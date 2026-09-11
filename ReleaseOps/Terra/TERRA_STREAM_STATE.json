@@ -1,11 +1,11 @@
 {
   "stream": "THF_TERRA",
-  "branch": "terra/rc28-godot472-readiness-20260912",
-  "source_checkpoint": "TERRA-RC28",
-  "source_version": "4.6.2-rc28",
-  "source_sha256": "54d5361c8346939c1a8d6cae4ab73c9048f04df8e4f5f666ac9c7e28ca35391e",
-  "releaseops_status": "RC28_SOURCE_TYPE_READINESS_PASS_REMOTE_GODOT_INPUT_STAGING_BLOCKED",
-  "dedup": "RC1-RC27 documented PASS gates were not rerun. RC28 fixes the concrete Godot 4.7.2 Variant type-inference defect identified by earlier remote diagnostics and validates only the changed source/current package.",
+  "branch": "terra/rc29-android-export-readiness-20260912",
+  "source_checkpoint": "TERRA-RC29",
+  "source_version": "4.6.3-rc29",
+  "source_sha256": "c80e7d3c1a241ef5d044f1638f231c2f44b982f02683a88fd35ff2e49599fd1e",
+  "releaseops_status": "RC29_ANDROID_EXPORT_SOURCE_READY_REMOTE_GODOT_INPUT_STAGING_BLOCKED",
+  "dedup": "RC1-RC28 documented PASS gates/artifacts were not rerun. RC29 validates only current Android/Godot export-readiness source and package integrity.",
   "latest_engine_attempt": {
     "workflow": "THF Terra RC27 Godot Gate V2",
     "workflow_run_id": 34646341978,
@@ -15,24 +15,29 @@
     "canonical_archive_mutated": false,
     "wave_untouched": true
   },
-  "rc28": {
-    "checkpoint_file": "ReleaseOps/Terra/RC28_CHECKPOINT.json",
-    "patch_file": "ReleaseOps/Terra/RC28_SOURCE_PATCH.diff",
-    "artifact": "THF_Terra_v4.6.2_RC28_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip",
-    "artifact_sha256": "54d5361c8346939c1a8d6cae4ab73c9048f04df8e4f5f666ac9c7e28ca35391e",
+  "rc29": {
+    "artifact": "THF_Terra_v4.6.3_RC29_GODOT_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip",
+    "artifact_sha256": "c80e7d3c1a241ef5d044f1638f231c2f44b982f02683a88fd35ff2e49599fd1e",
     "parts": [
-      {"name":"THF_Terra_v4.6.2_RC28_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"01cfa7a8b8385302ab751fea96abb6de76ab74002544c888818d624e04fd2e8e"},
-      {"name":"THF_Terra_v4.6.2_RC28_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"8ce2b51c23e8a0459ce65c7ba85248c9cd3d3cd7f58c0a66160f780488211b1c"}
+      {"name":"THF_Terra_v4.6.3_RC29_GODOT_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"7bc255562bc8d519d63e3bdb2f1cb28e50bfe5b9b1d79014d41c340cf06e7883"},
+      {"name":"THF_Terra_v4.6.3_RC29_GODOT_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"57c298675bd95f7a3c54071903c7e6efbe1c2a8fdd0b9bd4170941e04daac736"}
     ],
-    "focused_tests": "5/5 PASS",
+    "checkpoint_file": "ReleaseOps/Terra/RC29_CHECKPOINT.json",
+    "checkpoint_sha256": "8f83dfc0ac9a0df259e501e6fe27706d557b8e309326203dcaae31304e9babe2",
+    "patch_file": "ReleaseOps/Terra/RC29_SOURCE_PATCH.diff",
+    "focused_tests": "8/8 PASS",
     "python_compileall": "PASS",
     "javascript_syntax": "PASS",
-    "gdscript_static_type_gate": "PASS",
+    "gdscript_static_invariants": "PASS",
     "deterministic_package": "PASS exact SHA",
+    "clean_extract": "PASS",
     "zip_integrity": "PASS",
-    "godot_parser_import_headless": "NOT_RUN_INPUT_STAGING_BLOCKED"
+    "android_api_36_source_metadata": "PASS",
+    "native_aab_export_preset_source": "PASS",
+    "godot_parser_import_headless": "NOT_RUN_INPUT_STAGING_BLOCKED",
+    "android_export": "NOT_EXECUTED"
   },
-  "next_gate": "Stage exact RC28 full archive or both exact split parts on an approved GCP builder input path, then run clean Godot 4.7.2 editor import/parser/class-cache and 30-frame headless boot.",
+  "next_gate": "Stage exact RC29 archive/parts on approved builder, then Godot 4.7.2 clean editor import/parser/class-cache and 30-frame headless boot; only after PASS run unsigned Android export validation.",
   "truth_boundaries": {
     "gpu_device_visual_qa": "NOT_EXECUTED",
     "perfect_photo_likeness": "NOT_CLAIMED",
