@@ -1,0 +1,31 @@
+THF Rift RC31 Validation
+========================
+Checkpoint: RIFT-RC31-BOT-TACTICAL-INTERRUPTION
+Version: 4.6.5-rc31 / versionCode 42065 / compileSdk 36 / targetSdk 36
+Baseline artifact SHA: 1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41
+
+New scope only:
+- authoritative bot action/cover transient cleanup on downing
+- server-owned 320-unit + LOS immediate-hostile gate before bot revive
+- server-owned in-flight bot revive cancellation on newly visible immediate hostile
+- no client bot tactical/damage/ranked authority added
+
+PASS targeted: 69/69
+PASS clean-extract: 69/69
+PASS Python compileall source + clean extract
+PASS JavaScript syntax source + clean extract
+PASS GDScript static structural gate (NOT Godot parser)
+PASS native/Godot files byte-identical to RC30: 34/34
+PASS deterministic ZIP exact SHA: 0c87563b469d61f63330504f231b99c90db7f4832c2b08f12bd801440bb21253
+PASS ZIP integrity
+PENDING Godot 4.7.2 parser/import/headless: executable unavailable
+NOT EXECUTED physical Android/GPU/device QA
+
+Source hashes:
+app/services/arena.py ebd5f43578719b1c8f8184df27b3d4b02067470fb194f2bc4e014bbb2ae00fcd
+app/arena_physics.py 80a5b9e316fa44b957288a2cbbcd6a903419a62446aff934bdabe868626df235
+android-arena/app/build.gradle 891692d4ffc16c2d9820eca69bfd0d0b752d0dec33897f7dde78fedd9cd2a257
+config/animations.json 441c72ebe0f395da3713ba8777c3a380db664490dfcf5d551865f1abab62b0af
+scripts/rift_rc31_bot_tactical_interruption_gate.py 2babc0bf8bb548f4464726aacd4eb9750a549964c69a7c795961d220ca13d8c7
+
+No production-signed AAB, Play approval, GPU/device QA, production deployment, perfect photo likeness, Solana settlement, or visual parity/superiority claimed.
