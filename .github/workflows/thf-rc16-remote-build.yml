@@ -1,0 +1,124 @@
+name: THF RC16 Remote Unsigned Build
+
+on:
+  push:
+    branches:
+      - 'releaseops/rc16-remote-build-*'
+    paths:
+      - '.github/workflows/thf-rc16-remote-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  build:
+    name: Build RC16 unsigned/test candidates on private builder
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Reconfirm staged source hashes on builder
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          remote='set -Eeuo pipefail; cd "$HOME/thf-builder/inputs"; \
+          echo "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a  THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip" | sha256sum -c -; \
+          echo "60ccd44ee476822cb2b7a7011f6f42a6cf45da23afe154fb30b785e7f4376c46  THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip" | sha256sum -c -; \
+          echo "ed79b10d41f82a8fc0a5c43c00368d36b74c65f1aa5a7194a9c4f0a6999a5f2e  THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip" | sha256sum -c -; \
+          echo RC16_REMOTE_SOURCE_SHA_GATE=PASS'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="$remote"
+
+      - name: Copy build-only ReleaseOps scripts to builder
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -Eeuo pipefail; mkdir -p "$HOME/thf-builder-rc16-build/ops"; chmod 700 "$HOME/thf-builder-rc16-build" "$HOME/thf-builder-rc16-build/ops"'
+          gcloud compute scp ReleaseOps/rc16_remote_build.sh ReleaseOps/rc16-intake.json \
+            "$GCP_BUILDER:~/thf-builder-rc16-build/ops/" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
+      - name: Execute isolated unsigned/test build
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          remote='set -Eeuo pipefail; chmod +x "$HOME/thf-builder-rc16-build/ops/rc16_remote_build.sh"; \
+          THF_RC16_BUILD_ROOT="$HOME/thf-builder-rc16-build" \
+          THF_RC16_INPUTS_DIRECT="$HOME/thf-builder/inputs" \
+          THF_RC16_INTAKE="$HOME/thf-builder-rc16-build/ops/rc16-intake.json" \
+          "$HOME/thf-builder-rc16-build/ops/rc16_remote_build.sh"'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="$remote" | tee rc16-remote-build-console.log
+
+      - name: Collect build evidence from builder
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p rc16-build-evidence
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-builder-rc16-build/out/*" rc16-build-evidence/ \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          cp -f rc16-remote-build-console.log rc16-build-evidence/ 2>/dev/null || true
+          find rc16-build-evidence -type f -maxdepth 4 -print0 | sort -z | xargs -0 -r sha256sum > rc16-build-evidence/GITHUB_EVIDENCE_SHA256SUMS.txt
+
+      - name: Assert safety boundaries
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [ -f rc16-build-evidence/BUILD_SUMMARY_RC16.json ]; then
+            python3 - <<'PY'
+          import json
+          p='rc16-build-evidence/BUILD_SUMMARY_RC16.json'
+          d=json.load(open(p,encoding='utf-8'))
+          truth=d.get('truth',{})
+          assert truth.get('production_signing_performed') is False
+          assert truth.get('play_upload_performed') is False
+          assert truth.get('canonical_source_mutated') is False
+          assert truth.get('wave_mutated') is False
+          print('RC16_BUILD_SAFETY_GATE=PASS')
+          PY
+          fi
+          echo 'NO_PRODUCTION_SIGNING_PERFORMED=TRUE'
+          echo 'NO_PLAY_PUBLISH_PERFORMED=TRUE'
+          echo 'NO_CLOUDFLARE_CUTOVER_PERFORMED=TRUE'
+          echo 'NO_SOLANA_FINANCIAL_ACTION_PERFORMED=TRUE'
+          echo 'WAVE_UNTOUCHED=TRUE'
+
+      - name: Upload RC16 build evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-RC16-Remote-Build-Evidence
+          path: rc16-build-evidence/
+          if-no-files-found: error
+          retention-days: 30
