@@ -1,0 +1,94 @@
+name: THF RC16 Direct Remote Pull
+
+on:
+  push:
+    branches:
+      - 'releaseops/**'
+    paths:
+      - '.github/workflows/thf-rc16-remote-pull.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  pull:
+    name: Pull and verify RC16 directly on private builder
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: |
+            https://www.googleapis.com/auth/cloud-platform
+            https://www.googleapis.com/auth/drive.readonly
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Direct private Drive pull on builder + SHA gate
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          printf '%s\n' "$ACCESS_TOKEN" | gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=15m --quiet \
+            --command='set -Eeuo pipefail
+          IFS= read -r ACCESS_TOKEN
+          umask 077
+          BASE="$HOME/thf-builder/inputs-direct"
+          mkdir -p "$BASE"
+          chmod 700 "$HOME/thf-builder" "$BASE"
+          cd "$BASE"
+          download() {
+            id="$1"; name="$2"
+            echo "REMOTE_DOWNLOAD_START=$name"
+            curl --fail --location --silent --show-error --retry 5 --retry-delay 2 \
+              -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+              "https://www.googleapis.com/drive/v3/files/${id}?alt=media&supportsAllDrives=true" \
+              -o "${name}.partial"
+            mv "${name}.partial" "$name"
+            echo "REMOTE_DOWNLOAD_DONE=$name"
+          }
+          download "1KgdGSfoAv8dnZMlSMKmuOe-Tcjpdpvwz" "THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
+          download "1EO7z0cS1zeIYOR-1BAu73jp3Vw2snno2" "THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.00"
+          download "1ZfuiS4GKO4JD0Ubtqg0R3ZYJXxMEfbsS" "THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.01"
+          download "1x73ZxDn7KzY96aHEEjLWER1ZIJJrByYW" "THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.00"
+          download "1fg78kWW7AeGM6YKRwt9_wyo1N-SHiq1p" "THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.01"
+          unset ACCESS_TOKEN
+          echo "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a  THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          echo "8715408b62bf28bec6522a08a2ca0138287e7f5e7be726130fd49a8a87945cba  THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.00" | sha256sum -c -
+          echo "12f3655c01d2e5154d3108767762f667d1b3f93340a256293ed75e872ecf8c0e  THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.01" | sha256sum -c -
+          echo "84c7bad9256650b9dc0f41428a095886330f1aa1d3a53579c4e3ead50cdb050a  THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.00" | sha256sum -c -
+          echo "42bd48eef2bdc58ac624eea4aac35d85beebffca66377aeb9060b9afc2cd2970  THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.01" | sha256sum -c -
+          cat THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.00 THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.01 > THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip
+          echo "60ccd44ee476822cb2b7a7011f6f42a6cf45da23afe154fb30b785e7f4376c46  THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          cat THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.00 THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.01 > THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip
+          echo "ed79b10d41f82a8fc0a5c43c00368d36b74c65f1aa5a7194a9c4f0a6999a5f2e  THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          ls -lh
+          echo THF_RC16_REMOTE_DIRECT_PULL=PASS
+          echo EXACT_SHA_GATE=PASS
+          echo NO_BUILD_EXECUTED=TRUE
+          echo WAVE_UNTOUCHED=TRUE'
