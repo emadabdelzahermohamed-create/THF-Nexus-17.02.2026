@@ -1,0 +1,35 @@
+{
+  "stream": "THF_TERRA",
+  "release": "TERRA-RC28",
+  "version": "4.6.2-rc28",
+  "baseline": {
+    "release": "TERRA-RC27",
+    "sha256": "a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832"
+  },
+  "artifact": {
+    "name": "THF_Terra_v4.6.2_RC28_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip",
+    "sha256": "54d5361c8346939c1a8d6cae4ab73c9048f04df8e4f5f666ac9c7e28ca35391e",
+    "parts": [
+      {"name":"THF_Terra_v4.6.2_RC28_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"01cfa7a8b8385302ab751fea96abb6de76ab74002544c888818d624e04fd2e8e"},
+      {"name":"THF_Terra_v4.6.2_RC28_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"8ce2b51c23e8a0459ce65c7ba85248c9cd3d3cd7f58c0a66160f780488211b1c"}
+    ]
+  },
+  "source_fix": "WorldMain.gd NPC visual-cue Dictionary.get Variant inference explicitly converted to String; behavior preserved.",
+  "tests": {
+    "focused_rc28": "5/5 PASS",
+    "python_compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "changed_gdscript_static": "PASS",
+    "deterministic_package": "PASS exact SHA",
+    "zip_integrity": "PASS",
+    "broad_tests_directory": "162 PASS / 28 FAIL historical pinned-version or superseded-contract tests; not a current gate",
+    "godot_4_7_2_parser_import_headless": "BLOCKED_INPUT_STAGING"
+  },
+  "truth_boundaries": {
+    "gpu_device_visual_qa": "NOT_EXECUTED",
+    "perfect_photo_likeness": "NOT_CLAIMED",
+    "production_signed_aab": "NOT_CLAIMED",
+    "play_approval": "NOT_CLAIMED",
+    "production_deployment": "NOT_CLAIMED"
+  }
+}
