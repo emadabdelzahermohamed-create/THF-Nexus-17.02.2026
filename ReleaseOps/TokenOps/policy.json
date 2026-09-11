@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "verified": {
+    "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "decimals": 8,
+    "current_supply_ui": "10000000000",
+    "mint_authority": null,
+    "freeze_authority": null
+  },
+  "economics": {
+    "active_user_revenue_share": 0.35,
+    "approved_supply_floor_target_ui": "8000000000",
+    "burn_source_policy": "treasury_controlled_balances_only",
+    "minting_assumption": "disabled_immutable"
+  },
+  "automation": {
+    "read_only_monitoring": true,
+    "reward_manifest_generation": "allowed_offline",
+    "transaction_construction": "simulation_only_until_signer_policy_approved",
+    "transaction_signing": false,
+    "transaction_broadcast": false,
+    "burn_execution": false,
+    "treasury_transfer_execution": false,
+    "authority_change_execution": false
+  },
+  "signer_policy": {
+    "seed_phrase_in_repo": "forbidden",
+    "private_key_in_repo": "forbidden",
+    "persistent_hot_wallet_key": "forbidden",
+    "preferred_control": "multisig_or_owner_controlled_external_signer",
+    "production_policy_status": "not_yet_approved"
+  },
+  "distribution_controls": {
+    "anti_sybil_required": true,
+    "activity_evidence_required": true,
+    "anti_whale_cap_required": true,
+    "per_user_cap": null,
+    "epoch_budget_cap": null,
+    "claim_or_push_model": "to_be_selected_after_treasury_design"
+  },
+  "isolation": {
+    "wave_mawja": "must_not_be_touched",
+    "tokenops_separate_from_releaseops_signing": true
+  }
+}
