@@ -1,0 +1,48 @@
+{
+  "stream": "THF_TERRA",
+  "current": "TERRA-RC30",
+  "version": "4.6.4-rc30",
+  "package_id": "com.topherofit.thf.terra",
+  "baseline": {
+    "release": "TERRA-RC29",
+    "sha256": "c80e7d3c1a241ef5d044f1638f231c2f44b982f02683a88fd35ff2e49599fd1e"
+  },
+  "reason": "Real Godot 4.7.2 clean editor/import parser found missing helper methods in WorldMain.gd property confirmation path.",
+  "fixes": [
+    "define _set_activity_status as presentation-only activities body status append",
+    "define _refresh_activity_actions_only to re-render current cached authoritative payload without network/economy mutation",
+    "advance Android candidate metadata to versionCode 42064/versionName 4.6.4-rc30"
+  ],
+  "local_tests": {
+    "focused": "5/5 PASS",
+    "python_compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "deterministic_package": "PASS exact SHA",
+    "clean_extract_focused": "5/5 PASS",
+    "clean_extract_python_js": "PASS",
+    "zip_integrity": "PASS"
+  },
+  "godot_472": {
+    "rc29_clean_import": "FAILED_PARSE",
+    "errors": [
+      "Function _set_activity_status() not found in base self",
+      "Function _refresh_activity_actions_only() not found in base self"
+    ],
+    "rc30_rerun": "PENDING"
+  },
+  "artifact": {
+    "name": "THF_Terra_v4.6.4_RC30_GODOT472_PARSER_FIX_CUMULATIVE_SOURCE.zip",
+    "sha256": "8a83afc99065d93d7d49df4ce88b3afab58fc628b82c0b491e46f5fb7eb9c73f",
+    "parts": [
+      {"name": "THF_Terra_v4.6.4_RC30_GODOT472_PARSER_FIX_CUMULATIVE_SOURCE.zip.part.00", "sha256": "c3010db9296a6c2e2c11b6551ff62ee9d1625fe11e21fa35a069279d255b2fd6"},
+      {"name": "THF_Terra_v4.6.4_RC30_GODOT472_PARSER_FIX_CUMULATIVE_SOURCE.zip.part.01", "sha256": "a02b1115b054bfe2629f8b56833e02f6e41b0479054d2a0078b4b73f62bbbbb8"}
+    ]
+  },
+  "truth_boundaries": [
+    "GPU/device visual QA NOT EXECUTED",
+    "perfect photo likeness NOT CLAIMED",
+    "production-signed AAB NOT CLAIMED",
+    "Play approval NOT CLAIMED",
+    "production deployment NOT CLAIMED"
+  ]
+}
