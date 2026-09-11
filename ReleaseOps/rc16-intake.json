@@ -1,0 +1,66 @@
+{
+  "checkpoint": "PLATFORM-RC16-2026-09-11",
+  "scope": "platform_release_only",
+  "repository": "emadabdelzahermohamed-create/THF-Nexus-17.02.2026",
+  "gcp": {
+    "project_id": "project-b5e10d7e-8ce8-4aa4-a15",
+    "project_number": "1035420130588",
+    "zone": "europe-west1-b",
+    "builder": "thf-wave-builder",
+    "wif_provider": "projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider",
+    "service_account": "thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com"
+  },
+  "sources": {
+    "core": {
+      "checkpoint": "CORE-RC6",
+      "artifact": "THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip",
+      "sha256": "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a",
+      "package_id": "com.topherofit.thf.core",
+      "existing_build_request": "CORE_RC6_BUILD_REQUEST_R1"
+    },
+    "terra": {
+      "checkpoint": "TERRA-RC21",
+      "artifact": "THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip",
+      "sha256": "60ccd44ee476822cb2b7a7011f6f42a6cf45da23afe154fb30b785e7f4376c46",
+      "package_id": "com.topherofit.thf.terra",
+      "parts": [
+        {
+          "name": "THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.00",
+          "sha256": "8715408b62bf28bec6522a08a2ca0138287e7f5e7be726130fd49a8a87945cba",
+          "size_bytes": 94371840
+        },
+        {
+          "name": "THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.01",
+          "sha256": "12f3655c01d2e5154d3108767762f667d1b3f93340a256293ed75e872ecf8c0e",
+          "size_bytes": 14706866
+        }
+      ]
+    },
+    "rift": {
+      "checkpoint": "RIFT-RC24-ATTACHMENT-HYSTERESIS-SIGHT-CALIBRATION",
+      "artifact": "THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip",
+      "sha256": "ed79b10d41f82a8fc0a5c43c00368d36b74c65f1aa5a7194a9c4f0a6999a5f2e",
+      "package_id": "com.topherofit.thf.rift",
+      "parts": [
+        {
+          "name": "THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.00",
+          "sha256": "84c7bad9256650b9dc0f41428a095886330f1aa1d3a53579c4e3ead50cdb050a",
+          "size_bytes": 94371840
+        },
+        {
+          "name": "THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.01",
+          "sha256": "42bd48eef2bdc58ac624eea4aac35d85beebffca66377aeb9060b9afc2cd2970",
+          "size_bytes": 14254882
+        }
+      ]
+    }
+  },
+  "allowed_next": "unsigned_test_build_and_package_inspection",
+  "forbidden_in_this_gate": [
+    "production_signing",
+    "google_play_irreversible_actions",
+    "cloudflare_production_cutover",
+    "solana_signing_or_settlement",
+    "wave_mutation"
+  ]
+}
