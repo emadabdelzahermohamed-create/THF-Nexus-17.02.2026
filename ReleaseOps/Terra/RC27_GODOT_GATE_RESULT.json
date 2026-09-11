@@ -1,0 +1,22 @@
+{
+  "stream": "THF_TERRA",
+  "checkpoint": "TERRA-RC27",
+  "source_sha256": "a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832",
+  "workflow_run_id": 34646341978,
+  "workflow_commit": "d29e969bf538a7ff5146087864c20433b5e0b63c",
+  "status": "BLOCKED_MISSING_EXACT_RC27_INPUT",
+  "remote_exit_code": 42,
+  "godot_import_rc": null,
+  "godot_headless_boot_rc": null,
+  "script_error_log_count": null,
+  "canonical_archive_mutated": false,
+  "wave_untouched": true,
+  "truth_boundaries": {
+    "gpu_device_visual_qa": "NOT_EXECUTED",
+    "perfect_photo_likeness": "NOT_CLAIMED",
+    "production_signed_aab": "NOT_CLAIMED",
+    "play_approval": "NOT_CLAIMED",
+    "production_deployment": "NOT_CLAIMED",
+    "solana_settlement": "NOT_CLAIMED"
+  }
+}
