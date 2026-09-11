@@ -1,0 +1,70 @@
+name: THF Drive Access Smoke
+
+on:
+  push:
+    branches:
+      - main
+      - 'releaseops/**'
+    paths:
+      - '.github/workflows/thf-drive-access-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CORE_ID: 1KgdGSfoAv8dnZMlSMKmuOe-Tcjpdpvwz
+
+jobs:
+  drive-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+
+      - name: Probe exact private Drive file
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          code="$(curl --silent --show-error \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            -H 'Accept: application/json' \
+            -o /tmp/drive-response \
+            -w '%{http_code}' \
+            "https://www.googleapis.com/drive/v3/files/${CORE_ID}?fields=id,name,size,mimeType,capabilities(canDownload)&supportsAllDrives=true")"
+          echo "DRIVE_HTTP_STATUS=${code}"
+          if [ "$code" != "200" ]; then
+            python3 - <<'PY'
+          import json
+          p='/tmp/drive-response'
+          try:
+              data=json.load(open(p,encoding='utf-8'))
+              e=data.get('error',{})
+              print('DRIVE_ERROR_CODE=' + str(e.get('code','unknown')))
+              print('DRIVE_ERROR_STATUS=' + str(e.get('status','unknown')))
+              print('DRIVE_ERROR_MESSAGE=' + str(e.get('message','unknown')))
+              for d in e.get('details',[]) or []:
+                  reason=d.get('reason') or d.get('metadata',{}).get('reason')
+                  service=d.get('metadata',{}).get('service')
+                  if reason: print('DRIVE_ERROR_REASON=' + str(reason))
+                  if service: print('DRIVE_ERROR_SERVICE=' + str(service))
+          except Exception:
+              print(open(p,encoding='utf-8',errors='replace').read()[:1000])
+          PY
+            exit 22
+          fi
+          cat /tmp/drive-response
+          echo 'THF_DRIVE_PRIVATE_ACCESS=PASS'
