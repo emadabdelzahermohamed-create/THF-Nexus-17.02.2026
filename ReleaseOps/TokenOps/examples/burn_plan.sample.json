@@ -1,0 +1,26 @@
+{
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "observed_supply_raw": "1000000000000000000",
+  "requested_burn_raw": "250000000000000000",
+  "treasury_accounts": [
+    {
+      "token_account": "TreasuryTokenAccountA",
+      "owner": "TreasuryOwnerA",
+      "balance_raw": "150000000000000000",
+      "treasury_control_verified": true
+    },
+    {
+      "token_account": "TreasuryTokenAccountB",
+      "owner": "TreasuryOwnerB",
+      "balance_raw": "100000000000000000",
+      "treasury_control_verified": true
+    },
+    {
+      "token_account": "UnverifiedAccount",
+      "owner": "ThirdPartyOwner",
+      "balance_raw": "500000000000000000",
+      "treasury_control_verified": false
+    }
+  ]
+}
