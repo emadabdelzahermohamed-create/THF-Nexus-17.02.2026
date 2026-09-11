@@ -1,0 +1,82 @@
+name: Rift RC32 Godot 4.7.2 Gate
+
+on:
+  push:
+    branches: ['rift/releaseops-rc32']
+    paths: ['.github/workflows/rift-rc32-godot472-gate.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  rift-godot472:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Fresh Rift RC32 native parser/import/headless gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='set -Eeuo pipefail
+          GODOT="$HOME/thf-tools/godot/4.7.2-stable/godot"
+          INPUT="$HOME/thf-builder/inputs-rc17/THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip"
+          ROOT="$HOME/rift-rc32-godot472"
+          rm -rf "$ROOT"; mkdir -p "$ROOT/src" "$ROOT/out"
+          echo "1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41  $INPUT" | sha256sum -c -
+          unzip -q "$INPUT" -d "$ROOT/src"
+          P="$ROOT/src/THF_Nexus_Arena_Core/native/arena/RiftAudioFeedback.gd"
+          python3 - "$P" <<"PY"
+from pathlib import Path
+import hashlib,sys
+p=Path(sys.argv[1])
+before=hashlib.sha256(p.read_bytes()).hexdigest()
+assert before=="40804b4461820e78b63ca606dfc8cce1ad799f27eba61c94c3ed37f60de9f23d", before
+s=p.read_text()
+repls=[
+("        var extra := players.pop_back()","        var extra: AudioStreamPlayer = players.pop_back() as AudioStreamPlayer"),
+("    var spec := {","    var spec: Array = {"),
+("    }.get(kind, [280.0, 0.045, 0.25])\n    var hz := float(spec[0])","    }.get(kind, [280.0, 0.045, 0.25]) as Array\n    var hz := float(spec[0])")]
+for old,new in repls:
+    assert s.count(old)==1,(old,s.count(old)); s=s.replace(old,new,1)
+p.write_text(s)
+after=hashlib.sha256(p.read_bytes()).hexdigest()
+assert after=="a0de254feafce5d7bda6f26321915f30727057e1350ba1bba2356207840eee3a",after
+print("RIFT_RC32_TYPE_ONLY_FIX=PASS",before,after)
+PY
+          PROJECT="$ROOT/src/THF_Nexus_Arena_Core"
+          "$GODOT" --version | tee "$ROOT/out/godot-version.txt"
+          rm -rf "$PROJECT/.godot"
+          set +e
+          timeout 15m "$GODOT" --headless --editor --path "$PROJECT" --quit --verbose >"$ROOT/out/import.log" 2>&1
+          import_rc=$?
+          timeout 10m "$GODOT" --headless --path "$PROJECT" --quit >"$ROOT/out/headless.log" 2>&1
+          headless_rc=$?
+          set -e
+          cat "$ROOT/out/import.log"
+          cat "$ROOT/out/headless.log"
+          test "$import_rc" -eq 0
+          test "$headless_rc" -eq 0
+          ! grep -Eqi "SCRIPT ERROR|Parse Error|Parser Error|ERROR: Failed to load script|Cannot load script|Compile Error" "$ROOT/out/import.log" "$ROOT/out/headless.log"
+          printf "godot_import_rc=%s\ngodot_headless_rc=%s\nrift_audio_sha=%s\n" "$import_rc" "$headless_rc" "$(sha256sum "$P" | awk "{print \$1}")" | tee "$ROOT/out/result.txt"
+          echo RIFT_RC32_GODOT472_GATE=PASS'
+      - name: Truth boundary
+        if: always()
+        run: |
+          echo "Rift-only disposable parser/import/headless validation. No GPU/device visual QA, signed AAB, Play approval, or deployment claim."
