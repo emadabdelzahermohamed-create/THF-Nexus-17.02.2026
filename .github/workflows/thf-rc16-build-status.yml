@@ -1,0 +1,39 @@
+name: THF RC16 Build Status
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc16-build-status.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read live build status
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -u; ROOT="$HOME/thf-builder-rc16-build"; echo THF_RC16_LIVE_STATUS_BEGIN; date -u; du -sh "$ROOT" 2>/dev/null || true; echo PROCESSES; ps -eo pid,etimes,cmd | grep -E "(sdkmanager|gradle|GradleDaemon|java|commandlinetools|services.gradle)" | grep -v grep || true; echo OUTPUT_FILES; find "$ROOT/out" -maxdepth 3 -type f -printf "%p\t%s\n" 2>/dev/null | sort || true; echo LOG_TAILS; for f in "$ROOT"/out/*/wrapper.log "$ROOT"/out/*/gradle-build.log; do [ -f "$f" ] || continue; echo "===== $f ====="; tail -80 "$f"; done; echo THF_RC16_LIVE_STATUS_END; echo WAVE_UNTOUCHED=TRUE'
