@@ -1,0 +1,55 @@
+{
+  "stream": "THF_TERRA_RELEASEOPS",
+  "checkpoint": "TERRA-RC29",
+  "branch": "terra/rc29-android-export-readiness-20260912",
+  "version": "4.6.3-rc29",
+  "baseline": {
+    "checkpoint": "TERRA-RC28",
+    "sha256": "54d5361c8346939c1a8d6cae4ab73c9048f04df8e4f5f666ac9c7e28ca35391e"
+  },
+  "artifact": {
+    "name": "THF_Terra_v4.6.3_RC29_GODOT_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip",
+    "sha256": "c80e7d3c1a241ef5d044f1638f231c2f44b982f02683a88fd35ff2e49599fd1e",
+    "parts": [
+      {
+        "name": "THF_Terra_v4.6.3_RC29_GODOT_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.00",
+        "sha256": "7bc255562bc8d519d63e3bdb2f1cb28e50bfe5b9b1d79014d41c340cf06e7883"
+      },
+      {
+        "name": "THF_Terra_v4.6.3_RC29_GODOT_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.01",
+        "sha256": "57c298675bd95f7a3c54071903c7e6efbe1c2a8fdd0b9bd4170941e04daac736"
+      }
+    ]
+  },
+  "safe_checkpoint": {
+    "focused_tests": "8/8 PASS",
+    "python_compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "gdscript_static_invariants": "PASS",
+    "deterministic_package": "PASS exact SHA",
+    "clean_extract": "PASS",
+    "zip_integrity": "PASS",
+    "android_api_36_source_metadata": "PASS",
+    "native_aab_export_preset_source": "PASS"
+  },
+  "engine_gate": {
+    "godot_4_7_2_parser_import_headless": "BLOCKED_INPUT_STAGING",
+    "android_export_execution": "NOT_EXECUTED",
+    "reason": "Exact current RC29 artifact/parts are not staged on the approved GCP builder input path."
+  },
+  "changes": [
+    "Added Godot Android AAB candidate export preset with Gradle, minSdk 26, targetSdk 36, arm64-v8a.",
+    "Synchronized native export spec and Android fallback metadata to 42063 / 4.6.3-rc29.",
+    "Fixed fallback Android CI default package ID to com.topherofit.thf.terra and Terra-specific artifact identity.",
+    "Kept candidate unsigned/test-only; no production signing or deployment action."
+  ],
+  "next_gate": "Stage exact RC29 archive/parts on approved builder, then Godot 4.7.2 clean editor import/parser/class-cache and 30-frame headless boot; only after PASS run unsigned Android export validation.",
+  "truth_boundaries": [
+    "NO_GPU_DEVICE_VISUAL_QA",
+    "NO_PERFECT_PHOTO_LIKENESS",
+    "NO_PRODUCTION_SIGNED_AAB",
+    "NO_PLAY_APPROVAL",
+    "NO_PRODUCTION_DEPLOYMENT",
+    "NO_SOLANA_SETTLEMENT"
+  ]
+}
