@@ -1,0 +1,160 @@
+name: Terra RC29 Godot 4.7.2 Gate
+
+on:
+  push:
+    branches:
+      - 'terra/rc29-godot472-gate-20260912'
+    paths:
+      - '.github/workflows/terra-rc29-godot472-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  RC29_PART0_ID: 1GJzsNkjIA5_umpycwawBkNSTfeUct2cD
+  RC29_PART1_ID: 1COJA9k8NqkBrFp6Q1bdxp8u5sh1FO6_d
+  RC29_PART0_SHA256: 7bc255562bc8d519d63e3bdb2f1cb28e50bfe5b9b1d79014d41c340cf06e7883
+  RC29_PART1_SHA256: 57c298675bd95f7a3c54071903c7e6efbe1c2a8fdd0b9bd4170941e04daac736
+  RC29_ARCHIVE_SHA256: c80e7d3c1a241ef5d044f1638f231c2f44b982f02683a88fd35ff2e49599fd1e
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  godot472-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+
+      - name: Download exact RC29 source parts from private Drive staging
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p /tmp/terra-rc29
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://www.googleapis.com/drive/v3/files/${RC29_PART0_ID}?alt=media&supportsAllDrives=true" \
+            -o /tmp/terra-rc29/rc29.part.00
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://www.googleapis.com/drive/v3/files/${RC29_PART1_ID}?alt=media&supportsAllDrives=true" \
+            -o /tmp/terra-rc29/rc29.part.01
+          echo "${RC29_PART0_SHA256}  /tmp/terra-rc29/rc29.part.00" | sha256sum -c -
+          echo "${RC29_PART1_SHA256}  /tmp/terra-rc29/rc29.part.01" | sha256sum -c -
+          cat /tmp/terra-rc29/rc29.part.00 /tmp/terra-rc29/rc29.part.01 > /tmp/terra-rc29/rc29.zip
+          echo "${RC29_ARCHIVE_SHA256}  /tmp/terra-rc29/rc29.zip" | sha256sum -c -
+          mkdir -p /tmp/terra-rc29/project
+          unzip -q /tmp/terra-rc29/rc29.zip -d /tmp/terra-rc29/project
+          test -f /tmp/terra-rc29/project/project.godot
+
+      - name: Install exact Godot 4.7.2 Linux editor
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          api="https://api.github.com/repos/godotengine/godot-builds/releases/tags/${GODOT_VERSION}"
+          asset="Godot_v4.7.2-stable_linux.x86_64.zip"
+          release_json="$(curl --fail --silent --show-error --location "$api")"
+          url="$(printf '%s' "$release_json" | jq -r --arg asset "$asset" '.assets[] | select(.name == $asset) | .browser_download_url')"
+          digest="$(printf '%s' "$release_json" | jq -r --arg asset "$asset" '.assets[] | select(.name == $asset) | .digest')"
+          test -n "$url" && test "$url" != "null"
+          test -n "$digest" && test "$digest" != "null"
+          curl --fail --silent --show-error --location "$url" -o /tmp/terra-rc29/godot.zip
+          expected="${digest#sha256:}"
+          echo "${expected}  /tmp/terra-rc29/godot.zip" | sha256sum -c -
+          unzip -q /tmp/terra-rc29/godot.zip -d /tmp/terra-rc29/godot
+          godot_bin="$(find /tmp/terra-rc29/godot -maxdepth 1 -type f -name 'Godot_v4.7.2-stable_linux.x86_64' -print -quit)"
+          test -n "$godot_bin"
+          chmod +x "$godot_bin"
+          ln -sf "$godot_bin" /tmp/terra-rc29/godot472
+          /tmp/terra-rc29/godot472 --version | tee /tmp/terra-rc29/godot-version.txt
+          grep -q '^4\.7\.2' /tmp/terra-rc29/godot-version.txt
+
+      - name: Clean Godot editor import parser and class-cache gate
+        shell: bash
+        run: |
+          set -o pipefail
+          cd /tmp/terra-rc29/project
+          rm -rf .godot
+          set +e
+          /tmp/terra-rc29/godot472 --headless --editor --path . --quit --verbose 2>&1 | tee /tmp/terra-rc29/godot-import.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "$rc" > /tmp/terra-rc29/godot-import.rc
+          test "$rc" -eq 0
+          if grep -E -n 'SCRIPT ERROR:|Parse Error:|Failed to load script|Cannot get class|Could not resolve class' /tmp/terra-rc29/godot-import.log; then
+            echo 'Godot parser/import/class-cache signature detected' >&2
+            exit 31
+          fi
+          test -d .godot
+
+      - name: 30-frame headless boot gate
+        shell: bash
+        run: |
+          set -o pipefail
+          cd /tmp/terra-rc29/project
+          set +e
+          /tmp/terra-rc29/godot472 --headless --path . --quit-after 30 --verbose 2>&1 | tee /tmp/terra-rc29/godot-headless.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "$rc" > /tmp/terra-rc29/godot-headless.rc
+          test "$rc" -eq 0
+          if grep -E -n 'SCRIPT ERROR:|Parse Error:|Failed to load script|Cannot get class|Could not resolve class' /tmp/terra-rc29/godot-headless.log; then
+            echo 'Godot runtime script/class signature detected' >&2
+            exit 32
+          fi
+
+      - name: Emit Terra-only evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p /tmp/terra-rc29/evidence
+          cp /tmp/terra-rc29/godot-version.txt /tmp/terra-rc29/evidence/ 2>/dev/null || true
+          cp /tmp/terra-rc29/godot-import.log /tmp/terra-rc29/evidence/ 2>/dev/null || true
+          cp /tmp/terra-rc29/godot-headless.log /tmp/terra-rc29/evidence/ 2>/dev/null || true
+          cp /tmp/terra-rc29/godot-import.rc /tmp/terra-rc29/evidence/ 2>/dev/null || true
+          cp /tmp/terra-rc29/godot-headless.rc /tmp/terra-rc29/evidence/ 2>/dev/null || true
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          root=pathlib.Path('/tmp/terra-rc29/evidence')
+          def read(name):
+              p=root/name
+              return p.read_text(errors='replace').strip() if p.exists() else None
+          data={
+            'stream':'THF_TERRA',
+            'release':'TERRA-RC29',
+            'source_sha256':os.environ['RC29_ARCHIVE_SHA256'],
+            'godot_version':read('godot-version.txt'),
+            'godot_import_rc':read('godot-import.rc'),
+            'godot_headless_rc':read('godot-headless.rc'),
+            'gpu_device_visual_qa':'NOT_EXECUTED',
+            'production_signed_aab':'NOT_CLAIMED',
+            'play_approval':'NOT_CLAIMED',
+            'production_deployment':'NOT_CLAIMED'
+          }
+          p=root/'TERRA_RC29_GODOT472_GATE_RESULT.json'
+          p.write_text(json.dumps(data,indent=2)+'\n')
+          h=hashlib.sha256(p.read_bytes()).hexdigest()
+          (root/'TERRA_RC29_GODOT472_GATE_RESULT.sha256').write_text(f'{h}  {p.name}\n')
+          PY
+
+      - name: Upload Terra Godot gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terra-rc29-godot472-gate-evidence
+          path: /tmp/terra-rc29/evidence
+          if-no-files-found: error
