@@ -1,0 +1,95 @@
+name: THF GCP WIF Smoke
+
+on:
+  push:
+    branches:
+      - main
+      - 'releaseops/**'
+    paths:
+      - '.github/workflows/thf-gcp-wif-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_PROJECT_NUMBER: '1035420130588'
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  wif-smoke:
+    name: Read-only WIF verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        name: Authenticate to Google Cloud with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+          create_credentials_file: true
+
+      - name: Verify GCP project identity
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$ACCESS_TOKEN"
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://cloudresourcemanager.googleapis.com/v1/projects/${GCP_PROJECT_ID}" \
+            -o /tmp/thf-project.json
+          python3 - <<'PY'
+          import json, os
+          p = json.load(open('/tmp/thf-project.json', encoding='utf-8'))
+          expected_id = os.environ['GCP_PROJECT_ID']
+          expected_number = os.environ['GCP_PROJECT_NUMBER']
+          assert p.get('projectId') == expected_id, (p.get('projectId'), expected_id)
+          assert str(p.get('projectNumber')) == expected_number, (p.get('projectNumber'), expected_number)
+          print(f"GCP_PROJECT_ID={expected_id}")
+          print(f"GCP_PROJECT_NUMBER={expected_number}")
+          print("THF_GCP_PROJECT_IDENTITY=PASS")
+          PY
+
+      - name: Verify prepared private builder metadata
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}/zones/${GCP_ZONE}/instances/${GCP_BUILDER}" \
+            -o /tmp/thf-builder.json
+          python3 - <<'PY'
+          import json, os
+          vm = json.load(open('/tmp/thf-builder.json', encoding='utf-8'))
+          expected = os.environ['GCP_BUILDER']
+          assert vm.get('name') == expected, (vm.get('name'), expected)
+          print(f"GCP_BUILDER={expected}")
+          print(f"GCP_BUILDER_STATUS={vm.get('status', 'UNKNOWN')}")
+          print("THF_GCP_BUILDER_READ=PASS")
+          PY
+
+      - name: Gate result
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo 'THF_GITHUB_WIF_RUNTIME=PASS'
+          echo 'READ_ONLY_GATE=PASS'
+          echo 'NO_DEPLOYMENT_PERFORMED=TRUE'
+          echo 'NO_PRODUCTION_SIGNING_PERFORMED=TRUE'
+          echo 'WAVE_UNTOUCHED=TRUE'
