@@ -6,19 +6,22 @@
 - Workload Identity Federation authentication: **PASS**
 - Service-account access token: **PASS**
 - Authenticated service account: `thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com`
-- Compute builder metadata read: **BLOCKED — IAM 403**
-- Missing permission reported by Compute API: `compute.instances.get`
-- Target resource: `projects/project-b5e10d7e-8ce8-4aa4-a15/zones/europe-west1-b/instances/thf-wave-builder`
+- `roles/compute.viewer` grant: **PASS (operator applied)**
+- Compute builder metadata read: **PASS**
+- Builder: `thf-wave-builder`
+- Zone: `europe-west1-b`
+- Builder state observed by GitHub Actions: **RUNNING**
+- Workflow gate: **SUCCESS**
 
 ## Interpretation
 
-The GitHub ↔ GCP federation path is operational end-to-end. The remaining blocker is not WIF, GitHub, repository access, or a persistent credential. It is the GCP IAM policy attached to the federated service account.
+The GitHub ↔ GCP federation path is operational end-to-end. GitHub Actions can mint a short-lived federated service-account token and read the prepared private builder without a persistent service-account key.
 
-## Minimal next change
+The previous `compute.instances.get` IAM blocker is closed.
 
-Grant `roles/compute.viewer` to the release-builder service account at project scope, then rerun `THF GCP WIF Smoke`.
+## Next gate
 
-Prepared operator script: `ReleaseOps/01_grant_compute_viewer.sh`.
+Perform a read-only builder-access preflight for IAP/OS Login and network posture. Only after that passes should the automation lane receive the minimum SSH/IAP permissions needed to stage exact RC16 artifacts and execute the existing unsigned/test RC9/RC10 build chain.
 
 ## Safety boundary
 
