@@ -1,0 +1,176 @@
+name: THF Terra RC27 Godot Gate
+
+on:
+  push:
+    branches: ['terra/**']
+    paths:
+      - '.github/workflows/thf-terra-rc27-godot-gate.yml'
+      - 'ReleaseOps/Terra/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  TERRA_ARCHIVE: THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip
+  TERRA_SHA256: a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832
+  TERRA_PART0: THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.00
+  TERRA_PART0_SHA256: 1e3bcc23e3db418170fe5a398674c46e13df01daa46939ae12cacc3702c1fd8c
+  TERRA_PART1: THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.01
+  TERRA_PART1_SHA256: 746bb112916d016c3905673214511ac029d80bd083855cb75d47eb0fff0bff9e
+
+jobs:
+  terra-godot-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Verify RC27 input and run Terra-only Godot 4.7.2 gate
+        id: gate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="bash -s" <<'REMOTE' 2>&1 | tee "$RUNNER_TEMP/terra-rc27-godot.log"
+          set -Eeuo pipefail
+          ARCHIVE='THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip'
+          EXPECT='a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832'
+          PART0='THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.00'
+          PART0_SHA='1e3bcc23e3db418170fe5a398674c46e13df01daa46939ae12cacc3702c1fd8c'
+          PART1='THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.01'
+          PART1_SHA='746bb112916d016c3905673214511ac029d80bd083855cb75d47eb0fff0bff9e'
+          ROOT="$HOME/thf-terra-rc27-gate"
+          INPUT="$ROOT/input"
+          WORK="$ROOT/work"
+          OUT="$ROOT/out"
+          rm -rf "$ROOT"
+          mkdir -p "$INPUT" "$WORK" "$OUT"
+
+          candidates=(
+            "$HOME/thf-builder/inputs-rc18-terra"
+            "$HOME/thf-builder/inputs-rc17"
+            "$HOME/thf-builder/inputs"
+            "$HOME/thf-builder-rc17-build/inputs"
+          )
+          found=''
+          for d in "${candidates[@]}"; do
+            if [ -f "$d/$ARCHIVE" ]; then found="$d/$ARCHIVE"; break; fi
+          done
+
+          if [ -z "$found" ]; then
+            p0=''; p1=''
+            for d in "${candidates[@]}"; do
+              [ -z "$p0" ] && [ -f "$d/$PART0" ] && p0="$d/$PART0"
+              [ -z "$p1" ] && [ -f "$d/$PART1" ] && p1="$d/$PART1"
+            done
+            if [ -n "$p0" ] && [ -n "$p1" ]; then
+              echo "$PART0_SHA  $p0" | sha256sum -c -
+              echo "$PART1_SHA  $p1" | sha256sum -c -
+              cat "$p0" "$p1" > "$INPUT/$ARCHIVE"
+              found="$INPUT/$ARCHIVE"
+              echo TERRA_RC27_REASSEMBLED_FROM_SPLIT_PARTS=TRUE
+            fi
+          fi
+
+          if [ -z "$found" ]; then
+            printf 'status=BLOCKED_MISSING_RC27_INPUT\nexpected_archive=%s\nexpected_sha256=%s\n' "$ARCHIVE" "$EXPECT" | tee "$OUT/TRUTH.txt"
+            echo 'No RC27 canonical archive or exact split parts were present in approved builder input paths.' | tee "$OUT/BLOCKER.txt"
+            echo WAVE_UNTOUCHED=TRUE | tee -a "$OUT/TRUTH.txt"
+            exit 42
+          fi
+
+          echo "$EXPECT  $found" | sha256sum -c -
+          cp "$found" "$INPUT/$ARCHIVE"
+          unzip -q "$INPUT/$ARCHIVE" -d "$WORK"
+          test -f "$WORK/project.godot"
+          test -f "$WORK/native/world/WorldMain.gd"
+          test -f "$WORK/android/app/build.gradle"
+          grep -q 'versionCode 42061' "$WORK/android/app/build.gradle"
+          grep -q "versionName '4.6.1-rc27'" "$WORK/android/app/build.gradle"
+
+          GODOT="$HOME/thf-tools/godot/4.7.2-stable/godot"
+          if [ ! -x "$GODOT" ]; then
+            printf 'status=BLOCKED_GODOT_4_7_2_MISSING\npath=%s\n' "$GODOT" | tee "$OUT/TRUTH.txt"
+            exit 43
+          fi
+          "$GODOT" --version | tee "$OUT/GODOT_VERSION.txt"
+          rm -rf "$WORK/.godot"
+
+          set +e
+          timeout 15m "$GODOT" --headless --editor --path "$WORK" --quit --verbose > "$OUT/editor-import.log" 2>&1
+          import_rc=$?
+          timeout 5m "$GODOT" --headless --path "$WORK" --quit-after 30 --verbose > "$OUT/headless-boot.log" 2>&1
+          boot_rc=$?
+          set -e
+
+          script_errors=0
+          for log in "$OUT/editor-import.log" "$OUT/headless-boot.log"; do
+            if grep -Eqi 'SCRIPT ERROR|Parse Error|Parser Error|ERROR: Failed to load script|Cannot load script|Compile Error' "$log"; then
+              script_errors=$((script_errors+1))
+              grep -Ein 'SCRIPT ERROR|Parse Error|Parser Error|ERROR: Failed to load script|Cannot load script|Compile Error' "$log" | head -200 > "$OUT/script-errors.txt" || true
+            fi
+          done
+
+          printf 'status=%s\ncanonical_sha256=%s\nimport_rc=%s\nboot_rc=%s\nscript_error_logs=%s\ncanonical_archive_mutated=false\nwave_untouched=true\n' \
+            "$([ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$script_errors" -eq 0 ] && echo PASS || echo FAIL)" \
+            "$EXPECT" "$import_rc" "$boot_rc" "$script_errors" | tee "$OUT/TRUTH.txt"
+          sha256sum "$OUT"/* > "$OUT/SHA256SUMS.txt" || true
+          [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$script_errors" -eq 0 ]
+          REMOTE
+          rc=${PIPESTATUS[0]}
+          echo "gate_rc=$rc" >> "$GITHUB_OUTPUT"
+          echo "TERRA_GATE_RC=$rc" >> "$GITHUB_ENV"
+          exit "$rc"
+
+      - name: Retrieve Terra diagnostic evidence
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p terra-rc27-godot-evidence "$RUNNER_TEMP/terra-rc27-evidence"
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='set -Eeuo pipefail; ROOT="$HOME/thf-terra-rc27-gate"; [ -d "$ROOT/out" ] && tar -cf "$ROOT/terra-rc27-godot-evidence.tar" -C "$ROOT" out' || true
+          gcloud compute scp "$GCP_BUILDER:~/thf-terra-rc27-gate/terra-rc27-godot-evidence.tar" "$RUNNER_TEMP/terra-rc27-evidence/evidence.tar" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          [ -f "$RUNNER_TEMP/terra-rc27-evidence/evidence.tar" ] && tar -xf "$RUNNER_TEMP/terra-rc27-evidence/evidence.tar" -C terra-rc27-godot-evidence || true
+          cp "$RUNNER_TEMP/terra-rc27-godot.log" terra-rc27-godot-evidence/ || true
+          printf 'workflow_rc=%s\nsource=TERRA-RC27\nsource_sha256=%s\n' "${TERRA_GATE_RC:-missing}" "$TERRA_SHA256" > terra-rc27-godot-evidence/RUNNER_SUMMARY.txt
+          exit 0
+
+      - name: Upload Terra RC27 Godot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-Terra-RC27-Godot-evidence
+          path: terra-rc27-godot-evidence/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Terra gate conclusion
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          case "${TERRA_GATE_RC:-missing}" in
+            0) echo TERRA_RC27_GODOT_GATE=PASS ;;
+            42) echo TERRA_RC27_GODOT_GATE=BLOCKED_MISSING_EXACT_RC27_INPUT; exit 42 ;;
+            43) echo TERRA_RC27_GODOT_GATE=BLOCKED_GODOT_4_7_2_MISSING; exit 43 ;;
+            *) echo TERRA_RC27_GODOT_GATE=FAIL_SOURCE_OR_ENGINE_DIAGNOSTIC_REQUIRED; exit 1 ;;
+          esac
+          echo CANONICAL_ARCHIVE_MUTATED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
