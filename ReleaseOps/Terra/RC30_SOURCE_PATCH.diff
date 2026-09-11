@@ -1,0 +1,27 @@
+--- RC29/native/world/WorldMain.gd
++++ RC30/native/world/WorldMain.gd
+@@ -890,6 +890,24 @@
+         _add_activity_action("Refresh social / تحديث الاجتماعي", _refresh_active_activity.bind(true))
+ 
+ 
++func _set_activity_status(message: String) -> void:
++    if not is_instance_valid(activities_body):
++        return
++    var current := activities_body.text
++    if current.is_empty():
++        activities_body.text = message
++    else:
++        activities_body.text = current + "\n\n" + message
++
++
++func _refresh_activity_actions_only() -> void:
++    var section := active_activity_section
++    if not ACTIVITY_ENDPOINTS.has(section):
++        return
++    var payload: Dictionary = activity_cache.get(section, {})
++    _render_activity_actions(section, payload)
++
++
+ func _add_activity_action(label: String, callable: Callable) -> void:
+     var button := Button.new()
+     button.text = label
