@@ -60,7 +60,7 @@ jobs:
             --project "$GCP_PROJECT_ID" \
             --zone "$GCP_ZONE" \
             --tunnel-through-iap \
-            --ssh-key-expiration=5m \
+            --ssh-key-expire-after=5m \
             --quiet \
             --command='set -Eeuo pipefail; echo THF_REMOTE_SSH=PASS; printf "ARCH="; uname -m; printf "KERNEL="; uname -sr; if command -v java >/dev/null 2>&1; then java -version 2>&1 | head -n 1; fi; if [ -d "$HOME/thf-builder" ]; then echo THF_BUILDER_ROOT_PRESENT=TRUE; else echo THF_BUILDER_ROOT_PRESENT=FALSE; fi; echo NO_BUILD_EXECUTED=TRUE; echo WAVE_UNTOUCHED=TRUE'
 
