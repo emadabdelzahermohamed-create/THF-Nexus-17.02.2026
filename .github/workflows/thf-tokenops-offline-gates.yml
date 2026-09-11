@@ -1,0 +1,71 @@
+name: THF TokenOps Offline Gates
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-offline-gates.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-gates:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run reward accounting tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 ReleaseOps/TokenOps/test_reward_manifest.py | tee tokenops-reward-tests.log
+          python3 ReleaseOps/TokenOps/reward_manifest.py \
+            ReleaseOps/TokenOps/examples/reward_epoch.sample.json \
+            tokenops-offline/sample-reward-manifest.json | tee tokenops-reward-generator.log
+
+      - name: Assert financial execution remains disabled
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -qx 'TRANSACTION_CREATED=FALSE' tokenops-reward-tests.log
+          grep -qx 'TRANSACTION_SIGNED=FALSE' tokenops-reward-tests.log
+          grep -qx 'TRANSACTION_SUBMITTED=FALSE' tokenops-reward-tests.log
+          python3 - <<'PY'
+          import json
+          p='tokenops-offline/sample-reward-manifest.json'
+          d=json.load(open(p))
+          assert d['execution']['transaction_created'] is False
+          assert d['execution']['transaction_signed'] is False
+          assert d['execution']['transaction_submitted'] is False
+          assert d['execution']['requires_external_approval'] is True
+          print('THF_TOKENOPS_NO_EXECUTION_GATE=PASS')
+          PY
+
+      - name: Build evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sha256sum \
+            ReleaseOps/TokenOps/policy.json \
+            ReleaseOps/TokenOps/reward_manifest.py \
+            ReleaseOps/TokenOps/test_reward_manifest.py \
+            ReleaseOps/TokenOps/examples/reward_epoch.sample.json \
+            tokenops-offline/sample-reward-manifest.json \
+            tokenops-reward-tests.log \
+            tokenops-reward-generator.log > tokenops-offline/SHA256SUMS.txt
+
+      - name: Upload offline gate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Offline-Gates
+          path: |
+            tokenops-offline/
+            tokenops-reward-tests.log
+            tokenops-reward-generator.log
+          if-no-files-found: error
+          retention-days: 30
