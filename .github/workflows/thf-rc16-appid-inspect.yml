@@ -1,0 +1,54 @@
+name: THF RC16 AppId Inspect
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc16-appid-inspect.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect exact extracted build metadata
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-builder-rc16-build/work"
+          for spec in "terra:$ROOT/terra/android" "rift:$ROOT/rift/THF_Nexus_Arena_Core/android-arena"; do
+            slug="${spec%%:*}"; p="${spec#*:}"
+            echo "===== $slug ====="
+            echo "-- root build.gradle --"; sed -n "1,220p" "$p/build.gradle" 2>/dev/null || true
+            echo "-- app build.gradle --"; sed -n "1,260p" "$p/app/build.gradle" 2>/dev/null || true
+            echo "-- gradle.properties --"; cat "$p/gradle.properties" 2>/dev/null || true
+            echo "-- settings.gradle --"; cat "$p/settings.gradle" 2>/dev/null || true
+            echo "-- local candidates --"
+            find "$p" -maxdepth 2 -type f \( -name "*.properties" -o -name "*.gradle" -o -name "*.gradle.kts" \) -print | sort
+            echo "-- appId/package references --"
+            grep -RInE "appId|applicationId|namespace|com\.topherofit\.thf\.(terra|rift)" "$p" --include="*.gradle" --include="*.gradle.kts" --include="*.properties" --include="AndroidManifest.xml" 2>/dev/null | head -200 || true
+          done
+          echo THF_RC16_APPID_INSPECT=PASS
+          echo WAVE_UNTOUCHED=TRUE'
