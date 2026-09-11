@@ -1,0 +1,48 @@
+{
+  "checkpoint": "CORE-RC6-ANDROID-UNSIGNED-R2",
+  "run_id": 34651319006,
+  "run_conclusion": "success",
+  "head_sha": "63756dd3383652ef567a1072ab8758ff27bce3ef",
+  "source": {
+    "artifact": "THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip",
+    "sha256": "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a",
+    "size_bytes": 180945
+  },
+  "package": {
+    "id": "com.topherofit.thf.core",
+    "version": "6.2.2-rc6",
+    "versionCode": 62200,
+    "targetSdk": 36
+  },
+  "outputs": [
+    {
+      "kind": "debug_apk",
+      "name": "core-app-debug.apk",
+      "sha256": "87d119badc52504bd2471eec53fcc0142ca2e2cbac3171ab825b871c4087199f",
+      "size_bytes": 44179,
+      "zip_integrity": true,
+      "signing": "Android Debug test certificate"
+    },
+    {
+      "kind": "unsigned_release_aab",
+      "name": "core-app-release.aab",
+      "sha256": "e71625911d2c06eb0d084f6ed094fcd142f093fcfbb2bf2b13b59a4221760e6e",
+      "size_bytes": 24232,
+      "zip_integrity": true,
+      "production_signed": false
+    }
+  ],
+  "package_evidence_sha256": "1a583d9ae021b950978d3867eac8c0175535d3a91b378c8c4d87dbb1721a36ee",
+  "actions_artifact": {
+    "id": 10283498345,
+    "name": "THF-Core-RC6-unsigned-test-candidates",
+    "sha256": "c5e98699c883b5ec8ad9f1ef72583fb5e280e1852f7f30e7fee9fda0a6732b9f"
+  },
+  "truth": {
+    "production_signing_credentials_used": false,
+    "play_upload_performed": false,
+    "physical_device_qa": false,
+    "other_app_source_touched": false,
+    "wave_touched": false
+  }
+}
