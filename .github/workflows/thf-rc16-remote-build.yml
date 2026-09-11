@@ -56,16 +56,32 @@ jobs:
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
             --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="$remote"
 
-      - name: Copy build-only ReleaseOps scripts to builder
+      - name: Copy and harden build-only ReleaseOps scripts
         shell: bash
         run: |
           set -Eeuo pipefail
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
             --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
-            --command='set -Eeuo pipefail; mkdir -p "$HOME/thf-builder-rc16-build/ops"; chmod 700 "$HOME/thf-builder-rc16-build" "$HOME/thf-builder-rc16-build/ops"'
+            --command='set -Eeuo pipefail; rm -rf "$HOME/thf-builder-rc16-build/out"; mkdir -p "$HOME/thf-builder-rc16-build/ops" "$HOME/thf-builder-rc16-build/out"; chmod 700 "$HOME/thf-builder-rc16-build" "$HOME/thf-builder-rc16-build/ops" "$HOME/thf-builder-rc16-build/out"'
           gcloud compute scp ReleaseOps/rc16_remote_build.sh ReleaseOps/rc16-intake.json \
             "$GCP_BUILDER:~/thf-builder-rc16-build/ops/" \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat > /tmp/patch_rc16.py <<'PY'
+          from pathlib import Path
+          p=Path.home()/"thf-builder-rc16-build/ops/rc16_remote_build.sh"
+          s=p.read_text()
+          old='''  if ! verify_project "$slug"; then\n    rc=$?; printf '%s\\tVERIFY_FAILED_%s\\t%s\\t%s\\t%s\\n' "$slug" "$rc" "$p" "$agp" "$gradle" >> "$SUMMARY_TSV"\n    echo "BUILD_VERIFY_FAILED=$slug rc=$rc" | tee "$log"\n    return 0\n  fi\n  if ! prepare_wrapper "$slug" >"$OUT/$slug/wrapper.log" 2>&1; then\n    rc=$?; printf '%s\\tWRAPPER_FAILED_%s\\t%s\\t%s\\t%s\\n' "$slug" "$rc" "$p" "$agp" "$gradle" >> "$SUMMARY_TSV"\n    tail -200 "$OUT/$slug/wrapper.log" || true\n    return 0\n  fi'''
+          new='''  set +e\n  verify_project "$slug"\n  rc=$?\n  set -e\n  if [ "$rc" -ne 0 ]; then\n    printf '%s\\tVERIFY_FAILED_%s\\t%s\\t%s\\t%s\\n' "$slug" "$rc" "$p" "$agp" "$gradle" >> "$SUMMARY_TSV"\n    echo "BUILD_VERIFY_FAILED=$slug rc=$rc" | tee "$log"\n    return 0\n  fi\n  set +e\n  prepare_wrapper "$slug" >"$OUT/$slug/wrapper.log" 2>&1\n  rc=$?\n  set -e\n  if [ "$rc" -ne 0 ]; then\n    printf '%s\\tWRAPPER_FAILED_%s\\t%s\\t%s\\t%s\\n' "$slug" "$rc" "$p" "$agp" "$gradle" >> "$SUMMARY_TSV"\n    tail -200 "$OUT/$slug/wrapper.log" || true\n    return 0\n  fi'''
+          if old not in s:
+              raise SystemExit('expected RC16 verifier block not found')
+          p.write_text(s.replace(old,new,1))
+          print('RC16_VERIFIER_PATCH=PASS')
+          PY
+          gcloud compute scp /tmp/patch_rc16.py "$GCP_BUILDER:~/thf-builder-rc16-build/ops/patch_rc16.py" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -Eeuo pipefail; python3 "$HOME/thf-builder-rc16-build/ops/patch_rc16.py"; grep -Fq "if [ \"$rc\" -ne 0 ]; then" "$HOME/thf-builder-rc16-build/ops/rc16_remote_build.sh"; echo RC16_STALE_EVIDENCE_ISOLATION=PASS'
 
       - name: Execute isolated unsigned/test build
         shell: bash
@@ -84,6 +100,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          rm -rf rc16-build-evidence
           mkdir -p rc16-build-evidence
           gcloud compute scp --recurse "$GCP_BUILDER:~/thf-builder-rc16-build/out/*" rc16-build-evidence/ \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
