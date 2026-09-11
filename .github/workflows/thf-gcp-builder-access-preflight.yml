@@ -1,0 +1,118 @@
+name: THF GCP Builder Access Preflight
+
+on:
+  push:
+    branches:
+      - main
+      - 'releaseops/**'
+    paths:
+      - '.github/workflows/thf-gcp-builder-access-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  preflight:
+    name: Inspect builder access posture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+
+      - name: Read VM, project metadata and firewall rules
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          auth=(-H "Authorization: Bearer ${ACCESS_TOKEN}")
+          curl --fail --silent --show-error "${auth[@]}" \
+            "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}/zones/${GCP_ZONE}/instances/${GCP_BUILDER}" \
+            -o /tmp/vm.json
+          curl --fail --silent --show-error "${auth[@]}" \
+            "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}" \
+            -o /tmp/project.json
+          curl --fail --silent --show-error "${auth[@]}" \
+            "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}/global/firewalls" \
+            -o /tmp/firewalls.json
+
+          python3 - <<'PY'
+          import ipaddress, json, os
+
+          vm=json.load(open('/tmp/vm.json',encoding='utf-8'))
+          project=json.load(open('/tmp/project.json',encoding='utf-8'))
+          fw=json.load(open('/tmp/firewalls.json',encoding='utf-8'))
+
+          def md(items):
+              return {str(x.get('key','')).lower(): str(x.get('value','')) for x in (items or [])}
+
+          vm_md=md(vm.get('metadata',{}).get('items'))
+          project_md=md(project.get('commonInstanceMetadata',{}).get('items'))
+          oslogin=(vm_md.get('enable-oslogin') or project_md.get('enable-oslogin') or '').lower()
+
+          nics=vm.get('networkInterfaces',[])
+          external=[]
+          networks=[]
+          for nic in nics:
+              networks.append(str(nic.get('network','')).rsplit('/',1)[-1])
+              for ac in nic.get('accessConfigs',[]) or []:
+                  if ac.get('natIP'): external.append(ac['natIP'])
+
+          tags=set(vm.get('tags',{}).get('items') or [])
+          sas={x.get('email') for x in (vm.get('serviceAccounts') or []) if x.get('email')}
+          iap=ipaddress.ip_network('35.235.240.0/20')
+          candidates=[]
+          for rule in fw.get('items',[]) or []:
+              if rule.get('disabled') or rule.get('direction','INGRESS')!='INGRESS':
+                  continue
+              ranges=[]
+              for r in rule.get('sourceRanges',[]) or []:
+                  try: ranges.append(ipaddress.ip_network(r))
+                  except ValueError: pass
+              if not any(iap.subnet_of(r) or r.subnet_of(iap) or r.overlaps(iap) for r in ranges):
+                  continue
+              allows22=False
+              for a in rule.get('allowed',[]) or []:
+                  if a.get('IPProtocol')!='tcp': continue
+                  ports=a.get('ports') or []
+                  if not ports:
+                      allows22=True; break
+                  for p in ports:
+                      if '-' in p:
+                          lo,hi=map(int,p.split('-',1)); allows22 |= lo<=22<=hi
+                      else:
+                          allows22 |= int(p)==22
+              if not allows22: continue
+              tt=set(rule.get('targetTags') or [])
+              ts=set(rule.get('targetServiceAccounts') or [])
+              applies=(not tt and not ts) or bool(tt & tags) or bool(ts & sas)
+              candidates.append((rule.get('name'), applies))
+
+          print('BUILDER_STATUS=' + str(vm.get('status','UNKNOWN')))
+          print('BUILDER_NETWORKS=' + ','.join(networks))
+          print('BUILDER_EXTERNAL_IP_PRESENT=' + ('TRUE' if external else 'FALSE'))
+          print('OS_LOGIN_EFFECTIVE=' + (oslogin.upper() if oslogin else 'UNSET'))
+          print('IAP_SSH_FIREWALL_CANDIDATES=' + (','.join(f"{n}:{'APPLIES' if a else 'NONMATCHING_TARGET'}" for n,a in candidates) or 'NONE_FOUND'))
+          print('THF_BUILDER_ACCESS_PREFLIGHT=PASS_READ_ONLY')
+          print('NO_RESOURCE_MUTATION=TRUE')
+          print('WAVE_UNTOUCHED=TRUE')
+          PY
