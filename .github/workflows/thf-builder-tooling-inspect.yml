@@ -1,0 +1,67 @@
+name: THF Builder Tooling Inspect
+
+on:
+  push:
+    branches:
+      - 'releaseops/**'
+    paths:
+      - '.github/workflows/thf-builder-tooling-inspect.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect release tooling only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -Eeuo pipefail
+          echo THF_BUILDER_TOOLING_INSPECT_BEGIN
+          printf "ARCH="; uname -m
+          printf "JAVA="; java -version 2>&1 | head -1 || true
+          printf "SDK_ROOT="; printf "%s\n" "${ANDROID_SDK_ROOT:-${ANDROID_HOME:-UNSET}}"
+          for d in "$HOME/thf-builder/ops" "$HOME/thf-builder-rc16/ops" "$HOME/ReleaseOps" "$HOME/releaseops"; do
+            if [ -d "$d" ]; then
+              echo "DIR=$d"
+              find "$d" -maxdepth 2 -type f -printf "%f\t%p\n" | sort
+            fi
+          done
+          echo "SEARCH_EXPECTED_TOOLS"
+          find "$HOME" -maxdepth 5 -type f \( \
+            -name "40_bootstrap_android_sdk36_x86_64.sh" -o \
+            -name "50_verify_android_project.py" -o \
+            -name "60_build_unsigned_candidate.sh" -o \
+            -name "70_prepare_gradle_wrapper.sh" -o \
+            -name "REMOTE_BUILD_RC9.sh" -o \
+            -name "REMOTE_PACKAGE_INSPECT_RC9.py" \
+          \) -print 2>/dev/null | sort
+          echo "ANDROID_SDK_CHECK"
+          for p in "$HOME/android-sdk" "$HOME/Android/Sdk" "/opt/android-sdk"; do [ -d "$p" ] && echo "SDK_DIR=$p"; done
+          command -v adb || true
+          command -v sdkmanager || true
+          echo THF_BUILDER_TOOLING_INSPECT_END
+          echo WAVE_UNTOUCHED=TRUE'
