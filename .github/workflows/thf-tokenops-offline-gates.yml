@@ -23,14 +23,13 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          mkdir -p tokenops-offline
           python3 ReleaseOps/TokenOps/test_reward_manifest.py | tee tokenops-reward-tests.log
-          python3 ReleaseOps/TokenOps/reward_manifest.py \
-            ReleaseOps/TokenOps/examples/reward_epoch.sample.json \
-            tokenops-offline/sample-reward-manifest.json | tee tokenops-reward-generator.log
+          python3 ReleaseOps/TokenOps/reward_manifest.py ReleaseOps/TokenOps/examples/reward_epoch.sample.json tokenops-offline/sample-reward-manifest.json | tee tokenops-reward-generator.log
           python3 ReleaseOps/TokenOps/test_burn_plan.py | tee tokenops-burn-tests.log
-          python3 ReleaseOps/TokenOps/burn_plan.py \
-            ReleaseOps/TokenOps/examples/burn_plan.sample.json \
-            tokenops-offline/sample-burn-plan.json | tee tokenops-burn-generator.log
+          python3 ReleaseOps/TokenOps/burn_plan.py ReleaseOps/TokenOps/examples/burn_plan.sample.json tokenops-offline/sample-burn-plan.json | tee tokenops-burn-generator.log
+          PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_governance_controls.py | tee tokenops-governance-tests.log
+          python3 ReleaseOps/TokenOps/vesting_plan.py ReleaseOps/TokenOps/examples/vesting_plan.sample.json tokenops-offline/sample-vesting-plan.json | tee tokenops-vesting-generator.log
 
       - name: Assert financial execution remains disabled
         shell: bash
@@ -46,6 +45,7 @@ jobs:
           import json
           reward=json.load(open('tokenops-offline/sample-reward-manifest.json'))
           burn=json.load(open('tokenops-offline/sample-burn-plan.json'))
+          vest=json.load(open('tokenops-offline/sample-vesting-plan.json'))
           assert reward['execution']['transaction_created'] is False
           assert reward['execution']['transaction_signed'] is False
           assert reward['execution']['transaction_submitted'] is False
@@ -56,6 +56,7 @@ jobs:
           assert burn['execution']['burn_executed'] is False
           assert burn['constraints']['treasury_controlled_balances_only'] is True
           assert burn['constraints']['third_party_holder_burn_forbidden'] is True
+          assert vest['execution'] == 'forbidden_unsigned_plan_only'
           print('THF_TOKENOPS_NO_EXECUTION_GATE=PASS')
           PY
 
@@ -65,18 +66,19 @@ jobs:
           set -Eeuo pipefail
           sha256sum \
             ReleaseOps/TokenOps/policy.json \
+            ReleaseOps/TokenOps/treasury_policy.json \
             ReleaseOps/TokenOps/reward_manifest.py \
-            ReleaseOps/TokenOps/test_reward_manifest.py \
-            ReleaseOps/TokenOps/examples/reward_epoch.sample.json \
             ReleaseOps/TokenOps/burn_plan.py \
+            ReleaseOps/TokenOps/vesting_plan.py \
+            ReleaseOps/TokenOps/tx_manifest.py \
+            ReleaseOps/TokenOps/test_reward_manifest.py \
             ReleaseOps/TokenOps/test_burn_plan.py \
-            ReleaseOps/TokenOps/examples/burn_plan.sample.json \
+            ReleaseOps/TokenOps/test_governance_controls.py \
             tokenops-offline/sample-reward-manifest.json \
             tokenops-offline/sample-burn-plan.json \
-            tokenops-reward-tests.log \
-            tokenops-reward-generator.log \
-            tokenops-burn-tests.log \
-            tokenops-burn-generator.log > tokenops-offline/SHA256SUMS.txt
+            tokenops-offline/sample-vesting-plan.json \
+            tokenops-reward-tests.log tokenops-burn-tests.log tokenops-governance-tests.log tokenops-vesting-generator.log \
+            > tokenops-offline/SHA256SUMS.txt
 
       - name: Upload offline gate evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -88,5 +90,7 @@ jobs:
             tokenops-reward-generator.log
             tokenops-burn-tests.log
             tokenops-burn-generator.log
+            tokenops-governance-tests.log
+            tokenops-vesting-generator.log
           if-no-files-found: error
           retention-days: 30
