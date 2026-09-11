@@ -3,7 +3,7 @@ name: THF RC16 Remote Unsigned Build
 on:
   push:
     branches:
-      - 'releaseops/rc16-remote-build-*'
+      - 'r/**'
     paths:
       - '.github/workflows/thf-rc16-remote-build.yml'
   workflow_dispatch:
