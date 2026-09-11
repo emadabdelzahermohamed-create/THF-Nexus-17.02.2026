@@ -1,0 +1,142 @@
+name: THF RC17 Godot 4.7.2 Headless Gate
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc17-godot472-headless-gate.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  GODOT_VERSION: 4.7.2-stable
+  GODOT_ZIP_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+
+jobs:
+  engine-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Install SHA-pinned official Godot 4.7.2 on private builder
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=30m --quiet \
+            --command='set -Eeuo pipefail
+          TOOLS="$HOME/thf-tools/godot/4.7.2-stable"
+          CACHE="$HOME/thf-tools/cache"
+          ZIP="$CACHE/Godot_v4.7.2-stable_linux.x86_64.zip"
+          URL="https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip"
+          SHA="cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4"
+          mkdir -p "$TOOLS" "$CACHE"
+          chmod 700 "$HOME/thf-tools" "$TOOLS" "$CACHE"
+          if [ ! -f "$ZIP" ] || ! echo "$SHA  $ZIP" | sha256sum -c - >/dev/null 2>&1; then
+            rm -f "$ZIP"
+            curl --fail --location --retry 5 --retry-delay 2 --connect-timeout 30 "$URL" -o "$ZIP"
+          fi
+          echo "$SHA  $ZIP" | sha256sum -c -
+          rm -rf "$TOOLS/unpack"; mkdir -p "$TOOLS/unpack"
+          unzip -q -o "$ZIP" -d "$TOOLS/unpack"
+          BIN="$(find "$TOOLS/unpack" -maxdepth 2 -type f -name "Godot_v4.7.2-stable_linux.x86_64" -print -quit)"
+          [ -n "$BIN" ] && [ -f "$BIN" ]
+          chmod +x "$BIN"
+          ln -sfn "$BIN" "$TOOLS/godot"
+          "$TOOLS/godot" --version
+          test "$("$TOOLS/godot" --version | head -1)" = "4.7.2.stable.official.399a20b83"
+          echo THF_GODOT_472_OFFICIAL_SHA_GATE=PASS
+          echo WAVE_UNTOUCHED=TRUE'
+
+      - name: Fresh editor import and parser gate Terra RC26 Rift RC30
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=30m --quiet \
+            --command='set -uo pipefail
+          GODOT="$HOME/thf-tools/godot/4.7.2-stable/godot"
+          ROOT="$HOME/thf-builder-rc17-build/work"
+          OUT="$HOME/thf-builder-rc17-build/out/godot472"
+          mkdir -p "$OUT"
+          fail=0
+          gate(){
+            slug="$1"; p="$2"
+            log="$OUT/${slug}-editor-import.log"
+            rm -rf "$p/.godot"
+            echo "===== GODOT_IMPORT_START=$slug ====="
+            set +e
+            timeout 12m "$GODOT" --headless --editor --path "$p" --quit --verbose >"$log" 2>&1
+            rc=$?
+            set -e
+            echo "GODOT_IMPORT_RC=$slug:$rc"
+            if [ "$rc" -ne 0 ]; then fail=1; fi
+            if grep -Eqi "SCRIPT ERROR|Parse Error|Parser Error|ERROR: Failed to load script|Cannot load script" "$log"; then
+              echo "GODOT_SCRIPT_ERROR_FOUND=$slug"
+              fail=1
+            else
+              echo "GODOT_SCRIPT_PARSE_CLEAN=$slug"
+            fi
+            echo "--- ${slug} tail ---"
+            tail -120 "$log" || true
+          }
+          gate terra "$ROOT/terra"
+          gate rift "$ROOT/rift/THF_Nexus_Arena_Core"
+          echo "GODOT_GATE_FAIL_COUNT=$fail"
+          if [ "$fail" -eq 0 ]; then echo THF_RC17_GODOT472_IMPORT_PARSER=PASS; else echo THF_RC17_GODOT472_IMPORT_PARSER=FAIL; fi
+          echo WAVE_UNTOUCHED=TRUE
+          exit "$fail"' 2>&1 | tee "$RUNNER_TEMP/godot472-gate-console.log"
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "GODOT_GATE_RC=$rc" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Pack and retrieve Godot gate evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=15m --quiet \
+            --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-rc17-build"; mkdir -p "$ROOT/out/godot472"; printf "%s\n" "godot_version=4.7.2.stable.official.399a20b83" "linux_x86_64_sha256=cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4" "terra_source_sha256=05b7832cdd294f1f8dc90d5d8f967fb7aafcd97b3521a7445f52272e8aa9851d" "rift_source_sha256=1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41" > "$ROOT/out/godot472/GODOT472_PIN_EVIDENCE.txt"; sha256sum "$ROOT/out/godot472"/* > "$ROOT/out/godot472/SHA256SUMS.txt"; tar -cf "$ROOT/godot472-gate.tar" -C "$ROOT/out" godot472'
+          mkdir -p godot472-evidence "$RUNNER_TEMP/godot472"
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder-rc17-build/godot472-gate.tar" "$RUNNER_TEMP/godot472/godot472-gate.tar" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          tar -xf "$RUNNER_TEMP/godot472/godot472-gate.tar" -C godot472-evidence
+          cp "$RUNNER_TEMP/godot472-gate-console.log" godot472-evidence/ || true
+
+      - name: Upload Godot gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-RC17-Godot472-headless-gate
+          path: godot472-evidence/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Final Godot gate
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ "${GODOT_GATE_RC:-missing}" = "0" ] || { echo THF_RC17_GODOT472_FINAL_GATE=FAIL; exit 50; }
+          grep -q 'THF_RC17_GODOT472_IMPORT_PARSER=PASS' "$RUNNER_TEMP/godot472-gate-console.log"
+          echo THF_RC17_GODOT472_FINAL_GATE=PASS
+          echo EXPORT_TEMPLATES_NOT_DOWNLOADED_YET=TRUE
+          echo PRODUCTION_SIGNING_USED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
