@@ -1,0 +1,121 @@
+name: THF RC17 Godot Diagnostic Patch V2
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc17-godot-diagnostic-patch-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  diagnose-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage diagnostic patcher
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='mkdir -p "$HOME/thf-builder-rc17-build/ops" && chmod 700 "$HOME/thf-builder-rc17-build/ops"'
+          gcloud compute scp ReleaseOps/rc17_godot_type_diagnostic.py "$GCP_BUILDER:~/thf-builder-rc17-build/ops/rc17_godot_type_diagnostic.py" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Restore exact RC17 source trees before diagnostic patch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-builder-rc17-build/work"
+          INPUTS="$HOME/thf-builder/inputs-rc17"
+          rm -rf "$ROOT/terra" "$ROOT/rift"
+          mkdir -p "$ROOT/terra" "$ROOT/rift"
+          python3 -c "import zipfile,pathlib; z=zipfile.ZipFile(pathlib.Path.home()/'thf-builder/inputs-rc17/THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip'); z.extractall(pathlib.Path.home()/'thf-builder-rc17-build/work/terra')"
+          python3 -c "import zipfile,pathlib; z=zipfile.ZipFile(pathlib.Path.home()/'thf-builder/inputs-rc17/THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip'); z.extractall(pathlib.Path.home()/'thf-builder-rc17-build/work/rift')"
+          echo "05b7832cdd294f1f8dc90d5d8f967fb7aafcd97b3521a7445f52272e8aa9851d  $INPUTS/THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          echo "1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41  $INPUTS/THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          echo RC17_DIAGNOSTIC_SOURCE_RESTORE=PASS
+          echo CANONICAL_ARCHIVES_MUTATED=FALSE'
+      - name: Apply type-only diagnostic patch and run fresh Godot parser import
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='set -uo pipefail
+          GODOT="$HOME/thf-tools/godot/4.7.2-stable/godot"
+          ROOT="$HOME/thf-builder-rc17-build/work"
+          OUT="$HOME/thf-builder-rc17-build/out/godot-diagnostic-v2"
+          rm -rf "$OUT"; mkdir -p "$OUT"
+          python3 "$HOME/thf-builder-rc17-build/ops/rc17_godot_type_diagnostic.py" --root "$ROOT" --out "$OUT"
+          diff -u "$OUT/WorldMain.before.gd" "$OUT/WorldMain.after.gd" > "$OUT/TERRA_DIAGNOSTIC.patch" || true
+          diff -u "$OUT/RiftAudioFeedback.before.gd" "$OUT/RiftAudioFeedback.after.gd" > "$OUT/RIFT_DIAGNOSTIC.patch" || true
+          cat "$OUT/TERRA_DIAGNOSTIC.patch"
+          cat "$OUT/RIFT_DIAGNOSTIC.patch"
+          fail=0
+          for spec in "terra:$ROOT/terra" "rift:$ROOT/rift/THF_Nexus_Arena_Core"; do
+            slug="${spec%%:*}"; p="${spec#*:}"; log="$OUT/${slug}-import.log"
+            rm -rf "$p/.godot"
+            set +e
+            timeout 15m "$GODOT" --headless --editor --path "$p" --quit --verbose >"$log" 2>&1
+            rc=$?
+            set -e
+            echo "DIAG_IMPORT_RC=$slug:$rc"
+            if [ "$rc" -ne 0 ]; then fail=$((fail+1)); fi
+            if grep -Eqi "SCRIPT ERROR|Parse Error|Parser Error|ERROR: Failed to load script|Cannot load script|Compile Error" "$log"; then
+              echo "DIAG_SCRIPT_GATE=$slug:FAIL"
+              fail=$((fail+1))
+              grep -Ein "SCRIPT ERROR|Parse Error|Parser Error|ERROR: Failed to load script|Cannot load script|Compile Error" "$log" | head -120
+            else
+              echo "DIAG_SCRIPT_GATE=$slug:PASS"
+            fi
+          done
+          printf "canonical_terra_sha256=05b7832cdd294f1f8dc90d5d8f967fb7aafcd97b3521a7445f52272e8aa9851d\ncanonical_rift_sha256=1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41\ndiagnostic_workspace_only=true\ncanonical_archives_mutated=false\n" > "$OUT/TRUTH.txt"
+          sha256sum "$OUT"/* > "$OUT/SHA256SUMS.txt"
+          echo "DIAGNOSTIC_FAIL_COUNT=$fail"
+          [ "$fail" -eq 0 ] && echo THF_RC17_GODOT_DIAGNOSTIC_V2=PASS || echo THF_RC17_GODOT_DIAGNOSTIC_V2=FAIL
+          echo CANONICAL_ARCHIVES_MUTATED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          exit "$fail"' 2>&1 | tee "$RUNNER_TEMP/godot-diag-v2.log"
+          rc=${PIPESTATUS[0]}; set -e; echo "DIAG_RC=$rc" >> "$GITHUB_ENV"; exit 0
+      - name: Pack and retrieve diagnostic evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-rc17-build"; tar -cf "$ROOT/godot-diagnostic-v2.tar" -C "$ROOT/out" godot-diagnostic-v2'
+          mkdir -p godot-diagnostic-v2 "$RUNNER_TEMP/godotdiagv2"
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder-rc17-build/godot-diagnostic-v2.tar" "$RUNNER_TEMP/godotdiagv2/godot-diagnostic-v2.tar" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          tar -xf "$RUNNER_TEMP/godotdiagv2/godot-diagnostic-v2.tar" -C godot-diagnostic-v2
+          cp "$RUNNER_TEMP/godot-diag-v2.log" godot-diagnostic-v2/ || true
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-RC17-Godot-diagnostic-v2
+          path: godot-diagnostic-v2/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Diagnostic conclusion
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "DIAG_RC=${DIAG_RC:-missing}"
+          if [ "${DIAG_RC:-missing}" = 0 ]; then echo THF_RC17_GODOT_DIAGNOSTIC_V2_GATE=PASS; else echo THF_RC17_GODOT_DIAGNOSTIC_V2_GATE=MORE_SOURCE_FIXES_REQUIRED; fi
+          echo CANONICAL_ARCHIVES_MUTATED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
