@@ -1,0 +1,43 @@
+--- original/WorldMain.gd	2026-09-11 21:48:25.020852607 +0000
++++ src/native/world/WorldMain.gd	2026-09-11 21:47:16.087901958 +0000
+@@ -1588,7 +1588,7 @@
+ 
+ 
+ func _npc_visual_cue_label(role: String, intent: String) -> String:
+-    var role_label := {
++    var role_label: String = str({
+         "gardener":"Gardener / البستاني",
+         "farmer":"Farmer / المزارع",
+         "fisher":"Fisher / الصياد",
+@@ -1599,14 +1599,14 @@
+         "editor":"Editor / المحرر",
+         "director":"Director / المخرج",
+         "career":"Career Guide / مرشد المهن"
+-    }.get(role, "Citizen / مواطن")
+-    var intent_label := {
++    }.get(role, "Citizen / مواطن"))
++    var intent_label: String = str({
+         "greet":"Greeting / تحية",
+         "talk":"Conversation / محادثة",
+         "work":"Working / يعمل",
+         "celebrate":"Celebration / احتفال"
+-    }.get(intent, "World cue / تنبيه")
+-    return str(role_label) + " · " + str(intent_label)
++    }.get(intent, "World cue / تنبيه"))
++    return role_label + " · " + str(intent_label)
+ 
+ 
+ func _play_npc_clip(npc_id: String, clip: String) -> void:
+--- original/build.gradle	2026-09-11 21:48:25.024852700 +0000
++++ src/android/app/build.gradle	2026-09-11 21:47:16.088197594 +0000
+@@ -15,8 +15,8 @@
+         applicationId appId
+         minSdk 26
+         targetSdk 36
+-        versionCode 42061
+-        versionName '4.6.1-rc27'
++        versionCode 42062
++        versionName '4.6.2-rc28'
+         buildConfigField 'String', 'THF_WEB_URL', webUrlLiteral
+     }
+     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
