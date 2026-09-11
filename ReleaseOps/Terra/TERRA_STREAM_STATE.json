@@ -1,38 +1,38 @@
 {
   "stream": "THF_TERRA",
-  "branch": "terra/rc27-godot-gate-20260911",
-  "source_checkpoint": "TERRA-RC27",
-  "source_version": "4.6.1-rc27",
-  "source_sha256": "a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832",
-  "releaseops_status": "RC27_GODOT_GATE_BLOCKED_MISSING_EXACT_INPUT_ON_BUILDER",
-  "dedup": "Do not rerun RC1-RC27 source gates already documented PASS. Fresh Godot RC27 gate attempted once against approved builder paths; failure is an input-staging blocker, not a source-parser failure.",
+  "branch": "terra/rc28-godot472-readiness-20260912",
+  "source_checkpoint": "TERRA-RC28",
+  "source_version": "4.6.2-rc28",
+  "source_sha256": "54d5361c8346939c1a8d6cae4ab73c9048f04df8e4f5f666ac9c7e28ca35391e",
+  "releaseops_status": "RC28_SOURCE_TYPE_READINESS_PASS_REMOTE_GODOT_INPUT_STAGING_BLOCKED",
+  "dedup": "RC1-RC27 documented PASS gates were not rerun. RC28 fixes the concrete Godot 4.7.2 Variant type-inference defect identified by earlier remote diagnostics and validates only the changed source/current package.",
   "latest_engine_attempt": {
     "workflow": "THF Terra RC27 Godot Gate V2",
     "workflow_run_id": 34646341978,
-    "workflow_commit": "d29e969bf538a7ff5146087864c20433b5e0b63c",
-    "result_commit_file": "ReleaseOps/Terra/RC27_GODOT_GATE_RESULT.json",
     "result_status": "BLOCKED_MISSING_EXACT_RC27_INPUT",
-    "remote_exit_code": 42,
     "godot_import_rc": null,
     "godot_headless_boot_rc": null,
     "canonical_archive_mutated": false,
     "wave_untouched": true
   },
-  "required_input": {
-    "artifact": "THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip",
-    "sha256": "a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832",
-    "accepted_split_parts": [
-      {"name":"THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.00","sha256":"1e3bcc23e3db418170fe5a398674c46e13df01daa46939ae12cacc3702c1fd8c"},
-      {"name":"THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.01","sha256":"746bb112916d016c3905673214511ac029d80bd083855cb75d47eb0fff0bff9e"}
+  "rc28": {
+    "checkpoint_file": "ReleaseOps/Terra/RC28_CHECKPOINT.json",
+    "patch_file": "ReleaseOps/Terra/RC28_SOURCE_PATCH.diff",
+    "artifact": "THF_Terra_v4.6.2_RC28_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip",
+    "artifact_sha256": "54d5361c8346939c1a8d6cae4ab73c9048f04df8e4f5f666ac9c7e28ca35391e",
+    "parts": [
+      {"name":"THF_Terra_v4.6.2_RC28_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"01cfa7a8b8385302ab751fea96abb6de76ab74002544c888818d624e04fd2e8e"},
+      {"name":"THF_Terra_v4.6.2_RC28_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"8ce2b51c23e8a0459ce65c7ba85248c9cd3d3cd7f58c0a66160f780488211b1c"}
     ],
-    "approved_builder_input_paths": [
-      "$HOME/thf-builder/inputs-rc18-terra",
-      "$HOME/thf-builder/inputs-rc17",
-      "$HOME/thf-builder/inputs",
-      "$HOME/thf-builder-rc17-build/inputs"
-    ]
+    "focused_tests": "5/5 PASS",
+    "python_compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "gdscript_static_type_gate": "PASS",
+    "deterministic_package": "PASS exact SHA",
+    "zip_integrity": "PASS",
+    "godot_parser_import_headless": "NOT_RUN_INPUT_STAGING_BLOCKED"
   },
-  "next_gate": "After exact RC27 full archive or both exact split parts are staged in an approved builder input path, rerun clean Godot 4.7.2 editor import/parser/class-cache and 30-frame headless boot. Do not change canonical RC27 source to bypass missing input.",
+  "next_gate": "Stage exact RC28 full archive or both exact split parts on an approved GCP builder input path, then run clean Godot 4.7.2 editor import/parser/class-cache and 30-frame headless boot.",
   "truth_boundaries": {
     "gpu_device_visual_qa": "NOT_EXECUTED",
     "perfect_photo_likeness": "NOT_CLAIMED",
