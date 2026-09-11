@@ -56,7 +56,7 @@ jobs:
             -o /tmp/firewalls.json
 
           python3 - <<'PY'
-          import ipaddress, json, os
+          import ipaddress, json
 
           vm=json.load(open('/tmp/vm.json',encoding='utf-8'))
           project=json.load(open('/tmp/project.json',encoding='utf-8'))
@@ -110,6 +110,7 @@ jobs:
           print('BUILDER_STATUS=' + str(vm.get('status','UNKNOWN')))
           print('BUILDER_NETWORKS=' + ','.join(networks))
           print('BUILDER_EXTERNAL_IP_PRESENT=' + ('TRUE' if external else 'FALSE'))
+          print('BUILDER_ATTACHED_SERVICE_ACCOUNTS=' + (','.join(sorted(sas)) or 'NONE'))
           print('OS_LOGIN_EFFECTIVE=' + (oslogin.upper() if oslogin else 'UNSET'))
           print('IAP_SSH_FIREWALL_CANDIDATES=' + (','.join(f"{n}:{'APPLIES' if a else 'NONMATCHING_TARGET'}" for n,a in candidates) or 'NONE_FOUND'))
           print('THF_BUILDER_ACCESS_PREFLIGHT=PASS_READ_ONLY')
