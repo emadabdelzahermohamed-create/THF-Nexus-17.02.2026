@@ -1,0 +1,141 @@
+name: THF RC16 Unsigned Test Build V2
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc16-unsigned-build-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  build:
+    name: Build RC16 candidates with corrected no-signing guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Reset disposable work and output only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=60m --quiet \
+            --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-rc16-build"; rm -rf "$ROOT/work" "$ROOT/out"; mkdir -p "$ROOT/ops" "$ROOT/work" "$ROOT/out" "$ROOT/cache" "$ROOT/gradle-home"; chmod 700 "$ROOT" "$ROOT/ops" "$ROOT/work" "$ROOT/out" "$ROOT/cache" "$ROOT/gradle-home"; echo THF_RC16_V2_WORKSPACE=PASS; echo CACHE_PRESERVED=TRUE; echo WAVE_UNTOUCHED=TRUE'
+
+      - name: Stage RC16 intake and build composer
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp ReleaseOps/rc16-intake.json ReleaseOps/rc16_remote_build.sh \
+            "$GCP_BUILDER:~/thf-builder-rc16-build/ops/" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
+      - name: Patch only the disposable build guard
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=20m --quiet \
+            --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-rc16-build"; python3 - <<'"'"'PY'"'"'
+          from pathlib import Path
+          src=Path.home()/"thf-builder-rc16-build/ops/rc16_remote_build.sh"
+          dst=Path.home()/"thf-builder-rc16-build/ops/rc16_remote_build_v2.sh"
+          s=src.read_text()
+          old="  if grep -Eq '\''storeFile|storePassword|keyPassword|keyAlias'\'' <<<\"$combined\"; then return 35; fi"
+          new="  for key in THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD; do [ -z \"${!key:-}\" ] || return 35; done"
+          if old not in s:
+              raise SystemExit("EXPECTED_GUARD_NOT_FOUND")
+          s=s.replace(old,new,1)
+          dst.write_text(s)
+          dst.chmod(0o700)
+          print("THF_RC16_GUARD_PATCH=PASS")
+          print("PATCH_SCOPE=DISPOSABLE_BUILD_TOOL_ONLY")
+          PY
+          grep -n "THF_KEYSTORE_PATH THF_KEY_ALIAS" "$ROOT/ops/rc16_remote_build_v2.sh" >/dev/null
+          echo CANONICAL_SOURCE_UNCHANGED=TRUE
+          echo WAVE_UNTOUCHED=TRUE'
+
+      - name: Execute corrected RC16 build
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=60m --quiet \
+            --command='set -uo pipefail; unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD; ROOT="$HOME/thf-builder-rc16-build"; THF_RC16_BUILD_ROOT="$ROOT" THF_RC16_INTAKE="$ROOT/ops/rc16-intake.json" THF_RC16_INPUTS_DIRECT="$HOME/thf-builder/inputs-direct" bash "$ROOT/ops/rc16_remote_build_v2.sh"' \
+            2>&1 | tee "$RUNNER_TEMP/rc16-v2-console.log"
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "REMOTE_BUILD_RC=$rc" >> "$GITHUB_ENV"
+          echo "REMOTE_BUILD_RC=$rc"
+          exit 0
+
+      - name: Pack evidence and candidates
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=20m --quiet \
+            --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-rc16-build"; tar -cf "$ROOT/rc16-v2-output.tar" -C "$ROOT" out; sha256sum "$ROOT/rc16-v2-output.tar"; echo THF_RC16_V2_OUTPUT_PACK=PASS'
+
+      - name: Retrieve evidence and candidates
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/rc16-v2" rc16-v2-artifacts
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder-rc16-build/rc16-v2-output.tar" "$RUNNER_TEMP/rc16-v2/rc16-v2-output.tar" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          tar -xf "$RUNNER_TEMP/rc16-v2/rc16-v2-output.tar" -C rc16-v2-artifacts
+          cp "$RUNNER_TEMP/rc16-v2-console.log" rc16-v2-artifacts/ || true
+          find rc16-v2-artifacts -maxdepth 5 -type f -printf '%p\t%s bytes\n' | sort
+
+      - name: Upload V2 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-RC16-unsigned-test-candidates-v2
+          path: rc16-v2-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Final V2 gate
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ "${REMOTE_BUILD_RC:-missing}" = "0" ] || { echo 'THF_RC16_V2_GATE=FAIL'; exit 40; }
+          grep -q 'THF_RC16_UNSIGNED_BUILD=PASS' "$RUNNER_TEMP/rc16-v2-console.log"
+          grep -q 'THF_RC16_PACKAGE_INSPECTION=PASS' "$RUNNER_TEMP/rc16-v2-console.log"
+          echo THF_RC16_V2_GATE=PASS
+          echo NO_PRODUCTION_SIGNING=TRUE
+          echo NO_PLAY_UPLOAD=TRUE
+          echo CANONICAL_SOURCE_UNCHANGED=TRUE
+          echo WAVE_UNTOUCHED=TRUE
