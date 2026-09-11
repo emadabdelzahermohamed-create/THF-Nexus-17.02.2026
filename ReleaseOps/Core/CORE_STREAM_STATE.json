@@ -18,24 +18,55 @@
     "source_static_regression": "38/38 PASS",
     "note": "Preserved; not rerun."
   },
-  "previous_attempt": {
+  "r1": {
     "branch": "releaseops/core-rc6-unsigned-20260912",
     "run_id": 34651159978,
     "result": "FAILED_BEFORE_BUILD_AT_WIF_AUTH",
-    "source_build_started": false,
+    "source_build_started": false
+  },
+  "r2": {
+    "run_id": 34651319006,
+    "head_sha": "63756dd3383652ef567a1072ab8758ff27bce3ef",
+    "result": "SUCCESS",
+    "wif_auth": "PASS",
+    "gcloud_setup": "PASS",
+    "exact_core_build_and_inspection": "PASS",
+    "evidence_retrieval": "PASS",
+    "artifact_upload": "PASS",
+    "final_core_only_gate": "PASS",
+    "actions_artifact_id": 10283498345,
+    "actions_artifact_name": "THF-Core-RC6-unsigned-test-candidates",
+    "actions_artifact_sha256": "c5e98699c883b5ec8ad9f1ef72583fb5e280e1852f7f30e7fee9fda0a6732b9f",
+    "debug_apk": {
+      "name": "core-app-debug.apk",
+      "sha256": "87d119badc52504bd2471eec53fcc0142ca2e2cbac3171ab825b871c4087199f",
+      "size_bytes": 44179,
+      "zip_integrity": true,
+      "signing": "Android Debug test certificate"
+    },
+    "unsigned_release_aab": {
+      "name": "core-app-release.aab",
+      "sha256": "e71625911d2c06eb0d084f6ed094fcd142f093fcfbb2bf2b13b59a4221760e6e",
+      "size_bytes": 24232,
+      "zip_integrity": true,
+      "production_signed": false
+    },
+    "package_evidence_sha256": "1a583d9ae021b950978d3867eac8c0175535d3a91b378c8c4d87dbb1721a36ee",
+    "package_id": "com.topherofit.thf.core",
+    "versionCode": 62200,
+    "targetSdk": 36,
+    "production_signing_credentials_used": false,
+    "play_upload_performed": false,
+    "physical_device_qa": false,
     "other_app_source_touched": false,
     "wave_touched": false
   },
-  "safe_remediation": "Run the same dedicated Core-only lane from the already WIF-authorized ReleaseOps ref while preserving Core path isolation.",
-  "pipeline": {
-    "workflow": ".github/workflows/thf-core-rc6-unsigned-build.yml",
-    "production_signing": false,
-    "play_upload": false,
-    "physical_device_qa": false
-  },
-  "status": "CORE_ONLY_AUTHORIZED_REF_PIPELINE_PREPARED_BUILD_RESULT_PENDING",
+  "status": "CORE_RC6_UNSIGNED_ANDROID_CANDIDATES_PASS_PHYSICAL_DEVICE_QA_PENDING",
+  "next": [
+    "Install the debug APK on a physical Android device and run Core locale/navigation/offline/Data Saver/accessibility smoke.",
+    "Keep production signing and Play actions user-gated after physical QA."
+  ],
   "not_claimed": [
-    "unsigned/test APK/AAB built successfully",
     "production-signed AAB",
     "Play approval",
     "physical-device QA",
