@@ -1,0 +1,14 @@
+{
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "as_of_unix": 1800000000,
+  "grants": [
+    {
+      "beneficiary": "EXAMPLE_WALLET_A",
+      "start_unix": 1700000000,
+      "cliff_unix": 1750000000,
+      "end_unix": 1900000000,
+      "amount_ui": "1000000",
+      "released_ui": "0"
+    }
+  ]
+}
