@@ -1,0 +1,42 @@
+{
+  "stream": "THF_TERRA",
+  "checkpoint": "TERRA-RC27",
+  "version": "4.6.1-rc27",
+  "package_id": "com.topherofit.thf.terra",
+  "artifact": "THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip",
+  "sha256": "a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832",
+  "size_bytes": 109110004,
+  "parts": [
+    {
+      "name": "THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.00",
+      "size_bytes": 94371840,
+      "sha256": "1e3bcc23e3db418170fe5a398674c46e13df01daa46939ae12cacc3702c1fd8c"
+    },
+    {
+      "name": "THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.01",
+      "size_bytes": 14738164,
+      "sha256": "746bb112916d016c3905673214511ac029d80bd083855cb75d47eb0fff0bff9e"
+    }
+  ],
+  "source_truth": {
+    "library_state": "TERRA-RC27",
+    "prior_releaseops_intake": "TERRA-RC26",
+    "prior_releaseops_sha256": "05b7832cdd294f1f8dc90d5d8f967fb7aafcd97b3521a7445f52272e8aa9851d",
+    "reason": "Advance Terra-only ReleaseOps intake to the current authoritative source-owner state without modifying Rift, WAVE, or unrelated THF application logic."
+  },
+  "gate_order": [
+    "exact artifact/part SHA-256 verification",
+    "clean extraction into disposable Terra-only workspace",
+    "Godot 4.7.2 editor parser/import/class-cache gate",
+    "Godot 4.7.2 headless project boot gate",
+    "source/build evidence packaging"
+  ],
+  "truth_boundaries": [
+    "No GPU/device visual QA claim",
+    "No perfect photo likeness claim",
+    "No production-signed AAB claim",
+    "No Play approval claim",
+    "No production deployment claim",
+    "No Solana settlement claim"
+  ]
+}
