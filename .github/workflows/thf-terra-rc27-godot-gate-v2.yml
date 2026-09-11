@@ -1,0 +1,162 @@
+name: THF Terra RC27 Godot Gate V2
+
+on:
+  push:
+    branches: ['terra/**']
+    paths: ['.github/workflows/thf-terra-rc27-godot-gate-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  TERRA_SHA256: a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832
+
+jobs:
+  terra-godot-gate-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Execute exact RC27 Terra-only engine gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="bash -s" <<'REMOTE' > "$RUNNER_TEMP/terra-gate-v2.log" 2>&1
+          set -Eeuo pipefail
+          ARCHIVE='THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip'
+          EXPECT='a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832'
+          PART0='THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.00'
+          PART0_SHA='1e3bcc23e3db418170fe5a398674c46e13df01daa46939ae12cacc3702c1fd8c'
+          PART1='THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.01'
+          PART1_SHA='746bb112916d016c3905673214511ac029d80bd083855cb75d47eb0fff0bff9e'
+          ROOT="$HOME/thf-terra-rc27-gate-v2"
+          rm -rf "$ROOT"; mkdir -p "$ROOT/input" "$ROOT/work" "$ROOT/out"
+          dirs=("$HOME/thf-builder/inputs-rc18-terra" "$HOME/thf-builder/inputs-rc17" "$HOME/thf-builder/inputs" "$HOME/thf-builder-rc17-build/inputs")
+          found=''; p0=''; p1=''
+          for d in "${dirs[@]}"; do
+            [ -z "$found" ] && [ -f "$d/$ARCHIVE" ] && found="$d/$ARCHIVE"
+            [ -z "$p0" ] && [ -f "$d/$PART0" ] && p0="$d/$PART0"
+            [ -z "$p1" ] && [ -f "$d/$PART1" ] && p1="$d/$PART1"
+          done
+          if [ -z "$found" ] && [ -n "$p0" ] && [ -n "$p1" ]; then
+            echo "$PART0_SHA  $p0" | sha256sum -c - >/dev/null
+            echo "$PART1_SHA  $p1" | sha256sum -c - >/dev/null
+            cat "$p0" "$p1" > "$ROOT/input/$ARCHIVE"
+            found="$ROOT/input/$ARCHIVE"
+          fi
+          if [ -z "$found" ]; then
+            echo 'TERRA_GATE_STATUS=BLOCKED_MISSING_EXACT_RC27_INPUT'
+            echo "TERRA_GATE_EXPECTED_SHA=$EXPECT"
+            exit 42
+          fi
+          echo "$EXPECT  $found" | sha256sum -c - >/dev/null
+          unzip -q "$found" -d "$ROOT/work"
+          test -f "$ROOT/work/project.godot"
+          test -f "$ROOT/work/native/world/WorldMain.gd"
+          test -f "$ROOT/work/android/app/build.gradle"
+          grep -q 'versionCode 42061' "$ROOT/work/android/app/build.gradle"
+          grep -q "versionName '4.6.1-rc27'" "$ROOT/work/android/app/build.gradle"
+          GODOT="$HOME/thf-tools/godot/4.7.2-stable/godot"
+          if [ ! -x "$GODOT" ]; then
+            echo 'TERRA_GATE_STATUS=BLOCKED_GODOT_4_7_2_MISSING'
+            exit 43
+          fi
+          "$GODOT" --version
+          rm -rf "$ROOT/work/.godot"
+          set +e
+          timeout 15m "$GODOT" --headless --editor --path "$ROOT/work" --quit --verbose > "$ROOT/out/editor-import.log" 2>&1; irc=$?
+          timeout 5m "$GODOT" --headless --path "$ROOT/work" --quit-after 30 --verbose > "$ROOT/out/headless-boot.log" 2>&1; brc=$?
+          set -e
+          serr=0
+          for log in "$ROOT/out/editor-import.log" "$ROOT/out/headless-boot.log"; do
+            grep -Eqi 'SCRIPT ERROR|Parse Error|Parser Error|ERROR: Failed to load script|Cannot load script|Compile Error' "$log" && serr=$((serr+1)) || true
+          done
+          echo "TERRA_GATE_IMPORT_RC=$irc"
+          echo "TERRA_GATE_BOOT_RC=$brc"
+          echo "TERRA_GATE_SCRIPT_ERROR_LOGS=$serr"
+          if [ "$irc" -eq 0 ] && [ "$brc" -eq 0 ] && [ "$serr" -eq 0 ]; then
+            echo 'TERRA_GATE_STATUS=PASS'
+            exit 0
+          fi
+          echo 'TERRA_GATE_STATUS=FAIL_SOURCE_OR_ENGINE_DIAGNOSTIC_REQUIRED'
+          exit 1
+          REMOTE
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/terra-gate-v2.log"
+          status=$(grep -E '^TERRA_GATE_STATUS=' "$RUNNER_TEMP/terra-gate-v2.log" | tail -1 | cut -d= -f2-)
+          [ -n "$status" ] || status='UNKNOWN_FAILURE'
+          import_rc=$(grep -E '^TERRA_GATE_IMPORT_RC=' "$RUNNER_TEMP/terra-gate-v2.log" | tail -1 | cut -d= -f2- || true)
+          boot_rc=$(grep -E '^TERRA_GATE_BOOT_RC=' "$RUNNER_TEMP/terra-gate-v2.log" | tail -1 | cut -d= -f2- || true)
+          script_logs=$(grep -E '^TERRA_GATE_SCRIPT_ERROR_LOGS=' "$RUNNER_TEMP/terra-gate-v2.log" | tail -1 | cut -d= -f2- || true)
+          python3 - <<PY
+          import json, os
+          data={
+            'stream':'THF_TERRA',
+            'checkpoint':'TERRA-RC27',
+            'source_sha256':os.environ['TERRA_SHA256'],
+            'workflow_run_id':int(os.environ['GITHUB_RUN_ID']),
+            'workflow_commit':os.environ['GITHUB_SHA'],
+            'status':'''$status''',
+            'remote_exit_code':int('''$rc'''),
+            'godot_import_rc':'''$import_rc''' or None,
+            'godot_headless_boot_rc':'''$boot_rc''' or None,
+            'script_error_log_count':int('''$script_logs''' or '0') if '''$script_logs''' else None,
+            'canonical_archive_mutated':False,
+            'wave_untouched':True,
+            'truth_boundaries':{
+              'gpu_device_visual_qa':'NOT_EXECUTED',
+              'perfect_photo_likeness':'NOT_CLAIMED',
+              'production_signed_aab':'NOT_CLAIMED',
+              'play_approval':'NOT_CLAIMED',
+              'production_deployment':'NOT_CLAIMED',
+              'solana_settlement':'NOT_CLAIMED'
+            }
+          }
+          open('ReleaseOps/Terra/RC27_GODOT_GATE_RESULT.json','w',encoding='utf-8').write(json.dumps(data,indent=2)+'\n')
+          PY
+          sha256sum ReleaseOps/Terra/RC27_GODOT_GATE_RESULT.json > ReleaseOps/Terra/RC27_GODOT_GATE_RESULT.sha256
+          echo "FINAL_GATE_RC=$rc" >> "$GITHUB_ENV"
+
+      - name: Commit machine-readable Terra gate evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'thf-terra-releaseops-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add ReleaseOps/Terra/RC27_GODOT_GATE_RESULT.json ReleaseOps/Terra/RC27_GODOT_GATE_RESULT.sha256
+          if ! git diff --cached --quiet; then
+            git commit -m 'terra: record RC27 Godot gate evidence'
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Gate conclusion
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          case "${FINAL_GATE_RC:-99}" in
+            0) echo TERRA_RC27_GODOT_GATE=PASS ;;
+            42) echo TERRA_RC27_GODOT_GATE=BLOCKED_MISSING_EXACT_RC27_INPUT; exit 42 ;;
+            43) echo TERRA_RC27_GODOT_GATE=BLOCKED_GODOT_4_7_2_MISSING; exit 43 ;;
+            *) echo TERRA_RC27_GODOT_GATE=FAIL_SOURCE_OR_ENGINE_DIAGNOSTIC_REQUIRED; exit 1 ;;
+          esac
