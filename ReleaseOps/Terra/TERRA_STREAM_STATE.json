@@ -4,16 +4,35 @@
   "source_checkpoint": "TERRA-RC27",
   "source_version": "4.6.1-rc27",
   "source_sha256": "a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832",
-  "releaseops_status": "RC27_INTAKE_PINNED_GODOT_GATE_PENDING",
-  "dedup": "Do not rerun RC1-RC27 source gates already documented PASS. This stream resumes only the first unfinished fresh-engine gate against exact RC27 bytes.",
-  "latest_known_engine_evidence": {
-    "previous_releaseops_source": "TERRA-RC26",
-    "workflow": "THF RC17 Godot Diagnostic Patch V3",
-    "workflow_run_id": 34643108613,
-    "conclusion": "success",
-    "scope_note": "Evidence applies to RC26 diagnostic workspace, not RC27."
+  "releaseops_status": "RC27_GODOT_GATE_BLOCKED_MISSING_EXACT_INPUT_ON_BUILDER",
+  "dedup": "Do not rerun RC1-RC27 source gates already documented PASS. Fresh Godot RC27 gate attempted once against approved builder paths; failure is an input-staging blocker, not a source-parser failure.",
+  "latest_engine_attempt": {
+    "workflow": "THF Terra RC27 Godot Gate V2",
+    "workflow_run_id": 34646341978,
+    "workflow_commit": "d29e969bf538a7ff5146087864c20433b5e0b63c",
+    "result_commit_file": "ReleaseOps/Terra/RC27_GODOT_GATE_RESULT.json",
+    "result_status": "BLOCKED_MISSING_EXACT_RC27_INPUT",
+    "remote_exit_code": 42,
+    "godot_import_rc": null,
+    "godot_headless_boot_rc": null,
+    "canonical_archive_mutated": false,
+    "wave_untouched": true
   },
-  "next_gate": "Verify exact RC27 artifact on the GCP builder, then run clean Godot 4.7.2 editor import/parser/class-cache and headless boot without mutating canonical archive.",
+  "required_input": {
+    "artifact": "THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip",
+    "sha256": "a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832",
+    "accepted_split_parts": [
+      {"name":"THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.00","sha256":"1e3bcc23e3db418170fe5a398674c46e13df01daa46939ae12cacc3702c1fd8c"},
+      {"name":"THF_Terra_v4.6.1_RC27_NATIVE_PROPERTY_BUILDER_DEPTH_CUMULATIVE_SOURCE.zip.part.01","sha256":"746bb112916d016c3905673214511ac029d80bd083855cb75d47eb0fff0bff9e"}
+    ],
+    "approved_builder_input_paths": [
+      "$HOME/thf-builder/inputs-rc18-terra",
+      "$HOME/thf-builder/inputs-rc17",
+      "$HOME/thf-builder/inputs",
+      "$HOME/thf-builder-rc17-build/inputs"
+    ]
+  },
+  "next_gate": "After exact RC27 full archive or both exact split parts are staged in an approved builder input path, rerun clean Godot 4.7.2 editor import/parser/class-cache and 30-frame headless boot. Do not change canonical RC27 source to bypass missing input.",
   "truth_boundaries": {
     "gpu_device_visual_qa": "NOT_EXECUTED",
     "perfect_photo_likeness": "NOT_CLAIMED",
