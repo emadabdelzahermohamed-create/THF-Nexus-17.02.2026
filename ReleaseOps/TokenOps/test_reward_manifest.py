@@ -20,8 +20,10 @@ assert m1["execution"]["transaction_signed"] is False
 assert m1["execution"]["transaction_submitted"] is False
 assert m1["eligibility"]["eligible_count"] == 2
 assert len(m1["allocations"]) == 2
-assert m1["treasury_budget"]["allocated_raw"] == "80000000000"
-assert m1["treasury_budget"]["unallocated_raw"] == "20000000000"
+# user-a would receive 62.5B raw but is capped at 40B; user-b receives 37.5B.
+# The 22.5B remainder remains in treasury and is deliberately not redistributed.
+assert m1["treasury_budget"]["allocated_raw"] == "77500000000"
+assert m1["treasury_budget"]["unallocated_raw"] == "22500000000"
 
 bad = copy.deepcopy(sample)
 bad["mint"] = "bad"
