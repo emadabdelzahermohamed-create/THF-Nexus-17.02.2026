@@ -1,14 +1,16 @@
 {
   "stream": "THF_RIFT",
-  "checkpoint": "RIFT-RC31-BOT-TACTICAL-INTERRUPTION",
-  "status": "SOURCE_DETERMINISTIC_CLEAN_EXTRACT_PASS_ENGINE_GPU_DEVICE_GATES_PENDING",
-  "version": "4.6.5-rc31",
-  "base": {"checkpoint":"RIFT-RC30-BOT-TACTICAL-ACTION-PARITY","sha256":"1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41"},
-  "artifact": {"name":"THF_Rift_v4.6.5_RC31_BOT_TACTICAL_INTERRUPTION_CUMULATIVE_SOURCE.zip","sha256":"0c87563b469d61f63330504f231b99c90db7f4832c2b08f12bd801440bb21253","size_bytes":108661480,"parts":[{"name":"THF_Rift_v4.6.5_RC31_BOT_TACTICAL_INTERRUPTION_CUMULATIVE_SOURCE.zip.part.00","sha256":"567fccb9784cece80b3bfa3296fb7c50df63c549a13ce66b2b9e115e7e07de98","size_bytes":94371840},{"name":"THF_Rift_v4.6.5_RC31_BOT_TACTICAL_INTERRUPTION_CUMULATIVE_SOURCE.zip.part.01","sha256":"37dbe24e2fe2ba5c1d0a35844405aa443e54291acba4fc182c9291a89563c2e9","size_bytes":14289640}]},
-  "tests": {"targeted":"PASS 69/69","clean_extract":"PASS 69/69","python_compileall":"PASS","javascript_syntax":"PASS","gdscript_static":"PASS_STATIC_NOT_GODOT_PARSER","native_byte_identical_to_rc30":"PASS 34/34","deterministic_package":"PASS_EXACT_SHA","zip_integrity":"PASS","godot_4_7_2":"PENDING_EXECUTABLE_UNAVAILABLE","physical_android_gpu":"NOT_EXECUTED"},
-  "arena_service_sha256":"ebd5f43578719b1c8f8184df27b3d4b02067470fb194f2bc4e014bbb2ae00fcd",
-  "arena_physics_sha256":"80a5b9e316fa44b957288a2cbbcd6a903419a62446aff934bdabe868626df235",
+  "checkpoint": "RIFT-RC32-HUMAN-DOWN-GODOT472-TYPE-READINESS",
+  "status": "SOURCE_DETERMINISTIC_CLEAN_EXTRACT_GODOT472_PASS_GPU_DEVICE_ANDROID_BUILD_EXTERNAL",
+  "version": "4.6.6-rc32",
+  "version_code": 42066,
+  "compile_sdk": 36,
+  "target_sdk": 36,
+  "base": {"checkpoint":"RIFT-RC31-BOT-TACTICAL-INTERRUPTION","sha256":"0c87563b469d61f63330504f231b99c90db7f4832c2b08f12bd801440bb21253"},
+  "tests": {"targeted":"PASS 67/67","clean_extract":"PASS 67/67","python_compileall":"PASS","javascript_syntax":"PASS","gdscript_static":"PASS_STATIC","godot_4_7_2":"PASS_RELEASEOPS_GCP_RUN_34651723807","deterministic_package":"PASS_EXACT_SHA","zip_integrity":"PASS","local_android_gradle":"BLOCKED_ENVIRONMENT_NO_GRADLE_ANDROID_SDK","physical_android_gpu":"NOT_EXECUTED"},
+  "source_shas": {"arena_service":"64113108b94319b098f462a05b89684b7f0a6345764600b7cd2592329cb22706","rift_audio_feedback":"a0de254feafce5d7bda6f26321915f30727057e1350ba1bba2356207840eee3a"},
+  "artifact": {"name":"THF_Rift_v4.6.6_RC32_HUMAN_DOWN_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip","sha256":"f3d32333034ce15a9473a7e177b09eb7684d25fa374d845b2b01389325714e8d","size_bytes":108664177,"parts":[{"name":"THF_Rift_v4.6.6_RC32_HUMAN_DOWN_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"2fbd3f76ab2adfca89125ed2c8345cd1c2c820bd6dc0525637e664339729a548","size_bytes":94371840},{"name":"THF_Rift_v4.6.6_RC32_HUMAN_DOWN_GODOT472_TYPE_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"463e7c5cafc98a34215d0fcb6b7ce3e7df31dfac9f67e1c1176195c9d86c3003","size_bytes":14292337}]},
   "library_state_path":"/THF Nexus/Streams/RIFT_STATE.json",
-  "main_base_sha":"1ec81f0c54a1bf67b7e9ee648f7bdd777a18e47f",
-  "next":"Godot 4.7.2 parser/import/headless when executable becomes available; next verified source gap is explicit authoritative tactical action cleanup when a human/player is downed during cover/vault/revive."
+  "godot_workflow_run":34651723807,
+  "next":"Verified source gap: human revive_teammate only searches s['players'] and cannot revive a downed same-team bot; inspect human-to-bot revive parity next while preserving server authority."
 }
