@@ -1,0 +1,23 @@
+THF Rift RC34 Validation
+========================
+Checkpoint: RIFT-RC34-HUMAN-REVIVE-THREAT-INTERRUPTION
+Version: 4.6.8-rc34 / versionCode 42068 / compileSdk 36 / targetSdk 36
+Baseline: RC33 artifact SHA cd2ae24b9adffe27873acbee42e1380c50665dfbc9d21a6a560fc665ed1b961d
+
+New scope only:
+- server-owned human revive pre-start hostile threat gate
+- server-owned in-flight human revive cancellation before the existing 1800ms window completes
+- bounded 320-unit threat distance + server LOS; no client threat coordinates accepted
+- existing 110-unit revive range + server LOS + human↔bot revive parity preserved
+- RC31 bot threat interruption preserved through generic server helper
+- no client hit/damage/ranked authority added
+
+Godot/native delta: NONE vs RC32/RC33.
+Latest engine evidence remains Godot 4.7.2 parser/import/headless PASS on RC32 workflow run 34651723807; fresh RC34 engine run is not required for source compatibility because no native/GDScript file changed.
+Physical Android/GPU/device QA: NOT EXECUTED.
+Local Android Gradle build: BLOCKED_ENVIRONMENT_NO_GRADLE_ANDROID_SDK.
+Production-signed AAB / Play approval / production deployment: NOT CLAIMED.
+
+Artifact SHA-256: 2b565ee09eb00d3c1a5b54c7d07910c68daad11b40fcd8d361b672477a4023f6
+Targeted: PASS 49/49
+Clean extract: PASS 49/49
