@@ -41,7 +41,7 @@ jobs:
           access_token_scopes: https://www.googleapis.com/auth/cloud-platform
           create_credentials_file: true
 
-      - name: Verify GCP project identity
+      - name: Verify federated service-account token
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         shell: bash
@@ -49,19 +49,21 @@ jobs:
           set -Eeuo pipefail
           test -n "$ACCESS_TOKEN"
           curl --fail --silent --show-error \
-            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-            "https://cloudresourcemanager.googleapis.com/v1/projects/${GCP_PROJECT_ID}" \
-            -o /tmp/thf-project.json
+            --data-urlencode "access_token=${ACCESS_TOKEN}" \
+            https://oauth2.googleapis.com/tokeninfo \
+            -o /tmp/thf-tokeninfo.json
           python3 - <<'PY'
           import json, os
-          p = json.load(open('/tmp/thf-project.json', encoding='utf-8'))
-          expected_id = os.environ['GCP_PROJECT_ID']
-          expected_number = os.environ['GCP_PROJECT_NUMBER']
-          assert p.get('projectId') == expected_id, (p.get('projectId'), expected_id)
-          assert str(p.get('projectNumber')) == expected_number, (p.get('projectNumber'), expected_number)
-          print(f"GCP_PROJECT_ID={expected_id}")
-          print(f"GCP_PROJECT_NUMBER={expected_number}")
-          print("THF_GCP_PROJECT_IDENTITY=PASS")
+          t = json.load(open('/tmp/thf-tokeninfo.json', encoding='utf-8'))
+          expected = os.environ['GCP_SERVICE_ACCOUNT']
+          email = t.get('email')
+          if email:
+              assert email == expected, (email, expected)
+          scope = t.get('scope', '')
+          assert 'cloud-platform' in scope, scope
+          print(f"GCP_SERVICE_ACCOUNT={expected}")
+          print("THF_GITHUB_WIF_RUNTIME=PASS")
+          print("THF_GCP_FEDERATED_TOKEN=PASS")
           PY
 
       - name: Verify prepared private builder metadata
@@ -70,15 +72,32 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          curl --fail --silent --show-error \
+          http_code="$(curl --silent --show-error \
             -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-            "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}/zones/${GCP_ZONE}/instances/${GCP_BUILDER}" \
-            -o /tmp/thf-builder.json
+            -o /tmp/thf-builder.json \
+            -w '%{http_code}' \
+            "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}/zones/${GCP_ZONE}/instances/${GCP_BUILDER}")"
+          if [ "$http_code" != "200" ]; then
+            python3 - <<'PY'
+          import json
+          try:
+              body = json.load(open('/tmp/thf-builder.json', encoding='utf-8'))
+              err = body.get('error', {})
+              print('GCP_COMPUTE_HTTP_ERROR=' + str(err.get('code', 'unknown')))
+              print('GCP_COMPUTE_MESSAGE=' + str(err.get('message', 'unknown')))
+          except Exception:
+              print('GCP_COMPUTE_RESPONSE=UNPARSEABLE')
+          PY
+            echo "THF_GCP_BUILDER_READ=BLOCKED_HTTP_${http_code}"
+            exit 22
+          fi
           python3 - <<'PY'
           import json, os
           vm = json.load(open('/tmp/thf-builder.json', encoding='utf-8'))
           expected = os.environ['GCP_BUILDER']
           assert vm.get('name') == expected, (vm.get('name'), expected)
+          print(f"GCP_PROJECT_ID={os.environ['GCP_PROJECT_ID']}")
+          print(f"GCP_PROJECT_NUMBER={os.environ['GCP_PROJECT_NUMBER']}")
           print(f"GCP_BUILDER={expected}")
           print(f"GCP_BUILDER_STATUS={vm.get('status', 'UNKNOWN')}")
           print("THF_GCP_BUILDER_READ=PASS")
@@ -88,7 +107,6 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          echo 'THF_GITHUB_WIF_RUNTIME=PASS'
           echo 'READ_ONLY_GATE=PASS'
           echo 'NO_DEPLOYMENT_PERFORMED=TRUE'
           echo 'NO_PRODUCTION_SIGNING_PERFORMED=TRUE'
