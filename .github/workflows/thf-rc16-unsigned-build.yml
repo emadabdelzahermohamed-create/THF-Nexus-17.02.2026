@@ -1,0 +1,131 @@
+name: THF RC16 Unsigned Test Build
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths:
+      - '.github/workflows/thf-rc16-unsigned-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  REMOTE_ROOT: /home/sa_115575029018678177962/thf-builder-rc16-build
+
+jobs:
+  build:
+    name: Build Core Terra Rift unsigned/test candidates
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Prepare isolated RC16 build workspace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=60m --quiet \
+            --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-rc16-build"; rm -rf "$ROOT/work" "$ROOT/out"; mkdir -p "$ROOT/ops" "$ROOT/work" "$ROOT/out" "$ROOT/cache" "$ROOT/gradle-home"; chmod 700 "$ROOT" "$ROOT/ops" "$ROOT/work" "$ROOT/out" "$ROOT/cache" "$ROOT/gradle-home"; echo THF_RC16_BUILD_WORKSPACE=PASS; echo WAVE_UNTOUCHED=TRUE'
+
+      - name: Stage small build tooling through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp ReleaseOps/rc16-intake.json ReleaseOps/rc16_remote_build.sh \
+            "$GCP_BUILDER:~/thf-builder-rc16-build/ops/" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
+      - name: Execute RC16 build on private x86_64 builder
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=60m --quiet \
+            --command='set -uo pipefail; ROOT="$HOME/thf-builder-rc16-build"; chmod +x "$ROOT/ops/rc16_remote_build.sh"; THF_RC16_BUILD_ROOT="$ROOT" THF_RC16_INTAKE="$ROOT/ops/rc16-intake.json" THF_RC16_INPUTS_DIRECT="$HOME/thf-builder/inputs-direct" bash "$ROOT/ops/rc16_remote_build.sh"' \
+            2>&1 | tee "$RUNNER_TEMP/rc16-remote-build-console.log"
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "REMOTE_BUILD_RC=$rc" >> "$GITHUB_ENV"
+          echo "REMOTE_BUILD_RC=$rc"
+          exit 0
+
+      - name: Pack build evidence and candidates remotely
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=20m --quiet \
+            --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-rc16-build"; mkdir -p "$ROOT/out"; tar -cf "$ROOT/rc16-build-output.tar" -C "$ROOT" out; ls -lh "$ROOT/rc16-build-output.tar"; echo THF_RC16_OUTPUT_PACK=PASS'
+
+      - name: Retrieve candidates and evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/rc16-retrieved" rc16-build-artifacts
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder-rc16-build/rc16-build-output.tar" \
+            "$RUNNER_TEMP/rc16-retrieved/rc16-build-output.tar" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          tar -xf "$RUNNER_TEMP/rc16-retrieved/rc16-build-output.tar" -C rc16-build-artifacts
+          cp "$RUNNER_TEMP/rc16-remote-build-console.log" rc16-build-artifacts/ || true
+          find rc16-build-artifacts -type f -maxdepth 5 -printf '%p\t%s bytes\n' | sort
+
+      - name: Show RC16 evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for f in \
+            rc16-build-artifacts/out/BUILD_SUMMARY_RC16.json \
+            rc16-build-artifacts/out/PACKAGE_EVIDENCE_RC16.json \
+            rc16-build-artifacts/out/SHA256SUMS_RC16_BUILD_EVIDENCE.txt; do
+            if [ -f "$f" ]; then echo "===== $f ====="; cat "$f"; fi
+          done
+
+      - name: Upload RC16 build artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-RC16-unsigned-test-candidates
+          path: rc16-build-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Final RC16 build gate
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "REMOTE_BUILD_RC=${REMOTE_BUILD_RC:-missing}"
+          [ "${REMOTE_BUILD_RC:-missing}" = "0" ] || { echo 'THF_RC16_UNSIGNED_BUILD_GATE=FAIL'; exit 40; }
+          grep -q 'THF_RC16_UNSIGNED_BUILD=PASS' "$RUNNER_TEMP/rc16-remote-build-console.log"
+          grep -q 'THF_RC16_PACKAGE_INSPECTION=PASS' "$RUNNER_TEMP/rc16-remote-build-console.log"
+          echo 'THF_RC16_UNSIGNED_BUILD_GATE=PASS'
+          echo 'NO_PRODUCTION_SIGNING=TRUE'
+          echo 'NO_PLAY_UPLOAD=TRUE'
+          echo 'WAVE_UNTOUCHED=TRUE'
