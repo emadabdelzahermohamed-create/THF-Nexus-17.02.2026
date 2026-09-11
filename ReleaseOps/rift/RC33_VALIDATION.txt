@@ -1,0 +1,26 @@
+THF Rift RC33 Validation
+========================
+Checkpoint: RIFT-RC33-HUMAN-BOT-REVIVE-PARITY
+Version: 4.6.7-rc33 / versionCode 42067 / compileSdk 36 / targetSdk 36
+Baseline: RC32 artifact SHA f3d32333034ce15a9473a7e177b09eb7684d25fa374d845b2b01389325714e8d
+
+New scope only:
+- human revive candidate selection across authoritative players+bots
+- human tactical revive completion resolves targets across authoritative players+bots
+- 110-unit range, server LOS and 1800ms action window preserved
+- enemy, invalidated and out-of-range targets rejected
+- no client hit/damage/ranked authority added
+
+Validation:
+- RC33 targeted gate: PASS 24/24
+- clean-extract RC33 gate: PASS 24/24
+- Python compileall: PASS
+- JavaScript syntax: PASS
+- deterministic ZIP rebuild: PASS exact SHA cd2ae24b9adffe27873acbee42e1380c50665dfbc9d21a6a560fc665ed1b961d
+- ZIP integrity: PASS
+- Godot/native delta: NONE vs RC32
+- latest Godot 4.7.2 parser/import/headless evidence: RC32 workflow run 34651723807 PASS; fresh RC33 engine run NOT_EXECUTED because no native/GDScript delta
+- physical Android/GPU/device QA: NOT_EXECUTED
+- local Android Gradle build: BLOCKED_ENVIRONMENT_NO_GRADLE_ANDROID_SDK
+
+Truth boundaries: no GPU/device visual QA, production-signed AAB, Play approval or production deployment claimed.
