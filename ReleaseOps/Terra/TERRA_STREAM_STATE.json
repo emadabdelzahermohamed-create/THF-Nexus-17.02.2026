@@ -1,0 +1,25 @@
+{
+  "stream": "THF_TERRA",
+  "branch": "terra/rc27-godot-gate-20260911",
+  "source_checkpoint": "TERRA-RC27",
+  "source_version": "4.6.1-rc27",
+  "source_sha256": "a83fc655ce2621ce5c995699cee989e795d8516e2c6e3cffece3828e7cc55832",
+  "releaseops_status": "RC27_INTAKE_PINNED_GODOT_GATE_PENDING",
+  "dedup": "Do not rerun RC1-RC27 source gates already documented PASS. This stream resumes only the first unfinished fresh-engine gate against exact RC27 bytes.",
+  "latest_known_engine_evidence": {
+    "previous_releaseops_source": "TERRA-RC26",
+    "workflow": "THF RC17 Godot Diagnostic Patch V3",
+    "workflow_run_id": 34643108613,
+    "conclusion": "success",
+    "scope_note": "Evidence applies to RC26 diagnostic workspace, not RC27."
+  },
+  "next_gate": "Verify exact RC27 artifact on the GCP builder, then run clean Godot 4.7.2 editor import/parser/class-cache and headless boot without mutating canonical archive.",
+  "truth_boundaries": {
+    "gpu_device_visual_qa": "NOT_EXECUTED",
+    "perfect_photo_likeness": "NOT_CLAIMED",
+    "production_signed_aab": "NOT_CLAIMED",
+    "play_approval": "NOT_CLAIMED",
+    "production_deployment": "NOT_CLAIMED",
+    "solana_settlement": "NOT_CLAIMED"
+  }
+}
