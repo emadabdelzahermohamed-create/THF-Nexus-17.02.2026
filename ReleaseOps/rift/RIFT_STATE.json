@@ -1,16 +1,52 @@
 {
   "stream": "THF_RIFT",
-  "checkpoint": "RIFT-RC33-HUMAN-BOT-REVIVE-PARITY",
+  "checkpoint": "RIFT-RC34-HUMAN-REVIVE-THREAT-INTERRUPTION",
   "status": "SOURCE_DETERMINISTIC_CLEAN_EXTRACT_PASS_GODOT_RC32_CARRY_FORWARD_NO_NATIVE_DELTA_GPU_DEVICE_ANDROID_BUILD_EXTERNAL",
-  "version": "4.6.7-rc33",
-  "version_code": 42067,
+  "version": "4.6.8-rc34",
+  "version_code": 42068,
   "compile_sdk": 36,
   "target_sdk": 36,
-  "base": {"checkpoint":"RIFT-RC32-HUMAN-DOWN-GODOT472-TYPE-READINESS","sha256":"f3d32333034ce15a9473a7e177b09eb7684d25fa374d845b2b01389325714e8d"},
-  "tests": {"targeted":"PASS 24/24","clean_extract":"PASS 24/24","python_compileall":"PASS","javascript_syntax":"PASS","godot_4_7_2":"CARRY_FORWARD_RC32_PASS_RUN_34651723807_NO_NATIVE_DELTA","fresh_rc33_godot":"NOT_EXECUTED_NO_NATIVE_GDSCRIPT_DELTA","deterministic_package":"PASS_EXACT_SHA","zip_integrity":"PASS","local_android_gradle":"BLOCKED_ENVIRONMENT_NO_GRADLE_ANDROID_SDK","physical_android_gpu":"NOT_EXECUTED"},
-  "source_shas": {"arena_service":"f41ca92e51f96d5f5016991d680ecf600703b168ae31953c2f9156e05aec5751","rift_audio_feedback":"a0de254feafce5d7bda6f26321915f30727057e1350ba1bba2356207840eee3a"},
-  "artifact": {"name":"THF_Rift_v4.6.7_RC33_HUMAN_BOT_REVIVE_PARITY_CUMULATIVE_SOURCE.zip","sha256":"cd2ae24b9adffe27873acbee42e1380c50665dfbc9d21a6a560fc665ed1b961d","size_bytes":108731812,"parts":[{"name":"THF_Rift_v4.6.7_RC33_HUMAN_BOT_REVIVE_PARITY_CUMULATIVE_SOURCE.zip.part.00","sha256":"f968fc0db289f116993744ed45b3cb488c68088526789fa933f8ee1493dd0840","size_bytes":94371840},{"name":"THF_Rift_v4.6.7_RC33_HUMAN_BOT_REVIVE_PARITY_CUMULATIVE_SOURCE.zip.part.01","sha256":"4f3fa53295f68309c48b074718589c85f42ff5bb9ce8adf60ebbb478e10829df","size_bytes":14359972}]},
-  "library_state_path":"/THF Nexus/Streams/RIFT_STATE.json",
-  "latest_engine_evidence":{"godot_version":"4.7.2","workflow_run":34651723807,"result":"PASS","native_delta_since_run":false},
-  "next":"Verified source gap: human revive lacks bot-style server threat-aware cancellation during the active 1800ms revive window; inspect human revive threat interruption next while preserving server authority."
+  "base": {
+    "checkpoint": "RIFT-RC33-HUMAN-BOT-REVIVE-PARITY",
+    "sha256": "cd2ae24b9adffe27873acbee42e1380c50665dfbc9d21a6a560fc665ed1b961d"
+  },
+  "completed_now": [
+    "server-owned human revive pre-start threat gate",
+    "server-owned human revive in-flight threat cancellation",
+    "bounded 320-unit server LOS threat policy",
+    "110-unit LOS + 1800ms human↔bot revive legality preserved",
+    "RC31 bot threat policy preserved through generic helper",
+    "Android metadata 42068 / 4.6.8-rc34 / API 36"
+  ],
+  "tests": {
+    "targeted": "PASS 49/49",
+    "clean_extract": "PASS 49/49",
+    "python_compileall": "PASS",
+    "clean_extract_python_compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "clean_extract_javascript_syntax": "PASS",
+    "godot_4_7_2": "CARRY_FORWARD_RC32_PASS_RUN_34651723807_NO_NATIVE_DELTA",
+    "fresh_rc34_godot": "NOT_EXECUTED_NO_NATIVE_GDSCRIPT_DELTA",
+    "deterministic_package": "PASS_EXACT_SHA",
+    "zip_integrity": "PASS",
+    "local_android_gradle": "BLOCKED_ENVIRONMENT_NO_GRADLE_ANDROID_SDK",
+    "physical_android_gpu": "NOT_EXECUTED"
+  },
+  "source_shas": {
+    "arena_service": "bcca33186984df4ae4d1f43bff20c52e5ac70d36d4918f69fc2072e0336bbb80",
+    "rift_audio_feedback": "a0de254feafce5d7bda6f26321915f30727057e1350ba1bba2356207840eee3a"
+  },
+  "artifact": {
+    "name": "THF_Rift_v4.6.8_RC34_HUMAN_REVIVE_THREAT_INTERRUPTION_CUMULATIVE_SOURCE.zip",
+    "sha256": "2b565ee09eb00d3c1a5b54c7d07910c68daad11b40fcd8d361b672477a4023f6",
+    "size_bytes": 108672421,
+    "parts": [
+      {"name":"THF_Rift_v4.6.8_RC34_HUMAN_REVIVE_THREAT_INTERRUPTION_CUMULATIVE_SOURCE.zip.part.00","sha256":"29e143b4db626f05db847a6fc2be404f3e90de89c676e8b03e380f2707a7ff62","size_bytes":94371840},
+      {"name":"THF_Rift_v4.6.8_RC34_HUMAN_REVIVE_THREAT_INTERRUPTION_CUMULATIVE_SOURCE.zip.part.01","sha256":"95fff5e5e78985ea0a41c4faac6ceafd3a9436e33764064f809cabea5bbb368a","size_bytes":14300581}
+    ]
+  },
+  "library_state_path": "/THF Nexus/Streams/RIFT_STATE.json",
+  "latest_engine_evidence": {"godot_version":"4.7.2","workflow_run":34651723807,"result":"PASS","native_delta_since_run":false},
+  "next": "Verified export-readiness gap: project.godot exists but export_presets.cfg is absent. Add a source-controlled Android export preset for com.topherofit.thf.rift with no production signing secrets, then validate syntax/export readiness; actual Android export remains dependent on templates/SDK/toolchain evidence.",
+  "truth_boundaries": ["no production-signed AAB claimed","no Play approval claimed","no GPU/device QA claimed","no production deployment claimed","no Solana settlement claimed","no commercial-game visual parity/superiority claimed"]
 }
