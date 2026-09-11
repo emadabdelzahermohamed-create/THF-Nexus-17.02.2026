@@ -1,0 +1,94 @@
+--- baseline/native/build/ANDROID_NATIVE_EXPORT_SPEC.json	2026-09-12 00:45:00.000000000 +0000
++++ src/native/build/ANDROID_NATIVE_EXPORT_SPEC.json	2026-09-11 22:44:42.299411769 +0000
+@@ -1,8 +1,8 @@
+ {
+   "product": "nexus_world",
+   "application_id": "com.topherofit.thf.terra",
+-  "version_code": 41016,
+-  "version_name": "4.1.0-stage16i-native-foundation",
++  "version_code": 42063,
++  "version_name": "4.6.3-rc29",
+   "target_sdk": 36,
+   "min_sdk_target": 26,
+   "architectures": [
+@@ -13,5 +13,9 @@
+   "renderer": "mobile",
+   "signing": "external_operator_secret_only",
+   "production_endpoint_env": "THF_WORLD_API_URL",
+-  "status": "export_preset_pending_godot_validation"
++  "status": "android_aab_preset_source_ready_godot_validation_pending",
++  "export_preset": "Android AAB Candidate",
++  "export_format": "AAB",
++  "gradle_build": true,
++  "signed_candidate": false
+ }
+--- baseline/native/PLAY_READINESS_MATRIX.json	2026-09-12 00:45:00.000000000 +0000
++++ src/native/PLAY_READINESS_MATRIX.json	2026-09-11 22:44:42.299652298 +0000
+@@ -1,7 +1,7 @@
+ {
+   "product": "nexus_world",
+   "application_id": "com.topherofit.thf.terra",
+-  "stage": "16-I",
++  "stage": "RC29",
+   "play_ready": false,
+   "native_engine": "Godot 4.7.2 stable",
+   "language": "GDScript",
+@@ -11,9 +11,12 @@
+     "server_authoritative_protocol_mapped": true,
+     "mpfb_asset_bundled_for_native_import": true,
+     "android_fallback_target_sdk_36": true,
+-    "android_fallback_version_code_41016": true,
+     "signing_secrets_not_bundled": true,
+-    "delivery_files_must_be_under_100mb": true
++    "delivery_files_must_be_under_100mb": true,
++    "android_fallback_version_code_42063": true,
++    "native_android_aab_preset_present": true,
++    "native_android_aab_package_id_consistent": true,
++    "native_android_aab_arm64_only_candidate": true
+   },
+   "pending_before_play": {
+     "godot_4_7_2_parser_and_headless_import": true,
+--- baseline/android/app/build.gradle	2026-09-12 00:45:00.000000000 +0000
++++ src/android/app/build.gradle	2026-09-11 22:44:42.299785296 +0000
+@@ -15,8 +15,8 @@
+         applicationId appId
+         minSdk 26
+         targetSdk 36
+-        versionCode 42062
+-        versionName '4.6.2-rc28'
++        versionCode 42063
++        versionName '4.6.3-rc29'
+         buildConfigField 'String', 'THF_WEB_URL', webUrlLiteral
+     }
+     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+--- baseline/.github/workflows/android-aab.yml	2026-09-12 00:45:00.000000000 +0000
++++ src/.github/workflows/android-aab.yml	2026-09-11 22:44:42.299871967 +0000
+@@ -37,9 +37,9 @@
+         run: >-
+           gradle bundleRelease
+           -PTHF_WEB_URL="${THF_WEB_URL:-https://YOUR-PRODUCTION-DOMAIN.example/}"
+-          -PTHF_APPLICATION_ID="${{ vars.THF_APPLICATION_ID || 'com.topherofit.nexusworld' }}"
++          -PTHF_APPLICATION_ID="${{ vars.THF_APPLICATION_ID || 'com.topherofit.thf.terra' }}"
+       - uses: actions/upload-artifact@v4
+         with:
+-          name: thf-nexus-world-stage16i-fallback-aab
++          name: thf-terra-rc29-fallback-aab
+           path: android/app/build/outputs/bundle/release/*.aab
+           if-no-files-found: error
+--- baseline/project.godot	2026-09-12 00:45:00.000000000 +0000
++++ src/project.godot	2026-09-11 22:44:42.300003933 +0000
+@@ -1,4 +1,4 @@
+-; THF Terra — Stage16-K Native Avatar/Combat Parity
++; THF Terra — RC29 Native Godot Export Readiness
+ config_version=5
+ 
+ [application]
+@@ -25,7 +25,7 @@
+ product="nexus_world"
+ api_base_url="http://127.0.0.1:8000"
+ application_id="com.topherofit.thf.terra"
+-stage="16-K"
++stage="RC29"
+ server_authoritative=true
+ 
+ [thf]
