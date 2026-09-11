@@ -42,24 +42,7 @@ jobs:
           echo "1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41  $INPUT" | sha256sum -c -
           unzip -q "$INPUT" -d "$ROOT/src"
           P="$ROOT/src/THF_Nexus_Arena_Core/native/arena/RiftAudioFeedback.gd"
-          python3 - "$P" <<"PY"
-from pathlib import Path
-import hashlib,sys
-p=Path(sys.argv[1])
-before=hashlib.sha256(p.read_bytes()).hexdigest()
-assert before=="40804b4461820e78b63ca606dfc8cce1ad799f27eba61c94c3ed37f60de9f23d", before
-s=p.read_text()
-repls=[
-("        var extra := players.pop_back()","        var extra: AudioStreamPlayer = players.pop_back() as AudioStreamPlayer"),
-("    var spec := {","    var spec: Array = {"),
-("    }.get(kind, [280.0, 0.045, 0.25])\n    var hz := float(spec[0])","    }.get(kind, [280.0, 0.045, 0.25]) as Array\n    var hz := float(spec[0])")]
-for old,new in repls:
-    assert s.count(old)==1,(old,s.count(old)); s=s.replace(old,new,1)
-p.write_text(s)
-after=hashlib.sha256(p.read_bytes()).hexdigest()
-assert after=="a0de254feafce5d7bda6f26321915f30727057e1350ba1bba2356207840eee3a",after
-print("RIFT_RC32_TYPE_ONLY_FIX=PASS",before,after)
-PY
+          python3 -c "from pathlib import Path; import hashlib; p=Path(\"$P\"); before=hashlib.sha256(p.read_bytes()).hexdigest(); assert before==\"40804b4461820e78b63ca606dfc8cce1ad799f27eba61c94c3ed37f60de9f23d\"; s=p.read_text(); reps=[(\"        var extra := players.pop_back()\",\"        var extra: AudioStreamPlayer = players.pop_back() as AudioStreamPlayer\"),(\"    var spec := {\",\"    var spec: Array = {\"),(\"    }.get(kind, [280.0, 0.045, 0.25])\\n    var hz := float(spec[0])\",\"    }.get(kind, [280.0, 0.045, 0.25]) as Array\\n    var hz := float(spec[0])\")]; [(lambda old,new: (s.count(old)==1) or (_ for _ in ()).throw(AssertionError((old,s.count(old)))))(old,new) for old,new in reps]; [None for old,new in []]; s=s.replace(reps[0][0],reps[0][1],1).replace(reps[1][0],reps[1][1],1).replace(reps[2][0],reps[2][1],1); p.write_text(s); after=hashlib.sha256(p.read_bytes()).hexdigest(); assert after==\"a0de254feafce5d7bda6f26321915f30727057e1350ba1bba2356207840eee3a\"; print(\"RIFT_RC32_TYPE_ONLY_FIX=PASS\",before,after)"
           PROJECT="$ROOT/src/THF_Nexus_Arena_Core"
           "$GODOT" --version | tee "$ROOT/out/godot-version.txt"
           rm -rf "$PROJECT/.godot"
@@ -78,5 +61,4 @@ PY
           echo RIFT_RC32_GODOT472_GATE=PASS'
       - name: Truth boundary
         if: always()
-        run: |
-          echo "Rift-only disposable parser/import/headless validation. No GPU/device visual QA, signed AAB, Play approval, or deployment claim."
+        run: echo "Rift-only disposable parser/import/headless validation. No GPU/device visual QA, signed AAB, Play approval, or deployment claim."
