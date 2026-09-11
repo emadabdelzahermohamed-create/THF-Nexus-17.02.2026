@@ -1,0 +1,72 @@
+name: THF RC17 Direct Remote Pull
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc17-direct-remote-pull.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: |
+            https://www.googleapis.com/auth/cloud-platform
+            https://www.googleapis.com/auth/drive.readonly
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Pull latest exact intake directly on builder
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          printf '%s\n' "$ACCESS_TOKEN" | gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='set -Eeuo pipefail
+          IFS= read -r ACCESS_TOKEN
+          umask 077
+          BASE="$HOME/thf-builder/inputs-rc17"
+          OLD="$HOME/thf-builder/inputs-direct"
+          rm -rf "$BASE"; mkdir -p "$BASE"; chmod 700 "$BASE"
+          cp "$OLD/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip" "$BASE/"
+          cd "$BASE"
+          echo "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a  THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          download(){ id="$1"; name="$2"; echo "REMOTE_DOWNLOAD_START=$name"; curl --fail --location --silent --show-error --retry 5 --retry-delay 2 -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${id}?alt=media&supportsAllDrives=true" -o "${name}.partial"; mv "${name}.partial" "$name"; echo "REMOTE_DOWNLOAD_DONE=$name"; }
+          download "1qfDpKmRx29vFxqFOnPXySSMAXExXcR3v" "THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip.part.00"
+          download "1UCPUoF1oTq-8VrQ5TIsVHWCjKnWFGU_5" "THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip.part.01"
+          download "1GO0xyime8DQMbscEycfKZtInwecghnYI" "THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip.part.00"
+          download "1rtoXLlvaIxKHIjA4cwUNvg57gZ0DcWdr" "THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip.part.01"
+          unset ACCESS_TOKEN
+          echo "993ec90f79b1d123a07d6bdfd035fbe057c5b6f359d433b7ccfaa82f81d0ea1d  THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip.part.00" | sha256sum -c -
+          echo "7c2fabede5bbe980c6867a835053f6894ca947b247627eb40d772d1bf467a803  THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip.part.01" | sha256sum -c -
+          cat THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip.part.00 THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip.part.01 > THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip
+          echo "05b7832cdd294f1f8dc90d5d8f967fb7aafcd97b3521a7445f52272e8aa9851d  THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          echo "27ed02797a099d36cfa076837a2ef56b84bc9e12bd51f0ab207ae7726258dd17  THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip.part.00" | sha256sum -c -
+          echo "9a46a40d28d064c2d7c6745ef11da739ccdf3e9d02129141622b2323aa8b10f9  THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip.part.01" | sha256sum -c -
+          cat THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip.part.00 THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip.part.01 > THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip
+          echo "1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41  THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          echo THF_RC17_REMOTE_INTAKE=PASS
+          echo EXACT_SHA_GATE=PASS
+          echo WAVE_UNTOUCHED=TRUE'

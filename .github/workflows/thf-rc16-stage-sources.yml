@@ -1,0 +1,169 @@
+name: THF RC16 Stage Sources
+
+on:
+  push:
+    branches:
+      - main
+      - 'releaseops/**'
+    paths:
+      - '.github/workflows/thf-rc16-stage-sources.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CORE_NAME: THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip
+  CORE_ID: 1KgdGSfoAv8dnZMlSMKmuOe-Tcjpdpvwz
+  CORE_SHA: 6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a
+  CORE_SIZE: '180945'
+  TERRA_P00_NAME: THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.00
+  TERRA_P00_ID: 1EO7z0cS1zeIYOR-1BAu73jp3Vw2snno2
+  TERRA_P00_SHA: 8715408b62bf28bec6522a08a2ca0138287e7f5e7be726130fd49a8a87945cba
+  TERRA_P00_SIZE: '94371840'
+  TERRA_P01_NAME: THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip.part.01
+  TERRA_P01_ID: 1ZfuiS4GKO4JD0Ubtqg0R3ZYJXxMEfbsS
+  TERRA_P01_SHA: 12f3655c01d2e5154d3108767762f667d1b3f93340a256293ed75e872ecf8c0e
+  TERRA_P01_SIZE: '14706866'
+  TERRA_FULL_NAME: THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip
+  TERRA_FULL_SHA: 60ccd44ee476822cb2b7a7011f6f42a6cf45da23afe154fb30b785e7f4376c46
+  RIFT_P00_NAME: THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.00
+  RIFT_P00_ID: 1x73ZxDn7KzY96aHEEjLWER1ZIJJrByYW
+  RIFT_P00_SHA: 84c7bad9256650b9dc0f41428a095886330f1aa1d3a53579c4e3ead50cdb050a
+  RIFT_P00_SIZE: '94371840'
+  RIFT_P01_NAME: THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip.part.01
+  RIFT_P01_ID: 1fg78kWW7AeGM6YKRwt9_wyo1N-SHiq1p
+  RIFT_P01_SHA: 42bd48eef2bdc58ac624eea4aac35d85beebffca66377aeb9060b9afc2cd2970
+  RIFT_P01_SIZE: '14254882'
+  RIFT_FULL_NAME: THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip
+  RIFT_FULL_SHA: ed79b10d41f82a8fc0a5c43c00368d36b74c65f1aa5a7194a9c4f0a6999a5f2e
+
+jobs:
+  stage:
+    name: Verify and stage exact RC16 source intake
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: |
+            https://www.googleapis.com/auth/cloud-platform
+            https://www.googleapis.com/auth/drive.readonly
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Download private Drive staging files
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/thf-rc16-inputs"
+          cd "$RUNNER_TEMP/thf-rc16-inputs"
+          download() {
+            local id="$1" name="$2"
+            echo "Downloading ${name}"
+            curl --fail --location --silent --show-error \
+              -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+              "https://www.googleapis.com/drive/v3/files/${id}?alt=media" \
+              -o "$name"
+          }
+          download "$CORE_ID" "$CORE_NAME"
+          download "$TERRA_P00_ID" "$TERRA_P00_NAME"
+          download "$TERRA_P01_ID" "$TERRA_P01_NAME"
+          download "$RIFT_P00_ID" "$RIFT_P00_NAME"
+          download "$RIFT_P01_ID" "$RIFT_P01_NAME"
+
+      - name: Verify exact local RC16 intake
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/thf-rc16-inputs"
+          check() {
+            local name="$1" want_sha="$2" want_size="$3"
+            local got_sha got_size
+            got_sha="$(sha256sum "$name" | awk '{print $1}')"
+            got_size="$(stat -c '%s' "$name")"
+            [ "$got_sha" = "$want_sha" ] || { echo "SHA mismatch: $name"; exit 20; }
+            [ "$got_size" = "$want_size" ] || { echo "Size mismatch: $name got=$got_size want=$want_size"; exit 21; }
+            echo "PASS $name $got_sha $got_size"
+          }
+          check "$CORE_NAME" "$CORE_SHA" "$CORE_SIZE"
+          check "$TERRA_P00_NAME" "$TERRA_P00_SHA" "$TERRA_P00_SIZE"
+          check "$TERRA_P01_NAME" "$TERRA_P01_SHA" "$TERRA_P01_SIZE"
+          check "$RIFT_P00_NAME" "$RIFT_P00_SHA" "$RIFT_P00_SIZE"
+          check "$RIFT_P01_NAME" "$RIFT_P01_SHA" "$RIFT_P01_SIZE"
+          cat "$TERRA_P00_NAME" "$TERRA_P01_NAME" > "$TERRA_FULL_NAME"
+          cat "$RIFT_P00_NAME" "$RIFT_P01_NAME" > "$RIFT_FULL_NAME"
+          echo "$TERRA_FULL_SHA  $TERRA_FULL_NAME" | sha256sum -c -
+          echo "$RIFT_FULL_SHA  $RIFT_FULL_NAME" | sha256sum -c -
+          echo 'THF_RC16_LOCAL_INTAKE=PASS'
+
+      - name: Prepare isolated builder workspace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -Eeuo pipefail; mkdir -p "$HOME/thf-builder/inputs" "$HOME/thf-builder/ops" "$HOME/thf-builder/out"; chmod 700 "$HOME/thf-builder" "$HOME/thf-builder/inputs" "$HOME/thf-builder/ops" "$HOME/thf-builder/out"; echo THF_BUILDER_WORKSPACE_READY=PASS'
+
+      - name: Copy verified inputs to private builder through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/thf-rc16-inputs"
+          for f in "$CORE_NAME" "$TERRA_P00_NAME" "$TERRA_P01_NAME" "$RIFT_P00_NAME" "$RIFT_P01_NAME"; do
+            gcloud compute scp "$f" "$GCP_BUILDER:~/thf-builder/inputs/$f" \
+              --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+              --tunnel-through-iap --quiet
+          done
+
+      - name: Verify hashes on private builder and reassemble split sources
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          remote="set -Eeuo pipefail; cd \"\$HOME/thf-builder/inputs\"; \
+          echo '$CORE_SHA  $CORE_NAME' | sha256sum -c -; \
+          echo '$TERRA_P00_SHA  $TERRA_P00_NAME' | sha256sum -c -; \
+          echo '$TERRA_P01_SHA  $TERRA_P01_NAME' | sha256sum -c -; \
+          echo '$RIFT_P00_SHA  $RIFT_P00_NAME' | sha256sum -c -; \
+          echo '$RIFT_P01_SHA  $RIFT_P01_NAME' | sha256sum -c -; \
+          cat '$TERRA_P00_NAME' '$TERRA_P01_NAME' > '$TERRA_FULL_NAME'; \
+          echo '$TERRA_FULL_SHA  $TERRA_FULL_NAME' | sha256sum -c -; \
+          cat '$RIFT_P00_NAME' '$RIFT_P01_NAME' > '$RIFT_FULL_NAME'; \
+          echo '$RIFT_FULL_SHA  $RIFT_FULL_NAME' | sha256sum -c -; \
+          echo THF_RC16_REMOTE_INTAKE=PASS; echo NO_BUILD_EXECUTED=TRUE; echo WAVE_UNTOUCHED=TRUE"
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command="$remote"
+
+      - name: Gate result
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo 'THF_RC16_SOURCE_STAGING=PASS'
+          echo 'EXACT_SHA_GATE=PASS'
+          echo 'NO_BUILD_EXECUTED=TRUE'
+          echo 'NO_PRODUCTION_SIGNING_PERFORMED=TRUE'
+          echo 'WAVE_UNTOUCHED=TRUE'

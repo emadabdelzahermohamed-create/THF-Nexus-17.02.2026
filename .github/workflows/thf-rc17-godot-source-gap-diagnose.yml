@@ -1,0 +1,51 @@
+name: THF RC17 Godot Source Gap Diagnose
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc17-godot-source-gap-diagnose.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read exact failing source context
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=15m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-builder-rc17-build/work"
+          T="$ROOT/terra/native/world/WorldMain.gd"
+          R="$ROOT/rift/THF_Nexus_Arena_Core/native/arena/RiftAudioFeedback.gd"
+          echo "===== TERRA WorldMain.gd 1465-1505 ====="
+          nl -ba "$T" | sed -n "1465,1505p"
+          echo "===== RIFT RiftAudioFeedback.gd 1-70 ====="
+          nl -ba "$R" | sed -n "1,70p"
+          echo "===== SHA BEFORE ====="
+          sha256sum "$T" "$R"
+          echo THF_RC17_GODOT_SOURCE_GAP_CONTEXT=PASS
+          echo CANONICAL_ARCHIVES_MUTATED=FALSE
+          echo WAVE_UNTOUCHED=TRUE'

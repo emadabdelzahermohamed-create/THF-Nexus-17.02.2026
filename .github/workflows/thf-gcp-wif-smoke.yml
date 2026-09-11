@@ -1,0 +1,113 @@
+name: THF GCP WIF Smoke
+
+on:
+  push:
+    branches:
+      - main
+      - 'releaseops/**'
+    paths:
+      - '.github/workflows/thf-gcp-wif-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_PROJECT_NUMBER: '1035420130588'
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  wif-smoke:
+    name: Read-only WIF verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        name: Authenticate to Google Cloud with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+          create_credentials_file: true
+
+      - name: Verify federated service-account token
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$ACCESS_TOKEN"
+          curl --fail --silent --show-error \
+            --data-urlencode "access_token=${ACCESS_TOKEN}" \
+            https://oauth2.googleapis.com/tokeninfo \
+            -o /tmp/thf-tokeninfo.json
+          python3 - <<'PY'
+          import json, os
+          t = json.load(open('/tmp/thf-tokeninfo.json', encoding='utf-8'))
+          expected = os.environ['GCP_SERVICE_ACCOUNT']
+          email = t.get('email')
+          if email:
+              assert email == expected, (email, expected)
+          scope = t.get('scope', '')
+          assert 'cloud-platform' in scope, scope
+          print(f"GCP_SERVICE_ACCOUNT={expected}")
+          print("THF_GITHUB_WIF_RUNTIME=PASS")
+          print("THF_GCP_FEDERATED_TOKEN=PASS")
+          PY
+
+      - name: Verify prepared private builder metadata
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          http_code="$(curl --silent --show-error \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            -o /tmp/thf-builder.json \
+            -w '%{http_code}' \
+            "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}/zones/${GCP_ZONE}/instances/${GCP_BUILDER}")"
+          if [ "$http_code" != "200" ]; then
+            python3 - <<'PY'
+          import json
+          try:
+              body = json.load(open('/tmp/thf-builder.json', encoding='utf-8'))
+              err = body.get('error', {})
+              print('GCP_COMPUTE_HTTP_ERROR=' + str(err.get('code', 'unknown')))
+              print('GCP_COMPUTE_MESSAGE=' + str(err.get('message', 'unknown')))
+          except Exception:
+              print('GCP_COMPUTE_RESPONSE=UNPARSEABLE')
+          PY
+            echo "THF_GCP_BUILDER_READ=BLOCKED_HTTP_${http_code}"
+            exit 22
+          fi
+          python3 - <<'PY'
+          import json, os
+          vm = json.load(open('/tmp/thf-builder.json', encoding='utf-8'))
+          expected = os.environ['GCP_BUILDER']
+          assert vm.get('name') == expected, (vm.get('name'), expected)
+          print(f"GCP_PROJECT_ID={os.environ['GCP_PROJECT_ID']}")
+          print(f"GCP_PROJECT_NUMBER={os.environ['GCP_PROJECT_NUMBER']}")
+          print(f"GCP_BUILDER={expected}")
+          print(f"GCP_BUILDER_STATUS={vm.get('status', 'UNKNOWN')}")
+          print("THF_GCP_BUILDER_READ=PASS")
+          PY
+
+      - name: Gate result
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo 'READ_ONLY_GATE=PASS'
+          echo 'NO_DEPLOYMENT_PERFORMED=TRUE'
+          echo 'NO_PRODUCTION_SIGNING_PERFORMED=TRUE'
+          echo 'WAVE_UNTOUCHED=TRUE'

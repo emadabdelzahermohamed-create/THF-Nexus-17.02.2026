@@ -1,0 +1,62 @@
+name: THF RC17 Godot Export Inspect
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc17-godot-export-inspect.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect engine and exact latest projects
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=15m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-builder-rc17-build/work"
+          echo THF_RC17_GODOT_EXPORT_INSPECT_BEGIN
+          echo "-- engine commands --"
+          for c in godot godot4 godot4.7 godot4.7.2; do if command -v "$c" >/dev/null 2>&1; then printf "%s=" "$c"; command -v "$c"; "$c" --version 2>/dev/null || true; fi; done
+          echo "-- possible engine binaries in HOME/opt --"
+          find "$HOME" /opt -maxdepth 5 -type f \( -iname "godot*" -o -iname "Godot*" \) -perm -111 -print 2>/dev/null | head -100 || true
+          for spec in "terra:$ROOT/terra" "rift:$ROOT/rift"; do
+            slug="${spec%%:*}"; p="${spec#*:}"
+            echo "===== $slug ====="
+            echo "PROJECT_GODOT_FILES"
+            find "$p" -type f -name project.godot -printf "%p\t%s\n" | head -50
+            echo "EXPORT_PRESETS"
+            find "$p" -type f -name export_presets.cfg -printf "%p\t%s\n" | head -50
+            echo "ANDROID_EXPORT_RELATED"
+            find "$p" -maxdepth 6 -type f \( -name "export_presets.cfg" -o -name "project.godot" -o -name "*.pck" -o -name "*.apk" -o -name "*.aab" -o -iname "*android*" \) -printf "%p\t%s\n" 2>/dev/null | head -200
+            echo "PROJECT_SIZE_TOP"
+            du -ah "$p" 2>/dev/null | sort -h | tail -30
+            while IFS= read -r f; do echo "--- $f ---"; sed -n "1,260p" "$f"; done < <(find "$p" -type f -name export_presets.cfg | head -5)
+          done
+          echo "-- export templates / config --"
+          find "$HOME/.local/share/godot" "$HOME/.config/godot" -maxdepth 5 -type f -printf "%p\t%s\n" 2>/dev/null | head -200 || true
+          echo THF_RC17_GODOT_EXPORT_INSPECT=PASS
+          echo WAVE_UNTOUCHED=TRUE'

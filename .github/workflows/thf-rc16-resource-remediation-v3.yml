@@ -1,0 +1,218 @@
+name: THF RC16 Resource Remediation V3
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc16-resource-remediation-v3.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  remediate-build:
+    name: Remediate disposable Android resources and build Terra Rift
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Verify exact source archive hashes remain pinned
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=45m --quiet \
+            --command='set -Eeuo pipefail
+          BASE="$HOME/thf-builder/inputs-direct"
+          cd "$BASE"
+          echo "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a  THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          echo "60ccd44ee476822cb2b7a7011f6f42a6cf45da23afe154fb30b785e7f4376c46  THF_Terra_v4.5.5_RC21_NATIVE_FACIAL_MICROEXPRESSIONS_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          echo "ed79b10d41f82a8fc0a5c43c00368d36b74c65f1aa5a7194a9c4f0a6999a5f2e  THF_Rift_v4.5.8_RC24_ATTACHMENT_HYSTERESIS_SIGHT_CALIBRATION_CUMULATIVE_SOURCE.zip" | sha256sum -c -
+          echo THF_RC16_CANONICAL_ARCHIVES_STILL_EXACT=PASS
+          echo WAVE_UNTOUCHED=TRUE'
+
+      - name: Remove only stray Godot import metadata from disposable Android res
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=45m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-builder-rc16-build"
+          TERRA="$ROOT/work/terra/android/app/src/main/res"
+          RIFT="$ROOT/work/rift/THF_Nexus_Arena_Core/android-arena/app/src/main/res"
+          MAN="$ROOT/out/RESOURCE_REMEDIATION_V3.txt"
+          : > "$MAN"
+          for spec in "terra:$TERRA" "rift:$RIFT"; do
+            slug="${spec%%:*}"; dir="${spec#*:}"
+            [ -d "$dir" ] || { echo "MISSING_RES_DIR=$slug"; exit 31; }
+            echo "[$slug]" >> "$MAN"
+            count=0
+            while IFS= read -r -d "" f; do
+              count=$((count+1))
+              rel="${f#$ROOT/work/}"
+              sha="$(sha256sum "$f" | awk "{print \$1}")"
+              printf "removed\t%s\t%s\n" "$sha" "$rel" >> "$MAN"
+              rm -f -- "$f"
+            done < <(find "$dir" -type f -name "*.import" -print0)
+            echo "removed_count=$count" >> "$MAN"
+            [ "$count" -gt 0 ] || { echo "NO_IMPORT_METADATA_FOUND=$slug"; exit 32; }
+            if find "$dir" -type f -name "*.import" -print -quit | grep -q .; then exit 33; fi
+          done
+          cat "$MAN"
+          echo THF_RC16_DISPOSABLE_RESOURCE_REMEDIATION=PASS
+          echo CANONICAL_ARCHIVES_MUTATED=FALSE
+          echo WAVE_UNTOUCHED=TRUE'
+
+      - name: Build Terra and Rift with production signing vars explicitly absent
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=45m --quiet \
+            --command='set -uo pipefail
+          unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+          ROOT="$HOME/thf-builder-rc16-build"
+          SDK="$ROOT/android-sdk"
+          export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$ROOT/gradle-home"
+          rc=0
+          for spec in "terra:$ROOT/work/terra/android" "rift:$ROOT/work/rift/THF_Nexus_Arena_Core/android-arena"; do
+            slug="${spec%%:*}"; p="${spec#*:}"
+            mkdir -p "$ROOT/out/$slug"
+            echo "===== V3_BUILD_START=$slug ====="
+            set +e
+            (cd "$p" && ./gradlew --no-daemon --stacktrace :app:assembleDebug :app:bundleRelease) >"$ROOT/out/$slug/gradle-build-v3.log" 2>&1
+            one=$?
+            set -e
+            if [ "$one" -ne 0 ]; then
+              echo "V3_BUILD_FAILED=$slug rc=$one"
+              tail -180 "$ROOT/out/$slug/gradle-build-v3.log" || true
+              rc=1
+              continue
+            fi
+            rm -f "$ROOT/out/$slug/${slug}-app-debug.apk" "$ROOT/out/$slug/${slug}-app-release.aab"
+            cp "$p/app/build/outputs/apk/debug/app-debug.apk" "$ROOT/out/$slug/${slug}-app-debug.apk"
+            cp "$p/app/build/outputs/bundle/release/app-release.aab" "$ROOT/out/$slug/${slug}-app-release.aab"
+            echo "V3_BUILD_PASS=$slug"
+          done
+          exit "$rc"' 2>&1 | tee "$RUNNER_TEMP/rc16-v3-build.log"
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "V3_REMOTE_RC=$rc" >> "$GITHUB_ENV"
+          echo "V3_REMOTE_RC=$rc"
+          exit 0
+
+      - name: Generate package evidence on builder
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=20m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-builder-rc16-build"
+          python3 - <<'"'"'PY'"'"'
+          import hashlib,json,zipfile
+          from pathlib import Path
+          root=Path.home()/"thf-builder-rc16-build"
+          out=root/"out"
+          expected={
+            "core":"com.topherofit.thf.core",
+            "terra":"com.topherofit.thf.terra",
+            "rift":"com.topherofit.thf.rift",
+          }
+          arts=[]
+          for slug in ("core","terra","rift"):
+            for kind,name in (("apk",f"{slug}-app-debug.apk"),("aab",f"{slug}-app-release.aab")):
+              p=out/slug/name
+              if not p.is_file():
+                arts.append({"slug":slug,"kind":kind,"path":str(p.relative_to(out)),"present":False})
+                continue
+              h=hashlib.sha256()
+              with p.open("rb") as f:
+                for b in iter(lambda:f.read(1024*1024),b""): h.update(b)
+              with zipfile.ZipFile(p) as z:
+                bad=z.testzip()
+                names=set(z.namelist())
+                manifest=("AndroidManifest.xml" in names or "base/manifest/AndroidManifest.xml" in names)
+                meta=[n for n in names if n.upper().startswith("META-INF/") and n.upper().endswith((".RSA",".DSA",".EC",".SF"))]
+              arts.append({"slug":slug,"kind":kind,"path":str(p.relative_to(out)),"present":True,"sha256":h.hexdigest(),"size_bytes":p.stat().st_size,"zip_integrity":bad is None,"manifest_present":manifest,"signature_metadata_entries":sorted(meta)})
+          evidence={
+            "checkpoint":"PLATFORM-RC16-RESOURCE-REMEDIATION-V3",
+            "artifacts":arts,
+            "remediation":"Removed only *.import Godot metadata from disposable Android res trees; canonical source ZIPs unchanged.",
+            "truth":{"production_signing_credentials_present":False,"play_upload_performed":False,"canonical_archives_mutated":False,"wave_mutated":False}
+          }
+          (out/"PACKAGE_EVIDENCE_RC16_V3.json").write_text(json.dumps(evidence,indent=2))
+          missing=[a for a in arts if not a.get("present")]
+          invalid=[a for a in arts if a.get("present") and not (a.get("zip_integrity") and a.get("manifest_present"))]
+          print(json.dumps(evidence,indent=2))
+          if missing or invalid: raise SystemExit(41)
+          print("THF_RC16_V3_PACKAGE_INSPECTION=PASS")
+          PY
+          sha256sum "$ROOT/out"/core/core-app-debug.apk "$ROOT/out"/core/core-app-release.aab "$ROOT/out"/terra/terra-app-debug.apk "$ROOT/out"/terra/terra-app-release.aab "$ROOT/out"/rift/rift-app-debug.apk "$ROOT/out"/rift/rift-app-release.aab "$ROOT/out/PACKAGE_EVIDENCE_RC16_V3.json" > "$ROOT/out/SHA256SUMS_RC16_V3.txt"
+          cat "$ROOT/out/SHA256SUMS_RC16_V3.txt"
+          tar -cf "$ROOT/rc16-v3-output.tar" -C "$ROOT" out
+          echo THF_RC16_V3_EVIDENCE=PASS'
+
+      - name: Retrieve final V3 candidates and evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/rc16-v3" rc16-v3-artifacts
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder-rc16-build/rc16-v3-output.tar" "$RUNNER_TEMP/rc16-v3/rc16-v3-output.tar" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          tar -xf "$RUNNER_TEMP/rc16-v3/rc16-v3-output.tar" -C rc16-v3-artifacts
+          cp "$RUNNER_TEMP/rc16-v3-build.log" rc16-v3-artifacts/ || true
+          find rc16-v3-artifacts -maxdepth 5 -type f -printf '%p\t%s bytes\n' | sort
+
+      - name: Upload final V3 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-RC16-unsigned-test-candidates-v3
+          path: rc16-v3-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Final V3 gate
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ "${V3_REMOTE_RC:-missing}" = "0" ] || { echo THF_RC16_V3_GATE=FAIL; exit 50; }
+          grep -q 'V3_BUILD_PASS=terra' "$RUNNER_TEMP/rc16-v3-build.log"
+          grep -q 'V3_BUILD_PASS=rift' "$RUNNER_TEMP/rc16-v3-build.log"
+          test -f rc16-v3-artifacts/out/PACKAGE_EVIDENCE_RC16_V3.json
+          test -f rc16-v3-artifacts/out/SHA256SUMS_RC16_V3.txt
+          echo THF_RC16_V3_GATE=PASS
+          echo PRODUCTION_SIGNING_CREDENTIALS_USED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CANONICAL_ARCHIVES_MUTATED=FALSE
+          echo WAVE_UNTOUCHED=TRUE

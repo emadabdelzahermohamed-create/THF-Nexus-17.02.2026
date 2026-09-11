@@ -1,0 +1,156 @@
+name: THF RC17 Latest Unsigned Build
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc17-latest-unsigned-build.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage RC17 intake metadata
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=60m --quiet --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-rc17-build"; rm -rf "$ROOT/work" "$ROOT/out"; mkdir -p "$ROOT/ops" "$ROOT/work" "$ROOT/out" "$ROOT/gradle-home"; chmod 700 "$ROOT" "$ROOT/ops" "$ROOT/work" "$ROOT/out" "$ROOT/gradle-home"; echo RC17_WORKSPACE=PASS; echo WAVE_UNTOUCHED=TRUE'
+          gcloud compute scp ReleaseOps/rc17-intake.json "$GCP_BUILDER:~/thf-builder-rc17-build/ops/rc17-intake.json" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Verify extract remediate and build latest intake
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=60m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-builder-rc17-build"; INPUTS="$HOME/thf-builder/inputs-rc17"; INTAKE="$ROOT/ops/rc17-intake.json"; WORK="$ROOT/work"; OUT="$ROOT/out"; RC16="$HOME/thf-builder-rc16-build"; SDK="$RC16/android-sdk"; CACHE="$RC16/cache"
+          export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$ROOT/gradle-home"
+          export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$SDK/cmdline-tools/latest/bin:$PATH"
+          unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+          python3 - "$INTAKE" "$INPUTS" "$WORK" <<'"'"'PY'"'"'
+          import hashlib,json,sys,zipfile
+          from pathlib import Path
+          cfg=json.load(open(sys.argv[1],encoding="utf-8")); base=Path(sys.argv[2]); work=Path(sys.argv[3])
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open("rb") as f:
+                  for b in iter(lambda:f.read(1024*1024),b""): h.update(b)
+              return h.hexdigest()
+          def safe(z,d):
+              root=d.resolve()
+              for m in z.infolist():
+                  t=(d/m.filename).resolve()
+                  if t!=root and root not in t.parents: raise SystemExit("UNSAFE_ZIP_MEMBER="+m.filename)
+              z.extractall(d)
+          for slug,s in cfg["sources"].items():
+              p=base/s["artifact"]
+              if sha(p)!=s["sha256"]: raise SystemExit("SHA_MISMATCH="+slug)
+              if p.stat().st_size!=s["size_bytes"]: raise SystemExit("SIZE_MISMATCH="+slug)
+              d=work/slug; d.mkdir(parents=True,exist_ok=True)
+              with zipfile.ZipFile(p) as z:
+                  if z.testzip(): raise SystemExit("ZIP_INTEGRITY_FAIL="+slug)
+                  safe(z,d)
+              print("RC17_EXTRACT_PASS="+slug)
+          print("RC17_EXACT_SOURCE_GATE=PASS")
+          PY
+          PROJECT_core="$WORK/core/android"; PROJECT_terra="$WORK/terra/android"; PROJECT_rift="$WORK/rift/THF_Nexus_Arena_Core/android-arena"
+          REM="$OUT/RESOURCE_REMEDIATION_RC17.txt"; : > "$REM"
+          for spec in "terra:$PROJECT_terra/app/src/main/res" "rift:$PROJECT_rift/app/src/main/res"; do slug="${spec%%:*}"; dir="${spec#*:}"; echo "[$slug]" >> "$REM"; count=0; while IFS= read -r -d "" f; do count=$((count+1)); rel="${f#$WORK/}"; sh="$(sha256sum "$f"|awk "{print \$1}")"; printf "removed\t%s\t%s\n" "$sh" "$rel" >> "$REM"; rm -f "$f"; done < <(find "$dir" -type f -name "*.import" -print0 2>/dev/null); echo "removed_count=$count" >> "$REM"; done
+          cat "$REM"
+          verify_meta(){ slug="$1"; p="$2"; agp="$3"; want="$4"; vc="$5"; combined="$(find "$p" -maxdepth 3 -type f \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle.properties" \) -print0 | xargs -0 cat 2>/dev/null || true)"; grep -Eq "compileSdk([[:space:]]*=)?[[:space:]]*36|compileSdkVersion[[:space:]]+36" <<<"$combined"; grep -Eq "targetSdk([[:space:]]*=)?[[:space:]]*36|targetSdkVersion[[:space:]]+36" <<<"$combined"; grep -Fq "$agp" <<<"$combined"; grep -Fq "$want" <<<"$combined"; grep -Fq "$vc" <<<"$combined"; echo "META_PASS=$slug AGP=$agp VERSION_CODE=$vc"; }
+          verify_meta core "$PROJECT_core" 8.10.1 com.topherofit.thf.core 62200
+          verify_meta terra "$PROJECT_terra" 8.12.2 com.topherofit.thf.terra 42060
+          verify_meta rift "$PROJECT_rift" 8.12.2 com.topherofit.thf.rift 42064
+          prep(){ slug="$1"; p="$2"; ver="$3"; dsha="$4"; wsha="$5"; z="$CACHE/gradle-${ver}-bin.zip"; d="$CACHE/gradle-dist-${ver}/gradle-${ver}/bin/gradle"; echo "$dsha  $z"|sha256sum -c -; [ -x "$d" ]; (cd "$p" && "$d" --no-daemon wrapper --gradle-version "$ver" --distribution-type bin >/dev/null && chmod +x gradlew && echo "$wsha  gradle/wrapper/gradle-wrapper.jar"|sha256sum -c - >/dev/null); echo "WRAPPER_PASS=$slug"; }
+          prep core "$PROJECT_core" 8.11.1 f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6 2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046
+          prep terra "$PROJECT_terra" 8.13 20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78 81a82aaea5abcc8ff68b3dfcb58b3c3c429378efd98e7433460610fecd7ae45f
+          prep rift "$PROJECT_rift" 8.13 20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78 81a82aaea5abcc8ff68b3dfcb58b3c3c429378efd98e7433460610fecd7ae45f
+          build(){ slug="$1"; p="$2"; mkdir -p "$OUT/$slug"; echo "RC17_BUILD_START=$slug"; (cd "$p" && ./gradlew --no-daemon --stacktrace :app:assembleDebug :app:bundleRelease) >"$OUT/$slug/gradle-build.log" 2>&1 || { tail -200 "$OUT/$slug/gradle-build.log"; echo "RC17_BUILD_FAIL=$slug"; return 1; }; cp "$p/app/build/outputs/apk/debug/app-debug.apk" "$OUT/$slug/${slug}-app-debug.apk"; cp "$p/app/build/outputs/bundle/release/app-release.aab" "$OUT/$slug/${slug}-app-release.aab"; echo "RC17_BUILD_PASS=$slug"; }
+          build core "$PROJECT_core"
+          build terra "$PROJECT_terra"
+          build rift "$PROJECT_rift"
+          AAPT2="$SDK/build-tools/36.0.0/aapt2"; APKSIGNER="$SDK/build-tools/36.0.0/apksigner"; E="$OUT/BINARY_INSPECTION_RC17.txt"; : > "$E"
+          inspect_apk(){ slug="$1"; base="$2"; vc="$3"; apk="$OUT/$slug/${slug}-app-debug.apk"; bad="$($AAPT2 dump badging "$apk")"; pkg="$(printf "%s\n" "$bad"|sed -n "s/^package: name='\''\([^'\'']*\)'\'' versionCode='\''\([^'\'']*\)'\''.*/\1/p")"; gotvc="$(printf "%s\n" "$bad"|sed -n "s/^package: name='\''[^'\'']*'\'' versionCode='\''\([^'\'']*\)'\''.*/\1/p")"; target="$(printf "%s\n" "$bad"|sed -n "s/^targetSdkVersion:'\''\([^'\'']*\)'\''.*/\1/p")"; case "$pkg" in "$base"|"$base.debug") :;; *) echo "PACKAGE_FAIL=$slug:$pkg"; return 1;; esac; [ "$gotvc" = "$vc" ]; [ "$target" = 36 ]; $APKSIGNER verify --verbose --print-certs "$apk" >"$OUT/$slug/apksigner.txt" 2>&1; grep -q "CN=Android Debug" "$OUT/$slug/apksigner.txt"; echo "APK_PASS=$slug package=$pkg versionCode=$gotvc targetSdk=$target debug_signature=VERIFIED" | tee -a "$E"; }
+          inspect_aab(){ slug="$1"; aab="$OUT/$slug/${slug}-app-release.aab"; set +e; js="$(jarsigner -verify -verbose -certs "$aab" 2>&1)"; set -e; printf "%s\n" "$js"|grep -qi "jar is unsigned"; echo "AAB_PASS=$slug signing=UNSIGNED" | tee -a "$E"; }
+          inspect_apk core com.topherofit.thf.core 62200
+          inspect_apk terra com.topherofit.thf.terra 42060
+          inspect_apk rift com.topherofit.thf.rift 42064
+          inspect_aab core; inspect_aab terra; inspect_aab rift
+          python3 - "$INTAKE" "$OUT" <<'"'"'PY'"'"'
+          import hashlib,json,sys,zipfile
+          from pathlib import Path
+          cfg=json.load(open(sys.argv[1])); out=Path(sys.argv[2]); arts=[]
+          for slug in ("core","terra","rift"):
+              for kind,name in (("apk",f"{slug}-app-debug.apk"),("aab",f"{slug}-app-release.aab")):
+                  p=out/slug/name; h=hashlib.sha256()
+                  with p.open("rb") as f:
+                      for b in iter(lambda:f.read(1048576),b""): h.update(b)
+                  with zipfile.ZipFile(p) as z: bad=z.testzip(); count=len(z.namelist())
+                  arts.append({"slug":slug,"kind":kind,"path":str(p.relative_to(out)),"sha256":h.hexdigest(),"size_bytes":p.stat().st_size,"zip_integrity":bad is None,"zip_entries":count})
+          ev={"checkpoint":cfg["checkpoint"],"sources":{k:{"checkpoint":v["checkpoint"],"version":v["version"],"sha256":v["sha256"],"package_id":v["package_id"]} for k,v in cfg["sources"].items()},"artifacts":arts,"truth":{"production_signing_credentials_used":False,"play_upload_performed":False,"canonical_source_archives_mutated":False,"wave_mutated":False}}
+          (out/"PACKAGE_EVIDENCE_RC17.json").write_text(json.dumps(ev,indent=2))
+          print(json.dumps(ev,indent=2))
+          PY
+          sha256sum "$OUT"/core/core-app-debug.apk "$OUT"/core/core-app-release.aab "$OUT"/terra/terra-app-debug.apk "$OUT"/terra/terra-app-release.aab "$OUT"/rift/rift-app-debug.apk "$OUT"/rift/rift-app-release.aab "$OUT/PACKAGE_EVIDENCE_RC17.json" "$OUT/BINARY_INSPECTION_RC17.txt" "$OUT/RESOURCE_REMEDIATION_RC17.txt" > "$OUT/SHA256SUMS_RC17_BUILD.txt"
+          cat "$OUT/SHA256SUMS_RC17_BUILD.txt"
+          echo THF_RC17_LATEST_UNSIGNED_BUILD=PASS
+          echo THF_RC17_BINARY_INSPECTION=PASS
+          echo PRODUCTION_SIGNING_CREDENTIALS_USED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CANONICAL_SOURCE_ARCHIVES_MUTATED=FALSE
+          echo WAVE_UNTOUCHED=TRUE' 2>&1 | tee "$RUNNER_TEMP/rc17-build-console.log"
+          rc=${PIPESTATUS[0]}; set -e; echo "REMOTE_RC=$rc" >> "$GITHUB_ENV"; exit 0
+      - name: Pack and retrieve RC17 build output
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-rc17-build"; tar -cf "$ROOT/rc17-output.tar" -C "$ROOT" out; sha256sum "$ROOT/rc17-output.tar"'
+          mkdir -p rc17-artifacts "$RUNNER_TEMP/rc17"
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder-rc17-build/rc17-output.tar" "$RUNNER_TEMP/rc17/rc17-output.tar" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          tar -xf "$RUNNER_TEMP/rc17/rc17-output.tar" -C rc17-artifacts
+          cp "$RUNNER_TEMP/rc17-build-console.log" rc17-artifacts/ || true
+          find rc17-artifacts -maxdepth 5 -type f -printf '%p\t%s bytes\n' | sort
+      - name: Upload RC17 candidates
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-RC17-latest-unsigned-test-candidates
+          path: rc17-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+      - name: Final latest gate
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ "${REMOTE_RC:-missing}" = 0 ] || { echo THF_RC17_FINAL_GATE=FAIL; exit 50; }
+          grep -q 'THF_RC17_LATEST_UNSIGNED_BUILD=PASS' "$RUNNER_TEMP/rc17-build-console.log"
+          grep -q 'THF_RC17_BINARY_INSPECTION=PASS' "$RUNNER_TEMP/rc17-build-console.log"
+          echo THF_RC17_FINAL_GATE=PASS
+          echo WAVE_UNTOUCHED=TRUE

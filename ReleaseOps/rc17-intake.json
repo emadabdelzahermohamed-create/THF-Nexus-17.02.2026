@@ -1,0 +1,47 @@
+{
+  "checkpoint": "PLATFORM-RC17-2026-09-11",
+  "supersedes": "PLATFORM-RC16-2026-09-11",
+  "reason": "Source-owner streams advanced after the RC16 build: authoritative Terra state/manifest is now RC26 and authoritative Rift state/manifest is now RC30. Core remains RC6.",
+  "rules": [
+    "Exact SHA-256 match required before build.",
+    "Split archives reassembled in numeric part order; part SHA and full SHA verified before extraction.",
+    "No canonical product/game/UX source mutation in Platform lane.",
+    "Disposable Android packaging cleanup may remove only non-Android *.import metadata from extracted res trees and must record it.",
+    "Unsigned release AAB / debug-signed test APK candidates only.",
+    "No production signing keys, irreversible Play actions, Solana actions, or WAVE modifications."
+  ],
+  "sources": {
+    "core": {
+      "checkpoint": "CORE-RC6",
+      "version": "6.2.2-rc6",
+      "artifact": "THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip",
+      "sha256": "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a",
+      "size_bytes": 180945,
+      "package_id": "com.topherofit.thf.core"
+    },
+    "terra": {
+      "checkpoint": "TERRA-RC26",
+      "version": "4.6.0-rc26",
+      "artifact": "THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip",
+      "sha256": "05b7832cdd294f1f8dc90d5d8f967fb7aafcd97b3521a7445f52272e8aa9851d",
+      "size_bytes": 109107842,
+      "package_id": "com.topherofit.thf.terra",
+      "parts": [
+        {"name":"THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip.part.00","sha256":"993ec90f79b1d123a07d6bdfd035fbe057c5b6f359d433b7ccfaa82f81d0ea1d","size_bytes":94371840,"drive_file_id":"1qfDpKmRx29vFxqFOnPXySSMAXExXcR3v"},
+        {"name":"THF_Terra_v4.6.0_RC26_NATIVE_FARM_PRODUCTION_DEPTH_CUMULATIVE_SOURCE.zip.part.01","sha256":"7c2fabede5bbe980c6867a835053f6894ca947b247627eb40d772d1bf467a803","size_bytes":14736002,"drive_file_id":"1UCPUoF1oTq-8VrQ5TIsVHWCjKnWFGU_5"}
+      ]
+    },
+    "rift": {
+      "checkpoint": "RIFT-RC30-BOT-TACTICAL-ACTION-PARITY",
+      "version": "4.6.4-rc30",
+      "artifact": "THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip",
+      "sha256": "1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41",
+      "size_bytes": 108721900,
+      "package_id": "com.topherofit.thf.rift",
+      "parts": [
+        {"name":"THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip.part.00","sha256":"27ed02797a099d36cfa076837a2ef56b84bc9e12bd51f0ab207ae7726258dd17","size_bytes":94371840,"drive_file_id":"1GO0xyime8DQMbscEycfKZtInwecghnYI"},
+        {"name":"THF_Rift_v4.6.4_RC30_BOT_TACTICAL_ACTION_PARITY_CUMULATIVE_SOURCE.zip.part.01","sha256":"9a46a40d28d064c2d7c6745ef11da739ccdf3e9d02129141622b2323aa8b10f9","size_bytes":14350060,"drive_file_id":"1rtoXLlvaIxKHIjA4cwUNvg57gZ0DcWdr"}
+      ]
+    }
+  }
+}

@@ -1,0 +1,125 @@
+name: THF RC16 Binary Inspect V4
+
+on:
+  push:
+    branches: ['releaseops/**']
+    paths: ['.github/workflows/thf-rc16-binary-inspect-v4.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect built binaries on private builder
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=15m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-builder-rc16-build"
+          OUT="$ROOT/out"
+          AAPT2="$ROOT/android-sdk/build-tools/36.0.0/aapt2"
+          APKSIGNER="$ROOT/android-sdk/build-tools/36.0.0/apksigner"
+          [ -x "$AAPT2" ] && [ -x "$APKSIGNER" ]
+          E="$OUT/BINARY_INSPECTION_RC16_V4.txt"
+          : > "$E"
+          check_apk(){
+            slug="$1"; want="$2"; apk="$OUT/$slug/${slug}-app-debug.apk"
+            echo "===== APK $slug =====" | tee -a "$E"
+            badging="$($AAPT2 dump badging "$apk")"
+            printf "%s\n" "$badging" | grep -E "^(package:|sdkVersion:|targetSdkVersion:)" | tee -a "$E"
+            pkg="$(printf "%s\n" "$badging" | sed -n "s/^package: name='\''\([^'\'']*\)'\''.*/\1/p")"
+            target="$(printf "%s\n" "$badging" | sed -n "s/^targetSdkVersion:'\''\([^'\'']*\)'\''.*/\1/p")"
+            [ "$pkg" = "$want" ] || { echo "PACKAGE_FAIL=$slug got=$pkg want=$want"; exit 41; }
+            [ "$target" = "36" ] || { echo "TARGET_SDK_FAIL=$slug got=$target"; exit 42; }
+            echo "PACKAGE_ID_PASS=$slug:$pkg" | tee -a "$E"
+            echo "TARGET_SDK_PASS=$slug:36" | tee -a "$E"
+            set +e
+            sig="$($APKSIGNER verify --print-certs "$apk" 2>&1)"; rc=$?
+            set -e
+            echo "APK_SIGNATURE_VERIFY_RC=$slug:$rc" | tee -a "$E"
+            printf "%s\n" "$sig" | sed -n "1,20p" | tee -a "$E"
+          }
+          check_aab(){
+            slug="$1"; aab="$OUT/$slug/${slug}-app-release.aab"
+            echo "===== AAB $slug =====" | tee -a "$E"
+            set +e
+            js="$(jarsigner -verify -verbose -certs "$aab" 2>&1)"; rc=$?
+            set -e
+            echo "AAB_JARSIGNER_RC=$slug:$rc" | tee -a "$E"
+            printf "%s\n" "$js" | tail -20 | tee -a "$E"
+            if printf "%s\n" "$js" | grep -qi "jar is unsigned"; then
+              echo "AAB_SIGNING_STATE=$slug:UNSIGNED" | tee -a "$E"
+            elif printf "%s\n" "$js" | grep -qi "jar verified"; then
+              echo "AAB_SIGNING_STATE=$slug:SIGNED" | tee -a "$E"
+            else
+              echo "AAB_SIGNING_STATE=$slug:UNKNOWN" | tee -a "$E"
+            fi
+          }
+          check_apk core com.topherofit.thf.core
+          check_apk terra com.topherofit.thf.terra
+          check_apk rift com.topherofit.thf.rift
+          check_aab core
+          check_aab terra
+          check_aab rift
+          echo "===== CONTENT COUNTS =====" | tee -a "$E"
+          for slug in core terra rift; do
+            apk="$OUT/$slug/${slug}-app-debug.apk"; aab="$OUT/$slug/${slug}-app-release.aab"
+            echo "ZIP_ENTRIES_APK=$slug:$(unzip -Z1 "$apk" | wc -l)" | tee -a "$E"
+            echo "ZIP_ENTRIES_AAB=$slug:$(unzip -Z1 "$aab" | wc -l)" | tee -a "$E"
+          done
+          sha256sum "$E" | tee "$OUT/SHA256_BINARY_INSPECTION_RC16_V4.txt"
+          echo THF_RC16_BINARY_IDENTITY_SDK_INSPECTION=PASS
+          echo PRODUCTION_SIGNING_CREDENTIALS_USED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo WAVE_UNTOUCHED=TRUE'
+
+      - name: Retrieve inspection evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p binary-inspection-v4
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder-rc16-build/out/BINARY_INSPECTION_RC16_V4.txt" "$GCP_BUILDER:~/thf-builder-rc16-build/out/SHA256_BINARY_INSPECTION_RC16_V4.txt" binary-inspection-v4/ \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat binary-inspection-v4/BINARY_INSPECTION_RC16_V4.txt
+          cat binary-inspection-v4/SHA256_BINARY_INSPECTION_RC16_V4.txt
+
+      - name: Upload inspection evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-RC16-binary-inspection-v4
+          path: binary-inspection-v4/
+          retention-days: 14
+
+      - name: Gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q 'PACKAGE_ID_PASS=core:com.topherofit.thf.core' binary-inspection-v4/BINARY_INSPECTION_RC16_V4.txt
+          grep -q 'PACKAGE_ID_PASS=terra:com.topherofit.thf.terra' binary-inspection-v4/BINARY_INSPECTION_RC16_V4.txt
+          grep -q 'PACKAGE_ID_PASS=rift:com.topherofit.thf.rift' binary-inspection-v4/BINARY_INSPECTION_RC16_V4.txt
+          grep -q 'TARGET_SDK_PASS=core:36' binary-inspection-v4/BINARY_INSPECTION_RC16_V4.txt
+          grep -q 'TARGET_SDK_PASS=terra:36' binary-inspection-v4/BINARY_INSPECTION_RC16_V4.txt
+          grep -q 'TARGET_SDK_PASS=rift:36' binary-inspection-v4/BINARY_INSPECTION_RC16_V4.txt
+          echo THF_RC16_BINARY_INSPECTION_V4_GATE=PASS
