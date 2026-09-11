@@ -1,0 +1,26 @@
+THF Rift RC32 Validation
+========================
+Checkpoint: RIFT-RC32-HUMAN-DOWN-GODOT472-TYPE-READINESS
+Version: 4.6.6-rc32 / versionCode 42066 / compileSdk 36 / targetSdk 36
+Baseline: RC31 artifact SHA 0c87563b469d61f63330504f231b99c90db7f4832c2b08f12bd801440bb21253
+
+New scope only:
+- authoritative human/player tactical action cleanup when downed during cover/vault/revive
+- clears action_state, cover metadata, aiming and resets lean=center; weapon state preserved
+- RC31 bot tactical interruption preserved
+- RiftAudioFeedback.gd type-only Godot 4.7.2 compatibility fix (AudioStreamPlayer and Array explicit casts)
+- no client bot/player tactical/damage/ranked authority added
+
+Validation:
+- RC32 targeted behavior/source gate: PASS 67/67
+- clean-extract RC32 targeted gate: PASS 67/67
+- Python compileall source/clean extract: PASS
+- JavaScript syntax source/clean extract: PASS
+- GDScript static structural/type gate: PASS_STATIC
+- Godot 4.7.2 fresh parser/import/headless via isolated ReleaseOps/GCP workflow run 34651723807: PASS
+- deterministic ZIP rebuild: PASS exact SHA f3d32333034ce15a9473a7e177b09eb7684d25fa374d845b2b01389325714e8d
+- ZIP integrity: PASS
+- physical Android/GPU/device/touch/PBR/FPS/RAM/thermal QA: NOT_EXECUTED
+- local Android Gradle build: BLOCKED_ENVIRONMENT_NO_GRADLE_ANDROID_SDK
+
+Truth boundaries: no production-signed AAB, Play approval, GPU/device visual acceptance, production deployment, perfect photo likeness, Solana settlement, or commercial-game visual parity/superiority claimed.
