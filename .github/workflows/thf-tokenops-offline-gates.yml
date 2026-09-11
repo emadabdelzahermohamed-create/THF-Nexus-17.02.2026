@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
-      - name: Run reward accounting tests
+      - name: Run offline accounting tests
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -27,22 +27,35 @@ jobs:
           python3 ReleaseOps/TokenOps/reward_manifest.py \
             ReleaseOps/TokenOps/examples/reward_epoch.sample.json \
             tokenops-offline/sample-reward-manifest.json | tee tokenops-reward-generator.log
+          python3 ReleaseOps/TokenOps/test_burn_plan.py | tee tokenops-burn-tests.log
+          python3 ReleaseOps/TokenOps/burn_plan.py \
+            ReleaseOps/TokenOps/examples/burn_plan.sample.json \
+            tokenops-offline/sample-burn-plan.json | tee tokenops-burn-generator.log
 
       - name: Assert financial execution remains disabled
         shell: bash
         run: |
           set -Eeuo pipefail
-          grep -qx 'TRANSACTION_CREATED=FALSE' tokenops-reward-tests.log
-          grep -qx 'TRANSACTION_SIGNED=FALSE' tokenops-reward-tests.log
-          grep -qx 'TRANSACTION_SUBMITTED=FALSE' tokenops-reward-tests.log
+          for f in tokenops-reward-tests.log tokenops-burn-tests.log; do
+            grep -qx 'TRANSACTION_CREATED=FALSE' "$f"
+            grep -qx 'TRANSACTION_SIGNED=FALSE' "$f"
+            grep -qx 'TRANSACTION_SUBMITTED=FALSE' "$f"
+          done
+          grep -qx 'BURN_EXECUTED=FALSE' tokenops-burn-tests.log
           python3 - <<'PY'
           import json
-          p='tokenops-offline/sample-reward-manifest.json'
-          d=json.load(open(p))
-          assert d['execution']['transaction_created'] is False
-          assert d['execution']['transaction_signed'] is False
-          assert d['execution']['transaction_submitted'] is False
-          assert d['execution']['requires_external_approval'] is True
+          reward=json.load(open('tokenops-offline/sample-reward-manifest.json'))
+          burn=json.load(open('tokenops-offline/sample-burn-plan.json'))
+          assert reward['execution']['transaction_created'] is False
+          assert reward['execution']['transaction_signed'] is False
+          assert reward['execution']['transaction_submitted'] is False
+          assert reward['execution']['requires_external_approval'] is True
+          assert burn['execution']['transaction_created'] is False
+          assert burn['execution']['transaction_signed'] is False
+          assert burn['execution']['transaction_submitted'] is False
+          assert burn['execution']['burn_executed'] is False
+          assert burn['constraints']['treasury_controlled_balances_only'] is True
+          assert burn['constraints']['third_party_holder_burn_forbidden'] is True
           print('THF_TOKENOPS_NO_EXECUTION_GATE=PASS')
           PY
 
@@ -55,9 +68,15 @@ jobs:
             ReleaseOps/TokenOps/reward_manifest.py \
             ReleaseOps/TokenOps/test_reward_manifest.py \
             ReleaseOps/TokenOps/examples/reward_epoch.sample.json \
+            ReleaseOps/TokenOps/burn_plan.py \
+            ReleaseOps/TokenOps/test_burn_plan.py \
+            ReleaseOps/TokenOps/examples/burn_plan.sample.json \
             tokenops-offline/sample-reward-manifest.json \
+            tokenops-offline/sample-burn-plan.json \
             tokenops-reward-tests.log \
-            tokenops-reward-generator.log > tokenops-offline/SHA256SUMS.txt
+            tokenops-reward-generator.log \
+            tokenops-burn-tests.log \
+            tokenops-burn-generator.log > tokenops-offline/SHA256SUMS.txt
 
       - name: Upload offline gate evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -67,5 +86,7 @@ jobs:
             tokenops-offline/
             tokenops-reward-tests.log
             tokenops-reward-generator.log
+            tokenops-burn-tests.log
+            tokenops-burn-generator.log
           if-no-files-found: error
           retention-days: 30
