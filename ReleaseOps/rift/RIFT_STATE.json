@@ -1,0 +1,14 @@
+{
+  "stream": "THF_RIFT",
+  "checkpoint": "RIFT-RC31-BOT-TACTICAL-INTERRUPTION",
+  "status": "SOURCE_DETERMINISTIC_CLEAN_EXTRACT_PASS_ENGINE_GPU_DEVICE_GATES_PENDING",
+  "version": "4.6.5-rc31",
+  "base": {"checkpoint":"RIFT-RC30-BOT-TACTICAL-ACTION-PARITY","sha256":"1651ff94d42e63c2c1daa1e6d08820d706460bacba7f09c8e77f84a62b11bd41"},
+  "artifact": {"name":"THF_Rift_v4.6.5_RC31_BOT_TACTICAL_INTERRUPTION_CUMULATIVE_SOURCE.zip","sha256":"0c87563b469d61f63330504f231b99c90db7f4832c2b08f12bd801440bb21253","size_bytes":108661480,"parts":[{"name":"THF_Rift_v4.6.5_RC31_BOT_TACTICAL_INTERRUPTION_CUMULATIVE_SOURCE.zip.part.00","sha256":"567fccb9784cece80b3bfa3296fb7c50df63c549a13ce66b2b9e115e7e07de98","size_bytes":94371840},{"name":"THF_Rift_v4.6.5_RC31_BOT_TACTICAL_INTERRUPTION_CUMULATIVE_SOURCE.zip.part.01","sha256":"37dbe24e2fe2ba5c1d0a35844405aa443e54291acba4fc182c9291a89563c2e9","size_bytes":14289640}]},
+  "tests": {"targeted":"PASS 69/69","clean_extract":"PASS 69/69","python_compileall":"PASS","javascript_syntax":"PASS","gdscript_static":"PASS_STATIC_NOT_GODOT_PARSER","native_byte_identical_to_rc30":"PASS 34/34","deterministic_package":"PASS_EXACT_SHA","zip_integrity":"PASS","godot_4_7_2":"PENDING_EXECUTABLE_UNAVAILABLE","physical_android_gpu":"NOT_EXECUTED"},
+  "arena_service_sha256":"ebd5f43578719b1c8f8184df27b3d4b02067470fb194f2bc4e014bbb2ae00fcd",
+  "arena_physics_sha256":"80a5b9e316fa44b957288a2cbbcd6a903419a62446aff934bdabe868626df235",
+  "library_state_path":"/THF Nexus/Streams/RIFT_STATE.json",
+  "main_base_sha":"1ec81f0c54a1bf67b7e9ee648f7bdd777a18e47f",
+  "next":"Godot 4.7.2 parser/import/headless when executable becomes available; next verified source gap is explicit authoritative tactical action cleanup when a human/player is downed during cover/vault/revive."
+}
