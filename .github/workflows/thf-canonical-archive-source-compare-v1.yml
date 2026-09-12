@@ -47,9 +47,10 @@ jobs:
             echo ARCHIVE_BASENAME=$(basename "$ARCHIVE")
             echo ARCHIVE_SHA256=$(sha256sum "$ARCHIVE" | awk "{print \$1}")
             unzip -q "$ARCHIVE" -d "$TMP/extracted"
-            EXROOT=$(find "$TMP/extracted" -type f -path "*/src/thf/app.py" -printf "%h\n" -quit | sed "s#/src/thf$##")
-            if [ -z "$EXROOT" ] && [ -f "$TMP/extracted/src/thf/app.py" ]; then EXROOT="$TMP/extracted"; fi
-            test -n "$EXROOT"; test -d "$EXROOT/src"; test -d "$EXROOT/clients"
+            APPFILE=$(find "$TMP/extracted" -type f -path "*/src/thf/app.py" -print -quit)
+            test -n "$APPFILE"
+            EXROOT=$(dirname "$(dirname "$(dirname "$APPFILE")")")
+            test -d "$EXROOT/src"; test -d "$EXROOT/clients"
             make_manifest(){ BASE="$1"; OUT="$2"; : > "$OUT"; find "$BASE/src" "$BASE/clients" -type f -not -path "*/wave-mawja/*" -not -path "*/WAVE_MAWJA/*" -not -path "*/__pycache__/*" -not -name "*.pyc" -not -name "*.pyo" -print0 | while IFS= read -r -d "" f; do rel=${f#"$BASE/"}; printf "%s  %s\n" "$(sha256sum "$f" | awk "{print \$1}")" "$rel"; done | LC_ALL=C sort > "$OUT"; }
             make_manifest "$ROOT" "$TMP/runtime.manifest"
             make_manifest "$EXROOT" "$TMP/archive.manifest"
