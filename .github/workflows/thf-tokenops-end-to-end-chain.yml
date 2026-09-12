@@ -23,7 +23,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd ReleaseOps/TokenOps
-          python3 -m unittest -v test_end_to_end_chain_gate.py | tee end-to-end-chain-tests.log
+          python3 -m unittest -v test_end_to_end_chain_gate.py 2>&1 | tee end-to-end-chain-tests.log
       - name: Assert financial execution remains impossible
         run: |
           set -Eeuo pipefail
