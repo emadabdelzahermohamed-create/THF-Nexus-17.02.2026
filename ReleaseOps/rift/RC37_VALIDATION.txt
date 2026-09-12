@@ -1,0 +1,16 @@
+THF Rift RC37 Human Reload Timing Parity Validation
+===================================================
+Baseline: RC36 artifact SHA 6b738d80e3e97376cd4e7a9498e653b90bc7a926076c2c6e98431209cdc5147f
+Version: 4.7.1-rc37 / versionCode 42071 / compileSdk 36 / targetSdk 36
+Scope: Rift/Nexus Arena only.
+Focused reload lifecycle gate: PASS 45/45
+Clean-extract focused gate: PASS 45/45
+Python compileall source/clean extract: PASS
+JavaScript syntax source/clean extract: PASS (2 files)
+Native/Godot byte identity vs RC36: PASS 34/34 files
+ZIP integrity: PASS
+Deterministic package rebuild: PASS exact bytes
+Godot 4.7.2 fresh parser/import/headless: NOT EXECUTED for RC37; native/Godot source unchanged from RC36. Latest proven engine gate remains RC32 workflow 34651723807 PASS.
+Android test AAB export: BLOCKED exact cumulative source staging from Library to private WIF/GCP builder.
+Physical Android/GPU/device visual QA: NOT EXECUTED.
+Production-signed AAB / Play approval / production deployment: NOT CLAIMED.
