@@ -1,0 +1,79 @@
+name: THF Source Drift Inventory V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-source-drift-inventory-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  PREVIOUS_VERIFIED_SOURCE_SHA256: 7103363f195c29abe69e0d2284ab1ccc9f129235bacdc5946acbdd32043eaec7
+
+jobs:
+  drift-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only source drift inventory through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"; cd "$ROOT"
+          echo THF_SOURCE_DRIFT_INVENTORY_V2_BEGIN
+          CURRENT=$(find src clients -type f -not -path "*/wave-mawja/*" -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | awk "{print \$1}")
+          echo PREVIOUS_VERIFIED_SOURCE_SHA256='"$PREVIOUS_VERIFIED_SOURCE_SHA256"'
+          echo CURRENT_SOURCE_SHA256=$CURRENT
+          if [ "$CURRENT" = '"$PREVIOUS_VERIFIED_SOURCE_SHA256"' ]; then echo SOURCE_DRIFT=FALSE; else echo SOURCE_DRIFT=TRUE; fi
+
+          echo RELEASE_MARKERS_BEGIN
+          grep -nE "(__version__|server_version|release.*6\.0\.0|version[[:space:]]*=)" pyproject.toml src/thf/__init__.py src/thf/app.py 2>/dev/null || true
+          echo RELEASE_MARKERS_END
+
+          echo POLICY_ACCOUNT_MARKERS_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.map" "(/api/account|account-deletion|delete_account|delete account|privacy|terms|security\.txt)" src clients 2>/dev/null | head -400 || true
+          echo POLICY_ACCOUNT_MARKERS_END
+
+          echo FILE_SHA256_BEGIN
+          find src clients -type f -not -path "*/wave-mawja/*" -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum | head -1200
+          echo FILE_SHA256_END
+
+          echo NEWEST_FILES_BEGIN
+          find src clients -type f -not -path "*/wave-mawja/*" -printf "%T@ %TY-%Tm-%TdT%TH:%TM:%TS %p\n" | LC_ALL=C sort -nr | head -120
+          echo NEWEST_FILES_END
+
+          echo CANDIDATE_ARCHIVE_INVENTORY_BEGIN
+          find "$HOME/thf-runtime-s1" -maxdepth 4 -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.tgz" -o -name "*.sha256" -o -name "*manifest*" -o -name "*MANIFEST*" \) -not -path "*wave-mawja*" -not -path "*WAVE_MAWJA*" -printf "%TY-%Tm-%TdT%TH:%TM:%TS %s %p\n" | LC_ALL=C sort -r | head -300 || true
+          echo CANDIDATE_ARCHIVE_INVENTORY_END
+
+          if find . \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then echo THF_RUNTIME_WAVE_ISOLATION=FAIL; exit 9; fi
+          echo THF_RUNTIME_WAVE_ISOLATION=PASS
+          echo MUTATION_PERFORMED=FALSE
+          echo PRODUCTION_DB_MUTATION=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          echo THF_SOURCE_DRIFT_INVENTORY_V2_END'
