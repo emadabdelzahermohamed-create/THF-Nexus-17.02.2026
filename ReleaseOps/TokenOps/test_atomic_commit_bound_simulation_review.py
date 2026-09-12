@@ -41,7 +41,7 @@ class T(unittest.TestCase):
 
     def test_manifest_mismatch_fails_closed(self):
         p, manifest, receipt = self.fixture()
-        manifest['manifest_sha256'] = 'b' * 64
+        manifest['manifest_sha256'] = 'e' * 64
         with self.assertRaises(ValueError):
             mod.build(manifest, receipt, p, fx.HEAD)
 
