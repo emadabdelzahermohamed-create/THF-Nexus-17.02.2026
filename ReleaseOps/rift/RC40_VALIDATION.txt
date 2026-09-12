@@ -1,0 +1,16 @@
+THF Rift RC40 Validation
+========================
+Checkpoint: RIFT-RC40-EMPTY-INVENTORY-WEAPON-STATE-HYGIENE
+Version: 4.7.4-rc40 / versionCode 42074 / compileSdk 36 / targetSdk 36
+Baseline: RC39 artifact SHA 7cc4c241b5d8c7996fa481cf550c655d0b5c91699c6bc2f293b1e3b158b8cdac
+Focused gate: PASS 38/38
+Clean-extract focused gate: PASS 38/38
+Python compileall source/clean: PASS
+JavaScript syntax source/clean: PASS
+Native GDScript delta vs RC39: NONE (18/18 .gd byte-identical)
+Deterministic ZIP rebuild: PASS exact SHA dc96736d909913d4e8f436121de1d8e34b7ed8643d5b4f207251ff66760765c2
+ZIP integrity: PASS
+Fresh Godot 4.7.2 parser/import/headless: PENDING exact artifact staging
+Android API36 unsigned test AAB: BLOCKED exact artifact staging
+Physical Android/GPU/device QA: NOT EXECUTED
+Truth boundaries: no production-signed AAB, Play approval, GPU/device visual acceptance, or production deployment claimed.
