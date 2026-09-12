@@ -1,0 +1,75 @@
+name: THF Terra RC34 Toolchain Preflight
+on:
+  push:
+    branches: ['t/r34']
+    paths: ['.github/workflows/thf-terra-rc34-toolchain-preflight.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  FULL_NAME: THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip
+  FULL_SHA: eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect Terra-only toolchain prerequisites
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ReleaseOps/Terra/RC34_TOOLCHAIN_PREFLIGHT
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command="FULL_NAME='$FULL_NAME' FULL_SHA='$FULL_SHA' bash -s" <<'REMOTE' > ReleaseOps/Terra/RC34_TOOLCHAIN_PREFLIGHT/PREFLIGHT.txt 2>&1
+          set -u
+          ROOT="$HOME/thf-terra-rc34-gate"; INPUT="$ROOT/input"; PROBE="$ROOT/preflight-probe"
+          rm -rf "$PROBE"; mkdir -p "$PROBE"
+          echo "home=$HOME"
+          echo "$FULL_SHA  $INPUT/$FULL_NAME" | sha256sum -c - || true
+          unzip -q "$INPUT/$FULL_NAME" -d "$PROBE" || echo unzip_rc=$?
+          for f in project.godot export_presets.cfg android/app/build.gradle; do
+            if [ -e "$PROBE/$f" ]; then echo "project_file:$f=present"; else echo "project_file:$f=missing"; fi
+          done
+          if [ -f "$PROBE/export_presets.cfg" ]; then grep -n 'Android AAB Candidate' "$PROBE/export_presets.cfg" || true; fi
+          for p in "$HOME/thf-tools/godot/4.7.2-stable/godot" "$HOME/thf-builder-rc16-build/android-sdk/build-tools/36.0.0/aapt2" "$HOME/thf-builder-rc16-build/android-sdk/platforms/android-36/android.jar"; do
+            if [ -e "$p" ]; then echo "tool:$p=present"; else echo "tool:$p=missing"; fi
+          done
+          echo 'godot_candidates_begin'
+          find "$HOME" -maxdepth 6 -type f -name godot -perm -111 -path '*terra*' -o -type f -name godot -perm -111 -path '*thf-tools*' 2>/dev/null | head -50 || true
+          echo 'godot_candidates_end'
+          echo 'android_source_candidates_begin'
+          find "$HOME" -maxdepth 8 -type f -name android_source.zip \( -path '*godot*' -o -path '*terra*' \) -print 2>/dev/null | head -50 || true
+          echo 'android_source_candidates_end'
+          echo 'template_dirs_begin'
+          find "$HOME" -maxdepth 8 -type d \( -name '4.7.2.stable' -o -name '4.7.2-stable' \) -path '*godot*' -print 2>/dev/null | head -50 || true
+          echo 'template_dirs_end'
+          echo 'sdk36_dirs_begin'
+          find "$HOME" -maxdepth 7 -type f -path '*/platforms/android-36/android.jar' -print 2>/dev/null | head -20 || true
+          echo 'sdk36_dirs_end'
+          echo 'wave_untouched=true'
+          REMOTE
+          sha256sum ReleaseOps/Terra/RC34_TOOLCHAIN_PREFLIGHT/PREFLIGHT.txt > ReleaseOps/Terra/RC34_TOOLCHAIN_PREFLIGHT/PREFLIGHT.sha256
+      - name: Commit preflight evidence
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add ReleaseOps/Terra/RC34_TOOLCHAIN_PREFLIGHT
+          git diff --cached --quiet && exit 0
+          git commit -m 'releaseops(terra): record RC34 toolchain preflight'
+          git push origin HEAD:t/r34
