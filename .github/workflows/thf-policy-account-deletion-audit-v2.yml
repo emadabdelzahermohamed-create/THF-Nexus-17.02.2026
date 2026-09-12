@@ -1,0 +1,85 @@
+name: THF Policy Account Deletion Audit V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-policy-account-deletion-audit-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Audit source and live compliance routes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"; cd "$ROOT"
+          echo THF_POLICY_ACCOUNT_DELETION_AUDIT_V2_BEGIN
+          find src clients -type f -not -path "*/wave-mawja/*" -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | sed "s/^/SOURCE_SET_SHA256=/"
+          echo POLICY_FILES_BEGIN
+          find . -type f \( -iname "*privacy*" -o -iname "*terms*" -o -iname "*deletion*" -o -iname "security.txt" \) -not -path "*/.git/*" -not -path "*/wave-mawja/*" -print | LC_ALL=C sort || true
+          echo POLICY_FILES_END
+          echo POLICY_SOURCE_REFERENCES_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.map" "(/privacy|/terms|account.?delet|delete.?account|security\\.txt|privacy policy|terms of (use|service))" src clients 2>/dev/null | head -500 || true
+          echo POLICY_SOURCE_REFERENCES_END
+          echo DELETE_IMPLEMENTATION_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.map" --exclude="*.db" --exclude="*.sqlite*" "(DELETE[[:space:]]+FROM|cascade|ON DELETE|@.*delete|methods=.*DELETE|/api/.*delete|account.*delete|delete.*account|user.*delete|delete.*user)" src clients 2>/dev/null | head -700 || true
+          echo DELETE_IMPLEMENTATION_END
+          BASE=""
+          for port in 18080 8000 8001 8080 3000 5000 80; do
+            code=$(curl -sS -o /tmp/probe -w "%{http_code}" --max-time 3 "http://127.0.0.1:$port/health" 2>/dev/null || true)
+            if [ "$code" = "200" ]; then BASE="http://127.0.0.1:$port"; break; fi
+          done
+          echo LIVE_BASE=${BASE:-NONE}
+          if [ -n "$BASE" ]; then
+            curl -sS --max-time 8 "$BASE/" -o /tmp/root
+            rootsha=$(sha256sum /tmp/root | awk "{print \$1}")
+            echo ROOT_SHA256=$rootsha
+            for p in /health /privacy /terms /account-deletion /.well-known/security.txt; do
+              safe=$(printf "%s" "$p" | tr "/." "__")
+              out="/tmp/body_$safe"; hdr="/tmp/hdr_$safe"
+              code=$(curl -sS -D "$hdr" -o "$out" -w "%{http_code}" --max-time 8 "$BASE$p" 2>/dev/null || true)
+              ctype=$(tr -d "\r" <"$hdr" | awk -F": " "tolower(\$1)==\"content-type\"{print \$2; exit}" || true)
+              sha=$(sha256sum "$out" 2>/dev/null | awk "{print \$1}" || true)
+              bytes=$(wc -c <"$out" 2>/dev/null || echo 0)
+              distinct=YES; [ "$sha" = "$rootsha" ] && distinct=NO_SPA_FALLBACK
+              echo "ROUTE=$p HTTP=${code:-000} TYPE=${ctype:-NONE} BYTES=$bytes SHA256=${sha:-NONE} DISTINCT_FROM_ROOT=$distinct"
+            done
+          else
+            echo LIVE_ROUTE_CHECK=UNAVAILABLE
+          fi
+          if find . \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then echo THF_RUNTIME_WAVE_ISOLATION=FAIL; exit 9; fi
+          echo THF_RUNTIME_WAVE_ISOLATION=PASS
+          echo MUTATION_PERFORMED=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          echo THF_POLICY_ACCOUNT_DELETION_AUDIT_V2_END'
