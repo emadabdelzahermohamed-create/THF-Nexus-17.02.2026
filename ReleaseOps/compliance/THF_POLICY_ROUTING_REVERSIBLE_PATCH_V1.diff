@@ -1,0 +1,23 @@
+--- a/src/thf/app.py
++++ b/src/thf/app.py
+@@
+     def _static(self,path):
+-        web=(self.runtime.root/'clients'/'web').resolve();target=web/'index.html' if path in {'','/'} else (web/path.lstrip('/')).resolve()
++        web=(self.runtime.root/'clients'/'web').resolve()
++        # Policy endpoints must never silently resolve to the SPA shell.  They
++        # are reserved and fail closed until an independently versioned file is
++        # present.  This prevents HTTP 200 from being mistaken for legal-policy
++        # readiness while operator/legal contact values are still unapproved.
++        reserved={
++            '/privacy','/privacy.html','/terms','/terms.html',
++            '/account-deletion','/account-deletion.html',
++            '/.well-known/security.txt',
++        }
++        target=web/'index.html' if path in {'','/'} else (web/path.lstrip('/')).resolve()
+         if web not in target.parents and target!=web:return self._error(404,'not found')
+         if target.is_dir():target=target/'index.html'
+-        if not target.is_file():target=web/'index.html'
++        if not target.is_file():
++            if path in reserved:return self._error(404,'policy resource not published')
++            target=web/'index.html'
+         data=target.read_bytes();ctype=mimetypes.guess_type(target.name)[0] or 'application/octet-stream';self._headers(200,ctype,len(data));self.wfile.write(data)
