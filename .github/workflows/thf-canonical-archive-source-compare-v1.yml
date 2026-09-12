@@ -1,0 +1,105 @@
+name: THF Canonical Archive Source Compare V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-canonical-archive-source-compare-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Compare runtime to canonical source archive through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          ARCHIVE="$HOME/thf-runtime-s1/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip"
+          test -d "$ROOT"; test -f "$ARCHIVE"
+          TMP=$(mktemp -d /tmp/thf-canonical-compare-v1.XXXXXX); trap "rm -rf \"$TMP\"" EXIT
+          echo THF_CANONICAL_ARCHIVE_SOURCE_COMPARE_V1_BEGIN
+          echo ARCHIVE_PATH_BASENAME=$(basename "$ARCHIVE")
+          sha256sum "$ARCHIVE" | sed "s#  .*#  ARCHIVE#"
+          echo CHECKSUM_EVIDENCE_BEGIN
+          for f in "$HOME/thf-runtime-s1/evidence/outer.sha256" "$HOME/thf-runtime-s1/evidence/inner.sha256"; do
+            if [ -f "$f" ]; then echo FILE=$(basename "$f"); sed -E "s#(/[^ ]*/)+#PATH/#g" "$f"; fi
+          done
+          echo CHECKSUM_EVIDENCE_END
+          unzip -q "$ARCHIVE" -d "$TMP/extracted"
+          EXROOT=$(find "$TMP/extracted" -type d -name THF_NEXUS_6_FINAL -print -quit)
+          if [ -z "$EXROOT" ]; then
+            if [ -d "$TMP/extracted/src" ] && [ -d "$TMP/extracted/clients" ]; then EXROOT="$TMP/extracted"; else
+              EXROOT=$(find "$TMP/extracted" -type f -path "*/src/thf/app.py" -printf "%h\n" -quit | sed "s#/src/thf$##")
+            fi
+          fi
+          test -n "$EXROOT"; test -d "$EXROOT/src"; test -d "$EXROOT/clients"
+          hash_tree(){ BASE="$1"; find "$BASE/src" "$BASE/clients" -type f -not -path "*/wave-mawja/*" -not -path "*/WAVE_MAWJA/*" -not -path "*/__pycache__/*" -not -name "*.pyc" -not -name "*.pyo" -print0 | LC_ALL=C sort -z | while IFS= read -r -d "" f; do rel=${f#"$BASE/"}; printf "%s  %s\n" "$(sha256sum "$f" | awk "{print \$1}")" "$rel"; done | sha256sum | awk "{print \$1}"; }
+          RUNTIME_SHA=$(hash_tree "$ROOT")
+          ARCHIVE_SHA=$(hash_tree "$EXROOT")
+          echo RUNTIME_DETERMINISTIC_SOURCE_SHA256=$RUNTIME_SHA
+          echo ARCHIVE_DETERMINISTIC_SOURCE_SHA256=$ARCHIVE_SHA
+          if [ "$RUNTIME_SHA" = "$ARCHIVE_SHA" ]; then echo RUNTIME_MATCHES_ARCHIVE=TRUE; else echo RUNTIME_MATCHES_ARCHIVE=FALSE; fi
+          echo ARCHIVE_RELEASE_MARKERS_BEGIN
+          grep -nE "(__version__|server_version|release.*6\.0\.0|version[[:space:]]*=)" "$EXROOT/pyproject.toml" "$EXROOT/src/thf/__init__.py" "$EXROOT/src/thf/app.py" 2>/dev/null || true
+          echo ARCHIVE_RELEASE_MARKERS_END
+          if [ "$RUNTIME_SHA" != "$ARCHIVE_SHA" ]; then
+            echo SOURCE_DIFF_BEGIN
+            python3 - "$ROOT" "$EXROOT" <<"PY"
+import hashlib, os, pathlib, sys
+roots=[pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2])]
+def files(root):
+    out={}
+    for top in (root/'src',root/'clients'):
+        for p in top.rglob('*'):
+            if not p.is_file(): continue
+            rel=p.relative_to(root).as_posix()
+            if 'wave-mawja' in rel.lower() or '/__pycache__/' in ('/'+rel) or p.suffix in {'.pyc','.pyo'}: continue
+            out[rel]=hashlib.sha256(p.read_bytes()).hexdigest()
+    return out
+r,a=map(files,roots)
+for rel in sorted(set(r)|set(a)):
+    if r.get(rel)!=a.get(rel):
+        status='runtime-only' if rel not in a else 'archive-only' if rel not in r else 'changed'
+        print(f'DIFF {status} {rel} runtime_sha={r.get(rel,"-")} archive_sha={a.get(rel,"-")}')
+PY
+            echo SOURCE_DIFF_END
+          fi
+          echo RUNTIME_NEWEST_SOURCE_FILES_BEGIN
+          find "$ROOT/src" "$ROOT/clients" -type f -not -path "*/wave-mawja/*" -not -path "*/WAVE_MAWJA/*" -not -path "*/__pycache__/*" -not -name "*.pyc" -not -name "*.pyo" -printf "%TY-%Tm-%TdT%TH:%TM:%TS %p\n" | LC_ALL=C sort -r | head -80 | sed "s#$ROOT/##"
+          echo RUNTIME_NEWEST_SOURCE_FILES_END
+          if find "$ROOT" \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then echo THF_RUNTIME_WAVE_ISOLATION=FAIL; exit 9; fi
+          echo THF_RUNTIME_WAVE_ISOLATION=PASS
+          echo CANONICAL_ARCHIVE_MUTATION=FALSE
+          echo RUNTIME_MUTATION=FALSE
+          echo PRODUCTION_DB_MUTATION=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          echo THF_CANONICAL_ARCHIVE_SOURCE_COMPARE_V1_END'
