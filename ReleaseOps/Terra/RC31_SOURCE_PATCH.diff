@@ -1,0 +1,36 @@
+--- RC30/native/world/WorldMain.gd
++++ RC31/native/world/WorldMain.gd
+@@ -146,7 +146,7 @@
+-var environment_controller := THFTerraEnvironmentController.new()
++var environment_controller: THFTerraEnvironmentController = THFTerraEnvironmentController.new()
+@@ -253,7 +253,7 @@
+-    var state := environment_controller.update(
++    var state: Dictionary = environment_controller.update(
+@@ -281,7 +281,7 @@
+-    var budget := environment_controller.precipitation_budget(
++    var budget: int = environment_controller.precipitation_budget(
+@@ -322,7 +322,7 @@
+-        var policy := environment_controller.remote_lod_policy(distance_m, data_saver_enabled, environment_quality)
++        var policy: Dictionary = environment_controller.remote_lod_policy(distance_m, data_saver_enabled, environment_quality)
+@@ -527,7 +527,7 @@
+-    var payload := await api.request_json(endpoint)
++    var payload: Dictionary = await api.request_json(endpoint)
+@@ -919,7 +919,7 @@
+-    var result := await api.request_json(path, method, body)
++    var result: Dictionary = await api.request_json(path, method, body)
+@@ -927,52 +927,52 @@
+-    var result := await _activity_mutation(...)
++    var result: Dictionary = await _activity_mutation(...)
+@@
+- All remaining `_activity_mutation` await results used inferred Variant typing.
++ All remaining `_activity_mutation` await results now declare `Dictionary` explicitly.
+@@
+- All remaining `api.request_json` await results used inferred typing.
++ All remaining `api.request_json` await results now declare `Dictionary` explicitly.
+--- RC30/android/app/build.gradle
++++ RC31/android/app/build.gradle
+@@ -15,8 +15,8 @@
+-        versionCode 42064
+-        versionName '4.6.4-rc30'
++        versionCode 42065
++        versionName '4.6.5-rc31'
