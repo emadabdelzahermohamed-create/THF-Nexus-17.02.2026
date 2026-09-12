@@ -1,0 +1,63 @@
+name: THF GCP Production Inventory
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-gcp-production-inventory.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only production inventory
+        shell: bash
+        run: |
+          set -u
+          echo '=== PROJECT ==='
+          gcloud config get-value project
+          echo '=== COMPUTE INSTANCES ==='
+          gcloud compute instances list --project "$GCP_PROJECT_ID" --format='table(name,zone.basename(),status,machineType.basename(),networkInterfaces[0].networkIP,networkInterfaces[0].accessConfigs[0].natIP,serviceAccounts[0].email)' || true
+          echo '=== STATIC/RESERVED ADDRESSES ==='
+          gcloud compute addresses list --project "$GCP_PROJECT_ID" --format='table(name,region.basename(),address,status,purpose)' || true
+          echo '=== DISKS ==='
+          gcloud compute disks list --project "$GCP_PROJECT_ID" --format='table(name,zone.basename(),sizeGb,type.basename(),status,users.list())' || true
+          echo '=== FIREWALL RULES ==='
+          gcloud compute firewall-rules list --project "$GCP_PROJECT_ID" --format='table(name,direction,priority,disabled,sourceRanges.list(),allowed[].map().firewall_rule().list())' || true
+          echo '=== FORWARDING RULES ==='
+          gcloud compute forwarding-rules list --project "$GCP_PROJECT_ID" --format='table(name,region.basename(),IPAddress,IPProtocol,portRange,target.basename())' || true
+          echo '=== CLOUD RUN SERVICES ==='
+          gcloud run services list --project "$GCP_PROJECT_ID" --platform=managed --format='table(metadata.name,location,status.url)' || true
+          echo '=== RUNTIME S1 ON BUILDER ==='
+          gcloud compute ssh thf-wave-builder --project "$GCP_PROJECT_ID" --zone europe-west1-b --tunnel-through-iap --ssh-key-expire-after=8m --quiet --command='set -u; ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"; echo ROOT=$ROOT; test -d "$ROOT" && echo RUNTIME_ROOT=FOUND || echo RUNTIME_ROOT=MISSING; python3 - <<"PY"
+import json,urllib.request
+try:
+ d=json.load(urllib.request.urlopen("http://127.0.0.1:18080/health",timeout=3))
+ print("LOCAL_HEALTH="+("PASS" if d.get("ok") else "FAIL"))
+ print("LOCAL_RELEASE="+str(d.get("release")))
+except Exception as e:
+ print("LOCAL_HEALTH=FAIL")
+ print(type(e).__name__)
+PY
+' || true
+          echo THF_GCP_INVENTORY=COMPLETE
