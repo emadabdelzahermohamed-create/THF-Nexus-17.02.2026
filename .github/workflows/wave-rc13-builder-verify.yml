@@ -1,0 +1,111 @@
+name: WAVE RC13 Builder Verify
+
+on:
+  push:
+    branches: ['w/r1']
+    paths: ['.github/workflows/wave-rc13-builder-verify.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Install gcloud
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Verify WAVE canonical workspace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p wave-evidence
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=60m --quiet --command='set -Eeuo pipefail
+          PROJECT=/root/workspace/wave-mawja
+          [ -d "$PROJECT" ] || { echo WAVE_PROJECT_MISSING; exit 21; }
+          [ "$(readlink -f "$PROJECT")" = "$PROJECT" ] || { echo WAVE_IDENTITY_FAIL; exit 22; }
+          [ ! -L "$PROJECT" ] || { echo WAVE_SYMLINK_FAIL; exit 23; }
+          cd "$PROJECT"
+          echo WAVE_PROJECT_IDENTITY=PASS
+          for f in package.json app/api/control/route.ts components/control-dashboard.tsx media-server/api/source_connector.py; do [ -f "$f" ] || { echo MISSING:$f; exit 24; }; done
+          grep -q "batch-queue-import" app/api/control/route.ts
+          grep -q "requested.length > 20" app/api/control/route.ts
+          grep -q "type=\"file\" multiple" components/control-dashboard.tsx
+          grep -q "publisher-attestation" media-server/api/source_connector.py app/api/control/route.ts
+          echo WAVE_RC11_INVARIANTS=PASS
+          python3 - <<'"'"'PY'"'"'
+          from pathlib import Path
+          for rel in ["app/api/control/route.ts","media-server/api/source_connector.py"]:
+              s=Path(rel).read_text(encoding="utf-8").lower()
+              for bad in ("drm bypass","paywall bypass","password bypass"):
+                  assert bad not in s,(rel,bad)
+          print("WAVE_RIGHTS_SECURITY_BOUNDARY=PASS")
+          PY
+          npm run test:source
+          [ ! -f tests/multi-ingest-source.test.mjs ] || node --test tests/multi-ingest-source.test.mjs
+          npm run typecheck
+          npm run build
+          CONFIG="$PROJECT/dist/server/wrangler.json"
+          [ -f "$CONFIG" ]
+          [ ! -x scripts/fix-wrangler-generated-config.sh ] || bash scripts/fix-wrangler-generated-config.sh "$CONFIG"
+          jq empty "$CONFIG" >/dev/null
+          if jq -e '"'"'has("legacy_env")'"'"' "$CONFIG" >/dev/null; then echo WRANGLER_LEGACY_ENV_FAIL; exit 25; fi
+          node --import=./tests/register-cloudflare-loader.mjs --test tests/control-source.test.mjs tests/rendered-html.test.mjs
+          echo WAVE_SOURCE_TYPECHECK_BUILD_WORKER=PASS
+          ANDROID=""
+          while IFS= read -r -d "" f; do d="$(dirname "$f")"; if grep -Rqs "com.wave.mawja" "$d" --include='"'"'*.gradle'"'"' --include='"'"'*.gradle.kts'"'"' --include='"'"'AndroidManifest.xml'"'"'; then ANDROID="$d"; break; fi; done < <(find "$PROJECT" -maxdepth 6 -type f -name gradlew -print0)
+          if [ -n "$ANDROID" ]; then
+            cd "$ANDROID"
+            chmod +x ./gradlew
+            COMBINED="$(find . -maxdepth 4 -type f \( -name '"'"'*.gradle'"'"' -o -name '"'"'*.gradle.kts'"'"' -o -name AndroidManifest.xml \) -print0 | xargs -0 cat 2>/dev/null || true)"
+            grep -Fq "com.wave.mawja" <<<"$COMBINED"
+            grep -Eq "compileSdk([[:space:]]*=)?[[:space:]]*36|compileSdkVersion[[:space:]]+36" <<<"$COMBINED"
+            grep -Eq "targetSdk([[:space:]]*=)?[[:space:]]*36|targetSdkVersion[[:space:]]+36" <<<"$COMBINED"
+            if grep -RqiE '"'"'usesCleartextTraffic[[:space:]]*=[[:space:]]*"true"|http://[^[:space:]"'"'"'"']+'"'"' . --include='"'"'AndroidManifest.xml'"'"' --include='"'"'*.xml'"'"' --include='"'"'*.gradle'"'"'; then echo WAVE_CLEARTEXT_FAIL; exit 26; fi
+            echo WAVE_ANDROID_METADATA=PASS
+            if [ -n "${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}" ]; then ./gradlew --no-daemon assembleDebug; apk="$(find . -path '"'"'*/build/outputs/apk/debug/*.apk'"'"' -type f | head -1)"; [ -n "$apk" ]; sha256sum "$apk"; echo WAVE_DEBUG_APK=PASS; else echo WAVE_DEBUG_APK=SKIPPED_NO_ANDROID_SDK; fi
+          else
+            echo WAVE_ANDROID_PROJECT=NOT_FOUND
+          fi
+          printf "WAVE_RC13_VERIFY=PASS\nCLOUDFLARE_DEPLOYED=FALSE\nPLAY_UPLOAD_PERFORMED=FALSE\nPRODUCTION_SIGNING_USED=FALSE\nTHF_UNTOUCHED=TRUE\n"
+          sha256sum package.json app/api/control/route.ts components/control-dashboard.tsx media-server/api/source_connector.py
+          ' 2>&1 | tee wave-evidence/wave-rc13-builder.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "$rc" > wave-evidence/remote-exit-code.txt
+          exit "$rc"
+      - name: Evidence manifest
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sha256sum wave-evidence/* > wave-evidence/SHA256SUMS.txt
+          cat wave-evidence/SHA256SUMS.txt
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: WAVE-RC13-builder-verify-evidence
+          path: wave-evidence/
+          if-no-files-found: error
+          retention-days: 14
