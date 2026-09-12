@@ -1,0 +1,50 @@
+name: THF Terra Builder Input Inventory
+on:
+  push:
+    branches: ['t/r34']
+    paths: ['.github/workflows/thf-terra-input-inventory.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only Terra input inventory
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p evidence
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' <<'REMOTE' | tee evidence/TERRA_BUILDER_INPUT_INVENTORY.txt
+          set -Eeuo pipefail
+          echo 'scope=HOME_TERRA_ONLY'
+          find "$HOME" -maxdepth 5 -type f \( -name 'THF_Terra_v4.6.7_RC33_*' -o -name 'THF_Terra_v4.6.8_RC34_*' \) -print0 2>/dev/null | while IFS= read -r -d '' f; do
+            case "$f" in
+              "$HOME"/thf-terra*|"$HOME"/*terra*) sha256sum "$f" ;;
+            esac
+          done
+          echo 'inventory_complete=true'
+          echo 'wave_untouched=true'
+          REMOTE
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-Terra-builder-input-inventory
+          path: evidence/
+          retention-days: 7
