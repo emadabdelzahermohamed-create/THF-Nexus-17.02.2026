@@ -5,7 +5,7 @@ on:
     paths: ['.github/workflows/thf-terra-rc34-export-fix-gate-v2.yml']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
   id-token: write
 env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
@@ -75,8 +75,33 @@ jobs:
           gcloud compute scp "$GCP_BUILDER:~/thf-terra-rc34-gate/v2-evidence.tgz" evidence/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
           cp "$RUNNER_TEMP/gate.log" evidence/ || true
           printf 'canonical_sha256=%s\nremote_rc=%s\n' "$FULL_SHA" "${REMOTE_RC:-missing}" > evidence/RUNNER_SUMMARY.txt
+      - name: Persist Terra diagnostic evidence
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          mkdir -p ReleaseOps/Terra/RC34_LATEST_GATE /tmp/terra-evidence
+          if [ -f evidence/v2-evidence.tgz ]; then
+            tar -xzf evidence/v2-evidence.tgz -C /tmp/terra-evidence || true
+          fi
+          cp evidence/RUNNER_SUMMARY.txt ReleaseOps/Terra/RC34_LATEST_GATE/RUNNER_SUMMARY.txt || true
+          cp evidence/gate.log ReleaseOps/Terra/RC34_LATEST_GATE/GATE_LOG.txt || true
+          if [ -d /tmp/terra-evidence/out-v2 ]; then
+            cp /tmp/terra-evidence/out-v2/TRUTH.txt ReleaseOps/Terra/RC34_LATEST_GATE/TRUTH.txt || true
+            cp /tmp/terra-evidence/out-v2/SHA256SUMS.txt ReleaseOps/Terra/RC34_LATEST_GATE/REMOTE_SHA256SUMS.txt || true
+            for f in editor-import.log headless-boot.log android-template-install.log android-export.log; do
+              if [ -f "/tmp/terra-evidence/out-v2/$f" ]; then tail -n 250 "/tmp/terra-evidence/out-v2/$f" > "ReleaseOps/Terra/RC34_LATEST_GATE/${f%.log}-tail.log"; fi
+            done
+          fi
+          (cd ReleaseOps/Terra/RC34_LATEST_GATE && find . -type f -print0 | sort -z | xargs -0 sha256sum > EVIDENCE_SHA256SUMS.txt)
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add ReleaseOps/Terra/RC34_LATEST_GATE
+          git diff --cached --quiet && exit 0
+          git commit -m 'releaseops(terra): persist RC34 Godot export diagnostics'
+          git push origin HEAD:t/r34
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@ea165f8d65b540449e92b4886f43607fa02
         with:
           name: THF-Terra-RC34-export-fix-v2-evidence
           path: evidence/
