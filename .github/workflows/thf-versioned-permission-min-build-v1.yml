@@ -1,0 +1,129 @@
+name: THF Versioned Permission-Min Build V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-versioned-permission-min-build-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CANDIDATE_PATH: /home/sa_115575029018678177962/thf-release-candidates/permission-min-v1-34708908483
+  EXPECTED_CANDIDATE_SHA: 36b049848fb2002bc11358290fb6d95451d9c407055bb140cba2eb595888f3b7
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Build API-36 candidate without production signing
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command="CANDIDATE_PATH='$CANDIDATE_PATH' EXPECTED_CANDIDATE_SHA='$EXPECTED_CANDIDATE_SHA' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$CANDIDATE_PATH"
+          SRC="$ROOT/source"
+          OUT="$ROOT/build-v1"
+          test -d "$SRC"
+          current=$(cd "$SRC" && find . -type f -not -path '*/build/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          echo "CANDIDATE_SHA256_BEFORE=$current"
+          test "$current" = "$EXPECTED_CANDIDATE_SHA"
+          manifest="$SRC/app/src/main/AndroidManifest.xml"
+          test -f "$manifest"
+          if grep -qE 'android.permission.(CAMERA|RECORD_AUDIO|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION)' "$manifest"; then
+            echo "SOURCE_PERMISSION_MINIMIZATION=FAIL"
+            exit 31
+          fi
+          python3 - <<PY
+          import xml.etree.ElementTree as ET
+          ET.parse('$manifest')
+          print('MANIFEST_XML_PARSE=PASS')
+          PY
+          rm -rf "$OUT"
+          mkdir -p "$OUT/evidence" "$OUT/out" "$OUT/gradle-home"
+          WORK="$OUT/work"
+          mkdir -p "$WORK"
+          cp -a "$SRC/." "$WORK/"
+          cd "$WORK"
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"
+          CACHE="$HOME/thf-builder-rc16-build/cache"
+          GDIST="$CACHE/gradle-8.13-bin.zip"
+          GROOT="$CACHE/gradle-dist-8.13"
+          GSHA="20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78"
+          echo "$GSHA  $GDIST" | sha256sum -c -
+          GBIN="$GROOT/gradle-8.13/bin/gradle"
+          test -x "$GBIN"
+          test -f "$SDK/platforms/android-36/android.jar"
+          export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$OUT/gradle-home"
+          export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$SDK/cmdline-tools/latest/bin:$PATH"
+          unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+          export DEBUG_BASE_URL=http://10.0.2.2:8000
+          "$GBIN" --no-daemon clean assembleDebug 2>&1 | tee "$OUT/evidence/debug-build.log"
+          apk=$(find app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)
+          test -s "$apk"
+          cp "$apk" "$OUT/out/thf-versioned-permission-min-v1-debug.apk"
+          apk_sha=$(sha256sum "$OUT/out/thf-versioned-permission-min-v1-debug.apk" | awk '{print $1}')
+          echo "DEBUG_APK_SHA256=$apk_sha"
+          merged=$(find app/build/intermediates -type f -name AndroidManifest.xml -path '*debug*' | head -1 || true)
+          test -n "$merged"
+          if grep -qE 'android.permission.(CAMERA|RECORD_AUDIO|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION)' "$merged"; then
+            echo "MERGED_DEBUG_PERMISSION_MINIMIZATION=FAIL"
+            exit 32
+          fi
+          echo "MERGED_DEBUG_PERMISSION_MINIMIZATION=PASS"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/build.gradle')
+          s=p.read_text()
+          marker="def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }"
+          if marker in s and "def testUnsigned" not in s:
+              s=s.replace(marker, marker+"\ndef testUnsigned = System.getenv('THF_TEST_UNSIGNED') == '1'")
+          old="if (releaseRequested && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')"
+          if old in s:
+              s=s.replace(old,"if (releaseRequested && !testUnsigned && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')")
+          p.write_text(s)
+          PY
+          export APP_BASE_URL=https://test.invalid THF_TEST_UNSIGNED=1
+          "$GBIN" --no-daemon clean bundleRelease 2>&1 | tee "$OUT/evidence/test-aab-build.log"
+          aab=$(find app/build/outputs/bundle/release -type f -name '*.aab' -print -quit)
+          test -s "$aab"
+          cp "$aab" "$OUT/out/thf-versioned-permission-min-v1-TEST-UNSIGNED.aab"
+          aab_sha=$(sha256sum "$OUT/out/thf-versioned-permission-min-v1-TEST-UNSIGNED.aab" | awk '{print $1}')
+          echo "TEST_UNSIGNED_AAB_SHA256=$aab_sha"
+          if jarsigner -verify "$OUT/out/thf-versioned-permission-min-v1-TEST-UNSIGNED.aab" >/dev/null 2>&1; then
+            echo "AAB_SIGNING_STATE=UNEXPECTED-SIGNED"
+            exit 33
+          else
+            echo "AAB_SIGNING_STATE=UNSIGNED-AS-EXPECTED"
+          fi
+          after=$(cd "$SRC" && find . -type f -not -path '*/build/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          echo "CANDIDATE_SHA256_AFTER=$after"
+          test "$after" = "$current"
+          echo "VERSIONED_CANDIDATE_BUILD=PASS"
+          echo "PRODUCTION_SIGNING=NOT_PERFORMED"
+          echo "PLAY_UPLOAD=NOT_PERFORMED"
+          echo "THF_WAVE_ISOLATION=PASS"
+          REMOTE
