@@ -1,0 +1,25 @@
+THF Rift RC39 Validation
+========================
+Checkpoint: RIFT-RC39-DROPPED-WEAPON-STATE-PERSISTENCE
+Version: 4.7.3-rc39 / versionCode 42073 / compileSdk 36 / targetSdk 36
+Baseline: RC38 artifact SHA 46ee385c21fb2e437f48a051ab59d90010eb6b0b0b9727f269b37cfa20711c81
+
+New scope:
+- dropped weapon loot preserves chambered and server-owned attachment state
+- pickup restores bounded weapon state without stale-slot clobber
+- invalid attachment ids fail closed to none
+- empty magazine cannot restore chambered=true
+- hit/damage/ranked authority unchanged
+
+Focused gate: PASS 33/33
+Clean-extract focused gate: PASS 33/33
+Python compileall source/clean: PASS
+JavaScript syntax source/clean: PASS
+Fresh Godot 4.7.2 parser/import/headless: PENDING exact artifact staging
+Android API36 unsigned test AAB: BLOCKED exact artifact staging
+Physical Android/GPU/device QA: NOT EXECUTED
+
+Truth boundaries: no production-signed AAB, Play approval, GPU/device visual acceptance, or production deployment claimed.
+
+Deterministic ZIP: PASS exact SHA 7cc4c241b5d8c7996fa481cf550c655d0b5c91699c6bc2f293b1e3b158b8cdac
+ZIP integrity: PASS
