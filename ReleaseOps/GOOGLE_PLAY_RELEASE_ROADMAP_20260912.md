@@ -11,6 +11,7 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 | Recover existing `thf-runtime-s1` | PASS | Existing runtime located on GCP VM |
 | Start THF Nexus runtime | PASS | Local `/health` returns `ok:true`, release `6.0.0` |
 | Temporary Cloudflare HTTPS smoke | PASS | External `/health` passes through Quick Tunnel; run `34687446254` |
+| GCP production inventory | IN-PROGRESS | Read-only WIF inventory workflow repaired at commit `9c885932751a5aa718b23bcb245c83be16a1dacb`; no cloud mutation permitted |
 | Create Named Cloudflare Tunnel | BLOCKED-AUTHORIZATION | Stable named tunnel requires explicit Cloudflare production-cutover authorization before execution |
 | Bind fixed production hostname | BLOCKED-AUTHORIZATION | Stable HTTPS API hostname with TLS; no production DNS/cutover performed without exact authorization |
 | Set production API base URL in Core/Terra/Rift | WAITING-RUNTIME-HOSTNAME | No temporary Quick Tunnel URL embedded |
@@ -26,7 +27,9 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 | Rift package identity | PASS | `com.topherofit.thf.rift`, versionCode 42064 |
 | Core unsigned release AAB candidate | PASS | Run `34678895451`; AAB SHA-256 `e71625911d2c06eb0d084f6ed094fcd142f093fcfbb2bf2b13b59a4221760e6e`; source SHA-256 `6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a` |
 | Terra unsigned/test AAB candidate | PASS | Run `34676649980`; AAB SHA-256 `3af39232213171de0a5069dea2dfe3dab585d75f7246bf0bd75d61bb8a7dbee3`; source SHA-256 `eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68` |
+| Terra QA binary retrieval | PASS | Run `34701965401`; artifact `THF-Terra-RC34-QA-binaries`, artifact ID `10300501979`, artifact digest SHA-256 `a7c332b5cd48fcf556929ccf8e38e20560985b807367b51656ec4c178d9a6b1b`; no signing/publishing performed |
 | Rift unsigned/test AAB candidate | PASS | Run `34676685100`; AAB SHA-256 `1eb449b061135984bbdef5cecf012496b8d667963f37d813518f4fcd389652c7`; source SHA-256 `3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914` |
+| Permission-minimized Android candidate | PASS-CANDIDATE | Run `34700180841`; isolated copy removed CAMERA, RECORD_AUDIO, ACCESS_FINE_LOCATION and ACCESS_COARSE_LOCATION; debug APK SHA-256 `44b5c2f2d3b398768bf937487ae86d87d06702d715b94e900dea27ea82cc1484`; test unsigned AAB SHA-256 `429b6e982c6c1290033b0b69a2f7433d69eee208b03d6a20c59c376a2a818e30`; canonical source SHA-256 remained `46eca5adaef95d551e90723f87698100dbe242f51cd28186480b3215a2a54942` before/after |
 | Final production-configured AAB rebuild | WAITING-RUNTIME-HOSTNAME | Rebuild only after stable production API base URL is frozen; retain SHA-256 evidence |
 | Production upload-key signing | BLOCKED-AUTHORIZATION | Release AABs signed for Play upload; debug keys forbidden; no production signing performed |
 | Play App Signing enrollment | USER/PLAY-CONSOLE | Each Play app enrolled and upload certificate recorded |
@@ -40,10 +43,10 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 | Create/verify Play Console entries for all 3 apps | TODO-VERIFY | Correct package IDs; ownership confirmed |
 | Store listing assets | TODO | Name, short/full description, icon, feature graphic, screenshots |
 | Privacy Policy | TODO-VERIFY | Public HTTPS policy URL + in-app access |
-| Data Safety | TODO | Accurate declarations for collected/shared data |
+| Data Safety | IN-PROGRESS | Runtime/native/provider facts audited; final declaration waits on final permission/provider configuration |
 | App content / content rating | TODO | Required questionnaires complete |
 | Ads declaration / consent flow | TODO-VERIFY | Correct declaration and consent where applicable |
-| Permissions review | TODO | Only required permissions; sensitive permissions justified |
+| Permissions review | PASS-CANDIDATE | Four latent sensitive permissions can be removed without breaking API-36 debug/test-AAB builds; candidate run `34700180841`; apply only to a versioned release source, never overwrite canonical archive |
 | Play Integrity production configuration | TODO-VERIFY | Production project/app linkage and verification path PASS where enabled |
 | Countries / pricing / distribution | TODO | Launch countries and free/paid configuration set |
 
@@ -76,13 +79,15 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 
 ## Release order
 
-1. Obtain exact authorization for Cloudflare production cutover, then freeze a stable production API hostname.
-2. Rebuild and inspect Core/Terra/Rift final AABs against that hostname.
-3. Perform production upload-key signing only after exact signing authorization and verify Play App Signing.
-4. Complete Play Console store/compliance forms.
-5. Upload to Internal testing only after exact Play publishing authorization and install from Play on real devices.
-6. Complete Closed testing / production-access gate only if the developer account is subject to it.
-7. Submit staged Production rollout only after explicit final release authorization.
+1. Finish read-only GCP production inventory and keep the result as ReleaseOps evidence.
+2. Obtain exact authorization for Cloudflare production cutover, then freeze a stable production API hostname.
+3. Create a versioned release-source candidate that adopts the verified permission minimization; preserve the canonical archive unchanged.
+4. Rebuild and inspect Core/Terra/Rift final AABs against the frozen hostname.
+5. Perform production upload-key signing only after exact signing authorization and verify Play App Signing.
+6. Complete Play Console store/compliance forms.
+7. Upload to Internal testing only after exact Play publishing authorization and install from Play on real devices.
+8. Complete Closed testing / production-access gate only if the developer account is subject to it.
+9. Submit staged Production rollout only after explicit final release authorization.
 
 ## Hard blockers before first Play upload
 
