@@ -1,0 +1,86 @@
+name: THF Terra Godot 4.7.2 Templates Bootstrap
+on:
+  push:
+    branches: ['t/r34']
+    paths: ['.github/workflows/thf-terra-godot472-templates-bootstrap.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  TEMPLATE_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+  TEMPLATE_SHA: f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Install verified templates in Terra-only cache
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ReleaseOps/Terra/GODOT472_TEMPLATES
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="TEMPLATE_URL='$TEMPLATE_URL' TEMPLATE_SHA='$TEMPLATE_SHA' bash -s" <<'REMOTE' > ReleaseOps/Terra/GODOT472_TEMPLATES/BOOTSTRAP.txt 2>&1
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-terra-tooling/godot-export-templates"
+          CACHE="$ROOT/cache"
+          DEST="$ROOT/4.7.2.stable"
+          TPZ="$CACHE/Godot_v4.7.2-stable_export_templates.tpz"
+          mkdir -p "$CACHE" "$DEST"
+          echo "scope=THF_TERRA_TOOLING_ONLY"
+          echo "free_before=$(df -B1 "$HOME" | awk 'NR==2{print $4}')"
+          if [ -f "$TPZ" ] && echo "$TEMPLATE_SHA  $TPZ" | sha256sum -c - >/dev/null 2>&1; then
+            echo 'download=reused_verified_cache'
+          else
+            rm -f "$TPZ.tmp" "$TPZ"
+            curl -fL --retry 4 --retry-delay 5 --connect-timeout 20 -o "$TPZ.tmp" "$TEMPLATE_URL"
+            echo "$TEMPLATE_SHA  $TPZ.tmp" | sha256sum -c -
+            mv "$TPZ.tmp" "$TPZ"
+            echo 'download=fresh_verified'
+          fi
+          echo "$TEMPLATE_SHA  $TPZ" | sha256sum -c -
+          rm -rf "$DEST.tmp"; mkdir -p "$DEST.tmp"
+          unzip -q -o -j "$TPZ" 'templates/*' -d "$DEST.tmp"
+          test -f "$DEST.tmp/android_source.zip"
+          test -f "$DEST.tmp/android_debug.apk"
+          test -f "$DEST.tmp/android_release.apk"
+          rm -rf "$DEST.previous"
+          [ -d "$DEST" ] && mv "$DEST" "$DEST.previous" || true
+          mv "$DEST.tmp" "$DEST"
+          rm -rf "$DEST.previous"
+          echo "template_archive_sha256=$(sha256sum "$TPZ" | awk '{print $1}')"
+          echo "android_source_sha256=$(sha256sum "$DEST/android_source.zip" | awk '{print $1}')"
+          echo "android_debug_sha256=$(sha256sum "$DEST/android_debug.apk" | awk '{print $1}')"
+          echo "android_release_sha256=$(sha256sum "$DEST/android_release.apk" | awk '{print $1}')"
+          echo "templates_status=PASS"
+          echo "destination=$DEST"
+          echo "wave_untouched=true"
+          REMOTE
+          sha256sum ReleaseOps/Terra/GODOT472_TEMPLATES/BOOTSTRAP.txt > ReleaseOps/Terra/GODOT472_TEMPLATES/BOOTSTRAP.sha256
+      - name: Commit Terra template evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git fetch origin t/r34
+          git rebase origin/t/r34
+          git add ReleaseOps/Terra/GODOT472_TEMPLATES
+          git diff --cached --quiet && exit 0
+          git commit -m 'releaseops(terra): record verified Godot 4.7.2 templates'
+          git push origin HEAD:t/r34
