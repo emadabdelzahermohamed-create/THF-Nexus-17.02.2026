@@ -1,0 +1,51 @@
+name: THF GCP Runtime Inventory
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-gcp-runtime-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inventory existing runtime candidates
+        shell: bash
+        run: |
+          set -u
+          echo '=== COMPUTE INSTANCES ==='
+          gcloud compute instances list --project "$GCP_PROJECT_ID" --format='table(name,zone,status,machineType.basename(),networkInterfaces[0].networkIP,networkInterfaces[0].accessConfigs[0].natIP)' || true
+          echo '=== STATIC ADDRESSES ==='
+          gcloud compute addresses list --project "$GCP_PROJECT_ID" --format='table(name,region,address,status,purpose)' || true
+          echo '=== FORWARDING RULES ==='
+          gcloud compute forwarding-rules list --project "$GCP_PROJECT_ID" --format='table(name,region,IPAddress,IPProtocol,portRange,target)' || true
+          echo '=== CLOUD RUN ==='
+          gcloud run services list --project "$GCP_PROJECT_ID" --platform=managed --format='table(name,region,url)' || true
+          echo '=== SQL ==='
+          gcloud sql instances list --project "$GCP_PROJECT_ID" --format='table(name,region,databaseVersion,state,ipAddresses.ipAddress)' || true
+          echo '=== INVENTORY COMPLETE ==='
+          echo 'READ_ONLY=TRUE'
+          echo 'WAVE_MUTATION=FALSE'
