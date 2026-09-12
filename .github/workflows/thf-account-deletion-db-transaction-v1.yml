@@ -63,11 +63,14 @@ jobs:
               for table in tables:
                   cols={r[1]:r for r in con.execute(f'PRAGMA table_info("{table}")')}
                   for fk in con.execute(f'PRAGMA foreign_key_list("{table}")'):
-                      if fk[2]=='users' and fk[3]=='user_id': refs.append((table,str(fk[6]).upper(),bool(cols['user_id'][3])))
-              for table,on_delete,notnull in refs:
+                      if fk[2]=='users' and fk[3]=='user_id':
+                          col=cols['user_id']
+                          mandatory=bool(col[3] or col[5])  # NOT NULL or part of PRIMARY KEY
+                          refs.append((table,str(fk[6]).upper(),mandatory))
+              for table,on_delete,mandatory in refs:
                   if on_delete in {'CASCADE','SET NULL'}:
                       actions.append((table,on_delete,'defer-to-fk'))
-                  elif notnull:
+                  elif mandatory:
                       con.execute(f'DELETE FROM "{table}" WHERE user_id=?',(uid,)); actions.append((table,on_delete,'delete-owned'))
                   else:
                       con.execute(f'UPDATE "{table}" SET user_id=NULL WHERE user_id=?',(uid,)); actions.append((table,on_delete,'anonymize-attribution'))
