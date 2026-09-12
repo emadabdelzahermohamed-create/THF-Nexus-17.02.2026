@@ -1,0 +1,25 @@
+THF Rift RC38 Validation
+========================
+Checkpoint: RIFT-RC38-PICKUP-RELOAD-LIFECYCLE-SAFETY
+Version: 4.7.2-rc38 / versionCode 42072 / compileSdk 36 / targetSdk 36
+Baseline: RC37 artifact SHA 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+
+New scope only:
+- pickup_weapon cancels pending server-owned human reload before equip/ownership swap
+- stale reload completion cannot mutate newly picked-up weapon ammo
+- failed pickup also clears pending reload lifecycle
+- project/export/Gradle metadata synchronized to RC38 / 42072 / 4.7.2-rc38
+- hit/damage/ranked authority unchanged
+
+Validation:
+- focused behavior/source gate: PASS 34/34
+- clean-extract gate: PASS 34/34
+- Python compileall source/clean: PASS
+- JavaScript syntax source/clean: PASS
+- deterministic ZIP rebuild: PASS exact SHA 46ee385c21fb2e437f48a051ab59d90010eb6b0b0b9727f269b37cfa20711c81
+- ZIP integrity: PASS
+- fresh Godot 4.7.2 parser/import/headless: PENDING exact artifact staging
+- Android API36 unsigned test AAB: BLOCKED exact artifact staging
+- physical Android/GPU/device QA: NOT EXECUTED
+
+Truth boundaries: no production-signed AAB, Play approval, GPU/device visual acceptance, or production deployment claimed.
