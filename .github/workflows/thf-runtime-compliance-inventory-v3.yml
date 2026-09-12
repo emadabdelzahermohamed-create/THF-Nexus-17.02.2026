@@ -1,0 +1,85 @@
+name: THF Runtime Compliance Inventory V3
+
+on:
+  push:
+    branches: ['cp/v3']
+    paths:
+      - '.github/workflows/thf-runtime-compliance-inventory-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inventory exact isolated THF runtime
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=8m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"
+          cd "$ROOT"
+          echo THF_COMPLIANCE_INVENTORY_V3_BEGIN
+          echo "ROOT_PRESENT=PASS"
+          if [ -f runtime/THF_NEXUS_6_RELEASE.json ]; then
+            python3 - <<"PY"
+          import json
+          p="runtime/THF_NEXUS_6_RELEASE.json"
+          d=json.load(open(p,encoding="utf-8"))
+          print("RELEASE="+str(d.get("version",d.get("release","UNKNOWN"))))
+          print("PACKAGE_SHA256="+str(d.get("package_sha256","UNKNOWN")))
+          print("SCHEMA="+str(d.get("schema","UNKNOWN")))
+          PY
+          fi
+          echo POLICY_FILE_INVENTORY_BEGIN
+          find docs clients config -type f 2>/dev/null | grep -Ei "(^|/)(privacy|terms|account[-_]?deletion|security)([^/]*)$|privacy|terms|account[-_]?deletion|security\.txt" | LC_ALL=C sort | while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            printf "POLICY_FILE path=%s bytes=%s sha256=%s\n" "$f" "$(wc -c <"$f")" "$(sha256sum "$f" | awk "{print \$1}")"
+          done
+          echo POLICY_FILE_INVENTORY_END
+          echo ROUTE_EVIDENCE_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.db" --exclude="*.sqlite*" "privacy|terms|account.?delet|security\.txt|/api/.*/account|DELETE" src clients 2>/dev/null | head -200 || true
+          echo ROUTE_EVIDENCE_END
+          echo DATA_SAFETY_SURFACES_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.db" --exclude="*.sqlite*" "health|fitness|location|camera|microphone|photo|video|media|advert|analytics|AI|oauth|email|phone|wallet|token|notification|chat|message|profile|biometric" src config clients 2>/dev/null | head -300 || true
+          echo DATA_SAFETY_SURFACES_END
+          echo ENV_NAME_INVENTORY_BEGIN
+          find config -type f \( -name "*.example" -o -name "*.env*" \) -print0 2>/dev/null | xargs -0 -r grep -hE "^[A-Z][A-Z0-9_]*=" | sed "s/=.*$/=/" | LC_ALL=C sort -u || true
+          echo ENV_NAME_INVENTORY_END
+          if find . -path "*wave-mawja*" -print -quit | grep -q .; then
+            echo THF_TREE_WAVE_PATH=FAIL
+            exit 9
+          fi
+          echo THF_TREE_WAVE_PATH=PASS
+          echo WAVE_UNTOUCHED=TRUE
+          echo MUTATION_PERFORMED=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo THF_COMPLIANCE_INVENTORY_V3_END'
