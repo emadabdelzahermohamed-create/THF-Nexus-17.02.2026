@@ -1,0 +1,19 @@
+{
+  "stream": "THF_TERRA",
+  "release": "TERRA-RC33",
+  "canonical_source_sha256": "f50a0489c534306946f39603aaa2fa39e494fac5b4a7af906e03424d8457412b",
+  "gate": "ANDROID_TEST_AAB_V3",
+  "godot_version": "4.7.2.stable.official.ed1daf0bf",
+  "gradle_build_version_marker": "4.7.2.stable",
+  "android_export_rc": "0",
+  "aab_exists": true,
+  "aab_size_bytes": 145003107,
+  "aab_sha256": "d90638056d6f199bf682c0ecd7c2783434e343d30fee4adc9dbad6fa9006d7a9",
+  "package_expected": "com.topherofit.thf.terra",
+  "target_sdk_expected": 36,
+  "signing_scope": "DEBUG_TEST_ONLY_NOT_PRODUCTION",
+  "gpu_device_visual_qa": "NOT_EXECUTED",
+  "production_signed_aab": "NOT_CLAIMED",
+  "play_approval": "NOT_CLAIMED",
+  "production_deployment": "NOT_CLAIMED"
+}
