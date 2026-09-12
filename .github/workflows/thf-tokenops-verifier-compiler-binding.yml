@@ -1,0 +1,46 @@
+name: THF TokenOps Verifier Compiler Binding Gate
+
+on:
+  push:
+    branches: [tokenops/read-only-audit-20260911]
+    paths:
+      - 'ReleaseOps/TokenOps/verifier_compiler_binding.py'
+      - 'ReleaseOps/TokenOps/test_verifier_compiler_binding.py'
+      - '.github/workflows/thf-tokenops-verifier-compiler-binding.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed binding tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_verifier_compiler_binding.py | tee verifier-compiler-binding-tests.log
+      - name: Assert no transaction execution primitives
+        run: |
+          set -Eeuo pipefail
+          ! grep -REn 'sendTransaction|send_raw_transaction|private_key|seed_phrase' ReleaseOps/TokenOps/verifier_compiler_binding.py || false
+          grep -q 'broadcast_allowed.*False' ReleaseOps/TokenOps/verifier_compiler_binding.py
+          echo THF_TOKENOPS_VERIFIER_COMPILER_SAFETY_GATE=PASS
+      - name: Build evidence hashes
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-verifier-compiler-binding-evidence
+          cp ReleaseOps/TokenOps/verifier_compiler_binding.py tokenops-verifier-compiler-binding-evidence/
+          cp ReleaseOps/TokenOps/test_verifier_compiler_binding.py tokenops-verifier-compiler-binding-evidence/
+          cp ReleaseOps/TokenOps/verifier-compiler-binding-tests.log tokenops-verifier-compiler-binding-evidence/
+          (cd tokenops-verifier-compiler-binding-evidence && sha256sum * > SHA256SUMS.txt)
+          cat tokenops-verifier-compiler-binding-evidence/SHA256SUMS.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Verifier-Compiler-Binding-Gate
+          path: tokenops-verifier-compiler-binding-evidence/
+          if-no-files-found: error
+          retention-days: 30
