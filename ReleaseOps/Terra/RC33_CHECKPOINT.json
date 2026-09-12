@@ -1,0 +1,31 @@
+{
+  "stream": "THF_TERRA",
+  "current": "TERRA-RC33",
+  "status": "TERRA_RC33_ANDROID_TEXTURE_EXPORT_READINESS_SOURCE_DETERMINISTIC_PASS_GODOT472_RERUN_PENDING",
+  "package_id": "com.topherofit.thf.terra",
+  "version": "4.6.7-rc33",
+  "version_code": 42067,
+  "baseline": {"release":"TERRA-RC32","sha256":"389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695"},
+  "completed_now": [
+    "Promoted fresh RC32 Godot 4.7.2 clean import/parser/class-cache PASS from workflow run 34660616385",
+    "Promoted fresh RC32 30-frame headless PASS from workflow run 34660616385",
+    "Ran Android test AAB export diagnostics from exact RC32; V1 identified missing project Gradle build template",
+    "Fixed CI tooling by installing Godot android_source.zip into res://android/build; V2 advanced to Android texture-compression requirement",
+    "Enabled rendering/textures/vram_compression/import_etc2_astc=true in canonical Terra project.godot for Android export",
+    "Synchronized RC33 stage and Android version metadata to 42067 / 4.6.7-rc33 while keeping target/compile SDK 36",
+    "Added focused RC33 export-readiness gate"
+  ],
+  "tests": {
+    "focused":"4/4 PASS","python_compileall":"PASS","javascript_syntax":"PASS","deterministic_package":"PASS exact SHA","clean_extract_focused":"4/4 PASS","clean_extract_python_js":"PASS","zip_integrity":"PASS","rc32_godot_4_7_2_clean_import":"PASS run 34660616385","rc32_godot_4_7_2_headless_30":"PASS run 34660616385","rc33_godot_4_7_2_clean_import_headless":"PENDING_RERUN","rc33_android_test_aab":"PENDING_RERUN_AFTER_ETC2_ASTC_FIX","physical_android_gpu_visual":"NOT_EXECUTED"
+  },
+  "artifact": {
+    "name":"THF_Terra_v4.6.7_RC33_ANDROID_TEXTURE_EXPORT_READINESS_CUMULATIVE_SOURCE.zip",
+    "sha256":"f50a0489c534306946f39603aaa2fa39e494fac5b4a7af906e03424d8457412b",
+    "size_bytes":109116071,
+    "parts":[
+      {"name":"THF_Terra_v4.6.7_RC33_ANDROID_TEXTURE_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"02a56c856bbbd47d38169e71b5e68ecfd21282a23130ff9e2bd3ff1581353978","size_bytes":94371840},
+      {"name":"THF_Terra_v4.6.7_RC33_ANDROID_TEXTURE_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"2f5f5183b6087930b94de8c29fb0eef833bf9b5a7d8f5258fb979394592b345e","size_bytes":14744231}
+    ]
+  },
+  "truth_boundaries":{"gpu_device_visual_qa":"NOT_EXECUTED","perfect_photo_likeness":"NOT_CLAIMED","production_signed_aab":"NOT_CLAIMED","play_approval":"NOT_CLAIMED","production_deployment":"NOT_CLAIMED","solana_settlement":"NOT_CLAIMED"}
+}
