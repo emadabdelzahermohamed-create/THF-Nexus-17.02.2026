@@ -1,0 +1,138 @@
+name: THF Permission Minimization Candidate V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-permission-minimization-candidate-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  EXPECTED_SOURCE_SHA: 46eca5adaef95d551e90723f87698100dbe242f51cd28186480b3215a2a54942
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Build isolated permission-minimized candidate only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command="EXPECTED_SOURCE_SHA='$EXPECTED_SOURCE_SHA' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          CANON="$HOME/thf-runtime-s1/outer/01_THF_NEXUS_SUITE/ANDROID_PLAY_SOURCE"
+          ROOT="$HOME/thf-permission-min-v1"
+          test -d "$CANON"
+          before=$(cd "$CANON" && find . -type f -not -path '*/build/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          echo "CANONICAL_SOURCE_SHA256=$before"
+          test "$before" = "$EXPECTED_SOURCE_SHA"
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/work" "$ROOT/out" "$ROOT/evidence" "$ROOT/gradle-home"
+          cp -a "$CANON/." "$ROOT/work/"
+          cd "$ROOT/work"
+          manifest=app/src/main/AndroidManifest.xml
+          test -f "$manifest"
+          cp "$manifest" "$ROOT/evidence/AndroidManifest.canonical.xml"
+          echo PERMISSIONS_BEFORE_BEGIN
+          grep -oE 'android.permission.(CAMERA|RECORD_AUDIO|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION)' "$manifest" | LC_ALL=C sort -u || true
+          echo PERMISSIONS_BEFORE_END
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          names=('android.permission.CAMERA','android.permission.RECORD_AUDIO','android.permission.ACCESS_FINE_LOCATION','android.permission.ACCESS_COARSE_LOCATION')
+          for n in names:
+              s=re.sub(r'\s*<uses-permission\s+android:name=["\x27]'+re.escape(n)+r'["\x27]\s*/>\s*', '\n', s)
+          p.write_text(s)
+          PY
+          echo PERMISSIONS_AFTER_SOURCE_BEGIN
+          grep -oE 'android.permission.(CAMERA|RECORD_AUDIO|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION)' "$manifest" | LC_ALL=C sort -u || true
+          echo PERMISSIONS_AFTER_SOURCE_END
+          if grep -qE 'android.permission.(CAMERA|RECORD_AUDIO|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION)' "$manifest"; then
+            echo PERMISSION_MINIMIZATION_SOURCE=FAIL
+            exit 11
+          fi
+          echo PERMISSION_MINIMIZATION_SOURCE=PASS
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"
+          CACHE="$HOME/thf-builder-rc16-build/cache"
+          GDIST="$CACHE/gradle-8.13-bin.zip"
+          GROOT="$CACHE/gradle-dist-8.13"
+          GSHA="20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78"
+          echo "$GSHA  $GDIST" | sha256sum -c -
+          GBIN="$GROOT/gradle-8.13/bin/gradle"
+          test -x "$GBIN"
+          test -f "$SDK/platforms/android-36/android.jar"
+          export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$ROOT/gradle-home"
+          export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$SDK/cmdline-tools/latest/bin:$PATH"
+          unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+          export DEBUG_BASE_URL=http://10.0.2.2:8000
+          "$GBIN" --no-daemon clean assembleDebug 2>&1 | tee "$ROOT/evidence/debug-build.log"
+          apk=$(find app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)
+          test -s "$apk"
+          cp "$apk" "$ROOT/out/thf-nexus-permission-min-v1-debug.apk"
+          sha256sum "$ROOT/out/thf-nexus-permission-min-v1-debug.apk" | tee "$ROOT/evidence/debug-apk.sha256"
+          merged=$(find app/build/intermediates -type f -name AndroidManifest.xml -path '*debug*' | head -1 || true)
+          if [ -n "$merged" ]; then
+            cp "$merged" "$ROOT/evidence/AndroidManifest.debug-merged.xml"
+            if grep -qE 'android.permission.(CAMERA|RECORD_AUDIO|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION)' "$merged"; then
+              echo MERGED_DEBUG_SENSITIVE_PERMISSIONS=FAIL
+              exit 12
+            fi
+          fi
+          cp app/build.gradle "$ROOT/evidence/build.gradle.canonical"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/build.gradle'); s=p.read_text()
+          marker="def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }"
+          if marker in s and "def testUnsigned" not in s:
+              s=s.replace(marker, marker+"\ndef testUnsigned = System.getenv('THF_TEST_UNSIGNED') == '1'")
+          old="if (releaseRequested && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')"
+          if old in s:
+              s=s.replace(old,"if (releaseRequested && !testUnsigned && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')")
+          p.write_text(s)
+          PY
+          export APP_BASE_URL=https://test.invalid THF_TEST_UNSIGNED=1
+          "$GBIN" --no-daemon clean bundleRelease 2>&1 | tee "$ROOT/evidence/test-aab-build.log"
+          aab=$(find app/build/outputs/bundle/release -type f -name '*.aab' -print -quit)
+          test -s "$aab"
+          cp "$aab" "$ROOT/out/thf-nexus-permission-min-v1-TEST-UNSIGNED.aab"
+          sha256sum "$ROOT/out/thf-nexus-permission-min-v1-TEST-UNSIGNED.aab" | tee "$ROOT/evidence/test-aab.sha256"
+          unzip -t "$ROOT/out/thf-nexus-permission-min-v1-TEST-UNSIGNED.aab" > "$ROOT/evidence/test-aab-ziptest.txt"
+          after=$(cd "$CANON" && find . -type f -not -path '*/build/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          echo "CANONICAL_SOURCE_SHA256_AFTER=$after"
+          test "$after" = "$before"
+          echo CANONICAL_SOURCE_UNCHANGED=PASS
+          echo TARGET_SDK_36_CHECK_BEGIN
+          grep -E 'compileSdk[ =]+36|targetSdk[ =]+36' app/build.gradle
+          echo TARGET_SDK_36_CHECK_END
+          echo THF_PERMISSION_MINIMIZATION_CANDIDATE_V1_PASS
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          REMOTE
