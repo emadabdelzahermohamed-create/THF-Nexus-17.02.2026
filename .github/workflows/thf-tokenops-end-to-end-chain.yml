@@ -1,0 +1,57 @@
+name: THF TokenOps End-to-End Integrity Chain Gate
+
+on:
+  push:
+    branches: [tokenops/read-only-audit-20260911]
+    paths:
+      - 'ReleaseOps/TokenOps/end_to_end_chain_gate.py'
+      - 'ReleaseOps/TokenOps/test_end_to_end_chain_gate.py'
+      - 'ReleaseOps/TokenOps/verifier_compiler_binding.py'
+      - 'ReleaseOps/TokenOps/spl_instruction_compiler.py'
+      - '.github/workflows/thf-tokenops-end-to-end-chain.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run end-to-end integrity-chain tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_end_to_end_chain_gate.py | tee end-to-end-chain-tests.log
+      - name: Assert financial execution remains impossible
+        run: |
+          set -Eeuo pipefail
+          TARGETS='ReleaseOps/TokenOps/end_to_end_chain_gate.py ReleaseOps/TokenOps/verifier_compiler_binding.py ReleaseOps/TokenOps/spl_instruction_compiler.py'
+          if grep -REn 'sendTransaction|send_raw_transaction|send_transaction|broadcast_transaction' $TARGETS; then
+            echo 'Forbidden transaction execution primitive detected' >&2
+            exit 1
+          fi
+          grep -q 'ready_for_transaction_serialization.*False' ReleaseOps/TokenOps/end_to_end_chain_gate.py
+          grep -q 'ready_for_simulation.*False' ReleaseOps/TokenOps/end_to_end_chain_gate.py
+          grep -q 'ready_for_signing.*False' ReleaseOps/TokenOps/end_to_end_chain_gate.py
+          grep -q 'broadcast_allowed.*False' ReleaseOps/TokenOps/end_to_end_chain_gate.py
+          echo THF_TOKENOPS_END_TO_END_SAFETY_GATE=PASS
+      - name: Build evidence hashes
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-end-to-end-chain-evidence
+          cp ReleaseOps/TokenOps/end_to_end_chain_gate.py tokenops-end-to-end-chain-evidence/
+          cp ReleaseOps/TokenOps/test_end_to_end_chain_gate.py tokenops-end-to-end-chain-evidence/
+          cp ReleaseOps/TokenOps/verifier_compiler_binding.py tokenops-end-to-end-chain-evidence/
+          cp ReleaseOps/TokenOps/spl_instruction_compiler.py tokenops-end-to-end-chain-evidence/
+          cp ReleaseOps/TokenOps/end-to-end-chain-tests.log tokenops-end-to-end-chain-evidence/
+          (cd tokenops-end-to-end-chain-evidence && sha256sum * > SHA256SUMS.txt)
+          cat tokenops-end-to-end-chain-evidence/SHA256SUMS.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-End-to-End-Integrity-Chain-Gate
+          path: tokenops-end-to-end-chain-evidence/
+          if-no-files-found: error
+          retention-days: 30
