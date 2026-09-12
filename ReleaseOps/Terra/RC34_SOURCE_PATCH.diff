@@ -1,0 +1,126 @@
+--- RC33/native/common/TerraEnvironmentController.gd
++++ RC34/native/common/TerraEnvironmentController.gd
+@@ -173,7 +173,7 @@
+     return int(round(float(cap) * intensity))
+ 
+ 
+-func remote_lod_policy(distance_m: float, data_saver: bool, quality: String) -> Dictionary:
++func remote_lod_policy(distance_m: float, data_saver: bool, quality: String, previous_tier: String = "") -> Dictionary:
+     var near_m := 18.0
+     var mid_m := 34.0
+     var far_m := 52.0
+@@ -190,12 +190,51 @@
+         mid_m *= 0.78
+         far_m *= 0.72
+ 
+-    if distance_m <= near_m:
+-        return {"tier": "near", "visible": true, "process": true, "animation_hz": 30.0}
+-    if distance_m <= mid_m:
+-        return {"tier": "mid", "visible": true, "process": true, "animation_hz": 15.0}
+-    if distance_m <= far_m:
+-        return {"tier": "far", "visible": true, "process": false, "animation_hz": 6.0}
++    # RC34: asymmetric hysteresis keeps remote avatars from oscillating at LOD
++    # boundaries when the camera or network-smoothed actors move by centimeters.
++    # This is visual/performance policy only and never changes authoritative state.
++    var hysteresis := 1.8
++    if quality == QUALITY_LOW or data_saver:
++        hysteresis = 2.4
++    var near_enter := near_m - hysteresis
++    var near_exit := near_m + hysteresis
++    var mid_enter := mid_m - hysteresis
++    var mid_exit := mid_m + hysteresis
++    var far_enter := far_m - hysteresis
++    var far_exit := far_m + hysteresis
++
++    var tier := previous_tier
++    if tier not in ["near", "mid", "far", "culled"]:
++        if distance_m <= near_m:
++            tier = "near"
++        elif distance_m <= mid_m:
++            tier = "mid"
++        elif distance_m <= far_m:
++            tier = "far"
++        else:
++            tier = "culled"
++    elif tier == "near":
++        if distance_m > near_exit:
++            tier = "mid" if distance_m <= mid_m else ("far" if distance_m <= far_m else "culled")
++    elif tier == "mid":
++        if distance_m <= near_enter:
++            tier = "near"
++        elif distance_m > mid_exit:
++            tier = "far" if distance_m <= far_m else "culled"
++    elif tier == "far":
++        if distance_m <= mid_enter:
++            tier = "mid" if distance_m > near_enter else "near"
++        elif distance_m > far_exit:
++            tier = "culled"
++    elif tier == "culled" and distance_m <= far_enter:
++        tier = "far" if distance_m > mid_enter else ("mid" if distance_m > near_enter else "near")
++
++    if tier == "near":
++        return {"tier": tier, "visible": true, "process": true, "animation_hz": 30.0}
++    if tier == "mid":
++        return {"tier": tier, "visible": true, "process": true, "animation_hz": 15.0}
++    if tier == "far":
++        return {"tier": tier, "visible": true, "process": false, "animation_hz": 6.0}
+     return {"tier": "culled", "visible": false, "process": false, "animation_hz": 0.0}
+ 
+ 
+--- RC33/native/world/WorldMain.gd
++++ RC34/native/world/WorldMain.gd
+@@ -322,7 +322,16 @@
+         if not is_instance_valid(root):
+             continue
+         var distance_m := camera.global_position.distance_to(root.global_position)
+-        var policy: Dictionary = environment_controller.remote_lod_policy(distance_m, data_saver_enabled, environment_quality)
++        var previous_tier := str(root.get_meta("thf_lod_tier", ""))
++        var policy: Dictionary = environment_controller.remote_lod_policy(
++            distance_m,
++            data_saver_enabled,
++            environment_quality,
++            previous_tier
++        )
++        var next_tier := str(policy.get("tier", previous_tier))
++        root.set_meta("thf_lod_tier", next_tier)
++        root.set_meta("thf_animation_budget_hz", float(policy.get("animation_hz", 0.0)))
+         root.visible = bool(policy.get("visible", true))
+         root.process_mode = Node.PROCESS_MODE_INHERIT if bool(policy.get("process", true)) else Node.PROCESS_MODE_DISABLED
+ 
+--- RC33/android/app/build.gradle
++++ RC34/android/app/build.gradle
+@@ -15,8 +15,8 @@
+         applicationId appId
+         minSdk 26
+         targetSdk 36
+-        versionCode 42067
+-        versionName '4.6.7-rc33'
++        versionCode 42068
++        versionName '4.6.8-rc34'
+         buildConfigField 'String', 'THF_WEB_URL', webUrlLiteral
+     }
+     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+--- RC33/project.godot
++++ RC34/project.godot
+@@ -26,7 +26,7 @@
+ product="nexus_world"
+ api_base_url="http://127.0.0.1:8000"
+ application_id="com.topherofit.thf.terra"
+-stage="RC33"
++stage="RC34"
+ server_authoritative=true
+ 
+ [thf]
+--- RC33/export_presets.cfg
++++ RC34/export_presets.cfg
+@@ -33,8 +33,8 @@
+ architectures/arm64-v8a=true
+ architectures/x86=false
+ architectures/x86_64=false
+-version/code=42067
+-version/name="4.6.7-rc33"
++version/code=42068
++version/name="4.6.8-rc34"
+ package/unique_name="com.topherofit.thf.terra"
+ package/name="THF Terra"
+ package/signed=false
