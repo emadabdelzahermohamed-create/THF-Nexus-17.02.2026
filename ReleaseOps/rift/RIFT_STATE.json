@@ -1,23 +1,24 @@
 {
   "stream": "THF_RIFT",
-  "checkpoint": "RIFT-RC38-PICKUP-RELOAD-LIFECYCLE-SAFETY",
+  "checkpoint": "RIFT-RC39-DROPPED-WEAPON-STATE-PERSISTENCE",
   "status": "SOURCE_DETERMINISTIC_CLEAN_EXTRACT_PASS_REMOTE_EXPORT_BLOCKED_ON_EXACT_STAGING",
-  "version": "4.7.2-rc38",
-  "version_code": 42072,
+  "version": "4.7.3-rc39",
+  "version_code": 42073,
   "base": {
-    "checkpoint": "RIFT-RC37-HUMAN-RELOAD-TIMING-PARITY",
-    "sha256": "3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914"
+    "checkpoint": "RIFT-RC38-PICKUP-RELOAD-LIFECYCLE-SAFETY",
+    "sha256": "46ee385c21fb2e437f48a051ab59d90010eb6b0b0b9727f269b37cfa20711c81"
   },
   "completed_now": [
-    "server-owned pickup cancels any pending reload before weapon ownership/equip swap",
-    "stale reload timer cannot transfer magazine/reserve completion to picked-up weapon",
-    "failed pickup also clears pending reload to avoid hidden stale lifecycle state",
-    "Android export/Gradle metadata synchronized to 42072 / 4.7.2-rc38",
-    "project.godot Rift stage synchronized to RC38; API36/AAB/arm64/unsigned policy preserved"
+    "dropped weapon loot preserves authoritative chambered state and attachment state",
+    "pickup restores dropped weapon state through fail-closed attachment validation",
+    "weapon-specific optic compatibility is revalidated on loot pickup",
+    "empty magazine cannot restore chambered=true",
+    "pickup into the currently equipped empty slot no longer clobbers incoming loot with stale active state",
+    "Android export/Gradle metadata synchronized to 42073 / 4.7.3-rc39; API36/AAB/arm64/unsigned policy preserved"
   ],
   "tests": {
-    "focused": "PASS 34/34",
-    "clean_extract": "PASS 34/34",
+    "focused": "PASS 33/33",
+    "clean_extract": "PASS 33/33",
     "python_compileall": "PASS",
     "clean_extract_python_compileall": "PASS",
     "javascript_syntax": "PASS",
@@ -29,23 +30,38 @@
     "physical_android_gpu": "NOT_EXECUTED"
   },
   "artifact": {
-    "name": "THF_Rift_v4.7.2_RC38_PICKUP_RELOAD_LIFECYCLE_SAFETY_CUMULATIVE_SOURCE.zip",
-    "sha256": "46ee385c21fb2e437f48a051ab59d90010eb6b0b0b9727f269b37cfa20711c81",
-    "size_bytes": 108682461,
+    "name": "THF_Rift_v4.7.3_RC39_DROPPED_WEAPON_STATE_PERSISTENCE_CUMULATIVE_SOURCE.zip",
+    "sha256": "7cc4c241b5d8c7996fa481cf550c655d0b5c91699c6bc2f293b1e3b158b8cdac",
+    "size_bytes": 108688045,
     "parts": [
-      {"name":"THF_Rift_v4.7.2_RC38_PICKUP_RELOAD_LIFECYCLE_SAFETY_CUMULATIVE_SOURCE.zip.part.00","sha256":"9ee049650cab2667653c7f149b02177360bb2daf1740615509d8f64be4bc991b","size_bytes":94371840},
-      {"name":"THF_Rift_v4.7.2_RC38_PICKUP_RELOAD_LIFECYCLE_SAFETY_CUMULATIVE_SOURCE.zip.part.01","sha256":"8174fc5bd708bde0341e5781fcfbbe81cd0a9240a71fde2a81c4774956b55e3a","size_bytes":14310621}
+      {
+        "name": "THF_Rift_v4.7.3_RC39_DROPPED_WEAPON_STATE_PERSISTENCE_CUMULATIVE_SOURCE.zip.part.00",
+        "sha256": "ce54e95b6390f3fe24661c6b0a2a95eba2e3af176c1825dcfd16b66d179dd0e5",
+        "size_bytes": 94371840
+      },
+      {
+        "name": "THF_Rift_v4.7.3_RC39_DROPPED_WEAPON_STATE_PERSISTENCE_CUMULATIVE_SOURCE.zip.part.01",
+        "sha256": "52ea36701a6c989100582be2b55eb2bd772024c517b9196eb0db685666d96f2d",
+        "size_bytes": 14316205
+      }
     ]
   },
   "source_shas": {
-    "arena_service": "b7b748d1d95595768fd42279ed8cbaa0ae542e3e9fd0bbd0727a73c7541fddbf",
-    "project_godot": "8b7bf2574fc93ea819eb68b536e3a750135d3901ae42ab7195d817cd7d443a65",
-    "export_presets": "557e84dbe05b7a7d8d8bf07d04ef4eddf884de740c7a67245d23278d66176e80",
-    "android_build_gradle": "07a9d9d7d2dc7713508b681bcf731709ae9eb9973a0abce26e392cde396904a0",
-    "animations": "3c86fd830538f8fd9a4bf71d22a611b0d4569a2ef375c62d1242860e70449e17",
-    "rc38_gate": "c3eb3e6f5a5a291581d7decb0381a7cce710f1a963d1bbb7898589bd442f7390"
+    "arena_service": "eedcdf7a63b330f8cc3b316d83eca4f9ae98a8d041d08cff71c1bff9f30fa5be",
+    "project_godot": "af8f4616727af7b49482b1703a3783659bd5a7d79a8897510e04f1397ebb0f8c",
+    "export_presets": "a0770873d2a630badc04c946e63552769fb8fa3c1900ce8bae7c625033306e41",
+    "android_build_gradle": "efd806bf8044ca3a684e1ccb714daddac439f0fdfc590f018f2f2fae1f2b53aa",
+    "animations": "6bdc2d0f7631ca917c51bfdaa328a2c54cbea747893ae9abbb69055fed19fcc6",
+    "rc39_gate": "78952791af18f4ce0f1803ebce11dbe594ccba0befdb48a0a73a981e6413d6d1"
   },
-  "next": "Stage exact RC38 cumulative artifact into private WIF/GCP builder; run fresh Godot 4.7.2 parser/import/headless and unsigned test-only Android API 36 AAB export. If exact staging remains unavailable, inspect the next server-owned weapon lifecycle gap without changing combat authority.",
+  "godot_evidence": {
+    "latest_proven_run_id": 34651723807,
+    "latest_proven_checkpoint": "RIFT-RC32-HUMAN-DOWN-GODOT472-TYPE-READINESS",
+    "result": "SUCCESS",
+    "rc39_gd_gameplay_delta": "NONE",
+    "rc39_project_metadata_delta": "STAGE_ONLY"
+  },
+  "next": "Stage exact RC39 cumulative artifact into private WIF/GCP builder; run fresh Godot 4.7.2 parser/import/headless and unsigned test-only Android API 36 AAB export. If exact staging remains unavailable, continue the next independently verifiable server-owned Rift lifecycle/fairness gap without changing combat authority.",
   "blockers": [
     "Exact cumulative Rift artifact bytes remain in ChatGPT Library and are not addressable by GitHub ReleaseOps/GCP builder; WIF connectivity exists but no authenticated byte-staging path is exposed."
   ],
