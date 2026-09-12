@@ -1,0 +1,141 @@
+name: THF Runtime S1 Launch
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-runtime-s1-launch.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  launch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Launch runtime and Cloudflare quick tunnel
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=12m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          cd "$ROOT"
+          mkdir -p runtime/pids runtime/logs runtime/media runtime/uploads runtime/avatars "$HOME/bin"
+          ENVFILE="$ROOT/.env.local"
+          if [ ! -f "$ENVFILE" ]; then
+            umask 077
+            ADMIN=$(openssl rand -hex 32)
+            REWARD=$(openssl rand -hex 32)
+            cat >"$ENVFILE" <<EOF
+          THF_HOST=127.0.0.1
+          THF_PORT=18080
+          THF_DATABASE_PATH=$ROOT/runtime/thf_nexus.db
+          THF_ADMIN_TOKEN=$ADMIN
+          THF_INTERNAL_REWARD_TOKEN=$REWARD
+          THF_RATE_LIMIT_PER_MINUTE=240
+          THF_SESSION_TTL_HOURS=72
+          THF_MEDIA_UPLOAD_MAX_MB=128
+          THF_DEFAULT_LOCALE=ar
+          THF_GCP_PROJECT_ID=project-b5e10d7e-8ce8-4aa4-a15
+          THF_GCP_REGION=europe-west1
+          THF_GCP_ZONE=europe-west1-b
+          THF_HIGH_FIDELITY_AVATAR_PROVIDER=disabled
+          THF_PUBLIC_BASE_URL=
+          THF_MEDIA_OBJECT_STORAGE=local
+          THF_TURN_PROVIDER=disabled
+          THF_SOLANA_RPC_URL=
+          THF_THF_MINT_ADDRESS=
+          EOF
+            chmod 600 "$ENVFILE"
+            echo RUNTIME_ENV_CREATED=YES
+          else
+            chmod 600 "$ENVFILE"
+            echo RUNTIME_ENV_CREATED=NO_EXISTING_PRESERVED
+          fi
+          if [ -f runtime/pids/thf-nexus.pid ]; then
+            old=$(cat runtime/pids/thf-nexus.pid 2>/dev/null || true)
+            if [[ "$old" =~ ^[0-9]+$ ]] && kill -0 "$old" 2>/dev/null; then kill "$old" || true; sleep 1; fi
+            rm -f runtime/pids/thf-nexus.pid
+          fi
+          ./scripts/start.sh
+          python3 - <<"PY"
+          import json,urllib.request
+          d=json.load(urllib.request.urlopen("http://127.0.0.1:18080/health",timeout=3))
+          assert d.get("ok") is True
+          print("LOCAL_HEALTH=PASS")
+          print("RELEASE="+str(d.get("release")))
+          PY
+          CF="$HOME/bin/cloudflared"
+          if [ ! -x "$CF" ]; then
+            URL=$(python3 - <<"PY"
+          import json,urllib.request
+          req=urllib.request.Request("https://api.github.com/repos/cloudflare/cloudflared/releases/latest",headers={"User-Agent":"THF-ReleaseOps"})
+          rel=json.load(urllib.request.urlopen(req,timeout=20))
+          for a in rel.get("assets",[]):
+              if a.get("name")=="cloudflared-linux-amd64":
+                  print(a["browser_download_url"]); break
+          else: raise SystemExit("cloudflared linux amd64 asset not found")
+          PY
+          )
+            curl -fL --retry 3 --connect-timeout 10 "$URL" -o "$CF.tmp"
+            chmod 700 "$CF.tmp"; mv "$CF.tmp" "$CF"
+          fi
+          "$CF" --version
+          if [ -f runtime/pids/cloudflared-quick.pid ]; then
+            old=$(cat runtime/pids/cloudflared-quick.pid 2>/dev/null || true)
+            if [[ "$old" =~ ^[0-9]+$ ]] && kill -0 "$old" 2>/dev/null; then kill "$old" || true; sleep 1; fi
+          fi
+          : > runtime/logs/cloudflared-quick.log
+          nohup "$CF" tunnel --no-autoupdate --url http://127.0.0.1:18080 >runtime/logs/cloudflared-quick.log 2>&1 &
+          CFPID=$!; echo "$CFPID" > runtime/pids/cloudflared-quick.pid
+          PUB=""
+          for i in $(seq 1 40); do
+            PUB=$(grep -Eo "https://[a-z0-9-]+\.trycloudflare\.com" runtime/logs/cloudflared-quick.log | head -n1 || true)
+            [ -n "$PUB" ] && break
+            kill -0 "$CFPID" 2>/dev/null || { tail -80 runtime/logs/cloudflared-quick.log; exit 4; }
+            sleep .5
+          done
+          [ -n "$PUB" ] || { echo TUNNEL_URL_NOT_FOUND; tail -80 runtime/logs/cloudflared-quick.log; exit 5; }
+          printf "%s\n" "$PUB" > runtime/public-url.txt
+          chmod 600 runtime/public-url.txt
+          python3 - "$PUB" <<"PY"
+          import json,sys,time,urllib.request
+          u=sys.argv[1].rstrip("/")+"/health"
+          last=None
+          for _ in range(20):
+              try:
+                  req=urllib.request.Request(u,headers={"User-Agent":"THF-Public-Smoke"})
+                  d=json.load(urllib.request.urlopen(req,timeout=5))
+                  assert d.get("ok") is True
+                  print("PUBLIC_HEALTH=PASS")
+                  print("PUBLIC_RELEASE="+str(d.get("release")))
+                  raise SystemExit(0)
+              except Exception as e:
+                  last=e; time.sleep(1)
+          print("PUBLIC_HEALTH=FAIL",type(last).__name__,str(last)); raise SystemExit(6)
+          PY
+          echo PUBLIC_URL=$PUB
+          echo RUNTIME_PID=$(cat runtime/pids/thf-nexus.pid)
+          echo TUNNEL_PID=$(cat runtime/pids/cloudflared-quick.pid)
+          echo WAVE_UNTOUCHED=TRUE
+          echo PRODUCTION_DNS_NOT_CUT_OVER=TRUE'
