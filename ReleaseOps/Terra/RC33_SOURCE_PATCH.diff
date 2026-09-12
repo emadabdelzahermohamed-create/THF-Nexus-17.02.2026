@@ -1,0 +1,75 @@
+--- a/project.godot
++++ b/project.godot
+@@ -1,4 +1,4 @@
+-; THF Terra — RC29 Native Godot Export Readiness
++; THF Terra — RC33 Android Texture Export Readiness
+ config_version=5
+ 
+ [application]
+@@ -20,12 +20,13 @@
+ renderer/rendering_method.mobile="mobile"
+ renderer/rendering_method.web="gl_compatibility"
+ textures/default_filters/use_nearest_mipmap_filter=false
++textures/vram_compression/import_etc2_astc=true
+ 
+ [thf]
+ product="nexus_world"
+ api_base_url="http://127.0.0.1:8000"
+ application_id="com.topherofit.thf.terra"
+-stage="RC29"
++stage="RC33"
+ server_authoritative=true
+ 
+ [thf]
+--- a/export_presets.cfg
++++ b/export_presets.cfg
+@@ -33,8 +33,8 @@
+ architectures/arm64-v8a=true
+ architectures/x86=false
+ architectures/x86_64=false
+-version/code=42063
+-version/name="4.6.3-rc29"
++version/code=42067
++version/name="4.6.7-rc33"
+ package/unique_name="com.topherofit.thf.terra"
+ package/name="THF Terra"
+ package/signed=false
+--- a/android/app/build.gradle
++++ b/android/app/build.gradle
+@@ -15,8 +15,8 @@
+         applicationId appId
+         minSdk 26
+         targetSdk 36
+-        versionCode 42066
+-        versionName '4.6.6-rc32'
++        versionCode 42067
++        versionName '4.6.7-rc33'
+         buildConfigField 'String', 'THF_WEB_URL', webUrlLiteral
+     }
+     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+--- /dev/null
++++ b/tests/test_terra_rc33_android_texture_export_readiness.py
+@@ -0,0 +1,23 @@
++from pathlib import Path
++ROOT=Path(__file__).resolve().parents[1]
++PROJECT=(ROOT/"project.godot").read_text(encoding="utf-8")
++PRESET=(ROOT/"export_presets.cfg").read_text(encoding="utf-8")
++GRADLE=(ROOT/"android/app/build.gradle").read_text(encoding="utf-8")
++
++def test_android_etc2_astc_import_enabled():
++    assert "textures/vram_compression/import_etc2_astc=true" in PROJECT
++
++def test_project_stage_rc33():
++    assert 'stage="RC33"' in PROJECT
++
++def test_godot_android_preset_api36_and_rc33_version():
++    assert 'platform="Android"' in PRESET
++    assert 'gradle_build/target_sdk="36"' in PRESET
++    assert 'version/code=42067' in PRESET
++    assert 'version/name="4.6.7-rc33"' in PRESET
++
++def test_fallback_android_gradle_api36_and_rc33_version():
++    assert "compileSdk 36" in GRADLE
++    assert "targetSdk 36" in GRADLE
++    assert "versionCode 42067" in GRADLE
++    assert "versionName '4.6.7-rc33'" in GRADLE
