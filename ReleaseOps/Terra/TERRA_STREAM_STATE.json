@@ -1,11 +1,11 @@
 {
   "stream": "THF_TERRA",
-  "branch": "terra/rc33-android-texture-export-20260912",
-  "source_checkpoint": "TERRA-RC33",
-  "source_version": "4.6.7-rc33",
-  "source_sha256": "f50a0489c534306946f39603aaa2fa39e494fac5b4a7af906e03424d8457412b",
-  "releaseops_status": "RC33_EXACT_SOURCE_REVERIFIED_ENGINE_AND_AAB_BLOCKED_BY_PRE_STAGING_WIF_AUTH",
-  "dedup": "RC1-RC32 documented PASS gates/artifacts were not rerun. RC32 fresh Godot 4.7.2 import/headless PASS is retained. RC33 source/artifact identity and focused source gates were reverified only because the fresh RC33 engine/export gate remains unfinished.",
+  "branch": "terra/r34",
+  "source_checkpoint": "TERRA-RC34",
+  "source_version": "4.6.8-rc34",
+  "source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
+  "releaseops_status": "RC34_WIF_SUBJECT_OVERFLOW_REMEDIATED_BY_SHORT_BRANCH_GATE_RERUN_PENDING",
+  "dedup": "RC1-RC33 documented PASS gates/artifacts were not rerun. RC32 Godot 4.7.2 clean import/headless PASS retained. RC34 local source/deterministic gates retained; only unfinished current engine/export gate is being resumed.",
   "latest_engine_evidence": {
     "release": "TERRA-RC32",
     "workflow": "Terra RC32 G472 Gate",
@@ -13,38 +13,35 @@
     "clean_import_parser_class_cache": "PASS",
     "headless_30_frames": "PASS"
   },
-  "android_export_diagnostics": [
-    {"run_id":34661129318,"result":"FAIL_SAFE_DIAGNOSTIC","cause":"PROJECT_GRADLE_BUILD_TEMPLATE_MISSING","source_mutated":false},
-    {"run_id":34661274506,"result":"FAIL_SAFE_DIAGNOSTIC","cause":"ETC2_ASTC_IMPORT_REQUIRED","gradle_build_template_installed":true,"source_mutated":false},
-    {"run_id":34661740490,"result":"FAIL_PRE_STAGING","cause":"WIF_AUTH_FAILURE","terra_source_steps_executed":false,"source_mutated":false},
-    {"run_id":34662590579,"result":"FAIL_PRE_STAGING","cause":"WIF_AUTH_FAILURE_REPRODUCED","terra_source_steps_executed":false,"source_mutated":false,"checkpoint_commit":"cfcd17958ff2a3d12ae849cd4388ddb6c76e19a5"}
-  ],
-  "rc33": {
-    "artifact":"THF_Terra_v4.6.7_RC33_ANDROID_TEXTURE_EXPORT_READINESS_CUMULATIVE_SOURCE.zip",
-    "artifact_sha256":"f50a0489c534306946f39603aaa2fa39e494fac5b4a7af906e03424d8457412b",
-    "parts":[
-      {"name":"THF_Terra_v4.6.7_RC33_ANDROID_TEXTURE_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"02a56c856bbbd47d38169e71b5e68ecfd21282a23130ff9e2bd3ff1581353978"},
-      {"name":"THF_Terra_v4.6.7_RC33_ANDROID_TEXTURE_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"2f5f5183b6087930b94de8c29fb0eef833bf9b5a7d8f5258fb979394592b345e"}
+  "rc34": {
+    "artifact": "THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip",
+    "artifact_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
+    "parts": [
+      {"name": "THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip.part.00", "sha256": "a9ba896bd3ddc2667f759e9b1c7493f861ed075edacc962893b6449a7d651ef1"},
+      {"name": "THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip.part.01", "sha256": "a22fd343835a5153d540d95aaa56685428215d9ced3bb4fdeba7640e88f25507"}
     ],
-    "exact_artifact_reconstructed_and_sha_verified":"PASS",
-    "focused_tests":"4/4 PASS",
-    "python_compileall":"PASS",
-    "javascript_syntax":"PASS",
-    "android_api_36_metadata_static_gate":"PASS",
-    "project_godot_sha256":"fdb5b8e4d87751a224b7f8721adbc7a5dfeaeeab73c34af78a2167e1978106cc",
-    "export_presets_sha256":"01dba1637a0a973d11fab94f0f0aa30fb3ff4a860979a0d60390ccc76e70900e",
-    "android_build_gradle_sha256":"409968aeee5d1a68b0d9783df229c1f34ecc7cd178886b8faad1878ff466b2ff",
-    "etc2_astc_import":"ENABLED_CANONICAL_SOURCE",
-    "godot_4_7_2_clean_import_headless":"PENDING_FRESH_RC33_RERUN",
-    "android_test_aab":"PENDING_RERUN",
-    "sandbox_engine_acquisition":"BLOCKED_NO_NETWORK_DNS"
+    "focused_tests": "6/6 PASS",
+    "python_compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "deterministic_package": "PASS exact SHA",
+    "clean_extract": "PASS",
+    "android_api_36": "PRESERVED",
+    "godot_4_7_2_clean_import_headless": "PENDING_CURRENT_RERUN",
+    "android_test_aab": "PENDING_AFTER_ENGINE_GATE"
   },
-  "evidence": {
-    "file":"ReleaseOps/Terra/RC33_AUTONOMOUS_GATE_EVIDENCE.json",
-    "sha256":"e273090faa98e8fb6cb98b05738a3deab6250bc64579f0771c912558635bc184",
-    "evidence_commit":"d8975bf779b29b32ef116b16d2453d1e0b9ce527",
-    "sha_commit":"15b23b3554c044ef32e4d0c6281653d4d5eb216e"
+  "wif_diagnostic": {
+    "failed_run_id": 34663332064,
+    "cause": "google.subject mapped from GitHub OIDC subject exceeded 127 bytes on long branch name",
+    "remediation": "use short isolated branch terra/r34; expected OIDC subject length 79 bytes",
+    "gcp_provider_mutated": false
   },
-  "next_gate":"Restore WIF eligibility for this Terra branch or provide another engine-capable runner path, then run exact RC33 through Godot 4.7.2 clean import/parser/class-cache + 30-frame headless and debug/test-only Android API 36 AAB export. No gameplay/source bump is justified before that gate executes.",
-  "truth_boundaries":{"gpu_device_visual_qa":"NOT_EXECUTED","perfect_photo_likeness":"NOT_CLAIMED","production_signed_aab":"NOT_CLAIMED","play_approval":"NOT_CLAIMED","production_deployment":"NOT_CLAIMED","solana_settlement":"NOT_CLAIMED"}
+  "next_gate": "Run exact RC34 through Godot 4.7.2 clean import/parser/class-cache and 30-frame headless on WIF-safe short branch. If exact RC34 input is absent on builder, document staging blocker; do not mutate unrelated sources.",
+  "truth_boundaries": {
+    "gpu_device_visual_qa": "NOT_EXECUTED",
+    "perfect_photo_likeness": "NOT_CLAIMED",
+    "production_signed_aab": "NOT_CLAIMED",
+    "play_approval": "NOT_CLAIMED",
+    "production_deployment": "NOT_CLAIMED",
+    "solana_settlement": "NOT_CLAIMED"
+  }
 }
