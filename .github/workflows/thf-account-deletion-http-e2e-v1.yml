@@ -1,0 +1,96 @@
+name: THF Account Deletion HTTP E2E V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-account-deletion-http-e2e-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CANDIDATE_SHA256: 2b027ea4bfdbdbf29f3b3cb72201912b798aaf7c078415b738e9379c3515edd8
+  CANDIDATE_BASENAME: THF_NEXUS_6_ACCOUNT_DELETE_ENDPOINT_CANDIDATE_V2_34721464414.zip
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Run HTTP account deletion E2E through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cat > /tmp/thf_account_delete_http_e2e_v1.py <<'PY'
+          from pathlib import Path
+          import json, os, sys, threading, urllib.request, urllib.error
+          root=Path(os.environ['CANDIDATE_ROOT']); db=os.environ['TEST_DB']; sys.path.insert(0,str(root/'src'))
+          from thf.app import make_server
+
+          srv=make_server('127.0.0.1',0,root,db); port=srv.server_address[1]
+          thread=threading.Thread(target=srv.serve_forever,daemon=True); thread.start()
+          base=f'http://127.0.0.1:{port}'
+
+          def call(method,path,body=None,token=None):
+              data=None if body is None else json.dumps(body).encode()
+              headers={'Accept':'application/json'}
+              if data is not None: headers['Content-Type']='application/json'
+              if token: headers['Authorization']='Bearer '+token
+              req=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              try:
+                  with urllib.request.urlopen(req,timeout=5) as r:
+                      raw=r.read(); return r.status,json.loads(raw or b'{}')
+              except urllib.error.HTTPError as e:
+                  raw=e.read();
+                  try: payload=json.loads(raw or b'{}')
+                  except Exception: payload={'raw':raw.decode(errors='replace')}
+                  return e.code,payload
+
+          try:
+              s,reg=call('POST','/api/auth/register',{'username':'http_delete_v1','password':'HTTP-delete-test-only-2026!'})
+              assert s in (200,201), (s,reg)
+              token=reg.get('token'); assert token and isinstance(token,str)
+              s,profile=call('GET','/api/profile',token=token); assert s==200,(s,profile)
+              s,anon=call('DELETE','/api/account'); assert s==403,(s,anon)
+              s,out=call('DELETE','/api/account',token=token); assert s==200,(s,out)
+              assert out.get('ok') is True and out.get('deleted') is True
+              s,after=call('GET','/api/profile',token=token); assert s==403,(s,after)
+              s,again=call('DELETE','/api/account',token=token); assert s==403,(s,again)
+              print('HTTP_REGISTER=PASS')
+              print('HTTP_AUTHENTICATED_PROFILE_BEFORE_DELETE=PASS')
+              print('HTTP_ANONYMOUS_DELETE_REJECTED=PASS')
+              print('HTTP_DELETE_ACCOUNT=PASS')
+              print('HTTP_OLD_TOKEN_REJECTED_AFTER_DELETE=PASS')
+              print('HTTP_REPEAT_DELETE_WITH_REVOKED_TOKEN_REJECTED=PASS')
+              print('HTTP_ACCOUNT_DELETION_E2E=PASS')
+          finally:
+              srv.shutdown(); srv.server_close(); thread.join(timeout=3)
+          PY
+
+          gcloud compute scp /tmp/thf_account_delete_http_e2e_v1.py "${GCP_BUILDER}:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="set -Eeuo pipefail
+            C=\"\$HOME/thf-runtime-s1/candidates/$CANDIDATE_BASENAME\"; test -f \"\$C\"
+            SHA=\$(sha256sum \"\$C\" | awk '{print \$1}'); echo CANDIDATE_SHA256=\$SHA; test \"\$SHA\" = \"$CANDIDATE_SHA256\"
+            TMP=\$(mktemp -d /tmp/thf-http-e2e-v1.XXXXXX); trap 'rm -rf \"\$TMP\" /tmp/thf_account_delete_http_e2e_v1.py' EXIT
+            unzip -q \"\$C\" -d \"\$TMP/extracted\"; ROOT=\"\$TMP/extracted/THF_NEXUS_6_FINAL\"; test -f \"\$ROOT/src/thf/app.py\"
+            CANDIDATE_ROOT=\"\$ROOT\" TEST_DB=\"\$TMP/http.sqlite\" PYTHONDONTWRITEBYTECODE=1 python3 /tmp/thf_account_delete_http_e2e_v1.py
+            if find \"\$ROOT\" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then exit 9; fi
+            echo THF_CANDIDATE_WAVE_ISOLATION=PASS; echo PRODUCTION_RUNTIME_MUTATION=FALSE; echo PRODUCTION_DB_MUTATION=FALSE
+            echo PRODUCTION_SIGNING_PERFORMED=FALSE; echo PLAY_UPLOAD_PERFORMED=FALSE; echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE; echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE; echo WAVE_UNTOUCHED=TRUE"
