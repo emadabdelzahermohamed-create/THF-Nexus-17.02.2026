@@ -83,3 +83,4 @@ jobs:
           echo TERRA_RC34_EXPORT_GATE=PASS
           echo PRODUCTION_SIGNING=NOT_PERFORMED
           echo WAVE_UNTOUCHED=TRUE
+# rerun-exact-rc34: 2026-09-12
