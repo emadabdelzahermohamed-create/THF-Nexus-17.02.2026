@@ -1,0 +1,94 @@
+name: THF Account Client Candidate V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-account-client-candidate-v1.yml'
+      - 'ReleaseOps/Compliance/thf_account_client_candidate_v1.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  INPUT_SHA256: 2b027ea4bfdbdbf29f3b3cb72201912b798aaf7c078415b738e9379c3515edd8
+  INPUT_BASENAME: THF_NEXUS_6_ACCOUNT_DELETE_ENDPOINT_CANDIDATE_V2_34721464414.zip
+
+jobs:
+  build-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Build isolated account client candidate and run disposable E2E
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          OUT="THF_NEXUS_6_ACCOUNT_CLIENT_CANDIDATE_V1_${GITHUB_RUN_ID}.zip"
+          gcloud compute scp ReleaseOps/Compliance/thf_account_client_candidate_v1.py "${GCP_BUILDER}:/tmp/thf_account_client_candidate_v1.py" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="set -Eeuo pipefail
+            C=\"\$HOME/thf-runtime-s1/candidates/$INPUT_BASENAME\"; test -f \"\$C\"
+            BEFORE=\$(sha256sum \"\$C\" | awk '{print \$1}'); echo INPUT_SHA256_BEFORE=\$BEFORE; test \"\$BEFORE\" = \"$INPUT_SHA256\"
+            O=\"\$HOME/thf-runtime-s1/candidates/$OUT\"; test ! -e \"\$O\"
+            python3 /tmp/thf_account_client_candidate_v1.py \"\$C\" \"\$O\"
+            AFTER=\$(sha256sum \"\$C\" | awk '{print \$1}'); echo INPUT_SHA256_AFTER=\$AFTER; test \"\$AFTER\" = \"$INPUT_SHA256\"
+            OSHA=\$(sha256sum \"\$O\" | awk '{print \$1}'); echo ACCOUNT_CLIENT_CANDIDATE_BASENAME=$OUT; echo ACCOUNT_CLIENT_CANDIDATE_SHA256=\$OSHA
+            TMP=\$(mktemp -d /tmp/thf-account-client-e2e-v1.XXXXXX); trap 'rm -rf \"\$TMP\" /tmp/thf_account_client_candidate_v1.py' EXIT
+            unzip -q \"\$O\" -d \"\$TMP/extracted\"; ROOT=\"\$TMP/extracted/THF_NEXUS_6_FINAL\"
+            PYTHONDONTWRITEBYTECODE=1 python3 - \"\$ROOT\" \"\$TMP/e2e.sqlite\" <<'PY'
+          from pathlib import Path
+          import json, sys, threading, urllib.request, urllib.error
+          root=Path(sys.argv[1]); db=sys.argv[2]; sys.path.insert(0,str(root/'src'))
+          from thf.app import make_server
+          srv=make_server('127.0.0.1',0,root,db); port=srv.server_address[1]
+          th=threading.Thread(target=srv.serve_forever,daemon=True); th.start(); base=f'http://127.0.0.1:{port}'
+          def raw(path):
+              with urllib.request.urlopen(base+path,timeout=5) as r:return r.status,r.headers.get('Content-Type',''),r.read()
+          def call(method,path,body=None,token=None):
+              data=None if body is None else json.dumps(body).encode(); headers={'Accept':'application/json'}
+              if data is not None: headers['Content-Type']='application/json'
+              if token: headers['Authorization']='Bearer '+token
+              req=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              try:
+                  with urllib.request.urlopen(req,timeout=5) as r:return r.status,json.loads(r.read() or b'{}')
+              except urllib.error.HTTPError as e:
+                  try:p=json.loads(e.read() or b'{}')
+                  except Exception:p={}
+                  return e.code,p
+          try:
+              s0,ct0,b0=raw('/'); sd,ctd,bd=raw('/account-deletion')
+              assert s0==200 and sd==200 and b0!=bd and b'DELETE /api/account' in bd and 'text/html' in ctd
+              s,reg=call('POST','/api/auth/register',{'username':'client_delete_v1','password':'Client-delete-test-2026!'})
+              assert s in (200,201); token=reg.get('token'); assert token
+              s,out=call('DELETE','/api/account',token=token); assert s==200 and out.get('deleted') is True
+              s,_=call('GET','/api/profile',token=token); assert s==403
+              print('ACCOUNT_DELETION_STATIC_RESOURCE=PASS')
+              print('ACCOUNT_DELETION_NOT_SPA_FALLBACK=PASS')
+              print('ACCOUNT_DELETE_HTTP_E2E=PASS')
+              print('OLD_SESSION_REVOKED=PASS')
+          finally:
+              srv.shutdown();srv.server_close();th.join(timeout=3)
+          PY
+            grep -q \"DELETE ACCOUNT\" \"\$ROOT/clients/web/index.html\"
+            grep -q \"method:'DELETE'\" \"\$ROOT/clients/web/app.js\"
+            grep -q \"path=='/account-deletion'\" \"\$ROOT/src/thf/app.py\"
+            if find \"\$ROOT\" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then exit 9; fi
+            echo CLIENT_STATIC_CONTRACT=PASS; echo THF_CANDIDATE_WAVE_ISOLATION=PASS
+            echo PRODUCTION_RUNTIME_MUTATION=FALSE; echo PRODUCTION_DB_MUTATION=FALSE; echo CANONICAL_ARCHIVE_OVERWRITE=FALSE
+            echo PRODUCTION_SIGNING_PERFORMED=FALSE; echo PLAY_UPLOAD_PERFORMED=FALSE; echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE; echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE; echo WAVE_UNTOUCHED=TRUE"
