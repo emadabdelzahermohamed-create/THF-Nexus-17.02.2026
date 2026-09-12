@@ -1,0 +1,94 @@
+name: THF Play Data Safety Native Facts V3
+
+on:
+  push:
+    branches: ['ds/**']
+    paths:
+      - '.github/workflows/thf-play-data-safety-native-facts-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  native_facts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect isolated THF native facts only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -Eeuo pipefail
+          echo THF_PLAY_DATA_SAFETY_NATIVE_FACTS_V3_BEGIN
+          echo WAVE_UNTOUCHED=TRUE
+          ROOTS=(
+            "$HOME/thf-runtime-s1"
+            "$HOME/thf-builder"
+            "$HOME/thf-builder-rc16"
+            "$HOME/ReleaseOps"
+            "$HOME/releaseops"
+          )
+          TMP=$(mktemp)
+          trap "rm -f \"$TMP\"" EXIT
+          for root in "${ROOTS[@]}"; do
+            [ -d "$root" ] || continue
+            find "$root" -type f \
+              \( -name AndroidManifest.xml -o -name build.gradle -o -name build.gradle.kts -o -name export_presets.cfg \) \
+              ! -path "*/wave-mawja/*" ! -path "*/WAVE_MAWJA/*" \
+              -print >> "$TMP" 2>/dev/null || true
+          done
+          sort -u -o "$TMP" "$TMP"
+          echo "NATIVE_METADATA_FILES=$(wc -l <\"$TMP\")"
+          test -s "$TMP"
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            rel=${f#"$HOME/"}
+            sha=$(sha256sum "$f" | awk "{print \$1}")
+            printf "NATIVE_FILE path=%s sha256=%s\n" "$rel" "$sha"
+            case "$f" in
+              *AndroidManifest.xml)
+                grep -oE "<uses-permission[^>]+android:name=\"[^\"]+\"[^>]*/?>" "$f" 2>/dev/null | sed -E "s/.*android:name=\"([^\"]+)\".*/PERMISSION=\1/" | LC_ALL=C sort -u || true
+                grep -oE "android:(usesCleartextTraffic|requestLegacyExternalStorage|allowBackup)=\"[^\"]+\"" "$f" 2>/dev/null | LC_ALL=C sort -u | sed "s/^/MANIFEST_FLAG=/" || true
+                ;;
+              *build.gradle|*build.gradle.kts)
+                grep -E "applicationId|namespace|targetSdk|compileSdk|minSdk" "$f" 2>/dev/null | head -40 | sed -E "s/[[:space:]]+/ /g" | sed "s/^/GRADLE_FACT=/" || true
+                ;;
+              *export_presets.cfg)
+                grep -E "^(platform=|application/package/name=|architectures/|permissions/)" "$f" 2>/dev/null | head -80 | sed "s/^/GODOT_FACT=/" || true
+                ;;
+            esac
+          done < "$TMP"
+          echo THF_WAVE_PATH_CROSSCHECK_BEGIN
+          if grep -Ei "/wave-mawja/|/WAVE_MAWJA/" "$TMP"; then
+            echo THF_NATIVE_SCOPE_ISOLATION=FAIL
+            exit 9
+          fi
+          echo THF_NATIVE_SCOPE_ISOLATION=PASS
+          echo MUTATION_PERFORMED=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo THF_PLAY_DATA_SAFETY_NATIVE_FACTS_V3_END'
