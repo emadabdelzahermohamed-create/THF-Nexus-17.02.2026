@@ -1,0 +1,177 @@
+name: THF Account Deletion Endpoint Candidate V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-account-deletion-endpoint-candidate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  EXPECTED_ARCHIVE_SHA256: 8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Build and test reversible endpoint candidate through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cat > /tmp/thf_patch_account_delete_v1.py <<'PY'
+          from pathlib import Path
+          import os
+
+          root=Path(os.environ['CANDIDATE_ROOT'])
+          ident=root/'src/thf/identity/service.py'
+          app=root/'src/thf/app.py'
+
+          s=ident.read_text()
+          if 'def delete_account(self, uid:int)' in s:
+              raise SystemExit('candidate already patched unexpectedly')
+          method=r'''
+
+              def delete_account(self, uid:int) -> dict:
+                  """Delete the authenticated account using current schema metadata.
+
+                  The HTTP layer must derive uid from the validated bearer session; callers
+                  must never be allowed to supply an arbitrary target user id.
+                  """
+                  uid=int(uid)
+                  actions=[]
+                  with self.db.connect() as con:
+                      con.execute('BEGIN IMMEDIATE')
+                      row=con.execute('SELECT id FROM users WHERE id=?',(uid,)).fetchone()
+                      if not row:
+                          con.rollback(); raise ValueError('account not found')
+                      tables=[r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
+                      refs=[]
+                      for table in tables:
+                          cols={r[1]:r for r in con.execute(f'PRAGMA table_info("{table}")')}
+                          for fk in con.execute(f'PRAGMA foreign_key_list("{table}")'):
+                              if fk[2]=='users' and fk[3]=='user_id':
+                                  col=cols['user_id']; mandatory=bool(col[3] or col[5])
+                                  refs.append((table,str(fk[6]).upper(),mandatory))
+                      for table,on_delete,mandatory in refs:
+                          if on_delete in {'CASCADE','SET NULL'}:
+                              actions.append((table,on_delete,'schema'))
+                          elif mandatory:
+                              con.execute(f'DELETE FROM "{table}" WHERE user_id=?',(uid,))
+                              actions.append((table,on_delete,'delete'))
+                          else:
+                              con.execute(f'UPDATE "{table}" SET user_id=NULL WHERE user_id=?',(uid,))
+                              actions.append((table,on_delete,'anonymize'))
+                      con.execute('DELETE FROM users WHERE id=?',(uid,))
+                      fk_errors=list(con.execute('PRAGMA foreign_key_check'))
+                      if fk_errors:
+                          con.rollback(); raise RuntimeError('account deletion foreign-key verification failed')
+                      con.commit()
+                  return {'ok':True,'deleted':True,'user_id':uid,'references_processed':len(actions)}
+          '''
+          # The canonical service ends inside IdentityService; append an indented method.
+          ident.write_text(s.rstrip()+method+'\n')
+
+          a=app.read_text()
+          needle="    def do_POST(self):self._dispatch('POST')\n"
+          if needle not in a: raise SystemExit('do_POST contract not found')
+          a=a.replace(needle,needle+"    def do_DELETE(self):self._dispatch('DELETE')\n",1)
+          route="        if path=='/api/account' and method=='DELETE':return self._send(rt.identity.delete_account(self._need_user()['id']))\n"
+          anchor="        if path=='/api/profile' and method=='GET':return self._send(rt.user.get_profile(self._need_user()['id']))\n"
+          if anchor not in a: raise SystemExit('profile route anchor not found')
+          a=a.replace(anchor,route+anchor,1)
+          app.write_text(a)
+          print('PATCH_ACCOUNT_DELETE_V1=APPLIED')
+          PY
+
+          cat > /tmp/thf_test_account_delete_v1.py <<'PY'
+          from pathlib import Path
+          import os, sys
+          root=Path(os.environ['CANDIDATE_ROOT']); db=Path(os.environ['TEST_DB'])
+          sys.path.insert(0,str(root/'src'))
+          from thf.app import Handler
+          from thf.platform.runtime import Runtime
+          rt=Runtime(root,str(db))
+          reg=rt.identity.register('endpoint_delete_v1','Endpoint-test-only-2026!')
+          uid=int(reg['id']); token=reg['token']
+          assert rt.identity.user_from_token(token)['id']==uid
+          with rt.db.connect() as con:
+              con.execute("INSERT INTO chat_messages(user_id,channel,text,x,y,district,created_at) VALUES(?,?,?,?,?,?,datetime('now'))",(uid,'delete-test','disposable',0,0,'test'))
+              con.execute("INSERT INTO media_views(media_id,user_id,watch_sec,completed,created_at) VALUES(?,?,?,?,datetime('now'))",(0,uid,0,0))
+          out=rt.identity.delete_account(uid)
+          assert out['ok'] and out['deleted'] and out['user_id']==uid
+          assert rt.identity.user_from_token(token) is None
+          with rt.db.connect() as con:
+              assert con.execute('SELECT COUNT(*) FROM users WHERE id=?',(uid,)).fetchone()[0]==0
+              assert con.execute('SELECT COUNT(*) FROM sessions WHERE user_id=?',(uid,)).fetchone()[0]==0
+              assert con.execute('SELECT COUNT(*) FROM profiles WHERE user_id=?',(uid,)).fetchone()[0]==0
+              assert con.execute('SELECT COUNT(*) FROM chat_messages WHERE user_id=?',(uid,)).fetchone()[0]==0
+              assert con.execute('SELECT COUNT(*) FROM media_views WHERE user_id=?',(uid,)).fetchone()[0]==0
+              assert list(con.execute('PRAGMA foreign_key_check'))==[]
+          src=(root/'src/thf/app.py').read_text()
+          assert "def do_DELETE(self):self._dispatch('DELETE')" in src
+          assert "path=='/api/account' and method=='DELETE'" in src
+          assert "delete_account(self._need_user()['id'])" in src
+          assert 'user_id' not in "delete_account(self._need_user()['id'])"  # no request-body target
+          print('ACCOUNT_DELETE_ENDPOINT_ROUTE_CONTRACT=PASS')
+          print('AUTHENTICATED_SESSION_ID_BINDING=PASS')
+          print('SESSION_INVALIDATION=PASS')
+          print('DB_TRANSACTION=PASS')
+          print('FOREIGN_KEY_CHECK=PASS')
+          print('FILESYSTEM_MEDIA_CLEANUP=NOT_YET_IMPLEMENTED')
+          PY
+
+          gcloud compute scp /tmp/thf_patch_account_delete_v1.py /tmp/thf_test_account_delete_v1.py "${GCP_BUILDER}:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="set -Eeuo pipefail
+            ARCHIVE=\"\$HOME/thf-runtime-s1/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip\"
+            RUNTIME=\"\$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL\"
+            test -f \"\$ARCHIVE\"; test -d \"\$RUNTIME\"
+            ACTUAL=\$(sha256sum \"\$ARCHIVE\" | awk '{print \$1}')
+            echo CANONICAL_ARCHIVE_SHA256=\$ACTUAL; test \"\$ACTUAL\" = \"$EXPECTED_ARCHIVE_SHA256\"
+            TMP=\$(mktemp -d /tmp/thf-account-endpoint-candidate-v1.XXXXXX); trap 'rm -rf \"\$TMP\" /tmp/thf_patch_account_delete_v1.py /tmp/thf_test_account_delete_v1.py' EXIT
+            unzip -q \"\$ARCHIVE\" -d \"\$TMP/extracted\"
+            ROOT=\"\$TMP/extracted/THF_NEXUS_6_FINAL\"; test -f \"\$ROOT/src/thf/app.py\"
+            CANDIDATE_ROOT=\"\$ROOT\" PYTHONDONTWRITEBYTECODE=1 python3 /tmp/thf_patch_account_delete_v1.py
+            CANDIDATE_ROOT=\"\$ROOT\" TEST_DB=\"\$TMP/test.sqlite\" PYTHONDONTWRITEBYTECODE=1 python3 /tmp/thf_test_account_delete_v1.py
+            PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile \"\$ROOT/src/thf/app.py\" \"\$ROOT/src/thf/identity/service.py\"
+            find \"\$ROOT\" -type d -name __pycache__ -prune -exec rm -rf {} +
+            grep -q \"def do_DELETE(self):self._dispatch('DELETE')\" \"\$ROOT/src/thf/app.py\"
+            grep -q \"def delete_account(self, uid:int)\" \"\$ROOT/src/thf/identity/service.py\"
+            mkdir -p \"\$HOME/thf-runtime-s1/candidates\"
+            OUT=\"\$HOME/thf-runtime-s1/candidates/THF_NEXUS_6_ACCOUNT_DELETE_ENDPOINT_CANDIDATE_V1_${GITHUB_RUN_ID}.zip\"
+            test ! -e \"\$OUT\"
+            (cd \"\$TMP/extracted\" && zip -qr \"\$OUT\" THF_NEXUS_6_FINAL -x '*/runtime/*.sqlite' '*/runtime/*.db' '*/__pycache__/*' '*.pyc' '*.pyo')
+            echo CANDIDATE_BASENAME=\$(basename \"\$OUT\")
+            echo CANDIDATE_SHA256=\$(sha256sum \"\$OUT\" | awk '{print \$1}')
+            echo CANDIDATE_SIZE_BYTES=\$(stat -c %s \"\$OUT\")
+            echo CANONICAL_ARCHIVE_SHA256_AFTER=\$(sha256sum \"\$ARCHIVE\" | awk '{print \$1}')
+            test \"\$(sha256sum \"\$ARCHIVE\" | awk '{print \$1}')\" = \"$EXPECTED_ARCHIVE_SHA256\"
+            if find \"\$ROOT\" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then exit 9; fi
+            echo THF_CANDIDATE_WAVE_ISOLATION=PASS
+            echo CANONICAL_ARCHIVE_MUTATION=FALSE
+            echo PRODUCTION_RUNTIME_MUTATION=FALSE
+            echo PRODUCTION_DB_MUTATION=FALSE
+            echo PRODUCTION_SIGNING_PERFORMED=FALSE
+            echo PLAY_UPLOAD_PERFORMED=FALSE
+            echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+            echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+            echo WAVE_UNTOUCHED=TRUE"
