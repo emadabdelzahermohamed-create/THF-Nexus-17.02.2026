@@ -1,0 +1,63 @@
+name: THF Account-Owned Media Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-account-owned-media-inventory-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  EXPECTED_ARCHIVE_SHA256: 8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only media ownership inventory through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="set -Eeuo pipefail
+            ARCHIVE=\"\$HOME/thf-runtime-s1/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip\"; test -f \"\$ARCHIVE\"
+            SHA=\$(sha256sum \"\$ARCHIVE\" | awk '{print \$1}'); echo CANONICAL_ARCHIVE_SHA256=\$SHA; test \"\$SHA\" = \"$EXPECTED_ARCHIVE_SHA256\"
+            TMP=\$(mktemp -d /tmp/thf-media-inventory-v1.XXXXXX); trap 'rm -rf \"\$TMP\"' EXIT
+            unzip -q \"\$ARCHIVE\" -d \"\$TMP/extracted\"; ROOT=\"\$TMP/extracted/THF_NEXUS_6_FINAL\"; cd \"\$ROOT\"
+            echo THF_ACCOUNT_OWNED_MEDIA_INVENTORY_V1_BEGIN
+            echo MEDIA_SCHEMA_BEGIN
+            grep -RInE --include='*.py' 'CREATE TABLE (media|avatar)|media_posts|media_assets|avatar|upload|storage|object|blob|file_path|path[[:space:]]+TEXT|url[[:space:]]+TEXT' src/thf | head -600 || true
+            echo MEDIA_SCHEMA_END
+            echo FILESYSTEM_PRIMITIVES_BEGIN
+            grep -RInE --include='*.py' '(unlink\(|remove\(|rmtree\(|mkdir\(|write_bytes\(|write_text\(|open\(|Path\(|shutil|uploads|media_dir|avatar_dir|storage_dir)' src/thf | head -600 || true
+            echo FILESYSTEM_PRIMITIVES_END
+            echo MEDIA_API_ROUTES_BEGIN
+            grep -nE '/api/(media|avatar)|media_|avatar|upload' src/thf/app.py | head -400 || true
+            echo MEDIA_API_ROUTES_END
+            echo STORAGE_ENV_BEGIN
+            grep -RInE --exclude-dir=__pycache__ --include='*.py' --include='*.toml' --include='*.md' '(S3|GCS|BUCKET|OBJECT_STORAGE|STORAGE_|MEDIA_|UPLOAD_|AVATAR_)' src clients pyproject.toml README* 2>/dev/null | head -500 || true
+            echo STORAGE_ENV_END
+            echo RUNTIME_TOPLEVEL_BEGIN
+            find runtime -maxdepth 3 -type d -printf '%p\n' 2>/dev/null | head -200 || true
+            echo RUNTIME_TOPLEVEL_END
+            if find . \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then exit 9; fi
+            echo THF_SOURCE_WAVE_ISOLATION=PASS; echo MUTATION_PERFORMED=FALSE; echo WAVE_UNTOUCHED=TRUE
+            echo THF_ACCOUNT_OWNED_MEDIA_INVENTORY_V1_END"
