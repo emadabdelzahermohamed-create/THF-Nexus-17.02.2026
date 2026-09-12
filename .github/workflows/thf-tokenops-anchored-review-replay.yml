@@ -1,0 +1,49 @@
+name: THF TokenOps Anchored Review Replay Guard
+
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/anchored_review_replay_guard.py'
+      - 'ReleaseOps/TokenOps/test_anchored_review_replay_guard.py'
+      - '.github/workflows/thf-tokenops-anchored-review-replay.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  anchored-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_anchored_review_replay_guard.py 2>&1 | tee anchored-review-replay-tests.log
+      - name: Assert non-execution boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/anchored-review-replay-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' ReleaseOps/TokenOps/anchored_review_replay_guard.py ReleaseOps/TokenOps/test_anchored_review_replay_guard.py
+          printf '%s\n' 'EXTERNAL_ANCHOR_REQUIRED=TRUE' 'ONE_TIME_REPLAY=TRUE' 'SIMULATION_REVIEW_ONLY=TRUE' 'EXECUTION_AUTHORIZED=FALSE' 'FINANCIAL_EFFECT=FALSE' 'PRIVATE_KEY_USED=FALSE' 'WAVE_UNTOUCHED=TRUE'
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-anchored-review-replay
+          sha256sum ReleaseOps/TokenOps/anchored_review_replay_guard.py ReleaseOps/TokenOps/test_anchored_review_replay_guard.py .github/workflows/thf-tokenops-anchored-review-replay.yml > tokenops-anchored-review-replay/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/anchored-review-replay-tests.log tokenops-anchored-review-replay/
+          printf '%s\n' 'THF_TOKENOPS_ANCHORED_REVIEW_REPLAY=PASS' 'EXTERNAL_ANCHOR_REQUIRED=TRUE' 'ONE_TIME_REPLAY=TRUE' 'SIMULATION_REVIEW_ONLY=TRUE' 'EXECUTION_AUTHORIZED=FALSE' 'FINANCIAL_EFFECT=FALSE' 'PRIVATE_KEY_USED=FALSE' 'WAVE_UNTOUCHED=TRUE' > tokenops-anchored-review-replay/SAFETY.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Anchored-Review-Replay-Guard
+          path: tokenops-anchored-review-replay/
+          if-no-files-found: error
+          retention-days: 90
