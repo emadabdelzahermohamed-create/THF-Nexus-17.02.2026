@@ -19,7 +19,7 @@ env:
 jobs:
   inventory:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - id: auth
@@ -27,25 +27,53 @@ jobs:
         with:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-          create_credentials_file: true
-          export_environment_variables: true
-      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Inventory existing runtime candidates
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+      - name: Inventory existing GCP runtime candidates via REST
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         shell: bash
         run: |
-          set -u
-          echo '=== COMPUTE INSTANCES ==='
-          gcloud compute instances list --project "$GCP_PROJECT_ID" --format='table(name,zone,status,machineType.basename(),networkInterfaces[0].networkIP,networkInterfaces[0].accessConfigs[0].natIP)' || true
-          echo '=== STATIC ADDRESSES ==='
-          gcloud compute addresses list --project "$GCP_PROJECT_ID" --format='table(name,region,address,status,purpose)' || true
-          echo '=== FORWARDING RULES ==='
-          gcloud compute forwarding-rules list --project "$GCP_PROJECT_ID" --format='table(name,region,IPAddress,IPProtocol,portRange,target)' || true
-          echo '=== CLOUD RUN ==='
-          gcloud run services list --project "$GCP_PROJECT_ID" --platform=managed --format='table(name,region,url)' || true
-          echo '=== SQL ==='
-          gcloud sql instances list --project "$GCP_PROJECT_ID" --format='table(name,region,databaseVersion,state,ipAddresses.ipAddress)' || true
-          echo '=== INVENTORY COMPLETE ==='
-          echo 'READ_ONLY=TRUE'
-          echo 'WAVE_MUTATION=FALSE'
+          set -Eeuo pipefail
+          H="Authorization: Bearer ${ACCESS_TOKEN}"
+          curl -fsS -H "$H" "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}/aggregated/instances" -o /tmp/instances.json
+          curl -sS -H "$H" "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}/aggregated/addresses" -o /tmp/addresses.json || true
+          curl -sS -H "$H" "https://compute.googleapis.com/compute/v1/projects/${GCP_PROJECT_ID}/aggregated/forwardingRules" -o /tmp/fwdrules.json || true
+          curl -sS -H "$H" "https://run.googleapis.com/v2/projects/${GCP_PROJECT_ID}/locations/-/services" -o /tmp/run.json || true
+          curl -sS -H "$H" "https://sqladmin.googleapis.com/sql/v1beta4/projects/${GCP_PROJECT_ID}/instances" -o /tmp/sql.json || true
+          python3 - <<'PY'
+          import json, os
+          def load(p):
+              try:return json.load(open(p,encoding='utf-8'))
+              except Exception:return {}
+          inst=load('/tmp/instances.json')
+          print('=== COMPUTE INSTANCES ===')
+          count=0
+          for scope,data in sorted((inst.get('items') or {}).items()):
+              for vm in data.get('instances') or []:
+                  count+=1
+                  nics=vm.get('networkInterfaces') or []
+                  internal=(nics[0].get('networkIP') if nics else '') or ''
+                  external=''
+                  if nics:
+                      for ac in nics[0].get('accessConfigs') or []:
+                          external=ac.get('natIP') or external
+                  print(f"VM name={vm.get('name')} zone={scope.split('/')[-1]} status={vm.get('status')} machine={(vm.get('machineType') or '').split('/')[-1]} internal={internal} external={external or 'NONE'}")
+          print(f'COMPUTE_INSTANCE_COUNT={count}')
+          add=load('/tmp/addresses.json'); addc=0
+          print('=== ADDRESSES ===')
+          for scope,data in sorted((add.get('items') or {}).items()):
+              for x in data.get('addresses') or []:
+                  addc+=1; print(f"ADDRESS name={x.get('name')} scope={scope} address={x.get('address')} status={x.get('status')} purpose={x.get('purpose','')}")
+          print(f'ADDRESS_COUNT={addc}')
+          run=load('/tmp/run.json'); svcs=run.get('services') or []
+          print('=== CLOUD RUN ===')
+          for s in svcs: print(f"RUN name={(s.get('name') or '').split('/')[-1]} uri={s.get('uri','')}")
+          print(f'CLOUD_RUN_COUNT={len(svcs)}')
+          sql=load('/tmp/sql.json'); dbs=sql.get('items') or []
+          print('=== CLOUD SQL ===')
+          for s in dbs: print(f"SQL name={s.get('name')} region={s.get('region')} state={s.get('state')} version={s.get('databaseVersion')}")
+          print(f'CLOUD_SQL_COUNT={len(dbs)}')
+          print('READ_ONLY=TRUE')
+          print('WAVE_MUTATION=FALSE')
+          PY
