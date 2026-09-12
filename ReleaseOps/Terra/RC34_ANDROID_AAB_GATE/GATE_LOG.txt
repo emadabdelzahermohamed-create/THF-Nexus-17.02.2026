@@ -1,0 +1,29 @@
+WARNING: The private SSH key file for gcloud does not exist.
+WARNING: The public SSH key file for gcloud does not exist.
+WARNING: You do not have an SSH key for gcloud.
+WARNING: SSH keygen will be executed to generate a key.
+Generating public/private rsa key pair.
+Your identification has been saved in /home/runner/.ssh/google_compute_engine
+Your public key has been saved in /home/runner/.ssh/google_compute_engine.pub
+The key fingerprint is:
+SHA256:/j3tx6IwlKJNwuy62NxtUfe5/kTdl1jvnIMeSRqJSPU runner@runnervmlun5p
+The key's randomart image is:
++---[RSA 3072]----+
+|         .       |
+|        . .      |
+|       .   E   . |
+|     o. . o.o o =|
+|      +.Soo+ + o*|
+|     . *.o  + =+o|
+|      o o.o. = =+|
+|   + o ... +o =.+|
+|  . =.... . o*o+.|
++----[SHA256]-----+
+WARNING: 
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Warning: Permanently added 'compute.7990695183015470324' (ED25519) to the list of known hosts.
+/home/sa_115575029018678177962/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip: OK
+/home/sa_115575029018678177962/thf-terra-tooling/godot-export-templates/cache/Godot_v4.7.2-stable_export_templates.tpz: OK
