@@ -1,0 +1,49 @@
+name: THF Account Static Routing Context V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-account-static-routing-context-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CANDIDATE_SHA256: 2b027ea4bfdbdbf29f3b3cb72201912b798aaf7c078415b738e9379c3515edd8
+  CANDIDATE_BASENAME: THF_NEXUS_6_ACCOUNT_DELETE_ENDPOINT_CANDIDATE_V2_34721464414.zip
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect exact static routing through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="set -Eeuo pipefail
+            C=\"\$HOME/thf-runtime-s1/candidates/$CANDIDATE_BASENAME\"; test -f \"\$C\"
+            SHA=\$(sha256sum \"\$C\" | awk '{print \$1}'); echo CANDIDATE_SHA256=\$SHA; test \"\$SHA\" = \"$CANDIDATE_SHA256\"
+            TMP=\$(mktemp -d /tmp/thf-static-route-context-v1.XXXXXX); trap 'rm -rf \"\$TMP\"' EXIT
+            unzip -q \"\$C\" -d \"\$TMP/extracted\"; ROOT=\"\$TMP/extracted/THF_NEXUS_6_FINAL\"; cd \"\$ROOT\"
+            echo STATIC_ROUTE_CONTEXT_BEGIN; nl -ba src/thf/app.py | sed -n '186,214p'; echo STATIC_ROUTE_CONTEXT_END
+            echo STATIC_HELPERS_CONTEXT_BEGIN; grep -n -C 5 -E \"def _file|clients/web|index.html|mimetypes|Content-Type\" src/thf/app.py | head -160 || true; echo STATIC_HELPERS_CONTEXT_END
+            if find \"\$ROOT\" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then exit 9; fi
+            echo THF_CANDIDATE_WAVE_ISOLATION=PASS; echo MUTATION_PERFORMED=FALSE; echo WAVE_UNTOUCHED=TRUE"
