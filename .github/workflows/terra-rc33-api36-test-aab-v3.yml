@@ -1,0 +1,119 @@
+name: Terra RC33 API36 Test AAB V3
+
+on:
+  push:
+    branches: ['terra/rc32-g472-20260912']
+    paths: ['.github/workflows/terra-rc33-api36-test-aab-v3.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  P0: 1unN6-iLtu_nypKIqo-m_m8ZaLbSsGlk3
+  P1: 17ZvxPPh0JPInELSnm2ziaPIXuEnrZxo8
+  P0SHA: 4bfe9989563b8da1822e74b79531a2dd218131981277c05e01a712eabf0866c5
+  P1SHA: 4a00574c817f41a9492da20e19a023ebd39c7ba41f4573efea841c8a57b39cdc
+  RC32SHA: 389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695
+  GODOT_DIR: 4.7.2.stable
+
+jobs:
+  test-aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          ref: terra/rc32-g472-20260912
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Stage exact RC33 source identity
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          r=/tmp/terra33aab; mkdir -p "$r/project" "$r/out" "$r/evidence"
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${P0}?alt=media" -o "$r/p0"
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${P1}?alt=media" -o "$r/p1"
+          echo "${P0SHA}  $r/p0" | sha256sum -c -
+          echo "${P1SHA}  $r/p1" | sha256sum -c -
+          cat "$r/p0" "$r/p1" > "$r/rc32.zip"; echo "${RC32SHA}  $r/rc32.zip" | sha256sum -c -
+          unzip -q "$r/rc32.zip" -d "$r/project"; cd "$r/project"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('project.godot'); s=p.read_text().replace('; THF Terra — RC29 Native Godot Export Readiness','; THF Terra — RC33 Android Texture Export Readiness',1).replace('textures/default_filters/use_nearest_mipmap_filter=false','textures/default_filters/use_nearest_mipmap_filter=false\ntextures/vram_compression/import_etc2_astc=true',1).replace('stage="RC29"','stage="RC33"',1); p.write_text(s)
+          p=Path('export_presets.cfg'); p.write_text(p.read_text().replace('version/code=42063','version/code=42067',1).replace('version/name="4.6.3-rc29"','version/name="4.6.7-rc33"',1))
+          p=Path('android/app/build.gradle'); p.write_text(p.read_text().replace('versionCode 42066','versionCode 42067',1).replace("versionName '4.6.6-rc32'","versionName '4.6.7-rc33'",1))
+          p=Path('tests/test_terra_rc33_android_texture_export_readiness.py'); p.write_text('''from pathlib import Path\nROOT=Path(__file__).resolve().parents[1]\nPROJECT=(ROOT/"project.godot").read_text(encoding="utf-8")\nPRESET=(ROOT/"export_presets.cfg").read_text(encoding="utf-8")\nGRADLE=(ROOT/"android/app/build.gradle").read_text(encoding="utf-8")\n\ndef test_android_etc2_astc_import_enabled():\n    assert "textures/vram_compression/import_etc2_astc=true" in PROJECT\n\ndef test_project_stage_rc33():\n    assert 'stage="RC33"' in PROJECT\n\ndef test_godot_android_preset_api36_and_rc33_version():\n    assert 'platform="Android"' in PRESET\n    assert 'gradle_build/target_sdk="36"' in PRESET\n    assert 'version/code=42067' in PRESET\n    assert 'version/name="4.6.7-rc33"' in PRESET\n\ndef test_fallback_android_gradle_api36_and_rc33_version():\n    assert "compileSdk 36" in GRADLE\n    assert "targetSdk 36" in GRADLE\n    assert "versionCode 42067" in GRADLE\n    assert "versionName '4.6.7-rc33'" in GRADLE\n''')
+          PY
+          echo 'fdb5b8e4d87751a224b7f8721adbc7a5dfeaeeab73c34af78a2167e1978106cc  project.godot' | sha256sum -c -
+          echo '01dba1637a0a973d11fab94f0f0aa30fb3ff4a860979a0d60390ccc76e70900e  export_presets.cfg' | sha256sum -c -
+          echo '409968aeee5d1a68b0d9783df229c1f34ecc7cd178886b8faad1878ff466b2ff  android/app/build.gradle' | sha256sum -c -
+      - name: Install exact Godot 4.7.2 and Android templates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          r=/tmp/terra33aab
+          j="$(curl -fsSL https://api.github.com/repos/godotengine/godot-builds/releases/tags/4.7.2-stable)"; ed=Godot_v4.7.2-stable_linux.x86_64.zip; tp=Godot_v4.7.2-stable_export_templates.tpz
+          eu="$(printf '%s' "$j"|jq -r --arg a "$ed" '.assets[]|select(.name==$a)|.browser_download_url')"; eh="$(printf '%s' "$j"|jq -r --arg a "$ed" '.assets[]|select(.name==$a)|.digest')"
+          tu="$(printf '%s' "$j"|jq -r --arg a "$tp" '.assets[]|select(.name==$a)|.browser_download_url')"; th="$(printf '%s' "$j"|jq -r --arg a "$tp" '.assets[]|select(.name==$a)|.digest')"
+          curl -fsSL "$eu" -o "$r/g.zip"; curl -fsSL "$tu" -o "$r/t.tpz"
+          echo "${eh#sha256:}  $r/g.zip" | sha256sum -c -; echo "${th#sha256:}  $r/t.tpz" | sha256sum -c -
+          mkdir -p "$r/g" "$r/t" "$HOME/.local/share/godot/export_templates/${GODOT_DIR}"; unzip -q "$r/g.zip" -d "$r/g"; unzip -q "$r/t.tpz" -d "$r/t"
+          tr="$(find "$r/t" -type f -name android_source.zip -printf '%h\n' | head -1)"; test -n "$tr"; cp -a "$tr"/. "$HOME/.local/share/godot/export_templates/${GODOT_DIR}/"
+          b="$(find "$r/g" -maxdepth 1 -type f -name 'Godot_v4.7.2-stable_linux.x86_64' -print -quit)"; chmod +x "$b"; ln -sf "$b" "$r/godot"; "$r/godot" --version | tee "$r/evidence/godot-version.txt"
+      - name: Install Gradle project template and API 36 toolchain
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          r=/tmp/terra33aab; mkdir -p "$r/project/android/build"
+          unzip -q "$HOME/.local/share/godot/export_templates/${GODOT_DIR}/android_source.zip" -d "$r/project/android/build"
+          test -f "$r/project/android/build/build.gradle"
+          sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"; test -d "$sdk"
+          yes | "$sdk/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          "$sdk/cmdline-tools/latest/bin/sdkmanager" 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' >/dev/null
+          mkdir -p "$HOME/.android" "$HOME/.config/godot"
+          keytool -genkeypair -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname 'CN=Android Debug,O=Android,C=US' -keyalg RSA -keysize 2048 -validity 10000 >/dev/null 2>&1 || true
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$sdk"
+          export/android/java_sdk_path = "${JAVA_HOME}"
+          EOF
+          printf 'sdk=%s\njava=%s\n' "$sdk" "$JAVA_HOME" | tee "$r/evidence/android-toolchain.txt"
+      - name: Export debug test-only AAB
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          r=/tmp/terra33aab; cd "$r/project"
+          preset="$(awk '/^\[preset\.[0-9]+\]/{name=""}/^name=/{gsub(/^name="|"$/, "");name=$0}/^platform=/{gsub(/^platform="|"$/, "");if($0=="Android"){print name;exit}}' export_presets.cfg)"; test -n "$preset"; echo "$preset" | tee "$r/evidence/preset.txt"
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$HOME/.android/debug.keystore" GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+          set +e; "$r/godot" --headless --path . --export-debug "$preset" "$r/out/THF_Terra_RC33_TEST_ONLY.aab" > "$r/evidence/export.log" 2>&1; rc=$?; set -e; echo "$rc" | tee "$r/evidence/export.rc"; test "$rc" = 0
+          test -s "$r/out/THF_Terra_RC33_TEST_ONLY.aab"; sha256sum "$r/out/THF_Terra_RC33_TEST_ONLY.aab" | tee "$r/evidence/aab.sha256"; unzip -t "$r/out/THF_Terra_RC33_TEST_ONLY.aab" > "$r/evidence/aab.ziptest" 2>&1
+      - name: Emit export evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/terra33aab/evidence
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          r=pathlib.Path('/tmp/terra33aab'); e=r/'evidence'; a=r/'out/THF_Terra_RC33_TEST_ONLY.aab'; rd=lambda n:(e/n).read_text(errors='replace').strip() if (e/n).exists() else None
+          d={'stream':'THF_TERRA','release':'TERRA-RC33','source_sha256':'f50a0489c534306946f39603aaa2fa39e494fac5b4a7af906e03424d8457412b','godot_version':rd('godot-version.txt'),'android_export_rc':rd('export.rc'),'aab_exists':a.exists(),'aab_size_bytes':a.stat().st_size if a.exists() else None,'aab_sha256':hashlib.sha256(a.read_bytes()).hexdigest() if a.exists() else None,'package_expected':'com.topherofit.thf.terra','target_sdk_expected':36,'signing_scope':'DEBUG_TEST_ONLY_NOT_PRODUCTION','physical_android_gpu_visual_qa':'NOT_EXECUTED','production_signed_aab':'NOT_CLAIMED','play_approval':'NOT_CLAIMED','production_deployment':'NOT_CLAIMED'}
+          p=e/'result.json'; p.write_text(json.dumps(d,indent=2)+'\n'); (e/'result.sha256').write_text(hashlib.sha256(p.read_bytes()).hexdigest()+'  result.json\n')
+          PY
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terra-rc33-api36-test-aab-v3-evidence
+          path: /tmp/terra33aab/evidence
+          if-no-files-found: error
