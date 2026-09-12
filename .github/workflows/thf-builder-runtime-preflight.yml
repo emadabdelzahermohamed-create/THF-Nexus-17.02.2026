@@ -1,0 +1,73 @@
+name: THF Builder Runtime Preflight
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-builder-runtime-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect builder for isolated runtime use
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -Eeuo pipefail
+          echo "=== HOST ==="
+          echo USER=$(id -un); id; uname -a
+          free -h || true; df -h "$HOME" / || true
+          echo "=== TOOLING ==="
+          for x in docker podman cloudflared python3 node npm git curl openssl; do if command -v "$x" >/dev/null 2>&1; then echo TOOL_${x}=YES path=$(command -v "$x"); else echo TOOL_${x}=NO; fi; done
+          if command -v docker >/dev/null 2>&1; then docker --version || true; docker info >/dev/null 2>&1 && echo DOCKER_USABLE=YES || echo DOCKER_USABLE=NO; fi
+          if command -v podman >/dev/null 2>&1; then podman --version || true; podman info >/dev/null 2>&1 && echo PODMAN_USABLE=YES || echo PODMAN_USABLE=NO; fi
+          echo "=== LISTENERS ==="; ss -lnt 2>/dev/null | head -80 || true
+          echo "=== WORKSPACES ==="; find "$HOME" -maxdepth 1 -type d -printf "%f\n" | sort | head -80
+          echo "=== ATTACHED SERVICE ACCOUNT ==="
+          META="http://metadata.google.internal/computeMetadata/v1"
+          EMAIL=$(curl -fsS -H "Metadata-Flavor: Google" "$META/instance/service-accounts/default/email")
+          echo ATTACHED_SA=$EMAIL
+          echo SCOPES_BEGIN
+          curl -fsS -H "Metadata-Flavor: Google" "$META/instance/service-accounts/default/scopes" || true
+          echo; echo SCOPES_END
+          TOKEN=$(curl -fsS -H "Metadata-Flavor: Google" "$META/instance/service-accounts/default/token" | python3 -c "import json,sys;print(json.load(sys.stdin)[\"access_token\"])")
+          cat >/tmp/p.json <<"JSON"
+          {"permissions":["compute.instances.create","compute.disks.create","compute.subnetworks.use","compute.addresses.create","compute.firewalls.create","compute.instances.setMetadata","run.services.create","cloudbuild.builds.create"]}
+          JSON
+          curl -fsS -X POST -H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" --data-binary @/tmp/p.json "https://cloudresourcemanager.googleapis.com/v1/projects/project-b5e10d7e-8ce8-4aa4-a15:testIamPermissions" -o /tmp/got.json || true
+          python3 - <<"PY"
+          import json
+          wanted=json.load(open("/tmp/p.json"))["permissions"]
+          try: got=set(json.load(open("/tmp/got.json")).get("permissions") or [])
+          except Exception: got=set()
+          for p in wanted: print("ATTACHED_PERMISSION",p,"YES" if p in got else "NO")
+          print("ATTACHED_VM_CREATE_READY=" + ("YES" if {"compute.instances.create","compute.disks.create","compute.subnetworks.use"} <= got else "NO"))
+          PY
+          rm -f /tmp/p.json /tmp/got.json
+          echo NO_MUTATION=TRUE
+          echo WAVE_UNTOUCHED=TRUE'
