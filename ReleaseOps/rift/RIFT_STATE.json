@@ -1,36 +1,56 @@
 {
   "stream": "THF_RIFT",
-  "checkpoint": "RIFT-RC36-ANDROID-EXPORT-PREFLIGHT-HARDENING",
-  "status": "SOURCE_DETERMINISTIC_CLEAN_EXTRACT_PASS_REMOTE_GODOT_ANDROID_EXPORT_PENDING",
-  "version": "4.7.0-rc36",
-  "version_code": 42070,
-  "compile_sdk": 36,
-  "target_sdk": 36,
-  "base": {"checkpoint":"RIFT-RC35-ANDROID-EXPORT-READINESS","sha256":"ed3d1e3ede527b39f0110bbb83aab8e0d91cc4be4367b1634f14e17c02106558"},
+  "checkpoint": "RIFT-RC37-HUMAN-RELOAD-TIMING-PARITY",
+  "status": "SOURCE_DETERMINISTIC_CLEAN_EXTRACT_PASS_REMOTE_EXPORT_BLOCKED_ON_EXACT_STAGING",
+  "version": "4.7.1-rc37",
+  "version_code": 42071,
+  "base": {
+    "checkpoint": "RIFT-RC36-ANDROID-EXPORT-PREFLIGHT-HARDENING",
+    "sha256": "6b738d80e3e97376cd4e7a9498e653b90bc7a926076c2c6e98431209cdc5147f"
+  },
   "completed_now": [
-    "synchronized Android fallback Gradle and Godot export version metadata to 42070 / 4.7.0-rc36",
-    "enabled rendering/textures/vram_compression/import_etc2_astc=true for Android Godot export",
-    "preserved com.topherofit.thf.rift, minSdk 26, compile/targetSdk 36, AAB, arm64-v8a",
-    "production signing remains disabled in candidate export preset",
-    "focused and clean-extract export preflight gates PASS 12/12",
-    "deterministic exact-SHA cumulative source package created"
+    "server-owned human reload timing parity 780ms rifle / 620ms SMG",
+    "magazine fill occurs only at authoritative completion",
+    "fire/chamber blocked while reload pending",
+    "switch/holster/drop/downing cancel pending reload",
+    "Android export and Gradle metadata synchronized to 42071 / 4.7.1-rc37"
   ],
   "tests": {
-    "focused": "PASS 12/12",
-    "clean_extract": "PASS 12/12",
+    "focused": "PASS 45/45",
+    "clean_extract": "PASS 45/45",
     "python_compileall": "PASS",
-    "clean_extract_python_compileall": "PASS",
     "javascript_syntax": "PASS",
-    "clean_extract_javascript_syntax": "PASS",
+    "native_godot_byte_identity_vs_rc36": "PASS 34/34",
     "zip_integrity": "PASS",
     "deterministic_package": "PASS_EXACT_SHA",
-    "godot_4_7_2_latest_proven": "RC32_WORKFLOW_34651723807_PASS",
-    "fresh_rc36_godot": "PENDING_REMOTE_EXACT_INPUT_STAGING",
-    "android_test_aab": "PENDING_REMOTE_EXACT_INPUT_STAGING",
+    "fresh_godot_4_7_2": "NOT_EXECUTED_NATIVE_UNCHANGED",
+    "android_test_aab": "BLOCKED_EXACT_ARTIFACT_STAGING_TO_WIF_GCP_BUILDER",
     "physical_android_gpu": "NOT_EXECUTED"
   },
-  "artifact": {"name":"THF_Rift_v4.7.0_RC36_ANDROID_EXPORT_PREFLIGHT_HARDENING_CUMULATIVE_SOURCE.zip","sha256":"6b738d80e3e97376cd4e7a9498e653b90bc7a926076c2c6e98431209cdc5147f","size_bytes":108675909,"parts":[{"name":"THF_Rift_v4.7.0_RC36_ANDROID_EXPORT_PREFLIGHT_HARDENING_CUMULATIVE_SOURCE.zip.part.00","sha256":"dc8eb3e450c06e953e099d831adbc3ff224eb6fa02ad4ca60cc513827ebd64af","size_bytes":94371840},{"name":"THF_Rift_v4.7.0_RC36_ANDROID_EXPORT_PREFLIGHT_HARDENING_CUMULATIVE_SOURCE.zip.part.01","sha256":"3fbfddefd6ff12833233034e5359959920ca8b9db1585f6f2aad23be86dda657","size_bytes":14304069}]},
-  "source_shas": {"project_godot":"9e734e18f6fcd5ceacb8cebd7952e9bb16d425b432cb13278523399d80f4f2a3","export_presets":"809d34dfc680a4b12b65dc2b4969c95aea55ad243f1bc179aec0dc77185c26d5","android_build_gradle":"5a6dbb2653b1c06645780f7557df1a1020ddeaa1b8f4b0fec6668cc3028559c3"},
-  "next": "Stage exact RC36 source on private WIF/GCP builder; install Godot 4.7.2 Android export templates/project Gradle template and Android SDK 36; run fresh parser/import/headless and unsigned/test-only AAB export; verify package/version/ABI/AAB integrity/SHA-256.",
-  "truth_boundaries": ["no GPU/device visual QA claimed","no production-signed AAB claimed","no Play approval claimed","no production deployment claimed"]
+  "artifact": {
+    "name": "THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip",
+    "sha256": "3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914",
+    "size_bytes": 108758664,
+    "parts": [
+      {"name":"THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip.part.00","sha256":"5d17734cc13aeeb362a07ec36c262af7e14122aa3a51777b0e27ae005b3e4a81","size_bytes":94371840},
+      {"name":"THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip.part.01","sha256":"7b02187dcc9a7c69bfd4916649e60741c8c42d7b6738790ec35be8b3188675b4","size_bytes":14386824}
+    ]
+  },
+  "source_shas": {
+    "arena_service": "d660050386fc3c6a1c34d1a98b908d345c40bdf9640c7d97cfbc0e9610599634",
+    "project_godot": "9e734e18f6fcd5ceacb8cebd7952e9bb16d425b432cb13278523399d80f4f2a3",
+    "export_presets": "b72a3286228dedac1de6508175dadaf0ab9207ead648d99775ec1e35f1a3d47a",
+    "android_build_gradle": "b8efd63f35ff43401423eb0bc2915a3a37d19d83ff3dc6972337d6aa7edf8195",
+    "animations": "9e51749204071f7bf877eca8da1753f6d28baef887e30488729ebf917e3ac569"
+  },
+  "next": "Stage exact RC37 cumulative artifact into private WIF/GCP builder; run fresh Godot 4.7.2 parser/import/headless and unsigned test-only AAB export. Internal next source gap should be inspected only after remote gate or when staging remains unavailable.",
+  "blockers": [
+    "Exact cumulative Rift artifact bytes are in ChatGPT Library but not addressable by GitHub ReleaseOps/GCP builder; WIF connectivity exists, artifact staging path does not."
+  ],
+  "truth_boundaries": [
+    "no GPU/device visual QA claimed",
+    "no production-signed AAB claimed",
+    "no Play approval claimed",
+    "no production deployment claimed"
+  ]
 }
