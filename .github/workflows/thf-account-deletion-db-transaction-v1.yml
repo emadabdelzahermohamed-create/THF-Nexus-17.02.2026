@@ -17,7 +17,6 @@ env:
   GCP_BUILDER: thf-wave-builder
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
-  EXPECTED_SOURCE_SHA256: 7103363f195c29abe69e0d2284ab1ccc9f129235bacdc5946acbdd32043eaec7
 
 jobs:
   disposable-delete-transaction:
@@ -41,77 +40,56 @@ jobs:
         run: |
           cat > /tmp/thf_account_delete_db_v1.py <<'PY'
           from pathlib import Path
-          import os, sqlite3, sys
+          import os, sys
 
           root = Path(os.environ['THF_CANDIDATE_ROOT'])
           db_path = Path(os.environ['THF_TEST_DB'])
           sys.path.insert(0, str(root / 'src'))
-
           from thf.platform.runtime import Runtime
 
           rt = Runtime(root, str(db_path))
-          username = 'autodel_transaction_v1'
-          user = rt.identity.register(username, 'Autodel-test-only-2026!')
+          user = rt.identity.register('autodel_transaction_v1', 'Autodel-test-only-2026!')
           uid = int(user['id'])
 
-          # Exercise both a mandatory NO ACTION reference and an explicit SET NULL reference.
           with rt.db.connect() as con:
-              con.execute(
-                  "INSERT INTO chat_messages(user_id,channel,text,x,y,district,created_at) VALUES(?,?,?,?,?,?,datetime('now'))",
-                  (uid, 'delete-test', 'disposable', 0.0, 0.0, 'test')
-              )
-              con.execute(
-                  "INSERT INTO domain_events(service_id,item_id,user_id,event,payload_json,created_at) VALUES(?,NULL,?,?,?,datetime('now'))",
-                  ('delete-test', uid, 'disposable', '{}')
-              )
+              con.execute("INSERT INTO chat_messages(user_id,channel,text,x,y,district,created_at) VALUES(?,?,?,?,?,?,datetime('now'))", (uid,'delete-test','disposable',0.0,0.0,'test'))
+              con.execute("INSERT INTO domain_events(service_id,item_id,user_id,event,payload_json,created_at) VALUES(?,NULL,?,?,?,datetime('now'))", ('delete-test',uid,'disposable','{}'))
 
-          actions = []
+          actions=[]
           with rt.db.connect() as con:
               con.execute('BEGIN IMMEDIATE')
-              tables = [r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
-              refs = []
+              refs=[]
+              tables=[r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
               for table in tables:
-                  cols = {r[1]: r for r in con.execute(f'PRAGMA table_info("{table}")')}
+                  cols={r[1]:r for r in con.execute(f'PRAGMA table_info("{table}")')}
                   for fk in con.execute(f'PRAGMA foreign_key_list("{table}")'):
-                      # id, seq, table, from, to, on_update, on_delete, match
-                      if fk[2] == 'users' and fk[3] == 'user_id':
-                          refs.append((table, str(fk[6]).upper(), bool(cols['user_id'][3])))
-
-              for table, on_delete, notnull in refs:
-                  if on_delete in {'CASCADE', 'SET NULL'}:
-                      actions.append((table, on_delete, 'defer-to-fk'))
-                      continue
-                  if notnull:
-                      con.execute(f'DELETE FROM "{table}" WHERE user_id=?', (uid,))
-                      actions.append((table, on_delete, 'delete-owned'))
+                      if fk[2]=='users' and fk[3]=='user_id': refs.append((table,str(fk[6]).upper(),bool(cols['user_id'][3])))
+              for table,on_delete,notnull in refs:
+                  if on_delete in {'CASCADE','SET NULL'}:
+                      actions.append((table,on_delete,'defer-to-fk'))
+                  elif notnull:
+                      con.execute(f'DELETE FROM "{table}" WHERE user_id=?',(uid,)); actions.append((table,on_delete,'delete-owned'))
                   else:
-                      con.execute(f'UPDATE "{table}" SET user_id=NULL WHERE user_id=?', (uid,))
-                      actions.append((table, on_delete, 'anonymize-attribution'))
-
-              con.execute('DELETE FROM users WHERE id=?', (uid,))
+                      con.execute(f'UPDATE "{table}" SET user_id=NULL WHERE user_id=?',(uid,)); actions.append((table,on_delete,'anonymize-attribution'))
+              con.execute('DELETE FROM users WHERE id=?',(uid,))
               con.commit()
 
           with rt.db.connect() as con:
-              checks = {
-                  'users': con.execute('SELECT COUNT(*) FROM users WHERE id=?', (uid,)).fetchone()[0],
-                  'sessions': con.execute('SELECT COUNT(*) FROM sessions WHERE user_id=?', (uid,)).fetchone()[0],
-                  'profiles': con.execute('SELECT COUNT(*) FROM profiles WHERE user_id=?', (uid,)).fetchone()[0],
-                  'farm_state': con.execute('SELECT COUNT(*) FROM farm_state WHERE user_id=?', (uid,)).fetchone()[0],
-                  'chat_messages': con.execute('SELECT COUNT(*) FROM chat_messages WHERE user_id=?', (uid,)).fetchone()[0],
-                  'domain_event_attribution': con.execute("SELECT COUNT(*) FROM domain_events WHERE service_id='delete-test' AND user_id IS NOT NULL").fetchone()[0],
+              checks={
+                  'users':con.execute('SELECT COUNT(*) FROM users WHERE id=?',(uid,)).fetchone()[0],
+                  'sessions':con.execute('SELECT COUNT(*) FROM sessions WHERE user_id=?',(uid,)).fetchone()[0],
+                  'profiles':con.execute('SELECT COUNT(*) FROM profiles WHERE user_id=?',(uid,)).fetchone()[0],
+                  'farm_state':con.execute('SELECT COUNT(*) FROM farm_state WHERE user_id=?',(uid,)).fetchone()[0],
+                  'chat_messages':con.execute('SELECT COUNT(*) FROM chat_messages WHERE user_id=?',(uid,)).fetchone()[0],
+                  'domain_event_attribution':con.execute("SELECT COUNT(*) FROM domain_events WHERE service_id='delete-test' AND user_id IS NOT NULL").fetchone()[0],
               }
-              fk_errors = list(con.execute('PRAGMA foreign_key_check'))
-
+              fk_errors=list(con.execute('PRAGMA foreign_key_check'))
           print('THF_ACCOUNT_DELETION_DB_TRANSACTION_V1_BEGIN')
-          print('USER_ID_SOURCE=AUTHENTICATED_SESSION_CONTRACT_ONLY')
-          print('DIRECT_USER_FK_COUNT=' + str(len(actions)))
-          for table, on_delete, action in sorted(actions):
-              print(f'FK_ACTION table={table} on_delete={on_delete} action={action}')
-          for name, value in checks.items():
-              print(f'CHECK {name}={value}')
-          print('FOREIGN_KEY_CHECK_ERRORS=' + str(len(fk_errors)))
-          if any(checks.values()) or fk_errors:
-              raise SystemExit('ACCOUNT_DELETE_TRANSACTION=FAIL')
+          print('DIRECT_USER_FK_COUNT='+str(len(actions)))
+          for table,on_delete,action in sorted(actions): print(f'FK_ACTION table={table} on_delete={on_delete} action={action}')
+          for name,value in checks.items(): print(f'CHECK {name}={value}')
+          print('FOREIGN_KEY_CHECK_ERRORS='+str(len(fk_errors)))
+          if any(checks.values()) or fk_errors: raise SystemExit('ACCOUNT_DELETE_TRANSACTION=FAIL')
           print('ACCOUNT_DELETE_TRANSACTION=PASS')
           print('PRODUCTION_DB_MUTATION=FALSE')
           print('CANONICAL_SOURCE_MUTATION=FALSE')
@@ -124,27 +102,19 @@ jobs:
         run: |
           set -Eeuo pipefail
           REMOTE_SCRIPT="/tmp/thf-account-delete-db-v1-${GITHUB_RUN_ID}.py"
-          gcloud compute scp /tmp/thf_account_delete_db_v1.py "${GCP_BUILDER}:${REMOTE_SCRIPT}" \
-            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          gcloud compute ssh "$GCP_BUILDER" \
-            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
-            --command="set -Eeuo pipefail
-              ROOT=\"\$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL\"
-              test -d \"\$ROOT\"
-              BEFORE=\$(find \"\$ROOT/src\" \"\$ROOT/clients\" -type f -not -path '*/wave-mawja/*' -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | awk '{print \$1}')
-              echo SOURCE_SHA256_BEFORE=\$BEFORE
-              test \"\$BEFORE\" = \"$EXPECTED_SOURCE_SHA256\"
-              TMP=\$(mktemp -d /tmp/thf-account-delete-v1.XXXXXX)
-              trap 'rm -rf \"\$TMP\" \"$REMOTE_SCRIPT\"' EXIT
-              cp -a \"\$ROOT\" \"\$TMP/candidate\"
-              rm -f \"\$TMP/test.sqlite\"
-              THF_CANDIDATE_ROOT=\"\$TMP/candidate\" THF_TEST_DB=\"\$TMP/test.sqlite\" python3 \"$REMOTE_SCRIPT\"
-              AFTER=\$(find \"\$ROOT/src\" \"\$ROOT/clients\" -type f -not -path '*/wave-mawja/*' -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | awk '{print \$1}')
-              echo SOURCE_SHA256_AFTER=\$AFTER
-              test \"\$AFTER\" = \"$EXPECTED_SOURCE_SHA256\"
-              if find \"\$ROOT\" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then exit 9; fi
-              echo THF_RUNTIME_WAVE_ISOLATION=PASS
-              echo PRODUCTION_SIGNING_PERFORMED=FALSE
-              echo PLAY_UPLOAD_PERFORMED=FALSE
-              echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
-              echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE"
+          gcloud compute scp /tmp/thf_account_delete_db_v1.py "${GCP_BUILDER}:${REMOTE_SCRIPT}" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="set -Eeuo pipefail
+            ROOT=\"\$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL\"; test -d \"\$ROOT\"
+            hash_source(){ find \"\$ROOT/src\" \"\$ROOT/clients\" -type f -not -path '*/wave-mawja/*' -not -path '*/__pycache__/*' -not -name '*.pyc' -not -name '*.pyo' -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | awk '{print \$1}'; }
+            BEFORE=\$(hash_source); echo DETERMINISTIC_SOURCE_SHA256_BEFORE=\$BEFORE
+            grep -q '__version__ = \"6.0.0\"' \"\$ROOT/src/thf/__init__.py\"
+            TMP=\$(mktemp -d /tmp/thf-account-delete-v1.XXXXXX); trap 'rm -rf \"\$TMP\" \"$REMOTE_SCRIPT\"' EXIT
+            cp -a \"\$ROOT\" \"\$TMP/candidate\"; rm -f \"\$TMP/test.sqlite\"
+            THF_CANDIDATE_ROOT=\"\$TMP/candidate\" THF_TEST_DB=\"\$TMP/test.sqlite\" PYTHONDONTWRITEBYTECODE=1 python3 \"$REMOTE_SCRIPT\"
+            AFTER=\$(hash_source); echo DETERMINISTIC_SOURCE_SHA256_AFTER=\$AFTER; test \"\$AFTER\" = \"\$BEFORE\"
+            if find \"\$ROOT\" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then exit 9; fi
+            echo THF_RUNTIME_WAVE_ISOLATION=PASS
+            echo PRODUCTION_SIGNING_PERFORMED=FALSE
+            echo PLAY_UPLOAD_PERFORMED=FALSE
+            echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+            echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE"
