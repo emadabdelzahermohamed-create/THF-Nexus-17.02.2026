@@ -1,0 +1,82 @@
+name: THF Backend Source Schema Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-backend-source-schema-inventory-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inventory exact THF backend source and user-linked schema
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"; cd "$ROOT"
+          echo THF_BACKEND_SOURCE_SCHEMA_INVENTORY_V1_BEGIN
+          echo ROOT=$ROOT
+          printf "SOURCE_SET_SHA256="; find src clients -type f -not -path "*/wave-mawja/*" -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | awk "{print \$1}"
+          echo GIT_METADATA_BEGIN
+          if [ -d .git ]; then git rev-parse HEAD 2>/dev/null | sed "s/^/GIT_HEAD=/" || true; git status --porcelain=v1 2>/dev/null | head -100 || true; else echo GIT_METADATA=NO_DOT_GIT; fi
+          echo GIT_METADATA_END
+          echo RELEASE_MARKERS_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.map" "(6\.0\.0|version|release|build[_ -]?id)" pyproject.toml setup.cfg setup.py package.json src clients 2>/dev/null | head -300 || true
+          echo RELEASE_MARKERS_END
+          echo BACKEND_FILES_BEGIN
+          find src -maxdepth 4 -type f \( -name "*.py" -o -name "*.sql" -o -name "*.json" -o -name "*.toml" -o -name "*.yaml" -o -name "*.yml" \) -print | LC_ALL=C sort | head -1000
+          echo BACKEND_FILES_END
+          echo AUTH_SESSION_REFERENCES_BEGIN
+          grep -RInE --exclude-dir=.git "(session|auth|current_user|user_id|users|accounts|token)" src 2>/dev/null | head -900 || true
+          echo AUTH_SESSION_REFERENCES_END
+          echo SCHEMA_REFERENCES_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.pyc" "(CREATE TABLE|REFERENCES[[:space:]]+users|FOREIGN KEY|ON DELETE|sqlite|SQLAlchemy|CREATE INDEX)" src . 2>/dev/null | grep -v "/wave-mawja/" | head -1400 || true
+          echo SCHEMA_REFERENCES_END
+          echo DATABASE_FILES_BEGIN
+          find . -type f \( -name "*.db" -o -name "*.sqlite" -o -name "*.sqlite3" \) -not -path "*/wave-mawja/*" -print | LC_ALL=C sort | while read -r db; do
+            echo DB_FILE=$db
+            sha256sum "$db" | sed "s/^/DB_SHA256=/"
+            if command -v sqlite3 >/dev/null 2>&1; then
+              echo "DB_TABLES_BEGIN=$db"
+              sqlite3 "$db" ".tables" || true
+              sqlite3 "$db" "SELECT name, sql FROM sqlite_master WHERE type IN ('table','index') AND sql IS NOT NULL ORDER BY name;" 2>/dev/null | head -2000 || true
+              echo "DB_TABLES_END=$db"
+            fi
+          done
+          echo DATABASE_FILES_END
+          if find . \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then echo THF_RUNTIME_WAVE_ISOLATION=FAIL; exit 9; fi
+          echo THF_RUNTIME_WAVE_ISOLATION=PASS
+          echo MUTATION_PERFORMED=FALSE
+          echo DESTRUCTIVE_TEST_PERFORMED=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          echo THF_BACKEND_SOURCE_SCHEMA_INVENTORY_V1_END'
