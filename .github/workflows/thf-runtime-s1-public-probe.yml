@@ -1,0 +1,78 @@
+name: THF Runtime S1 Public Probe
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-runtime-s1-public-probe.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read runtime and tunnel status
+        id: remote
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          OUT=$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=8m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          URL=$(cat "$ROOT/runtime/public-url.txt" 2>/dev/null || true)
+          RP=$(cat "$ROOT/runtime/pids/thf-nexus.pid" 2>/dev/null || true)
+          CP=$(cat "$ROOT/runtime/pids/cloudflared-quick.pid" 2>/dev/null || true)
+          [[ "$RP" =~ ^[0-9]+$ ]] && kill -0 "$RP" 2>/dev/null && echo RUNTIME_PROCESS=RUNNING || echo RUNTIME_PROCESS=DOWN
+          [[ "$CP" =~ ^[0-9]+$ ]] && kill -0 "$CP" 2>/dev/null && echo TUNNEL_PROCESS=RUNNING || echo TUNNEL_PROCESS=DOWN
+          python3 - <<"PY"
+          import json,urllib.request
+          d=json.load(urllib.request.urlopen("http://127.0.0.1:18080/health",timeout=3))
+          print("LOCAL_HEALTH="+("PASS" if d.get("ok") else "FAIL"))
+          print("LOCAL_RELEASE="+str(d.get("release")))
+          PY
+          echo PUBLIC_URL=$URL
+          echo "=== TUNNEL LOG TAIL ==="
+          tail -30 "$ROOT/runtime/logs/cloudflared-quick.log" 2>/dev/null | sed -E "s/(token|secret|password|key)=[^ ]+/\1=<redacted>/Ig" || true')
+          printf '%s\n' "$OUT"
+          URL=$(printf '%s\n' "$OUT" | sed -n 's/^PUBLIC_URL=//p' | tail -1)
+          [ -n "$URL" ]
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+      - name: External HTTPS health check
+        shell: bash
+        env:
+          URL: ${{ steps.remote.outputs.url }}
+        run: |
+          set -Eeuo pipefail
+          echo "Testing $URL/health"
+          for i in $(seq 1 12); do
+            if BODY=$(curl -fsS --connect-timeout 5 --max-time 10 "$URL/health" 2>/tmp/curl.err); then
+              echo "$BODY" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("ok") is True; print("EXTERNAL_HEALTH=PASS"); print("EXTERNAL_RELEASE="+str(d.get("release")))'
+              echo PUBLIC_URL="$URL"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/curl.err || true
+          echo EXTERNAL_HEALTH=FAIL
+          exit 1
