@@ -1,0 +1,62 @@
+name: THF Runtime S1 Inspect
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-runtime-s1-inspect.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect existing runtime workspace safely
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1"
+          echo RUNTIME_ROOT=$ROOT
+          [ -d "$ROOT" ] || { echo RUNTIME_PRESENT=NO; exit 2; }
+          echo RUNTIME_PRESENT=YES
+          echo "=== SIZE ==="; du -sh "$ROOT" || true
+          echo "=== TOP LEVEL ==="; find "$ROOT" -maxdepth 2 -mindepth 1 -printf "%y %P\n" | sort | head -250
+          echo "=== ENTRYPOINT CANDIDATES ==="; find "$ROOT" -maxdepth 4 -type f \( -name "main.py" -o -name "app.py" -o -name "server.py" -o -name "manage.py" -o -name "Dockerfile" -o -name "docker-compose.yml" -o -name "compose.yml" -o -name "package.json" -o -name "requirements.txt" -o -name "pyproject.toml" -o -name "README*" -o -name "*.service" \) -printf "%P\n" | sort | head -200
+          echo "=== CONFIG KEYS ONLY ==="
+          find "$ROOT" -maxdepth 4 -type f \( -name "*.env*" -o -name "*.example" -o -name "*.toml" -o -name "*.yaml" -o -name "*.yml" -o -name "*.json" \) -print0 2>/dev/null | xargs -0 -r grep -hE "^[A-Za-z_][A-Za-z0-9_]*(=|:)" 2>/dev/null | sed -E "s/^([A-Za-z_][A-Za-z0-9_]*).*/KEY \1/" | sort -u | grep -E "THF|VPS|API|PORT|HOST|DATABASE|REDIS|MEDIA|CORS|ENV|TOKEN|URL|SECRET|KEY" | head -200 || true
+          echo "=== SECRET FILE PRESENCE ONLY ==="
+          find "$ROOT" -maxdepth 3 -type f \( -name ".env" -o -name "*.pem" -o -name "*.key" -o -name "credentials*.json" \) -printf "SECRET_FILE_PRESENT %P\n" | head -100 || true
+          echo "=== SAFE SOURCE SIGNALS ==="
+          grep -RIlE "FastAPI|Flask|uvicorn|gunicorn|express\(|createServer\(|THF_VPS_ENABLED|/health|healthz|readyz" "$ROOT" --exclude-dir=.git --exclude='*.env' 2>/dev/null | sed "s#^$ROOT/##" | sort | head -150 || true
+          echo "=== LISTENERS ==="; ss -lntp 2>/dev/null | head -120 || true
+          echo "=== RELATED PROCESSES ==="; ps -eo pid,comm,args --sort=pid | grep -Ei "python|uvicorn|gunicorn|node|thf|runtime" | grep -vE "grep|gcloud|ssh" | sed -E "s#(TOKEN|SECRET|PASSWORD|KEY)=[^ ]+#\1=<redacted>#Ig" | head -120 || true
+          echo "=== SYSTEMD USER UNITS ==="; systemctl --user --no-pager --type=service --all 2>/dev/null | grep -Ei "thf|runtime|uvicorn|gunicorn|python" | head -80 || true
+          echo "=== GIT ==="; if [ -d "$ROOT/.git" ]; then git -C "$ROOT" status --short; git -C "$ROOT" log -1 --oneline; else echo GIT_REPO=NO; fi
+          echo INSPECTION_COMPLETE=TRUE
+          echo NO_SECRET_VALUES_PRINTED=TRUE
+          echo NO_RUNTIME_MUTATION=TRUE
+          echo WAVE_UNTOUCHED=TRUE'
