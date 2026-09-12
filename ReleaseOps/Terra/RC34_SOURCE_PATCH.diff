@@ -1,0 +1,90 @@
+--- /mnt/data/terra_rc33_exact/project/project.godot	2026-09-12 00:00:00.000000000 +0000
++++ src/project.godot	2026-09-12 00:56:15.487956124 +0000
+@@ -1,4 +1,4 @@
+-; THF Terra — RC33 Android Texture Export Readiness
++; THF Terra — RC34 Android Export Blocker Fix
+ config_version=5
+ 
+ [application]
+@@ -6,6 +6,7 @@
+ config/description="THF Terra native client"
+ run/main_scene="res://native/scenes/world_main.tscn"
+ config/features=PackedStringArray("4.7")
++config/icon="res://web/static/icons/icon-512.png"
+ 
+ [display]
+ window/size/viewport_width=1280
+@@ -26,7 +27,7 @@
+ product="nexus_world"
+ api_base_url="http://127.0.0.1:8000"
+ application_id="com.topherofit.thf.terra"
+-stage="RC33"
++stage="RC34"
+ server_authoritative=true
+ 
+ [thf]
+--- /mnt/data/terra_rc33_exact/project/export_presets.cfg	2026-09-12 00:00:00.000000000 +0000
++++ src/export_presets.cfg	2026-09-12 00:56:15.488077828 +0000
+@@ -9,7 +9,7 @@
+ export_filter="all_resources"
+ include_filter=""
+ exclude_filter=""
+-export_path="build/android/THF-Terra-rc29-test.aab"
++export_path="build/android/THF-Terra-rc34-test.aab"
+ patches=PackedStringArray()
+ encryption_include_filters=""
+ encryption_exclude_filters=""
+@@ -33,8 +33,8 @@
+ architectures/arm64-v8a=true
+ architectures/x86=false
+ architectures/x86_64=false
+-version/code=42067
+-version/name="4.6.7-rc33"
++version/code=42068
++version/name="4.6.8-rc34"
+ package/unique_name="com.topherofit.thf.terra"
+ package/name="THF Terra"
+ package/signed=false
+--- /mnt/data/terra_rc33_exact/project/android/app/build.gradle	2026-09-12 00:00:00.000000000 +0000
++++ src/android/app/build.gradle	2026-09-12 00:56:15.488128485 +0000
+@@ -15,8 +15,8 @@
+         applicationId appId
+         minSdk 26
+         targetSdk 36
+-        versionCode 42067
+-        versionName '4.6.7-rc33'
++        versionCode 42068
++        versionName '4.6.8-rc34'
+         buildConfigField 'String', 'THF_WEB_URL', webUrlLiteral
+     }
+     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+--- /dev/null	2026-09-12 00:45:04.306625974 +0000
++++ src/tests/test_terra_rc34_android_export_blocker_fix.py	2026-09-12 00:56:15.488247645 +0000
+@@ -0,0 +1,27 @@
++from pathlib import Path
++ROOT=Path(__file__).resolve().parents[1]
++PROJECT=(ROOT/"project.godot").read_text(encoding="utf-8")
++PRESET=(ROOT/"export_presets.cfg").read_text(encoding="utf-8")
++GRADLE=(ROOT/"android/app/build.gradle").read_text(encoding="utf-8")
++ICON=ROOT/"web/static/icons/icon-512.png"
++
++def test_native_project_has_exportable_app_icon():
++    assert 'config/icon="res://web/static/icons/icon-512.png"' in PROJECT
++    assert ICON.is_file() and ICON.stat().st_size > 0
++
++def test_rc34_stage_and_android_api36_metadata():
++    assert 'stage="RC34"' in PROJECT
++    assert 'gradle_build/target_sdk="36"' in PRESET
++    assert 'version/code=42068' in PRESET
++    assert 'version/name="4.6.8-rc34"' in PRESET
++    assert 'package/unique_name="com.topherofit.thf.terra"' in PRESET
++    assert 'export_path="build/android/THF-Terra-rc34-test.aab"' in PRESET
++
++def test_fallback_gradle_metadata_matches_rc34_api36():
++    assert 'compileSdk 36' in GRADLE
++    assert 'targetSdk 36' in GRADLE
++    assert 'versionCode 42068' in GRADLE
++    assert "versionName '4.6.8-rc34'" in GRADLE
++
++def test_android_texture_export_readiness_retained():
++    assert 'textures/vram_compression/import_etc2_astc=true' in PROJECT
