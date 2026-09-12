@@ -42,19 +42,23 @@ jobs:
           unzip -q "$INPUT/$FULL_NAME" -d "$WORK"
           PG="$(find "$WORK" -maxdepth 3 -type f -name project.godot -print -quit)"; test -n "$PG"; PROJECT="$(dirname "$PG")"; test -f "$PROJECT/export_presets.cfg"
           PRESET="$(sed -n 's/^name="\([^"]*\)"/\1/p' "$PROJECT/export_presets.cfg" | head -1)"; test -n "$PRESET"
-          GODOT="$BASE_HOME/thf-tools/godot/4.7.2-stable/godot"; SDK="$BASE_HOME/thf-builder-rc16-build/android-sdk"; test -x "$GODOT"; test -x "$SDK/build-tools/36.0.0/aapt2"
-          JAVA_HOME_REAL="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"; ISO_HOME="$ROOT/godot-home-v2"; rm -rf "$ISO_HOME"; mkdir -p "$ISO_HOME/.config/godot"
+          GODOT="$BASE_HOME/thf-tools/godot/4.7.2-stable/godot"; SDK="$BASE_HOME/thf-builder-rc16-build/android-sdk"; TEMPLATE_ROOT="$BASE_HOME/.local/share/godot/export_templates/4.7.2.stable"
+          test -x "$GODOT"; test -x "$SDK/build-tools/36.0.0/aapt2"; test -f "$SDK/platforms/android-36/android.jar"; test -d "$TEMPLATE_ROOT"; test -f "$TEMPLATE_ROOT/android_source.zip"
+          JAVA_HOME_REAL="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"; ISO_HOME="$ROOT/godot-home-v2"; rm -rf "$ISO_HOME"; mkdir -p "$ISO_HOME/.config/godot" "$ISO_HOME/.local/share/godot"
+          ln -s "$BASE_HOME/.local/share/godot/export_templates" "$ISO_HOME/.local/share/godot/export_templates"
           printf '%s\n' '[gd_resource format=3]' '' '[resource]' "export/android/android_sdk_path = \"$SDK\"" "export/android/java_sdk_path = \"$JAVA_HOME_REAL\"" > "$ISO_HOME/.config/godot/editor_settings-4.7.tres"
           export HOME="$ISO_HOME" ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" JAVA_HOME="$JAVA_HOME_REAL"; export PATH="$JAVA_HOME/bin:$SDK/platform-tools:$SDK/build-tools/36.0.0:$PATH"
           set +e
           timeout 15m "$GODOT" --headless --editor --path "$PROJECT" --quit --verbose >"$OUT/editor-import.log" 2>&1; import_rc=$?
           timeout 5m "$GODOT" --headless --path "$PROJECT" --quit-after 30 --verbose >"$OUT/headless-boot.log" 2>&1; boot_rc=$?
+          template_rc=99
+          if [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ]; then timeout 5m "$GODOT" --headless --editor --path "$PROJECT" --install-android-build-template --quit >"$OUT/android-template-install.log" 2>&1; template_rc=$?; fi
           export_rc=99
-          if [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ]; then timeout 20m "$GODOT" --headless --path "$PROJECT" --export-debug "$PRESET" "$OUT/android/THF-Rift-RC37-test.aab" >"$OUT/android-export.log" 2>&1; export_rc=$?; fi
+          if [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$template_rc" -eq 0 ]; then timeout 20m "$GODOT" --headless --path "$PROJECT" --export-debug "$PRESET" "$OUT/android/THF-Rift-RC37-test.aab" >"$OUT/android-export.log" 2>&1; export_rc=$?; fi
           set -e
           aab=''; [ -f "$OUT/android/THF-Rift-RC37-test.aab" ] && aab="$(sha256sum "$OUT/android/THF-Rift-RC37-test.aab" | awk '{print $1}')"
-          status=FAIL; [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$export_rc" -eq 0 ] && [ -n "$aab" ] && status=PASS
-          printf 'status=%s\nproject_root=%s\npreset=%s\ncanonical_sha256=%s\nimport_rc=%s\nboot_rc=%s\nandroid_export_rc=%s\naab_sha256=%s\nproduction_signing=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' "$status" "$PROJECT" "$PRESET" "$FULL_SHA" "$import_rc" "$boot_rc" "$export_rc" "$aab" | tee "$OUT/TRUTH.txt"
+          status=FAIL; [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$template_rc" -eq 0 ] && [ "$export_rc" -eq 0 ] && [ -n "$aab" ] && status=PASS
+          printf 'status=%s\nproject_root=%s\npreset=%s\ncanonical_sha256=%s\nimport_rc=%s\nboot_rc=%s\nandroid_template_install_rc=%s\nandroid_export_rc=%s\naab_sha256=%s\nproduction_signing=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' "$status" "$PROJECT" "$PRESET" "$FULL_SHA" "$import_rc" "$boot_rc" "$template_rc" "$export_rc" "$aab" | tee "$OUT/TRUTH.txt"
           (cd "$OUT" && find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt); tar -czf "$ROOT/v2-evidence.tgz" -C "$ROOT" out-v2; [ "$status" = PASS ]
           REMOTE
           rc=${PIPESTATUS[0]}; echo "REMOTE_RC=$rc" >> "$GITHUB_ENV"; exit 0
