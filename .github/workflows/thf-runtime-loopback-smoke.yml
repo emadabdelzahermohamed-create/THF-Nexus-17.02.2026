@@ -1,0 +1,151 @@
+name: THF Runtime GCP Loopback Smoke
+
+on:
+  push:
+    branches: ['rt/s1']
+    paths: ['.github/workflows/thf-runtime-loopback-smoke.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  DRIVE_FILE_ID: 1JWm4UcGnjk2JdEyY_CNsoYw24zBfwZtx
+  OUTER_SHA: b4786128ffd684ae83e1a99ddd5b798f1d55e196462518434513b5c28e63f721
+  INNER_SHA: 8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Fetch exact Suite source package
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p /tmp/thf-runtime-s1
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${DRIVE_FILE_ID}?alt=media" -o /tmp/thf-runtime-s1/outer.zip
+          echo "${OUTER_SHA}  /tmp/thf-runtime-s1/outer.zip" | sha256sum -c -
+      - name: Stage over IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp /tmp/thf-runtime-s1/outer.zip "$GCP_BUILDER:/tmp/thf-runtime-s1-outer.zip" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet
+      - name: Run isolated loopback runtime smoke
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="OUTER_SHA='$OUTER_SHA' INNER_SHA='$INNER_SHA' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          root="$HOME/thf-runtime-s1"; rm -rf "$root"; mkdir -p "$root/outer" "$root/runtime" "$root/evidence"
+          cp /tmp/thf-runtime-s1-outer.zip "$root/outer.zip"
+          echo "$OUTER_SHA  $root/outer.zip" | sha256sum -c - | tee "$root/evidence/outer.sha256"
+          python3 - "$root/outer.zip" "$root/outer" <<'PY'
+          import sys,zipfile
+          from pathlib import Path
+          src=Path(sys.argv[1]); dst=Path(sys.argv[2]); rr=dst.resolve()
+          with zipfile.ZipFile(src) as z:
+              bad=z.testzip()
+              if bad: raise SystemExit('ZIP_INTEGRITY_FAIL='+bad)
+              for m in z.infolist():
+                  t=(dst/m.filename).resolve()
+                  if t != rr and rr not in t.parents: raise SystemExit('UNSAFE_ZIP_MEMBER='+m.filename)
+              z.extractall(dst)
+          PY
+          inner="$root/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip"
+          echo "$INNER_SHA  $inner" | sha256sum -c - | tee "$root/evidence/inner.sha256"
+          python3 - "$inner" "$root/runtime" <<'PY'
+          import sys,zipfile
+          from pathlib import Path
+          src=Path(sys.argv[1]); dst=Path(sys.argv[2]); rr=dst.resolve()
+          with zipfile.ZipFile(src) as z:
+              bad=z.testzip()
+              if bad: raise SystemExit('INNER_ZIP_INTEGRITY_FAIL='+bad)
+              for m in z.infolist():
+                  t=(dst/m.filename).resolve()
+                  if t != rr and rr not in t.parents: raise SystemExit('UNSAFE_INNER_MEMBER='+m.filename)
+              z.extractall(dst)
+          PY
+          app="$root/runtime/THF_NEXUS_6_FINAL"; cd "$app"
+          export THF_HOST=127.0.0.1 THF_PORT=18080 THF_ADMIN_TOKEN=ci-loopback-admin THF_INTERNAL_REWARD_TOKEN=ci-loopback-reward THF_QUIET=1 THF_DEBUG=0
+          cleanup(){ bash scripts/stop.sh >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          bash scripts/start.sh | tee "$root/evidence/start.txt"
+          bash scripts/status.sh | tee "$root/evidence/status.txt"
+          python3 - <<'PY' | tee "$HOME/thf-runtime-s1/evidence/http-smoke.txt"
+          import json,urllib.request,urllib.error
+          base='http://127.0.0.1:18080'
+          def openp(path,headers=None):
+              req=urllib.request.Request(base+path,headers=headers or {})
+              return urllib.request.urlopen(req,timeout=3)
+          with openp('/health') as r:
+              h=json.load(r); assert h['ok'] is True; assert h['release']=='6.0.0'; assert h['runtime']=='unified-domain-runtime'
+              assert r.headers['X-Content-Type-Options']=='nosniff'; assert r.headers['X-Frame-Options']=='DENY'; assert "default-src 'self'" in r.headers['Content-Security-Policy']
+          with openp('/') as r: assert b'<!DOCTYPE html' in r.read(256)
+          with openp('/admin.html') as r: assert b'<!DOCTYPE html' in r.read(256)
+          try:
+              openp('/api/admin/services')
+              raise AssertionError('admin endpoint accepted missing token')
+          except urllib.error.HTTPError as e: assert e.code==403
+          with openp('/api/admin/services',{'X-THF-Admin-Token':'ci-loopback-admin'}) as r:
+              d=json.load(r); assert len(d['items'])>=30
+          print('LOOPBACK_HTTP_SMOKE=PASS')
+          PY
+          bash scripts/stop.sh | tee "$root/evidence/stop.txt"
+          trap - EXIT
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          r=pathlib.Path.home()/ 'thf-runtime-s1'
+          d={'checkpoint':'THF-RUNTIME-GCP-LOOPBACK-S1','canonical_outer_sha256':'b4786128ffd684ae83e1a99ddd5b798f1d55e196462518434513b5c28e63f721','canonical_inner_sha256':'8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884','binding':'127.0.0.1:18080','health':True,'static_user':True,'static_admin':True,'admin_fail_closed_without_token':True,'admin_authorized_smoke':True,'public_cutover_performed':False,'production_secrets_used':False,'wave_touched':False}
+          (r/'evidence/result.json').write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          tar -cf "$root/evidence.tar" -C "$root" evidence
+          echo THF_RUNTIME_LOOPBACK_SMOKE=PASS
+          echo WAVE_UNTOUCHED=TRUE
+          REMOTE
+      - name: Retrieve evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp "$GCP_BUILDER:~/thf-runtime-s1/evidence.tar" /tmp/thf-runtime-s1/evidence.tar --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet
+          tar -xf /tmp/thf-runtime-s1/evidence.tar -C /tmp/thf-runtime-s1
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thf-runtime-gcp-loopback-s1-evidence
+          path: /tmp/thf-runtime-s1/evidence
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Final gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -s /tmp/thf-runtime-s1/evidence/result.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/thf-runtime-s1/evidence/result.json'))
+          assert d['health'] and d['static_user'] and d['static_admin'] and d['admin_fail_closed_without_token'] and d['admin_authorized_smoke']
+          assert not d['public_cutover_performed'] and not d['production_secrets_used'] and not d['wave_touched']
+          print('THF_RUNTIME_GCP_LOOPBACK_FINAL=PASS')
+          PY
