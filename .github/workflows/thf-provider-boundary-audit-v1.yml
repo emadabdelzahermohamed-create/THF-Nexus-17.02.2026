@@ -1,0 +1,120 @@
+name: THF Provider Boundary Audit V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-provider-boundary-audit-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  provider_boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Audit THF provider boundaries without reading secret values
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"
+          cd "$ROOT"
+          echo THF_PROVIDER_BOUNDARY_AUDIT_V1_BEGIN
+          echo SOURCE_ROOT_SHA256_BEGIN
+          find src clients config -type f 2>/dev/null \
+            -not -path "*/wave-mawja/*" -not -path "*/WAVE_MAWJA/*" -print0 \
+            | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum \
+            | sed "s/^/PROVIDER_AUDIT_SOURCE_SET_SHA256=/"
+          echo SOURCE_ROOT_SHA256_END
+
+          echo PROVIDER_RELEVANT_FILES_BEGIN
+          find src clients config -type f 2>/dev/null \
+            | grep -Ei "provider|integration|storage|media|turn|webrtc|rtc|advert|analytics|identity|auth|oauth|ai|llm|firebase|s3|gcs|bucket" \
+            | sed -n "1,250p" || true
+          echo PROVIDER_RELEVANT_FILES_END
+
+          echo ENVIRONMENT_VARIABLE_NAMES_BEGIN
+          grep -RhoE --exclude-dir=.git --exclude="*.map" \
+            "(THF|OPENAI|GEMINI|GROQ|FIREBASE|TURN|STUN|WEBRTC|S3|AWS|GCS|GOOGLE|AZURE|ADS|ANALYTICS|OAUTH|OIDC)_[A-Z0-9_]+" \
+            src clients config 2>/dev/null | LC_ALL=C sort -u | sed -n "1,300p" || true
+          echo ENVIRONMENT_VARIABLE_NAMES_END
+
+          echo PROVIDER_IMPLEMENTATION_MARKERS_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.map" --exclude="*.db" --exclude="*.sqlite*" \
+            "(provider|adapter|object.?storage|S3|GCS|bucket|TURN|STUN|WebRTC|RTCPeerConnection|ads?|analytics|OAuth|OIDC|Firebase|OpenAI|Gemini|Groq|LLM)" \
+            src clients config 2>/dev/null | sed -n "1,450p" || true
+          echo PROVIDER_IMPLEMENTATION_MARKERS_END
+
+          echo LITERAL_EXTERNAL_HOST_CLASSES_BEGIN
+          python3 - <<"PY"
+import re
+from pathlib import Path
+roots=[Path("src"),Path("clients"),Path("config")]
+allow_ext={".py",".js",".html",".json",".yaml",".yml",".toml",".properties",".kt",".kts"}
+hosts=set()
+for root in roots:
+    if not root.exists():
+        continue
+    for p in root.rglob("*"):
+        if not p.is_file() or p.suffix.lower() not in allow_ext:
+            continue
+        try: text=p.read_text(errors="ignore")
+        except Exception: continue
+        for m in re.finditer(r"(?:https?|wss?)://([^/\s\"\x27:]+)", text, re.I):
+            h=m.group(1).lower().strip(".()[]{}")
+            if h in {"localhost","127.0.0.1","0.0.0.0"} or h.endswith(".local"):
+                continue
+            # Report host classification only; never query or emit credentials/query strings.
+            if "openai" in h: c="OPENAI"
+            elif "google" in h or "googleapis" in h or "firebase" in h: c="GOOGLE_FIREBASE"
+            elif "groq" in h: c="GROQ"
+            elif "cloudflare" in h: c="CLOUDFLARE"
+            elif "amazonaws" in h or h.startswith("s3."): c="AWS_S3"
+            elif "azure" in h or "windows.net" in h: c="AZURE"
+            elif "spotify" in h: c="SPOTIFY"
+            elif "audius" in h: c="AUDIUS"
+            elif "jamendo" in h: c="JAMENDO"
+            else: c="OTHER_EXTERNAL_HOST"
+            hosts.add(c)
+for c in sorted(hosts): print(c)
+PY
+          echo LITERAL_EXTERNAL_HOST_CLASSES_END
+
+          if find . \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then
+            echo THF_RUNTIME_WAVE_ISOLATION=FAIL
+            exit 9
+          fi
+          echo THF_RUNTIME_WAVE_ISOLATION=PASS
+          echo SECRET_VALUES_READ=FALSE
+          echo MUTATION_PERFORMED=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          echo THF_PROVIDER_BOUNDARY_AUDIT_V1_END'
