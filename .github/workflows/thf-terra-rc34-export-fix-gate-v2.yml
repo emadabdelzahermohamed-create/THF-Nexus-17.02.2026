@@ -101,7 +101,7 @@ jobs:
           git commit -m 'releaseops(terra): persist RC34 Godot export diagnostics'
           git push origin HEAD:t/r34
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: THF-Terra-RC34-export-fix-v2-evidence
           path: evidence/
