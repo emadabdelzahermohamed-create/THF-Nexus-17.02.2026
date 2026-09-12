@@ -1,0 +1,101 @@
+name: Terra RC31 G472 Gate
+
+on:
+  push:
+    branches: ['terra/rc31-g472-20260912']
+    paths: ['.github/workflows/terra-rc31-g472.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  RC_PART0_ID: 1Wx6ij9aeuNHX7-DeHVCrxqcxvyLORwEb
+  RC_PART1_ID: 16_BWiiWn193p2e6DiM8d5JXxq9ZJdr1W
+  RC_PART0_SHA256: 9621efef575646b7ba961fbb1310cc7e656c8410363f785a32d6c5b62eeb2c68
+  RC_PART1_SHA256: 4213f260ed3ed49b8a7e37540f53ef50fe3b8fbb0b6f0dd1ac6c421cf51eaace
+  RC_ARCHIVE_SHA256: 8a13330ba907448029e9bf65c18649c3d6fc7cf1bdbeffea6211cc28474bdcda
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Stage exact RC31
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p /tmp/terra/project
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${RC_PART0_ID}?alt=media&supportsAllDrives=true" -o /tmp/terra/p0
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${RC_PART1_ID}?alt=media&supportsAllDrives=true" -o /tmp/terra/p1
+          echo "${RC_PART0_SHA256}  /tmp/terra/p0" | sha256sum -c -
+          echo "${RC_PART1_SHA256}  /tmp/terra/p1" | sha256sum -c -
+          cat /tmp/terra/p0 /tmp/terra/p1 > /tmp/terra/rc.zip
+          echo "${RC_ARCHIVE_SHA256}  /tmp/terra/rc.zip" | sha256sum -c -
+          unzip -q /tmp/terra/rc.zip -d /tmp/terra/project
+          test -f /tmp/terra/project/project.godot
+      - name: Install exact Godot 4.7.2
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          j="$(curl -fsSL "https://api.github.com/repos/godotengine/godot-builds/releases/tags/${GODOT_VERSION}")"
+          asset='Godot_v4.7.2-stable_linux.x86_64.zip'
+          url="$(printf '%s' "$j" | jq -r --arg a "$asset" '.assets[]|select(.name==$a)|.browser_download_url')"
+          digest="$(printf '%s' "$j" | jq -r --arg a "$asset" '.assets[]|select(.name==$a)|.digest')"
+          curl -fsSL "$url" -o /tmp/terra/godot.zip
+          echo "${digest#sha256:}  /tmp/terra/godot.zip" | sha256sum -c -
+          unzip -q /tmp/terra/godot.zip -d /tmp/terra/godot
+          bin="$(find /tmp/terra/godot -maxdepth 1 -type f -name 'Godot_v4.7.2-stable_linux.x86_64' -print -quit)"
+          chmod +x "$bin"; ln -sf "$bin" /tmp/terra/godot472
+          /tmp/terra/godot472 --version | tee /tmp/terra/version.txt
+          grep -q '^4\.7\.2' /tmp/terra/version.txt
+      - name: Clean parser import class-cache
+        shell: bash
+        run: |
+          set -o pipefail
+          cd /tmp/terra/project; rm -rf .godot
+          /tmp/terra/godot472 --headless --editor --path . --quit --verbose 2>&1 | tee /tmp/terra/import.log
+          if grep -E -n 'SCRIPT ERROR:|Parse Error:|Failed to load script|Cannot get class|Could not resolve class' /tmp/terra/import.log; then exit 31; fi
+          test -d .godot
+      - name: 30-frame headless boot
+        shell: bash
+        run: |
+          set -o pipefail
+          cd /tmp/terra/project
+          /tmp/terra/godot472 --headless --path . --quit-after 30 --verbose 2>&1 | tee /tmp/terra/headless.log
+          if grep -E -n 'SCRIPT ERROR:|Parse Error:|Failed to load script|Cannot get class|Could not resolve class' /tmp/terra/headless.log; then exit 32; fi
+      - name: Evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/terra/evidence
+          cp /tmp/terra/version.txt /tmp/terra/import.log /tmp/terra/headless.log /tmp/terra/evidence/ 2>/dev/null || true
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib
+          d=pathlib.Path('/tmp/terra/evidence')
+          imp=(d/'import.log').read_text(errors='replace') if (d/'import.log').exists() else ''
+          head=(d/'headless.log').read_text(errors='replace') if (d/'headless.log').exists() else ''
+          bad=('SCRIPT ERROR:','Parse Error:','Failed to load script','Cannot get class','Could not resolve class')
+          r={'stream':'THF_TERRA','release':'TERRA-RC31','source_sha256':os.environ['RC_ARCHIVE_SHA256'],'godot_version':(d/'version.txt').read_text().strip() if (d/'version.txt').exists() else None,'clean_import_no_script_signatures':bool(imp) and not any(x in imp for x in bad),'headless_30_no_script_signatures':bool(head) and not any(x in head for x in bad),'gpu_device_visual_qa':'NOT_EXECUTED','production_signed_aab':'NOT_CLAIMED','play_approval':'NOT_CLAIMED','production_deployment':'NOT_CLAIMED'}
+          p=d/'TERRA_RC31_GODOT472_GATE_RESULT.json'; p.write_text(json.dumps(r,indent=2)+'\n'); (d/'TERRA_RC31_GODOT472_GATE_RESULT.sha256').write_text(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n')
+          PY
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terra-rc31-g472-evidence
+          path: /tmp/terra/evidence
+          if-no-files-found: error
