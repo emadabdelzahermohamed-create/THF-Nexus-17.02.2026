@@ -1,0 +1,47 @@
+WARNING: The private SSH key file for gcloud does not exist.
+WARNING: The public SSH key file for gcloud does not exist.
+WARNING: You do not have an SSH key for gcloud.
+WARNING: SSH keygen will be executed to generate a key.
+Generating public/private rsa key pair.
+Your identification has been saved in /home/runner/.ssh/google_compute_engine
+Your public key has been saved in /home/runner/.ssh/google_compute_engine.pub
+The key fingerprint is:
+SHA256:yYWMmIz+X/jreLU50/TUhwL2EipOxInalhmJ5HjnMe8 runner@runnervmlun5p
+The key's randomart image is:
++---[RSA 3072]----+
+|                 |
+|  .o o o .       |
+| +..++..o .      |
+|..+ B +. o+      |
+| ..= O  So +   o |
+|  ..* +.. o + o o|
+|   ..+.... * +  .|
+|     .E+. = . .  |
+|      oo+. o     |
++----[SHA256]-----+
+WARNING: 
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Warning: Permanently added 'compute.7990695183015470324' (ED25519) to the list of known hosts.
+home=/home/sa_115575029018678177962
+/home/sa_115575029018678177962/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip: OK
+project_file:project.godot=present
+project_file:export_presets.cfg=present
+project_file:android/app/build.gradle=present
+3:name="Android AAB Candidate"
+tool:/home/sa_115575029018678177962/thf-tools/godot/4.7.2-stable/godot=present
+tool:/home/sa_115575029018678177962/thf-builder-rc16-build/android-sdk/build-tools/36.0.0/aapt2=present
+tool:/home/sa_115575029018678177962/thf-builder-rc16-build/android-sdk/platforms/android-36/android.jar=present
+godot_candidates_begin
+godot_candidates_end
+android_source_candidates_begin
+android_source_candidates_end
+template_dirs_begin
+/home/sa_115575029018678177962/thf-tools/godot/4.7.2-stable
+template_dirs_end
+sdk36_dirs_begin
+/home/sa_115575029018678177962/thf-builder-rc16-build/android-sdk/platforms/android-36/android.jar
+sdk36_dirs_end
+wave_untouched=true
