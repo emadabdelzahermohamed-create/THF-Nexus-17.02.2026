@@ -1,0 +1,177 @@
+THF Terra RC29 Godot 4.7.2 diagnostics
+source_sha256=c80e7d3c1a241ef5d044f1638f231c2f44b982f02683a88fd35ff2e49599fd1e
+godot_version=4.7.2.stable.official.ed1daf0bf
+import_rc=0
+--- focused diagnostics ---
+4687-[0m
+4688-Loading resource: res://native/scenes/world_main.tscn remapped: res://native/scenes/world_main.tscn
+4689-Loading resource: res://native/world/WorldMain.gd remapped: res://native/world/WorldMain.gd
+4690:SCRIPT ERROR: Parse Error: Function "_set_activity_status()" not found in base self.
+4691-          at: GDScript::reload (res://native/world/WorldMain.gd:1074)
+4692:SCRIPT ERROR: Parse Error: Function "_refresh_activity_actions_only()" not found in base self.
+4693-          at: GDScript::reload (res://native/world/WorldMain.gd:1075)
+4694:ERROR: Failed to load script "res://native/world/WorldMain.gd" with error "Parse error".
+4695-   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+4696-Completed load for: 'res://native/world/WorldMain.gd' remapped 'res://native/world/WorldMain.gd' at thread -1
+4697-Completed load for: 'res://native/scenes/world_main.tscn' remapped 'res://native/scenes/world_main.tscn' at thread -1
+--- import tail ---
+  LOD stop: reached 1.465172290802 cumulative error (step error 0.98754489421844)
+[   1% ] [90m[1mimport[22m | Running Custom Script...[39m[0m
+[  99% ] [90m[1mimport[22m | Saving...[39m[0m
+Saving scene to: res://.godot/imported/short.glb-f6f94415b087cf4b41da33966d26cba1.scn
+[92m[ DONE ][39m [1mimport[22m
+[0m
+EditorFileSystem: "res://web/static/assets/stage16g_avatar/hair/short.glb" import took 13 ms.
+[  95% ] [90m[1mreimport[22m | long.glb[39m[0m
+EditorFileSystem: Importing file: res://web/static/assets/stage16g_avatar/hair/long.glb
+[   0% ] [90m[1mimport[22m | Started Import Scene (104 steps)[39m[0m
+[   0% ] [90m[1mimport[22m | Importing Scene...[39m[0m
+glTF: Total buffers: 1
+glTF: Total buffer views: 3
+glTF: Total accessors: 3
+glTF: Parsing mesh: 0
+glTF: Total meshes: 1
+glTF: Converting spatial: world
+glTF: Creating mesh for: long01_obj
+LOD Generation: Triangles 4108, vertices 3314 (merged 3248)
+  LOD 1: 2326 triangles, error 0.99353224039078 (step error 0.99353224039078)
+  LOD stop: got 2310 triangles when asking for 1163
+[   1% ] [90m[1mimport[22m | Running Custom Script...[39m[0m
+[  99% ] [90m[1mimport[22m | Saving...[39m[0m
+Saving scene to: res://.godot/imported/long.glb-70114331588d3af3b6b1597612a5ecdb.scn
+[92m[ DONE ][39m [1mimport[22m
+[0m
+EditorFileSystem: "res://web/static/assets/stage16g_avatar/hair/long.glb" import took 15 ms.
+[  96% ] [90m[1mreimport[22m | buzz.glb[39m[0m
+EditorFileSystem: Importing file: res://web/static/assets/stage16g_avatar/hair/buzz.glb
+[   0% ] [90m[1mimport[22m | Started Import Scene (104 steps)[39m[0m
+[   0% ] [90m[1mimport[22m | Importing Scene...[39m[0m
+glTF: Total buffers: 1
+glTF: Total buffer views: 3
+glTF: Total accessors: 3
+glTF: Parsing mesh: 0
+glTF: Total meshes: 1
+glTF: Converting spatial: world
+glTF: Creating mesh for: short04_obj
+LOD Generation: Triangles 1050, vertices 991 (merged 882)
+  LOD 1: 514 triangles, error 0.98964262008667 (step error 0.98964262008667)
+  LOD stop: got 502 triangles when asking for 257
+[   1% ] [90m[1mimport[22m | Running Custom Script...[39m[0m
+[  99% ] [90m[1mimport[22m | Saving...[39m[0m
+Saving scene to: res://.godot/imported/buzz.glb-568e66f11a9cc555c304ad6d6bbabfee.scn
+[92m[ DONE ][39m [1mimport[22m
+[0m
+EditorFileSystem: "res://web/static/assets/stage16g_avatar/hair/buzz.glb" import took 6 ms.
+[  96% ] [90m[1mreimport[22m | afro.glb[39m[0m
+EditorFileSystem: Importing file: res://web/static/assets/stage16g_avatar/hair/afro.glb
+[   0% ] [90m[1mimport[22m | Started Import Scene (104 steps)[39m[0m
+[   0% ] [90m[1mimport[22m | Importing Scene...[39m[0m
+glTF: Total buffers: 1
+glTF: Total buffer views: 3
+glTF: Total accessors: 3
+glTF: Parsing mesh: 0
+glTF: Total meshes: 1
+glTF: Converting spatial: world
+glTF: Creating mesh for: afro01_obj
+LOD Generation: Triangles 2192, vertices 2276 (merged 2216)
+  LOD 1: 1096 triangles, error 0.32347017526627 (step error 0.32347017526627)
+  LOD 2: 252 triangles, error 0.53170371055603 (step error 0.53170371055603)
+  LOD stop: got 190 triangles when asking for 126
+[   1% ] [90m[1mimport[22m | Running Custom Script...[39m[0m
+[  99% ] [90m[1mimport[22m | Saving...[39m[0m
+Saving scene to: res://.godot/imported/afro.glb-e960c191166cc22c1de4103922a2dfcb.scn
+[92m[ DONE ][39m [1mimport[22m
+[0m
+EditorFileSystem: "res://web/static/assets/stage16g_avatar/hair/afro.glb" import took 9 ms.
+[  97% ] [90m[1mreimport[22m | eyelashes.glb[39m[0m
+EditorFileSystem: Importing file: res://web/static/assets/stage16g_avatar/face/eyelashes.glb
+[   0% ] [90m[1mimport[22m | Started Import Scene (104 steps)[39m[0m
+[   0% ] [90m[1mimport[22m | Importing Scene...[39m[0m
+glTF: Total buffers: 1
+glTF: Total buffer views: 3
+glTF: Total accessors: 3
+glTF: Parsing mesh: 0
+glTF: Total meshes: 1
+glTF: Converting spatial: world
+glTF: Creating mesh for: eyelashes03
+LOD Generation: Triangles 368, vertices 250 (merged 250)
+  LOD 1: 184 triangles, error 0.04166354611516 (step error 0.04166354611516)
+  LOD 2: 62 triangles, error 0.22244127094746 (step error 0.22244127094746)
+  LOD stop: got 62 triangles when asking for 31
+[   1% ] [90m[1mimport[22m | Running Custom Script...[39m[0m
+[  99% ] [90m[1mimport[22m | Saving...[39m[0m
+Saving scene to: res://.godot/imported/eyelashes.glb-ba8d38d0f9e4e2115da2f9ff9db11a03.scn
+[92m[ DONE ][39m [1mimport[22m
+[0m
+EditorFileSystem: "res://web/static/assets/stage16g_avatar/face/eyelashes.glb" import took 4 ms.
+[  98% ] [90m[1mreimport[22m | eyebrows_thick.glb[39m[0m
+EditorFileSystem: Importing file: res://web/static/assets/stage16g_avatar/face/eyebrows_thick.glb
+[   0% ] [90m[1mimport[22m | Started Import Scene (104 steps)[39m[0m
+[   0% ] [90m[1mimport[22m | Importing Scene...[39m[0m
+glTF: Total buffers: 1
+glTF: Total buffer views: 3
+glTF: Total accessors: 3
+glTF: Parsing mesh: 0
+glTF: Total meshes: 1
+glTF: Converting spatial: world
+glTF: Creating mesh for: eyebrow004_obj
+LOD Generation: Triangles 192, vertices 126 (merged 124)
+  LOD 1: 96 triangles, error 0.04047680273652 (step error 0.04047680273652)
+  LOD 2: 52 triangles, error 0.18394656479359 (step error 0.18394656479359)
+  LOD stop: got 52 triangles when asking for 26
+[   1% ] [90m[1mimport[22m | Running Custom Script...[39m[0m
+[  99% ] [90m[1mimport[22m | Saving...[39m[0m
+Saving scene to: res://.godot/imported/eyebrows_thick.glb-71c71ade8d7fd14c6782c2a1bd159e99.scn
+[92m[ DONE ][39m [1mimport[22m
+[0m
+EditorFileSystem: "res://web/static/assets/stage16g_avatar/face/eyebrows_thick.glb" import took 3 ms.
+[  98% ] [90m[1mreimport[22m | eyebrows_straight.glb[39m[0m
+EditorFileSystem: Importing file: res://web/static/assets/stage16g_avatar/face/eyebrows_straight.glb
+[   0% ] [90m[1mimport[22m | Started Import Scene (104 steps)[39m[0m
+[   0% ] [90m[1mimport[22m | Importing Scene...[39m[0m
+glTF: Total buffers: 1
+glTF: Total buffer views: 3
+glTF: Total accessors: 3
+glTF: Parsing mesh: 0
+glTF: Total meshes: 1
+glTF: Converting spatial: world
+glTF: Creating mesh for: eyebrow002_obj
+LOD Generation: Triangles 192, vertices 126 (merged 124)
+  LOD 1: 96 triangles, error 0.03857340291142 (step error 0.03857340291142)
+  LOD 2: 50 triangles, error 0.3223802447319 (step error 0.3223802447319)
+  LOD stop: got 50 triangles when asking for 25
+[   1% ] [90m[1mimport[22m | Running Custom Script...[39m[0m
+[  99% ] [90m[1mimport[22m | Saving...[39m[0m
+Saving scene to: res://.godot/imported/eyebrows_straight.glb-afe2cebc700aa6c52ce6f4667832a3b7.scn
+[92m[ DONE ][39m [1mimport[22m
+[0m
+EditorFileSystem: "res://web/static/assets/stage16g_avatar/face/eyebrows_straight.glb" import took 4 ms.
+[  99% ] [90m[1mreimport[22m | Finalizing Asset Import...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mreimport[22m | Started (Re)Importing Assets (159 steps)[39m[0m
+[   0% ] [90m[1mreimport[22m | Executing post-reimport operations...[39m[0m
+[92m[ DONE ][39m [1mreimport[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Loading editor (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+Loading resource: res://native/scenes/world_main.tscn remapped: res://native/scenes/world_main.tscn
+Loading resource: res://native/world/WorldMain.gd remapped: res://native/world/WorldMain.gd
+SCRIPT ERROR: Parse Error: Function "_set_activity_status()" not found in base self.
+          at: GDScript::reload (res://native/world/WorldMain.gd:1074)
+SCRIPT ERROR: Parse Error: Function "_refresh_activity_actions_only()" not found in base self.
+          at: GDScript::reload (res://native/world/WorldMain.gd:1075)
+ERROR: Failed to load script "res://native/world/WorldMain.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+Completed load for: 'res://native/world/WorldMain.gd' remapped 'res://native/world/WorldMain.gd' at thread -1
+Completed load for: 'res://native/scenes/world_main.tscn' remapped 'res://native/scenes/world_main.tscn' at thread -1
+Script docs haven't been properly loaded or regenerated, so don't save them to disk.
+EditorSettings: Save OK!
+XR: Clearing primary interface
+XR: Removed interface "Native mobile"
+XR: Removed interface "OpenXR"
+Orphan StringName: Node (static: 3, total: 4)
+StringName: 1 unclaimed string names at exit.
