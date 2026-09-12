@@ -1,0 +1,114 @@
+name: THF Versioned Permission-Min Source V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-versioned-permission-min-source-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  EXPECTED_SOURCE_SHA: 46eca5adaef95d551e90723f87698100dbe242f51cd28186480b3215a2a54942
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Create immutable versioned source candidate and verify canonical unchanged
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command="EXPECTED_SOURCE_SHA='$EXPECTED_SOURCE_SHA' RUN_ID='$GITHUB_RUN_ID' HEAD_SHA='$GITHUB_SHA' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          CANON="$HOME/thf-runtime-s1/outer/01_THF_NEXUS_SUITE/ANDROID_PLAY_SOURCE"
+          BASE="$HOME/thf-release-candidates"
+          CANDIDATE="$BASE/permission-min-v1-$RUN_ID"
+          test -d "$CANON"
+          canonical_hash() {
+            (cd "$CANON" && find . -type f -not -path '*/build/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          }
+          before=$(canonical_hash)
+          echo "CANONICAL_SHA256_BEFORE=$before"
+          test "$before" = "$EXPECTED_SOURCE_SHA"
+          mkdir -p "$BASE"
+          if [ -e "$CANDIDATE" ]; then
+            echo "CANDIDATE_ALREADY_EXISTS=$CANDIDATE"
+            exit 21
+          fi
+          mkdir -p "$CANDIDATE/source" "$CANDIDATE/evidence"
+          cp -a "$CANON/." "$CANDIDATE/source/"
+          cd "$CANDIDATE/source"
+          manifest=app/src/main/AndroidManifest.xml
+          test -f "$manifest"
+          cp "$manifest" "$CANDIDATE/evidence/AndroidManifest.before.xml"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          names=(
+              'android.permission.CAMERA',
+              'android.permission.RECORD_AUDIO',
+              'android.permission.ACCESS_FINE_LOCATION',
+              'android.permission.ACCESS_COARSE_LOCATION',
+          )
+          for n in names:
+              s=re.sub(r'\s*<uses-permission\s+android:name=["\x27]'+re.escape(n)+r'["\x27]\s*/>\s*', '\n', s)
+          p.write_text(s)
+          PY
+          if grep -qE 'android.permission.(CAMERA|RECORD_AUDIO|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION)' "$manifest"; then
+            echo "PERMISSION_MINIMIZATION=FAIL"
+            exit 22
+          fi
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          ET.parse('app/src/main/AndroidManifest.xml')
+          print('MANIFEST_XML_PARSE=PASS')
+          PY
+          cp "$manifest" "$CANDIDATE/evidence/AndroidManifest.after.xml"
+          candidate_hash=$(find . -type f -not -path '*/build/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          cat > "$CANDIDATE/evidence/PROVENANCE.txt" <<EOF
+          TYPE=THF_VERSIONED_RELEASE_SOURCE_CANDIDATE
+          POLICY=REVERSIBLE_NON_DESTRUCTIVE
+          CREATED_FROM_CANONICAL_SHA256=$before
+          CANDIDATE_SHA256=$candidate_hash
+          GITHUB_HEAD_SHA=$HEAD_SHA
+          GITHUB_RUN_ID=$RUN_ID
+          CHANGE=REMOVE_LATENT_CAMERA_MIC_LOCATION_PERMISSIONS_ONLY
+          PRODUCTION_HOSTNAME=NOT_SET
+          PRODUCTION_SIGNING=NOT_PERFORMED
+          PLAY_UPLOAD=NOT_PERFORMED
+          WAVE_FILES=NOT_INCLUDED
+          EOF
+          after=$(canonical_hash)
+          echo "CANONICAL_SHA256_AFTER=$after"
+          test "$after" = "$before"
+          echo "CANDIDATE_PATH=$CANDIDATE"
+          echo "CANDIDATE_SHA256=$candidate_hash"
+          echo "CANONICAL_UNCHANGED=PASS"
+          echo "PERMISSION_MINIMIZATION=PASS"
+          echo "THF_WAVE_ISOLATION=PASS"
+          REMOTE
