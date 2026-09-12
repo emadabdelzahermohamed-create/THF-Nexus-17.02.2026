@@ -1,0 +1,100 @@
+name: THF Terra RC34 Export Gate v3
+on:
+  push:
+    branches: ['t/r34']
+    paths: ['.github/workflows/thf-terra-rc34-export-gate-v3.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  FULL_NAME: THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip
+  FULL_SHA: eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Execute deterministic export gate
+        shell: bash
+        run: |
+          set -uo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="FULL_NAME='$FULL_NAME' FULL_SHA='$FULL_SHA' bash -s" <<'REMOTE' 2>&1 | tee "$RUNNER_TEMP/gate.log"
+          set -Eeuo pipefail
+          BASE_HOME="$HOME"; ROOT="$BASE_HOME/thf-terra-rc34-gate-v3"; INPUT="$BASE_HOME/thf-terra-rc34-gate/input"; WORK="$ROOT/work"; OUT="$ROOT/out"
+          rm -rf "$ROOT"; mkdir -p "$WORK" "$OUT/android"
+          echo "$FULL_SHA  $INPUT/$FULL_NAME" | sha256sum -c -
+          python3 - "$INPUT/$FULL_NAME" "$WORK" <<'PY'
+          import os, pathlib, shutil, sys, zipfile
+          src, dst = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).resolve()
+          with zipfile.ZipFile(src) as z:
+              for info in z.infolist():
+                  rel = pathlib.PurePosixPath(info.filename)
+                  if rel.is_absolute() or '..' in rel.parts:
+                      raise SystemExit(f'unsafe zip member: {info.filename}')
+                  target = (dst / pathlib.Path(*rel.parts)).resolve()
+                  if target != dst and dst not in target.parents:
+                      raise SystemExit(f'zip escape: {info.filename}')
+                  if info.is_dir():
+                      target.mkdir(parents=True, exist_ok=True); continue
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  with z.open(info) as r, open(target, 'wb') as w: shutil.copyfileobj(r, w)
+          PY
+          test -f "$WORK/project.godot"; test -f "$WORK/export_presets.cfg"; grep -q 'name="Android AAB Candidate"' "$WORK/export_presets.cfg"
+          GODOT="$BASE_HOME/thf-tools/godot/4.7.2-stable/godot"; SDK="$BASE_HOME/thf-builder-rc16-build/android-sdk"; TEMPLATE_ROOT="$BASE_HOME/.local/share/godot/export_templates/4.7.2.stable"
+          test -x "$GODOT"; test -x "$SDK/build-tools/36.0.0/aapt2"; test -f "$SDK/platforms/android-36/android.jar"; test -f "$TEMPLATE_ROOT/android_source.zip"
+          JAVA_HOME_REAL="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"; ISO_HOME="$ROOT/godot-home"; mkdir -p "$ISO_HOME/.config/godot" "$ISO_HOME/.local/share/godot"
+          ln -s "$BASE_HOME/.local/share/godot/export_templates" "$ISO_HOME/.local/share/godot/export_templates"
+          printf '%s\n' '[gd_resource format=3]' '' '[resource]' "export/android/android_sdk_path = \"$SDK\"" "export/android/java_sdk_path = \"$JAVA_HOME_REAL\"" > "$ISO_HOME/.config/godot/editor_settings-4.7.tres"
+          export HOME="$ISO_HOME" ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" JAVA_HOME="$JAVA_HOME_REAL" PATH="$JAVA_HOME/bin:$SDK/platform-tools:$SDK/build-tools/36.0.0:$PATH"
+          set +e
+          timeout 15m "$GODOT" --headless --editor --path "$WORK" --quit --verbose >"$OUT/editor-import.log" 2>&1; import_rc=$?
+          timeout 5m "$GODOT" --headless --path "$WORK" --quit-after 30 --verbose >"$OUT/headless-boot.log" 2>&1; boot_rc=$?
+          template_rc=99; export_rc=99
+          if [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ]; then timeout 5m "$GODOT" --headless --editor --path "$WORK" --install-android-build-template --quit >"$OUT/android-template-install.log" 2>&1; template_rc=$?; fi
+          if [ "$template_rc" -eq 0 ]; then timeout 20m "$GODOT" --headless --path "$WORK" --export-debug "Android AAB Candidate" "$OUT/android/THF-Terra-RC34-test.aab" >"$OUT/android-export.log" 2>&1; export_rc=$?; fi
+          set -e
+          aab=''; [ -f "$OUT/android/THF-Terra-RC34-test.aab" ] && aab="$(sha256sum "$OUT/android/THF-Terra-RC34-test.aab" | awk '{print $1}')"
+          status=FAIL; [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$template_rc" -eq 0 ] && [ "$export_rc" -eq 0 ] && [ -n "$aab" ] && status=PASS
+          printf 'status=%s\ncanonical_sha256=%s\nimport_rc=%s\nboot_rc=%s\nandroid_template_install_rc=%s\nandroid_export_rc=%s\naab_sha256=%s\nproduction_signing=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' "$status" "$FULL_SHA" "$import_rc" "$boot_rc" "$template_rc" "$export_rc" "$aab" | tee "$OUT/TRUTH.txt"
+          (cd "$OUT" && find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+          tar -czf "$ROOT/evidence.tgz" -C "$ROOT" out
+          [ "$status" = PASS ]
+          REMOTE
+          rc=${PIPESTATUS[0]}; echo "REMOTE_RC=$rc" >> "$GITHUB_ENV"; exit 0
+      - name: Retrieve evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence
+          gcloud compute scp "$GCP_BUILDER:~/thf-terra-rc34-gate-v3/evidence.tgz" evidence/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          cp "$RUNNER_TEMP/gate.log" evidence/ || true
+          printf 'canonical_sha256=%s\nremote_rc=%s\n' "$FULL_SHA" "${REMOTE_RC:-missing}" > evidence/RUNNER_SUMMARY.txt
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-Terra-RC34-export-v3-evidence
+          path: evidence/
+          retention-days: 14
+      - name: Final gate
+        if: always()
+        run: |
+          test "${REMOTE_RC:-missing}" = 0
+          echo TERRA_RC34_EXPORT_V3=PASS
+          echo PRODUCTION_SIGNING=NOT_PERFORMED
+          echo WAVE_UNTOUCHED=TRUE
