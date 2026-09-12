@@ -1,0 +1,17 @@
+THF Rift RC42 Validation
+========================
+Checkpoint: RIFT-RC42-WEAPON-COMMAND-FAIL-CLOSED
+Version: 4.7.6-rc42 / versionCode 42076 / compileSdk 36 / targetSdk 36
+Baseline: RC41 artifact SHA 29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d
+Focused RC42 gate: PASS 38/38
+RC41 behavioral regression on RC42 source: PASS 40/40 (metadata normalized only for historical gate)
+Clean-extract RC42 focused gate: PASS 38/38
+Python compileall source/clean: PASS
+JavaScript syntax source/clean: PASS
+Native GDScript gameplay delta: NONE (18 files)
+Deterministic ZIP rebuild: PASS exact SHA 550c9d5b637d665b6cd835d4b85453a2430ef6b3f50d3d9a4008b248cb5cc95c
+ZIP integrity: PASS
+Fresh Godot 4.7.2 parser/import/headless: NOT EXECUTED; local executable unavailable and exact remote staging remains unavailable
+Android API36 unsigned test AAB: BLOCKED exact artifact staging to WIF/GCP builder
+Physical Android/GPU/device QA: NOT EXECUTED
+Truth boundaries: no production-signed AAB, Play approval, GPU/device visual acceptance, or production deployment claimed.
