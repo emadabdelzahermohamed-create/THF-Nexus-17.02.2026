@@ -1,0 +1,54 @@
+name: THF Policy Source Inspect
+
+on:
+  push:
+    branches: ['cp/v2']
+    paths:
+      - '.github/workflows/thf-policy-source-inspect.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect THF policy/static routing only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=8m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"
+          echo THF_POLICY_SOURCE_INSPECT_BEGIN
+          echo ROOT=$ROOT
+          echo "POLICY_NAMED_FILES"
+          find "$ROOT" -maxdepth 6 -type f \( -iname "*privacy*" -o -iname "*terms*" -o -iname "security.txt" -o -iname "*policy*" \) -printf "%s\t%p\n" 2>/dev/null | sort | head -200
+          echo "STATIC_CANDIDATES"
+          find "$ROOT" -maxdepth 4 -type d \( -name public -o -name static -o -name web -o -name frontend -o -name site \) -print 2>/dev/null | sort
+          echo "ROUTE_MARKERS"
+          grep -RIl --exclude-dir=.git --exclude="*.min.js" -E "(/privacy|privacy\.html|/terms|terms\.html|security\.txt|StaticFiles|FileResponse|index\.html)" "$ROOT" 2>/dev/null | head -200
+          echo "INDEX_CANDIDATES"
+          find "$ROOT" -maxdepth 5 -type f -name "index.html" -printf "%s\t%p\n" 2>/dev/null | sort | head -50
+          echo WAVE_UNTOUCHED=TRUE
+          echo MUTATION_PERFORMED=FALSE
+          echo THF_POLICY_SOURCE_INSPECT_END'
