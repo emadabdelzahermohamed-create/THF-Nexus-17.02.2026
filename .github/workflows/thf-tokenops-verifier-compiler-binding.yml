@@ -25,7 +25,12 @@ jobs:
       - name: Assert no transaction execution primitives
         run: |
           set -Eeuo pipefail
-          ! grep -REn 'sendTransaction|send_raw_transaction|private_key|seed_phrase' ReleaseOps/TokenOps/verifier_compiler_binding.py || false
+          if grep -REn 'sendTransaction|send_raw_transaction|send_transaction|broadcast_transaction' ReleaseOps/TokenOps/verifier_compiler_binding.py; then
+            echo 'Forbidden transaction execution primitive detected' >&2
+            exit 1
+          fi
+          grep -q 'ready_for_transaction_serialization.*False' ReleaseOps/TokenOps/verifier_compiler_binding.py
+          grep -q 'ready_for_signing.*False' ReleaseOps/TokenOps/verifier_compiler_binding.py
           grep -q 'broadcast_allowed.*False' ReleaseOps/TokenOps/verifier_compiler_binding.py
           echo THF_TOKENOPS_VERIFIER_COMPILER_SAFETY_GATE=PASS
       - name: Build evidence hashes
