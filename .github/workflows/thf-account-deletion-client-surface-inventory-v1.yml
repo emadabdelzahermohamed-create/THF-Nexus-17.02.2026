@@ -1,0 +1,52 @@
+name: THF Account Deletion Client Surface Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-account-deletion-client-surface-inventory-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  EXPECTED_ARCHIVE_SHA256: 8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect client deletion surfaces through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="set -Eeuo pipefail
+            A=\"\$HOME/thf-runtime-s1/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip\"; test -f \"\$A\"
+            SHA=\$(sha256sum \"\$A\" | awk '{print \$1}'); echo CANONICAL_ARCHIVE_SHA256=\$SHA; test \"\$SHA\" = \"$EXPECTED_ARCHIVE_SHA256\"
+            TMP=\$(mktemp -d /tmp/thf-account-client-inventory-v1.XXXXXX); trap 'rm -rf \"\$TMP\"' EXIT
+            unzip -q \"\$A\" -d \"\$TMP/extracted\"; ROOT=\"\$TMP/extracted/THF_NEXUS_6_FINAL\"; cd \"\$ROOT\"
+            echo CLIENT_SURFACE_SEARCH_BEGIN
+            grep -RInE --exclude-dir=__pycache__ --exclude='*.map' --exclude='*.min.js' '(delete[ _-]?account|account[ _-]?deletion|remove[ _-]?account|/api/account|privacy|settings|logout)' clients src 2>/dev/null | head -1000 || true
+            echo CLIENT_SURFACE_SEARCH_END
+            echo WEB_FILES_BEGIN; find clients/web -maxdepth 3 -type f -printf '%p\n' | LC_ALL=C sort | head -500; echo WEB_FILES_END
+            echo ANDROID_FILES_BEGIN; find clients -maxdepth 5 -type f \( -name '*.kt' -o -name '*.java' -o -name '*.xml' -o -name '*.gradle' -o -name '*.kts' \) -printf '%p\n' | LC_ALL=C sort | head -700; echo ANDROID_FILES_END
+            echo MUTATION_PERFORMED=FALSE; echo WAVE_UNTOUCHED=TRUE
+            if find \"\$ROOT\" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then exit 9; fi
+            echo THF_SOURCE_WAVE_ISOLATION=PASS"
