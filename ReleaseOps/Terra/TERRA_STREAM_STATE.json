@@ -1,45 +1,40 @@
 {
   "stream": "THF_TERRA",
-  "branch": "terra/rc32-g472-20260912",
-  "source_checkpoint": "TERRA-RC32",
-  "source_version": "4.6.6-rc32",
-  "source_sha256": "389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695",
-  "releaseops_status": "RC32_GODOT472_IMPORT_HEADLESS_PASS_ANDROID_UNSIGNED_EXPORT_NEXT",
-  "dedup": "RC1-RC31 documented PASS gates/artifacts were not rerun. RC32 is the authoritative current Terra source; this checkpoint promotes fresh engine evidence only.",
+  "branch": "terra/rc33-android-texture-export-20260912",
+  "source_checkpoint": "TERRA-RC33",
+  "source_version": "4.6.7-rc33",
+  "source_sha256": "f50a0489c534306946f39603aaa2fa39e494fac5b4a7af906e03424d8457412b",
+  "releaseops_status": "RC33_ANDROID_TEXTURE_EXPORT_SOURCE_READY_ENGINE_AND_AAB_RERUN_NEXT",
+  "dedup": "RC1-RC32 documented PASS gates/artifacts were not rerun. RC32 fresh Godot 4.7.2 import/headless PASS is retained; RC33 changes only Android ETC2/ASTC export readiness and synchronized release metadata.",
   "latest_engine_evidence": {
+    "release": "TERRA-RC32",
     "workflow": "Terra RC32 G472 Gate",
     "workflow_run_id": 34660616385,
-    "branch_head": "36be136353f2e7cde72c1dc13209ff08bf8189b5",
-    "godot_version": "4.7.2.stable",
-    "exact_source_staging": "PASS_SHA256_VERIFIED",
     "clean_import_parser_class_cache": "PASS",
-    "headless_30_frames": "PASS",
-    "result": "PASS"
+    "headless_30_frames": "PASS"
   },
-  "rc32": {
-    "artifact": "THF_Terra_v4.6.6_RC32_GODOT472_FACIAL_SEED_TYPING_CUMULATIVE_SOURCE.zip",
-    "artifact_sha256": "389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695",
-    "parts": [
-      {"name":"THF_Terra_v4.6.6_RC32_GODOT472_FACIAL_SEED_TYPING_CUMULATIVE_SOURCE.zip.part.00","sha256":"4bfe9989563b8da1822e74b79531a2dd218131981277c05e01a712eabf0866c5"},
-      {"name":"THF_Terra_v4.6.6_RC32_GODOT472_FACIAL_SEED_TYPING_CUMULATIVE_SOURCE.zip.part.01","sha256":"4a00574c817f41a9492da20e19a023ebd39c7ba41f4573efea841c8a57b39cdc"}
+  "android_export_diagnostics": [
+    {"run_id":34661129318,"result":"FAIL_SAFE_DIAGNOSTIC","cause":"PROJECT_GRADLE_BUILD_TEMPLATE_MISSING","source_mutated":false},
+    {"run_id":34661274506,"result":"FAIL_SAFE_DIAGNOSTIC","cause":"ETC2_ASTC_IMPORT_REQUIRED","gradle_build_template_installed":true,"source_mutated":false}
+  ],
+  "rc33": {
+    "artifact":"THF_Terra_v4.6.7_RC33_ANDROID_TEXTURE_EXPORT_READINESS_CUMULATIVE_SOURCE.zip",
+    "artifact_sha256":"f50a0489c534306946f39603aaa2fa39e494fac5b4a7af906e03424d8457412b",
+    "parts":[
+      {"name":"THF_Terra_v4.6.7_RC33_ANDROID_TEXTURE_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"02a56c856bbbd47d38169e71b5e68ecfd21282a23130ff9e2bd3ff1581353978"},
+      {"name":"THF_Terra_v4.6.7_RC33_ANDROID_TEXTURE_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"2f5f5183b6087930b94de8c29fb0eef833bf9b5a7d8f5258fb979394592b345e"}
     ],
-    "focused_tests": "3/3 PASS",
-    "python_compileall": "PASS",
-    "javascript_syntax": "PASS",
-    "deterministic_package": "PASS exact SHA",
-    "zip_integrity": "PASS",
-    "godot_4_7_2_clean_import": "PASS_RUN_34660616385",
-    "godot_4_7_2_headless_30": "PASS_RUN_34660616385",
-    "android_api_36_source_metadata": "PASS_CARRY_FORWARD_RC29_PLUS_RC32_VERSION",
-    "android_unsigned_export": "NOT_EXECUTED"
+    "focused_tests":"4/4 PASS",
+    "python_compileall":"PASS",
+    "javascript_syntax":"PASS",
+    "deterministic_package":"PASS exact SHA",
+    "clean_extract":"PASS",
+    "zip_integrity":"PASS",
+    "android_api_36":"PASS_SOURCE_METADATA",
+    "etc2_astc_import":"ENABLED_CANONICAL_SOURCE",
+    "godot_4_7_2_clean_import_headless":"PENDING_FRESH_RC33_RERUN",
+    "android_test_aab":"PENDING_RERUN"
   },
-  "next_gate": "Run isolated unsigned/test-only Android export validation from exact RC32 using Godot 4.7.2 export templates and Android SDK; verify applicationId/target SDK/output identity without production signing or Play actions.",
-  "truth_boundaries": {
-    "gpu_device_visual_qa": "NOT_EXECUTED",
-    "perfect_photo_likeness": "NOT_CLAIMED",
-    "production_signed_aab": "NOT_CLAIMED",
-    "play_approval": "NOT_CLAIMED",
-    "production_deployment": "NOT_CLAIMED",
-    "solana_settlement": "NOT_CLAIMED"
-  }
+  "next_gate":"Run exact RC33 through fresh Godot 4.7.2 clean import/parser/class-cache + 30-frame headless, install project Gradle Android template and API 36 toolchain, then export debug/test-only AAB and record SHA/identity if generated.",
+  "truth_boundaries":{"gpu_device_visual_qa":"NOT_EXECUTED","perfect_photo_likeness":"NOT_CLAIMED","production_signed_aab":"NOT_CLAIMED","play_approval":"NOT_CLAIMED","production_deployment":"NOT_CLAIMED","solana_settlement":"NOT_CLAIMED"}
 }
