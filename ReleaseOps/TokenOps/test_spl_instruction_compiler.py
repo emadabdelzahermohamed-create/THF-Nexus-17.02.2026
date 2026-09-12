@@ -38,7 +38,9 @@ class CompilerTests(unittest.TestCase):
         with self.assertRaises(ValueError): compiler.build({'mint':MINT,'operation':'burn_checked','amount_raw':'1','decimals':8,'control_plane_binding_sha256':BIND,'source':source(),'authority_pubkey':OWNER,'private_key':'never'})
 
 if __name__=='__main__':
-    unittest.main()
+    result=unittest.main(exit=False).result
+    if not result.wasSuccessful():
+        raise SystemExit(1)
     print('THF_TOKENOPS_SPL_COMPILER_TESTS=PASS')
     print('UNVERIFIED_TREASURY_REJECTED=TRUE')
     print('THIRD_PARTY_SOURCE_REJECTED=TRUE')
