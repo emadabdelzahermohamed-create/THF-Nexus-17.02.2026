@@ -1,0 +1,183 @@
+name: THF Suite GP1 API36 Test Gate
+
+on:
+  push:
+    branches: ['s/gp1']
+    paths: ['.github/workflows/thf-suite-gp1-api36-gate.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  DRIVE_FILE_ID: 1JWm4UcGnjk2JdEyY_CNsoYw24zBfwZtx
+  OUTER_SHA: b4786128ffd684ae83e1a99ddd5b798f1d55e196462518434513b5c28e63f721
+  INNER_SHA: 8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Fetch exact canonical suite source from Drive
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p /tmp/thf-suite-gp1
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://www.googleapis.com/drive/v3/files/${DRIVE_FILE_ID}?alt=media" \
+            -o /tmp/thf-suite-gp1/source.zip
+          echo "${OUTER_SHA}  /tmp/thf-suite-gp1/source.zip" | sha256sum -c -
+      - name: Stage exact source to GCP builder over IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp /tmp/thf-suite-gp1/source.zip "$GCP_BUILDER:/tmp/thf-suite-gp1-source.zip" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap \
+            --ssh-key-expire-after=10m --quiet
+      - name: Verify and build on isolated GCP workspace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command="OUTER_SHA='$OUTER_SHA' INNER_SHA='$INNER_SHA' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          root="$HOME/thf-suite-gp1"
+          rm -rf "$root"
+          mkdir -p "$root/src" "$root/work" "$root/evidence" "$root/out"
+          cp /tmp/thf-suite-gp1-source.zip "$root/source.zip"
+          echo "$OUTER_SHA  $root/source.zip" | sha256sum -c - | tee "$root/evidence/outer-sha.txt"
+          python3 - <<'PY'
+          import zipfile, pathlib
+          z=pathlib.Path.home()/"thf-suite-gp1/source.zip"
+          out=pathlib.Path.home()/"thf-suite-gp1/src"
+          with zipfile.ZipFile(z) as f:
+              for i in f.infolist():
+                  p=(out/i.filename).resolve()
+                  if out.resolve() not in p.parents and p != out.resolve():
+                      raise SystemExit(f"unsafe zip path: {i.filename}")
+              f.extractall(out)
+          PY
+          base="$root/src/01_THF_NEXUS_SUITE"
+          test -f "$base/PLAY_RELEASE_STATUS.json"
+          test -f "$base/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip"
+          echo "$INNER_SHA  $base/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip" | sha256sum -c - | tee "$root/evidence/inner-sha.txt"
+          python3 - <<'PY' | tee "$HOME/thf-suite-gp1/evidence/status-check.txt"
+          import json, pathlib
+          p=pathlib.Path.home()/"thf-suite-gp1/src/01_THF_NEXUS_SUITE/PLAY_RELEASE_STATUS.json"
+          d=json.loads(p.read_text())
+          assert d['application_id']=='com.thf.topherofit'
+          assert d['android_target_sdk']==36
+          assert d['source_sha256']=='8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884'
+          assert d['production_signed_aab_included'] is False
+          assert d['play_upload_claim'] is False
+          print('STATUS_CONTRACT_PASS')
+          PY
+          cp -a "$base/ANDROID_PLAY_SOURCE/." "$root/work/"
+          cd "$root/work"
+          grep -q 'compileSdk 36' app/build.gradle
+          grep -q 'targetSdk 36' app/build.gradle
+          grep -q "applicationId 'com.thf.topherofit'" app/build.gradle
+          unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+          export DEBUG_BASE_URL=http://10.0.2.2:8000
+          gradle --version > "$root/evidence/gradle-version.txt"
+          gradle --no-daemon clean assembleDebug 2>&1 | tee "$root/evidence/debug-build.log"
+          apk="$(find app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"
+          test -s "$apk"
+          cp "$apk" "$root/out/thf-nexus-suite-debug.apk"
+          sha256sum "$root/out/thf-nexus-suite-debug.apk" | tee "$root/evidence/debug-apk.sha256"
+          unzip -t "$root/out/thf-nexus-suite-debug.apk" > "$root/evidence/debug-apk-ziptest.txt"
+          if command -v apksigner >/dev/null; then apksigner verify --verbose --print-certs "$root/out/thf-nexus-suite-debug.apk" > "$root/evidence/apksigner.txt" 2>&1; fi
+          cp app/build.gradle "$root/evidence/build.gradle.canonical"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/build.gradle')
+          s=p.read_text()
+          s=s.replace("def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }", "def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }\ndef testUnsigned = System.getenv('THF_TEST_UNSIGNED') == '1'")
+          s=s.replace("if (releaseRequested && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')", "if (releaseRequested && !testUnsigned && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')")
+          p.write_text(s)
+          PY
+          export APP_BASE_URL=https://test.invalid THF_TEST_UNSIGNED=1
+          gradle --no-daemon clean bundleRelease 2>&1 | tee "$root/evidence/test-aab-build.log"
+          aab="$(find app/build/outputs/bundle/release -type f -name '*.aab' -print -quit)"
+          test -s "$aab"
+          cp "$aab" "$root/out/thf-nexus-suite-TEST-UNSIGNED.aab"
+          sha256sum "$root/out/thf-nexus-suite-TEST-UNSIGNED.aab" | tee "$root/evidence/test-aab.sha256"
+          unzip -t "$root/out/thf-nexus-suite-TEST-UNSIGNED.aab" > "$root/evidence/test-aab-ziptest.txt"
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          r=pathlib.Path.home()/"thf-suite-gp1"
+          apk=r/'out/thf-nexus-suite-debug.apk'; aab=r/'out/thf-nexus-suite-TEST-UNSIGNED.aab'
+          data={
+            'checkpoint':'THF-NEXUS-SUITE-GP1-API36-TEST',
+            'canonical_outer_sha256':'b4786128ffd684ae83e1a99ddd5b798f1d55e196462518434513b5c28e63f721',
+            'canonical_inner_source_sha256':'8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884',
+            'application_id':'com.thf.topherofit','target_sdk':36,
+            'debug_apk_sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),
+            'debug_apk_size':apk.stat().st_size,
+            'test_unsigned_aab_sha256':hashlib.sha256(aab.read_bytes()).hexdigest(),
+            'test_unsigned_aab_size':aab.stat().st_size,
+            'production_signing_credentials_used':False,
+            'play_upload_performed':False,
+            'canonical_source_modified':False,
+            'wave_touched':False,
+            'test_aab_note':'Disposable build.gradle guard bypass only; production signing guard in canonical archive remains unchanged.'
+          }
+          p=r/'evidence/result.json'; p.write_text(json.dumps(data,indent=2)+'\n')
+          print(json.dumps(data,indent=2))
+          PY
+          echo WAVE_UNTOUCHED=TRUE
+          REMOTE
+      - name: Retrieve evidence only
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p /tmp/thf-suite-gp1/evidence
+          gcloud compute scp --recurse "$GCP_BUILDER:$HOME/thf-suite-gp1/evidence" /tmp/thf-suite-gp1/ \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap \
+            --ssh-key-expire-after=10m --quiet
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thf-nexus-suite-gp1-api36-test-evidence
+          path: /tmp/thf-suite-gp1/evidence
+          if-no-files-found: warn
+      - name: Final gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -s /tmp/thf-suite-gp1/evidence/result.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/thf-suite-gp1/evidence/result.json'))
+          assert d['application_id']=='com.thf.topherofit'
+          assert d['target_sdk']==36
+          assert d['production_signing_credentials_used'] is False
+          assert d['play_upload_performed'] is False
+          assert d['canonical_source_modified'] is False
+          assert d['wave_touched'] is False
+          print('THF_NEXUS_SUITE_GP1_PASS')
+          PY
