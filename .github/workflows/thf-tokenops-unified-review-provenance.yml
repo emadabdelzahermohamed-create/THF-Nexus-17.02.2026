@@ -1,0 +1,81 @@
+name: THF TokenOps Unified Review Provenance Gate
+
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/unified_review_provenance.py'
+      - 'ReleaseOps/TokenOps/test_unified_review_provenance.py'
+      - 'ReleaseOps/TokenOps/atomic_commit_bound_simulation_review.py'
+      - 'ReleaseOps/TokenOps/evidence_freshness_gate.py'
+      - 'ReleaseOps/TokenOps/github_evidence_metadata.py'
+      - '.github/workflows/thf-tokenops-unified-review-provenance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unified-review-provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed provenance tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_unified_review_provenance.py 2>&1 | tee unified-review-provenance-tests.log
+      - name: Assert review-only boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/unified-review-provenance-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' ReleaseOps/TokenOps/unified_review_provenance.py ReleaseOps/TokenOps/test_unified_review_provenance.py
+          printf '%s\n' \
+            'UNIFIED_REVIEW_PROVENANCE_REQUIRED=TRUE' \
+            'ATOMIC_LEDGER_APPROVAL_BOUND=TRUE' \
+            'EVIDENCE_FRESHNESS_BOUND=TRUE' \
+            'GITHUB_AUDIT_ARTIFACT_METADATA_BOUND=TRUE' \
+            'SIMULATION_REVIEW_ELIGIBLE_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE'
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-unified-review-provenance
+          sha256sum \
+            ReleaseOps/TokenOps/unified_review_provenance.py \
+            ReleaseOps/TokenOps/test_unified_review_provenance.py \
+            ReleaseOps/TokenOps/atomic_commit_bound_simulation_review.py \
+            ReleaseOps/TokenOps/evidence_freshness_gate.py \
+            ReleaseOps/TokenOps/github_evidence_metadata.py \
+            .github/workflows/thf-tokenops-unified-review-provenance.yml \
+            > tokenops-unified-review-provenance/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/unified-review-provenance-tests.log tokenops-unified-review-provenance/
+          printf '%s\n' \
+            'THF_TOKENOPS_UNIFIED_REVIEW_PROVENANCE=PASS' \
+            'SIMULATION_REVIEW_ELIGIBLE_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-unified-review-provenance/SAFETY.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Unified-Review-Provenance-Gate
+          path: tokenops-unified-review-provenance/
+          if-no-files-found: error
+          retention-days: 90
