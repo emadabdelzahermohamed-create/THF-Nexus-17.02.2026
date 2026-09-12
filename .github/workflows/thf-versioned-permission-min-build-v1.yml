@@ -113,11 +113,13 @@ jobs:
           cp "$aab" "$OUT/out/thf-versioned-permission-min-v1-TEST-UNSIGNED.aab"
           aab_sha=$(sha256sum "$OUT/out/thf-versioned-permission-min-v1-TEST-UNSIGNED.aab" | awk '{print $1}')
           echo "TEST_UNSIGNED_AAB_SHA256=$aab_sha"
-          if jarsigner -verify "$OUT/out/thf-versioned-permission-min-v1-TEST-UNSIGNED.aab" >/dev/null 2>&1; then
-            echo "AAB_SIGNING_STATE=UNEXPECTED-SIGNED"
-            exit 33
-          else
+          jarsigner -verify -verbose -certs "$OUT/out/thf-versioned-permission-min-v1-TEST-UNSIGNED.aab" > "$OUT/evidence/jarsigner-verify.txt" 2>&1 || true
+          if grep -qiE 'jar is unsigned|This jar contains unsigned entries|unsigned' "$OUT/evidence/jarsigner-verify.txt"; then
             echo "AAB_SIGNING_STATE=UNSIGNED-AS-EXPECTED"
+          else
+            echo "AAB_SIGNING_STATE=SIGNED-OR-INDETERMINATE"
+            sed -n '1,120p' "$OUT/evidence/jarsigner-verify.txt"
+            exit 33
           fi
           after=$(cd "$SRC" && find . -type f -not -path '*/build/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
           echo "CANDIDATE_SHA256_AFTER=$after"
