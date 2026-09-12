@@ -1,8 +1,8 @@
-name: THF Runtime Compliance Probe
+name: THF Runtime Compliance Probe V2
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'cp/v2']
     paths:
       - '.github/workflows/thf-runtime-compliance-probe.yml'
   workflow_dispatch:
@@ -55,7 +55,7 @@ jobs:
           URL=$(printf '%s\n' "$OUT" | sed -n 's/^PUBLIC_URL=//p' | tail -1)
           test -n "$URL"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
-      - name: External health and security headers
+      - name: External health and required security headers
         shell: bash
         env:
           URL: ${{ steps.runtime.outputs.url }}
@@ -70,19 +70,41 @@ jobs:
           print('EXTERNAL_HEALTH=PASS')
           print('EXTERNAL_RELEASE='+str(d.get('release')))
           PY
-          grep -iE '^(content-security-policy|x-frame-options|x-content-type-options|referrer-policy|strict-transport-security):' "$H" || true
-      - name: Probe public policy routes without mutation
+          grep -qi '^content-security-policy:' "$H"
+          grep -qi '^x-frame-options:' "$H"
+          grep -qi '^x-content-type-options:' "$H"
+          grep -qi '^referrer-policy:' "$H"
+          echo REQUIRED_SECURITY_HEADERS=PASS
+      - name: Verify public policy content is real, not SPA fallback
         shell: bash
         env:
           URL: ${{ steps.runtime.outputs.url }}
         run: |
           set -Eeuo pipefail
-          for p in /privacy /privacy.html /terms /terms.html /.well-known/security.txt; do
-            code=$(curl -sS -o /tmp/body -D /tmp/headers --connect-timeout 5 --max-time 15 -w '%{http_code}' "$URL$p" || true)
-            ctype=$(awk 'BEGIN{IGNORECASE=1} /^content-type:/{sub(/\r$/,""); print substr($0,index($0,":")+2); exit}' /tmp/headers || true)
-            bytes=$(wc -c </tmp/body 2>/dev/null || echo 0)
-            echo "POLICY_ROUTE path=$p http=$code bytes=$bytes content_type=${ctype:-UNSET}"
-          done
+          mkdir -p /tmp/thf-policy
+          curl -fsS --connect-timeout 5 --max-time 15 -D /tmp/thf-policy/privacy.h -o /tmp/thf-policy/privacy.body "$URL/privacy"
+          curl -fsS --connect-timeout 5 --max-time 15 -D /tmp/thf-policy/terms.h -o /tmp/thf-policy/terms.body "$URL/terms"
+          curl -fsS --connect-timeout 5 --max-time 15 -D /tmp/thf-policy/security.h -o /tmp/thf-policy/security.body "$URL/.well-known/security.txt"
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,re
+          p=Path('/tmp/thf-policy/privacy.body').read_bytes()
+          t=Path('/tmp/thf-policy/terms.body').read_bytes()
+          s=Path('/tmp/thf-policy/security.body').read_bytes()
+          def h(x): return hashlib.sha256(x).hexdigest()
+          print('PRIVACY_SHA256='+h(p)); print('TERMS_SHA256='+h(t)); print('SECURITY_TXT_SHA256='+h(s))
+          print('PRIVACY_BYTES='+str(len(p))); print('TERMS_BYTES='+str(len(t))); print('SECURITY_TXT_BYTES='+str(len(s)))
+          pl=p.decode('utf-8','ignore').lower(); tl=t.decode('utf-8','ignore').lower(); sl=s.decode('utf-8','ignore')
+          assert len(p) >= 500 and ('privacy' in pl or 'خصوص' in pl), 'privacy content marker missing'
+          assert len(t) >= 500 and ('terms' in tl or 'شروط' in tl or 'conditions' in tl), 'terms content marker missing'
+          assert h(p) != h(t), 'privacy and terms are byte-identical; probable SPA fallback'
+          assert re.search(r'(?im)^contact\s*:', sl), 'security.txt Contact field missing'
+          assert re.search(r'(?im)^expires\s*:', sl), 'security.txt Expires field missing'
+          assert '<html' not in sl.lower() and '<!doctype' not in sl.lower(), 'security.txt returned HTML fallback'
+          print('POLICY_SEMANTIC_CONTENT=PASS')
+          print('SECURITY_TXT_RFC9116_MINIMUM=PASS')
+          PY
+          grep -qi '^content-type:.*text/plain' /tmp/thf-policy/security.h
           echo POLICY_PROBE_READ_ONLY=TRUE
           echo WAVE_UNTOUCHED=TRUE
       - name: Verify admin fails closed externally
