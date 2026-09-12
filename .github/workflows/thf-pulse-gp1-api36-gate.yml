@@ -1,0 +1,128 @@
+name: THF Pulse GP1 API36 Test Gate
+
+on:
+  push:
+    branches: ['p/gp1']
+    paths: ['.github/workflows/thf-pulse-gp1-api36-gate.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  DRIVE_FILE_ID: 1DbITXyUVThBkSI1NJEHgpdNBNYsC22MM
+  OUTER_SHA: 8f18fc7f889c1fd0e01994350b399434a9779e714664c6974bb7925f36f50913
+  INNER_SHA: 31116912623767ebc2edcd56ad55fb2358a4cf398d2765f5eb1de9d842a75ad2
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Fetch exact canonical Pulse source from Drive
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p /tmp/thf-pulse-gp1
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${DRIVE_FILE_ID}?alt=media" -o /tmp/thf-pulse-gp1/source.zip
+          echo "${OUTER_SHA}  /tmp/thf-pulse-gp1/source.zip" | sha256sum -c -
+      - name: Stage exact source to GCP builder over IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp /tmp/thf-pulse-gp1/source.zip "$GCP_BUILDER:/tmp/thf-pulse-gp1-source.zip" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet
+      - name: Verify and build on isolated GCP workspace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="OUTER_SHA='$OUTER_SHA' INNER_SHA='$INNER_SHA' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          root="$HOME/thf-pulse-gp1"; rm -rf "$root"; mkdir -p "$root/src" "$root/work" "$root/evidence" "$root/out"
+          cp /tmp/thf-pulse-gp1-source.zip "$root/source.zip"
+          echo "$OUTER_SHA  $root/source.zip" | sha256sum -c - | tee "$root/evidence/outer-sha.txt"
+          python3 - <<'PY'
+          import zipfile,pathlib
+          z=pathlib.Path.home()/"thf-pulse-gp1/source.zip"; out=pathlib.Path.home()/"thf-pulse-gp1/src"
+          with zipfile.ZipFile(z) as f:
+            for i in f.infolist():
+              p=(out/i.filename).resolve()
+              if out.resolve() not in p.parents and p != out.resolve(): raise SystemExit(f"unsafe zip path: {i.filename}")
+            f.extractall(out)
+          PY
+          base="$root/src/02_THF_PULSE"
+          echo "$INNER_SHA  $base/SOURCE/THF_PULSE_V4.1.0_SOURCE.zip" | sha256sum -c - | tee "$root/evidence/inner-sha.txt"
+          python3 - <<'PY' | tee "$HOME/thf-pulse-gp1/evidence/status-check.txt"
+          import json,pathlib
+          d=json.loads((pathlib.Path.home()/"thf-pulse-gp1/src/02_THF_PULSE/PLAY_RELEASE_STATUS.json").read_text())
+          assert d['application_id']=='com.thf.topherofit.fitness'; assert d['android_target_sdk']==36
+          assert d['source_sha256']=='31116912623767ebc2edcd56ad55fb2358a4cf398d2765f5eb1de9d842a75ad2'
+          assert d['production_signed_aab_included'] is False and d['play_upload_claim'] is False
+          print('STATUS_CONTRACT_PASS')
+          PY
+          cp -a "$base/ANDROID_PLAY_SOURCE/." "$root/work/"; cd "$root/work"
+          grep -q 'compileSdk 36' app/build.gradle; grep -q 'targetSdk 36' app/build.gradle; grep -q "applicationId 'com.thf.topherofit.fitness'" app/build.gradle
+          unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+          export DEBUG_BASE_URL=http://10.0.2.2:8000
+          gradle --no-daemon clean assembleDebug 2>&1 | tee "$root/evidence/debug-build.log"
+          apk="$(find app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"; test -s "$apk"; cp "$apk" "$root/out/thf-pulse-debug.apk"
+          sha256sum "$root/out/thf-pulse-debug.apk" | tee "$root/evidence/debug-apk.sha256"; unzip -t "$root/out/thf-pulse-debug.apk" > "$root/evidence/debug-apk-ziptest.txt"
+          cp app/build.gradle "$root/evidence/build.gradle.canonical"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/build.gradle'); s=p.read_text()
+          s=s.replace("def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }", "def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }\ndef testUnsigned = System.getenv('THF_TEST_UNSIGNED') == '1'")
+          s=s.replace("if (releaseRequested && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')", "if (releaseRequested && !testUnsigned && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')")
+          p.write_text(s)
+          PY
+          export APP_BASE_URL=https://test.invalid THF_TEST_UNSIGNED=1
+          gradle --no-daemon clean bundleRelease 2>&1 | tee "$root/evidence/test-aab-build.log"
+          aab="$(find app/build/outputs/bundle/release -type f -name '*.aab' -print -quit)"; test -s "$aab"; cp "$aab" "$root/out/thf-pulse-TEST-UNSIGNED.aab"
+          sha256sum "$root/out/thf-pulse-TEST-UNSIGNED.aab" | tee "$root/evidence/test-aab.sha256"; unzip -t "$root/out/thf-pulse-TEST-UNSIGNED.aab" > "$root/evidence/test-aab-ziptest.txt"
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          r=pathlib.Path.home()/"thf-pulse-gp1"; apk=r/'out/thf-pulse-debug.apk'; aab=r/'out/thf-pulse-TEST-UNSIGNED.aab'
+          d={'checkpoint':'THF-PULSE-GP1-API36-TEST','canonical_outer_sha256':'8f18fc7f889c1fd0e01994350b399434a9779e714664c6974bb7925f36f50913','canonical_inner_source_sha256':'31116912623767ebc2edcd56ad55fb2358a4cf398d2765f5eb1de9d842a75ad2','application_id':'com.thf.topherofit.fitness','target_sdk':36,'debug_apk_sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'debug_apk_size':apk.stat().st_size,'test_unsigned_aab_sha256':hashlib.sha256(aab.read_bytes()).hexdigest(),'test_unsigned_aab_size':aab.stat().st_size,'production_signing_credentials_used':False,'play_upload_performed':False,'canonical_source_modified':False,'wave_touched':False}
+          (r/'evidence/result.json').write_text(json.dumps(d,indent=2)+'\n'); print(json.dumps(d,indent=2))
+          PY
+          echo WAVE_UNTOUCHED=TRUE
+          REMOTE
+      - name: Retrieve evidence only
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail; mkdir -p /tmp/thf-pulse-gp1/evidence
+          gcloud compute scp --recurse "$GCP_BUILDER:$HOME/thf-pulse-gp1/evidence" /tmp/thf-pulse-gp1/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: {name: thf-pulse-gp1-api36-test-evidence, path: /tmp/thf-pulse-gp1/evidence, if-no-files-found: warn}
+      - name: Final gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail; test -s /tmp/thf-pulse-gp1/evidence/result.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/thf-pulse-gp1/evidence/result.json'))
+          assert d['application_id']=='com.thf.topherofit.fitness' and d['target_sdk']==36
+          assert not d['production_signing_credentials_used'] and not d['play_upload_performed'] and not d['canonical_source_modified'] and not d['wave_touched']
+          print('THF_PULSE_GP1_PASS')
+          PY
