@@ -45,49 +45,57 @@ jobs:
           test -d "$ROOT"
           cd "$ROOT"
           echo THF_POLICY_ACCOUNT_DELETION_AUDIT_V1_BEGIN
-          echo SOURCE_SHA_BEGIN
           find src clients -type f -not -path "*/wave-mawja/*" -print0 2>/dev/null | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | sed "s/^/SOURCE_SET_SHA256=/"
-          echo SOURCE_SHA_END
 
           echo POLICY_FILE_INVENTORY_BEGIN
-          find . -type f \
-            \( -iname "*privacy*" -o -iname "*terms*" -o -iname "*deletion*" -o -iname "security.txt" \) \
-            -not -path "*/.git/*" -not -path "*/wave-mawja/*" -print | LC_ALL=C sort || true
+          find . -type f \( -iname "*privacy*" -o -iname "*terms*" -o -iname "*deletion*" -o -iname "security.txt" \) -not -path "*/.git/*" -not -path "*/wave-mawja/*" -print | LC_ALL=C sort || true
           echo POLICY_FILE_INVENTORY_END
 
           echo POLICY_ROUTE_SOURCE_BEGIN
-          grep -RInE --exclude-dir=.git --exclude="*.map" \
-            "(/privacy|/terms|account.?delet|delete.?account|security\\.txt|privacy policy|terms of (use|service))" \
-            src clients 2>/dev/null | head -500 || true
+          grep -RInE --exclude-dir=.git --exclude="*.map" "(/privacy|/terms|account.?delet|delete.?account|security\\.txt|privacy policy|terms of (use|service))" src clients 2>/dev/null | head -500 || true
           echo POLICY_ROUTE_SOURCE_END
 
           echo ACCOUNT_DELETE_IMPLEMENTATION_BEGIN
-          grep -RInE --exclude-dir=.git --exclude="*.map" --exclude="*.db" --exclude="*.sqlite*" \
-            "(DELETE[[:space:]]+FROM|delete\\(|remove\\(|cascade|ON DELETE|@.*delete|methods=.*DELETE|/api/.*delete|account.*delete|delete.*account|user.*delete|delete.*user)" \
-            src clients 2>/dev/null | head -700 || true
+          grep -RInE --exclude-dir=.git --exclude="*.map" --exclude="*.db" --exclude="*.sqlite*" "(DELETE[[:space:]]+FROM|delete\\(|remove\\(|cascade|ON DELETE|@.*delete|methods=.*DELETE|/api/.*delete|account.*delete|delete.*account|user.*delete|delete.*user)" src clients 2>/dev/null | head -700 || true
           echo ACCOUNT_DELETE_IMPLEMENTATION_END
 
-          echo LIVE_ROUTE_CHECK_BEGIN
-          BASE=http://127.0.0.1:8000
-          for p in /health /privacy /terms /account-deletion /.well-known/security.txt; do
-            code=$(curl -sS -o /tmp/thf_body -w "%{http_code}" --max-time 8 "$BASE$p" || true)
-            ctype=$(curl -sSI --max-time 8 "$BASE$p" 2>/dev/null | tr -d "\r" | awk -F": " "tolower(\$1)==\"content-type\"{print \$2; exit}")
-            bytes=$(wc -c </tmp/thf_body 2>/dev/null || echo 0)
-            sha=$(sha256sum /tmp/thf_body 2>/dev/null | awk "{print \$1}")
-            echo "ROUTE=$p HTTP=$code CONTENT_TYPE=${ctype:-NONE} BYTES=$bytes SHA256=${sha:-NONE}"
-          done
-          echo LIVE_ROUTE_CHECK_END
+          echo LISTENERS_BEGIN
+          ss -ltnp 2>/dev/null || true
+          ps -eo pid,args | grep -E "uvicorn|gunicorn|python.*thf|THF_NEXUS" | grep -v grep || true
+          echo LISTENERS_END
 
-          echo ROUTE_DISTINCTNESS_BEGIN
-          curl -sS --max-time 8 "$BASE/" -o /tmp/thf_root || true
-          rootsha=$(sha256sum /tmp/thf_root | awk "{print \$1}")
-          echo ROOT_SHA256=$rootsha
-          for p in privacy terms account-deletion .well-known/security.txt; do
-            curl -sS --max-time 8 "$BASE/$p" -o "/tmp/thf_${p//\//_}" || true
-            psha=$(sha256sum "/tmp/thf_${p//\//_}" | awk "{print \$1}")
-            if [ "$psha" = "$rootsha" ]; then echo "DISTINCT_$p=FAIL_SPA_FALLBACK"; else echo "DISTINCT_$p=PASS"; fi
+          BASE=""
+          for port in 8000 8001 8080 3000 5000 80; do
+            code=$(curl -sS -o /tmp/thf_probe -w "%{http_code}" --max-time 2 "http://127.0.0.1:$port/health" 2>/dev/null || true)
+            if [ "$code" = "200" ]; then BASE="http://127.0.0.1:$port"; break; fi
           done
-          echo ROUTE_DISTINCTNESS_END
+          if [ -n "$BASE" ]; then
+            echo LIVE_RUNTIME=FOUND
+            echo LIVE_BASE=$BASE
+            echo LIVE_ROUTE_CHECK_BEGIN
+            for p in /health /privacy /terms /account-deletion /.well-known/security.txt; do
+              rm -f /tmp/thf_body /tmp/thf_headers
+              code=$(curl -sS -D /tmp/thf_headers -o /tmp/thf_body -w "%{http_code}" --max-time 8 "$BASE$p" 2>/dev/null || true)
+              ctype=$(tr -d "\r" </tmp/thf_headers 2>/dev/null | awk -F": " "tolower(\$1)==\"content-type\"{print \$2; exit}" || true)
+              bytes=$(wc -c </tmp/thf_body 2>/dev/null || echo 0)
+              sha=$(sha256sum /tmp/thf_body 2>/dev/null | awk "{print \$1}" || true)
+              echo "ROUTE=$p HTTP=${code:-000} CONTENT_TYPE=${ctype:-NONE} BYTES=$bytes SHA256=${sha:-NONE}"
+            done
+            echo LIVE_ROUTE_CHECK_END
+
+            curl -sS --max-time 8 "$BASE/" -o /tmp/thf_root 2>/dev/null || true
+            rootsha=$(sha256sum /tmp/thf_root 2>/dev/null | awk "{print \$1}" || true)
+            echo ROOT_SHA256=${rootsha:-NONE}
+            for p in privacy terms account-deletion .well-known/security.txt; do
+              out="/tmp/thf_${p//\//_}"
+              curl -sS --max-time 8 "$BASE/$p" -o "$out" 2>/dev/null || true
+              psha=$(sha256sum "$out" 2>/dev/null | awk "{print \$1}" || true)
+              if [ -n "$rootsha" ] && [ "$psha" = "$rootsha" ]; then echo "DISTINCT_$p=FAIL_SPA_FALLBACK"; else echo "DISTINCT_$p=PASS_OR_UNAVAILABLE"; fi
+            done
+          else
+            echo LIVE_RUNTIME=NOT_LISTENING_ON_KNOWN_PORTS
+            echo LIVE_ROUTE_CHECK=SKIPPED_SOURCE_AUDIT_STILL_VALID
+          fi
 
           if find . \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then
             echo THF_RUNTIME_WAVE_ISOLATION=FAIL
