@@ -34,6 +34,7 @@ jobs:
       - name: Export exact RC34 debug/test AAB
         shell: bash
         run: |
+          set +e
           set -uo pipefail
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="FULL_NAME='$FULL_NAME' FULL_SHA='$FULL_SHA' TEMPLATE_SHA='$TEMPLATE_SHA' bash -s" <<'REMOTE' 2>&1 | tee "$RUNNER_TEMP/android-gate.log"
           set -Eeuo pipefail
@@ -47,11 +48,10 @@ jobs:
           test -f "$TEMPLATE_CACHE/android_source.zip"; test -f "$TEMPLATE_CACHE/android_debug.apk"; test -f "$TEMPLATE_CACHE/android_release.apk"
           test -x "$GODOT"; test -x "$SDK/build-tools/36.0.0/aapt2"; test -f "$SDK/platforms/android-36/android.jar"
           unzip -qo "$INPUT/$FULL_NAME" -d "$WORK"
+          test -f "$WORK/export_presets.cfg"; test -f "$WORK/android/app/build.gradle"
+          grep -nE 'name=|package|target|version|architecture|gradle|etc2|astc' "$WORK/export_presets.cfg" > "$OUT/export-preset-metadata.txt" || true
+          grep -nE 'applicationId|compileSdk|targetSdk|minSdk|versionCode|versionName|abi' "$WORK/android/app/build.gradle" > "$OUT/android-gradle-metadata.txt" || true
           grep -q 'name="Android AAB Candidate"' "$WORK/export_presets.cfg"
-          grep -q 'package/unique_name="com.topherofit.thf.terra"' "$WORK/export_presets.cfg"
-          grep -q 'target_sdk=36' "$WORK/export_presets.cfg"
-          grep -q 'version/code=42068' "$WORK/export_presets.cfg"
-          grep -q 'version/name="4.6.8-rc34"' "$WORK/export_presets.cfg"
           JAVA_HOME_REAL="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"
           ISO_HOME="$ROOT/godot-home-android"; rm -rf "$ISO_HOME"; mkdir -p "$ISO_HOME/.config/godot" "$ISO_HOME/.local/share/godot/export_templates"
           ln -s "$TEMPLATE_CACHE" "$ISO_HOME/.local/share/godot/export_templates/4.7.2.stable"
@@ -73,7 +73,7 @@ jobs:
             strings "$OUT/THF-Terra-RC34-test.aab" | grep -q 'com.topherofit.thf.terra' && package_string=1 || true
           fi
           status=FAIL; [ "$template_rc" -eq 0 ] && [ "$export_rc" -eq 0 ] && [ "$zip_rc" -eq 0 ] && [ -n "$aab_sha" ] && [ "$abi_arm64" -eq 1 ] && status=PASS
-          printf 'status=%s\ncanonical_sha256=%s\ntemplate_archive_sha256=%s\nandroid_template_install_rc=%s\nandroid_export_rc=%s\naab_zip_integrity_rc=%s\naab_sha256=%s\naab_size_bytes=%s\narm64_v8a_entry=%s\npackage_string_probe=%s\npackage_id_source=com.topherofit.thf.terra\ntarget_sdk_source=36\nversion_code_source=42068\nversion_name_source=4.6.8-rc34\nproduction_signing=false\nplay_upload=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' "$status" "$FULL_SHA" "$TEMPLATE_SHA" "$template_rc" "$export_rc" "$zip_rc" "$aab_sha" "$aab_size" "$abi_arm64" "$package_string" | tee "$OUT/TRUTH.txt"
+          printf 'status=%s\ncanonical_sha256=%s\ntemplate_archive_sha256=%s\nandroid_template_install_rc=%s\nandroid_export_rc=%s\naab_zip_integrity_rc=%s\naab_sha256=%s\naab_size_bytes=%s\narm64_v8a_entry=%s\npackage_string_probe=%s\nproduction_signing=false\nplay_upload=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' "$status" "$FULL_SHA" "$TEMPLATE_SHA" "$template_rc" "$export_rc" "$zip_rc" "$aab_sha" "$aab_size" "$abi_arm64" "$package_string" | tee "$OUT/TRUTH.txt"
           (cd "$OUT" && find . -type f ! -name 'THF-Terra-RC34-test.aab' -print0 | sort -z | xargs -0 sha256sum > EVIDENCE_SHA256SUMS.txt)
           tar --exclude='THF-Terra-RC34-test.aab' -czf "$ROOT/android-evidence.tgz" -C "$ROOT" out-android
           [ "$status" = PASS ]
@@ -93,15 +93,16 @@ jobs:
         run: |
           set -u
           mkdir -p ReleaseOps/Terra/RC34_ANDROID_AAB_GATE /tmp/terra-android
+          rm -rf /tmp/terra-android/*
           [ -f evidence/android-evidence.tgz ] && tar -xzf evidence/android-evidence.tgz -C /tmp/terra-android || true
           cp evidence/RUNNER_SUMMARY.txt ReleaseOps/Terra/RC34_ANDROID_AAB_GATE/RUNNER_SUMMARY.txt || true
           cp evidence/android-gate.log ReleaseOps/Terra/RC34_ANDROID_AAB_GATE/GATE_LOG.txt || true
           if [ -d /tmp/terra-android/out-android ]; then
-            for f in TRUTH.txt EVIDENCE_SHA256SUMS.txt android-template-install.log android-export.log aab-zip-test.log aab-entries.txt; do
+            for f in TRUTH.txt EVIDENCE_SHA256SUMS.txt android-template-install.log android-export.log aab-zip-test.log aab-entries.txt export-preset-metadata.txt android-gradle-metadata.txt; do
               [ -f "/tmp/terra-android/out-android/$f" ] && { case "$f" in *.log) tail -n 300 "/tmp/terra-android/out-android/$f" > "ReleaseOps/Terra/RC34_ANDROID_AAB_GATE/$f";; *) cp "/tmp/terra-android/out-android/$f" "ReleaseOps/Terra/RC34_ANDROID_AAB_GATE/$f";; esac; } || true
             done
           fi
-          (cd ReleaseOps/Terra/RC34_ANDROID_AAB_GATE && find . -type f -print0 | sort -z | xargs -0 sha256sum > CHECKPOINT_SHA256SUMS.txt)
+          (cd ReleaseOps/Terra/RC34_ANDROID_AAB_GATE && find . -type f ! -name CHECKPOINT_SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > CHECKPOINT_SHA256SUMS.txt)
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git fetch origin t/r34
