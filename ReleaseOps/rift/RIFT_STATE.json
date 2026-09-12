@@ -1,50 +1,36 @@
 {
   "stream": "THF_RIFT",
-  "checkpoint": "RIFT-RC35-ANDROID-EXPORT-READINESS",
-  "status": "SOURCE_EXPORT_PRESET_PASS_ANDROID_AAB_GATE_PENDING_WIF_GCP",
-  "version": "4.6.9-rc35",
-  "version_code": 42069,
+  "checkpoint": "RIFT-RC36-ANDROID-EXPORT-PREFLIGHT-HARDENING",
+  "status": "SOURCE_DETERMINISTIC_CLEAN_EXTRACT_PASS_REMOTE_GODOT_ANDROID_EXPORT_PENDING",
+  "version": "4.7.0-rc36",
+  "version_code": 42070,
   "compile_sdk": 36,
   "target_sdk": 36,
-  "base": {
-    "checkpoint": "RIFT-RC34-HUMAN-REVIVE-THREAT-INTERRUPTION",
-    "sha256": "2b565ee09eb00d3c1a5b54c7d07910c68daad11b40fcd8d361b672477a4023f6"
-  },
+  "base": {"checkpoint":"RIFT-RC35-ANDROID-EXPORT-READINESS","sha256":"ed3d1e3ede527b39f0110bbb83aab8e0d91cc4be4367b1634f14e17c02106558"},
   "completed_now": [
-    "verified canonical RC34 source SHA before modification",
-    "added source-controlled Godot Android export_presets.cfg",
-    "package com.topherofit.thf.rift",
-    "Android target SDK 36 / min SDK 26",
-    "AAB export format with arm64-v8a enabled",
-    "production signing explicitly disabled",
-    "project stage advanced to RC35",
-    "deterministic cumulative RC35 source archive and sub-100MB parts created",
-    "ZIP integrity and structural export-readiness checks PASS"
+    "synchronized Android fallback Gradle and Godot export version metadata to 42070 / 4.7.0-rc36",
+    "enabled rendering/textures/vram_compression/import_etc2_astc=true for Android Godot export",
+    "preserved com.topherofit.thf.rift, minSdk 26, compile/targetSdk 36, AAB, arm64-v8a",
+    "production signing remains disabled in candidate export preset",
+    "focused and clean-extract export preflight gates PASS 12/12",
+    "deterministic exact-SHA cumulative source package created"
   ],
   "tests": {
-    "rc34_source_sha": "PASS",
-    "export_preset_structure": "PASS",
-    "package_id": "PASS",
-    "target_sdk_36": "PASS",
-    "aab_format": "PASS",
-    "arm64": "PASS",
-    "production_signing_embedded": "NO",
+    "focused": "PASS 12/12",
+    "clean_extract": "PASS 12/12",
+    "python_compileall": "PASS",
+    "clean_extract_python_compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "clean_extract_javascript_syntax": "PASS",
     "zip_integrity": "PASS",
-    "godot_4_7_2": "CARRY_FORWARD_RC32_PASS_RUN_34651723807; RC35_ENGINE_EXPORT_PENDING",
-    "android_aab_export": "PENDING_WIF_GCP_TOOLCHAIN_GATE",
+    "deterministic_package": "PASS_EXACT_SHA",
+    "godot_4_7_2_latest_proven": "RC32_WORKFLOW_34651723807_PASS",
+    "fresh_rc36_godot": "PENDING_REMOTE_EXACT_INPUT_STAGING",
+    "android_test_aab": "PENDING_REMOTE_EXACT_INPUT_STAGING",
     "physical_android_gpu": "NOT_EXECUTED"
   },
-  "artifact": {
-    "name": "THF_Rift_v4.6.9_RC35_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip",
-    "sha256": "ed3d1e3ede527b39f0110bbb83aab8e0d91cc4be4367b1634f14e17c02106558",
-    "size_bytes": 108709714,
-    "parts": [
-      {"name":"THF_Rift_v4.6.9_RC35_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"e4e5b42d69bc4399c57a3e5b3a8f23a06134b09ecdc73d38ed5069704831f781"},
-      {"name":"THF_Rift_v4.6.9_RC35_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"679287f01480949a8233cc28cbaea82183d9750c6ac4f8211d057f6cb66a0db0"}
-    ]
-  },
-  "library_state_path": "/THF Nexus/Streams/",
-  "latest_engine_evidence": {"godot_version":"4.7.2","workflow_run":34651723807,"result":"PASS","rc35_native_delta":"export configuration only"},
-  "next": "Stage canonical RC35 parts through private Drive/GCP WIF path, run Godot 4.7.2 headless Android debug/test AAB export with Android SDK 36, verify AAB ZIP/package metadata/SHA-256 and persist ReleaseOps evidence. No production signing or store publication.",
-  "truth_boundaries": ["no production-signed AAB claimed","no Play approval claimed","no GPU/device QA claimed","no production deployment claimed","no Solana settlement claimed","no commercial-game visual parity/superiority claimed"]
+  "artifact": {"name":"THF_Rift_v4.7.0_RC36_ANDROID_EXPORT_PREFLIGHT_HARDENING_CUMULATIVE_SOURCE.zip","sha256":"6b738d80e3e97376cd4e7a9498e653b90bc7a926076c2c6e98431209cdc5147f","size_bytes":108675909,"parts":[{"name":"THF_Rift_v4.7.0_RC36_ANDROID_EXPORT_PREFLIGHT_HARDENING_CUMULATIVE_SOURCE.zip.part.00","sha256":"dc8eb3e450c06e953e099d831adbc3ff224eb6fa02ad4ca60cc513827ebd64af","size_bytes":94371840},{"name":"THF_Rift_v4.7.0_RC36_ANDROID_EXPORT_PREFLIGHT_HARDENING_CUMULATIVE_SOURCE.zip.part.01","sha256":"3fbfddefd6ff12833233034e5359959920ca8b9db1585f6f2aad23be86dda657","size_bytes":14304069}]},
+  "source_shas": {"project_godot":"9e734e18f6fcd5ceacb8cebd7952e9bb16d425b432cb13278523399d80f4f2a3","export_presets":"809d34dfc680a4b12b65dc2b4969c95aea55ad243f1bc179aec0dc77185c26d5","android_build_gradle":"5a6dbb2653b1c06645780f7557df1a1020ddeaa1b8f4b0fec6668cc3028559c3"},
+  "next": "Stage exact RC36 source on private WIF/GCP builder; install Godot 4.7.2 Android export templates/project Gradle template and Android SDK 36; run fresh parser/import/headless and unsigned/test-only AAB export; verify package/version/ABI/AAB integrity/SHA-256.",
+  "truth_boundaries": ["no GPU/device visual QA claimed","no production-signed AAB claimed","no Play approval claimed","no production deployment claimed"]
 }
