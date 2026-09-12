@@ -1,0 +1,19 @@
+{
+  "stream": "THF_TERRA",
+  "current": "TERRA-RC31",
+  "version": "4.6.5-rc31",
+  "package_id": "com.topherofit.thf.terra",
+  "baseline": {"release":"TERRA-RC30","sha256":"8a83afc99065d93d7d49df4ce88b3afab58fc628b82c0b491e46f5fb7eb9c73f"},
+  "reason": "Real Godot 4.7.2 clean import advanced past RC30 missing-helper errors and exposed strict Variant-inference warnings in WorldMain.gd.",
+  "fixes": [
+    "explicit THFTerraEnvironmentController type and Dictionary/int environment outputs",
+    "explicit Dictionary typing for all authoritative _activity_mutation await results",
+    "explicit Dictionary typing for THFApiClient.request_json await results",
+    "preserve RC30 property confirmation helpers and server-authority boundaries",
+    "advance Android candidate metadata to versionCode 42065/versionName 4.6.5-rc31"
+  ],
+  "local_tests": {"focused":"8/8 PASS","python_compileall":"PASS","javascript_syntax":"PASS","deterministic_package":"PASS exact SHA","clean_extract_focused":"8/8 PASS","zip_integrity":"PASS"},
+  "artifact": {"name":"THF_Terra_v4.6.5_RC31_GODOT472_STRICT_TYPING_CUMULATIVE_SOURCE.zip","sha256":"8a13330ba907448029e9bf65c18649c3d6fc7cf1bdbeffea6211cc28474bdcda","parts":[{"name":"THF_Terra_v4.6.5_RC31_GODOT472_STRICT_TYPING_CUMULATIVE_SOURCE.zip.part.00","sha256":"9621efef575646b7ba961fbb1310cc7e656c8410363f785a32d6c5b62eeb2c68"},{"name":"THF_Terra_v4.6.5_RC31_GODOT472_STRICT_TYPING_CUMULATIVE_SOURCE.zip.part.01","sha256":"4213f260ed3ed49b8a7e37540f53ef50fe3b8fbb0b6f0dd1ac6c421cf51eaace"}]},
+  "godot_472": {"rc30_clean_import":"FAILED_STRICT_VARIANT_INFERENCE","rc31_rerun":"PENDING"},
+  "truth_boundaries": ["GPU/device visual QA NOT EXECUTED","perfect photo likeness NOT CLAIMED","production-signed AAB NOT CLAIMED","Play approval NOT CLAIMED","production deployment NOT CLAIMED"]
+}
