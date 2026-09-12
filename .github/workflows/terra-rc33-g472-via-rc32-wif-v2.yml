@@ -1,0 +1,110 @@
+name: Terra RC33 G472 Bridge V2
+
+on:
+  push:
+    branches: ['terra/rc32-g472-20260912']
+    paths: ['.github/workflows/terra-rc33-g472-via-rc32-wif-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  P0: 1unN6-iLtu_nypKIqo-m_m8ZaLbSsGlk3
+  P1: 17ZvxPPh0JPInELSnm2ziaPIXuEnrZxo8
+  P0SHA: 4bfe9989563b8da1822e74b79531a2dd218131981277c05e01a712eabf0866c5
+  P1SHA: 4a00574c817f41a9492da20e19a023ebd39c7ba41f4573efea841c8a57b39cdc
+  RC32SHA: 389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          ref: terra/rc32-g472-20260912
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Stage exact RC32
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          r=/tmp/terra33v2; mkdir -p "$r/project" "$r/evidence"
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${P0}?alt=media" -o "$r/p0"
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${P1}?alt=media" -o "$r/p1"
+          echo "${P0SHA}  $r/p0" | sha256sum -c - | tee "$r/evidence/p0.sha.check"
+          echo "${P1SHA}  $r/p1" | sha256sum -c - | tee "$r/evidence/p1.sha.check"
+          cat "$r/p0" "$r/p1" > "$r/rc32.zip"
+          echo "${RC32SHA}  $r/rc32.zip" | sha256sum -c - | tee "$r/evidence/rc32.sha.check"
+          unzip -q "$r/rc32.zip" -d "$r/project"
+      - name: Apply and verify exact RC33 delta
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          r=/tmp/terra33v2; cd "$r/project"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('project.godot'); s=p.read_text(); s=s.replace('; THF Terra — RC29 Native Godot Export Readiness','; THF Terra — RC33 Android Texture Export Readiness',1); s=s.replace('textures/default_filters/use_nearest_mipmap_filter=false','textures/default_filters/use_nearest_mipmap_filter=false\ntextures/vram_compression/import_etc2_astc=true',1); s=s.replace('stage="RC29"','stage="RC33"',1); p.write_text(s)
+          p=Path('export_presets.cfg'); p.write_text(p.read_text().replace('version/code=42063','version/code=42067',1).replace('version/name="4.6.3-rc29"','version/name="4.6.7-rc33"',1))
+          p=Path('android/app/build.gradle'); p.write_text(p.read_text().replace('versionCode 42066','versionCode 42067',1).replace("versionName '4.6.6-rc32'","versionName '4.6.7-rc33'",1))
+          p=Path('tests/test_terra_rc33_android_texture_export_readiness.py'); p.write_text('''from pathlib import Path\nROOT=Path(__file__).resolve().parents[1]\nPROJECT=(ROOT/"project.godot").read_text(encoding="utf-8")\nPRESET=(ROOT/"export_presets.cfg").read_text(encoding="utf-8")\nGRADLE=(ROOT/"android/app/build.gradle").read_text(encoding="utf-8")\n\ndef test_android_etc2_astc_import_enabled():\n    assert "textures/vram_compression/import_etc2_astc=true" in PROJECT\n\ndef test_project_stage_rc33():\n    assert 'stage="RC33"' in PROJECT\n\ndef test_godot_android_preset_api36_and_rc33_version():\n    assert 'platform="Android"' in PRESET\n    assert 'gradle_build/target_sdk="36"' in PRESET\n    assert 'version/code=42067' in PRESET\n    assert 'version/name="4.6.7-rc33"' in PRESET\n\ndef test_fallback_android_gradle_api36_and_rc33_version():\n    assert "compileSdk 36" in GRADLE\n    assert "targetSdk 36" in GRADLE\n    assert "versionCode 42067" in GRADLE\n    assert "versionName '4.6.7-rc33'" in GRADLE\n''')
+          PY
+          echo 'fdb5b8e4d87751a224b7f8721adbc7a5dfeaeeab73c34af78a2167e1978106cc  project.godot' | sha256sum -c - | tee "$r/evidence/project-godot.sha.check"
+          echo '01dba1637a0a973d11fab94f0f0aa30fb3ff4a860979a0d60390ccc76e70900e  export_presets.cfg' | sha256sum -c - | tee "$r/evidence/export-presets.sha.check"
+          echo '409968aeee5d1a68b0d9783df229c1f34ecc7cd178886b8faad1878ff466b2ff  android/app/build.gradle' | sha256sum -c - | tee "$r/evidence/gradle.sha.check"
+          echo '38cd0737bfbf96ab8923e854daf1f914bca79e109e525ec913a1f153ada77815  tests/test_terra_rc33_android_texture_export_readiness.py' | sha256sum -c - | tee "$r/evidence/test.sha.check"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('project.godot').read_text(); e=Path('export_presets.cfg').read_text(); g=Path('android/app/build.gradle').read_text()
+          assert 'textures/vram_compression/import_etc2_astc=true' in p and 'stage="RC33"' in p
+          assert 'gradle_build/target_sdk="36"' in e and 'version/code=42067' in e and 'version/name="4.6.7-rc33"' in e
+          assert 'compileSdk 36' in g and 'targetSdk 36' in g and 'versionCode 42067' in g and "versionName '4.6.7-rc33'" in g
+          print('RC33_STATIC_ASSERTS=PASS')
+          PY
+      - name: Install exact Godot 4.7.2
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          r=/tmp/terra33v2
+          j="$(curl -fsSL https://api.github.com/repos/godotengine/godot-builds/releases/tags/4.7.2-stable)"; a=Godot_v4.7.2-stable_linux.x86_64.zip
+          u="$(printf '%s' "$j"|jq -r --arg a "$a" '.assets[]|select(.name==$a)|.browser_download_url')"; d="$(printf '%s' "$j"|jq -r --arg a "$a" '.assets[]|select(.name==$a)|.digest')"
+          curl -fsSL "$u" -o "$r/g.zip"; echo "${d#sha256:}  $r/g.zip" | sha256sum -c - | tee "$r/evidence/godot-archive.sha.check"
+          mkdir -p "$r/g"; unzip -q "$r/g.zip" -d "$r/g"; b="$(find "$r/g" -maxdepth 1 -type f -name 'Godot_v4.7.2-stable_linux.x86_64' -print -quit)"; chmod +x "$b"; ln -sf "$b" "$r/godot"; "$r/godot" --version | tee "$r/evidence/godot-version.txt"
+      - name: Fresh RC33 clean import and headless
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          r=/tmp/terra33v2; cd "$r/project"; rm -rf .godot
+          "$r/godot" --headless --editor --path . --quit --verbose 2>&1 | tee "$r/evidence/import.log"
+          ! grep -E -n 'SCRIPT ERROR:|Parse Error:|Failed to load script|Cannot get class|Could not resolve class' "$r/evidence/import.log"
+          "$r/godot" --headless --path . --quit-after 30 --verbose 2>&1 | tee "$r/evidence/headless.log"
+          ! grep -E -n 'SCRIPT ERROR:|Parse Error:|Failed to load script|Cannot get class|Could not resolve class' "$r/evidence/headless.log"
+      - name: Emit result
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/terra33v2/evidence
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          e=pathlib.Path('/tmp/terra33v2/evidence'); rd=lambda n:(e/n).read_text(errors='replace') if (e/n).exists() else ''
+          bad=('SCRIPT ERROR:','Parse Error:','Failed to load script','Cannot get class','Could not resolve class'); imp=rd('import.log'); head=rd('headless.log')
+          d={'release':'TERRA-RC33','source_sha256':'f50a0489c534306946f39603aaa2fa39e494fac5b4a7af906e03424d8457412b','godot_version':rd('godot-version.txt').strip() or None,'clean_import_no_script_signatures':bool(imp) and not any(x in imp for x in bad),'headless_30_no_script_signatures':bool(head) and not any(x in head for x in bad),'lane':'RC32_WIF_AUTH_BRIDGE_V2','gpu_device_visual_qa':'NOT_EXECUTED','production_signed_aab':'NOT_CLAIMED'}
+          p=e/'result.json'; p.write_text(json.dumps(d,indent=2)+'\n'); (e/'result.sha256').write_text(hashlib.sha256(p.read_bytes()).hexdigest()+'  result.json\n')
+          PY
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terra-rc33-g472-bridge-v2-evidence
+          path: /tmp/terra33v2/evidence
+          if-no-files-found: error
