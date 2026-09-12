@@ -5,8 +5,8 @@
   "source_version": "4.6.8-rc34",
   "version_code": 42068,
   "source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
-  "releaseops_status": "RC34_GODOT472_ENGINE_PASS_OFFICIAL_TEMPLATES_PASS_ANDROID_API36_TEST_AAB_GATE_ACTIVE",
-  "dedup": "RC1-RC33 documented PASS gates/artifacts were not rerun. RC34 exact cumulative artifact was verified before engine/export work. Fresh RC34 Godot 4.7.2 engine gate and template bootstrap are new evidence; Android export is isolated test-only work.",
+  "releaseops_status": "RC34_GODOT472_ENGINE_PASS_OFFICIAL_TEMPLATES_PASS_ANDROID_API36_TEST_AAB_PASS",
+  "dedup": "RC1-RC33 documented PASS gates/artifacts were not rerun. RC34 exact cumulative artifact was verified before engine/export work. Fresh RC34 Godot 4.7.2 engine gate, official template bootstrap, and Android API36 test-only AAB export are recorded as PASS evidence.",
   "rc34": {
     "artifact": "THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip",
     "artifact_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
@@ -40,31 +40,28 @@
     "wave_untouched": true
   },
   "android_api36_test_aab": {
+    "result": "PASS",
+    "workflow_run_id": 34672051650,
+    "workflow_head_sha": "30f2d1f421784d26d6e9c8539cde5713803a67a4",
     "preset": "Android AAB Candidate",
     "package_id": "com.topherofit.thf.terra",
     "min_sdk": 26,
     "target_sdk": 36,
-    "arm64_v8a": true,
+    "version_code": 42068,
+    "version_name": "4.6.8-rc34",
+    "arm64_v8a_entry": true,
+    "android_export_rc": 0,
+    "aab_zip_integrity_rc": 0,
+    "aab_sha256": "976a0dbfae6938deda18c98208ec8631c2f893f4cebb166d3f7a2d5c13e51ca5",
+    "aab_size_bytes": 145004105,
+    "evidence_artifact_id": 10291316054,
+    "evidence_artifact_digest_sha256": "c34b783927d8ffb4e83f9269dcf143b11ddccdb2024fb85d8a0b02b963f44331",
     "production_signing": false,
     "play_upload": false,
-    "diagnostic_run_34671914989": {
-      "result": "FAIL_SAFE",
-      "canonical_sha_verified": true,
-      "official_template_sha_verified": true,
-      "android_template_install_rc": 0,
-      "android_export_rc": 1,
-      "cause": "Godot CLI install returned 0 but did not create res://android/build; export then reported Android build template not installed.",
-      "canonical_archive_mutated": false,
-      "wave_untouched": true
-    },
-    "current_gate": {
-      "workflow_run_id": 34672051650,
-      "status": "IN_PROGRESS",
-      "strategy": "Explicitly install verified android_source.zip into isolated work copy res://android/build, use valid EditorSettings resource, then export debug/test AAB and verify ZIP/SHA/arm64.",
-      "canonical_archive_mutated": false
-    }
+    "canonical_archive_mutated": false,
+    "wave_untouched": true
   },
-  "next_gate": "Complete RC34 Android API 36 test-only AAB export on the isolated work copy. If PASS, record AAB SHA/integrity/ABI evidence; if FAIL, fix only the evidenced export/tooling issue and rerun. Do not repeat the already-PASS RC34 Godot engine gate.",
+  "next_gate": "Do not repeat RC34 engine/export PASS gates. Resume the next unclosed Terra Native quality gate from exact RC34 source, preferring a substantial RC batch across avatar/animation/IK/locomotion/NPC/world/mobile systems before the next version bump.",
   "truth_boundaries": {
     "gpu_device_visual_qa": "NOT_EXECUTED",
     "perfect_photo_likeness": "NOT_CLAIMED",
