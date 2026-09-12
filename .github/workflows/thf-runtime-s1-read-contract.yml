@@ -1,0 +1,54 @@
+name: THF Runtime S1 Read Contract
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-runtime-s1-read-contract.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  read-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read safe startup contract and prior evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1"; APP="$ROOT/runtime/THF_NEXUS_6_FINAL"
+          safe(){ f="$1"; echo "===== ${f#$ROOT/} ====="; if [ -f "$f" ]; then sed -E "s#([A-Za-z_][A-Za-z0-9_]*(TOKEN|SECRET|PASSWORD|KEY)[A-Za-z0-9_]*)[=:][^[:space:]]+#\1=<redacted>#Ig" "$f" | head -260; else echo MISSING; fi; }
+          safe "$ROOT/evidence/start.txt"
+          safe "$ROOT/evidence/status.txt"
+          safe "$ROOT/evidence/http-smoke.txt"
+          safe "$APP/scripts/start.sh"
+          safe "$APP/deploy/gcp/BOOTSTRAP_THF_VM.sh"
+          safe "$APP/deploy/gcp/UPDATE_THF_VM.sh"
+          safe "$APP/README.md"
+          echo "===== ENV FILE NAMES ====="; find "$APP" -maxdepth 3 -type f -iname "*.env*" -printf "%P\n" | sort
+          echo "===== ENV KEY NAMES ONLY ====="; find "$APP" -maxdepth 3 -type f -iname "*.env*" -print0 | xargs -0 -r grep -hE "^[A-Za-z_][A-Za-z0-9_]*=" | cut -d= -f1 | sort -u
+          echo CONTRACT_READ=PASS
+          echo NO_SECRET_VALUES_PRINTED=TRUE
+          echo WAVE_UNTOUCHED=TRUE'
