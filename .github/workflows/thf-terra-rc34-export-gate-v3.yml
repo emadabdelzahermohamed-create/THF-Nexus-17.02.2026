@@ -57,6 +57,7 @@ jobs:
           PY
           test -f "$WORK/project.godot"; test -f "$WORK/export_presets.cfg"; grep -q 'name="Android AAB Candidate"' "$WORK/export_presets.cfg"
           GODOT="$BASE_HOME/thf-tools/godot/4.7.2-stable/godot"; SDK="$BASE_HOME/thf-builder-rc16-build/android-sdk"; TEMPLATE_ROOT="$BASE_HOME/.local/share/godot/export_templates/4.7.2.stable"
+          for _ in $(seq 1 60); do [ -x "$GODOT" ] && break; sleep 2; done
           test -x "$GODOT"; test -x "$SDK/build-tools/36.0.0/aapt2"; test -f "$SDK/platforms/android-36/android.jar"; test -f "$TEMPLATE_ROOT/android_source.zip"
           JAVA_HOME_REAL="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"; ISO_HOME="$ROOT/godot-home"; mkdir -p "$ISO_HOME/.config/godot" "$ISO_HOME/.local/share/godot"
           ln -s "$BASE_HOME/.local/share/godot/export_templates" "$ISO_HOME/.local/share/godot/export_templates"
