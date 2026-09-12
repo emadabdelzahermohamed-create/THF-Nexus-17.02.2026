@@ -93,7 +93,11 @@ jobs:
             chmod +x "$WORK/android/build/gradlew" || true
             test -f "$WORK/android/build/gradlew"
             test -f "$WORK/android/build/build.gradle"
+            GODOT_TEMPLATE_ID="$($GODOT --version | sed 's/\.official.*//')"
+            printf '%s\n' "$GODOT_TEMPLATE_ID" > "$WORK/android/.build_version"
+            test "$(cat "$WORK/android/.build_version")" = "4.7.2.stable"
             echo MANUAL_ANDROID_BUILD_TEMPLATE_FALLBACK=PASS >>"$OUT/android-template-install.log"
+            echo BUILD_VERSION_MARKER=4.7.2.stable >>"$OUT/android-template-install.log"
           fi
           set +e
           if [ "$template_rc" -eq 0 ]; then timeout 20m "$GODOT" --headless --path "$WORK" --export-debug "Android AAB Candidate" "$OUT/android/THF-Terra-RC34-test.aab" >"$OUT/android-export.log" 2>&1; export_rc=$?; fi
