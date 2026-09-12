@@ -65,7 +65,7 @@ jobs:
           set -Eeuo pipefail
           root="$HOME/thf-suite-gp1"
           rm -rf "$root"
-          mkdir -p "$root/src" "$root/work" "$root/evidence" "$root/out"
+          mkdir -p "$root/src" "$root/work" "$root/evidence" "$root/out" "$root/gradle-home"
           cp /tmp/thf-suite-gp1-source.zip "$root/source.zip"
           echo "$OUTER_SHA  $root/source.zip" | sha256sum -c - | tee "$root/evidence/outer-sha.txt"
           python3 - <<'PY'
@@ -73,6 +73,8 @@ jobs:
           z=pathlib.Path.home()/"thf-suite-gp1/source.zip"
           out=pathlib.Path.home()/"thf-suite-gp1/src"
           with zipfile.ZipFile(z) as f:
+              bad=f.testzip()
+              if bad: raise SystemExit('ZIP_INTEGRITY_FAIL='+bad)
               for i in f.infolist():
                   p=(out/i.filename).resolve()
                   if out.resolve() not in p.parents and p != out.resolve():
@@ -83,7 +85,7 @@ jobs:
           test -f "$base/PLAY_RELEASE_STATUS.json"
           test -f "$base/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip"
           echo "$INNER_SHA  $base/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip" | sha256sum -c - | tee "$root/evidence/inner-sha.txt"
-          python3 - <<'PY' | tee "$HOME/thf-suite-gp1/evidence/status-check.txt"
+          python3 - <<'PY' | tee "$root/evidence/status-check.txt"
           import json, pathlib
           p=pathlib.Path.home()/"thf-suite-gp1/src/01_THF_NEXUS_SUITE/PLAY_RELEASE_STATUS.json"
           d=json.loads(p.read_text())
@@ -99,10 +101,17 @@ jobs:
           grep -q 'compileSdk 36' app/build.gradle
           grep -q 'targetSdk 36' app/build.gradle
           grep -q "applicationId 'com.thf.topherofit'" app/build.gradle
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"
+          GBIN="$HOME/thf-builder-rc16-build/cache/gradle-dist-8.11.1/gradle-8.11.1/bin/gradle"
+          GDIST="$HOME/thf-builder-rc16-build/cache/gradle-8.11.1-bin.zip"
+          test -x "$GBIN"; test -f "$SDK/platforms/android-36/android.jar"
+          echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $GDIST" | sha256sum -c - | tee "$root/evidence/gradle-dist-sha.txt"
+          export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$root/gradle-home"
+          export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$SDK/cmdline-tools/latest/bin:$PATH"
+          "$GBIN" --version > "$root/evidence/gradle-version.txt"
           unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
           export DEBUG_BASE_URL=http://10.0.2.2:8000
-          gradle --version > "$root/evidence/gradle-version.txt"
-          gradle --no-daemon clean assembleDebug 2>&1 | tee "$root/evidence/debug-build.log"
+          "$GBIN" --no-daemon clean assembleDebug 2>&1 | tee "$root/evidence/debug-build.log"
           apk="$(find app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"
           test -s "$apk"
           cp "$apk" "$root/out/thf-nexus-suite-debug.apk"
@@ -119,7 +128,7 @@ jobs:
           p.write_text(s)
           PY
           export APP_BASE_URL=https://test.invalid THF_TEST_UNSIGNED=1
-          gradle --no-daemon clean bundleRelease 2>&1 | tee "$root/evidence/test-aab-build.log"
+          "$GBIN" --no-daemon clean bundleRelease 2>&1 | tee "$root/evidence/test-aab-build.log"
           aab="$(find app/build/outputs/bundle/release -type f -name '*.aab' -print -quit)"
           test -s "$aab"
           cp "$aab" "$root/out/thf-nexus-suite-TEST-UNSIGNED.aab"
@@ -154,8 +163,8 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          mkdir -p /tmp/thf-suite-gp1/evidence
-          gcloud compute scp --recurse "$GCP_BUILDER:$HOME/thf-suite-gp1/evidence" /tmp/thf-suite-gp1/ \
+          mkdir -p /tmp/thf-suite-gp1
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-suite-gp1/evidence" /tmp/thf-suite-gp1/ \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap \
             --ssh-key-expire-after=10m --quiet
       - name: Upload evidence
@@ -164,7 +173,7 @@ jobs:
         with:
           name: thf-nexus-suite-gp1-api36-test-evidence
           path: /tmp/thf-suite-gp1/evidence
-          if-no-files-found: warn
+          if-no-files-found: error
       - name: Final gate
         shell: bash
         run: |
