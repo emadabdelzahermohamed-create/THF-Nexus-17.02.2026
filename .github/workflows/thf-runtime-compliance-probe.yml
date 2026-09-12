@@ -1,0 +1,100 @@
+name: THF Runtime Compliance Probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-runtime-compliance-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  compliance_probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read current isolated THF runtime URL
+        id: runtime
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          OUT=$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=8m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          URL=$(cat "$ROOT/runtime/public-url.txt" 2>/dev/null || true)
+          test -n "$URL"
+          python3 - <<"PY"
+          import json,urllib.request
+          d=json.load(urllib.request.urlopen("http://127.0.0.1:18080/health",timeout=3))
+          assert d.get("ok") is True
+          print("LOCAL_HEALTH=PASS")
+          print("LOCAL_RELEASE="+str(d.get("release")))
+          PY
+          echo PUBLIC_URL=$URL
+          echo WAVE_UNTOUCHED=TRUE')
+          printf '%s\n' "$OUT"
+          URL=$(printf '%s\n' "$OUT" | sed -n 's/^PUBLIC_URL=//p' | tail -1)
+          test -n "$URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+      - name: External health and security headers
+        shell: bash
+        env:
+          URL: ${{ steps.runtime.outputs.url }}
+        run: |
+          set -Eeuo pipefail
+          H=$(mktemp); B=$(mktemp)
+          curl -fsS --connect-timeout 5 --max-time 15 -D "$H" -o "$B" "$URL/health"
+          python3 - "$B" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          assert d.get('ok') is True
+          print('EXTERNAL_HEALTH=PASS')
+          print('EXTERNAL_RELEASE='+str(d.get('release')))
+          PY
+          grep -iE '^(content-security-policy|x-frame-options|x-content-type-options|referrer-policy|strict-transport-security):' "$H" || true
+      - name: Probe public policy routes without mutation
+        shell: bash
+        env:
+          URL: ${{ steps.runtime.outputs.url }}
+        run: |
+          set -Eeuo pipefail
+          for p in /privacy /privacy.html /terms /terms.html /.well-known/security.txt; do
+            code=$(curl -sS -o /tmp/body -D /tmp/headers --connect-timeout 5 --max-time 15 -w '%{http_code}' "$URL$p" || true)
+            ctype=$(awk 'BEGIN{IGNORECASE=1} /^content-type:/{sub(/\r$/,""); print substr($0,index($0,":")+2); exit}' /tmp/headers || true)
+            bytes=$(wc -c </tmp/body 2>/dev/null || echo 0)
+            echo "POLICY_ROUTE path=$p http=$code bytes=$bytes content_type=${ctype:-UNSET}"
+          done
+          echo POLICY_PROBE_READ_ONLY=TRUE
+          echo WAVE_UNTOUCHED=TRUE
+      - name: Verify admin fails closed externally
+        shell: bash
+        env:
+          URL: ${{ steps.runtime.outputs.url }}
+        run: |
+          set -Eeuo pipefail
+          code=$(curl -sS -o /tmp/admin-body --connect-timeout 5 --max-time 15 -w '%{http_code}' "$URL/api/admin/services" || true)
+          echo "ADMIN_UNAUTH_HTTP=$code"
+          case "$code" in 401|403) echo ADMIN_FAIL_CLOSED=PASS;; *) echo ADMIN_FAIL_CLOSED=FAIL; exit 1;; esac
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
