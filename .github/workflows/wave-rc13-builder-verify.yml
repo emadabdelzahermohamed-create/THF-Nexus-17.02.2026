@@ -34,62 +34,91 @@ jobs:
         uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Verify WAVE canonical workspace
+      - name: Prepare remote verifier
         shell: bash
         run: |
           set -Eeuo pipefail
-          mkdir -p wave-evidence
-          set +e
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=60m --quiet --command='set -Eeuo pipefail
+          cat > "$RUNNER_TEMP/wave-rc13-remote.sh" <<'REMOTE'
+          #!/usr/bin/env bash
+          set -Eeuo pipefail
           PROJECT=/root/workspace/wave-mawja
           [ -d "$PROJECT" ] || { echo WAVE_PROJECT_MISSING; exit 21; }
           [ "$(readlink -f "$PROJECT")" = "$PROJECT" ] || { echo WAVE_IDENTITY_FAIL; exit 22; }
           [ ! -L "$PROJECT" ] || { echo WAVE_SYMLINK_FAIL; exit 23; }
           cd "$PROJECT"
           echo WAVE_PROJECT_IDENTITY=PASS
-          for f in package.json app/api/control/route.ts components/control-dashboard.tsx media-server/api/source_connector.py; do [ -f "$f" ] || { echo MISSING:$f; exit 24; }; done
-          grep -q "batch-queue-import" app/api/control/route.ts
-          grep -q "requested.length > 20" app/api/control/route.ts
-          grep -q "type=\"file\" multiple" components/control-dashboard.tsx
-          grep -q "publisher-attestation" media-server/api/source_connector.py app/api/control/route.ts
+          for f in package.json app/api/control/route.ts components/control-dashboard.tsx media-server/api/source_connector.py; do
+            [ -f "$f" ] || { echo "MISSING:$f"; exit 24; }
+          done
+          grep -q 'batch-queue-import' app/api/control/route.ts
+          grep -q 'requested.length > 20' app/api/control/route.ts
+          grep -q 'type="file" multiple' components/control-dashboard.tsx
+          grep -q 'publisher-attestation' media-server/api/source_connector.py app/api/control/route.ts
           echo WAVE_RC11_INVARIANTS=PASS
-          python3 - <<'"'"'PY'"'"'
+          python3 - <<'PY'
           from pathlib import Path
-          for rel in ["app/api/control/route.ts","media-server/api/source_connector.py"]:
-              s=Path(rel).read_text(encoding="utf-8").lower()
-              for bad in ("drm bypass","paywall bypass","password bypass"):
+          for rel in ['app/api/control/route.ts','media-server/api/source_connector.py']:
+              s=Path(rel).read_text(encoding='utf-8').lower()
+              for bad in ('drm bypass','paywall bypass','password bypass'):
                   assert bad not in s,(rel,bad)
-          print("WAVE_RIGHTS_SECURITY_BOUNDARY=PASS")
+          print('WAVE_RIGHTS_SECURITY_BOUNDARY=PASS')
           PY
           npm run test:source
           [ ! -f tests/multi-ingest-source.test.mjs ] || node --test tests/multi-ingest-source.test.mjs
           npm run typecheck
           npm run build
           CONFIG="$PROJECT/dist/server/wrangler.json"
-          [ -f "$CONFIG" ]
+          [ -f "$CONFIG" ] || { echo WRANGLER_CONFIG_MISSING; exit 25; }
           [ ! -x scripts/fix-wrangler-generated-config.sh ] || bash scripts/fix-wrangler-generated-config.sh "$CONFIG"
           jq empty "$CONFIG" >/dev/null
-          if jq -e '"'"'has("legacy_env")'"'"' "$CONFIG" >/dev/null; then echo WRANGLER_LEGACY_ENV_FAIL; exit 25; fi
+          if jq -e 'has("legacy_env")' "$CONFIG" >/dev/null; then echo WRANGLER_LEGACY_ENV_FAIL; exit 26; fi
           node --import=./tests/register-cloudflare-loader.mjs --test tests/control-source.test.mjs tests/rendered-html.test.mjs
           echo WAVE_SOURCE_TYPECHECK_BUILD_WORKER=PASS
           ANDROID=""
-          while IFS= read -r -d "" f; do d="$(dirname "$f")"; if grep -Rqs "com.wave.mawja" "$d" --include='"'"'*.gradle'"'"' --include='"'"'*.gradle.kts'"'"' --include='"'"'AndroidManifest.xml'"'"'; then ANDROID="$d"; break; fi; done < <(find "$PROJECT" -maxdepth 6 -type f -name gradlew -print0)
+          while IFS= read -r -d '' f; do
+            d="$(dirname "$f")"
+            if grep -Rqs 'com.wave.mawja' "$d" --include='*.gradle' --include='*.gradle.kts' --include='AndroidManifest.xml'; then ANDROID="$d"; break; fi
+          done < <(find "$PROJECT" -maxdepth 6 -type f -name gradlew -print0)
           if [ -n "$ANDROID" ]; then
             cd "$ANDROID"
             chmod +x ./gradlew
-            COMBINED="$(find . -maxdepth 4 -type f \( -name '"'"'*.gradle'"'"' -o -name '"'"'*.gradle.kts'"'"' -o -name AndroidManifest.xml \) -print0 | xargs -0 cat 2>/dev/null || true)"
-            grep -Fq "com.wave.mawja" <<<"$COMBINED"
-            grep -Eq "compileSdk([[:space:]]*=)?[[:space:]]*36|compileSdkVersion[[:space:]]+36" <<<"$COMBINED"
-            grep -Eq "targetSdk([[:space:]]*=)?[[:space:]]*36|targetSdkVersion[[:space:]]+36" <<<"$COMBINED"
-            if grep -RqiE '"'"'usesCleartextTraffic[[:space:]]*=[[:space:]]*"true"|http://[^[:space:]"'"'"'"']+'"'"' . --include='"'"'AndroidManifest.xml'"'"' --include='"'"'*.xml'"'"' --include='"'"'*.gradle'"'"'; then echo WAVE_CLEARTEXT_FAIL; exit 26; fi
+            COMBINED="$(find . -maxdepth 4 -type f \( -name '*.gradle' -o -name '*.gradle.kts' -o -name AndroidManifest.xml \) -print0 | xargs -0 cat 2>/dev/null || true)"
+            grep -Fq 'com.wave.mawja' <<<"$COMBINED"
+            grep -Eq 'compileSdk([[:space:]]*=)?[[:space:]]*36|compileSdkVersion[[:space:]]+36' <<<"$COMBINED"
+            grep -Eq 'targetSdk([[:space:]]*=)?[[:space:]]*36|targetSdkVersion[[:space:]]+36' <<<"$COMBINED"
+            if grep -RqiE 'usesCleartextTraffic[[:space:]]*=[[:space:]]*"true"' . --include='AndroidManifest.xml' --include='*.xml'; then echo WAVE_CLEARTEXT_FAIL; exit 27; fi
             echo WAVE_ANDROID_METADATA=PASS
-            if [ -n "${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}" ]; then ./gradlew --no-daemon assembleDebug; apk="$(find . -path '"'"'*/build/outputs/apk/debug/*.apk'"'"' -type f | head -1)"; [ -n "$apk" ]; sha256sum "$apk"; echo WAVE_DEBUG_APK=PASS; else echo WAVE_DEBUG_APK=SKIPPED_NO_ANDROID_SDK; fi
+            SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/thf-builder-rc16-build/android-sdk}}"
+            if [ -d "$SDK" ]; then
+              export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK"
+              ./gradlew --no-daemon assembleDebug
+              apk="$(find . -path '*/build/outputs/apk/debug/*.apk' -type f | head -1)"
+              [ -n "$apk" ] || { echo WAVE_DEBUG_APK_MISSING; exit 28; }
+              sha256sum "$apk"
+              echo WAVE_DEBUG_APK=PASS
+            else
+              echo WAVE_DEBUG_APK=SKIPPED_NO_ANDROID_SDK
+            fi
           else
             echo WAVE_ANDROID_PROJECT=NOT_FOUND
           fi
-          printf "WAVE_RC13_VERIFY=PASS\nCLOUDFLARE_DEPLOYED=FALSE\nPLAY_UPLOAD_PERFORMED=FALSE\nPRODUCTION_SIGNING_USED=FALSE\nTHF_UNTOUCHED=TRUE\n"
+          printf 'WAVE_RC13_VERIFY=PASS\nCLOUDFLARE_DEPLOYED=FALSE\nPLAY_UPLOAD_PERFORMED=FALSE\nPRODUCTION_SIGNING_USED=FALSE\nTHF_UNTOUCHED=TRUE\n'
+          cd "$PROJECT"
           sha256sum package.json app/api/control/route.ts components/control-dashboard.tsx media-server/api/source_connector.py
-          ' 2>&1 | tee wave-evidence/wave-rc13-builder.log
+          REMOTE
+          chmod +x "$RUNNER_TEMP/wave-rc13-remote.sh"
+      - name: Transfer verifier through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp "$RUNNER_TEMP/wave-rc13-remote.sh" "$GCP_BUILDER:~/wave-rc13-remote.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Verify WAVE canonical workspace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p wave-evidence
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=60m --quiet --command='chmod 700 ~/wave-rc13-remote.sh && bash ~/wave-rc13-remote.sh' 2>&1 | tee wave-evidence/wave-rc13-builder.log
           rc=${PIPESTATUS[0]}
           set -e
           echo "$rc" > wave-evidence/remote-exit-code.txt
@@ -99,7 +128,8 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          sha256sum wave-evidence/* > wave-evidence/SHA256SUMS.txt
+          mkdir -p wave-evidence
+          find wave-evidence -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 -r sha256sum > wave-evidence/SHA256SUMS.txt
           cat wave-evidence/SHA256SUMS.txt
       - name: Upload evidence
         if: always()
