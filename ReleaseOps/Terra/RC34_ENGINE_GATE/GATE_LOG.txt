@@ -1,0 +1,39 @@
+WARNING: The private SSH key file for gcloud does not exist.
+WARNING: The public SSH key file for gcloud does not exist.
+WARNING: You do not have an SSH key for gcloud.
+WARNING: SSH keygen will be executed to generate a key.
+Generating public/private rsa key pair.
+Your identification has been saved in /home/runner/.ssh/google_compute_engine
+Your public key has been saved in /home/runner/.ssh/google_compute_engine.pub
+The key fingerprint is:
+SHA256:QrloE5QQUksnygOJ5DOQnbMAo5dLBHJVU9R+q8W9qsk runner@runnervmlun5p
+The key's randomart image is:
++---[RSA 3072]----+
+|%BO=+oooo.       |
+|%B+*.  o  .      |
+|oB=o. o  .       |
+| o=. + .  . .    |
+|  . + o S  o o   |
+|   . . .    + .  |
+|           o   . |
+|         ...  .  |
+|          E...   |
++----[SHA256]-----+
+WARNING: 
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+Warning: Permanently added 'compute.7990695183015470324' (ED25519) to the list of known hosts.
+/home/sa_115575029018678177962/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip: OK
+status=PASS
+engine_gate=PASS
+canonical_sha256=eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+import_rc=0
+boot_rc=0
+godot=4.7.2-stable
+export_templates=SEPARATE_GATE
+android_export=NOT_EXECUTED_IN_ENGINE_GATE
+production_signing=false
+canonical_archive_mutated=false
+wave_untouched=true

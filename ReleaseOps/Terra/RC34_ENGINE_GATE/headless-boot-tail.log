@@ -1,0 +1,31 @@
+WorkerThreadPool: 4 threads, 1 max low-priority.
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+TextServer: Added interface "Dummy"
+TextServer: Added interface "ICU / HarfBuzz / Graphite (Built-in)"
+SDL: Init OK!
+Using "default" pen tablet driver...
+
+TextServer: Primary interface set to: "ICU / HarfBuzz / Graphite (Built-in)".
+CORE API HASH: 2004498165
+EDITOR API HASH: 1696660745
+SceneTreeFTI: traversal method DEFAULT
+Loaded system CA certificates
+Loading resource: res://native/scenes/world_main.tscn remapped: res://native/scenes/world_main.tscn
+Loading resource: res://native/world/WorldMain.gd remapped: res://native/world/WorldMain.gd
+Completed load for: 'res://native/world/WorldMain.gd' remapped 'res://native/world/WorldMain.gd' at thread -1
+Completed load for: 'res://native/scenes/world_main.tscn' remapped 'res://native/scenes/world_main.tscn' at thread -1
+Loading resource: res://web/static/assets/avatars/thf_humanoid_v6.glb remapped: res://web/static/assets/avatars/thf_humanoid_v6.glb
+Loading resource: res://.godot/imported/thf_humanoid_v6.glb-f8bf8e6bb1c12490ac4e0b965d94db53.scn remapped: res://.godot/imported/thf_humanoid_v6.glb-f8bf8e6bb1c12490ac4e0b965d94db53.scn
+Completed load for: 'res://web/static/assets/avatars/thf_humanoid_v6.glb' remapped 'res://web/static/assets/avatars/thf_humanoid_v6.glb' at thread -1
+Loading resource: res://native/assets/audio/terra_social_cue.wav remapped: res://native/assets/audio/terra_social_cue.wav
+Loading resource: res://.godot/imported/terra_social_cue.wav-50e2d793b6ad4a6ae1fea2ef1167d6e3.sample remapped: res://.godot/imported/terra_social_cue.wav-50e2d793b6ad4a6ae1fea2ef1167d6e3.sample
+Completed load for: 'res://native/assets/audio/terra_social_cue.wav' remapped 'res://native/assets/audio/terra_social_cue.wav' at thread -1
+Loading resource: res://native/assets/audio/terra_work_cue.wav remapped: res://native/assets/audio/terra_work_cue.wav
+Loading resource: res://.godot/imported/terra_work_cue.wav-9d98b489a5ea17a0b1270488c22997d9.sample remapped: res://.godot/imported/terra_work_cue.wav-9d98b489a5ea17a0b1270488c22997d9.sample
+Completed load for: 'res://native/assets/audio/terra_work_cue.wav' remapped 'res://native/assets/audio/terra_work_cue.wav' at thread -1
+Loading resource: res://native/assets/audio/terra_greet_cue.wav remapped: res://native/assets/audio/terra_greet_cue.wav
+Loading resource: res://.godot/imported/terra_greet_cue.wav-9ce3d69462748ecf705c1cb0c8c966cd.sample remapped: res://.godot/imported/terra_greet_cue.wav-9ce3d69462748ecf705c1cb0c8c966cd.sample
+Completed load for: 'res://native/assets/audio/terra_greet_cue.wav' remapped 'res://native/assets/audio/terra_greet_cue.wav' at thread -1
+XR: Clearing primary interface
+XR: Removed interface "Native mobile"
+XR: Removed interface "OpenXR"

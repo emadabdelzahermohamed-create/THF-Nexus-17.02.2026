@@ -1,0 +1,11 @@
+status=PASS
+engine_gate=PASS
+canonical_sha256=eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+import_rc=0
+boot_rc=0
+godot=4.7.2-stable
+export_templates=SEPARATE_GATE
+android_export=NOT_EXECUTED_IN_ENGINE_GATE
+production_signing=false
+canonical_archive_mutated=false
+wave_untouched=true
