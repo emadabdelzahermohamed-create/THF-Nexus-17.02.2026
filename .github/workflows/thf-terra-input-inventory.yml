@@ -5,7 +5,7 @@ on:
     paths: ['.github/workflows/thf-terra-input-inventory.yml']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
   id-token: write
 env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
@@ -31,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          mkdir -p evidence
+          mkdir -p evidence ReleaseOps/Terra
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' <<'REMOTE' | tee evidence/TERRA_BUILDER_INPUT_INVENTORY.txt
           set -Eeuo pipefail
           echo 'scope=HOME_TERRA_ONLY'
@@ -43,6 +44,18 @@ jobs:
           echo 'inventory_complete=true'
           echo 'wave_untouched=true'
           REMOTE
+          cp evidence/TERRA_BUILDER_INPUT_INVENTORY.txt ReleaseOps/Terra/BUILDER_INPUT_INVENTORY.txt
+          sha256sum ReleaseOps/Terra/BUILDER_INPUT_INVENTORY.txt > ReleaseOps/Terra/BUILDER_INPUT_INVENTORY.sha256
+      - name: Commit Terra inventory checkpoint
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add ReleaseOps/Terra/BUILDER_INPUT_INVENTORY.txt ReleaseOps/Terra/BUILDER_INPUT_INVENTORY.sha256
+          git diff --cached --quiet && exit 0
+          git commit -m 'releaseops(terra): record builder input inventory'
+          git push origin HEAD:t/r34
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: THF-Terra-builder-input-inventory
