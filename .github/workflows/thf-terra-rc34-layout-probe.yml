@@ -1,0 +1,55 @@
+name: THF Terra RC34 Layout Probe
+on:
+  push:
+    branches: ['t/r34']
+    paths: ['.github/workflows/thf-terra-rc34-layout-probe.yml']
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  FULL_NAME: THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip
+  FULL_SHA: eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Probe
+        run: |
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="FULL_NAME='$FULL_NAME' FULL_SHA='$FULL_SHA' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          B="$HOME"; SRC="$B/thf-terra-rc34-gate/input/$FULL_NAME"; W="$B/thf-terra-layout-probe"; rm -rf "$W"; mkdir -p "$W"
+          echo "$FULL_SHA  $SRC" | sha256sum -c -
+          python3 - "$SRC" "$W" <<'PY'
+          import pathlib,shutil,sys,zipfile
+          s=pathlib.Path(sys.argv[1]); d=pathlib.Path(sys.argv[2]).resolve()
+          with zipfile.ZipFile(s) as z:
+            for i in z.infolist():
+              p=pathlib.PurePosixPath(i.filename)
+              if p.is_absolute() or '..' in p.parts: raise SystemExit(2)
+              t=(d/pathlib.Path(*p.parts)).resolve()
+              if t!=d and d not in t.parents: raise SystemExit(3)
+              if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+              t.parent.mkdir(parents=True,exist_ok=True)
+              with z.open(i) as r, open(t,'wb') as o: shutil.copyfileobj(r,o)
+          PY
+          echo PROJECT_GODOT_FILES
+          find "$W" -maxdepth 4 -type f -name project.godot -print
+          echo EXPORT_PRESET_FILES
+          find "$W" -maxdepth 4 -type f -name export_presets.cfg -print
+          echo ANDROID_PRESETS
+          find "$W" -maxdepth 4 -type f -name export_presets.cfg -exec grep -H '^name=' {} \; || true
+          for p in "$B/thf-tools/godot/4.7.2-stable/godot" "$B/thf-builder-rc16-build/android-sdk/build-tools/36.0.0/aapt2" "$B/thf-builder-rc16-build/android-sdk/platforms/android-36/android.jar" "$B/.local/share/godot/export_templates/4.7.2.stable/android_source.zip"; do if [ -e "$p" ]; then echo "PRESENT=$p"; else echo "MISSING=$p"; fi; done
+          REMOTE
