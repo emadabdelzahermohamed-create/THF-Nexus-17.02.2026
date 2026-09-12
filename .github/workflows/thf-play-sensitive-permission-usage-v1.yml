@@ -45,22 +45,23 @@ jobs:
           test -d "$ROOT"
           cd "$ROOT"
           echo THF_PLAY_SENSITIVE_PERMISSION_USAGE_V1_BEGIN
-          echo "SOURCE_ROOT_SHA256=$(find . -type f -not -path "*/build/*" -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk "{print \$1}")"
+          SOURCE_ROOT_SHA256=$(find . -type f -not -path "*/build/*" -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk "{print \$1}")
+          echo "SOURCE_ROOT_SHA256=$SOURCE_ROOT_SHA256"
           echo DECLARED_PERMISSION_USAGE_EVIDENCE_BEGIN
-          grep -RInE --exclude-dir=.git --exclude-dir=build --exclude='*.class' --exclude='*.jar' \
-            'requestPermissions|checkSelfPermission|ActivityCompat|Manifest\.permission|ACCESS_(FINE|COARSE)_LOCATION|RECORD_AUDIO|CAMERA|onPermissionRequest|PermissionRequest|WebChromeClient|GeolocationPermissions|getUserMedia|mediaDevices|navigator\.geolocation|capture=' \
+          grep -RInE --exclude-dir=.git --exclude-dir=build --exclude="*.class" --exclude="*.jar" \
+            "requestPermissions|checkSelfPermission|ActivityCompat|Manifest\\.permission|ACCESS_(FINE|COARSE)_LOCATION|RECORD_AUDIO|CAMERA|onPermissionRequest|PermissionRequest|WebChromeClient|GeolocationPermissions|getUserMedia|mediaDevices|navigator\\.geolocation|capture=" \
             . 2>/dev/null | head -300 || true
           echo DECLARED_PERMISSION_USAGE_EVIDENCE_END
           echo WEBVIEW_SECURITY_EVIDENCE_BEGIN
           grep -RInE --exclude-dir=.git --exclude-dir=build \
-            'setJavaScriptEnabled|setAllowFileAccess|setAllowContentAccess|setMixedContentMode|addJavascriptInterface|setWebContentsDebuggingEnabled|shouldOverrideUrlLoading|onReceivedSslError|proceed\(' \
+            "setJavaScriptEnabled|setAllowFileAccess|setAllowContentAccess|setMixedContentMode|addJavascriptInterface|setWebContentsDebuggingEnabled|shouldOverrideUrlLoading|onReceivedSslError|proceed\\(" \
             . 2>/dev/null | head -200 || true
           echo WEBVIEW_SECURITY_EVIDENCE_END
           echo ENDPOINT_EVIDENCE_BEGIN
           grep -RInE --exclude-dir=.git --exclude-dir=build \
-            'https?://|API_URL|BASE_URL|WebView|loadUrl' . 2>/dev/null | head -200 || true
+            "https?://|API_URL|BASE_URL|WebView|loadUrl" . 2>/dev/null | head -200 || true
           echo ENDPOINT_EVIDENCE_END
-          if find . -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" | grep -q .; then
+          if find . \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then
             echo THF_WAVE_SOURCE_ISOLATION=FAIL
             exit 9
           fi
