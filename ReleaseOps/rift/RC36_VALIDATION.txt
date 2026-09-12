@@ -1,0 +1,15 @@
+THF Rift RC36 Android Export Preflight Hardening Validation
+============================================================
+Baseline: RC35 artifact SHA ed3d1e3ede527b39f0110bbb83aab8e0d91cc4be4367b1634f14e17c02106558
+Version: 4.7.0-rc36 / versionCode 42070 / compileSdk 36 / targetSdk 36
+Scope: Rift/Nexus Arena only.
+Focused preflight gate: PASS 12/12
+Clean-extract preflight gate: PASS 12/12
+Python compileall source/clean extract: PASS
+JavaScript syntax source/clean extract: PASS
+ZIP integrity: PASS
+Deterministic package rebuild: PASS exact SHA 6b738d80e3e97376cd4e7a9498e653b90bc7a926076c2c6e98431209cdc5147f
+Godot 4.7.2 fresh parser/import/headless: NOT EXECUTED locally; executable unavailable. Latest proven gate remains RC32 workflow run 34651723807 PASS.
+Android test AAB export: PENDING exact RC36 staging to private WIF/GCP builder with Godot 4.7.2 export templates + Android SDK 36/Gradle template.
+Physical Android/GPU/device visual QA: NOT EXECUTED.
+Production-signed AAB / Play approval / production deployment: NOT CLAIMED.
