@@ -50,7 +50,7 @@ jobs:
             if [ -e "$p" ]; then echo "tool:$p=present"; else echo "tool:$p=missing"; fi
           done
           echo 'godot_candidates_begin'
-          find "$HOME" -maxdepth 6 -type f -name godot -perm -111 -path '*terra*' -o -type f -name godot -perm -111 -path '*thf-tools*' 2>/dev/null | head -50 || true
+          find "$HOME" -maxdepth 6 \( -type f -name godot -perm -111 -path '*terra*' -o -type f -name godot -perm -111 -path '*thf-tools*' \) -print 2>/dev/null | head -50 || true
           echo 'godot_candidates_end'
           echo 'android_source_candidates_begin'
           find "$HOME" -maxdepth 8 -type f -name android_source.zip \( -path '*godot*' -o -path '*terra*' \) -print 2>/dev/null | head -50 || true
@@ -67,8 +67,11 @@ jobs:
       - name: Commit preflight evidence
         shell: bash
         run: |
+          set -Eeuo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git fetch origin t/r34
+          git rebase origin/t/r34
           git add ReleaseOps/Terra/RC34_TOOLCHAIN_PREFLIGHT
           git diff --cached --quiet && exit 0
           git commit -m 'releaseops(terra): record RC34 toolchain preflight'
