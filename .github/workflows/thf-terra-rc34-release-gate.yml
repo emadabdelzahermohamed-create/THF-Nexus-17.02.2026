@@ -1,0 +1,148 @@
+name: THF Terra RC34 Release Gate
+
+on:
+  push:
+    branches: ['t/r34']
+    paths:
+      - '.github/workflows/thf-terra-rc34-release-gate.yml'
+      - 'ReleaseOps/Streams/TERRA_RC34_WIF_RETRY_20260912.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  P00_NAME: THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip.part.00
+  P00_ID: 187UN4UCuiWbpTMzi4W099YXkaAwEUvaB
+  P00_SHA: a9ba896bd3ddc2667f759e9b1c7493f861ed075edacc962893b6449a7d651ef1
+  P01_NAME: THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip.part.01
+  P01_ID: 1zxQr6jn-KIP6nwf9gM73SoCaJm_hv_gh
+  P01_SHA: a22fd343835a5153d540d95aaa56685428215d9ced3bb4fdeba7640e88f25507
+  FULL_NAME: THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip
+  FULL_SHA: eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+
+jobs:
+  terra-rc34:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: |
+            https://www.googleapis.com/auth/cloud-platform
+            https://www.googleapis.com/auth/drive.readonly
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Download and verify canonical RC34
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          D="$RUNNER_TEMP/terra-rc34"; mkdir -p "$D"; cd "$D"
+          for spec in "$P00_ID|$P00_NAME|$P00_SHA" "$P01_ID|$P01_NAME|$P01_SHA"; do
+            IFS='|' read -r id name sha <<<"$spec"
+            curl --fail --location --silent --show-error -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" -o "$name"
+            echo "$sha  $name" | sha256sum -c -
+          done
+          cat "$P00_NAME" "$P01_NAME" > "$FULL_NAME"
+          echo "$FULL_SHA  $FULL_NAME" | sha256sum -c -
+          echo TERRA_RC34_LOCAL_SHA_GATE=PASS
+
+      - name: Stage canonical archive on isolated builder path
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='set -Eeuo pipefail; rm -rf "$HOME/thf-terra-rc34-gate"; mkdir -p "$HOME/thf-terra-rc34-gate/input" "$HOME/thf-terra-rc34-gate/work" "$HOME/thf-terra-rc34-gate/out"; chmod 700 "$HOME/thf-terra-rc34-gate"'
+          gcloud compute scp "$RUNNER_TEMP/terra-rc34/$FULL_NAME" "$GCP_BUILDER:~/thf-terra-rc34-gate/input/$FULL_NAME" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
+      - name: Godot 4.7.2 import, headless boot and Android test export
+        id: gate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="FULL_NAME='$FULL_NAME' FULL_SHA='$FULL_SHA' bash -s" <<'REMOTE' 2>&1 | tee "$RUNNER_TEMP/terra-rc34-gate.log"
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-terra-rc34-gate"; INPUT="$ROOT/input"; WORK="$ROOT/work"; OUT="$ROOT/out"
+          echo "$FULL_SHA  $INPUT/$FULL_NAME" | sha256sum -c -
+          unzip -q "$INPUT/$FULL_NAME" -d "$WORK"
+          test -f "$WORK/project.godot"
+          test -f "$WORK/export_presets.cfg"
+          GODOT="$HOME/thf-tools/godot/4.7.2-stable/godot"
+          test -x "$GODOT"
+          "$GODOT" --version | tee "$OUT/GODOT_VERSION.txt"
+          rm -rf "$WORK/.godot"
+          set +e
+          timeout 15m "$GODOT" --headless --editor --path "$WORK" --quit --verbose >"$OUT/editor-import.log" 2>&1; import_rc=$?
+          timeout 5m "$GODOT" --headless --path "$WORK" --quit-after 30 --verbose >"$OUT/headless-boot.log" 2>&1; boot_rc=$?
+          set -e
+          script_errors=0
+          for log in "$OUT/editor-import.log" "$OUT/headless-boot.log"; do
+            if grep -Eqi 'SCRIPT ERROR|Parse Error|Parser Error|ERROR: Failed to load script|Cannot load script|Compile Error' "$log"; then
+              script_errors=$((script_errors+1))
+            fi
+          done
+          export_rc=99
+          mkdir -p "$OUT/android"
+          if [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$script_errors" -eq 0 ]; then
+            set +e
+            timeout 20m "$GODOT" --headless --path "$WORK" --export-debug Android "$OUT/android/THF-Terra-RC34-test.aab" >"$OUT/android-export.log" 2>&1; export_rc=$?
+            set -e
+          fi
+          artifact=''
+          if [ -f "$OUT/android/THF-Terra-RC34-test.aab" ]; then artifact="$(sha256sum "$OUT/android/THF-Terra-RC34-test.aab" | awk '{print $1}')"; fi
+          status=FAIL
+          [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$script_errors" -eq 0 ] && [ "$export_rc" -eq 0 ] && [ -n "$artifact" ] && status=PASS
+          printf 'status=%s\ncanonical_sha256=%s\nimport_rc=%s\nboot_rc=%s\nscript_error_logs=%s\nandroid_export_rc=%s\naab_sha256=%s\nproduction_signing=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' "$status" "$FULL_SHA" "$import_rc" "$boot_rc" "$script_errors" "$export_rc" "$artifact" | tee "$OUT/TRUTH.txt"
+          (cd "$OUT" && find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+          [ "$status" = PASS ]
+          REMOTE
+          rc=${PIPESTATUS[0]}; echo "rc=$rc" >> "$GITHUB_OUTPUT"; echo "TERRA_RC34_RC=$rc" >> "$GITHUB_ENV"; exit "$rc"
+
+      - name: Retrieve evidence
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p terra-rc34-evidence
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='set -Eeuo pipefail; R="$HOME/thf-terra-rc34-gate"; [ -d "$R/out" ] && tar -czf "$R/evidence.tgz" -C "$R" out' || true
+          gcloud compute scp "$GCP_BUILDER:~/thf-terra-rc34-gate/evidence.tgz" terra-rc34-evidence/evidence.tgz --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          cp "$RUNNER_TEMP/terra-rc34-gate.log" terra-rc34-evidence/ || true
+          printf 'source=TERRA-RC34\ncanonical_sha256=%s\nworkflow_rc=%s\nwave_untouched=true\n' "$FULL_SHA" "${TERRA_RC34_RC:-missing}" > terra-rc34-evidence/RUNNER_SUMMARY.txt
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-Terra-RC34-release-evidence
+          path: terra-rc34-evidence/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Gate conclusion
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ "${TERRA_RC34_RC:-missing}" = 0 ]
+          echo TERRA_RC34_GODOT_ANDROID_GATE=PASS
+          echo PRODUCTION_SIGNING=NOT_PERFORMED
+          echo WAVE_UNTOUCHED=TRUE
