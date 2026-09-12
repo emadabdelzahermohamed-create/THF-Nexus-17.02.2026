@@ -1,0 +1,82 @@
+name: THF Data Safety Runtime Flow V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-data-safety-runtime-flow-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  runtime_flow:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect THF web and backend data-flow evidence only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"
+          cd "$ROOT"
+          echo THF_DATA_SAFETY_RUNTIME_FLOW_V1_BEGIN
+          echo WEB_CAPTURE_EVIDENCE_BEGIN
+          grep -RInE --exclude-dir=.git --exclude-dir=runtime --exclude="*.map" \
+            "getUserMedia|mediaDevices|navigator\\.geolocation|watchPosition|getCurrentPosition|MediaRecorder|capture=|accept=.*(image|video|audio)|FileReader|FormData" \
+            clients src 2>/dev/null | head -300 || true
+          echo WEB_CAPTURE_EVIDENCE_END
+          echo BACKEND_DATA_ENDPOINT_EVIDENCE_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.db" --exclude="*.sqlite*" \
+            "(camera|microphone|audio|video|media|upload|location|latitude|longitude|geolocation|profile|message|chat|health|fitness).*(@app|/api/|router|endpoint|post|put|patch)|(@app|/api/|router|endpoint|post|put|patch).*(camera|microphone|audio|video|media|upload|location|latitude|longitude|geolocation|profile|message|chat|health|fitness)" \
+            src clients 2>/dev/null | head -400 || true
+          echo BACKEND_DATA_ENDPOINT_EVIDENCE_END
+          echo STORAGE_MODEL_EVIDENCE_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.db" --exclude="*.sqlite*" \
+            "CREATE TABLE|class .*Model|location|latitude|longitude|media|video|audio|message|chat|profile|health|fitness" \
+            src 2>/dev/null | head -400 || true
+          echo STORAGE_MODEL_EVIDENCE_END
+          echo NETWORK_DESTINATION_EVIDENCE_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.map" --exclude="*.db" --exclude="*.sqlite*" \
+            "https://|wss://|fetch\\(|WebSocket\\(|XMLHttpRequest|axios|/api/" \
+            clients src 2>/dev/null | head -400 || true
+          echo NETWORK_DESTINATION_EVIDENCE_END
+          find clients src -type f \
+            \( -name "*.js" -o -name "*.html" -o -name "*.py" -o -name "*.json" \) \
+            -not -path "*/wave-mawja/*" -print0 2>/dev/null | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | sed "s/^/SCANNED_SOURCE_SET_SHA256=/"
+          if find . \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then
+            echo THF_RUNTIME_WAVE_ISOLATION=FAIL
+            exit 9
+          fi
+          echo THF_RUNTIME_WAVE_ISOLATION=PASS
+          echo MUTATION_PERFORMED=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          echo THF_DATA_SAFETY_RUNTIME_FLOW_V1_END'
