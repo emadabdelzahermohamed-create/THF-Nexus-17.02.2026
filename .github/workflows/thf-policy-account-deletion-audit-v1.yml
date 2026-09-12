@@ -1,0 +1,103 @@
+name: THF Policy Account Deletion Audit V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-policy-account-deletion-audit-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Audit policy resources and account deletion without mutation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"
+          cd "$ROOT"
+          echo THF_POLICY_ACCOUNT_DELETION_AUDIT_V1_BEGIN
+          echo SOURCE_SHA_BEGIN
+          find src clients -type f -not -path "*/wave-mawja/*" -print0 2>/dev/null | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | sed "s/^/SOURCE_SET_SHA256=/"
+          echo SOURCE_SHA_END
+
+          echo POLICY_FILE_INVENTORY_BEGIN
+          find . -type f \
+            \( -iname "*privacy*" -o -iname "*terms*" -o -iname "*deletion*" -o -iname "security.txt" \) \
+            -not -path "*/.git/*" -not -path "*/wave-mawja/*" -print | LC_ALL=C sort || true
+          echo POLICY_FILE_INVENTORY_END
+
+          echo POLICY_ROUTE_SOURCE_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.map" \
+            "(/privacy|/terms|account.?delet|delete.?account|security\\.txt|privacy policy|terms of (use|service))" \
+            src clients 2>/dev/null | head -500 || true
+          echo POLICY_ROUTE_SOURCE_END
+
+          echo ACCOUNT_DELETE_IMPLEMENTATION_BEGIN
+          grep -RInE --exclude-dir=.git --exclude="*.map" --exclude="*.db" --exclude="*.sqlite*" \
+            "(DELETE[[:space:]]+FROM|delete\\(|remove\\(|cascade|ON DELETE|@.*delete|methods=.*DELETE|/api/.*delete|account.*delete|delete.*account|user.*delete|delete.*user)" \
+            src clients 2>/dev/null | head -700 || true
+          echo ACCOUNT_DELETE_IMPLEMENTATION_END
+
+          echo LIVE_ROUTE_CHECK_BEGIN
+          BASE=http://127.0.0.1:8000
+          for p in /health /privacy /terms /account-deletion /.well-known/security.txt; do
+            code=$(curl -sS -o /tmp/thf_body -w "%{http_code}" --max-time 8 "$BASE$p" || true)
+            ctype=$(curl -sSI --max-time 8 "$BASE$p" 2>/dev/null | tr -d "\r" | awk -F": " "tolower(\$1)==\"content-type\"{print \$2; exit}")
+            bytes=$(wc -c </tmp/thf_body 2>/dev/null || echo 0)
+            sha=$(sha256sum /tmp/thf_body 2>/dev/null | awk "{print \$1}")
+            echo "ROUTE=$p HTTP=$code CONTENT_TYPE=${ctype:-NONE} BYTES=$bytes SHA256=${sha:-NONE}"
+          done
+          echo LIVE_ROUTE_CHECK_END
+
+          echo ROUTE_DISTINCTNESS_BEGIN
+          curl -sS --max-time 8 "$BASE/" -o /tmp/thf_root || true
+          rootsha=$(sha256sum /tmp/thf_root | awk "{print \$1}")
+          echo ROOT_SHA256=$rootsha
+          for p in privacy terms account-deletion .well-known/security.txt; do
+            curl -sS --max-time 8 "$BASE/$p" -o "/tmp/thf_${p//\//_}" || true
+            psha=$(sha256sum "/tmp/thf_${p//\//_}" | awk "{print \$1}")
+            if [ "$psha" = "$rootsha" ]; then echo "DISTINCT_$p=FAIL_SPA_FALLBACK"; else echo "DISTINCT_$p=PASS"; fi
+          done
+          echo ROUTE_DISTINCTNESS_END
+
+          if find . \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then
+            echo THF_RUNTIME_WAVE_ISOLATION=FAIL
+            exit 9
+          fi
+          echo THF_RUNTIME_WAVE_ISOLATION=PASS
+          echo MUTATION_PERFORMED=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          echo THF_POLICY_ACCOUNT_DELETION_AUDIT_V1_END'
