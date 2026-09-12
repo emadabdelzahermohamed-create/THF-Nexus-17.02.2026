@@ -1,0 +1,12 @@
+{
+  "stream":"THF_TERRA",
+  "current":"TERRA-RC32",
+  "version":"4.6.6-rc32",
+  "baseline":{"release":"TERRA-RC31","sha256":"8a13330ba907448029e9bf65c18649c3d6fc7cf1bdbeffea6211cc28474bdcda"},
+  "reason":"Godot 4.7.2 clean import on RC31 failed at HumanFacialRuntime.gd:128 because generic abs() yielded an untyped Variant for mixed.",
+  "fix":"Use absi() with explicit int for the deterministic facial seed while preserving normalized float output.",
+  "local_tests":{"focused":"3/3 PASS","python_compileall":"PASS","javascript_syntax":"PASS","deterministic_package":"PASS exact SHA","zip_integrity":"PASS"},
+  "artifact":{"name":"THF_Terra_v4.6.6_RC32_GODOT472_FACIAL_SEED_TYPING_CUMULATIVE_SOURCE.zip","sha256":"389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695","parts":[{"sha256":"4bfe9989563b8da1822e74b79531a2dd218131981277c05e01a712eabf0866c5"},{"sha256":"4a00574c817f41a9492da20e19a023ebd39c7ba41f4573efea841c8a57b39cdc"}]},
+  "godot_472":{"clean_import":"PENDING_RERUN","headless_30":"PENDING_AFTER_IMPORT"},
+  "truth_boundaries":["GPU/device visual QA NOT EXECUTED","perfect photo likeness NOT CLAIMED","production-signed AAB NOT CLAIMED","Play approval NOT CLAIMED","production deployment NOT CLAIMED"]
+}
