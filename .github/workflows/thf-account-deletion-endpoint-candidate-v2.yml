@@ -1,0 +1,214 @@
+name: THF Account Deletion Endpoint Candidate V2
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-account-deletion-endpoint-candidate-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  EXPECTED_ARCHIVE_SHA256: 8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Build and test reversible V2 candidate through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cat > /tmp/thf_patch_account_delete_v2.py <<'PY'
+          from pathlib import Path
+          import os
+
+          root=Path(os.environ['CANDIDATE_ROOT'])
+          app=root/'src/thf/app.py'
+          a=app.read_text()
+          if 'def delete_account(self,uid:int)->dict:' in a:
+              raise SystemExit('candidate already patched unexpectedly')
+
+          method=r'''
+
+              def delete_account(self,uid:int)->dict:
+                  """Delete the authenticated account and safely remove local owned media.
+
+                  Caller identity must already be resolved from the bearer session. Local
+                  files are path-validated and staged by same-filesystem rename before the
+                  DB transaction, then restored on DB failure.
+                  """
+                  import os as _os, shutil as _shutil, uuid as _uuid
+                  uid=int(uid)
+                  runtime=(self.root/'runtime').resolve()
+                  media_root=(runtime/'media').resolve(); upload_root=(runtime/'uploads').resolve(); avatar_root=(runtime/'avatars').resolve()
+                  for d in (media_root,upload_root,avatar_root): d.mkdir(parents=True,exist_ok=True)
+
+                  # Collect and validate every owned local reference before moving anything.
+                  media_rows=self.db.rows('SELECT asset_url FROM media_posts WHERE user_id=?',(uid,))
+                  avatar=self.db.one('SELECT avatar_id,likeness_reference_path,glb_path FROM avatars WHERE user_id=?',(uid,))
+                  owned=[]
+                  for row in media_rows:
+                      url=str(row.get('asset_url') or '')
+                      if not url: continue
+                      prefix='/media/file/'
+                      if not url.startswith(prefix): raise ValueError('unsafe account media reference')
+                      name=url[len(prefix):]
+                      if not name or Path(name).name!=name or not name.startswith(f'{uid}_'): raise ValueError('unsafe account media reference')
+                      target=(media_root/name).resolve()
+                      if target.parent!=media_root: raise ValueError('unsafe account media path')
+                      owned.append(('media',target))
+                  for target in media_root.glob(f'.upload-{uid}-*.tmp'):
+                      target=target.resolve()
+                      if target.parent!=media_root: raise ValueError('unsafe account upload temp path')
+                      owned.append(('media-tmp',target))
+                  if avatar:
+                      aid=str(avatar['avatar_id'])
+                      if not aid or '/' in aid or '\\' in aid or Path(aid).name!=aid: raise ValueError('unsafe avatar id')
+                      expected_up=Path('runtime')/'uploads'/f'{aid}.img'; expected_glb=Path('runtime')/'avatars'/f'{aid}.glb'
+                      if Path(str(avatar['likeness_reference_path']))!=expected_up or Path(str(avatar['glb_path']))!=expected_glb:
+                          raise ValueError('unsafe avatar file reference')
+                      owned.append(('avatar-photo',(upload_root/f'{aid}.img').resolve()))
+                      owned.append(('avatar-glb',(avatar_root/f'{aid}.glb').resolve()))
+
+                  stage=(runtime/'.account-delete-stage'/f'{uid}-{_uuid.uuid4().hex}').resolve()
+                  stage_parent=(runtime/'.account-delete-stage').resolve()
+                  if stage.parent!=stage_parent: raise ValueError('unsafe account stage path')
+                  moved=[]
+                  try:
+                      for kind,target in owned:
+                          if not target.exists(): continue
+                          bucket=stage/kind; bucket.mkdir(parents=True,exist_ok=True)
+                          dst=(bucket/target.name).resolve()
+                          if stage not in dst.parents: raise ValueError('unsafe staged path')
+                          _os.replace(target,dst); moved.append((dst,target))
+
+                      actions=[]
+                      with self.db.connect() as con:
+                          con.execute('BEGIN IMMEDIATE')
+                          if not con.execute('SELECT id FROM users WHERE id=?',(uid,)).fetchone():
+                              con.rollback(); raise ValueError('account not found')
+                          tables=[r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
+                          refs=[]
+                          for table in tables:
+                              cols={r[1]:r for r in con.execute(f'PRAGMA table_info("{table}")')}
+                              for fk in con.execute(f'PRAGMA foreign_key_list("{table}")'):
+                                  if fk[2]=='users' and fk[3]=='user_id':
+                                      col=cols['user_id']; refs.append((table,str(fk[6]).upper(),bool(col[3] or col[5])))
+                          for table,on_delete,mandatory in refs:
+                              if on_delete in {'CASCADE','SET NULL'}: actions.append((table,on_delete,'schema'))
+                              elif mandatory:
+                                  con.execute(f'DELETE FROM "{table}" WHERE user_id=?',(uid,)); actions.append((table,on_delete,'delete'))
+                              else:
+                                  con.execute(f'UPDATE "{table}" SET user_id=NULL WHERE user_id=?',(uid,)); actions.append((table,on_delete,'anonymize'))
+                          con.execute('DELETE FROM users WHERE id=?',(uid,))
+                          if list(con.execute('PRAGMA foreign_key_check')):
+                              con.rollback(); raise RuntimeError('account deletion foreign-key verification failed')
+                          con.commit()
+                  except Exception:
+                      for staged,original in reversed(moved):
+                          if staged.exists():
+                              original.parent.mkdir(parents=True,exist_ok=True); _os.replace(staged,original)
+                      if stage.exists(): _shutil.rmtree(stage,ignore_errors=True)
+                      raise
+                  if stage.exists(): _shutil.rmtree(stage)
+                  return {'ok':True,'deleted':True,'user_id':uid,'references_processed':len(actions),'local_files_removed':len(moved)}
+          '''
+          marker="    def user_services(self)->list[dict]:\n"
+          if marker not in a: raise SystemExit('Runtime insertion marker missing')
+          a=a.replace(marker,method+'\n'+marker,1)
+          needle="    def do_POST(self):self._dispatch('POST')\n"
+          if needle not in a: raise SystemExit('do_POST contract missing')
+          a=a.replace(needle,needle+"    def do_DELETE(self):self._dispatch('DELETE')\n",1)
+          anchor="        if path=='/api/profile' and method=='GET':return self._send(rt.user.get_profile(self._need_user()['id']))\n"
+          route="        if path=='/api/account' and method=='DELETE':return self._send(rt.delete_account(self._need_user()['id']))\n"
+          if anchor not in a: raise SystemExit('route anchor missing')
+          app.write_text(a.replace(anchor,route+anchor,1))
+          print('PATCH_ACCOUNT_DELETE_V2=APPLIED')
+          PY
+
+          cat > /tmp/thf_test_account_delete_v2.py <<'PY'
+          from pathlib import Path
+          import base64, os, sys
+          root=Path(os.environ['CANDIDATE_ROOT']); db=Path(os.environ['TEST_DB']); sys.path.insert(0,str(root/'src'))
+          from thf.app import Runtime
+          rt=Runtime(root,str(db))
+
+          # Fail-closed path-validation test: no filesystem move or DB identity deletion.
+          bad=rt.identity.register('delete_v2_bad','Delete-v2-test-only-2026!'); bad_uid=int(bad['id'])
+          bad_post=rt.media.create(bad_uid,{'type':'photo','mime':'image/png','asset_base64':base64.b64encode(b'bad-fixture').decode()})
+          bad_file=root/'runtime'/'media'/Path(bad_post['asset_url']).name; assert bad_file.exists()
+          sentinel=root/'runtime'/'media'/'unrelated-sentinel.txt'; sentinel.write_text('KEEP')
+          with rt.db.connect() as con: con.execute('UPDATE media_posts SET asset_url=? WHERE id=?',('/media/file/../../unrelated-sentinel.txt',bad_post['id']))
+          try: rt.delete_account(bad_uid); raise AssertionError('unsafe reference was not rejected')
+          except ValueError as e: assert 'unsafe' in str(e)
+          assert rt.db.one('SELECT id FROM users WHERE id=?',(bad_uid,)) is not None
+          assert bad_file.exists() and sentinel.read_text()=='KEEP'
+          print('UNSAFE_PATH_FAIL_CLOSED=PASS')
+
+          # Real service-generated owned media + avatar cleanup success path.
+          reg=rt.identity.register('delete_v2_ok','Delete-v2-test-only-2026!'); uid=int(reg['id']); token=reg['token']
+          post=rt.media.create(uid,{'type':'photo','mime':'image/png','asset_base64':base64.b64encode(b'owned-media-v2').decode(),'title':'fixture'})
+          media_file=root/'runtime'/'media'/Path(post['asset_url']).name; assert media_file.exists()
+          av=rt.avatar.generate(uid,{'photo_base64':base64.b64encode(b'owned-avatar-photo-v2').decode()})
+          photo_file=root/av['likeness_reference_path']; glb_file=root/av['glb_path']; assert photo_file.exists() and glb_file.exists()
+          tmp_upload=root/'runtime'/'media'/f'.upload-{uid}-fixture.tmp'; tmp_upload.write_bytes(b'tmp'); assert tmp_upload.exists()
+          assert rt.identity.user_from_token(token)['id']==uid
+          out=rt.delete_account(uid)
+          assert out['ok'] and out['deleted'] and out['local_files_removed']>=4
+          assert rt.identity.user_from_token(token) is None
+          assert not media_file.exists() and not photo_file.exists() and not glb_file.exists() and not tmp_upload.exists()
+          assert sentinel.exists() and sentinel.read_text()=='KEEP'
+          with rt.db.connect() as con:
+              assert con.execute('SELECT COUNT(*) FROM users WHERE id=?',(uid,)).fetchone()[0]==0
+              assert con.execute('SELECT COUNT(*) FROM sessions WHERE user_id=?',(uid,)).fetchone()[0]==0
+              assert con.execute('SELECT COUNT(*) FROM media_posts WHERE user_id=?',(uid,)).fetchone()[0]==0
+              assert con.execute('SELECT COUNT(*) FROM avatars WHERE user_id=?',(uid,)).fetchone()[0]==0
+              assert list(con.execute('PRAGMA foreign_key_check'))==[]
+          stage=root/'runtime'/'.account-delete-stage'
+          assert not stage.exists() or not any(stage.iterdir())
+          src=(root/'src/thf/app.py').read_text()
+          assert "path=='/api/account' and method=='DELETE'" in src and "rt.delete_account(self._need_user()['id'])" in src
+          print('OWNED_MEDIA_CLEANUP=PASS')
+          print('OWNED_AVATAR_CLEANUP=PASS')
+          print('STALE_UPLOAD_TEMP_CLEANUP=PASS')
+          print('UNRELATED_SENTINEL_PRESERVED=PASS')
+          print('SESSION_INVALIDATION=PASS')
+          print('DB_FOREIGN_KEY_CHECK=PASS')
+          print('HTTP_ROUTE_SESSION_BINDING_CONTRACT=PASS')
+          PY
+
+          gcloud compute scp /tmp/thf_patch_account_delete_v2.py /tmp/thf_test_account_delete_v2.py "${GCP_BUILDER}:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="set -Eeuo pipefail
+            ARCHIVE=\"\$HOME/thf-runtime-s1/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip\"; test -f \"\$ARCHIVE\"
+            SHA=\$(sha256sum \"\$ARCHIVE\" | awk '{print \$1}'); echo CANONICAL_ARCHIVE_SHA256=\$SHA; test \"\$SHA\" = \"$EXPECTED_ARCHIVE_SHA256\"
+            TMP=\$(mktemp -d /tmp/thf-account-delete-v2.XXXXXX); trap 'rm -rf \"\$TMP\" /tmp/thf_patch_account_delete_v2.py /tmp/thf_test_account_delete_v2.py' EXIT
+            unzip -q \"\$ARCHIVE\" -d \"\$TMP/extracted\"; ROOT=\"\$TMP/extracted/THF_NEXUS_6_FINAL\"; test -f \"\$ROOT/src/thf/app.py\"
+            CANDIDATE_ROOT=\"\$ROOT\" PYTHONDONTWRITEBYTECODE=1 python3 /tmp/thf_patch_account_delete_v2.py
+            CANDIDATE_ROOT=\"\$ROOT\" TEST_DB=\"\$TMP/test.sqlite\" PYTHONDONTWRITEBYTECODE=1 python3 /tmp/thf_test_account_delete_v2.py
+            PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile \"\$ROOT/src/thf/app.py\"; find \"\$ROOT\" -type d -name __pycache__ -prune -exec rm -rf {} +
+            mkdir -p \"\$HOME/thf-runtime-s1/candidates\"; OUT=\"\$HOME/thf-runtime-s1/candidates/THF_NEXUS_6_ACCOUNT_DELETE_ENDPOINT_CANDIDATE_V2_${GITHUB_RUN_ID}.zip\"; test ! -e \"\$OUT\"
+            (cd \"\$TMP/extracted\" && zip -qr \"\$OUT\" THF_NEXUS_6_FINAL -x '*/runtime/*.sqlite' '*/runtime/*.db' '*/runtime/media/*' '*/runtime/uploads/*' '*/runtime/avatars/*' '*/__pycache__/*' '*.pyc' '*.pyo')
+            echo CANDIDATE_BASENAME=\$(basename \"\$OUT\"); echo CANDIDATE_SHA256=\$(sha256sum \"\$OUT\" | awk '{print \$1}'); echo CANDIDATE_SIZE_BYTES=\$(stat -c %s \"\$OUT\")
+            AFTER=\$(sha256sum \"\$ARCHIVE\" | awk '{print \$1}'); echo CANONICAL_ARCHIVE_SHA256_AFTER=\$AFTER; test \"\$AFTER\" = \"$EXPECTED_ARCHIVE_SHA256\"
+            if find \"\$ROOT\" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then exit 9; fi
+            echo THF_CANDIDATE_WAVE_ISOLATION=PASS; echo CANONICAL_ARCHIVE_MUTATION=FALSE; echo PRODUCTION_RUNTIME_MUTATION=FALSE; echo PRODUCTION_DB_MUTATION=FALSE
+            echo PRODUCTION_SIGNING_PERFORMED=FALSE; echo PLAY_UPLOAD_PERFORMED=FALSE; echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE; echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE; echo WAVE_UNTOUCHED=TRUE"
