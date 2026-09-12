@@ -55,15 +55,15 @@ jobs:
             .github/workflows/thf-tokenops-evidence-artifact-binding.yml \
             > tokenops-evidence-binding/SHA256SUMS.txt
           cp ReleaseOps/TokenOps/evidence-artifact-binding-tests.log tokenops-evidence-binding/
-          cat > tokenops-evidence-binding/SAFETY.txt <<'EOF'
-THF_TOKENOPS_EVIDENCE_BINDING_GATE=PASS
-TRANSACTION_CREATED=FALSE
-TRANSACTION_SIGNED=FALSE
-TRANSACTION_SUBMITTED=FALSE
-PRIVATE_KEY_USED=FALSE
-FINANCIAL_EFFECT=FALSE
-WAVE_UNTOUCHED=TRUE
-EOF
+          printf '%s\n' \
+            'THF_TOKENOPS_EVIDENCE_BINDING_GATE=PASS' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-evidence-binding/SAFETY.txt
 
       - name: Upload gate evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
