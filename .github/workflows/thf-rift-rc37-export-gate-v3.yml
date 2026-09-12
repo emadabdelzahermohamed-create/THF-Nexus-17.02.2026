@@ -63,7 +63,7 @@ jobs:
           JAVA_HOME_REAL="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"; ISO_HOME="$ROOT/godot-home"; mkdir -p "$ISO_HOME/.config/godot" "$ISO_HOME/.local/share/godot"
           ln -s "$BASE_HOME/.local/share/godot/export_templates" "$ISO_HOME/.local/share/godot/export_templates"
           printf '%s\n' '[gd_resource format=3]' '' '[resource]' "export/android/android_sdk_path = \"$SDK\"" "export/android/java_sdk_path = \"$JAVA_HOME_REAL\"" > "$ISO_HOME/.config/godot/editor_settings-4.7.tres"
-          export HOME="$ISO_HOME" ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" JAVA_HOME="$JAVA_HOME_REAL" PATH="$JAVA_HOME/bin:$SDK/platform-tools:$SDK/build-tools/36.0.0:$PATH"
+          export HOME="$ISO_HOME" ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" JAVA_HOME="$JAVA_HOME_REAL" PATH="$JAVA_HOME_REAL/bin:$SDK/platform-tools:$SDK/build-tools/36.0.0:$PATH"
           set +e
           timeout 15m "$GODOT" --headless --editor --path "$PROJECT" --quit --verbose >"$OUT/editor-import.log" 2>&1; import_rc=$?
           timeout 5m "$GODOT" --headless --path "$PROJECT" --quit-after 30 --verbose >"$OUT/headless-boot.log" 2>&1; boot_rc=$?
