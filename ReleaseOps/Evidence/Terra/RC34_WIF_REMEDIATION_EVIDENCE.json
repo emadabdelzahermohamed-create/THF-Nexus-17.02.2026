@@ -1,0 +1,36 @@
+{
+  "stream": "THF_TERRA",
+  "release": "TERRA-RC34",
+  "source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
+  "diagnostic": "WIF subject overflow fixed by short branch; current blocker is exact RC34 input staging on GCP builder",
+  "failed_long_branch_run": 34663332064,
+  "short_branch": "terra/r34",
+  "workflow_commit": "4a245c41cec096c4e12183d8a81bda98ddd63b03",
+  "run_id": 34668675620,
+  "checks": {
+    "wif_auth": "PASS",
+    "setup_gcloud": "PASS",
+    "iap_ssh": "PASS",
+    "exact_rc34_input": "BLOCKED_MISSING",
+    "godot_4_7_2": "NOT_EXECUTED",
+    "wave_untouched": true
+  },
+  "expected": {
+    "archive": "THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip",
+    "sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
+    "part0_sha256": "a9ba896bd3ddc2667f759e9b1c7493f861ed075edacc962893b6449a7d651ef1",
+    "part1_sha256": "a22fd343835a5153d540d95aaa56685428215d9ced3bb4fdeba7640e88f25507"
+  },
+  "evidence_artifact": {
+    "id": 10289792348,
+    "sha256": "ea0e559ff68a880831dd95257257ff83d92a133aaa47e74cccf6535a90e93121"
+  },
+  "truth_boundaries": {
+    "gpu_device_visual_qa": "NOT_EXECUTED",
+    "perfect_photo_likeness": "NOT_CLAIMED",
+    "production_signed_aab": "NOT_CLAIMED",
+    "play_approval": "NOT_CLAIMED",
+    "production_deployment": "NOT_CLAIMED",
+    "solana_settlement": "NOT_CLAIMED"
+  }
+}
