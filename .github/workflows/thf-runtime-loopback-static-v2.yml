@@ -1,0 +1,90 @@
+name: THF Runtime Loopback Static V2
+
+on:
+  push:
+    branches: ['rt/s1']
+    paths: ['.github/workflows/thf-runtime-loopback-static-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  OUTER_SHA: b4786128ffd684ae83e1a99ddd5b798f1d55e196462518434513b5c28e63f721
+  INNER_SHA: 8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884
+
+jobs:
+  runtime_static_v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Verify exact staged source and HTTP contracts over IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="OUTER_SHA='$OUTER_SHA' INNER_SHA='$INNER_SHA' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          root="$HOME/thf-runtime-s1"
+          app="$root/runtime/THF_NEXUS_6_FINAL"
+          test -f "$root/outer.zip"
+          test -f "$root/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip"
+          echo "$OUTER_SHA  $root/outer.zip" | sha256sum -c -
+          echo "$INNER_SHA  $root/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip" | sha256sum -c -
+          cd "$app"
+          export THF_HOST=127.0.0.1 THF_PORT=18080 THF_ADMIN_TOKEN=ci-loopback-admin THF_INTERNAL_REWARD_TOKEN=ci-loopback-reward THF_QUIET=1 THF_DEBUG=0
+          bash scripts/stop.sh >/dev/null 2>&1 || true
+          bash scripts/start.sh >/tmp/thf-runtime-v2-start.txt
+          trap 'bash scripts/stop.sh >/dev/null 2>&1 || true' EXIT
+          python3 - <<'PY'
+          import json, urllib.request, urllib.error
+          base='http://127.0.0.1:18080'
+          checks={}
+          def get(path,headers=None):
+              return urllib.request.urlopen(urllib.request.Request(base+path,headers=headers or {}),timeout=3)
+          with get('/health') as r:
+              h=json.load(r)
+              checks['health_ok']=h.get('ok') is True
+              checks['release_6']=h.get('release')=='6.0.0'
+              checks['runtime_name']=h.get('runtime')=='unified-domain-runtime'
+              checks['nosniff']=r.headers.get('X-Content-Type-Options')=='nosniff'
+              checks['frame_deny']=r.headers.get('X-Frame-Options')=='DENY'
+              checks['csp_self']="default-src 'self'" in (r.headers.get('Content-Security-Policy') or '')
+          for path,key in [('/','static_user'),('/admin.html','static_admin')]:
+              with get(path) as r:
+                  body=r.read()
+                  ctype=(r.headers.get('Content-Type') or '').lower()
+                  checks[key]=(r.status==200 and 'text/html' in ctype and len(body)>64)
+                  print(key.upper()+'_STATUS='+str(r.status))
+                  print(key.upper()+'_CTYPE='+ctype)
+                  print(key.upper()+'_BYTES='+str(len(body)))
+          try:
+              get('/api/admin/services')
+              checks['admin_fail_closed']=False
+          except urllib.error.HTTPError as e:
+              checks['admin_fail_closed']=e.code==403
+          with get('/api/admin/services',{'X-THF-Admin-Token':'ci-loopback-admin'}) as r:
+              d=json.load(r)
+              checks['admin_authorized']=len(d.get('items',[]))>=30
+          print('CHECKS='+json.dumps(checks,sort_keys=True))
+          failed=[k for k,v in checks.items() if not v]
+          if failed: raise SystemExit('RUNTIME_V2_FAIL='+','.join(failed))
+          print('THF_RUNTIME_LOOPBACK_STATIC_V2=PASS')
+          print('PUBLIC_CUTOVER=FALSE')
+          print('PRODUCTION_SECRETS_USED=FALSE')
+          print('WAVE_TOUCHED=FALSE')
+          PY
+          REMOTE
