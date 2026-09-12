@@ -1,0 +1,16 @@
+THF Rift RC41 Validation
+========================
+Checkpoint: RIFT-RC41-SERVER-PICKUP-REACHABILITY
+Version: 4.7.5-rc41 / versionCode 42075 / compileSdk 36 / targetSdk 36
+Baseline: RC40 artifact SHA dc96736d909913d4e8f436121de1d8e34b7ed8643d5b4f207251ff66760765c2
+Focused gate: PASS 40/40
+Clean-extract focused gate: PASS 40/40
+Python compileall source/clean: PASS
+JavaScript syntax source/clean: PASS
+Native GDScript gameplay delta: NONE (18 files; RC41 source scope)
+Deterministic ZIP rebuild: PASS exact SHA 29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d
+ZIP integrity: PASS
+Fresh Godot 4.7.2 parser/import/headless: PENDING exact artifact staging
+Android API36 unsigned test AAB: BLOCKED exact artifact staging
+Physical Android/GPU/device QA: NOT EXECUTED
+Truth boundaries: no production-signed AAB, Play approval, GPU/device visual acceptance, or production deployment claimed.
