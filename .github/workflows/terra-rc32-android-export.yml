@@ -1,0 +1,200 @@
+name: Terra RC32 Android Unsigned Export Gate
+
+on:
+  push:
+    branches: ['terra/rc32-android-export-20260912']
+    paths: ['.github/workflows/terra-rc32-android-export.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  P0: 1unN6-iLtu_nypKIqo-m_m8ZaLbSsGlk3
+  P1: 17ZvxPPh0JPInELSnm2ziaPIXuEnrZxo8
+  P0SHA: 4bfe9989563b8da1822e74b79531a2dd218131981277c05e01a712eabf0866c5
+  P1SHA: 4a00574c817f41a9492da20e19a023ebd39c7ba41f4573efea841c8a57b39cdc
+  ARCSHA: 389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695
+  GODOT_TAG: 4.7.2-stable
+  GODOT_DIR: 4.7.2.stable
+
+jobs:
+  android-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          ref: terra/rc32-android-export-20260912
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Stage exact RC32 source
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root=/tmp/terra-rc32-export
+          mkdir -p "$root/project" "$root/out" "$root/evidence"
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${P0}?alt=media" -o "$root/p0"
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${P1}?alt=media" -o "$root/p1"
+          echo "${P0SHA}  $root/p0" | sha256sum -c -
+          echo "${P1SHA}  $root/p1" | sha256sum -c -
+          cat "$root/p0" "$root/p1" > "$root/source.zip"
+          echo "${ARCSHA}  $root/source.zip" | sha256sum -c -
+          unzip -q "$root/source.zip" -d "$root/project"
+          test -f "$root/project/project.godot"
+          test -f "$root/project/export_presets.cfg"
+          cp "$root/project/export_presets.cfg" "$root/evidence/export_presets.cfg"
+      - name: Install exact Godot and export templates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root=/tmp/terra-rc32-export
+          j="$(curl -fsSL https://api.github.com/repos/godotengine/godot-builds/releases/tags/${GODOT_TAG})"
+          editor_asset=Godot_v4.7.2-stable_linux.x86_64.zip
+          templates_asset=Godot_v4.7.2-stable_export_templates.tpz
+          editor_url="$(printf '%s' "$j" | jq -r --arg a "$editor_asset" '.assets[]|select(.name==$a)|.browser_download_url')"
+          editor_digest="$(printf '%s' "$j" | jq -r --arg a "$editor_asset" '.assets[]|select(.name==$a)|.digest')"
+          templates_url="$(printf '%s' "$j" | jq -r --arg a "$templates_asset" '.assets[]|select(.name==$a)|.browser_download_url')"
+          templates_digest="$(printf '%s' "$j" | jq -r --arg a "$templates_asset" '.assets[]|select(.name==$a)|.digest')"
+          test -n "$editor_url"; test "$editor_url" != null; test -n "$templates_url"; test "$templates_url" != null
+          curl -fsSL "$editor_url" -o "$root/godot.zip"
+          curl -fsSL "$templates_url" -o "$root/templates.tpz"
+          echo "${editor_digest#sha256:}  $root/godot.zip" | sha256sum -c -
+          echo "${templates_digest#sha256:}  $root/templates.tpz" | sha256sum -c -
+          mkdir -p "$root/godot" "$HOME/.local/share/godot/export_templates/${GODOT_DIR}"
+          unzip -q "$root/godot.zip" -d "$root/godot"
+          unzip -q "$root/templates.tpz" -d "$root/templates-unpack"
+          template_root="$(find "$root/templates-unpack" -type f -name android_debug.apk -printf '%h\n' | head -1)"
+          test -n "$template_root"
+          cp -a "$template_root"/. "$HOME/.local/share/godot/export_templates/${GODOT_DIR}/"
+          bin="$(find "$root/godot" -maxdepth 1 -type f -name 'Godot_v4.7.2-stable_linux.x86_64' -print -quit)"
+          chmod +x "$bin"; ln -sf "$bin" "$root/godot472"
+          "$root/godot472" --version | tee "$root/evidence/godot-version.txt"
+          find "$HOME/.local/share/godot/export_templates/${GODOT_DIR}" -maxdepth 1 -type f -printf '%f\n' | sort > "$root/evidence/export-template-files.txt"
+      - name: Inspect Android SDK Java and preset
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root=/tmp/terra-rc32-export
+          {
+            echo "ANDROID_HOME=${ANDROID_HOME:-}"
+            echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-}"
+            java -version 2>&1 || true
+            keytool -help >/dev/null 2>&1 && echo keytool=present || echo keytool=missing
+            if command -v sdkmanager >/dev/null; then sdkmanager --version; fi
+            find "${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}/platforms" -maxdepth 1 -type d -name 'android-*' -printf '%f\n' 2>/dev/null | sort -V | tail -20
+          } | tee "$root/evidence/android-toolchain.txt"
+          python3 - <<'PY'
+          import configparser, pathlib, re
+          p=pathlib.Path('/tmp/terra-rc32-export/project/export_presets.cfg')
+          text=p.read_text(errors='replace')
+          names=re.findall(r'^name="([^"]+)"', text, flags=re.M)
+          platforms=re.findall(r'^platform="([^"]+)"', text, flags=re.M)
+          out=pathlib.Path('/tmp/terra-rc32-export/evidence/preset-summary.txt')
+          out.write_text('names='+repr(names)+'\nplatforms='+repr(platforms)+'\n')
+          if 'Android' not in platforms: raise SystemExit('No Android export preset')
+          PY
+      - name: Configure test-only Android export environment
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root=/tmp/terra-rc32-export
+          sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          test -d "$sdk"
+          mkdir -p "$HOME/.android" "$HOME/.config/godot"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname 'CN=Android Debug,O=Android,C=US' -keyalg RSA -keysize 2048 -validity 10000 >/dev/null 2>&1
+          fi
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$sdk"
+          export/android/java_sdk_path = "${JAVA_HOME}"
+          EOF
+          sha256sum "$HOME/.android/debug.keystore" | sed 's#  .*#  DEBUG_KEYSTORE_TEST_ONLY#' > "$root/evidence/debug-keystore.sha256"
+      - name: Export unsigned/test-only Android AAB candidate
+        shell: bash
+        run: |
+          set +e
+          root=/tmp/terra-rc32-export
+          cd "$root/project"
+          preset="$(awk '
+            /^\[preset\.[0-9]+\]/{sec=$0; name=""; platform=""}
+            /^name=/{gsub(/^name="|"$/, ""); name=$0}
+            /^platform=/{gsub(/^platform="|"$/, ""); platform=$0; if(platform=="Android"){print name; exit}}
+          ' export_presets.cfg)"
+          echo "$preset" | tee "$root/evidence/android-preset-name.txt"
+          "$root/godot472" --headless --path . --export-debug "$preset" "$root/out/THF_Terra_RC32_TEST_ONLY.aab" > "$root/evidence/android-export.log" 2>&1
+          rc=$?
+          echo "$rc" | tee "$root/evidence/android-export.rc"
+          set -e
+          ls -l "$root/out" | tee "$root/evidence/android-output-list.txt" || true
+          if [ -f "$root/out/THF_Terra_RC32_TEST_ONLY.aab" ]; then
+            sha256sum "$root/out/THF_Terra_RC32_TEST_ONLY.aab" | tee "$root/evidence/android-aab.sha256"
+            unzip -t "$root/out/THF_Terra_RC32_TEST_ONLY.aab" > "$root/evidence/android-aab-ziptest.txt" 2>&1 || true
+          fi
+          exit "$rc"
+      - name: Persist ReleaseOps evidence summary
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root=/tmp/terra-rc32-export
+          out=ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT_RESULT.json
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib
+          root=pathlib.Path('/tmp/terra-rc32-export')
+          ev=root/'evidence'
+          def read(n):
+              p=ev/n
+              return p.read_text(errors='replace').strip() if p.exists() else None
+          aab=root/'out/THF_Terra_RC32_TEST_ONLY.aab'
+          data={
+            'stream':'THF_TERRA',
+            'release':'TERRA-RC32',
+            'source_sha256':os.environ['ARCSHA'],
+            'gate':'ANDROID_UNSIGNED_TEST_EXPORT',
+            'godot_version':read('godot-version.txt'),
+            'preset':read('android-preset-name.txt'),
+            'export_rc':read('android-export.rc'),
+            'aab_exists':aab.exists(),
+            'aab_size_bytes':aab.stat().st_size if aab.exists() else None,
+            'aab_sha256':hashlib.sha256(aab.read_bytes()).hexdigest() if aab.exists() else None,
+            'application_id_expected':'com.topherofit.thf.terra',
+            'target_sdk_expected':36,
+            'signing_scope':'TEST_DEBUG_ONLY_NOT_PRODUCTION',
+            'physical_android_gpu_visual_qa':'NOT_EXECUTED',
+            'production_signed_aab':'NOT_CLAIMED',
+            'play_approval':'NOT_CLAIMED',
+            'production_deployment':'NOT_CLAIMED'
+          }
+          p=pathlib.Path('ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT_RESULT.json')
+          p.write_text(json.dumps(data,indent=2)+'\n')
+          h=hashlib.sha256(p.read_bytes()).hexdigest()
+          pathlib.Path('ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT_RESULT.sha256').write_text(f'{h}  {p.name}\n')
+          PY
+          cp "$root/evidence/android-export.log" ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT.log 2>/dev/null || true
+          sha256sum ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT.log > ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT.log.sha256 2>/dev/null || true
+          git config user.name 'THF Terra ReleaseOps'
+          git config user.email 'actions@users.noreply.github.com'
+          git add ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT_RESULT.json ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT_RESULT.sha256 ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT.log ReleaseOps/Terra/RC32_ANDROID_UNSIGNED_EXPORT.log.sha256 2>/dev/null || true
+          git commit -m 'terra: record RC32 Android unsigned export evidence' || exit 0
+          git push origin HEAD:terra/rc32-android-export-20260912
+      - name: Upload Terra-only export evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terra-rc32-android-unsigned-export-evidence
+          path: /tmp/terra-rc32-export/evidence
+          if-no-files-found: error
