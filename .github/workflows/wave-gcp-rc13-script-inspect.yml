@@ -1,0 +1,40 @@
+name: WAVE RC13 Recovery Script Inspect
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/wave-gcp-rc13-script-inspect.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect RC13 script without exposing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_cmd='set -euo pipefail; f="$HOME/wave-rc13-remote.sh"; test -f "$f"; echo "RC13_REMOTE_SCRIPT=FOUND"; sha256sum "$f" | sed "s#  .*#  wave-rc13-remote.sh#"; wc -l "$f"; echo "=== SAFE RECOVERY REFERENCES ==="; grep -Ein "(wave|rc13|bundle|archive|zip|sha256|source|drive|gcs|gs://|artifact|download|workspace|staging|inbox|backup)" "$f" | sed -E "s/((TOKEN|SECRET|PASSWORD|PASS|PRIVATE[_-]?KEY|AUTHORIZATION)[A-Za-z0-9_.-]*[[:space:]]*=[[:space:]]*).*/\1<REDACTED>/I" | sed -E "s/(Bearer[[:space:]]+)[A-Za-z0-9._~+\/-]+/\1<REDACTED>/Ig" | head -n 240; echo WAVE_RC13_SCRIPT_INSPECT=COMPLETE; echo MUTATION_PERFORMED=FALSE; echo THF_FILES_TOUCHED=FALSE; echo WAVE_FILES_TOUCHED=FALSE'
+          gcloud compute ssh thf-wave-builder --project "$GCP_PROJECT_ID" --zone europe-west1-b --tunnel-through-iap --ssh-key-expire-after=8m --quiet --command="$remote_cmd"
