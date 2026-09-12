@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='set -Eeuo pipefail; ROOT="$HOME/thf-terra-rc34-gate"; AAB="$ROOT/out-android-v3/THF-Terra-RC34-test.aab"; PROJ="$ROOT/work-android-v3/android/build"; test -f "$AAB"; echo "976a0dbfae6938deda18c98208ec8631c2f893f4cebb166d3f7a2d5c13e51ca5  $AAB" | sha256sum -c -; cd "$PROJ"; ./gradlew --no-daemon assembleStandardDebug; APK=$(find . -type f -name "*.apk" -path "*/build/outputs/apk/*" | head -1); test -n "$APK"; cp "$APK" "$ROOT/out-android-v3/THF-Terra-RC34-QA.apk"; sha256sum "$AAB" "$ROOT/out-android-v3/THF-Terra-RC34-QA.apk"; echo TERRA_RC34_QA_APK=PASS'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='set -Eeuo pipefail; ROOT="$HOME/thf-terra-rc34-gate"; AAB="$ROOT/out-android-v3/THF-Terra-RC34-test.aab"; PROJ="$ROOT/work-android-v3/android/build"; SDK="$HOME/thf-builder-rc16-build/android-sdk"; test -f "$AAB"; test -d "$SDK"; echo "976a0dbfae6938deda18c98208ec8631c2f893f4cebb166d3f7a2d5c13e51ca5  $AAB" | sha256sum -c -; export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"; cd "$PROJ"; ./gradlew --no-daemon assembleStandardDebug; APK=$(find . -type f -name "*.apk" -path "*/build/outputs/apk/*" | head -1); test -n "$APK"; cp "$APK" "$ROOT/out-android-v3/THF-Terra-RC34-QA.apk"; sha256sum "$AAB" "$ROOT/out-android-v3/THF-Terra-RC34-QA.apk"; echo TERRA_RC34_QA_APK=PASS'
       - name: Retrieve binaries
         shell: bash
         run: |
