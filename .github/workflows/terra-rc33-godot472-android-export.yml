@@ -6,6 +6,7 @@ on:
     paths: ['.github/workflows/terra-rc33-godot472-android-export.yml']
   workflow_dispatch:
 
+# Safe retry checkpoint after a pre-staging WIF auth failure; source/artifact inputs unchanged.
 permissions:
   contents: write
   id-token: write
