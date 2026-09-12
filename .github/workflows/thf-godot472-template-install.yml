@@ -1,4 +1,4 @@
-name: THF Godot 4.7.2 Export Templates Install
+name: THF Godot 4.7.2 Toolchain Install
 
 on:
   push:
@@ -20,6 +20,8 @@ env:
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
   GODOT_TPZ_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
   GODOT_TPZ_SHA256: f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011
+  GODOT_EDITOR_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+  GODOT_EDITOR_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
 
 jobs:
   install:
@@ -34,7 +36,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Install verified Godot 4.7.2 templates on builder
+      - name: Install verified Godot 4.7.2 editor and templates on builder
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -42,33 +44,57 @@ jobs:
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
             --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
             --command="set -Eeuo pipefail
-          URL='$GODOT_TPZ_URL'
-          EXPECTED='$GODOT_TPZ_SHA256'
-          CACHE=\"\$HOME/.cache/thf-releaseops/godot/Godot_v4.7.2-stable_export_templates.tpz\"
-          DEST=\"\$HOME/.local/share/godot/export_templates/4.7.2.stable\"
-          mkdir -p \"\$(dirname \"\$CACHE\")\"
-          if [ ! -f \"\$CACHE\" ] || ! echo \"\$EXPECTED  \$CACHE\" | sha256sum -c - >/dev/null 2>&1; then
-            rm -f \"\$CACHE.part\"
-            curl -fL --retry 5 --retry-delay 3 --connect-timeout 20 --max-time 1800 \"\$URL\" -o \"\$CACHE.part\"
-            echo \"\$EXPECTED  \$CACHE.part\" | sha256sum -c -
-            mv \"\$CACHE.part\" \"\$CACHE\"
-          fi
-          echo \"\$EXPECTED  \$CACHE\" | sha256sum -c -
-          TMP=\"\$(mktemp -d)\"
-          unzip -q \"\$CACHE\" -d \"\$TMP\"
-          SRC=\"\$TMP/templates\"
+          TPZ_URL='$GODOT_TPZ_URL'
+          TPZ_EXPECTED='$GODOT_TPZ_SHA256'
+          EDITOR_URL='$GODOT_EDITOR_URL'
+          EDITOR_EXPECTED='$GODOT_EDITOR_SHA256'
+          CACHE_DIR=\"\$HOME/.cache/thf-releaseops/godot\"
+          TEMPLATE_CACHE=\"\$CACHE_DIR/Godot_v4.7.2-stable_export_templates.tpz\"
+          EDITOR_CACHE=\"\$CACHE_DIR/Godot_v4.7.2-stable_linux.x86_64.zip\"
+          TEMPLATE_DEST=\"\$HOME/.local/share/godot/export_templates/4.7.2.stable\"
+          BIN_DIR=\"\$HOME/.local/bin\"
+          mkdir -p \"\$CACHE_DIR\" \"\$BIN_DIR\"
+
+          fetch_verified() {
+            url=\"\$1\"; expected=\"\$2\"; dest=\"\$3\"
+            if [ ! -f \"\$dest\" ] || ! echo \"\$expected  \$dest\" | sha256sum -c - >/dev/null 2>&1; then
+              rm -f \"\$dest.part\"
+              curl -fL --retry 5 --retry-delay 3 --connect-timeout 20 --max-time 1800 \"\$url\" -o \"\$dest.part\"
+              echo \"\$expected  \$dest.part\" | sha256sum -c -
+              mv \"\$dest.part\" \"\$dest\"
+            fi
+            echo \"\$expected  \$dest\" | sha256sum -c -
+          }
+
+          fetch_verified \"\$TPZ_URL\" \"\$TPZ_EXPECTED\" \"\$TEMPLATE_CACHE\"
+          fetch_verified \"\$EDITOR_URL\" \"\$EDITOR_EXPECTED\" \"\$EDITOR_CACHE\"
+
+          TMP_T=\"\$(mktemp -d)\"
+          unzip -q \"\$TEMPLATE_CACHE\" -d \"\$TMP_T\"
+          SRC=\"\$TMP_T/templates\"
           test -f \"\$SRC/android_source.zip\"
           test -f \"\$SRC/android_debug.apk\"
           test -f \"\$SRC/android_release.apk\"
-          NEW=\"\$DEST.new.\$\$\"
+          NEW=\"\$TEMPLATE_DEST.new.\$\$\"
           mkdir -p \"\$NEW\"
           cp -a \"\$SRC/.\" \"\$NEW/\"
-          if [ -d \"\$DEST\" ]; then mv \"\$DEST\" \"\$DEST.prev.\$(date +%Y%m%d%H%M%S)\"; fi
-          mv \"\$NEW\" \"\$DEST\"
-          rm -rf \"\$TMP\"
-          printf 'GODOT_VERSION='; godot --version || true
-          echo TEMPLATE_SHA256=\$EXPECTED
-          echo TEMPLATE_DIR=\$DEST
-          sha256sum \"\$DEST/android_source.zip\" \"\$DEST/android_debug.apk\" \"\$DEST/android_release.apk\"
-          echo GODOT_472_EXPORT_TEMPLATES_INSTALL=PASS
+          if [ -d \"\$TEMPLATE_DEST\" ]; then mv \"\$TEMPLATE_DEST\" \"\$TEMPLATE_DEST.prev.\$(date +%Y%m%d%H%M%S)\"; fi
+          mv \"\$NEW\" \"\$TEMPLATE_DEST\"
+          rm -rf \"\$TMP_T\"
+
+          TMP_E=\"\$(mktemp -d)\"
+          unzip -q \"\$EDITOR_CACHE\" -d \"\$TMP_E\"
+          EDITOR_BIN=\"\$(find \"\$TMP_E\" -maxdepth 2 -type f -name 'Godot_v4.7.2-stable_linux.x86_64' -print -quit)\"
+          test -n \"\$EDITOR_BIN\"
+          install -m 0755 \"\$EDITOR_BIN\" \"\$BIN_DIR/godot-4.7.2\"
+          ln -sfn \"\$BIN_DIR/godot-4.7.2\" \"\$BIN_DIR/godot\"
+          rm -rf \"\$TMP_E\"
+
+          export PATH=\"\$BIN_DIR:\$PATH\"
+          printf 'GODOT_VERSION='; godot --version
+          test \"\$(godot --version | cut -d. -f1-3)\" = '4.7.2'
+          echo TEMPLATE_SHA256=\$TPZ_EXPECTED
+          echo EDITOR_ARCHIVE_SHA256=\$EDITOR_EXPECTED
+          sha256sum \"\$BIN_DIR/godot-4.7.2\" \"\$TEMPLATE_DEST/android_source.zip\" \"\$TEMPLATE_DEST/android_debug.apk\" \"\$TEMPLATE_DEST/android_release.apk\"
+          echo GODOT_472_TOOLCHAIN_INSTALL=PASS
           echo WAVE_UNTOUCHED=TRUE"
