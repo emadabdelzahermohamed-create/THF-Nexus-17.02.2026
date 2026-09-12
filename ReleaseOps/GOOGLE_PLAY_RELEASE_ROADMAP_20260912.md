@@ -11,7 +11,9 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 | Recover existing `thf-runtime-s1` | PASS | Existing runtime located on GCP VM |
 | Start THF Nexus runtime | PASS | Local `/health` returns `ok:true`, release `6.0.0` |
 | Temporary Cloudflare HTTPS smoke | PASS | External `/health` passes through Quick Tunnel; run `34687446254` |
-| GCP production inventory | IN-PROGRESS | Read-only WIF inventory workflow repaired at commit `9c885932751a5aa718b23bcb245c83be16a1dacb`; no cloud mutation permitted |
+| GCP production inventory | PASS-WITH-FINDING | Run `34702891468`; runtime root FOUND, local health PASS release `6.0.0`; evidence `ReleaseOps/GCP_PRODUCTION_INVENTORY_20260912.md` |
+| Firewall hardening | BLOCKED-AUTHORIZATION | Public `default-allow-ssh` TCP/22 and `default-allow-rdp` TCP/3389 from `0.0.0.0/0` are broader than required; do not mutate without explicit authorization; IAP SSH rule already exists |
+| Cloud Run inventory | LIMITED-PERMISSION | `run.services.list` denied to least-privilege WIF service account; no privilege escalation attempted |
 | Create Named Cloudflare Tunnel | BLOCKED-AUTHORIZATION | Stable named tunnel requires explicit Cloudflare production-cutover authorization before execution |
 | Bind fixed production hostname | BLOCKED-AUTHORIZATION | Stable HTTPS API hostname with TLS; no production DNS/cutover performed without exact authorization |
 | Set production API base URL in Core/Terra/Rift | WAITING-RUNTIME-HOSTNAME | No temporary Quick Tunnel URL embedded |
@@ -74,20 +76,20 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 - Cloudflare Quick Tunnel process: RUNNING.
 - Local `/health`: PASS, release `6.0.0`.
 - External HTTPS `/health`: PASS in run `34687446254`.
+- GCP inventory run `34702891468` verified the builder/runtime read-only and performed no mutation.
 - The Quick Tunnel hostname is temporary evidence only and MUST NOT be embedded as a production API URL.
-- ICMP proxy is unavailable for the cloudflared process because of `ping_group_range`, but HTTP/2/QUIC tunnel connectivity and HTTPS health checks pass; this is not a release blocker for HTTP API traffic.
+- Public SSH/RDP firewall rules are recorded for later hardening but remain unchanged pending exact authorization.
 
 ## Release order
 
-1. Finish read-only GCP production inventory and keep the result as ReleaseOps evidence.
-2. Obtain exact authorization for Cloudflare production cutover, then freeze a stable production API hostname.
-3. Create a versioned release-source candidate that adopts the verified permission minimization; preserve the canonical archive unchanged.
-4. Rebuild and inspect Core/Terra/Rift final AABs against the frozen hostname.
-5. Perform production upload-key signing only after exact signing authorization and verify Play App Signing.
-6. Complete Play Console store/compliance forms.
-7. Upload to Internal testing only after exact Play publishing authorization and install from Play on real devices.
-8. Complete Closed testing / production-access gate only if the developer account is subject to it.
-9. Submit staged Production rollout only after explicit final release authorization.
+1. Obtain exact authorization for Cloudflare production cutover, then freeze a stable production API hostname.
+2. Create a versioned release-source candidate that adopts the verified permission minimization; preserve the canonical archive unchanged.
+3. Rebuild and inspect Core/Terra/Rift final AABs against the frozen hostname.
+4. Perform production upload-key signing only after exact signing authorization and verify Play App Signing.
+5. Complete Play Console store/compliance forms.
+6. Upload to Internal testing only after exact Play publishing authorization and install from Play on real devices.
+7. Complete Closed testing / production-access gate only if the developer account is subject to it.
+8. Submit staged Production rollout only after explicit final release authorization.
 
 ## Hard blockers before first Play upload
 
