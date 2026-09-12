@@ -1,0 +1,129 @@
+name: THF Core RC6 Unsigned Build V2
+
+on:
+  push:
+    branches: ['c/r6']
+    paths:
+      - '.github/workflows/thf-core-rc6-unsigned-build-v2.yml'
+      - 'ReleaseOps/Core/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CORE_ARTIFACT: THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip
+  CORE_SHA256: 6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a
+  CORE_SIZE: '180945'
+
+jobs:
+  core_unsigned:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Build and inspect exact Core RC6 only
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=45m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-builder-core-rc6"; INPUTS="$HOME/thf-builder/inputs-rc17"; WORK="$ROOT/work"; OUT="$ROOT/out"
+          RC16="$HOME/thf-builder-rc16-build"; SDK="$RC16/android-sdk"; CACHE="$RC16/cache"; SRC="$INPUTS/'"$CORE_ARTIFACT"'"
+          rm -rf "$WORK" "$OUT"; mkdir -p "$WORK" "$OUT" "$ROOT/gradle-home"; chmod 700 "$ROOT" "$WORK" "$OUT" "$ROOT/gradle-home"
+          export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$ROOT/gradle-home"
+          export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$SDK/cmdline-tools/latest/bin:$PATH"
+          unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+          test -f "$SRC"; test "$(stat -c %s "$SRC")" = "'"$CORE_SIZE"'"; echo "'"$CORE_SHA256"'  $SRC" | sha256sum -c -
+          python3 - "$SRC" "$WORK" <<'"'"'PY'"'"'
+          import sys,zipfile
+          from pathlib import Path
+          src=Path(sys.argv[1]); dst=Path(sys.argv[2]); root=dst.resolve()
+          with zipfile.ZipFile(src) as z:
+              bad=z.testzip()
+              if bad: raise SystemExit("ZIP_INTEGRITY_FAIL="+bad)
+              for m in z.infolist():
+                  t=(dst/m.filename).resolve()
+                  if t != root and root not in t.parents: raise SystemExit("UNSAFE_ZIP_MEMBER="+m.filename)
+              z.extractall(dst)
+          print("CORE_RC6_EXACT_SOURCE_GATE=PASS")
+          PY
+          PROJECT="$WORK/android"; test -d "$PROJECT"
+          combined="$(find "$PROJECT" -maxdepth 3 -type f \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle.properties" \) -print0 | xargs -0 cat 2>/dev/null || true)"
+          grep -Eq "compileSdk([[:space:]]*=)?[[:space:]]*36|compileSdkVersion[[:space:]]+36" <<<"$combined"
+          grep -Eq "targetSdk([[:space:]]*=)?[[:space:]]*36|targetSdkVersion[[:space:]]+36" <<<"$combined"
+          grep -Fq "com.topherofit.thf.core" <<<"$combined"; grep -Fq "62200" <<<"$combined"; grep -Fq "6.2.2-rc6" <<<"$combined"; grep -Fq "8.10.1" <<<"$combined"
+          echo CORE_RC6_METADATA_GATE=PASS
+          GVER=8.11.1; GDIST="$CACHE/gradle-${GVER}-bin.zip"; GBIN="$CACHE/gradle-dist-${GVER}/gradle-${GVER}/bin/gradle"
+          echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $GDIST" | sha256sum -c -; test -x "$GBIN"
+          cd "$PROJECT"; "$GBIN" --no-daemon wrapper --gradle-version "$GVER" --distribution-type bin >/dev/null; chmod +x gradlew
+          echo "2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046  gradle/wrapper/gradle-wrapper.jar" | sha256sum -c - >/dev/null
+          ./gradlew --no-daemon --stacktrace :app:assembleDebug :app:bundleRelease >"$OUT/gradle-build.log" 2>&1
+          cp app/build/outputs/apk/debug/app-debug.apk "$OUT/core-app-debug.apk"; cp app/build/outputs/bundle/release/app-release.aab "$OUT/core-app-release.aab"
+          AAPT2="$SDK/build-tools/36.0.0/aapt2"; APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
+          bad="$($AAPT2 dump badging "$OUT/core-app-debug.apk")"; pkg="$(printf "%s\n" "$bad"|sed -n "s/^package: name='\''\([^'\'']*\)'\'' versionCode='\''\([^'\'']*\)'\''.*/\1/p")"; gotvc="$(printf "%s\n" "$bad"|sed -n "s/^package: name='\''[^'\'']*'\'' versionCode='\''\([^'\'']*\)'\''.*/\1/p")"; target="$(printf "%s\n" "$bad"|sed -n "s/^targetSdkVersion:'\''\([^'\'']*\)'\''.*/\1/p")"
+          case "$pkg" in com.topherofit.thf.core|com.topherofit.thf.core.debug) :;; *) exit 31;; esac; test "$gotvc" = 62200; test "$target" = 36
+          "$APKSIGNER" verify --verbose --print-certs "$OUT/core-app-debug.apk" >"$OUT/apksigner.txt" 2>&1; grep -q "CN=Android Debug" "$OUT/apksigner.txt"
+          set +e; js="$(jarsigner -verify -verbose -certs "$OUT/core-app-release.aab" 2>&1)"; set -e; printf "%s\n" "$js"|grep -qi "jar is unsigned"
+          python3 - "$OUT" <<'"'"'PY'"'"'
+          import hashlib,json,sys,zipfile
+          from pathlib import Path
+          out=Path(sys.argv[1]); arts=[]
+          for kind,name in (("apk","core-app-debug.apk"),("aab","core-app-release.aab")):
+              p=out/name; h=hashlib.sha256()
+              with p.open("rb") as f:
+                  for b in iter(lambda:f.read(1048576),b""): h.update(b)
+              with zipfile.ZipFile(p) as z: bad=z.testzip(); count=len(z.namelist())
+              arts.append({"kind":kind,"name":name,"sha256":h.hexdigest(),"size_bytes":p.stat().st_size,"zip_integrity":bad is None,"zip_entries":count})
+          ev={"checkpoint":"CORE-RC6-ANDROID-UNSIGNED-R2","source_sha256":"6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a","package_id":"com.topherofit.thf.core","version":"6.2.2-rc6","versionCode":62200,"targetSdk":36,"artifacts":arts,"truth":{"production_signing_credentials_used":False,"play_upload_performed":False,"physical_device_qa":False,"other_app_source_touched":False,"wave_touched":False}}
+          (out/"CORE_RC6_PACKAGE_EVIDENCE.json").write_text(json.dumps(ev,indent=2)+"\n"); print(json.dumps(ev,indent=2))
+          PY
+          sha256sum "$OUT/core-app-debug.apk" "$OUT/core-app-release.aab" "$OUT/CORE_RC6_PACKAGE_EVIDENCE.json" >"$OUT/SHA256SUMS_CORE_RC6_BUILD.txt"
+          echo CORE_RC6_UNSIGNED_BUILD=PASS; echo PRODUCTION_SIGNING_CREDENTIALS_USED=FALSE; echo PLAY_UPLOAD_PERFORMED=FALSE; echo OTHER_APP_SOURCE_TOUCHED=FALSE; echo WAVE_UNTOUCHED=TRUE' 2>&1 | tee "$RUNNER_TEMP/core-rc6-console.log"
+          rc=${PIPESTATUS[0]}; set -e; echo "REMOTE_RC=$rc" >> "$GITHUB_ENV"; exit 0
+      - name: Retrieve Core evidence only
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p core-rc6-artifacts "$RUNNER_TEMP/core-rc6"
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='set -Eeuo pipefail; ROOT="$HOME/thf-builder-core-rc6"; tar -cf "$ROOT/core-rc6-output.tar" -C "$ROOT" out; sha256sum "$ROOT/core-rc6-output.tar"'
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder-core-rc6/core-rc6-output.tar" "$RUNNER_TEMP/core-rc6/core-rc6-output.tar" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          tar -xf "$RUNNER_TEMP/core-rc6/core-rc6-output.tar" -C core-rc6-artifacts
+          cp "$RUNNER_TEMP/core-rc6-console.log" core-rc6-artifacts/ || true
+      - name: Upload Core unsigned candidates
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-Core-RC6-unsigned-test-candidates-v2
+          path: core-rc6-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+      - name: Final Core-only gate
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "${REMOTE_RC:-1}" = 0
+          grep -q 'CORE_RC6_UNSIGNED_BUILD=PASS' "$RUNNER_TEMP/core-rc6-console.log"
+          grep -q 'OTHER_APP_SOURCE_TOUCHED=FALSE' "$RUNNER_TEMP/core-rc6-console.log"
+          grep -q 'WAVE_UNTOUCHED=TRUE' "$RUNNER_TEMP/core-rc6-console.log"
+          echo THF_CORE_RC6_UNSIGNED_PIPELINE=PASS
