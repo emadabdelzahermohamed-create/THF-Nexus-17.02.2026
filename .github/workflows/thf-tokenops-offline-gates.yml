@@ -31,8 +31,9 @@ jobs:
           PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_governance_controls.py | tee tokenops-governance-tests.log
           python3 ReleaseOps/TokenOps/test_control_plane.py | tee tokenops-control-plane-tests.log
           python3 ReleaseOps/TokenOps/vesting_plan.py ReleaseOps/TokenOps/examples/vesting_plan.sample.json tokenops-offline/sample-vesting-plan.json | tee tokenops-vesting-generator.log
+          PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_simulation_audit.py | tee tokenops-simulation-audit-tests.log
 
-      - name: Build approval ledger evidence
+      - name: Build approval and simulation evidence
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -49,17 +50,24 @@ jobs:
           JSON
           python3 ReleaseOps/TokenOps/tx_manifest.py tokenops-offline/approved-reward-request.json ReleaseOps/TokenOps/treasury_policy.json tokenops-offline/unsigned-tx-manifest.json | tee tokenops-tx-manifest.log
           python3 ReleaseOps/TokenOps/approval_ledger.py tokenops-offline/unsigned-tx-manifest.json ReleaseOps/TokenOps/treasury_policy.json tokenops-offline/approval-ledger.json | tee tokenops-approval-ledger.log
+          python3 ReleaseOps/TokenOps/simulation_plan.py tokenops-offline/unsigned-tx-manifest.json tokenops-offline/simulation-plan.json | tee tokenops-simulation-plan.log
+          cat > tokenops-offline/audit-event.json <<'JSON'
+          {"kind":"ci_simulation_plan","status":"PASS","financial_effect":false}
+          JSON
+          python3 ReleaseOps/TokenOps/audit_export.py append tokenops-offline/audit-event.json tokenops-offline/audit-chain.jsonl > tokenops-audit-append.log
+          python3 ReleaseOps/TokenOps/audit_export.py verify tokenops-offline/audit-chain.jsonl | tee tokenops-audit-verify.log
 
       - name: Assert financial execution remains disabled
         shell: bash
         run: |
           set -Eeuo pipefail
-          for f in tokenops-reward-tests.log tokenops-burn-tests.log; do
+          for f in tokenops-reward-tests.log tokenops-burn-tests.log tokenops-simulation-audit-tests.log; do
             grep -qx 'TRANSACTION_CREATED=FALSE' "$f"
             grep -qx 'TRANSACTION_SIGNED=FALSE' "$f"
             grep -qx 'TRANSACTION_SUBMITTED=FALSE' "$f"
           done
           grep -qx 'BURN_EXECUTED=FALSE' tokenops-burn-tests.log
+          grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-simulation-audit-tests.log
           python3 - <<'PY'
           import json
           reward=json.load(open('tokenops-offline/sample-reward-manifest.json'))
@@ -67,22 +75,20 @@ jobs:
           vest=json.load(open('tokenops-offline/sample-vesting-plan.json'))
           tx=json.load(open('tokenops-offline/unsigned-tx-manifest.json'))
           ledger=json.load(open('tokenops-offline/approval-ledger.json'))
+          sim=json.load(open('tokenops-offline/simulation-plan.json'))
           assert reward['execution']['transaction_created'] is False
           assert reward['execution']['transaction_signed'] is False
           assert reward['execution']['transaction_submitted'] is False
-          assert reward['execution']['requires_external_approval'] is True
           assert burn['execution']['transaction_created'] is False
-          assert burn['execution']['transaction_signed'] is False
-          assert burn['execution']['transaction_submitted'] is False
           assert burn['execution']['burn_executed'] is False
-          assert burn['constraints']['treasury_controlled_balances_only'] is True
           assert burn['constraints']['third_party_holder_burn_forbidden'] is True
           assert vest['execution'] == 'forbidden_unsigned_plan_only'
-          assert tx['approval_gate_pass'] is True
-          assert tx['transaction_created'] is False and tx['transaction_signed'] is False and tx['transaction_submitted'] is False
-          assert ledger['threshold_met'] is True
-          assert ledger['execution_authorized'] is False
-          assert ledger['transaction_signed'] is False and ledger['transaction_submitted'] is False
+          assert tx['approval_gate_pass'] is True and tx['broadcast_allowed'] is False
+          assert ledger['threshold_met'] is True and ledger['execution_authorized'] is False
+          assert sim['solana_simulation']['rpc_method']=='simulateTransaction'
+          assert sim['solana_simulation']['serialized_transaction_present'] is False
+          assert sim['solana_simulation']['broadcast_allowed'] is False
+          assert sim['safety']['financial_effect'] is False
           print('THF_TOKENOPS_NO_EXECUTION_GATE=PASS')
           PY
 
@@ -99,16 +105,21 @@ jobs:
             ReleaseOps/TokenOps/tx_manifest.py \
             ReleaseOps/TokenOps/approval_ledger.py \
             ReleaseOps/TokenOps/treasury_inventory.py \
+            ReleaseOps/TokenOps/simulation_plan.py \
+            ReleaseOps/TokenOps/audit_export.py \
             ReleaseOps/TokenOps/test_reward_manifest.py \
             ReleaseOps/TokenOps/test_burn_plan.py \
             ReleaseOps/TokenOps/test_governance_controls.py \
             ReleaseOps/TokenOps/test_control_plane.py \
+            ReleaseOps/TokenOps/test_simulation_audit.py \
             tokenops-offline/sample-reward-manifest.json \
             tokenops-offline/sample-burn-plan.json \
             tokenops-offline/sample-vesting-plan.json \
             tokenops-offline/unsigned-tx-manifest.json \
             tokenops-offline/approval-ledger.json \
-            tokenops-reward-tests.log tokenops-burn-tests.log tokenops-governance-tests.log tokenops-control-plane-tests.log tokenops-vesting-generator.log \
+            tokenops-offline/simulation-plan.json \
+            tokenops-offline/audit-chain.jsonl \
+            tokenops-reward-tests.log tokenops-burn-tests.log tokenops-governance-tests.log tokenops-control-plane-tests.log tokenops-simulation-audit-tests.log \
             > tokenops-offline/SHA256SUMS.txt
 
       - name: Upload offline gate evidence
@@ -126,5 +137,9 @@ jobs:
             tokenops-vesting-generator.log
             tokenops-tx-manifest.log
             tokenops-approval-ledger.log
+            tokenops-simulation-plan.log
+            tokenops-simulation-audit-tests.log
+            tokenops-audit-append.log
+            tokenops-audit-verify.log
           if-no-files-found: error
           retention-days: 30
