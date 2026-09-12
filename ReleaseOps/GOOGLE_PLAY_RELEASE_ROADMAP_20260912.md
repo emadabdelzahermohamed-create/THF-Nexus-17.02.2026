@@ -10,25 +10,28 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 |---|---|---|
 | Recover existing `thf-runtime-s1` | PASS | Existing runtime located on GCP VM |
 | Start THF Nexus runtime | PASS | Local `/health` returns `ok:true`, release `6.0.0` |
-| Temporary Cloudflare HTTPS smoke | PASS | External `/health` passes through Quick Tunnel |
-| Create Named Cloudflare Tunnel | TODO | Stable named tunnel, not `trycloudflare.com` |
-| Bind fixed production hostname | TODO | Stable HTTPS API hostname with TLS |
-| Set production API base URL in Core/Terra/Rift | TODO | No temporary Quick Tunnel URL embedded |
-| External end-to-end API smoke from installed apps | TODO | Auth/session/core API paths work from real Android devices |
+| Temporary Cloudflare HTTPS smoke | PASS | External `/health` passes through Quick Tunnel; run `34687446254` |
+| Create Named Cloudflare Tunnel | BLOCKED-AUTHORIZATION | Stable named tunnel requires explicit Cloudflare production-cutover authorization before execution |
+| Bind fixed production hostname | BLOCKED-AUTHORIZATION | Stable HTTPS API hostname with TLS; no production DNS/cutover performed without exact authorization |
+| Set production API base URL in Core/Terra/Rift | WAITING-RUNTIME-HOSTNAME | No temporary Quick Tunnel URL embedded |
+| External end-to-end API smoke from installed apps | WAITING-FINAL-BINARIES | Auth/session/core API paths work from real Android devices |
 
 ## Gate 2 — Android Production Binaries
 
 | Task | State | Acceptance |
 |---|---|---|
-| Android SDK / build tools 36 | READY | Builder workflow validates API 36 metadata |
-| Core package identity | READY | `com.topherofit.thf.core`, versionCode 62200 |
-| Terra package identity | READY | `com.topherofit.thf.terra`, versionCode 42060 |
-| Rift package identity | READY | `com.topherofit.thf.rift`, versionCode 42064 |
-| Core/Terra/Rift release AAB build gate | TODO-VERIFY | Run latest RC17 build and retain AAB + SHA-256 evidence |
-| Production upload-key signing | TODO | Release AABs signed for Play upload; debug keys forbidden |
-| Play App Signing enrollment | TODO | Each Play app enrolled and upload certificate recorded |
-| Real-device install/smoke | TODO | Launch, login, API, lifecycle, permissions, network PASS |
-| Crash/ANR regression gate | TODO | No release-blocking crash/ANR in final candidate |
+| Android SDK / build tools 36 | PASS | Builder validates API 36 metadata through WIF/IAP |
+| Core package identity | PASS | `com.topherofit.thf.core`, versionCode 62200 |
+| Terra package identity | PASS | `com.topherofit.thf.terra`, versionCode 42060 |
+| Rift package identity | PASS | `com.topherofit.thf.rift`, versionCode 42064 |
+| Core unsigned release AAB candidate | PASS | Run `34678895451`; AAB SHA-256 `e71625911d2c06eb0d084f6ed094fcd142f093fcfbb2bf2b13b59a4221760e6e`; source SHA-256 `6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a` |
+| Terra unsigned/test AAB candidate | PASS | Run `34676649980`; AAB SHA-256 `3af39232213171de0a5069dea2dfe3dab585d75f7246bf0bd75d61bb8a7dbee3`; source SHA-256 `eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68` |
+| Rift unsigned/test AAB candidate | PASS | Run `34676685100`; AAB SHA-256 `1eb449b061135984bbdef5cecf012496b8d667963f37d813518f4fcd389652c7`; source SHA-256 `3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914` |
+| Final production-configured AAB rebuild | WAITING-RUNTIME-HOSTNAME | Rebuild only after stable production API base URL is frozen; retain SHA-256 evidence |
+| Production upload-key signing | BLOCKED-AUTHORIZATION | Release AABs signed for Play upload; debug keys forbidden; no production signing performed |
+| Play App Signing enrollment | USER/PLAY-CONSOLE | Each Play app enrolled and upload certificate recorded |
+| Real-device install/smoke | WAITING-FINAL-BINARIES | Launch, login, API, lifecycle, permissions, network PASS |
+| Crash/ANR regression gate | WAITING-FINAL-BINARIES | No release-blocking crash/ANR in final candidate |
 
 ## Gate 3 — Google Play Console Compliance
 
@@ -48,35 +51,50 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 
 | Task | State | Acceptance |
 |---|---|---|
-| Internal testing upload | TODO | Final signed AAB uploaded and installable from Play |
+| Internal testing upload | BLOCKED-AUTHORIZATION | Final signed AAB uploaded and installable from Play; irreversible/publishing action not performed |
 | Closed testing, if account policy requires it | CONDITIONAL | Required tester count/duration completed |
-| Play pre-launch report | TODO | No blocking compatibility/security/accessibility findings |
+| Play pre-launch report | WAITING-INTERNAL-TRACK | No blocking compatibility/security/accessibility findings |
 | Production access | CONDITIONAL | Granted for account if Google requires an access application |
 
 ## Gate 5 — Public Production
 
 | Task | State | Acceptance |
 |---|---|---|
-| Final release manifest | TODO | AAB hashes, package IDs, versions, runtime hostname, rollback reference |
-| Staged rollout | TODO | Start controlled rollout; monitor crashes/ANRs/backend health |
-| Public availability | TODO | Core/Terra/Rift visible and installable from Google Play |
+| Final release manifest | IN-PROGRESS | Current unsigned/test AAB hashes captured; stable runtime hostname, signed AAB hashes and rollback reference still required |
+| Staged rollout | BLOCKED-AUTHORIZATION | Start controlled rollout only after exact authorization; monitor crashes/ANRs/backend health |
+| Public availability | BLOCKED-AUTHORIZATION | Core/Terra/Rift visible and installable from Google Play only after explicit release authorization |
+
+## Verified runtime checkpoint
+
+- GCP access uses GitHub OIDC/WIF + IAP/OS Login; no persistent cloud key is required.
+- Runtime process: RUNNING.
+- Cloudflare Quick Tunnel process: RUNNING.
+- Local `/health`: PASS, release `6.0.0`.
+- External HTTPS `/health`: PASS in run `34687446254`.
+- The Quick Tunnel hostname is temporary evidence only and MUST NOT be embedded as a production API URL.
+- ICMP proxy is unavailable for the cloudflared process because of `ping_group_range`, but HTTP/2/QUIC tunnel connectivity and HTTPS health checks pass; this is not a release blocker for HTTP API traffic.
 
 ## Release order
 
-1. Freeze stable production API hostname.
-2. Rebuild and inspect Core/Terra/Rift release AABs against that hostname.
-3. Sign with upload key and enroll/verify Play App Signing.
+1. Obtain exact authorization for Cloudflare production cutover, then freeze a stable production API hostname.
+2. Rebuild and inspect Core/Terra/Rift final AABs against that hostname.
+3. Perform production upload-key signing only after exact signing authorization and verify Play App Signing.
 4. Complete Play Console store/compliance forms.
-5. Upload to Internal testing and install from Play on real devices.
+5. Upload to Internal testing only after exact Play publishing authorization and install from Play on real devices.
 6. Complete Closed testing / production-access gate only if the developer account is subject to it.
-7. Submit staged Production rollout.
+7. Submit staged Production rollout only after explicit final release authorization.
 
 ## Hard blockers before first Play upload
 
-- Stable production API endpoint instead of Quick Tunnel URL.
-- Final release AAB artifacts for Core/Terra/Rift with SHA-256 evidence.
-- Upload-key / Play App Signing path.
+- Explicit authorization for Cloudflare production cutover and a stable production API endpoint instead of Quick Tunnel URL.
+- Final production-configured AAB rebuild for Core/Terra/Rift after the API hostname is frozen.
+- Explicit production-signing authorization plus upload-key / Play App Signing path.
 - Play Console app records and mandatory policy/store metadata.
+- Explicit authorization before any Play upload/publishing action.
+
+## WAVE_MAWJA isolation status
+
+WAVE remains technically isolated from these THF runtime and Android gates. No WAVE source, runtime, build artifact or production configuration is used by Core/Terra/Rift. The previously identified WAVE live-gate blocker remains the absence of the full canonical `/root/workspace/wave-mawja` runtime/source on the GCP builder; WIF/IAP itself is not the blocker.
 
 ## Non-blocking post-launch integrations unless explicitly required by a selected app build
 
