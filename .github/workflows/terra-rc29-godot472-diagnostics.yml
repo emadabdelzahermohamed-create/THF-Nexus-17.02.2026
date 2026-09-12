@@ -1,0 +1,105 @@
+name: Terra RC29 Godot 4.7.2 Diagnostics
+
+on:
+  push:
+    branches: ['terra/rc29-godot472-gate-20260912']
+    paths: ['.github/workflows/terra-rc29-godot472-diagnostics.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  RC29_PART0_ID: 1GJzsNkjIA5_umpycwawBkNSTfeUct2cD
+  RC29_PART1_ID: 1COJA9k8NqkBrFp6Q1bdxp8u5sh1FO6_d
+  RC29_PART0_SHA256: 7bc255562bc8d519d63e3bdb2f1cb28e50bfe5b9b1d79014d41c340cf06e7883
+  RC29_PART1_SHA256: 57c298675bd95f7a3c54071903c7e6efbe1c2a8fdd0b9bd4170941e04daac736
+  RC29_ARCHIVE_SHA256: c80e7d3c1a241ef5d044f1638f231c2f44b982f02683a88fd35ff2e49599fd1e
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          ref: terra/rc29-godot472-gate-20260912
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Stage exact RC29 and Godot 4.7.2
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root=/tmp/terra-rc29-diag
+          mkdir -p "$root/project" "$root/godot"
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${RC29_PART0_ID}?alt=media&supportsAllDrives=true" -o "$root/p0"
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${RC29_PART1_ID}?alt=media&supportsAllDrives=true" -o "$root/p1"
+          echo "${RC29_PART0_SHA256}  $root/p0" | sha256sum -c -
+          echo "${RC29_PART1_SHA256}  $root/p1" | sha256sum -c -
+          cat "$root/p0" "$root/p1" > "$root/rc29.zip"
+          echo "${RC29_ARCHIVE_SHA256}  $root/rc29.zip" | sha256sum -c -
+          unzip -q "$root/rc29.zip" -d "$root/project"
+          api="https://api.github.com/repos/godotengine/godot-builds/releases/tags/${GODOT_VERSION}"
+          release_json="$(curl -fsSL "$api")"
+          asset=Godot_v4.7.2-stable_linux.x86_64.zip
+          url="$(printf '%s' "$release_json" | jq -r --arg asset "$asset" '.assets[] | select(.name == $asset) | .browser_download_url')"
+          digest="$(printf '%s' "$release_json" | jq -r --arg asset "$asset" '.assets[] | select(.name == $asset) | .digest')"
+          curl -fsSL "$url" -o "$root/godot.zip"
+          echo "${digest#sha256:}  $root/godot.zip" | sha256sum -c -
+          unzip -q "$root/godot.zip" -d "$root/godot"
+          bin="$(find "$root/godot" -maxdepth 1 -type f -name 'Godot_v4.7.2-stable_linux.x86_64' -print -quit)"
+          chmod +x "$bin"
+          ln -sf "$bin" "$root/godot472"
+          "$root/godot472" --version | tee "$root/version.txt"
+      - name: Capture clean parser/import diagnostics
+        shell: bash
+        run: |
+          root=/tmp/terra-rc29-diag
+          cd "$root/project"
+          rm -rf .godot
+          set +e
+          "$root/godot472" --headless --editor --path . --quit --verbose >"$root/import.log" 2>&1
+          rc=$?
+          set -e
+          echo "$rc" > "$root/import.rc"
+          grep -E -n -C 3 'SCRIPT ERROR:|Parse Error:|Failed to load script|Cannot get class|Could not resolve class|Warning treated as error|inferred.*Variant' "$root/import.log" > "$root/diagnostics.txt" || true
+          tail -n 160 "$root/import.log" > "$root/import-tail.txt"
+      - name: Persist Terra-only diagnostics evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root=/tmp/terra-rc29-diag
+          out=ReleaseOps/Terra/RC29_GODOT472_DIAGNOSTICS.txt
+          {
+            echo 'THF Terra RC29 Godot 4.7.2 diagnostics'
+            echo "source_sha256=${RC29_ARCHIVE_SHA256}"
+            echo "godot_version=$(cat "$root/version.txt")"
+            echo "import_rc=$(cat "$root/import.rc")"
+            echo '--- focused diagnostics ---'
+            cat "$root/diagnostics.txt"
+            echo '--- import tail ---'
+            cat "$root/import-tail.txt"
+          } > "$out"
+          sha256sum "$out" > ReleaseOps/Terra/RC29_GODOT472_DIAGNOSTICS.sha256
+          git config user.name 'THF Terra ReleaseOps'
+          git config user.email 'actions@users.noreply.github.com'
+          git add "$out" ReleaseOps/Terra/RC29_GODOT472_DIAGNOSTICS.sha256
+          git commit -m 'terra: record RC29 Godot 4.7.2 parser diagnostics' || exit 0
+          git push origin HEAD:terra/rc29-godot472-gate-20260912
+      - name: Enforce clean import gate
+        shell: bash
+        run: |
+          root=/tmp/terra-rc29-diag
+          test "$(cat "$root/import.rc")" = 0
+          ! grep -E -n 'SCRIPT ERROR:|Parse Error:|Failed to load script|Cannot get class|Could not resolve class' "$root/import.log"
