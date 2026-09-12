@@ -21,7 +21,7 @@ def sha(o):
 def manifest():
     return {
         'version':1,
-        'network':'mainnet-beta',
+        'network':evidence_freshness_gate.NETWORK,
         'mint':MINT,
         'operation':'reward_distribution_review',
         'manifest_sha256':MANIFEST_SHA,
@@ -35,7 +35,7 @@ def manifest():
 def policy():
     return {
         'version':1,
-        'network':'mainnet-beta',
+        'network':evidence_freshness_gate.NETWORK,
         'mint':MINT,
         'approval_classes':{
             'reward_distribution_review':{'minimum_approvals':1}
