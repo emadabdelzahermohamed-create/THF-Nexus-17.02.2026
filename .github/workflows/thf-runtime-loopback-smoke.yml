@@ -57,6 +57,8 @@ jobs:
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="OUTER_SHA='$OUTER_SHA' INNER_SHA='$INNER_SHA' bash -s" <<'REMOTE'
           set -Eeuo pipefail
           root="$HOME/thf-runtime-s1"; rm -rf "$root"; mkdir -p "$root/outer" "$root/runtime" "$root/evidence"
+          finish(){ bash scripts/stop.sh >/dev/null 2>&1 || true; tar -cf "$root/evidence.tar" -C "$root" evidence 2>/dev/null || true; }
+          trap finish EXIT
           cp /tmp/thf-runtime-s1-outer.zip "$root/outer.zip"
           echo "$OUTER_SHA  $root/outer.zip" | sha256sum -c - | tee "$root/evidence/outer.sha256"
           python3 - "$root/outer.zip" "$root/outer" <<'PY'
@@ -87,38 +89,48 @@ jobs:
           PY
           app="$root/runtime/THF_NEXUS_6_FINAL"; cd "$app"
           export THF_HOST=127.0.0.1 THF_PORT=18080 THF_ADMIN_TOKEN=ci-loopback-admin THF_INTERNAL_REWARD_TOKEN=ci-loopback-reward THF_QUIET=1 THF_DEBUG=0
-          cleanup(){ bash scripts/stop.sh >/dev/null 2>&1 || true; }
-          trap cleanup EXIT
           bash scripts/start.sh | tee "$root/evidence/start.txt"
           bash scripts/status.sh | tee "$root/evidence/status.txt"
           python3 - <<'PY' | tee "$HOME/thf-runtime-s1/evidence/http-smoke.txt"
           import json,urllib.request,urllib.error
           base='http://127.0.0.1:18080'
-          def openp(path,headers=None):
+          checks={}
+          def get(path,headers=None):
               req=urllib.request.Request(base+path,headers=headers or {})
               return urllib.request.urlopen(req,timeout=3)
-          with openp('/health') as r:
-              h=json.load(r); assert h['ok'] is True; assert h['release']=='6.0.0'; assert h['runtime']=='unified-domain-runtime'
-              assert r.headers['X-Content-Type-Options']=='nosniff'; assert r.headers['X-Frame-Options']=='DENY'; assert "default-src 'self'" in r.headers['Content-Security-Policy']
-          with openp('/') as r: assert b'<!DOCTYPE html' in r.read(256)
-          with openp('/admin.html') as r: assert b'<!DOCTYPE html' in r.read(256)
+          with get('/health') as r:
+              body=r.read(); h=json.loads(body); hdr=dict(r.headers.items())
+              print('HEALTH_BODY='+body.decode('utf-8','replace'))
+              print('HEALTH_HEADERS='+json.dumps(hdr,sort_keys=True))
+              checks['health_ok']=h.get('ok') is True
+              checks['release_6']=h.get('release')=='6.0.0'
+              checks['runtime_name']=h.get('runtime')=='unified-domain-runtime'
+              checks['nosniff']=r.headers.get('X-Content-Type-Options')=='nosniff'
+              checks['frame_deny']=r.headers.get('X-Frame-Options')=='DENY'
+              checks['csp_self']="default-src 'self'" in (r.headers.get('Content-Security-Policy') or '')
+          with get('/') as r: checks['static_user']=b'<!DOCTYPE html' in r.read(512)
+          with get('/admin.html') as r: checks['static_admin']=b'<!DOCTYPE html' in r.read(512)
           try:
-              openp('/api/admin/services')
-              raise AssertionError('admin endpoint accepted missing token')
-          except urllib.error.HTTPError as e: assert e.code==403
-          with openp('/api/admin/services',{'X-THF-Admin-Token':'ci-loopback-admin'}) as r:
-              d=json.load(r); assert len(d['items'])>=30
+              get('/api/admin/services')
+              checks['admin_fail_closed']=False
+          except urllib.error.HTTPError as e:
+              checks['admin_fail_closed']=e.code==403
+              print('ADMIN_NO_TOKEN_STATUS='+str(e.code))
+          with get('/api/admin/services',{'X-THF-Admin-Token':'ci-loopback-admin'}) as r:
+              d=json.load(r); checks['admin_authorized']=len(d.get('items',[]))>=30
+              print('ADMIN_ITEMS='+str(len(d.get('items',[]))))
+          print('CHECKS='+json.dumps(checks,sort_keys=True))
+          failed=[k for k,v in checks.items() if not v]
+          if failed: raise SystemExit('RUNTIME_CONTRACT_FAIL='+','.join(failed))
           print('LOOPBACK_HTTP_SMOKE=PASS')
           PY
           bash scripts/stop.sh | tee "$root/evidence/stop.txt"
-          trap - EXIT
           python3 - <<'PY'
-          import hashlib,json,pathlib
-          r=pathlib.Path.home()/ 'thf-runtime-s1'
+          import json,pathlib
+          r=pathlib.Path.home()/'thf-runtime-s1'
           d={'checkpoint':'THF-RUNTIME-GCP-LOOPBACK-S1','canonical_outer_sha256':'b4786128ffd684ae83e1a99ddd5b798f1d55e196462518434513b5c28e63f721','canonical_inner_sha256':'8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884','binding':'127.0.0.1:18080','health':True,'static_user':True,'static_admin':True,'admin_fail_closed_without_token':True,'admin_authorized_smoke':True,'public_cutover_performed':False,'production_secrets_used':False,'wave_touched':False}
           (r/'evidence/result.json').write_text(json.dumps(d,indent=2)+'\n')
           PY
-          tar -cf "$root/evidence.tar" -C "$root" evidence
           echo THF_RUNTIME_LOOPBACK_SMOKE=PASS
           echo WAVE_UNTOUCHED=TRUE
           REMOTE
@@ -127,6 +139,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          mkdir -p /tmp/thf-runtime-s1
           gcloud compute scp "$GCP_BUILDER:~/thf-runtime-s1/evidence.tar" /tmp/thf-runtime-s1/evidence.tar --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet
           tar -xf /tmp/thf-runtime-s1/evidence.tar -C /tmp/thf-runtime-s1
       - name: Upload evidence
@@ -135,7 +148,7 @@ jobs:
         with:
           name: thf-runtime-gcp-loopback-s1-evidence
           path: /tmp/thf-runtime-s1/evidence
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
       - name: Final gate
         shell: bash
