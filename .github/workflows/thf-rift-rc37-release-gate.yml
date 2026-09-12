@@ -1,0 +1,134 @@
+name: THF Rift RC37 Release Gate
+
+on:
+  push:
+    branches: ['r/r37']
+    paths:
+      - '.github/workflows/thf-rift-rc37-release-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  P00_NAME: THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip.part.00
+  P00_ID: 1apBxxhVTsSzYebQtHAjxbXK8p7WfNinS
+  P00_SHA: 5d17734cc13aeeb362a07ec36c262af7e14122aa3a51777b0e27ae005b3e4a81
+  P01_NAME: THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip.part.01
+  P01_ID: 1p4JVbPV9DVfaGvQ7povwl_dOSr2rX1sz
+  P01_SHA: 7b02187dcc9a7c69bfd4916649e60741c8c42d7b6738790ec35be8b3188675b4
+  FULL_NAME: THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip
+  FULL_SHA: 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+
+jobs:
+  rift-rc37:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: |
+            https://www.googleapis.com/auth/cloud-platform
+            https://www.googleapis.com/auth/drive.readonly
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Download and verify canonical RC37
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          D="$RUNNER_TEMP/rift-rc37"; mkdir -p "$D"; cd "$D"
+          for spec in "$P00_ID|$P00_NAME|$P00_SHA" "$P01_ID|$P01_NAME|$P01_SHA"; do
+            IFS='|' read -r id name sha <<<"$spec"
+            curl --fail --location --silent --show-error -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" -o "$name"
+            echo "$sha  $name" | sha256sum -c -
+          done
+          cat "$P00_NAME" "$P01_NAME" > "$FULL_NAME"
+          echo "$FULL_SHA  $FULL_NAME" | sha256sum -c -
+          echo RIFT_RC37_LOCAL_SHA_GATE=PASS
+      - name: Stage canonical archive on isolated builder path
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='set -Eeuo pipefail; rm -rf "$HOME/thf-rift-rc37-gate"; mkdir -p "$HOME/thf-rift-rc37-gate/input" "$HOME/thf-rift-rc37-gate/work" "$HOME/thf-rift-rc37-gate/out"; chmod 700 "$HOME/thf-rift-rc37-gate"'
+          gcloud compute scp "$RUNNER_TEMP/rift-rc37/$FULL_NAME" "$GCP_BUILDER:~/thf-rift-rc37-gate/input/$FULL_NAME" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Godot 4.7.2 import, headless boot and Android test export
+        id: gate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="FULL_NAME='$FULL_NAME' FULL_SHA='$FULL_SHA' bash -s" <<'REMOTE' 2>&1 | tee "$RUNNER_TEMP/rift-rc37-gate.log"
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-rift-rc37-gate"; INPUT="$ROOT/input"; WORK="$ROOT/work"; OUT="$ROOT/out"
+          echo "$FULL_SHA  $INPUT/$FULL_NAME" | sha256sum -c -
+          unzip -q "$INPUT/$FULL_NAME" -d "$WORK"
+          test -f "$WORK/project.godot"
+          test -f "$WORK/export_presets.cfg"
+          GODOT="$HOME/thf-tools/godot/4.7.2-stable/godot"; test -x "$GODOT"
+          "$GODOT" --version | tee "$OUT/GODOT_VERSION.txt"
+          rm -rf "$WORK/.godot"
+          set +e
+          timeout 15m "$GODOT" --headless --editor --path "$WORK" --quit --verbose >"$OUT/editor-import.log" 2>&1; import_rc=$?
+          timeout 5m "$GODOT" --headless --path "$WORK" --quit-after 30 --verbose >"$OUT/headless-boot.log" 2>&1; boot_rc=$?
+          set -e
+          script_errors=0
+          for log in "$OUT/editor-import.log" "$OUT/headless-boot.log"; do
+            grep -Eqi 'SCRIPT ERROR|Parse Error|Parser Error|ERROR: Failed to load script|Cannot load script|Compile Error' "$log" && script_errors=$((script_errors+1)) || true
+          done
+          export_rc=99; mkdir -p "$OUT/android"
+          if [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$script_errors" -eq 0 ]; then
+            set +e
+            timeout 20m "$GODOT" --headless --path "$WORK" --export-debug Android "$OUT/android/THF-Rift-RC37-test.aab" >"$OUT/android-export.log" 2>&1; export_rc=$?
+            set -e
+          fi
+          artifact=''; [ -f "$OUT/android/THF-Rift-RC37-test.aab" ] && artifact="$(sha256sum "$OUT/android/THF-Rift-RC37-test.aab" | awk '{print $1}')"
+          status=FAIL
+          [ "$import_rc" -eq 0 ] && [ "$boot_rc" -eq 0 ] && [ "$script_errors" -eq 0 ] && [ "$export_rc" -eq 0 ] && [ -n "$artifact" ] && status=PASS
+          printf 'status=%s\ncanonical_sha256=%s\nimport_rc=%s\nboot_rc=%s\nscript_error_logs=%s\nandroid_export_rc=%s\naab_sha256=%s\nproduction_signing=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' "$status" "$FULL_SHA" "$import_rc" "$boot_rc" "$script_errors" "$export_rc" "$artifact" | tee "$OUT/TRUTH.txt"
+          (cd "$OUT" && find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt)
+          [ "$status" = PASS ]
+          REMOTE
+          rc=${PIPESTATUS[0]}; echo "RIFT_RC37_RC=$rc" >> "$GITHUB_ENV"; exit "$rc"
+      - name: Retrieve evidence
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p rift-rc37-evidence
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='set -Eeuo pipefail; R="$HOME/thf-rift-rc37-gate"; [ -d "$R/out" ] && tar -czf "$R/evidence.tgz" -C "$R" out' || true
+          gcloud compute scp "$GCP_BUILDER:~/thf-rift-rc37-gate/evidence.tgz" rift-rc37-evidence/evidence.tgz --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          cp "$RUNNER_TEMP/rift-rc37-gate.log" rift-rc37-evidence/ || true
+          printf 'source=RIFT-RC37\ncanonical_sha256=%s\nworkflow_rc=%s\nwave_untouched=true\n' "$FULL_SHA" "${RIFT_RC37_RC:-missing}" > rift-rc37-evidence/RUNNER_SUMMARY.txt
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-Rift-RC37-release-evidence
+          path: rift-rc37-evidence/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Gate conclusion
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ "${RIFT_RC37_RC:-missing}" = 0 ]
+          echo RIFT_RC37_GODOT_ANDROID_GATE=PASS
+          echo PRODUCTION_SIGNING=NOT_PERFORMED
+          echo WAVE_UNTOUCHED=TRUE
