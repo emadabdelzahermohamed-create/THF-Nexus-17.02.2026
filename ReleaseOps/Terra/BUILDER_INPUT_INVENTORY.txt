@@ -1,0 +1,21 @@
+Generating public/private rsa key pair.
+Your identification has been saved in /home/runner/.ssh/google_compute_engine
+Your public key has been saved in /home/runner/.ssh/google_compute_engine.pub
+The key fingerprint is:
+SHA256:RizAC3kOPY+nhPLsVjx4Q5JPDYdc30IIEOF8AXxv8Dw runner@runnervmlun5p
+The key's randomart image is:
++---[RSA 3072]----+
+| .=X++...        |
+| o= @oo+ .       |
+|  oO.&. = .      |
+|. +.B Eo .       |
+| + O + .S        |
+|  + O  .         |
+| . o o           |
+|  o              |
+| .               |
++----[SHA256]-----+
+scope=HOME_TERRA_ONLY
+eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68  /home/sa_115575029018678177962/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip
+inventory_complete=true
+wave_untouched=true
