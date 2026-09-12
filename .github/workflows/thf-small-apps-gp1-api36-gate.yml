@@ -1,0 +1,210 @@
+name: THF Small Apps GP1 API36 Test Gate
+
+on:
+  push:
+    branches: ['a/gp1']
+    paths: ['.github/workflows/thf-small-apps-gp1-api36-gate.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  api36_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - slug: suite
+            drive_id: 1JWm4UcGnjk2JdEyY_CNsoYw24zBfwZtx
+            outer_sha: b4786128ffd684ae83e1a99ddd5b798f1d55e196462518434513b5c28e63f721
+            root_dir: 01_THF_NEXUS_SUITE
+            source_name: THF_NEXUS_6_FINAL_SOURCE_20260829.zip
+            inner_sha: 8c060bdb7776ccf485b6294cda513a75b0fd3be28d43a416431d1368260a4884
+            app_id: com.thf.topherofit
+          - slug: pulse
+            drive_id: 1DbITXyUVThBkSI1NJEHgpdNBNYsC22MM
+            outer_sha: 8f18fc7f889c1fd0e01994350b399434a9779e714664c6974bb7925f36f50913
+            root_dir: 02_THF_PULSE
+            source_name: THF_PULSE_V4.1.0_SOURCE.zip
+            inner_sha: 31116912623767ebc2edcd56ad55fb2358a4cf398d2765f5eb1de9d842a75ad2
+            app_id: com.thf.topherofit.fitness
+          - slug: link
+            drive_id: 1vxebOzSVWnaB7bPrubuxiVrWcXX7CZhU
+            outer_sha: e0d785b57bb5e9368b1055f2ef831a1b8679786fee00c05dfe43458d48510ab5
+            root_dir: 03_THF_LINK
+            source_name: THF_LINK_V2.0.0_SOURCE.zip
+            inner_sha: b9a4df060668dde23462c8f279e492e1687ac3f7e37f74571d95d819c281085b
+            app_id: com.thf.topherofit.link
+          - slug: quest
+            drive_id: 1G1jq81dJBavEkyUSmjP6GWUzO-BLT2cs
+            outer_sha: d4eb28417af5793c903d8962838715fd59a1e7b226dee07b9e94806aab9cd284
+            root_dir: 04_THF_QUEST
+            source_name: THF_QUEST_V2.0.0_SOURCE.zip
+            inner_sha: f1cc6360a8e248794dbeb23e402d77da3d879212c59f0c2f545c86727c7a4394
+            app_id: com.thf.topherofit.learn
+          - slug: market
+            drive_id: 1ze_pIcxqob8iVhQ3A0uoc8w6vkbIPJgm
+            outer_sha: 46d2c0055b81cc325267401bcefbb28df8cf9c36e0029827a7cc0d0dde2712a0
+            root_dir: 05_THF_MARKET
+            source_name: THF_MARKET_V1.0.0_SOURCE.zip
+            inner_sha: 5050b95e37d766734b37d2763eddf5c76c605bdedcce0da3733ad27412c97b64
+            app_id: com.thf.topherofit.market
+          - slug: learn-games
+            drive_id: 13I8tliJF7PatkSsCrrFf2H0TQWyg4xzd
+            outer_sha: ce8547851c9573db02603ea6f11e020a1b7d346af0cac51e07947304f1a7c1f9
+            root_dir: 08_THF_LEARN_GAMES
+            source_name: THF_LEARN_GAMES_P49_RC2_SOURCE.zip
+            inner_sha: dbd259b224924e60902fb0e1b2ebca77bc243e5f29a64d04fd3114438fd41484
+            app_id: com.thf.topherofit.learngames
+          - slug: fitness-games
+            drive_id: 158fXUkoMY-5ePU5sFuMzxd334iXKRkp3
+            outer_sha: cf5d73c3a03ab503dbd7c36a2d4db3ec1449ec8281304627b9463e2cb8732a25
+            root_dir: 09_THF_FITNESS_GAMES
+            source_name: THF_FITNESS_GAMES_P49_RC2_SOURCE.zip
+            inner_sha: da3c865a76848c170d679547e05d6edbc0b5ffd6a48002b12ad0d26415fd0273
+            app_id: com.thf.topherofit.fitnessgames
+    env:
+      SLUG: ${{ matrix.slug }}
+      DRIVE_FILE_ID: ${{ matrix.drive_id }}
+      OUTER_SHA: ${{ matrix.outer_sha }}
+      ROOT_DIR: ${{ matrix.root_dir }}
+      SOURCE_NAME: ${{ matrix.source_name }}
+      INNER_SHA: ${{ matrix.inner_sha }}
+      APP_ID: ${{ matrix.app_id }}
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Fetch and verify exact source
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root="/tmp/thf-small-${SLUG}"; mkdir -p "$root"
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${DRIVE_FILE_ID}?alt=media" -o "$root/source.zip"
+          echo "${OUTER_SHA}  $root/source.zip" | sha256sum -c -
+      - name: Stage exact source over IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp "/tmp/thf-small-${SLUG}/source.zip" "$GCP_BUILDER:/tmp/thf-small-${SLUG}-source.zip" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet
+      - name: Verify metadata and build debug plus test-only unsigned AAB
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command="SLUG='$SLUG' OUTER_SHA='$OUTER_SHA' ROOT_DIR='$ROOT_DIR' SOURCE_NAME='$SOURCE_NAME' INNER_SHA='$INNER_SHA' APP_ID='$APP_ID' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          root="$HOME/thf-small-${SLUG}"; rm -rf "$root"; mkdir -p "$root/src" "$root/work" "$root/out" "$root/evidence"
+          cp "/tmp/thf-small-${SLUG}-source.zip" "$root/source.zip"
+          echo "$OUTER_SHA  $root/source.zip" | sha256sum -c - | tee "$root/evidence/outer-sha.txt"
+          python3 - "$root/source.zip" "$root/src" <<'PY'
+          import sys,zipfile
+          from pathlib import Path
+          src=Path(sys.argv[1]); dst=Path(sys.argv[2]); rr=dst.resolve()
+          with zipfile.ZipFile(src) as z:
+              bad=z.testzip()
+              if bad: raise SystemExit('ZIP_INTEGRITY_FAIL='+bad)
+              for m in z.infolist():
+                  t=(dst/m.filename).resolve()
+                  if t != rr and rr not in t.parents: raise SystemExit('UNSAFE_ZIP_MEMBER='+m.filename)
+              z.extractall(dst)
+          PY
+          base="$root/src/$ROOT_DIR"; test -f "$base/PLAY_RELEASE_STATUS.json"; test -f "$base/SOURCE/$SOURCE_NAME"
+          echo "$INNER_SHA  $base/SOURCE/$SOURCE_NAME" | sha256sum -c - | tee "$root/evidence/inner-sha.txt"
+          python3 - "$base/PLAY_RELEASE_STATUS.json" "$APP_ID" "$INNER_SHA" <<'PY' | tee "$root/evidence/status-check.txt"
+          import json,sys
+          d=json.load(open(sys.argv[1])); assert d['application_id']==sys.argv[2]; assert d['android_target_sdk']==36; assert d['source_sha256']==sys.argv[3]
+          assert d['production_signed_aab_included'] is False; assert d['play_upload_claim'] is False; print('STATUS_CONTRACT_PASS')
+          PY
+          cp -a "$base/ANDROID_PLAY_SOURCE/." "$root/work/"; cd "$root/work"
+          grep -q 'compileSdk 36' app/build.gradle; grep -q 'targetSdk 36' app/build.gradle; grep -Fq "applicationId '$APP_ID'" app/build.gradle
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"; test -d "$SDK"; export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK"; export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$PATH"
+          tool="$HOME/thf-toolchain"; ghome="$tool/gradle-8.13"; gbin="$ghome/bin/gradle"; mkdir -p "$tool"
+          if [ ! -x "$gbin" ]; then
+            tmp="$tool/gradle-8.13-bin.zip.tmp.$$"; sum="$tool/gradle-8.13-bin.zip.sha256.tmp.$$"
+            curl -fsSL https://services.gradle.org/distributions/gradle-8.13-bin.zip.sha256 -o "$sum"
+            curl -fsSL https://services.gradle.org/distributions/gradle-8.13-bin.zip -o "$tmp"
+            expected="$(tr -d '[:space:]' < "$sum")"; echo "$expected  $tmp" | sha256sum -c -
+            rm -rf "$ghome.tmp"; mkdir -p "$ghome.tmp"; unzip -q "$tmp" -d "$ghome.tmp"; rm -rf "$ghome"; mv "$ghome.tmp/gradle-8.13" "$ghome"; rm -rf "$ghome.tmp" "$tmp" "$sum"
+          fi
+          "$gbin" --version | tee "$root/evidence/gradle-version.txt"
+          unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+          export DEBUG_BASE_URL=http://10.0.2.2:8000 GRADLE_USER_HOME="$HOME/thf-small-gradle-home"
+          "$gbin" --no-daemon clean assembleDebug 2>&1 | tee "$root/evidence/debug-build.log"
+          apk="$(find app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"; test -s "$apk"; cp "$apk" "$root/out/${SLUG}-debug.apk"
+          sha256sum "$root/out/${SLUG}-debug.apk" | tee "$root/evidence/debug-apk.sha256"; unzip -t "$root/out/${SLUG}-debug.apk" > "$root/evidence/debug-apk-ziptest.txt"
+          if [ -x "$SDK/build-tools/36.0.0/apksigner" ]; then "$SDK/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$root/out/${SLUG}-debug.apk" > "$root/evidence/apksigner.txt" 2>&1; fi
+          cp app/build.gradle "$root/evidence/build.gradle.canonical"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/build.gradle'); s=p.read_text()
+          old="def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }"
+          assert old in s; s=s.replace(old,old+"\ndef testUnsigned = System.getenv('THF_TEST_UNSIGNED') == '1'",1)
+          old2="if (releaseRequested && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')"
+          assert old2 in s; s=s.replace(old2,"if (releaseRequested && !testUnsigned && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')",1)
+          p.write_text(s)
+          PY
+          export APP_BASE_URL=https://test.invalid THF_TEST_UNSIGNED=1
+          "$gbin" --no-daemon clean bundleRelease 2>&1 | tee "$root/evidence/test-aab-build.log"
+          aab="$(find app/build/outputs/bundle/release -type f -name '*.aab' -print -quit)"; test -s "$aab"; cp "$aab" "$root/out/${SLUG}-TEST-UNSIGNED.aab"
+          sha256sum "$root/out/${SLUG}-TEST-UNSIGNED.aab" | tee "$root/evidence/test-aab.sha256"; unzip -t "$root/out/${SLUG}-TEST-UNSIGNED.aab" > "$root/evidence/test-aab-ziptest.txt"
+          set +e; jarsigner -verify -verbose -certs "$root/out/${SLUG}-TEST-UNSIGNED.aab" > "$root/evidence/aab-jarsigner.txt" 2>&1; set -e
+          grep -qi 'jar is unsigned' "$root/evidence/aab-jarsigner.txt"
+          python3 - "$root" "$SLUG" "$APP_ID" "$OUTER_SHA" "$INNER_SHA" <<'PY'
+          import hashlib,json,pathlib,sys
+          r=pathlib.Path(sys.argv[1]); slug,app,outer,inner=sys.argv[2:]
+          apk=r/f'out/{slug}-debug.apk'; aab=r/f'out/{slug}-TEST-UNSIGNED.aab'
+          d={'checkpoint':f'THF-{slug.upper()}-GP1-API36-TEST','canonical_outer_sha256':outer,'canonical_inner_source_sha256':inner,'application_id':app,'target_sdk':36,'debug_apk_sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'debug_apk_size':apk.stat().st_size,'test_unsigned_aab_sha256':hashlib.sha256(aab.read_bytes()).hexdigest(),'test_unsigned_aab_size':aab.stat().st_size,'production_signing_credentials_used':False,'play_upload_performed':False,'canonical_source_modified':False,'wave_touched':False,'test_aab_note':'Disposable build.gradle signing-guard bypass only; canonical archive unchanged.'}
+          (r/'evidence/result.json').write_text(json.dumps(d,indent=2)+'\n')
+          PY
+          tar -cf "$root/evidence.tar" -C "$root" evidence
+          echo SMALL_APP_GATE_PASS="$SLUG"; echo WAVE_UNTOUCHED=TRUE
+          REMOTE
+      - name: Retrieve evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root="/tmp/thf-small-${SLUG}"; mkdir -p "$root"
+          gcloud compute scp "$GCP_BUILDER:~/thf-small-${SLUG}/evidence.tar" "$root/evidence.tar" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet
+          tar -xf "$root/evidence.tar" -C "$root"
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thf-${{ matrix.slug }}-gp1-api36-test-evidence
+          path: /tmp/thf-small-${{ matrix.slug }}/evidence
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Final gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          f="/tmp/thf-small-${SLUG}/evidence/result.json"; test -s "$f"
+          python3 - "$f" "$APP_ID" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1])); assert d['application_id']==sys.argv[2]; assert d['target_sdk']==36
+          assert not d['production_signing_credentials_used']; assert not d['play_upload_performed']; assert not d['canonical_source_modified']; assert not d['wave_touched']; print('FINAL_GATE_PASS')
+          PY
