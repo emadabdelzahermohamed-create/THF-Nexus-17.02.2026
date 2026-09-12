@@ -1,0 +1,40 @@
+name: WAVE GCP Recovery Inventory
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/wave-gcp-recovery-inventory.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  wave_recovery_inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only WAVE recovery inventory over IAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_cmd='set -u; echo "=== WAVE RECOVERY INVENTORY ==="; echo "HOST=$(hostname)"; echo "USER=$(id -un)"; for p in "$HOME/wave-mawja" "$HOME/workspace/wave-mawja" /root/workspace/wave-mawja /workspace/wave-mawja; do if test -d "$p" 2>/dev/null; then echo "WAVE_RUNTIME_FOUND=$p"; else echo "WAVE_RUNTIME_NOT_FOUND=$p"; fi; done; echo "=== CANDIDATE PATH NAMES (metadata only) ==="; for base in "$HOME" /tmp /var/tmp /mnt/downloads /workspace; do if test -d "$base"; then find "$base" -maxdepth 5 \( -iname "*wave*mawja*" -o -iname "*WAVE*RC1[234]*" -o -iname "*wave-rc1[234]*" \) -printf "%y %p\n" 2>/dev/null | head -n 200; fi; done; echo "=== COMMON EXTERNAL ROOTS ==="; for base in /root/backups /root/inbox /root/workspace /mnt/downloads; do if test -e "$base" 2>/dev/null; then ls -ld "$base" 2>/dev/null || true; else echo "NOT_ACCESSIBLE_OR_MISSING=$base"; fi; done; echo WAVE_GCP_RECOVERY_INVENTORY=COMPLETE; echo MUTATION_PERFORMED=FALSE; echo THF_FILES_TOUCHED=FALSE; echo WAVE_FILES_TOUCHED=FALSE'
+          gcloud compute ssh thf-wave-builder --project "$GCP_PROJECT_ID" --zone europe-west1-b --tunnel-through-iap --ssh-key-expire-after=8m --quiet --command="$remote_cmd"
