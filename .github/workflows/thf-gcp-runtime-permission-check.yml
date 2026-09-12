@@ -1,0 +1,73 @@
+name: THF GCP Runtime Permission Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-gcp-runtime-permission-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+      - name: Test minimum runtime permissions
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cat >/tmp/payload.json <<'JSON'
+          {"permissions":[
+            "compute.instances.create",
+            "compute.instances.get",
+            "compute.disks.create",
+            "compute.subnetworks.use",
+            "compute.subnetworks.useExternalIp",
+            "compute.addresses.create",
+            "compute.firewalls.create",
+            "compute.instances.setMetadata",
+            "compute.instances.setServiceAccount",
+            "iam.serviceAccounts.actAs",
+            "run.services.create",
+            "run.services.update",
+            "run.services.get",
+            "artifactregistry.repositories.uploadArtifacts",
+            "cloudbuild.builds.create"
+          ]}
+          JSON
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/payload.json \
+            "https://cloudresourcemanager.googleapis.com/v1/projects/${GCP_PROJECT_ID}:testIamPermissions" \
+            -o /tmp/perms.json
+          python3 - <<'PY'
+          import json
+          wanted=json.load(open('/tmp/payload.json'))['permissions']
+          got=set(json.load(open('/tmp/perms.json')).get('permissions') or [])
+          for p in wanted: print(f"PERMISSION {p}={'YES' if p in got else 'NO'}")
+          vm={'compute.instances.create','compute.disks.create','compute.subnetworks.use'}
+          run={'run.services.create','run.services.update','artifactregistry.repositories.uploadArtifacts','cloudbuild.builds.create'}
+          print('VM_CREATE_READY=' + ('YES' if vm <= got else 'NO'))
+          print('CLOUD_RUN_CREATE_READY=' + ('YES' if run <= got else 'NO'))
+          print('NO_RESOURCE_MUTATION=TRUE')
+          PY
