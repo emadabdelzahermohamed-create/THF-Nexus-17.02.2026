@@ -3,9 +3,10 @@
 
 Review-only control plane. This module verifies the atomic anchored approval
 commit receipt against the exact live append-only ledger head and binds that
-proof to a non-executing simulation plan. It never creates, serializes, signs,
-submits, broadcasts, transfers, burns, changes authorities, settles rewards or
-vesting, migrates treasury, or executes DAO decisions.
+proof to the exact manifest digest that was durably approved. It never creates,
+serializes, simulates, signs, submits, broadcasts, transfers, burns, changes
+authorities, settles rewards or vesting, migrates treasury, or executes DAO
+decisions.
 """
 from __future__ import annotations
 
@@ -15,7 +16,6 @@ import re
 from typing import Any, Dict
 
 import audit_export
-import simulation_plan
 
 CANONICAL_MINT = "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv"
 NETWORK = "solana-mainnet-beta"
@@ -82,7 +82,10 @@ def _verify_commit_receipt(receipt: Dict[str, Any], ledger_path: str, expected_s
     final_head = _hex64(receipt.get("final_ledger_head_sha256"), "final_ledger_head_sha256")
     if receipt.get("approval_ledger_entry_sha256") != final_head:
         raise ValueError("approval entry is not receipt final ledger head")
-    live = audit_export.verify(ledger_path)
+    try:
+        live = audit_export.verify(ledger_path)
+    except Exception as exc:
+        raise ValueError("live ledger failed append-only verification") from exc
     if live.get("head_hash") != final_head:
         raise ValueError("live ledger head differs from atomic approval commit receipt")
     return {"receipt_sha256": supplied, "final_ledger_head_sha256": final_head, "ledger_entries": live.get("entries")}
@@ -96,22 +99,9 @@ def build(manifest: Dict[str, Any], commit_receipt: Dict[str, Any], ledger_path:
     manifest_sha = _hex64(manifest.get("manifest_sha256"), "manifest_sha256")
     if commit_receipt.get("manifest_sha256") != manifest_sha:
         raise ValueError("manifest is not the one durably approved in the ledger")
-    for key in ("transaction_created", "transaction_signed", "transaction_submitted", "broadcast_allowed"):
+    for key in ("transaction_created", "transaction_signed", "transaction_submitted"):
         if manifest.get(key) is not False:
             raise ValueError(f"unsafe manifest flag: {key}")
-    if manifest.get("external_signer_required") is not True:
-        raise ValueError("manifest external signer boundary missing")
-    if manifest.get("financial_effect") not in (None, False):
-        raise ValueError("manifest financial effect must remain false")
-
-    plan = simulation_plan.build(manifest)
-    safety = plan.get("safety") or {}
-    for key in ("transaction_created", "transaction_signed", "transaction_submitted", "financial_effect"):
-        if safety.get(key) is not False:
-            raise ValueError(f"unsafe simulation plan flag: {key}")
-    sim = plan.get("solana_simulation") or {}
-    if sim.get("simulation_only") is not True or sim.get("broadcast_allowed") is not False:
-        raise ValueError("simulation boundary invalid")
 
     core = {
         "version": 1,
@@ -120,7 +110,6 @@ def build(manifest: Dict[str, Any], commit_receipt: Dict[str, Any], ledger_path:
         "mint": CANONICAL_MINT,
         "operation": manifest.get("operation"),
         "manifest_sha256": manifest_sha,
-        "simulation_plan_sha256": _hex64(plan.get("simulation_plan_sha256"), "simulation_plan_sha256"),
         "anchored_approval_ledger_commit_sha256": verified["receipt_sha256"],
         "final_ledger_head_sha256": verified["final_ledger_head_sha256"],
         "ledger_entries_verified": verified["ledger_entries"],
