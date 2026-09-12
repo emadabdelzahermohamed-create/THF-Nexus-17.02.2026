@@ -38,68 +38,47 @@ jobs:
         run: |
           set -Eeuo pipefail
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -Eeuo pipefail
-          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
-          ARCHIVE="$HOME/thf-runtime-s1/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip"
-          test -d "$ROOT"; test -f "$ARCHIVE"
-          TMP=$(mktemp -d /tmp/thf-canonical-compare-v1.XXXXXX); trap "rm -rf \"$TMP\"" EXIT
-          echo THF_CANONICAL_ARCHIVE_SOURCE_COMPARE_V1_BEGIN
-          echo ARCHIVE_PATH_BASENAME=$(basename "$ARCHIVE")
-          sha256sum "$ARCHIVE" | sed "s#  .*#  ARCHIVE#"
-          echo CHECKSUM_EVIDENCE_BEGIN
-          for f in "$HOME/thf-runtime-s1/evidence/outer.sha256" "$HOME/thf-runtime-s1/evidence/inner.sha256"; do
-            if [ -f "$f" ]; then echo FILE=$(basename "$f"); sed -E "s#(/[^ ]*/)+#PATH/#g" "$f"; fi
-          done
-          echo CHECKSUM_EVIDENCE_END
-          unzip -q "$ARCHIVE" -d "$TMP/extracted"
-          EXROOT=$(find "$TMP/extracted" -type d -name THF_NEXUS_6_FINAL -print -quit)
-          if [ -z "$EXROOT" ]; then
-            if [ -d "$TMP/extracted/src" ] && [ -d "$TMP/extracted/clients" ]; then EXROOT="$TMP/extracted"; else
-              EXROOT=$(find "$TMP/extracted" -type f -path "*/src/thf/app.py" -printf "%h\n" -quit | sed "s#/src/thf$##")
+            ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+            ARCHIVE="$HOME/thf-runtime-s1/outer/01_THF_NEXUS_SUITE/SOURCE/THF_NEXUS_6_FINAL_SOURCE_20260829.zip"
+            test -d "$ROOT"; test -f "$ARCHIVE"
+            TMP=$(mktemp -d /tmp/thf-canonical-compare-v1.XXXXXX)
+            trap "rm -rf \"$TMP\"" EXIT
+            echo THF_CANONICAL_ARCHIVE_SOURCE_COMPARE_V1_BEGIN
+            echo ARCHIVE_BASENAME=$(basename "$ARCHIVE")
+            echo ARCHIVE_SHA256=$(sha256sum "$ARCHIVE" | awk "{print \$1}")
+            unzip -q "$ARCHIVE" -d "$TMP/extracted"
+            EXROOT=$(find "$TMP/extracted" -type f -path "*/src/thf/app.py" -printf "%h\n" -quit | sed "s#/src/thf$##")
+            if [ -z "$EXROOT" ] && [ -f "$TMP/extracted/src/thf/app.py" ]; then EXROOT="$TMP/extracted"; fi
+            test -n "$EXROOT"; test -d "$EXROOT/src"; test -d "$EXROOT/clients"
+            make_manifest(){ BASE="$1"; OUT="$2"; : > "$OUT"; find "$BASE/src" "$BASE/clients" -type f -not -path "*/wave-mawja/*" -not -path "*/WAVE_MAWJA/*" -not -path "*/__pycache__/*" -not -name "*.pyc" -not -name "*.pyo" -print0 | while IFS= read -r -d "" f; do rel=${f#"$BASE/"}; printf "%s  %s\n" "$(sha256sum "$f" | awk "{print \$1}")" "$rel"; done | LC_ALL=C sort > "$OUT"; }
+            make_manifest "$ROOT" "$TMP/runtime.manifest"
+            make_manifest "$EXROOT" "$TMP/archive.manifest"
+            RUNTIME_SHA=$(sha256sum "$TMP/runtime.manifest" | awk "{print \$1}")
+            ARCHIVE_TREE_SHA=$(sha256sum "$TMP/archive.manifest" | awk "{print \$1}")
+            echo RUNTIME_DETERMINISTIC_SOURCE_SHA256=$RUNTIME_SHA
+            echo ARCHIVE_DETERMINISTIC_SOURCE_SHA256=$ARCHIVE_TREE_SHA
+            if cmp -s "$TMP/runtime.manifest" "$TMP/archive.manifest"; then
+              echo RUNTIME_MATCHES_ARCHIVE=TRUE
+            else
+              echo RUNTIME_MATCHES_ARCHIVE=FALSE
+              echo SOURCE_DIFF_BEGIN
+              diff -u "$TMP/archive.manifest" "$TMP/runtime.manifest" | grep -E "^[+-][0-9a-f]{64}  " | head -300 || true
+              echo SOURCE_DIFF_END
             fi
-          fi
-          test -n "$EXROOT"; test -d "$EXROOT/src"; test -d "$EXROOT/clients"
-          hash_tree(){ BASE="$1"; find "$BASE/src" "$BASE/clients" -type f -not -path "*/wave-mawja/*" -not -path "*/WAVE_MAWJA/*" -not -path "*/__pycache__/*" -not -name "*.pyc" -not -name "*.pyo" -print0 | LC_ALL=C sort -z | while IFS= read -r -d "" f; do rel=${f#"$BASE/"}; printf "%s  %s\n" "$(sha256sum "$f" | awk "{print \$1}")" "$rel"; done | sha256sum | awk "{print \$1}"; }
-          RUNTIME_SHA=$(hash_tree "$ROOT")
-          ARCHIVE_SHA=$(hash_tree "$EXROOT")
-          echo RUNTIME_DETERMINISTIC_SOURCE_SHA256=$RUNTIME_SHA
-          echo ARCHIVE_DETERMINISTIC_SOURCE_SHA256=$ARCHIVE_SHA
-          if [ "$RUNTIME_SHA" = "$ARCHIVE_SHA" ]; then echo RUNTIME_MATCHES_ARCHIVE=TRUE; else echo RUNTIME_MATCHES_ARCHIVE=FALSE; fi
-          echo ARCHIVE_RELEASE_MARKERS_BEGIN
-          grep -nE "(__version__|server_version|release.*6\.0\.0|version[[:space:]]*=)" "$EXROOT/pyproject.toml" "$EXROOT/src/thf/__init__.py" "$EXROOT/src/thf/app.py" 2>/dev/null || true
-          echo ARCHIVE_RELEASE_MARKERS_END
-          if [ "$RUNTIME_SHA" != "$ARCHIVE_SHA" ]; then
-            echo SOURCE_DIFF_BEGIN
-            python3 - "$ROOT" "$EXROOT" <<"PY"
-import hashlib, os, pathlib, sys
-roots=[pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2])]
-def files(root):
-    out={}
-    for top in (root/'src',root/'clients'):
-        for p in top.rglob('*'):
-            if not p.is_file(): continue
-            rel=p.relative_to(root).as_posix()
-            if 'wave-mawja' in rel.lower() or '/__pycache__/' in ('/'+rel) or p.suffix in {'.pyc','.pyo'}: continue
-            out[rel]=hashlib.sha256(p.read_bytes()).hexdigest()
-    return out
-r,a=map(files,roots)
-for rel in sorted(set(r)|set(a)):
-    if r.get(rel)!=a.get(rel):
-        status='runtime-only' if rel not in a else 'archive-only' if rel not in r else 'changed'
-        print(f'DIFF {status} {rel} runtime_sha={r.get(rel,"-")} archive_sha={a.get(rel,"-")}')
-PY
-            echo SOURCE_DIFF_END
-          fi
-          echo RUNTIME_NEWEST_SOURCE_FILES_BEGIN
-          find "$ROOT/src" "$ROOT/clients" -type f -not -path "*/wave-mawja/*" -not -path "*/WAVE_MAWJA/*" -not -path "*/__pycache__/*" -not -name "*.pyc" -not -name "*.pyo" -printf "%TY-%Tm-%TdT%TH:%TM:%TS %p\n" | LC_ALL=C sort -r | head -80 | sed "s#$ROOT/##"
-          echo RUNTIME_NEWEST_SOURCE_FILES_END
-          if find "$ROOT" \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then echo THF_RUNTIME_WAVE_ISOLATION=FAIL; exit 9; fi
-          echo THF_RUNTIME_WAVE_ISOLATION=PASS
-          echo CANONICAL_ARCHIVE_MUTATION=FALSE
-          echo RUNTIME_MUTATION=FALSE
-          echo PRODUCTION_DB_MUTATION=FALSE
-          echo PRODUCTION_SIGNING_PERFORMED=FALSE
-          echo PLAY_UPLOAD_PERFORMED=FALSE
-          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
-          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
-          echo WAVE_UNTOUCHED=TRUE
-          echo THF_CANONICAL_ARCHIVE_SOURCE_COMPARE_V1_END'
+            echo ARCHIVE_RELEASE_MARKERS_BEGIN
+            grep -nE "(__version__|server_version|release.*6\.0\.0|version[[:space:]]*=)" "$EXROOT/pyproject.toml" "$EXROOT/src/thf/__init__.py" "$EXROOT/src/thf/app.py" 2>/dev/null || true
+            echo ARCHIVE_RELEASE_MARKERS_END
+            echo CHECKSUM_EVIDENCE_BEGIN
+            for f in "$HOME/thf-runtime-s1/evidence/outer.sha256" "$HOME/thf-runtime-s1/evidence/inner.sha256"; do if [ -f "$f" ]; then echo FILE=$(basename "$f"); grep -F "$(basename "$ARCHIVE")" "$f" || true; fi; done
+            echo CHECKSUM_EVIDENCE_END
+            if find "$ROOT" \( -path "*wave-mawja*" -o -path "*WAVE_MAWJA*" \) -print -quit | grep -q .; then echo THF_RUNTIME_WAVE_ISOLATION=FAIL; exit 9; fi
+            echo THF_RUNTIME_WAVE_ISOLATION=PASS
+            echo CANONICAL_ARCHIVE_MUTATION=FALSE
+            echo RUNTIME_MUTATION=FALSE
+            echo PRODUCTION_DB_MUTATION=FALSE
+            echo PRODUCTION_SIGNING_PERFORMED=FALSE
+            echo PLAY_UPLOAD_PERFORMED=FALSE
+            echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+            echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+            echo WAVE_UNTOUCHED=TRUE
+            echo THF_CANONICAL_ARCHIVE_SOURCE_COMPARE_V1_END'
