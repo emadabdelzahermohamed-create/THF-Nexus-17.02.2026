@@ -1,0 +1,91 @@
+name: THF TokenOps Treasury Control Registry Gate
+
+on:
+  push:
+    branches:
+      - tokenops/read-only-audit-20260911
+    paths:
+      - 'ReleaseOps/TokenOps/treasury_control_registry.py'
+      - 'ReleaseOps/TokenOps/test_treasury_control_registry.py'
+      - '.github/workflows/thf-tokenops-treasury-control-registry.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  treasury-control-registry-gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ReleaseOps/TokenOps
+    steps:
+      - name: Checkout exact branch state
+        uses: actions/checkout@v4
+
+      - name: Run fail-closed unit tests
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/treasury-control-registry
+          python3 -m unittest -v test_treasury_control_registry.py 2>&1 | tee evidence/treasury-control-registry/tests.log
+
+      - name: Build empty public-only registry snapshot
+        run: |
+          set -euo pipefail
+          cat > evidence/treasury-control-registry/registry-input.json <<'JSON'
+          {
+            "network": "solana-mainnet-beta",
+            "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+            "entries": []
+          }
+          JSON
+          python3 treasury_control_registry.py \
+            evidence/treasury-control-registry/registry-input.json \
+            evidence/treasury-control-registry/registry-snapshot.json \
+            2>&1 | tee evidence/treasury-control-registry/registry.log
+
+      - name: Prove execution remains disabled
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          p='evidence/treasury-control-registry/registry-snapshot.json'
+          d=json.load(open(p))
+          assert d['mint']=='HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv'
+          assert d['public_identifiers_only'] is True
+          assert d['contains_signer_secrets'] is False
+          assert d['execution_authorized'] is False
+          assert d['transaction_signing_enabled'] is False
+          assert d['transaction_broadcast_enabled'] is False
+          assert d['entries']==[]
+          print('TREASURY_CONTROL_REGISTRY_SAFETY=PASS')
+          print('REAL_TREASURY_ACCOUNT_ASSUMED=FALSE')
+          print('EXECUTION_AUTHORIZED=FALSE')
+          print('TRANSACTION_SIGNING=FALSE')
+          print('TRANSACTION_BROADCAST=FALSE')
+          print('WAVE_UNTOUCHED=TRUE')
+          PY
+
+      - name: Generate evidence SHA-256
+        run: |
+          set -euo pipefail
+          sha256sum \
+            treasury_control_registry.py \
+            test_treasury_control_registry.py \
+            evidence/treasury-control-registry/tests.log \
+            evidence/treasury-control-registry/registry-input.json \
+            evidence/treasury-control-registry/registry-snapshot.json \
+            evidence/treasury-control-registry/registry.log \
+            > evidence/treasury-control-registry/SHA256SUMS.txt
+          cat evidence/treasury-control-registry/SHA256SUMS.txt
+
+      - name: Upload immutable evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-TokenOps-Treasury-Control-Registry-Gate
+          path: ReleaseOps/TokenOps/evidence/treasury-control-registry/
+          if-no-files-found: error
+          retention-days: 90
