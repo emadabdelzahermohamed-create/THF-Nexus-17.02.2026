@@ -1,43 +1,39 @@
 {
   "stream": "THF_TERRA",
-  "branch": "terra/rc29-android-export-readiness-20260912",
-  "source_checkpoint": "TERRA-RC29",
-  "source_version": "4.6.3-rc29",
-  "source_sha256": "c80e7d3c1a241ef5d044f1638f231c2f44b982f02683a88fd35ff2e49599fd1e",
-  "releaseops_status": "RC29_ANDROID_EXPORT_SOURCE_READY_REMOTE_GODOT_INPUT_STAGING_BLOCKED",
-  "dedup": "RC1-RC28 documented PASS gates/artifacts were not rerun. RC29 validates only current Android/Godot export-readiness source and package integrity.",
-  "latest_engine_attempt": {
-    "workflow": "THF Terra RC27 Godot Gate V2",
-    "workflow_run_id": 34646341978,
-    "result_status": "BLOCKED_MISSING_EXACT_RC27_INPUT",
-    "godot_import_rc": null,
-    "godot_headless_boot_rc": null,
-    "canonical_archive_mutated": false,
-    "wave_untouched": true
+  "branch": "terra/rc32-g472-20260912",
+  "source_checkpoint": "TERRA-RC32",
+  "source_version": "4.6.6-rc32",
+  "source_sha256": "389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695",
+  "releaseops_status": "RC32_GODOT472_IMPORT_HEADLESS_PASS_ANDROID_UNSIGNED_EXPORT_NEXT",
+  "dedup": "RC1-RC31 documented PASS gates/artifacts were not rerun. RC32 is the authoritative current Terra source; this checkpoint promotes fresh engine evidence only.",
+  "latest_engine_evidence": {
+    "workflow": "Terra RC32 G472 Gate",
+    "workflow_run_id": 34660616385,
+    "branch_head": "36be136353f2e7cde72c1dc13209ff08bf8189b5",
+    "godot_version": "4.7.2.stable",
+    "exact_source_staging": "PASS_SHA256_VERIFIED",
+    "clean_import_parser_class_cache": "PASS",
+    "headless_30_frames": "PASS",
+    "result": "PASS"
   },
-  "rc29": {
-    "artifact": "THF_Terra_v4.6.3_RC29_GODOT_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip",
-    "artifact_sha256": "c80e7d3c1a241ef5d044f1638f231c2f44b982f02683a88fd35ff2e49599fd1e",
+  "rc32": {
+    "artifact": "THF_Terra_v4.6.6_RC32_GODOT472_FACIAL_SEED_TYPING_CUMULATIVE_SOURCE.zip",
+    "artifact_sha256": "389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695",
     "parts": [
-      {"name":"THF_Terra_v4.6.3_RC29_GODOT_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.00","sha256":"7bc255562bc8d519d63e3bdb2f1cb28e50bfe5b9b1d79014d41c340cf06e7883"},
-      {"name":"THF_Terra_v4.6.3_RC29_GODOT_ANDROID_EXPORT_READINESS_CUMULATIVE_SOURCE.zip.part.01","sha256":"57c298675bd95f7a3c54071903c7e6efbe1c2a8fdd0b9bd4170941e04daac736"}
+      {"name":"THF_Terra_v4.6.6_RC32_GODOT472_FACIAL_SEED_TYPING_CUMULATIVE_SOURCE.zip.part.00","sha256":"4bfe9989563b8da1822e74b79531a2dd218131981277c05e01a712eabf0866c5"},
+      {"name":"THF_Terra_v4.6.6_RC32_GODOT472_FACIAL_SEED_TYPING_CUMULATIVE_SOURCE.zip.part.01","sha256":"4a00574c817f41a9492da20e19a023ebd39c7ba41f4573efea841c8a57b39cdc"}
     ],
-    "checkpoint_file": "ReleaseOps/Terra/RC29_CHECKPOINT.json",
-    "checkpoint_sha256": "8f83dfc0ac9a0df259e501e6fe27706d557b8e309326203dcaae31304e9babe2",
-    "patch_file": "ReleaseOps/Terra/RC29_SOURCE_PATCH.diff",
-    "focused_tests": "8/8 PASS",
+    "focused_tests": "3/3 PASS",
     "python_compileall": "PASS",
     "javascript_syntax": "PASS",
-    "gdscript_static_invariants": "PASS",
     "deterministic_package": "PASS exact SHA",
-    "clean_extract": "PASS",
     "zip_integrity": "PASS",
-    "android_api_36_source_metadata": "PASS",
-    "native_aab_export_preset_source": "PASS",
-    "godot_parser_import_headless": "NOT_RUN_INPUT_STAGING_BLOCKED",
-    "android_export": "NOT_EXECUTED"
+    "godot_4_7_2_clean_import": "PASS_RUN_34660616385",
+    "godot_4_7_2_headless_30": "PASS_RUN_34660616385",
+    "android_api_36_source_metadata": "PASS_CARRY_FORWARD_RC29_PLUS_RC32_VERSION",
+    "android_unsigned_export": "NOT_EXECUTED"
   },
-  "next_gate": "Stage exact RC29 archive/parts on approved builder, then Godot 4.7.2 clean editor import/parser/class-cache and 30-frame headless boot; only after PASS run unsigned Android export validation.",
+  "next_gate": "Run isolated unsigned/test-only Android export validation from exact RC32 using Godot 4.7.2 export templates and Android SDK; verify applicationId/target SDK/output identity without production signing or Play actions.",
   "truth_boundaries": {
     "gpu_device_visual_qa": "NOT_EXECUTED",
     "perfect_photo_likeness": "NOT_CLAIMED",
