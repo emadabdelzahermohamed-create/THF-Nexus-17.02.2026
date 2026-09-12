@@ -1,0 +1,50 @@
+{
+  "stream": "THF_TERRA",
+  "current": "TERRA-RC34",
+  "status": "TERRA_RC34_REMOTE_LOD_HYSTERESIS_SOURCE_DETERMINISTIC_PASS_REMOTE_GODOT_ANDROID_GATE_WIF_BLOCKED",
+  "package_id": "com.topherofit.thf.terra",
+  "version": "4.6.8-rc34",
+  "version_code": 42068,
+  "baseline": {
+    "release": "TERRA-RC33",
+    "sha256": "f50a0489c534306946f39603aaa2fa39e494fac5b4a7af906e03424d8457412b"
+  },
+  "artifact": {
+    "name": "THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip",
+    "sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
+    "parts": [
+      {"name": "THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip.part.00", "sha256": "a9ba896bd3ddc2667f759e9b1c7493f861ed075edacc962893b6449a7d651ef1", "size_bytes": 94371840},
+      {"name": "THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip.part.01", "sha256": "a22fd343835a5153d540d95aaa56685428215d9ced3bb4fdeba7640e88f25507", "size_bytes": 14745738}
+    ]
+  },
+  "source_patch_sha256": "f89695ff90967c0b2f34d97e65174f64618927d23a3682af51f8a14e480331a2",
+  "tests": {
+    "focused": "6/6 PASS",
+    "python_compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "gdscript_static_changed_source": "PASS",
+    "deterministic_package": "PASS exact SHA",
+    "clean_extract_focused": "6/6 PASS",
+    "clean_extract_python_js": "PASS",
+    "zip_integrity": "PASS",
+    "rc32_godot_4_7_2_clean_import": "PASS run 34660616385",
+    "rc32_godot_4_7_2_headless_30": "PASS run 34660616385",
+    "latest_remote_rc33_gate": "BLOCKED_PRE_EXECUTION_WIF_AUTH run 34662852776",
+    "rc34_godot_4_7_2_clean_import_headless": "PENDING_REMOTE_GATE",
+    "rc34_android_test_aab": "PENDING_REMOTE_GATE",
+    "physical_android_gpu_visual": "NOT_EXECUTED"
+  },
+  "github": {
+    "branch": "terra/rc33-android-texture-export-20260912",
+    "workflow_tooling_commit": "404f560e5b2a436dc7019c5ee0e6957d4a24dfc9",
+    "source_patch_commit": "05e5b779146e163732836c78e1555ccd4a9ef929"
+  },
+  "truth_boundaries": {
+    "gpu_device_visual_qa": "NOT_EXECUTED",
+    "perfect_photo_likeness": "NOT_CLAIMED",
+    "production_signed_aab": "NOT_CLAIMED",
+    "play_approval": "NOT_CLAIMED",
+    "production_deployment": "NOT_CLAIMED",
+    "solana_settlement": "NOT_CLAIMED"
+  }
+}
