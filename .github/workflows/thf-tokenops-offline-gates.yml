@@ -33,8 +33,9 @@ jobs:
           python3 ReleaseOps/TokenOps/vesting_plan.py ReleaseOps/TokenOps/examples/vesting_plan.sample.json tokenops-offline/sample-vesting-plan.json | tee tokenops-vesting-generator.log
           PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_simulation_audit.py | tee tokenops-simulation-audit-tests.log
           PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_reconciliation.py | tee tokenops-reconciliation-tests.log
+          PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_reservation_binding.py | tee tokenops-reservation-binding-tests.log
 
-      - name: Build approval, reconciliation and simulation evidence
+      - name: Build approval, reconciliation, reservation and simulation evidence
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -64,9 +65,21 @@ jobs:
           }
           JSON
           python3 ReleaseOps/TokenOps/reconciliation.py tokenops-offline/reconciliation-request.json ReleaseOps/TokenOps/policy.json tokenops-offline/reconciliation.json | tee tokenops-reconciliation.log
+          cat > tokenops-offline/reservations.json <<'JSON'
+          {
+            "mint":"HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+            "reservations":[
+              {"reservation_id":"reward:ci-example","kind":"reward","amount_raw":"350000","source_ref":"reward-manifest:ci-example"},
+              {"reservation_id":"vesting:ci-batch","kind":"vesting","amount_raw":"100000","source_ref":"vesting-plan:ci-batch"},
+              {"reservation_id":"burn:ci-proposal","kind":"burn","amount_raw":"200000","source_ref":"burn-plan:ci-proposal"},
+              {"reservation_id":"transfer:ci-ops","kind":"treasury_transfer","amount_raw":"50000","source_ref":"treasury-request:ci-ops"}
+            ]
+          }
+          JSON
+          python3 ReleaseOps/TokenOps/reservation_binding.py tokenops-offline/reservations.json tokenops-offline/reconciliation.json tokenops-offline/approval-ledger.json ReleaseOps/TokenOps/policy.json tokenops-offline/control-plane-binding.json | tee tokenops-reservation-binding.log
           python3 ReleaseOps/TokenOps/simulation_plan.py tokenops-offline/unsigned-tx-manifest.json tokenops-offline/simulation-plan.json | tee tokenops-simulation-plan.log
           cat > tokenops-offline/audit-event.json <<'JSON'
-          {"kind":"ci_reconciliation_and_simulation_plan","status":"PASS","financial_effect":false}
+          {"kind":"ci_reconciliation_reservation_and_simulation_plan","status":"PASS","financial_effect":false}
           JSON
           python3 ReleaseOps/TokenOps/audit_export.py append tokenops-offline/audit-event.json tokenops-offline/audit-chain.jsonl > tokenops-audit-append.log
           python3 ReleaseOps/TokenOps/audit_export.py verify tokenops-offline/audit-chain.jsonl | tee tokenops-audit-verify.log
@@ -75,14 +88,22 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          for f in tokenops-reward-tests.log tokenops-burn-tests.log tokenops-simulation-audit-tests.log tokenops-reconciliation-tests.log; do
-            grep -qx 'TRANSACTION_CREATED=FALSE' "$f"
+          for f in tokenops-reward-tests.log tokenops-burn-tests.log tokenops-simulation-audit-tests.log tokenops-reconciliation-tests.log tokenops-reservation-binding-tests.log; do
             grep -qx 'TRANSACTION_SIGNED=FALSE' "$f"
             grep -qx 'TRANSACTION_SUBMITTED=FALSE' "$f"
           done
+          grep -qx 'TRANSACTION_CREATED=FALSE' tokenops-reward-tests.log
+          grep -qx 'TRANSACTION_CREATED=FALSE' tokenops-burn-tests.log
+          grep -qx 'TRANSACTION_CREATED=FALSE' tokenops-simulation-audit-tests.log
+          grep -qx 'TRANSACTION_CREATED=FALSE' tokenops-reconciliation-tests.log
           grep -qx 'BURN_EXECUTED=FALSE' tokenops-burn-tests.log
           grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-simulation-audit-tests.log
           grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-reconciliation-tests.log
+          grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-reservation-binding-tests.log
+          grep -qx 'DUPLICATE_RESERVATION_REJECTED=TRUE' tokenops-reservation-binding-tests.log
+          grep -qx 'RESERVATION_COLLISION_REJECTED=TRUE' tokenops-reservation-binding-tests.log
+          grep -qx 'RECONCILIATION_CRYPTO_BOUND=TRUE' tokenops-reservation-binding-tests.log
+          grep -qx 'APPROVAL_LEDGER_CRYPTO_BOUND=TRUE' tokenops-reservation-binding-tests.log
           python3 - <<'PY'
           import json
           reward=json.load(open('tokenops-offline/sample-reward-manifest.json'))
@@ -91,6 +112,7 @@ jobs:
           tx=json.load(open('tokenops-offline/unsigned-tx-manifest.json'))
           ledger=json.load(open('tokenops-offline/approval-ledger.json'))
           recon=json.load(open('tokenops-offline/reconciliation.json'))
+          binding=json.load(open('tokenops-offline/control-plane-binding.json'))
           sim=json.load(open('tokenops-offline/simulation-plan.json'))
           assert reward['execution']['transaction_created'] is False
           assert reward['execution']['transaction_signed'] is False
@@ -104,6 +126,12 @@ jobs:
           assert recon['reconciliation']['treasury_solvent'] is True
           assert recon['reconciliation']['third_party_balance_included'] is False
           assert recon['execution']['financial_effect'] is False
+          assert binding['reconciliation_sha256']==recon['reconciliation_sha256']
+          assert binding['manifest_sha256']==ledger['manifest_sha256']
+          assert binding['execution_authorized'] is False
+          assert binding['transaction_signed'] is False
+          assert binding['transaction_submitted'] is False
+          assert binding['financial_effect'] is False
           assert sim['solana_simulation']['rpc_method']=='simulateTransaction'
           assert sim['solana_simulation']['serialized_transaction_present'] is False
           assert sim['solana_simulation']['broadcast_allowed'] is False
@@ -125,6 +153,7 @@ jobs:
             ReleaseOps/TokenOps/approval_ledger.py \
             ReleaseOps/TokenOps/treasury_inventory.py \
             ReleaseOps/TokenOps/reconciliation.py \
+            ReleaseOps/TokenOps/reservation_binding.py \
             ReleaseOps/TokenOps/simulation_plan.py \
             ReleaseOps/TokenOps/audit_export.py \
             ReleaseOps/TokenOps/test_reward_manifest.py \
@@ -133,15 +162,18 @@ jobs:
             ReleaseOps/TokenOps/test_control_plane.py \
             ReleaseOps/TokenOps/test_simulation_audit.py \
             ReleaseOps/TokenOps/test_reconciliation.py \
+            ReleaseOps/TokenOps/test_reservation_binding.py \
             tokenops-offline/sample-reward-manifest.json \
             tokenops-offline/sample-burn-plan.json \
             tokenops-offline/sample-vesting-plan.json \
             tokenops-offline/unsigned-tx-manifest.json \
             tokenops-offline/approval-ledger.json \
             tokenops-offline/reconciliation.json \
+            tokenops-offline/reservations.json \
+            tokenops-offline/control-plane-binding.json \
             tokenops-offline/simulation-plan.json \
             tokenops-offline/audit-chain.jsonl \
-            tokenops-reward-tests.log tokenops-burn-tests.log tokenops-governance-tests.log tokenops-control-plane-tests.log tokenops-simulation-audit-tests.log tokenops-reconciliation-tests.log \
+            tokenops-reward-tests.log tokenops-burn-tests.log tokenops-governance-tests.log tokenops-control-plane-tests.log tokenops-simulation-audit-tests.log tokenops-reconciliation-tests.log tokenops-reservation-binding-tests.log \
             > tokenops-offline/SHA256SUMS.txt
 
       - name: Upload offline gate evidence
@@ -161,6 +193,8 @@ jobs:
             tokenops-approval-ledger.log
             tokenops-reconciliation.log
             tokenops-reconciliation-tests.log
+            tokenops-reservation-binding.log
+            tokenops-reservation-binding-tests.log
             tokenops-simulation-plan.log
             tokenops-simulation-audit-tests.log
             tokenops-audit-append.log
