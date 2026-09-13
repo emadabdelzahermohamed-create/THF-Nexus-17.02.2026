@@ -59,3 +59,46 @@ Interpretation: **APK structure/signing/installability packaging gate is green.*
 **NO-GO for irreversible public rollout.**
 
 Safe engineering and QA preparation can continue. Core RC6 packaging/installability is now evidence-backed green in CI; Terra RC34 has same-day installability evidence; WAVE/Rift and device/Internal-Testing closure remain required before any broader release claim.
+
+---
+
+## Latest verified addendum — runtime triad + artifact integrity
+
+The older installability-only entries above are retained as historical evidence; the following newer evidence supersedes them for current runtime-candidate status.
+
+### Core RC6 current runtime candidate
+- Runtime-configured staging run `34743356308`: PASS.
+- Candidate APK SHA-256: `262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba`.
+- GitHub artifact ID `10312629324`, artifact digest/ZIP SHA-256 `ecb52d75fbc99960937f4e00ad2019ba3dbdc723296a76278ff0a7ebdcb916d9`.
+- Downloaded artifact was unpacked into a disposable directory and APK SHA-256 independently recalculated: MATCH.
+- `TRUTH.txt`: HTTPS service URL embedded, health PASS, targetSdk 36, production signing false, production cutover false, canonical mutation false, WAVE untouched.
+
+### Terra RC34 current runtime candidate
+- Runtime-fixed run `34752636192`: PASS.
+- Candidate APK SHA-256: `388f3c09bd8e0d64ebb5ad5e9c10b92d3b17f05851949936a07fb5b3db5b18c7`.
+- Canonical source SHA-256: `eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68`.
+- GitHub artifact ID `10315967515`, artifact digest/ZIP SHA-256 `5b8d923366fd2ab4028f4acc1e42af4ab6a17a992183df898e026959eea43bda`.
+- Independent artifact extraction/re-hash: MATCH.
+- Godot payload PASS, `project.binary` present, assets=461, targetSdk 36, QA-only signing recovery, canonical mutation false, WAVE untouched.
+
+### Rift RC37 current runtime candidate
+- Runtime-fixed run `34752636187`: PASS.
+- Candidate APK SHA-256: `fe35328b6ec4ed98a4c26cd5067e8056310fd773d9a3e7c3212943249eb024b1`.
+- Canonical source SHA-256: `3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914`.
+- GitHub artifact ID `10315992361`, artifact digest/ZIP SHA-256 `0de948ba21fe96e275c2ec459d95820202e4ba11c5fcdf54c49a03214323f0dd`.
+- Independent artifact extraction/re-hash: MATCH.
+- Godot payload PASS, `project.binary` present, assets=450, targetSdk 36, QA-only signing recovery, canonical mutation false, WAVE untouched.
+
+### New release-control artifacts
+- `ReleaseOps/Compliance/THF_ANDROID_ARTIFACT_INTEGRITY_CHECKPOINT_V1_20260913.md` records exact run/artifact/source/APK digests.
+- `ReleaseOps/DEVICE_ACCEPTANCE_PROTOCOL_V1_20260913.md` makes physical-device evidence mandatory and binds it to exact APK SHA-256 values.
+- `ReleaseOps/Compliance/THF_PLAY_DATA_SAFETY_PREFILL_V3_20260913.md` converts current technical data-flow evidence into a conservative Play Console preparation worksheet; it is explicitly not a legal submission.
+
+### Current highest-priority blockers
+1. Physical-device install/cold-launch/interactive acceptance remains P0 for the exact Core/Terra/Rift hashes above.
+2. WAVE remains blocked on recovery of the exact RC13/RC14 canonical `/root/workspace/wave-mawja` runtime/source; older RC9 is not an acceptable substitute.
+3. Stable production API hostname remains blocked pending separately authorized Cloudflare production cutover.
+4. Privacy/Terms/deletion-retention wording and production security contact values still require owner/legal approval.
+5. Production signing and any Play upload/publication remain closed gates until separately authorized.
+
+Open PR review: PR #2 remains open/draft and isolated to TokenOps read-only work. No Solana transaction, signing, burn, transfer or authority mutation was performed.
