@@ -20,7 +20,7 @@ SIGNALS = {
     'state_or_progression': re.compile(r'\b(score|points|level|progress|streak|combo|xp|experience|completed|correct|incorrect|reps?|sets?)\b', re.I),
     'render_or_motion': re.compile(r'\b(Canvas|SurfaceView|TextureView|draw\s*\(|graphicsLayer|animate\w*AsState|Animatable|ObjectAnimator|ValueAnimator|translate|velocity|position)\b'),
     'learning_domain': re.compile(r'\b(quiz|question|answer|lesson|learn|vocabulary|math|correctAnswer|choice|mastery)\b', re.I),
-    'fitness_domain': re.compile(r'\b(workout|exercise|fitness|rep|repetition|set|timer|calorie|movement|squat|pushup|run|pace)\b', re.I),
+    'fitness_domain': re.compile(r'\b(workout|exercise|fitness|reps?|repetitions?|sets?|timer|calorie|movement|motion|sensor|accelerometer|squat|pushup|run|pace)\b', re.I),
 }
 
 
@@ -46,7 +46,6 @@ def audit(root: Path, profile: str) -> dict:
                 evidence[name].append(rel)
 
     required = ['interactive_input', 'state_or_progression']
-    # A game-like experience must demonstrate either a continuous/timed loop or actual visual motion/rendering.
     loop_or_motion = bool(evidence['timed_or_frame_loop'] or evidence['render_or_motion'])
     domain_key = 'learning_domain' if profile == 'learning' else 'fitness_domain'
     missing = [name for name in required if not evidence[name]]
