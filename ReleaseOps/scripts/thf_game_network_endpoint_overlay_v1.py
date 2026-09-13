@@ -7,7 +7,8 @@ import argparse, pathlib, re, sys, urllib.parse
 
 HTTP_RE=re.compile(r'https?://(?:example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?',re.I)
 WS_RE=re.compile(r'wss?://(?:example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?',re.I)
-EXT={'.gd','.godot','.cfg','.ini','.json','.tscn','.tres','.txt'}
+# Keep this aligned with the real-function audit runtime endpoint extensions.
+EXT={'.gd','.godot','.cfg','.ini','.json','.tscn','.tres','.txt','.py'}
 
 def validate(url:str,scheme:str)->None:
     u=urllib.parse.urlsplit(url)
