@@ -1,0 +1,62 @@
+name: THF Learn Fitness Gradle Contract Forensics V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-learn-fitness-gradle-contract-forensics-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect build contract names only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='python3 -' > out/contract.json <<'PY'
+          import pathlib,zipfile,tempfile,re,json,hashlib,shutil
+          cases={'learn':(pathlib.Path.home()/'thf-small-learn-games/source.zip','ce8547851c9573db02603ea6f11e020a1b7d346af0cac51e07947304f1a7c1f9'),'fitness':(pathlib.Path.home()/'thf-small-fitness-games/source.zip','cf5d73c3a03ab503dbd7c36a2d4db3ec1449ec8281304627b9463e2cb8732a25')}
+          out={'schema':'thf-learn-fitness-gradle-contract-forensics-v1','read_only':True,'wave_files_read_or_changed':False,'cases':{}}
+          for kind,(zp,expected) in cases.items():
+            actual=hashlib.sha256(zp.read_bytes()).hexdigest();assert actual==expected
+            with zipfile.ZipFile(zp) as z:
+              candidates=[n for n in z.namelist() if n.endswith('ANDROID_PLAY_SOURCE/app/build.gradle')]
+              assert len(candidates)==1,(kind,candidates)
+              text=z.read(candidates[0]).decode('utf-8','replace')
+            env=sorted(set(re.findall(r'(?:System\.)?getenv\s*\(\s*["\']([A-Z0-9_]+)["\']',text)))
+            # only declarative Android DSL numbers and env variable names; no values/secrets/URLs.
+            nums={k:sorted(set(re.findall(r'\b'+k+r'\s+([0-9]+)',text))) for k in ('compileSdk','compileSdkVersion','targetSdk','targetSdkVersion','minSdk','minSdkVersion')}
+            out['cases'][kind]={'outer_sha256':actual,'gradle_path':candidates[0],'env_names':env,'android_dsl_numbers':nums,'has_release_signing_guard':'Release signing env vars are required' in text,'canonical_archive_unchanged':hashlib.sha256(zp.read_bytes()).hexdigest()==expected}
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('out/contract.json');raw=p.read_text(errors='ignore');i=raw.find('{');assert i>=0;x=json.loads(raw[i:]);p.write_text(json.dumps(x,indent=2,sort_keys=True)+'\n');print(json.dumps(x,indent=2,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-LEARN-FITNESS-GRADLE-CONTRACT-FORENSICS-V1
+          path: out/
+          retention-days: 14
