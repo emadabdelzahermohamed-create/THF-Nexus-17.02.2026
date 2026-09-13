@@ -1,0 +1,197 @@
+name: THF Apps RC2 Exact Candidate Large Batch V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-apps-rc2-exact-candidate-large-batch-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  exact-candidate-large-batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Build and inspect exact APPS-RC2 QA candidates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=65m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-apps-rc2-exact-candidate-v1"
+          WORK="$ROOT/work"
+          OUT="$ROOT/out"
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"
+          rm -rf "$ROOT" && mkdir -p "$WORK" "$OUT"
+          test -d "$SDK"
+          export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"
+          BT=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          AAPT="$BT/aapt"
+          APKSIGNER="$BT/apksigner"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+
+          cat > "$ROOT/expected.tsv" <<'EOF'
+          pulse	ef4d82dc1e3fff0d0bcdf0b7b31b9820aa9c958d846e9b1fd8ee6a19430ab6f8	com.topherofit.thf.pulse
+          forge	8f6bf74b15146bc0a895912c40b9946ef5c3cc8df99fdcae39fa615ce4f03eed	com.topherofit.thf.forge
+          echo	09773a4c3890fc43ee8e15b37267555f9db0e471fe8cbdcefa3886d2a2def73a	com.topherofit.thf.echo
+          codex	d8cf35346e244c141c65d4a5ce10e07f7fb2d4d6b831a0a63dd0b517d3ae0b83	com.topherofit.thf.codex
+          spark	6b74f8d75df8c0b7f74d8c2fee8be7e3517f3803cb42968735bc7a10939bc18c	com.topherofit.thf.spark
+          rush	bb6ff035186b13cdde853145f42e66259c205889de2a7b368da34c9cb0582ba7	com.topherofit.thf.rush
+          vault	e53d0cb62296581b1d8b52ce040b10ac896607adcc049b78f06a75bc8c28f6c7	com.topherofit.thf.vault
+          signal	87e199ff2c174990b6e0e4e4ddd8accc0d585d2675343067395ccdf9490e9fb1	com.topherofit.thf.signal
+          command	7dc686a9ad78ef90eec7cb2f7e65495356b3d513d9fc152c7ee8e3d20f91e487	com.topherofit.thf.command
+          EOF
+
+          printf 'app\tpackage\tsource_sha256\tsource_path\tclean_extract\tgradle_root\tbuild_status\tapk_path\tapk_sha256\tpackage_ok\ttarget36_ok\tsignature_ok\tdebuggable\tnote\n' > "$OUT/results.tsv"
+
+          while IFS=$'\t' read -r app expected pkg; do
+            appwork="$WORK/$app"
+            mkdir -p "$appwork"
+            source_path=''
+            while IFS= read -r f; do
+              [ -f "$f" ] || continue
+              sha=$(sha256sum "$f" | awk '{print $1}')
+              if [ "$sha" = "$expected" ]; then source_path="$f"; break; fi
+            done < <(find "$HOME" -maxdepth 10 -type f \( -name '*.zip' -o -name '*.tar' -o -name '*.tar.gz' -o -name '*.tgz' \) ! -path "$ROOT/*" ! -path '*/wave-mawja/*' ! -path '*terra*' ! -path '*rift*' 2>/dev/null)
+
+            if [ -z "$source_path" ]; then
+              printf '%s\t%s\t%s\tNOT_FOUND\tfalse\t\tSOURCE_NOT_FOUND\t\t\tfalse\tfalse\tfalse\t\texact APPS-RC2 source SHA not found\n' "$app" "$pkg" "$expected" >> "$OUT/results.tsv"
+              continue
+            fi
+
+            clean=true
+            case "$source_path" in
+              *.zip) unzip -tq "$source_path" >/dev/null && unzip -q "$source_path" -d "$appwork/src" || clean=false ;;
+              *.tar|*.tar.gz|*.tgz) mkdir -p "$appwork/src"; tar -tf "$source_path" >/dev/null && tar -xf "$source_path" -C "$appwork/src" || clean=false ;;
+              *) clean=false ;;
+            esac
+            if [ "$clean" != true ]; then
+              printf '%s\t%s\t%s\t%s\tfalse\t\tEXTRACT_FAIL\t\t\tfalse\tfalse\tfalse\t\tclean extract failed\n' "$app" "$pkg" "$expected" "$source_path" >> "$OUT/results.tsv"
+              continue
+            fi
+
+            root=''
+            while IFS= read -r g; do
+              d=$(dirname "$g")
+              if [ -f "$d/settings.gradle" ] || [ -f "$d/settings.gradle.kts" ]; then root="$d"; break; fi
+            done < <(find "$appwork/src" -maxdepth 6 -type f -name gradlew -print)
+            if [ -z "$root" ]; then
+              root=$(find "$appwork/src" -maxdepth 6 -type f \( -name settings.gradle -o -name settings.gradle.kts \) -printf '%h\n' | head -1 || true)
+            fi
+            if [ -z "$root" ]; then
+              printf '%s\t%s\t%s\t%s\ttrue\t\tNO_GRADLE_ROOT\t\t\tfalse\tfalse\tfalse\t\tno Android Gradle project root in exact source\n' "$app" "$pkg" "$expected" "$source_path" >> "$OUT/results.tsv"
+              continue
+            fi
+
+            cd "$root"
+            printf 'sdk.dir=%s\n' "$SDK" > local.properties
+            [ -f gradlew ] && chmod +x gradlew
+            runner='./gradlew'
+            [ -x gradlew ] || runner='gradle'
+            set +e
+            "$runner" --no-daemon clean assembleDebug >"$OUT/$app.gradle.log" 2>&1
+            rc=$?
+            set -e
+            if [ $rc -ne 0 ]; then
+              printf '%s\t%s\t%s\t%s\ttrue\t%s\tBUILD_FAIL\t\t\tfalse\tfalse\tfalse\t\tassembleDebug failed; see gradle log\n' "$app" "$pkg" "$expected" "$source_path" "$root" >> "$OUT/results.tsv"
+              continue
+            fi
+
+            apk=$(find "$root" -type f -name '*.apk' -path '*/build/outputs/apk/*debug*/*' | head -1 || true)
+            if [ -z "$apk" ]; then apk=$(find "$root" -type f -name '*.apk' -path '*/build/outputs/apk/*' | head -1 || true); fi
+            if [ -z "$apk" ]; then
+              printf '%s\t%s\t%s\t%s\ttrue\t%s\tBUILD_NO_APK\t\t\tfalse\tfalse\tfalse\t\tGradle succeeded but no APK found\n' "$app" "$pkg" "$expected" "$source_path" "$root" >> "$OUT/results.tsv"
+              continue
+            fi
+
+            badging=$("$AAPT" dump badging "$apk" 2>/dev/null || true)
+            p_ok=false; grep -q "package: name='$pkg'" <<<"$badging" && p_ok=true
+            t_ok=false; grep -q "targetSdkVersion:'36'" <<<"$badging" && t_ok=true
+            sig_ok=false; "$APKSIGNER" verify "$apk" >/dev/null 2>&1 && sig_ok=true
+            debug='unknown'; grep -q 'application-debuggable' <<<"$badging" && debug=true || debug=false
+            apksha=$(sha256sum "$apk" | awk '{print $1}')
+            cp "$apk" "$OUT/THF-${app^^}-APPS-RC2-QA-$apksha.apk"
+            printf '%s\n' "$badging" > "$OUT/$app.badging.txt"
+            printf '%s  %s\n' "$apksha" "THF-${app^^}-APPS-RC2-QA-$apksha.apk" > "$OUT/$app.sha256"
+            note='QA candidate only; physical-device and real backend gates still required'
+            [ "$p_ok" = true ] && [ "$t_ok" = true ] && status='APK_INSPECTION_PASS' || status='APK_INSPECTION_FAIL'
+            printf '%s\t%s\t%s\t%s\ttrue\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$pkg" "$expected" "$source_path" "$root" "$status" "$apk" "$apksha" "$p_ok" "$t_ok" "$sig_ok" "$debug" "$note" >> "$OUT/results.tsv"
+          done < "$ROOT/expected.tsv"
+
+          python3 - "$OUT/results.tsv" "$OUT/summary.json" <<'PY'
+          import csv,json,sys
+          rows=list(csv.DictReader(open(sys.argv[1]),delimiter='\t'))
+          summary={
+            'schema':1,
+            'mode':'QA_ONLY_REVERSIBLE',
+            'exact_source_required':True,
+            'production_signing':False,
+            'public_rollout':False,
+            'physical_device_gate':'REQUIRED_BEFORE_FINAL',
+            'apps':rows,
+          }
+          summary['counts']={
+            'total':len(rows),
+            'built':sum(r['build_status'] in ('APK_INSPECTION_PASS','APK_INSPECTION_FAIL') for r in rows),
+            'inspection_pass':sum(r['build_status']=='APK_INSPECTION_PASS' for r in rows),
+            'source_missing':sum(r['build_status']=='SOURCE_NOT_FOUND' for r in rows),
+            'build_fail':sum(r['build_status']=='BUILD_FAIL' for r in rows),
+          }
+          json.dump(summary,open(sys.argv[2],'w'),indent=2)
+          PY
+          cat "$OUT/summary.json"
+          REMOTE
+
+      - name: Retrieve evidence and QA APKs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-apps-rc2-exact-candidate-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          python3 -m json.tool out/summary.json >/dev/null
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-APPS-RC2-EXACT-QA-CANDIDATES-V1
+          path: out/
+          retention-days: 14
+          compression-level: 0
+
+      - name: Truth and safety gate
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('out/summary.json'))
+          assert d['mode']=='QA_ONLY_REVERSIBLE'
+          assert d['exact_source_required'] is True
+          assert d['production_signing'] is False and d['public_rollout'] is False
+          assert d['physical_device_gate']=='REQUIRED_BEFORE_FINAL'
+          assert d['counts']['total']==9
+          for a in d['apps']:
+              if a['build_status']=='APK_INSPECTION_PASS':
+                  assert a['package_ok']=='true' and a['target36_ok']=='true'
+                  assert len(a['apk_sha256'])==64
+          print('THF_APPS_RC2_EXACT_CANDIDATE_LARGE_BATCH=PASS')
+          PY
