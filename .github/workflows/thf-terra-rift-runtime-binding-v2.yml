@@ -1,0 +1,97 @@
+name: THF Terra Rift Runtime Binding V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py'
+      - 'ReleaseOps/tests/test_game_runtime_binding_audit_v2.py'
+      - '.github/workflows/thf-terra-rift-runtime-binding-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  runtime-binding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: terra
+            source_path: ~/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip
+            source_sha: eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+          - kind: rift
+            source_path: ~/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip
+            source_sha: 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Audit regression tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py ReleaseOps/tests/test_game_runtime_binding_audit_v2.py
+          python3 -m unittest ReleaseOps.tests.test_game_runtime_binding_audit_v2 -v
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Fetch exact canonical source read-only via WIF/IAP
+        env:
+          KIND: ${{ matrix.kind }}
+          SOURCE_PATH: ${{ matrix.source_path }}
+          SOURCE_SHA: ${{ matrix.source_sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p src out
+          gcloud compute scp "$GCP_BUILDER:$SOURCE_PATH" "src/$KIND.zip" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          actual=$(sha256sum "src/$KIND.zip" | awk '{print $1}')
+          test "$actual" = "$SOURCE_SHA"
+          unzip -tq "src/$KIND.zip" >/dev/null
+          printf 'CANONICAL_SOURCE_SHA256=%s\nZIP_INTEGRITY=PASS\nCANONICAL_ARCHIVE_MUTATED=NO\nWAVE_FILES_READ_OR_CHANGED=NO\n' "$actual" > "out/$KIND.summary.txt"
+      - name: Clean extract and fail-closed runtime binding audit
+        env:
+          KIND: ${{ matrix.kind }}
+          SOURCE_SHA: ${{ matrix.source_sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - "$KIND" <<'PY'
+          import pathlib,shutil,sys,zipfile
+          kind=sys.argv[1]; src=pathlib.Path('src')/(kind+'.zip'); dst=(pathlib.Path('src')/(kind+'-extracted')).resolve(); dst.mkdir(parents=True)
+          with zipfile.ZipFile(src) as z:
+            for i in z.infolist():
+              r=pathlib.PurePosixPath(i.filename)
+              if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip member')
+              t=(dst/pathlib.Path(*r.parts)).resolve()
+              if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
+              if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+              t.parent.mkdir(parents=True,exist_ok=True)
+              with z.open(i) as a,open(t,'wb') as b: shutil.copyfileobj(a,b)
+          PY
+          python3 ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py "src/$KIND-extracted" --kind "$KIND" --json-out "out/$KIND.runtime-binding.json" | tee "out/$KIND.runtime-binding.log"
+          grep -q '"source_contract_status": "PASS"' "out/$KIND.runtime-binding.json"
+          grep -q '"device_status": "PENDING"' "out/$KIND.runtime-binding.json"
+          grep -q '"final_status": "NOT_FINAL"' "out/$KIND.runtime-binding.json"
+          before=$(sha256sum "src/$KIND.zip" | awk '{print $1}'); test "$before" = "$SOURCE_SHA"
+          printf 'RUNTIME_BINDING_SOURCE_CONTRACT=PASS\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' >> "out/$KIND.summary.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-${{ matrix.kind }}-RUNTIME-BINDING-V2
+          path: out/
+          retention-days: 14
