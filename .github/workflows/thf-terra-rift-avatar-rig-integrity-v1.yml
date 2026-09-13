@@ -1,0 +1,92 @@
+name: THF Terra Rift Avatar Rig Integrity V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/thf_glb_rig_audit_v1.py'
+      - '.github/workflows/thf-terra-rift-avatar-rig-integrity-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit-rigs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Python syntax gate
+        run: python3 -m py_compile ReleaseOps/scripts/thf_glb_rig_audit_v1.py
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage rig auditor
+        run: gcloud compute scp ReleaseOps/scripts/thf_glb_rig_audit_v1.py "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Audit canonical-source avatar GLBs read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-avatar-rig-integrity-v1"; rm -rf "$ROOT"; mkdir -p "$ROOT/out"
+          safe_extract() { python3 - "$1" "$2" <<'PY'
+          import pathlib,shutil,sys,zipfile
+          src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve(); dst.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile(src) as z:
+              for i in z.infolist():
+                  r=pathlib.PurePosixPath(i.filename)
+                  if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip')
+                  t=(dst/pathlib.Path(*r.parts)).resolve()
+                  if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
+                  if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+                  t.parent.mkdir(parents=True,exist_ok=True)
+                  with z.open(i) as a,open(t,'wb') as b: shutil.copyfileobj(a,b)
+          PY
+          }
+          run_one() {
+            tag="$1"; src="$2"; expected="$3"
+            work="$ROOT/$tag"; ev="$ROOT/out/$tag"; mkdir -p "$work" "$ev"
+            test "$(sha256sum "$src"|awk '{print $1}')" = "$expected"
+            safe_extract "$src" "$work"
+            set +e; python3 /tmp/thf_glb_rig_audit_v1.py "$work" --json-out "$ev/rig-audit.json" > "$ev/rig-audit.txt"; rc=$?; set -e
+            python3 - "$ev/rig-audit.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); print('candidate_count='+str(x['candidate_count'])); print('rigged_count='+str(x['rigged_count'])); print('animated_count='+str(x['animated_count'])); print('error_count='+str(x['error_count'])); print('device_status='+x['device_status']); print('final_status='+x['final_status'])
+          PY
+            test "$rc" -eq 0
+            test "$(sha256sum "$src"|awk '{print $1}')" = "$expected"
+            echo 'canonical_archive_unchanged=true'
+          }
+          echo '=== terra ==='; run_one terra "$HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip" eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+          echo '=== rift ==='; run_one rift "$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip" 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+          echo 'wave_files_read_or_changed=false'; echo 'canonical_archives_mutated=false'
+          REMOTE
+      - name: Retrieve evidence
+        run: |
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-avatar-rig-integrity-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/summary.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TERRA-RIFT-AVATAR-RIG-INTEGRITY-V1
+          path: out/
+          retention-days: 14
+      - name: Safety assertions
+        run: |
+          grep -q '^wave_files_read_or_changed=false$' out/summary.txt
+          grep -q '^canonical_archives_mutated=false$' out/summary.txt
+          test "$(grep -c '^canonical_archive_unchanged=true$' out/summary.txt)" -eq 2
