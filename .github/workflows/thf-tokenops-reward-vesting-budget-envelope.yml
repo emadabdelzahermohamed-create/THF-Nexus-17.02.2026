@@ -1,0 +1,129 @@
+name: THF TokenOps Reward Vesting Budget Envelope Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/reward_vesting_budget_envelope.py'
+      - 'ReleaseOps/TokenOps/test_reward_vesting_budget_envelope.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-reward-vesting-budget-envelope.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reward-vesting-budget-envelope:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run fail-closed compiler tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-budget-envelope
+          PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_reward_vesting_budget_envelope.py | tee tokenops-budget-envelope/tests.log
+
+      - name: Compile production-policy fail-closed probe
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONPATH=ReleaseOps/TokenOps python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from reward_vesting_budget_envelope import CANONICAL_MINT, CANONICAL_NETWORK, canonical_sha256, compile_budget_envelope
+
+          policy=json.load(open('ReleaseOps/TokenOps/policy.json'))
+          treasury=json.load(open('ReleaseOps/TokenOps/treasury_policy.json'))
+          bound={
+            'gate':'THF_TOKENOPS_POLICY_COMPLETION_BOUND_UNSIGNED_ADMISSION_V1',
+            'network':CANONICAL_NETWORK,
+            'mint':CANONICAL_MINT,
+            'intent':'reward_epoch',
+            'policy_completion_evidence_sha256':'5747de9d10e1fd2894baea38e0690c39a4d220885585ab296b0c1b65200bb190',
+            'base_admission_sha256':'0'*64,
+            'authoritative_policy_sha256':canonical_sha256(policy),
+            'treasury_policy_sha256':canonical_sha256(treasury),
+            'simulation_review_eligible':False,
+            'blockers':[
+              'anti_whale_caps_not_authoritatively_configured',
+              'production_caps_not_approved',
+              'policy_completion_not_authoritatively_completed'
+            ],
+            'simulation_execution_permitted':False,
+            'execution_authorized':False,
+            'transaction_created':False,
+            'transaction_signed':False,
+            'transaction_submitted':False,
+            'broadcast_allowed':False,
+            'financial_effect':False,
+            'private_key_used':False,
+            'wave_mawja_untouched':True,
+          }
+          bound['bound_admission_sha256']=canonical_sha256(bound)
+          request={
+            'network':CANONICAL_NETWORK,
+            'mint':CANONICAL_MINT,
+            'intent':'reward_epoch',
+            'request_id':'production-policy-probe',
+            'bound_admission_sha256':bound['bound_admission_sha256'],
+            'epoch_revenue_minor':'0',
+            'entries':[],
+          }
+          out=compile_budget_envelope(bound, policy, treasury, request)
+          assert out['review_eligible'] is False
+          assert out['budget_controls']['per_user_cap_raw'] is None
+          assert out['budget_controls']['epoch_budget_cap_raw'] is None
+          assert 'anti_whale_per_user_cap_not_authoritatively_configured' in out['blockers']
+          assert 'epoch_budget_cap_not_authoritatively_configured' in out['blockers']
+          assert out['execution']['transaction_created'] is False
+          assert out['execution']['transaction_signed'] is False
+          assert out['execution']['transaction_submitted'] is False
+          assert out['execution']['financial_effect'] is False
+          assert out['execution']['private_key_used'] is False
+          assert out['execution']['wave_mawja_untouched'] is True
+          Path('tokenops-budget-envelope/production-policy-probe.json').write_text(json.dumps(out,sort_keys=True,indent=2)+'\n')
+          Path('tokenops-budget-envelope/bound-admission-probe.json').write_text(json.dumps(bound,sort_keys=True,indent=2)+'\n')
+          print('THF_TOKENOPS_PRODUCTION_POLICY_PROBE=FAIL_CLOSED_AS_EXPECTED')
+          print('ENVELOPE_SHA256='+out['envelope_sha256'])
+          print('TRANSACTION_CREATED=FALSE')
+          print('TRANSACTION_SIGNED=FALSE')
+          print('TRANSACTION_SUBMITTED=FALSE')
+          print('FINANCIAL_EFFECT=FALSE')
+          print('PRIVATE_KEY_USED=FALSE')
+          print('WAVE_UNTOUCHED=TRUE')
+          PY
+
+      - name: Assert hard safety boundary and hash evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -qx 'THF_REWARD_VESTING_BUDGET_ENVELOPE_TESTS=PASS' tokenops-budget-envelope/tests.log
+          grep -qx 'TRANSACTION_CREATED=FALSE' tokenops-budget-envelope/tests.log
+          grep -qx 'TRANSACTION_SIGNED=FALSE' tokenops-budget-envelope/tests.log
+          grep -qx 'TRANSACTION_SUBMITTED=FALSE' tokenops-budget-envelope/tests.log
+          grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-budget-envelope/tests.log
+          grep -qx 'PRIVATE_KEY_USED=FALSE' tokenops-budget-envelope/tests.log
+          grep -qx 'WAVE_UNTOUCHED=TRUE' tokenops-budget-envelope/tests.log
+          sha256sum \
+            ReleaseOps/TokenOps/reward_vesting_budget_envelope.py \
+            ReleaseOps/TokenOps/test_reward_vesting_budget_envelope.py \
+            ReleaseOps/TokenOps/policy.json \
+            ReleaseOps/TokenOps/treasury_policy.json \
+            tokenops-budget-envelope/production-policy-probe.json \
+            tokenops-budget-envelope/bound-admission-probe.json \
+            tokenops-budget-envelope/tests.log \
+            > tokenops-budget-envelope/SHA256SUMS.txt
+
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Reward-Vesting-Budget-Envelope-Gate
+          path: tokenops-budget-envelope/
+          if-no-files-found: error
+          retention-days: 30
