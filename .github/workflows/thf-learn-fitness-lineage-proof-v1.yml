@@ -1,0 +1,110 @@
+name: THF Learn Fitness Lineage Proof V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-learn-fitness-lineage-proof-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  prove-lineage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only lineage evidence verification
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/lineage.raw <<'PY'
+          import hashlib,json,pathlib,re
+          home=pathlib.Path.home()
+          cases={
+            'learn':{
+              'result':home/'thf-small-learn-games/evidence/result.json',
+              'recovered':home/'thf-small-learn-games/source.zip',
+              'canonical':home/'thf-small-learn-games/src/08_THF_LEARN_GAMES/SOURCE/THF_LEARN_GAMES_P49_RC2_SOURCE.zip',
+              'recovered_sha':'ce8547851c9573db02603ea6f11e020a1b7d346af0cac51e07947304f1a7c1f9',
+              'canonical_sha':'dbd259b224924e60902fb0e1b2ebca77bc243e5f29a64d04fd3114438fd41484'},
+            'fitness':{
+              'result':home/'thf-small-fitness-games/evidence/result.json',
+              'recovered':home/'thf-small-fitness-games/source.zip',
+              'canonical':home/'thf-small-fitness-games/src/09_THF_FITNESS_GAMES/SOURCE/THF_FITNESS_GAMES_P49_RC2_SOURCE.zip',
+              'recovered_sha':'cf5d73c3a03ab503dbd7c36a2d4db3ec1449ec8281304627b9463e2cb8732a25',
+              'canonical_sha':'da3c865a76848c170d679547e05d6edbc0b5ffd6a48002b12ad0d26415fd0273'} }
+          def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+          def scalar_map(x,prefix=''):
+              out={}
+              if isinstance(x,dict):
+                  for k,v in x.items(): out.update(scalar_map(v,prefix+'.'+str(k) if prefix else str(k)))
+              elif isinstance(x,list):
+                  for i,v in enumerate(x): out.update(scalar_map(v,prefix+f'[{i}]'))
+              elif isinstance(x,(str,int,float,bool)) or x is None: out[prefix]=x
+              return out
+          result={'schema':'thf-learn-fitness-lineage-proof-v1','cases':{},'read_only':True,'wave_files_read_or_changed':False,'secrets_emitted':False}
+          for name,c in cases.items():
+              for key in ('result','recovered','canonical'): assert c[key].is_file(), (name,key)
+              rsha=sha(c['recovered']); csha=sha(c['canonical']); assert rsha==c['recovered_sha']; assert csha==c['canonical_sha']
+              raw=c['result'].read_text(errors='strict'); doc=json.loads(raw); flat=scalar_map(doc)
+              # Emit only field names and SHA-like values; suppress URLs, tokens, paths, credentials and arbitrary payload strings.
+              sha_fields={}
+              status_fields={}
+              for k,v in flat.items():
+                  lk=k.lower()
+                  if isinstance(v,str) and re.fullmatch(r'[0-9a-fA-F]{64}',v): sha_fields[k]=v.lower()
+                  elif any(t in lk for t in ('status','result','pass','stage','version','kind','app')) and isinstance(v,(str,int,bool)):
+                      sv=str(v)
+                      if not re.search(r'https?://|wss?://|token|secret|password|key=',sv,re.I) and len(sv)<120: status_fields[k]=v
+              vals=set(sha_fields.values())
+              result['cases'][name]={
+                'evidence_sha256':sha(c['result']),
+                'recovered_sha256':rsha,'canonical_sha256':csha,
+                'sha_fields':sha_fields,'status_fields':status_fields,
+                'evidence_mentions_recovered_sha':rsha in vals,
+                'evidence_mentions_canonical_sha':csha in vals,
+                'lineage_proof_status':'PASS' if rsha in vals and csha in vals else 'INCOMPLETE'
+              }
+          print(json.dumps(result,indent=2,sort_keys=True))
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/lineage.raw').read_text(errors='ignore'); start=raw.find('{')
+          if start<0: raise SystemExit('lineage JSON missing')
+          obj=json.loads(raw[start:]); pathlib.Path('out/lineage.json').write_text(json.dumps(obj,indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Summarize truth without secrets
+        run: |
+          python3 - <<'PY'
+          import json
+          x=json.load(open('out/lineage.json'))
+          assert x['read_only'] and not x['wave_files_read_or_changed'] and not x['secrets_emitted']
+          for name,c in x['cases'].items():
+              print(name+'_lineage_proof_status='+c['lineage_proof_status'])
+              print(name+'_mentions_recovered_sha='+str(c['evidence_mentions_recovered_sha']).lower())
+              print(name+'_mentions_canonical_sha='+str(c['evidence_mentions_canonical_sha']).lower())
+              print(name+'_evidence_sha256='+c['evidence_sha256'])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-LEARN-FITNESS-LINEAGE-PROOF-V1
+          path: out/
+          retention-days: 14
