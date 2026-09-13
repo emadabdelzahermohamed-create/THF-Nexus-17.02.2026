@@ -1,0 +1,29 @@
+name: THF Mobile Real-Function Gate Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/mobile/mobile_real_function_gate.py'
+      - 'ReleaseOps/mobile/test_mobile_real_function_gate.py'
+      - '.github/workflows/thf-mobile-real-function-gate-tests.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/mobile/mobile_real_function_gate.py'
+      - 'ReleaseOps/mobile/test_mobile_real_function_gate.py'
+      - '.github/workflows/thf-mobile-real-function-gate-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Compile release gate
+        run: python3 -m py_compile ReleaseOps/mobile/mobile_real_function_gate.py ReleaseOps/mobile/test_mobile_real_function_gate.py
+      - name: Run release-gate tests
+        run: python3 -m unittest -v ReleaseOps/mobile/test_mobile_real_function_gate.py
