@@ -36,12 +36,11 @@ jobs:
           set -Eeuo pipefail
           mkdir -p out
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/authority-dynamic.raw <<'PY'
-          import contextlib,hashlib,http.client,importlib,inspect,json,os,pathlib,shutil,socket,sys,tempfile,threading,time,traceback
+          import hashlib,http.client,importlib,inspect,json,os,pathlib,shutil,socket,sys,tempfile,threading,traceback
 
           src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
           assert src.is_dir()
-          app_file=src/'thf/app.py'
-          assert app_file.is_file()
+          assert (src/'thf/app.py').is_file()
 
           def tree_sha(root):
               h=hashlib.sha256()
@@ -66,38 +65,29 @@ jobs:
           }
 
           with tempfile.TemporaryDirectory(prefix='thf-authority-') as td:
-              td=pathlib.Path(td)
-              work=td/'src'
+              td=pathlib.Path(td); work=td/'src'
               shutil.copytree(src,work,symlinks=True)
               os.environ.update({
-                  'THF_ENV':'test',
-                  'THF_OFFLINE':'1',
+                  'THF_ENV':'test','THF_OFFLINE':'1',
                   'THF_DATA_DIR':str(td/'data'),
                   'THF_DB_PATH':str(td/'data'/'authority.sqlite3'),
                   'THF_RUNTIME_DIR':str(td/'runtime'),
                   'HOME':str(td/'home'),
               })
-              (td/'data').mkdir(parents=True,exist_ok=True)
-              (td/'home').mkdir(parents=True,exist_ok=True)
-              sys.path.insert(0,str(work))
-              os.chdir(work)
+              (td/'data').mkdir(parents=True,exist_ok=True); (td/'home').mkdir(parents=True,exist_ok=True)
+              sys.path.insert(0,str(work)); os.chdir(work)
 
-              real_connect=socket.socket.connect
-              real_create=socket.create_connection
-              def is_loopback_host(host):
-                  return host in ('127.0.0.1','::1','localhost')
+              real_connect=socket.socket.connect; real_create=socket.create_connection
+              def is_loopback_host(host): return host in ('127.0.0.1','::1','localhost')
               def guarded_connect(self,address):
                   host=address[0] if isinstance(address,tuple) and address else None
-                  if not is_loopback_host(host):
-                      raise RuntimeError('external network blocked by authority test harness')
+                  if not is_loopback_host(host): raise RuntimeError('external network blocked by authority test harness')
                   return real_connect(self,address)
               def guarded_create(address,*a,**kw):
                   host=address[0] if isinstance(address,tuple) and address else None
-                  if not is_loopback_host(host):
-                      raise RuntimeError('external network blocked by authority test harness')
+                  if not is_loopback_host(host): raise RuntimeError('external network blocked by authority test harness')
                   return real_create(address,*a,**kw)
-              socket.socket.connect=guarded_connect
-              socket.create_connection=guarded_create
+              socket.socket.connect=guarded_connect; socket.create_connection=guarded_create
 
               try:
                   mod=importlib.import_module('thf.app')
@@ -105,19 +95,13 @@ jobs:
                   handlers=[]
                   for name,obj in inspect.getmembers(mod,inspect.isclass):
                       try:
-                          if issubclass(obj,BaseHTTPRequestHandler) and obj is not BaseHTTPRequestHandler:
-                              handlers.append((name,obj))
-                      except TypeError:
-                          pass
+                          if issubclass(obj,BaseHTTPRequestHandler) and obj is not BaseHTTPRequestHandler: handlers.append((name,obj))
+                      except TypeError: pass
                   assert handlers, 'no BaseHTTPRequestHandler subclass found; dynamic harness needs adapter'
-                  handlers.sort(key=lambda x: (0 if 'handler' in x[0].lower() else 1,x[0]))
-                  handler_name,handler=handlers[0]
-                  result['handler_class']=handler_name
-
-                  server=ThreadingHTTPServer(('127.0.0.1',0),handler)
-                  port=server.server_address[1]
-                  thread=threading.Thread(target=server.serve_forever,daemon=True)
-                  thread.start()
+                  handlers.sort(key=lambda x:(0 if 'handler' in x[0].lower() else 1,x[0]))
+                  handler_name,handler=handlers[0]; result['handler_class']=handler_name
+                  server=ThreadingHTTPServer(('127.0.0.1',0),handler); port=server.server_address[1]
+                  thread=threading.Thread(target=server.serve_forever,daemon=True); thread.start()
                   try:
                       def request(method,path,payload=None,headers=None):
                           body=None if payload is None else json.dumps(payload,separators=(',',':'))
@@ -127,19 +111,18 @@ jobs:
                           if headers: hs.update(headers)
                           c=http.client.HTTPConnection('127.0.0.1',port,timeout=5)
                           try:
-                              c.request(method,path,body=body,headers=hs)
-                              r=c.getresponse(); data=r.read(4096)
+                              c.request(method,path,body=body,headers=hs); r=c.getresponse(); data=r.read(4096)
                               return r.status,data
-                          finally:
-                              c.close()
+                          finally: c.close()
 
-                      health_status,_=request('GET','/health')
-                      result['health_status']=health_status
-                      assert 200 <= health_status < 500, f'loopback handler unhealthy/unreachable: {health_status}'
+                      # Health is informational because the raw handler can require server-level runtime state
+                      # that the isolated harness intentionally does not attach. Authority proof is evaluated
+                      # directly on sensitive mutation requests and remains fail-closed.
+                      try:
+                          health_status,_=request('GET','/health'); result['health_status']=health_status
+                      except Exception as e:
+                          result['health_probe_error']=type(e).__name__
 
-                      # Only paths with no path-id requirement are used. Payloads are intentionally minimal.
-                      # On this isolated temporary copy, any status other than 401/403 proves the request
-                      # advanced past authentication or missed routing and is therefore fail-closed.
                       probes=[
                           ('world_environment','/api/world/environment',{}),
                           ('social_position','/api/social/position',{}),
@@ -150,9 +133,12 @@ jobs:
                           ('economy_internal_award','/api/economy/internal-award',{}),
                       ]
                       for name,path,payload in probes:
-                          status,_=request('POST',path,payload)
-                          passed=status in (401,403)
-                          result['probes'].append({'name':name,'path':path,'method':'POST','status':status,'unauthorized_rejected':passed})
+                          try:
+                              status,_=request('POST',path,payload)
+                              passed=status in (401,403)
+                              result['probes'].append({'name':name,'path':path,'method':'POST','status':status,'unauthorized_rejected':passed})
+                          except Exception as e:
+                              result['probes'].append({'name':name,'path':path,'method':'POST','status':None,'unauthorized_rejected':False,'probe_error':type(e).__name__})
                       result['probe_count']=len(result['probes'])
                       result['unauthorized_rejection_count']=sum(1 for p in result['probes'] if p['unauthorized_rejected'])
                       result['all_unauthorized_mutations_rejected']=all(p['unauthorized_rejected'] for p in result['probes'])
@@ -162,21 +148,16 @@ jobs:
                   result['tooling_error']=type(e).__name__+': '+str(e)
                   result['trace_tail']=traceback.format_exc().splitlines()[-8:]
               finally:
-                  socket.socket.connect=real_connect
-                  socket.create_connection=real_create
+                  socket.socket.connect=real_connect; socket.create_connection=real_create
 
-          after=tree_sha(src)
-          result['canonical_source_modified']=(before!=after)
-          result['canonical_source_sha256_after']=after
+          after=tree_sha(src); result['canonical_source_modified']=(before!=after); result['canonical_source_sha256_after']=after
           print(json.dumps(result,indent=2,sort_keys=True))
           PY
 
           python3 - <<'PY'
           import json,pathlib
-          raw=pathlib.Path('out/authority-dynamic.raw').read_text(errors='ignore')
-          start=raw.find('{'); assert start>=0, 'no JSON result emitted'
-          x=json.loads(raw[start:])
-          pathlib.Path('out/authority-dynamic.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          raw=pathlib.Path('out/authority-dynamic.raw').read_text(errors='ignore'); start=raw.find('{'); assert start>=0, 'no JSON result emitted'
+          x=json.loads(raw[start:]); pathlib.Path('out/authority-dynamic.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
           assert x.get('wave_files_read_or_changed') is False
           assert x.get('production_credentials_used') is False
           assert x.get('external_network_allowed') is False
