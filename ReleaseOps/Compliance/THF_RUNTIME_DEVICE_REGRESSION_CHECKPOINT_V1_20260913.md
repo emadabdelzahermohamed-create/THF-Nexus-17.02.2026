@@ -25,27 +25,52 @@ WAVE touched: false.
 
 This closes the previously observed `service_not_configured` packaging defect for the staging candidate. Device-level acceptance is still required before final-release status.
 
-## Terra RC34 — FAIL-RUNTIME-PACKAGING (diagnostic retry active)
-Previous runtime-fixed run `34743325701` failed inside the Godot runtime export phase after canonical SHA verification passed. No artifact was accepted.
-Canonical SHA-256 remains `eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68`.
+## Terra RC34 — FAIL-APK-VERIFICATION; SAFE RECOVERY ACTIVE
+Canonical source:
+- `THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip`
+- SHA-256: `eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68`
 
-The shared Godot packaging script was hardened to emit exact failing phase plus tails of import/boot/template/export logs. Commit: `74c3b0e5af23adccfddb74312c7853da92f267d5`.
-A new Terra run is triggered automatically by the shared-script path dependency. Final status pending.
+Diagnostic run `34745986144` verified the canonical SHA and completed Godot 4.7.2 import, headless boot, Android template installation and Android export. The exported APK then failed in the generic APK verification phase; no artifact was accepted. Import logs show the main scene and runtime assets loading correctly, so the previous missing-project-data defect is no longer the first failing phase.
 
-## Rift RC37 — FAIL-RUNTIME-PACKAGING (diagnostic retry active)
-Previous runtime-fixed run `34743337175` failed inside the Godot runtime export phase after canonical SHA verification passed. No artifact was accepted.
-Canonical SHA-256 remains `3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914`.
+A release-tooling correction was committed at `65dab598cb5dbb2ddf8ef2628c34f95ddee92fcb`:
+- split signature / zipalign / badging / package / targetSdk checks into independently reported phases;
+- if the isolated Godot HOME emits an unsigned-but-structurally-valid debug APK, recover only with a disposable QA keystore;
+- production signing remains false;
+- canonical archives remain immutable;
+- signature recovery cannot touch WAVE.
 
-The same diagnostic hardening applies. New Rift run `34745986135` was queued from commit `74c3b0e5af23adccfddb74312c7853da92f267d5`.
+Replacement Terra run triggered from that commit: `34748278028` (status to be consumed on the next checkpoint).
 
-## Permanent release rule
+## Rift RC37 — FAIL-APK-VERIFICATION; SAFE RECOVERY ACTIVE
+Canonical source:
+- `THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip`
+- SHA-256: `3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914`
+
+Diagnostic run `34745986135` verified the canonical SHA and completed Godot 4.7.2 import, headless boot, Android template installation and Android export. It failed at the same generic APK verification phase after the export completed; no artifact was accepted. Import/boot evidence shows `arena_main.tscn`, `ArenaMain.gd` and avatar assets loading before packaging verification.
+
+The same safe recovery commit `65dab598cb5dbb2ddf8ef2628c34f95ddee92fcb` applies. Replacement Rift run: `34748278032`.
+
+## Cross-app prevention rule
 An Android build is not considered a release candidate solely because compilation, signing or installation succeeds.
 
-Godot applications must additionally prove packaged project payload and successful engine boot path. Service-native applications must prove a non-placeholder HTTPS runtime endpoint and service-health gate. Device/runtime acceptance remains mandatory before final-release status.
+Every THF Android lane must be classified and gated as one of:
+1. `GODOT_RUNTIME`: canonical SHA, parser/import, headless boot, Android export, embedded Godot payload/assets, package, API 36, signature, zipalign, then device/runtime acceptance.
+2. `SERVICE_NATIVE`: canonical SHA, package/API36/signature/zipalign plus non-placeholder HTTPS endpoint embedded in the artifact and service-health proof, then device/runtime acceptance.
+3. `OFFLINE_NATIVE`: canonical SHA, package/API36/signature/zipalign and offline boot/content checks, then device/runtime acceptance.
+
+This rule is mandatory for the remaining THF apps/games to prevent repeats of both observed failures: missing Godot project data and missing service configuration.
+
+## WAVE_MAWJA lane
+WAVE remains isolated. Current policy remains: resume WAVE only from a verified canonical RC13/RC14 source/workspace and never substitute or silently mutate RC9. No WAVE bytes were copied into THF in this checkpoint.
+
+## Open PR / protected actions
+PR #2 remains a draft TokenOps read-only lane. No Solana transaction, signing, burn, transfer or authority mutation was performed.
+
+No production signing, irreversible Play publishing, Cloudflare production cutover or destructive cloud change was performed.
 
 ## Next
-1. Consume the new Terra/Rift diagnostic runs and fix the exact Godot import/export blocker in disposable build copies only.
-2. Rebuild Terra/Rift and require payload/package/API36/signature/zipalign PASS.
-3. Run the reusable Android runtime release guard against Core/Terra/Rift outputs.
-4. Continue equivalent runtime-config/payload regression checks across remaining THF Android apps and games.
-5. WAVE_MAWJA remains isolated; resume its independent lane only from a verified canonical RC13/RC14 source/workspace, never by substituting RC9.
+1. Consume Terra `34748278028` and Rift `34748278032`; accept artifacts only on full payload/package/API36/signature/zipalign PASS.
+2. If either fails, use its now-specific phase and evidence rather than rerunning blindly.
+3. Apply the reusable runtime-release guard to accepted Core/Terra/Rift artifacts.
+4. Extend the same classification/gates across remaining THF Android apps and games.
+5. Continue WAVE independently when verified canonical RC13/RC14 source becomes available in an authorized workspace.
