@@ -28,46 +28,63 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
-        with: { project_id: '${{ env.GCP_PROJECT_ID }}' }
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
       - name: Clean-extract and classify authoritative small-game sources
         shell: bash
         run: |
-          set -Eeuo pipefail; mkdir -p out
+          set -Eeuo pipefail
+          mkdir -p out
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='bash -s' > out/audit.txt <<'REMOTE'
           set -Eeuo pipefail
-          ROOT="$HOME/thf-small-games-audit-v1"; rm -rf "$ROOT"; mkdir -p "$ROOT"
+          ROOT="$HOME/thf-small-games-audit-v1"
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT"
           one() {
-            name="$1"; src="$2"; sha="$3"; work="$ROOT/$name"; mkdir -p "$work"
-            echo "=== $name ==="; echo "canonical_sha256=$sha"; echo "$sha  $src" | sha256sum -c -
+            name="$1"
+            src="$2"
+            sha="$3"
+            work="$ROOT/$name"
+            mkdir -p "$work"
+            echo "=== $name ==="
+            echo "canonical_sha256=$sha"
+            echo "$sha  $src" | sha256sum -c -
             python3 -c 'import pathlib,sys,zipfile; z=zipfile.ZipFile(sys.argv[1]); bad=[i.filename for i in z.infolist() if pathlib.PurePosixPath(i.filename).is_absolute() or ".." in pathlib.PurePosixPath(i.filename).parts]; assert not bad,bad' "$src"
             unzip -q "$src" -d "$work"
             echo "file_count=$(find "$work" -type f | wc -l)"
             [ -n "$(find "$work" -name project.godot -print -quit)" ] && echo engine=godot || true
-            [ -n "$(find "$work" -name settings.gradle -o -name settings.gradle.kts -print -quit)" ] && echo android_native=true || true
+            [ -n "$(find "$work" \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)" ] && echo android_native=true || true
             [ -n "$(find "$work" -name package.json -print -quit)" ] && echo node_or_web=true || true
             [ -n "$(find "$work" -name pubspec.yaml -print -quit)" ] && echo flutter=true || true
             [ -n "$(find "$work" -path '*/ProjectSettings/ProjectVersion.txt' -print -quit)" ] && echo unity=true || true
             [ -n "$(find "$work" -name index.html -print -quit)" ] && echo web_entry=true || true
-            echo 'top_files:'; find "$work" -maxdepth 4 -type f | sed "s#^$work/##" | sort | head -120
+            echo 'top_files:'
+            find "$work" -maxdepth 4 -type f | sed "s#^$work/##" | sort | head -120 || true
             echo 'runtime_marker_counts:'
             python3 - "$work" <<'PY'
-import pathlib,re,sys
-root=pathlib.Path(sys.argv[1]); patterns={
-'input':r'InputEvent|onTouch|MotionEvent|pointer|keydown|touchstart',
-'game_loop':r'_process\(|_physics_process\(|requestAnimationFrame|update\(|game[_ ]?loop',
-'player':r'player|avatar|character',
-'score':r'score|points|level|progress',
-'placeholder':r'localhost|127\.0\.0\.1|example\.com|REPLACE[_ -]?ME|YOUR[_ -]?(API|URL|HOST)',
-'network':r'https://|wss://|WebSocket|fetch\(|HttpRequest|Retrofit|OkHttp',
-}
-counts={k:0 for k in patterns}
-for p in root.rglob('*'):
- if not p.is_file() or p.stat().st_size>1000000 or p.suffix.lower() not in {'.gd','.js','.ts','.tsx','.kt','.java','.html','.json','.xml','.cs','.py'}: continue
- try:s=p.read_text(errors='ignore')
- except OSError:continue
- for k,v in patterns.items(): counts[k]+=len(re.findall(v,s,re.I))
-for k,v in counts.items(): print(f'{k}={v}')
-PY
+          import pathlib,re,sys
+          root=pathlib.Path(sys.argv[1])
+          patterns={
+              'input':r'InputEvent|onTouch|MotionEvent|pointer|keydown|touchstart',
+              'game_loop':r'_process\(|_physics_process\(|requestAnimationFrame|update\(|game[_ ]?loop',
+              'player':r'player|avatar|character',
+              'score':r'score|points|level|progress',
+              'placeholder':r'localhost|127\.0\.0\.1|example\.com|REPLACE[_ -]?ME|YOUR[_ -]?(API|URL|HOST)',
+              'network':r'https://|wss://|WebSocket|fetch\(|HttpRequest|Retrofit|OkHttp',
+          }
+          counts={k:0 for k in patterns}
+          for p in root.rglob('*'):
+              if not p.is_file() or p.stat().st_size>1000000 or p.suffix.lower() not in {'.gd','.js','.ts','.tsx','.kt','.java','.html','.json','.xml','.cs','.py'}:
+                  continue
+              try:
+                  s=p.read_text(errors='ignore')
+              except OSError:
+                  continue
+              for k,v in patterns.items():
+                  counts[k]+=len(re.findall(v,s,re.I))
+          for k,v in counts.items():
+              print(f'{k}={v}')
+          PY
             echo "$sha  $src" | sha256sum -c -
           }
           one learn "$HOME/thf-small-learn-games/src/08_THF_LEARN_GAMES/SOURCE/THF_LEARN_GAMES_P49_RC2_SOURCE.zip" dbd259b224924e60902fb0e1b2ebca77bc243e5f29a64d04fd3114438fd41484
