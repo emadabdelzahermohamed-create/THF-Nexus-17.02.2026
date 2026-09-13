@@ -1,0 +1,185 @@
+name: WAVE RC14 Root-Isolated Large Batch
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/wave-root-isolated-rc14-large-batch.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  wave-root-batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Execute canonical WAVE-only gate and evidence pass
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=50m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          PROJECT=/root/workspace/wave-mawja
+          CALLER_HOME="$HOME"
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          EXPORT="$CALLER_HOME/wave-rc14-evidence-$TS"
+          mkdir -p "$EXPORT"
+          echo "CALLER=$(id -un)"
+          if ! sudo -n true 2>/dev/null; then
+            echo 'BLOCKER=SUDO_NONINTERACTIVE_NOT_AVAILABLE'
+            echo 'THF_FILES_TOUCHED=FALSE'
+            exit 30
+          fi
+          sudo -n test -d "$PROJECT" || { echo 'BLOCKER=CANONICAL_WAVE_ROOT_MISSING'; exit 31; }
+          [ "$(sudo -n readlink -f "$PROJECT")" = "$PROJECT" ] || { echo 'BLOCKER=WAVE_PATH_IDENTITY_MISMATCH'; exit 32; }
+          case "$PROJECT" in *THF*|*thf-nexus*|*THF-Nexus*) echo 'ISOLATION_GUARD=FAIL'; exit 33;; esac
+          echo "WAVE_ROOT=$PROJECT"
+          echo 'ISOLATION_GUARD=PASS'
+
+          # Capture authoritative identity/state before any build/test action.
+          sudo -n bash -c 'set -Eeuo pipefail; cd /root/workspace/wave-mawja; echo "=== AUTHORITATIVE WAVE IDENTITY ==="; test -f package.json; node -e '\''const p=require("./package.json"); console.log("NAME="+(p.name||"")); console.log("VERSION="+(p.version||"")); console.log("SCRIPTS="+Object.keys(p.scripts||{}).sort().join(","))'\''; if [ -d .git ]; then echo GIT_HEAD=$(git rev-parse HEAD); echo GIT_BRANCH=$(git branch --show-current || true); git status --short --branch; fi; echo "=== STATE/HANDOFF/RC/SHA ==="; find . -maxdepth 4 -type f \( -iname "*CURRENT_STATE*" -o -iname "*HANDOFF*" -o -iname "*RC14*" -o -iname "*SHA256*" -o -iname "*RELEASE*MANIFEST*" \) -print | sort | head -250'
+
+          # Reuse the previously-authored WAVE-only RC13 verification invariant suite if present.
+          if [ -f "$CALLER_HOME/wave-rc13-remote.sh" ]; then
+            echo '=== RC13 AUTHORITATIVE VERIFY SUITE ==='
+            sudo -n bash "$CALLER_HOME/wave-rc13-remote.sh" | tee "$EXPORT/rc13-verify.log"
+          else
+            echo 'RC13_VERIFY_SCRIPT=MISSING'
+          fi
+
+          # Large-batch non-destructive audit/test pass in canonical WAVE root.
+          sudo -n env EXPORT="$EXPORT" bash -s <<'ROOT'
+          set -Eeuo pipefail
+          PROJECT=/root/workspace/wave-mawja
+          cd "$PROJECT"
+          echo '=== WAVE SOURCE REAL-FUNCTION INVENTORY ==='
+          for term in hls m3u8 quality bitrate rendition offline cache indexeddb quota eviction serviceWorker manifest.webmanifest subtitle webvtt translate dubbing ffmpeg transcode publisher admin upload import rights license ads search visitor auth MEDIA_API; do
+            n=$(grep -RIl --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build -i "$term" . 2>/dev/null | wc -l || true)
+            printf '%s=%s\n' "$term" "$n"
+          done | tee "$EXPORT/capability-inventory.txt"
+
+          echo '=== PLACEHOLDER/TEMPLATE/LOCALHOST REJECTION AUDIT ==='
+          grep -RInE --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build \
+            '(com\.example\.|example\.com|TODO[ :].*(endpoint|offline|player|download)|FIXME|placeholder|javascript:void\(0\)|localhost:[0-9]+|127\.0\.0\.1:[0-9]+)' . \
+            > "$EXPORT/suspicious-source.txt" || true
+          echo "SUSPICIOUS_COUNT=$(wc -l < "$EXPORT/suspicious-source.txt")"
+
+          echo '=== PACKAGE SCRIPTS / QUALITY GATES ==='
+          node -e 'const p=require("./package.json"); console.log(JSON.stringify(p.scripts||{},null,2))' > "$EXPORT/package-scripts.json"
+          run_script(){
+            s="$1"
+            if node -e 'const p=require("./package.json");process.exit(p.scripts&&p.scripts[process.argv[1]]?0:1)' "$s"; then
+              echo "RUN=$s"
+              npm run "$s"
+            else echo "SKIP=$s"; fi
+          }
+          [ -d node_modules ] || npm ci
+          run_script typecheck
+          run_script lint
+          run_script test:source
+          run_script test
+          run_script test:integration
+          run_script test:e2e
+          run_script build
+
+          echo '=== PWA CHECK ==='
+          MAN=$(find . -maxdepth 6 -type f \( -name manifest.webmanifest -o -name manifest.json \) ! -path '*/node_modules/*' | head -1 || true)
+          SW=$(find . -maxdepth 7 -type f \( -iname 'sw.js' -o -iname 'service-worker.js' -o -iname '*service*worker*.js' -o -iname '*service*worker*.ts' \) ! -path '*/node_modules/*' | head -1 || true)
+          echo "PWA_MANIFEST=${MAN:-MISSING}" | tee "$EXPORT/pwa.txt"
+          echo "PWA_SW=${SW:-MISSING}" | tee -a "$EXPORT/pwa.txt"
+
+          echo '=== ANDROID API36 / PACKAGE / SHELL CHECK ==='
+          ANDROID=""
+          for d in android app/android mobile android-app; do
+            [ -d "$d" ] || continue
+            if grep -Rqs 'com.wave.mawja' "$d" --include='*.gradle' --include='*.gradle.kts' --include='AndroidManifest.xml'; then ANDROID="$d"; break; fi
+          done
+          if [ -n "$ANDROID" ]; then
+            echo "ANDROID_ROOT=$ANDROID" | tee "$EXPORT/android.txt"
+            grep -RInE --include='*.gradle' --include='*.gradle.kts' --include='AndroidManifest.xml' '(applicationId|namespace|compileSdk|targetSdk|minSdk|com\.wave\.mawja|usesCleartextTraffic)' "$ANDROID" | head -200 | tee -a "$EXPORT/android.txt" || true
+            grep -RqsE --include='*.gradle' --include='*.gradle.kts' 'targetSdk[^0-9]*36|targetSdkVersion[^0-9]*36' "$ANDROID" && echo TARGET_SDK_36=PASS || echo TARGET_SDK_36=FAIL
+            if grep -RqiE --include='*.kt' --include='*.java' 'WebView' "$ANDROID"; then echo WEBVIEW_PRESENT=YES; else echo WEBVIEW_PRESENT=NO; fi
+            if grep -RqiE --include='*.kt' --include='*.java' '(ExoPlayer|Media3|DownloadManager|WorkManager|RoomDatabase|MediaSession)' "$ANDROID"; then echo NATIVE_MEDIA_OR_OFFLINE_PRIMITIVES=FOUND; else echo NATIVE_MEDIA_OR_OFFLINE_PRIMITIVES=NOT_FOUND; fi
+          else echo ANDROID_PROJECT=NOT_FOUND | tee "$EXPORT/android.txt"; fi
+
+          echo '=== STATIC MOBILE REAL-FUNCTION GATE ==='
+          python3 - <<'PY' | tee "$EXPORT/static-real-function-gate.txt"
+          import os
+          exts={'.js','.ts','.tsx','.jsx','.kt','.java','.json','.html','.mjs','.cjs','.py'}
+          buf=[]
+          for dp,dn,fs in os.walk('.'):
+              dn[:]=[d for d in dn if d not in {'.git','node_modules','dist','build','.gradle'}]
+              for f in fs:
+                  if os.path.splitext(f)[1].lower() in exts:
+                      try: buf.append(open(os.path.join(dp,f),encoding='utf8',errors='ignore').read())
+                      except OSError: pass
+          s='\n'.join(buf).lower()
+          checks={
+              'HLS': any(x in s for x in ('.m3u8','hls.js','mpegurl')),
+              'MANUAL_QUALITY': 'quality' in s and any(x in s for x in ('bitrate','rendition','level')),
+              'DATA_SAVER': any(x in s for x in ('data saver','datasaver','low bandwidth','low-bandwidth')),
+              'OFFLINE_REAL_STORAGE': any(x in s for x in ('indexeddb','cachestorage','cache.open','downloadmanager','roomdatabase')),
+              'QUOTA_EVICTION': 'quota' in s and any(x in s for x in ('evict','oldest','lru','delete')),
+              'SUBTITLES': any(x in s for x in ('webvtt','.vtt','subtitle','texttrack')),
+              'TRANSLATION_DUB': any(x in s for x in ('translate','translation')) and any(x in s for x in ('dub','dubbing','tts','speech')),
+              'FFMPEG_TRANSCODE': 'ffmpeg' in s and 'transcod' in s,
+              'RIGHTS_GUARD': any(x in s for x in ('publisher-attestation','rights','approved_sources','allowed_domains')),
+              'ADMIN_PUBLISHER': 'admin' in s and 'publisher' in s,
+              'AUTH_VISITOR': 'auth' in s and any(x in s for x in ('guest','visitor','anonymous')),
+          }
+          for k,v in checks.items(): print(f'{k}={"PASS" if v else "MISSING"}')
+          print('FINAL_OR_PLAY_READY=NO')
+          PY
+
+          echo '=== CLEAN EXTRACT / INTEGRITY SHA ==='
+          ARCH="$EXPORT/WAVE_RC14_SOURCE_AUDIT.tar.gz"
+          tar --exclude='./node_modules' --exclude='./dist' --exclude='./build' --exclude='./.git' --exclude='./WAVE_EVIDENCE' -czf "$ARCH" .
+          tar -tzf "$ARCH" >/dev/null
+          sha256sum "$ARCH" | tee "$ARCH.sha256"
+          echo 'FINAL_OR_PLAY_READY=NO'
+          echo 'RELEASE_BLOCKER=PHYSICAL_PHONE_INSTALL_LAUNCH_TOUCH_LAYOUT_BACKGROUND_RESUME_OFFLINE_NETWORK_CORE_PLAYBACK_CRASHFREE_EVIDENCE_REQUIRED'
+          echo 'THF_SOURCE_RELEASE_TREES_TOUCHED=FALSE'
+          ROOT
+
+          sudo -n chown -R "$(id -u):$(id -g)" "$EXPORT"
+          sha256sum "$EXPORT"/* 2>/dev/null | sort > "$EXPORT/SHA256SUMS.txt" || true
+          echo "EVIDENCE_DIR=$EXPORT"
+          echo 'WAVE_ROOT_BATCH=COMPLETE'
+          REMOTE
+
+      - name: Retrieve WAVE evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p wave-root-evidence
+          gcloud compute scp --recurse "$GCP_BUILDER:~/wave-rc14-evidence-*" wave-root-evidence/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          find wave-root-evidence -type f -maxdepth 4 -print
+
+      - name: Upload WAVE RC14 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-RC14-ROOT-ISOLATED-EVIDENCE
+          path: wave-root-evidence/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
