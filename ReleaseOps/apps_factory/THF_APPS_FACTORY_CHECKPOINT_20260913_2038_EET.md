@@ -18,6 +18,8 @@ A non-promotional source audit was run against the exact current source SHAs for
 
 The same audit found no notification/push source hit in any of the nine exact source trees. This is recorded as a portfolio backlog gap rather than silently accepted. WebSocket evidence is present in Echo but absent from the other eight; that is not a defect unless their current product flow requires realtime transport. Data Saver/network-capability evidence is present across all nine, but exact-device metered-network behavior remains unproven.
 
+A second audit restricted scanning to shipping runtime paths (`android/app/src/main`, `app`, `appsrc`) so documentation/test examples could not mask endpoint defects. Across all nine exact source SHAs it found zero placeholder runtime URLs and zero insecure HTTP/WS runtime URLs. Every app has at least one runtime auth/Pass-related source file and at least one runtime endpoint/build-config source reference. This clears a static runtime-endpoint hygiene gate only; it does not prove those configured HTTPS/WSS services are currently reachable or that auth/session handoff succeeds.
+
 Spark RC3 and Rush RC3 still have no discovered pytest suite. Their compile/source-policy/package gates pass, but `NO_TESTS` is a release-preparation debt and is not equivalent to automated functional coverage.
 
 ## THF Pass / federation boundary
