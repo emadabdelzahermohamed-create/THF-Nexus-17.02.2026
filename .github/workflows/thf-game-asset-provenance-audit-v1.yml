@@ -1,0 +1,88 @@
+name: THF Game Asset Provenance Audit V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/thf_game_asset_provenance_audit_v1.py'
+      - '.github/workflows/thf-game-asset-provenance-audit-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Syntax gate
+        run: python3 -m py_compile ReleaseOps/scripts/thf_game_asset_provenance_audit_v1.py
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage read-only auditor
+        run: |
+          gcloud compute scp ReleaseOps/scripts/thf_game_asset_provenance_audit_v1.py "$GCP_BUILDER:/tmp/" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Audit authoritative canonical archives without extraction
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
+          set -Eeuo pipefail
+          BASE="$HOME"
+          TERRA="$BASE/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip"
+          RIFT="$BASE/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
+          OUT="$BASE/thf-game-asset-provenance-v1"
+          rm -rf "$OUT"; mkdir -p "$OUT"
+          python3 /tmp/thf_game_asset_provenance_audit_v1.py "$TERRA" \
+            --expected-sha256 eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68 \
+            --json-out "$OUT/terra.json" >/dev/null
+          python3 /tmp/thf_game_asset_provenance_audit_v1.py "$RIFT" \
+            --expected-sha256 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914 \
+            --json-out "$OUT/rift.json" >/dev/null
+          python3 - "$OUT/terra.json" "$OUT/rift.json" <<'PY'
+          import json,sys
+          for p in sys.argv[1:]:
+              d=json.load(open(p))
+              print('kind='+('terra' if p.endswith('terra.json') else 'rift'))
+              for k in ('archive_sha256','safety_status','unsafe_member_count','symlink_member_count','casefold_collision_count','oversized_asset_count','file_count','asset_file_count','model_file_count','animation_capable_file_count','avatar_character_marker_count','animation_motion_marker_count','provenance_document_count'):
+                  print(f'{k}={d[k]}')
+              for k,v in d['integration_signals'].items():
+                  print(f'{k}={str(v).lower()}')
+              print('canonical_archive_mutated=false')
+          print('wave_files_read_or_changed=false')
+          PY
+          REMOTE
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-game-asset-provenance-v1/*" out/ \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/summary.txt
+      - name: Fail closed on archive safety
+        run: |
+          test "$(grep -c '^safety_status=PASS$' out/summary.txt)" -eq 2
+          test "$(grep -c '^unsafe_member_count=0$' out/summary.txt)" -eq 2
+          test "$(grep -c '^symlink_member_count=0$' out/summary.txt)" -eq 2
+          test "$(grep -c '^casefold_collision_count=0$' out/summary.txt)" -eq 2
+          test "$(grep -c '^canonical_archive_mutated=false$' out/summary.txt)" -eq 2
+          test "$(grep -c '^wave_files_read_or_changed=false$' out/summary.txt)" -eq 1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-GAME-ASSET-PROVENANCE-V1
+          path: out/
+          retention-days: 14
