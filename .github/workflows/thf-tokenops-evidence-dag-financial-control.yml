@@ -1,0 +1,52 @@
+name: THF TokenOps Evidence DAG Financial Control Gate
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/evidence_dag_financial_control.py'
+      - 'ReleaseOps/TokenOps/test_evidence_dag_financial_control.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-evidence-dag-financial-control.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run evidence DAG financial control tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_evidence_dag_financial_control.py |& tee evidence-dag-financial-control-tests.log
+      - name: Build hash-bound evidence package
+        run: |
+          set -Eeuo pipefail
+          mkdir evidence
+          cp ReleaseOps/TokenOps/{evidence_dag_financial_control.py,test_evidence_dag_financial_control.py,evidence-dag-financial-control-tests.log,policy.json,treasury_policy.json} evidence/
+          cd evidence
+          sha256sum * > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          printf '%s\n' \
+            'EVIDENCE_DAG=ENFORCED' \
+            'DOUBLE_ENTRY_PREVIEW=NON_POSTING' \
+            'INCIDENT_QUARANTINE=CONFIG_ONLY' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'SIGNING=FALSE' \
+            'BROADCAST=FALSE' \
+            'TRANSACTION_BYTES_CREATED=FALSE' \
+            'INSTRUCTION_BYTES_CREATED=FALSE' \
+            'PRIVATE_KEY_ACCEPTED=FALSE' \
+            'PERSISTENT_SERVICE_ACCOUNT_KEY=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' > SAFETY.txt
+          sha256sum SAFETY.txt >> SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Evidence-DAG-Financial-Control
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
