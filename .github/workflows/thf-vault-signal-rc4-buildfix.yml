@@ -45,14 +45,28 @@ jobs:
           vault	RC4-BF1	dd6db86d7532f773a8d1d2662bf466bdcc0f1c64a863602ecdd1267c8f82fa33	com.topherofit.thf.vault	1uxsDgpOF5ZknvCnYIZTgIYNnO2cwVVJI
           signal	RC4-BF1	377044263fa0fc366afe67c6b42ccf4f3e2d1bc75769350f2ee885983f820ddf	com.topherofit.thf.signal	1za4Ibh8Lm5gt0DNe2oNLxmxYp0bb_gLh
           EOF
+          printf 'app\tcheckpoint\tdrive_file_id\thttp\texpected_sha256\tactual_sha256\tzip_ok\tresult\n' > out/source-stage.tsv
+          stage_fail=0
           while IFS=$'\t' read -r app cp sha pkg fid; do
             f="src/$app.zip"
-            code=$(curl -sSLo "$f" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$fid?alt=media&supportsAllDrives=true")
-            [ "$code" = 200 ]
-            [ "$(sha256sum "$f" | awk '{print $1}')" = "$sha" ]
-            unzip -tq "$f" >/dev/null
-            mkdir -p "work/$app" && unzip -q "$f" -d "work/$app"
+            code=$(curl -sSLo "$f" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$fid?alt=media&supportsAllDrives=true") || code="curl_error"
+            actual="MISSING"
+            zip_ok=false
+            result=FAIL
+            if [ -s "$f" ]; then actual=$(sha256sum "$f" | awk '{print $1}'); fi
+            if [ "$code" = 200 ] && [ "$actual" = "$sha" ] && unzip -tq "$f" >/dev/null 2>&1; then
+              zip_ok=true
+              mkdir -p "work/$app"
+              unzip -q "$f" -d "work/$app"
+              result=PASS
+            else
+              stage_fail=1
+            fi
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$cp" "$fid" "$code" "$sha" "$actual" "$zip_ok" "$result" >> out/source-stage.tsv
           done < src/matrix.tsv
+          cat out/source-stage.tsv
+          sha256sum src/matrix.tsv out/source-stage.tsv | tee out/source-stage.sha256
+          [ "$stage_fail" -eq 0 ]
           echo EXACT_RC4_BUILD_FIX_SOURCE=PASS
 
       - name: Test source and build QA APKs
@@ -71,6 +85,7 @@ jobs:
           printf 'app\tcheckpoint\tpackage\tbuild\tapk_sha256\ttarget36\tsigned\tdebuggable\tversion_code\tversion_name\n' > out/results.tsv
           while IFS=$'\t' read -r app cp sha pkg fid; do
             root=$(find "work/$app" -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1)
+            test -n "$root"
             python -m compileall -q "$root"
             if [ -d "$root/tests" ] && find "$root/tests" -name 'test_*.py' | grep -q .; then (cd "$root" && python -m pytest -q) | tee "out/$app.pytest.log"; fi
             python ReleaseOps/validators/validate_mobile_real_function_source.py "$root" --package "$pkg" --json-out "out/$app.source-policy.json"
@@ -94,6 +109,7 @@ jobs:
           done < src/matrix.tsv
           cat out/results.tsv
           [ "$(grep -c $'\tPASS\t' out/results.tsv)" -eq 2 ]
+          sha256sum out/results.tsv out/*.apk 2>/dev/null | tee out/candidate.sha256 || true
           echo THF_VAULT_SIGNAL_RC4_BUILD_FIX=PASS | tee out/TRUTH.txt
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
