@@ -40,7 +40,8 @@ jobs:
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
-      - name: Verify exact source and audit game-like contract
+      - id: audit
+        name: Verify exact source and audit game-like contract
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           APP: ${{ matrix.app }}
@@ -59,22 +60,37 @@ jobs:
           unzip -q src/app.zip -d src/extracted
           root=$(find src/extracted -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1)
           test -n "$root"
+          set +e
           python ReleaseOps/validators/audit_game_like_real_function.py "$root" --profile "$PROFILE" --json-out "out/$APP.game-like-contract.json"
-          python - "$APP" "$PROFILE" "$SOURCE_SHA" "out/$APP.game-like-contract.json" > "out/$APP.summary.txt" <<'PY'
-          import json,sys
-          app,profile,sha,path=sys.argv[1:]
+          audit_rc=$?
+          set -e
+          python - "$APP" "$PROFILE" "$SOURCE_SHA" "out/$APP.game-like-contract.json" "$GITHUB_OUTPUT" > "out/$APP.summary.txt" <<'PY'
+          import json,re,sys
+          app,profile,sha,path,out=sys.argv[1:]
           d=json.load(open(path))
+          missing=d['missing_required_signals']
+          key='none' if not missing else '+'.join(re.sub(r'[^A-Za-z0-9_.+-]','_',x) for x in missing)
           print(f'APP={app}')
           print(f'PROFILE={profile}')
           print(f'SOURCE_SHA256={sha}')
           print(f'FILES_SCANNED={d["files_scanned"]}')
           print(f'GAME_LIKE_SOURCE_CONTRACT={d["source_contract"]}')
+          print(f'MISSING_REQUIRED_SIGNALS={",".join(missing) if missing else "none"}')
           print('READINESS_PROMOTION=NO')
           print('PHYSICAL_DEVICE_REQUIRED=YES')
+          with open(out,'a') as f:
+              f.write(f'status={d["source_contract"]}\n')
+              f.write(f'missing_key={key}\n')
           PY
+          echo "audit_rc=$audit_rc" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: THF-${{ matrix.app }}-GAME-LIKE-CONTRACT-V1
+          name: THF-${{ matrix.app }}-GAME-LIKE-${{ steps.audit.outputs.status }}-${{ steps.audit.outputs.missing_key }}
           path: out/
           retention-days: 14
+      - name: Enforce game-like contract
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.audit.outputs.status }}" = "PASS"
