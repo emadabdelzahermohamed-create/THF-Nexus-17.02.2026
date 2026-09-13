@@ -1,0 +1,132 @@
+name: THF Pass Auth Lifecycle Candidate V2
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-pass-auth-lifecycle-candidate-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Build candidate only in disposable runtime copy
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' <<'REMOTE' > out/result.txt
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"; command -v python3 >/dev/null
+          ORIG_APP=$(sha256sum "$ROOT/src/thf/app.py"|awk '{print $1}')
+          ORIG_ID=$(sha256sum "$ROOT/src/thf/identity/service.py"|awk '{print $1}')
+          WORK=$(mktemp -d "$HOME/thf-pass-life-v2.XXXXXX"); trap 'rm -rf "$WORK"' EXIT
+          cp -a "$ROOT/." "$WORK/"
+
+          python3 - "$WORK" <<'PY'
+          from pathlib import Path
+          import sys
+          r=Path(sys.argv[1])
+          p=r/'src/thf/identity/service.py'; s=p.read_text()
+          a='    def user_from_token(self, token: str|None) -> dict|None:\n'
+          assert a in s
+          methods='''    def refresh_session(self, token: str|None) -> dict:\n        if not token: raise PermissionError('authentication required')\n        row=self.db.one("SELECT s.user_id,s.expires_at,u.username FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=?",(token,))\n        if not row: raise PermissionError('invalid session')\n        if row['expires_at'] < utcnow():\n            self.db.execute("DELETE FROM sessions WHERE token=?",(token,)); raise PermissionError('expired session')\n        self.db.execute("DELETE FROM sessions WHERE token=?",(token,))\n        return {'id':row['user_id'],'username':row['username'],'token':self._new_session(int(row['user_id'])),'rotated':True}\n\n    def logout_session(self, token: str|None) -> dict:\n        if not token: raise PermissionError('authentication required')\n        existed=self.db.one("SELECT 1 ok FROM sessions WHERE token=?",(token,)) is not None\n        self.db.execute("DELETE FROM sessions WHERE token=?",(token,))\n        return {'ok':True,'revoked':existed}\n\n    def revoke_all(self, uid:int) -> dict:\n        self.db.execute("DELETE FROM sessions WHERE user_id=?",(uid,))\n        return {'ok':True,'all_sessions_revoked':True}\n\n'''
+          p.write_text(s.replace(a,methods+a,1))
+          p=r/'src/thf/app.py'; s=p.read_text()
+          a="        if path=='/api/auth/login' and method=='POST':\n            b=self._body();return self._send(rt.identity.login(str(b.get('username','')),str(b.get('password',''))))\n"
+          assert a in s
+          routes=a+"        if path=='/api/auth/refresh' and method=='POST':return self._send(rt.identity.refresh_session(self._token()))\n        if path=='/api/auth/logout' and method=='POST':return self._send(rt.identity.logout_session(self._token()))\n        if path=='/api/auth/revoke-all' and method=='POST':return self._send(rt.identity.revoke_all(self._need_user()['id']))\n"
+          p.write_text(s.replace(a,routes,1))
+          PY
+
+          cat > "$WORK/tests/test_auth_lifecycle_candidate.py" <<'PYTEST'
+          import json, os, tempfile, threading, time, unittest, urllib.error, urllib.request
+          from datetime import datetime, timedelta, timezone
+          from pathlib import Path
+          from thf.app import Runtime, make_server
+
+          class Service(unittest.TestCase):
+              def setUp(self):
+                  self.t=tempfile.TemporaryDirectory(); self.root=Path(self.t.name)
+                  self.rt=Runtime(self.root,str(self.root/'db.sqlite')); self.u=self.rt.identity.register('lifeuser','strong-pass-123')
+              def tearDown(self): self.t.cleanup()
+              def test_rotation_expiry_logout_revoke(self):
+                  old=self.u['token']; new=self.rt.identity.refresh_session(old)['token']
+                  self.assertIsNone(self.rt.identity.user_from_token(old)); self.assertIsNotNone(self.rt.identity.user_from_token(new))
+                  with self.assertRaises(PermissionError): self.rt.identity.refresh_session(old)
+                  past=(datetime.now(timezone.utc)-timedelta(minutes=1)).isoformat().replace('+00:00','Z')
+                  self.rt.db.execute('UPDATE sessions SET expires_at=? WHERE token=?',(past,new))
+                  with self.assertRaises(PermissionError): self.rt.identity.refresh_session(new)
+                  a=self.rt.identity.login('lifeuser','strong-pass-123')['token']; b=self.rt.identity.login('lifeuser','strong-pass-123')['token']
+                  self.assertTrue(self.rt.identity.logout_session(a)['revoked']); self.assertIsNone(self.rt.identity.user_from_token(a))
+                  self.rt.identity.revoke_all(self.u['id']); self.assertIsNone(self.rt.identity.user_from_token(b))
+
+          class Http(unittest.TestCase):
+              @classmethod
+              def setUpClass(cls):
+                  cls.t=tempfile.TemporaryDirectory(); cls.root=Path(__file__).resolve().parents[1]; os.environ['THF_QUIET']='1'
+                  cls.srv=make_server('127.0.0.1',0,cls.root,str(Path(cls.t.name)/'http.db')); cls.port=cls.srv.server_address[1]
+                  cls.th=threading.Thread(target=cls.srv.serve_forever,daemon=True); cls.th.start(); time.sleep(.05)
+              @classmethod
+              def tearDownClass(cls): cls.srv.shutdown(); cls.srv.server_close(); cls.t.cleanup()
+              def req(self,path,method='GET',body=None,token=None):
+                  h={'Content-Type':'application/json'}
+                  if token: h['Authorization']='Bearer '+token
+                  d=json.dumps(body).encode() if body is not None else None
+                  try:
+                      r=urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{self.port}{path}',data=d,method=method,headers=h),timeout=3); return r.status,json.loads(r.read())
+                  except urllib.error.HTTPError as e: return e.code,json.loads(e.read())
+              def test_http_lifecycle(self):
+                  st,u=self.req('/api/auth/register','POST',{'username':'http-life','password':'http-pass-123'}); self.assertEqual(st,201); old=u['token']
+                  st,r=self.req('/api/auth/refresh','POST',token=old); self.assertEqual(st,200); fresh=r['token']
+                  self.assertEqual(self.req('/api/profile',token=old)[0],403); self.assertEqual(self.req('/api/profile',token=fresh)[0],200)
+                  self.assertEqual(self.req('/api/auth/logout','POST',token=fresh)[0],200); self.assertEqual(self.req('/api/profile',token=fresh)[0],403)
+                  _,a=self.req('/api/auth/login','POST',{'username':'http-life','password':'http-pass-123'}); _,b=self.req('/api/auth/login','POST',{'username':'http-life','password':'http-pass-123'})
+                  self.assertEqual(self.req('/api/auth/revoke-all','POST',token=a['token'])[0],200)
+                  self.assertEqual(self.req('/api/profile',token=a['token'])[0],403); self.assertEqual(self.req('/api/profile',token=b['token'])[0],403)
+
+          if __name__=='__main__': unittest.main()
+          PYTEST
+
+          cd "$WORK"; export PYTHONPATH="$WORK/src"
+          python3 -m py_compile src/thf/identity/service.py src/thf/app.py tests/test_auth_lifecycle_candidate.py
+          python3 -m unittest -v tests.test_auth_lifecycle_candidate tests.test_unified_runtime tests.test_security_boundaries
+          NEW_APP=$(sha256sum src/thf/app.py|awk '{print $1}'); NEW_ID=$(sha256sum src/thf/identity/service.py|awk '{print $1}')
+          test "$NEW_APP" != "$ORIG_APP"; test "$NEW_ID" != "$ORIG_ID"
+          test "$(sha256sum "$ROOT/src/thf/app.py"|awk '{print $1}')" = "$ORIG_APP"
+          test "$(sha256sum "$ROOT/src/thf/identity/service.py"|awk '{print $1}')" = "$ORIG_ID"
+          echo "ORIGINAL_APP_SHA=$ORIG_APP"; echo "ORIGINAL_IDENTITY_SHA=$ORIG_ID"
+          echo "CANDIDATE_APP_SHA=$NEW_APP"; echo "CANDIDATE_IDENTITY_SHA=$NEW_ID"
+          echo 'REFRESH_ROTATION=PASS'; echo 'EXPIRED_REFRESH_REJECTION=PASS'; echo 'LOGOUT_INVALIDATION=PASS'; echo 'REVOKE_ALL_INVALIDATION=PASS'
+          echo 'EXISTING_RUNTIME_REGRESSION_TESTS=PASS'; echo 'ORIGINAL_RUNTIME_UNCHANGED=TRUE'; echo 'DEPLOYMENT_PERFORMED=FALSE'; echo 'WAVE_UNTOUCHED=TRUE'; echo 'FINAL_OR_PLAY_READY=FALSE'
+          REMOTE
+          grep -q 'REFRESH_ROTATION=PASS' out/result.txt
+          grep -q 'EXISTING_RUNTIME_REGRESSION_TESTS=PASS' out/result.txt
+          grep -q 'ORIGINAL_RUNTIME_UNCHANGED=TRUE' out/result.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-PASS-AUTH-LIFECYCLE-CANDIDATE-V2
+          path: out/
+          retention-days: 14
