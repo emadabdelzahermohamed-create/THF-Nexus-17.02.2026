@@ -1,0 +1,52 @@
+name: THF TokenOps Policy Liability Solvency Batch Gate
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/policy_decision_scenario_engine.py'
+      - 'ReleaseOps/TokenOps/vesting_lock_liability_model.py'
+      - 'ReleaseOps/TokenOps/treasury_solvency_stress.py'
+      - 'ReleaseOps/TokenOps/governance_decision_packet.py'
+      - 'ReleaseOps/TokenOps/test_policy_liability_solvency_batch.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - 'ReleaseOps/TokenOps/treasury_public_registry.json'
+      - '.github/workflows/thf-tokenops-policy-liability-solvency-batch.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed policy/liability/solvency tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_policy_liability_solvency_batch.py |& tee policy-liability-solvency-tests.log
+      - name: Build immutable evidence hashes
+        run: |
+          set -Eeuo pipefail
+          mkdir evidence
+          cp ReleaseOps/TokenOps/{policy_decision_scenario_engine.py,vesting_lock_liability_model.py,treasury_solvency_stress.py,governance_decision_packet.py,test_policy_liability_solvency_batch.py,policy-liability-solvency-tests.log,policy.json,treasury_policy.json,treasury_public_registry.json} evidence/
+          cd evidence
+          sha256sum * > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          printf '%s\n' \
+            'POLICY_MUTATION=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'SIGNING=FALSE' \
+            'BROADCAST=FALSE' \
+            'TRANSACTION_BYTES_CREATED=FALSE' \
+            'PRIVATE_KEY_ACCEPTED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' > SAFETY.txt
+          sha256sum SAFETY.txt >> SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Policy-Liability-Solvency-Batch-Gate
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
