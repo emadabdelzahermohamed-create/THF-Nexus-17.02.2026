@@ -135,7 +135,7 @@ jobs:
             printf '%s\n' "$badging" > "$OUT/$app.badging.txt"
             printf '%s  %s\n' "$apksha" "THF-${app^^}-APPS-RC2-QA-$apksha.apk" > "$OUT/$app.sha256"
             note='QA candidate only; physical-device and real backend gates still required'
-            [ "$p_ok" = true ] && [ "$t_ok" = true ] && status='APK_INSPECTION_PASS' || status='APK_INSPECTION_FAIL'
+            [ "$p_ok" = true ] && [ "$t_ok" = true ] && [ "$sig_ok" = true ] && status='APK_INSPECTION_PASS' || status='APK_INSPECTION_FAIL'
             printf '%s\t%s\t%s\t%s\ttrue\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$pkg" "$expected" "$source_path" "$root" "$status" "$apk" "$apksha" "$p_ok" "$t_ok" "$sig_ok" "$debug" "$note" >> "$OUT/results.tsv"
           done < "$ROOT/expected.tsv"
 
@@ -143,7 +143,7 @@ jobs:
           import csv,json,sys
           rows=list(csv.DictReader(open(sys.argv[1]),delimiter='\t'))
           summary={
-            'schema':1,
+            'schema':2,
             'mode':'QA_ONLY_REVERSIBLE',
             'exact_source_required':True,
             'production_signing':False,
@@ -189,9 +189,13 @@ jobs:
           assert d['production_signing'] is False and d['public_rollout'] is False
           assert d['physical_device_gate']=='REQUIRED_BEFORE_FINAL'
           assert d['counts']['total']==9
+          assert d['counts']['source_missing']==0, f"missing exact sources: {d['counts']['source_missing']}"
+          assert d['counts']['built']==9, f"not all exact candidates built: {d['counts']['built']}/9"
+          assert d['counts']['inspection_pass']==9, f"inspection pass: {d['counts']['inspection_pass']}/9"
           for a in d['apps']:
-              if a['build_status']=='APK_INSPECTION_PASS':
-                  assert a['package_ok']=='true' and a['target36_ok']=='true'
-                  assert len(a['apk_sha256'])==64
+              assert a['source_path']!='NOT_FOUND'
+              assert a['build_status']=='APK_INSPECTION_PASS'
+              assert a['package_ok']=='true' and a['target36_ok']=='true' and a['signature_ok']=='true'
+              assert len(a['apk_sha256'])==64
           print('THF_APPS_RC2_EXACT_CANDIDATE_LARGE_BATCH=PASS')
           PY
