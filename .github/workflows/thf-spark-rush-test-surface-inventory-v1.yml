@@ -1,0 +1,63 @@
+name: THF Spark Rush Test Surface Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-spark-rush-test-surface-inventory-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Stage and inventory exact sources
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p src work out
+          cat > src/matrix.tsv <<'EOF'
+          spark	RC3	dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0	com.topherofit.thf.spark	1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+          rush	RC3	bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b	com.topherofit.thf.rush	1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+          EOF
+          while IFS=$'\t' read -r app cp sha pkg fid; do
+            f="src/$app.zip"
+            code=$(curl -sSLo "$f" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$fid?alt=media&supportsAllDrives=true")
+            test "$code" = 200
+            test "$(sha256sum "$f"|awk '{print $1}')" = "$sha"
+            mkdir -p "work/$app" && unzip -q "$f" -d "work/$app"
+            root=$(find "work/$app" -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1)
+            test -n "$root"
+            {
+              echo "APP=$app"; echo "CHECKPOINT=$cp"; echo "SOURCE_SHA256=$sha"; echo "PACKAGE=$pkg"; echo "ROOT=$root"
+              echo '--- TOP FILES ---'; find "$root" -maxdepth 3 -type f | sed "s#^$root/##" | sort | head -250
+              echo '--- PYTHON SYMBOLS ---'; grep -RInE '^(class |def |async def )|@(app|router)\.(get|post|put|patch|delete)|add_api_route|route\(' "$root" --include='*.py' | head -500 || true
+              echo '--- ANDROID SYMBOLS ---'; grep -RInE 'class |fun |onClick|setOnClickListener|Button|NavHost|composable\(|Intent\(|SharedPreferences|DataStore|WorkManager|Notification' "$root/android/app/src" --include='*.kt' --include='*.java' | head -500 || true
+              echo '--- REQUIREMENTS ---'; find "$root" -name requirements.txt -maxdepth 4 -print -exec cat {} \; || true
+              echo '--- TEST FILES ---'; find "$root" -type f \( -name 'test_*.py' -o -path '*/src/test/*' -o -path '*/src/androidTest/*' \) -print | sed "s#^$root/##" | sort || true
+            } > "out/$app.inventory.txt"
+          done < src/matrix.tsv
+          echo SPARK_RUSH_TEST_SURFACE_INVENTORY=PASS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THF-SPARK-RUSH-TEST-SURFACE-INVENTORY-V1
+          path: out/
+          retention-days: 14
