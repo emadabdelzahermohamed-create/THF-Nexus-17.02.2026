@@ -48,19 +48,8 @@ jobs:
           audit_one() {
             game="$1"; src="$2"; expected="$3"; work="$ROOT/work/$game"; mkdir -p "$work"
             test -f "$src"; echo "$expected  $src" | sha256sum -c -
-            python3 - "$src" "$work" <<'PY'
-import pathlib,shutil,sys,zipfile
-src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve()
-with zipfile.ZipFile(src) as z:
-  for i in z.infolist():
-    r=pathlib.PurePosixPath(i.filename)
-    if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip member')
-    t=(dst/pathlib.Path(*r.parts)).resolve()
-    if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
-    if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
-    t.parent.mkdir(parents=True,exist_ok=True)
-    with z.open(i) as a, open(t,'wb') as b: shutil.copyfileobj(a,b)
-PY
+            python3 -c 'import pathlib,sys,zipfile; p=pathlib.Path(sys.argv[1]); z=zipfile.ZipFile(p); bad=[i.filename for i in z.infolist() if pathlib.PurePosixPath(i.filename).is_absolute() or ".." in pathlib.PurePosixPath(i.filename).parts]; assert not bad, bad' "$src"
+            unzip -q "$src" -d "$work"
             set +e
             python3 "$TOOL" "$work" --game "$game" --json-out "$OUT/${game}.json" > "$OUT/${game}.log" 2>&1
             rc=$?
