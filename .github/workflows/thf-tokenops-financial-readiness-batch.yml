@@ -1,0 +1,62 @@
+name: THF TokenOps Financial Readiness Large Batch
+on:
+  workflow_dispatch:
+  push:
+    branches: [tokenops/read-only-audit-20260911]
+    paths:
+      - 'ReleaseOps/TokenOps/policy_blocker_registry.py'
+      - 'ReleaseOps/TokenOps/treasury_risk_envelope.py'
+      - 'ReleaseOps/TokenOps/financial_readiness_attestation.py'
+      - 'ReleaseOps/TokenOps/financial_readiness_batch_report.py'
+      - 'ReleaseOps/TokenOps/test_financial_readiness_batch.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-financial-readiness-batch.yml'
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - name: Financial readiness fail-closed tests
+        working-directory: ReleaseOps/TokenOps
+        run: python3 -m unittest -v test_financial_readiness_batch.py |& tee financial-readiness-tests.log
+      - name: Fresh canonical Mainnet read-only audit
+        working-directory: ReleaseOps/TokenOps
+        env:
+          TOKENOPS_OUT: financial-readiness-evidence/audit
+        run: bash readonly_audit.sh |& tee financial-readiness-audit.log
+      - name: Build blocker registry, treasury risk envelope, and readiness attestation
+        working-directory: ReleaseOps/TokenOps
+        run: |
+          python3 financial_readiness_batch_report.py \
+            --policy policy.json \
+            --treasury-policy treasury_policy.json \
+            --audit financial-readiness-evidence/audit/token-audit.json \
+            --output-dir financial-readiness-evidence \
+            | tee financial-readiness-summary.log
+      - name: Evidence SHA-256
+        working-directory: ReleaseOps/TokenOps
+        run: |
+          sha256sum \
+            policy_blocker_registry.py treasury_risk_envelope.py financial_readiness_attestation.py \
+            financial_readiness_batch_report.py test_financial_readiness_batch.py policy.json treasury_policy.json \
+            financial-readiness-evidence/audit/token-audit.json \
+            financial-readiness-evidence/policy-blockers.json \
+            financial-readiness-evidence/treasury-risk-envelope.json \
+            financial-readiness-evidence/financial-readiness-attestation.json \
+            financial-readiness-tests.log financial-readiness-audit.log financial-readiness-summary.log \
+            > financial-readiness-evidence/SHA256SUMS.txt
+          cat financial-readiness-evidence/SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Financial-Readiness-Large-Batch
+          path: |
+            ReleaseOps/TokenOps/financial-readiness-evidence
+            ReleaseOps/TokenOps/financial-readiness-tests.log
+            ReleaseOps/TokenOps/financial-readiness-audit.log
+            ReleaseOps/TokenOps/financial-readiness-summary.log
+          if-no-files-found: error
+          retention-days: 30
