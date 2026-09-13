@@ -27,7 +27,10 @@ P={k:re.compile(v) for k,v in RX.items()}
 URL=re.compile(r'(?i)\b(?:https|wss)://[^\s\"\'<>)]*')
 BADURL=re.compile(r'(?i)(example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0|placeholder|changeme|your[-_.]?(?:api|host|url))')
 CLEAR=re.compile(r'(?i)\b(?:http|ws)://(?!schemas\.android\.com)')
-FAKE_OFFLINE=re.compile(r'(?i)(offline.*(?:rank|leaderboard|wallet|token|econom|social).*(?:success|commit|sync)|(?:rank|leaderboard|wallet|token|econom|social).*offline.*(?:success|commit))')
+# Fail closed only when offline and authoritative state terms are coupled to a success/commit/sync
+# signal on the same logical line. Cross-line matches caused false positives where an offline_fallback
+# requirement was followed later by unrelated DB commit code.
+FAKE_OFFLINE=re.compile(r'(?i)(?:offline[^\n]{0,180}(?:rank|leaderboard|wallet|token|econom|social)[^\n]{0,180}(?:success|commit|sync)|(?:rank|leaderboard|wallet|token|econom|social)[^\n]{0,180}offline[^\n]{0,180}(?:success|commit|sync))')
 
 def files(root):
  seen=set()
