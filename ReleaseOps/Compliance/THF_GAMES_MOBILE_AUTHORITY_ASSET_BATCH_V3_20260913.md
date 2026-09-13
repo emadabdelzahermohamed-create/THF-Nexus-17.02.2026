@@ -81,16 +81,44 @@ Rush clean extract: 46 files. It is also native Android + web/backend hybrid: on
 
 Neither is being represented as a game-ready candidate. `device_status=PENDING`, `final_status=NOT_FINAL`.
 
-## 4. Learn Games / Fitness Games lineage discovery
-Extended read-only discovery found both the known P49 RC2 canonical archives and additional generated candidate/source trees on the builder. Known canonical inputs remain:
+## 4. Learn Games / Fitness Games recovered-candidate audit — provenance still pending, real-function still FAIL
+Known canonical P49 RC2 inputs remain unchanged:
 - Learn Games P49 RC2 SHA-256 `dbd259b224924e60902fb0e1b2ebca77bc243e5f29a64d04fd3114438fd41484`
 - Fitness Games P49 RC2 SHA-256 `da3c865a76848c170d679547e05d6edbc0b5ffd6a48002b12ad0d26415fd0273`
 
-Additional recovered candidate archives found:
+Additional recovered archives were verified but are **not** promoted to authoritative status:
 - Learn recovered `source.zip` SHA-256 `ce8547851c9573db02603ea6f11e020a1b7d346af0cac51e07947304f1a7c1f9`
 - Fitness recovered `source.zip` SHA-256 `cf5d73c3a03ab503dbd7c36a2d4db3ec1449ec8281304627b9463e2cb8732a25`
 
-These recovered archives are not yet promoted to authoritative status. A dedicated provenance + real-function audit is running; until its evidence closes lineage, P49 RC2 remains the canonical reference and the recovered zips remain `PROVENANCE_PENDING`.
+Workflow: `THF Learn Fitness Games Recovered Candidate Audit V1`
+Run: `34768210562` — SUCCESS
+Artifact: `THF-LEARN-FITNESS-RECOVERED-CANDIDATE-AUDIT-V1`
+Artifact ID: `10320478522`
+Artifact ZIP digest: `8ff5687e4b417c0de96e500e8ddb08c953de0642890fbf565b7ed93f515f9ade`
+
+Learn recovered candidate:
+- clean extract: 14 files
+- Android manifest: present
+- Java source: 1; Kotlin: 0
+- target SDK 36 marker: present
+- touch/input token: present
+- placeholder endpoint marker: absent
+- Real-Function required failures: `no_ui_only_shell`, `real_input_wiring`, `player_or_avatar_load`, `locomotion_or_gameplay_action`, `learning_loop`
+- `candidate_authority_status=PROVENANCE_PENDING`
+- `device_status=PENDING`, `final_status=NOT_FINAL`
+
+Fitness recovered candidate:
+- clean extract: 14 files
+- Android manifest: present
+- Java source: 1; Kotlin: 0
+- target SDK 36 marker: present
+- touch/input token: present
+- placeholder endpoint marker: absent
+- Real-Function required failures: `no_ui_only_shell`, `real_input_wiring`, `player_or_avatar_load`, `locomotion_or_gameplay_action`, `fitness_loop`
+- `candidate_authority_status=PROVENANCE_PENDING`
+- `device_status=PENDING`, `final_status=NOT_FINAL`
+
+Both recovered and canonical archives were SHA-reverified unchanged after the audit. P49 RC2 remains the canonical reference until provenance evidence proves the recovered lineage. Even if provenance later closes, the recovered candidates still require real gameplay implementation; API 36 and simple touch-token presence are not sufficient.
 
 ## 5. Shared avatar / MPFB / MakeHuman / UAL GLB integrity — PASS at asset-container level
 Workflow: `THF Terra Rift Avatar Rig Integrity V1`
@@ -133,6 +161,6 @@ The bounded discovery collected 160 source candidates and 160 avatar/animation a
 1. Resolve Terra/Rift `no_placeholder_endpoint` only against an authorized reachable THF HTTPS/WSS service. Validate `/health`, auth and backend-authoritative world/arena/economy/social transitions. Do not hardcode an arbitrary host.
 2. After network authority PASS, export fresh candidate APKs from the new overlay bytes and rerun API 36/package/payload/signature/security checks. Old APK PASS cannot be reused for changed bytes.
 3. Build real game loops for Spark/Rush instead of accepting the existing hybrid shell: touch/input events, player/game state, learning/fitness gameplay logic, explicit offline semantics and backend-authoritative online state.
-4. Complete provenance audit of the recovered Learn/Fitness `source.zip` candidates and select the latest authoritative lineage only from evidence.
+4. Close provenance for the recovered Learn/Fitness archives using lineage evidence only. Regardless of lineage outcome, implement the missing real learning/fitness gameplay loop, avatar/player state and real input wiring before any game-ready label.
 5. Extend avatar evidence from GLB integrity to actual Godot/native runtime load, animation tree/state machine, locomotion/IK/root-motion and gameplay binding tests.
 6. Physical Android device gate remains mandatory for every exact candidate SHA: install, cold launch, touch, sensor-landscape where required, safe layout, background/resume, offline/network transition, core gameplay, crash-free smoke, avatar/player load, movement/camera/combat where applicable, and FPS/RAM/thermal observation.
