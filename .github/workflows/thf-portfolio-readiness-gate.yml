@@ -1,0 +1,29 @@
+name: THF Portfolio Readiness Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/portfolio/**'
+      - '.github/workflows/thf-portfolio-readiness-gate.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/portfolio/**'
+      - '.github/workflows/thf-portfolio-readiness-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Compile validator
+        run: python -m py_compile ReleaseOps/portfolio/validate_portfolio_readiness.py
+      - name: Validate portfolio source of truth
+        run: python ReleaseOps/portfolio/validate_portfolio_readiness.py
+      - name: Run regression tests
+        run: python -m unittest ReleaseOps/portfolio/test_validate_portfolio_readiness.py -v
