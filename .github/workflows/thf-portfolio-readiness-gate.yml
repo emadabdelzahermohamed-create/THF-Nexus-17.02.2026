@@ -21,9 +21,22 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - name: Compile validator
-        run: python -m py_compile ReleaseOps/portfolio/validate_portfolio_readiness.py
+      - name: Compile validators
+        run: |
+          python -m py_compile ReleaseOps/portfolio/validate_portfolio_readiness.py
+          python -m py_compile ReleaseOps/portfolio/validate_mobile_candidate_acceptance.py
       - name: Validate portfolio source of truth
         run: python ReleaseOps/portfolio/validate_portfolio_readiness.py
       - name: Run regression tests
-        run: python -m unittest ReleaseOps/portfolio/test_validate_portfolio_readiness.py -v
+        run: |
+          python -m unittest ReleaseOps/portfolio/test_validate_portfolio_readiness.py -v
+          python -m unittest ReleaseOps/portfolio/test_validate_mobile_candidate_acceptance.py -v
+      - name: Prove template fails closed
+        shell: bash
+        run: |
+          set +e
+          python ReleaseOps/portfolio/validate_mobile_candidate_acceptance.py ReleaseOps/portfolio/mobile_candidate_acceptance_template_v1.json
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          echo MOBILE_ACCEPTANCE_TEMPLATE_FAILS_CLOSED=PASS
