@@ -1,0 +1,116 @@
+name: THF Apps Factory Workspace Discovery V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-apps-factory-workspace-discovery-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Discover package-bound source/workspaces
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=35m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          OUT="$HOME/thf-apps-factory-workspace-discovery-v1"
+          rm -rf "$OUT" && mkdir -p "$OUT"
+          cat > "$OUT/packages.tsv" <<'EOF'
+          pulse	com.topherofit.thf.pulse
+          forge	com.topherofit.thf.forge
+          echo	com.topherofit.thf.echo
+          codex	com.topherofit.thf.codex
+          spark	com.topherofit.thf.spark
+          rush	com.topherofit.thf.rush
+          vault	com.topherofit.thf.vault
+          signal	com.topherofit.thf.signal
+          command	com.topherofit.thf.command
+          EOF
+          printf 'app\tpackage\tmatch_file\tproject_root\tgradlew\tbuild_file\tmanifest\n' > "$OUT/workspaces.tsv"
+          # Search likely source text only; exclude caches/build outputs and WAVE/game paths.
+          while IFS=$'\t' read -r app pkg; do
+            find "$HOME" -maxdepth 9 -type f \( -name 'build.gradle' -o -name 'build.gradle.kts' -o -name 'AndroidManifest.xml' -o -name '*.properties' -o -name '*.json' -o -name '*.toml' \) \
+              ! -path '*/.gradle/*' ! -path '*/.cache/*' ! -path '*/build/*' ! -path '*/wave-mawja/*' ! -path '*terra*' ! -path '*rift*' -print0 2>/dev/null |
+            xargs -0 -r grep -Il -- "$pkg" 2>/dev/null | head -100 > "$OUT/$app.matches" || true
+            while IFS= read -r f; do
+              [ -f "$f" ] || continue
+              d=$(dirname "$f")
+              root="$d"
+              for _ in 1 2 3 4 5; do
+                if [ -f "$root/gradlew" ] || [ -f "$root/settings.gradle" ] || [ -f "$root/settings.gradle.kts" ]; then break; fi
+                root=$(dirname "$root")
+              done
+              gradlew=false; [ -f "$root/gradlew" ] && gradlew=true
+              bf=''; [ -f "$root/build.gradle" ] && bf="$root/build.gradle"; [ -f "$root/build.gradle.kts" ] && bf="$root/build.gradle.kts"
+              mf=''; [ -f "$root/app/src/main/AndroidManifest.xml" ] && mf="$root/app/src/main/AndroidManifest.xml"
+              printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$pkg" "$f" "$root" "$gradlew" "$bf" "$mf" >> "$OUT/workspaces.tsv"
+            done < "$OUT/$app.matches"
+          done < "$OUT/packages.tsv"
+
+          # Discover named source archives/manifests without assuming old SHA is current.
+          find "$HOME" -maxdepth 9 -type f \( -iname '*pulse*source*.zip' -o -iname '*forge*source*.zip' -o -iname '*echo*source*.zip' -o -iname '*codex*source*.zip' -o -iname '*spark*source*.zip' -o -iname '*rush*source*.zip' -o -iname '*vault*source*.zip' -o -iname '*signal*source*.zip' -o -iname '*command*source*.zip' \) \
+            ! -path '*/wave-mawja/*' ! -path '*terra*' ! -path '*rift*' -print0 2>/dev/null |
+          while IFS= read -r -d '' f; do printf '%s\t%s\n' "$(sha256sum "$f" | awk '{print $1}')" "$f"; done | sort -k2 > "$OUT/source_archives.tsv"
+
+          python3 - "$OUT" <<'PY'
+          import csv,json,os,sys
+          out=sys.argv[1]
+          ws=list(csv.DictReader(open(out+'/workspaces.tsv'),delimiter='\t'))
+          arcs=[]
+          for line in open(out+'/source_archives.tsv'):
+              line=line.rstrip('\n')
+              if not line: continue
+              sha,path=line.split('\t',1); arcs.append({'sha256':sha,'path':path})
+          pkgs={}
+          for r in ws:
+              a=pkgs.setdefault(r['app'],{'package':r['package'],'roots':set(),'matches':0})
+              a['matches']+=1; a['roots'].add(r['project_root'])
+          for k,v in pkgs.items(): v['roots']=sorted(v['roots'])
+          json.dump({'schema':1,'mode':'READ_ONLY','apps':pkgs,'archives':arcs,'canonical_mutation':False,'production_signing':False,'public_rollout':False},open(out+'/summary.json','w'),indent=2)
+          PY
+          cat "$OUT/summary.json"
+          REMOTE
+      - name: Retrieve evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-apps-factory-workspace-discovery-v1/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-APPS-FACTORY-WORKSPACE-DISCOVERY-V1
+          path: out/
+          retention-days: 14
+      - name: Safety gate
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('out/summary.json'))
+          assert d['mode']=='READ_ONLY' and d['canonical_mutation'] is False
+          assert d['production_signing'] is False and d['public_rollout'] is False
+          print('APPS_FACTORY_WORKSPACE_DISCOVERY=PASS')
+          PY
