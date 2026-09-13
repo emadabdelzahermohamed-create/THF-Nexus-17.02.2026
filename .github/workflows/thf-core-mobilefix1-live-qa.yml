@@ -41,16 +41,15 @@ jobs:
           set -Eeuo pipefail
           SRC="$HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
           EXPECTED="6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a"
-          ROOT="$HOME/thf-core-mobilefix1-live"
+          ROOT="$HOME/thf-core-mobilefix1-live-v2"
           APP="$ROOT/app"
           OUT="$ROOT/out"
-          PORT=18080
+          PORT=18181
           RC16="$HOME/thf-builder-rc16-build"
           SDK="$RC16/android-sdk"
           CACHE="$RC16/cache"
-          
+
           echo "$EXPECTED  $SRC" | sha256sum -c -
-          # Stop only this dedicated QA runtime/tunnel if an earlier attempt exists.
           for f in "$ROOT/backend.pid" "$ROOT/cloudflared.pid"; do
             if [ -f "$f" ]; then p=$(cat "$f" 2>/dev/null || true); [[ "$p" =~ ^[0-9]+$ ]] && kill "$p" 2>/dev/null || true; fi
           done
@@ -60,18 +59,21 @@ jobs:
           python3 -m venv "$ROOT/venv"
           "$ROOT/venv/bin/python" -m pip install -q --upgrade pip
           "$ROOT/venv/bin/python" -m pip install -q -r "$APP/requirements.txt"
-          
+
           cd "$APP"
           export PYTHONPATH="$APP/src"
           export THF_HOST=127.0.0.1 THF_PORT="$PORT"
           nohup "$ROOT/venv/bin/python" scripts/run.py >"$OUT/backend.log" 2>&1 & echo $! > "$ROOT/backend.pid"
+          BACKEND_PID=$(cat "$ROOT/backend.pid")
           for i in $(seq 1 60); do
+            kill -0 "$BACKEND_PID" 2>/dev/null || { cat "$OUT/backend.log"; exit 1; }
             if curl -fsS "http://127.0.0.1:$PORT/health" >"$OUT/local-health.json" 2>/dev/null; then break; fi
             sleep 1
           done
+          kill -0 "$BACKEND_PID"
           curl -fsS "http://127.0.0.1:$PORT/health" >"$OUT/local-health.json"
-          grep -q '"ok"' "$OUT/local-health.json"
-          
+          grep -q '"ok":true' "$OUT/local-health.json"
+
           CF="$ROOT/cloudflared"
           if [ ! -x "$CF" ]; then
             curl -fsSL --retry 3 "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64" -o "$CF"
@@ -92,11 +94,10 @@ jobs:
             sleep 2
           done
           curl -fsS --max-time 15 "$PUBLIC/health" >"$OUT/public-health.json"
-          grep -q '"ok"' "$OUT/public-health.json"
+          grep -q '"ok":true' "$OUT/public-health.json"
           curl -fsS --max-time 15 "$PUBLIC/" -o "$OUT/home.html"
           test -s "$OUT/home.html"
-          
-          # Advance only the QA phone candidate metadata; canonical source remains unchanged.
+
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle')
@@ -111,13 +112,14 @@ jobs:
           GVER=8.11.1
           GDIST="$CACHE/gradle-${GVER}-bin.zip"
           GBIN="$CACHE/gradle-dist-${GVER}/gradle-${GVER}/bin/gradle"
-          test -x "$GBIN"; echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $GDIST" | sha256sum -c -
+          test -x "$GBIN"
+          echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $GDIST" | sha256sum -c -
           cd android
           "$GBIN" --no-daemon wrapper --gradle-version "$GVER" --distribution-type bin >/dev/null
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace -PTHF_BASE_URL="$PUBLIC" -PTHF_PASS_URL="$PUBLIC" clean :app:assembleDebug >"$OUT/gradle.log" 2>&1
           cp app/build/outputs/apk/debug/app-debug.apk "$OUT/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk"
-          
+
           AAPT2="$SDK/build-tools/36.0.0/aapt2"
           APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
           APK="$OUT/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk"
@@ -127,8 +129,12 @@ jobs:
           grep -q "versionCode='62201'" "$OUT/badging.txt"
           grep -q "targetSdkVersion:'36'" "$OUT/badging.txt"
           grep -q 'CN=Android Debug' "$OUT/apksigner.txt"
-          # The endpoint must actually be embedded in the DEX, otherwise fail the release gate.
-          grep -aFq "$PUBLIC" "$APK"
+          BUILD_CONFIG=$(find app/build/generated -type f -name BuildConfig.java | head -1)
+          test -n "$BUILD_CONFIG"
+          grep -Fq "$PUBLIC" "$BUILD_CONFIG"
+          unzip -p "$APK" classes.dex > "$OUT/classes.dex"
+          grep -aFq "$PUBLIC" "$OUT/classes.dex"
+          rm -f "$OUT/classes.dex"
           APK_SHA=$(sha256sum "$APK" | awk '{print $1}')
           cat > "$OUT/EVIDENCE.txt" <<EOF
           THF_CORE_MOBILEFIX1=PASS
@@ -138,8 +144,12 @@ jobs:
           versionName=6.2.2-rc6-mobilefix1-debug
           targetSdk=36
           endpoint=$PUBLIC
+          dedicated_backend_port=$PORT
+          backend_pid=$BACKEND_PID
           endpoint_health=PASS
           home_http=PASS
+          endpoint_in_buildconfig=PASS
+          endpoint_in_dex=PASS
           apk_sha256=$APK_SHA
           production_signing=false
           play_upload=false
@@ -154,7 +164,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p out
-          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-core-mobilefix1-live/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-core-mobilefix1-live-v2/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
           grep -q '^THF_CORE_MOBILEFIX1=PASS$' out/EVIDENCE.txt
           test -s out/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk
           cat out/EVIDENCE.txt
