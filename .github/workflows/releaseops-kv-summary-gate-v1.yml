@@ -1,0 +1,23 @@
+name: ReleaseOps KV Summary Gate V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/kv_summary_gate_v1.py'
+      - 'ReleaseOps/tests/test_kv_summary_gate_v1.py'
+      - '.github/workflows/releaseops-kv-summary-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Syntax
+        run: python3 -m py_compile ReleaseOps/scripts/kv_summary_gate_v1.py ReleaseOps/tests/test_kv_summary_gate_v1.py
+      - name: Regression
+        run: python3 -m unittest -v ReleaseOps.tests.test_kv_summary_gate_v1
