@@ -1,0 +1,25 @@
+name: THF Game APK Payload Gate Tests V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/validators/audit_game_apk_payload_v1.py'
+      - 'ReleaseOps/tests/test_audit_game_apk_payload_v1.py'
+      - '.github/workflows/thf-game-apk-payload-gate-tests-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Compile and run fail-closed payload regressions
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ReleaseOps/validators/audit_game_apk_payload_v1.py ReleaseOps/tests/test_audit_game_apk_payload_v1.py
+          python3 -m pytest -q ReleaseOps/tests/test_audit_game_apk_payload_v1.py
