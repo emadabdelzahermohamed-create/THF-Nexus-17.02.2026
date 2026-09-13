@@ -1,0 +1,193 @@
+name: THF Learn Fitness Android36 Backfix V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-learn-fitness-android36-backfix-v2.yml'
+      - 'ReleaseOps/games_factory/apply_learn_fitness_real_game_overlay_v1.py'
+      - 'ReleaseOps/scripts/thf_game_real_function_audit_v2.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: learn
+            source_path: ~/thf-small-learn-games/source.zip
+            source_sha: ce8547851c9573db02603ea6f11e020a1b7d346af0cac51e07947304f1a7c1f9
+            package_id: com.thf.topherofit.learngames
+          - kind: fitness
+            source_path: ~/thf-small-fitness-games/source.zip
+            source_sha: cf5d73c3a03ab503dbd7c36a2d4db3ec1449ec8281304627b9463e2cb8732a25
+            package_id: com.thf.topherofit.fitnessgames
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+        with:
+          gradle-version: '8.13'
+
+      - name: Fetch exact authoritative source through WIF/IAP
+        env:
+          KIND: ${{ matrix.kind }}
+          SOURCE_PATH: ${{ matrix.source_path }}
+          SOURCE_SHA: ${{ matrix.source_sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p src out
+          gcloud compute scp "$GCP_BUILDER:$SOURCE_PATH" "src/$KIND-source.zip" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          actual=$(sha256sum "src/$KIND-source.zip" | awk '{print $1}')
+          test "$actual" = "$SOURCE_SHA"
+          unzip -tq "src/$KIND-source.zip" >/dev/null
+          printf 'AUTHORITATIVE_OUTER_SHA256=%s\nZIP_INTEGRITY=PASS\nCANONICAL_ARCHIVE_MUTATED=NO\n' "$actual" > "out/$KIND.summary.txt"
+
+      - name: Resolve healthy reversible staging HTTPS endpoint
+        id: staging
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' > out/staging.raw <<'REMOTE'
+          set -Eeuo pipefail
+          RUNTIME="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"; CF="$HOME/bin/cloudflared"
+          python3 - <<'PY'
+          import json,urllib.request
+          d=json.load(urllib.request.urlopen('http://127.0.0.1:18080/health',timeout=5)); assert d.get('ok') is True
+          PY
+          check(){ python3 - "$1" <<'PY'
+          import json,sys,urllib.request
+          u=sys.argv[1]; assert u.startswith('https://'); d=json.load(urllib.request.urlopen(u.rstrip('/')+'/health',timeout=8)); assert d.get('ok') is True
+          PY
+          }
+          PUB=''; [ -f "$RUNTIME/runtime/public-url.txt" ] && PUB=$(cat "$RUNTIME/runtime/public-url.txt" 2>/dev/null || true)
+          if [ -z "$PUB" ] || ! check "$PUB" >/dev/null 2>&1; then
+            test -x "$CF"; mkdir -p "$RUNTIME/runtime/logs" "$RUNTIME/runtime/pids"; :>"$RUNTIME/runtime/logs/cloudflared-learn-fitness-v2.log"
+            nohup "$CF" tunnel --no-autoupdate --url http://127.0.0.1:18080 >"$RUNTIME/runtime/logs/cloudflared-learn-fitness-v2.log" 2>&1 & echo $! >"$RUNTIME/runtime/pids/cloudflared-learn-fitness-v2.pid"
+            for _ in $(seq 1 60); do PUB=$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' "$RUNTIME/runtime/logs/cloudflared-learn-fitness-v2.log"|head -1||true); [ -n "$PUB" ] && break; sleep .5; done
+            test -n "$PUB"; check "$PUB"
+          else check "$PUB"; fi
+          echo "THF_URL=$PUB"
+          REMOTE
+          url=$(grep '^THF_URL=https://' out/staging.raw | tail -1 | cut -d= -f2-)
+          test -n "$url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          rm -f out/staging.raw
+          printf 'STAGING_HTTPS_HEALTH=PASS\nSTAGING_ENDPOINT_CLASS=REVERSIBLE_QUICK_TUNNEL\nPRODUCTION_CUTOVER=NO\n' >> "out/${{ matrix.kind }}.summary.txt"
+
+      - name: Extract and apply disposable real-game plus API36 predictive-back overlay
+        id: overlay
+        env:
+          KIND: ${{ matrix.kind }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p src/extracted
+          python3 - "$KIND" <<'PY'
+          import pathlib,shutil,sys,zipfile
+          kind=sys.argv[1]; src=pathlib.Path('src')/(kind+'-source.zip'); dst=pathlib.Path('src/extracted').resolve()
+          with zipfile.ZipFile(src) as z:
+            for i in z.infolist():
+              r=pathlib.PurePosixPath(i.filename)
+              if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip')
+              t=(dst/pathlib.Path(*r.parts)).resolve()
+              if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
+              if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+              t.parent.mkdir(parents=True,exist_ok=True)
+              with z.open(i) as aa,open(t,'wb') as bb: shutil.copyfileobj(aa,bb)
+          PY
+          root=$(find src/extracted -type f -name settings.gradle -path '*/ANDROID_PLAY_SOURCE/settings.gradle' -printf '%h\n' | head -1)
+          test -n "$root"
+          python3 ReleaseOps/games_factory/apply_learn_fitness_real_game_overlay_v1.py "$root" --kind "$KIND" --manifest-out "out/$KIND.real-game-overlay.sha256"
+          python3 - "$root" <<'PY'
+          import pathlib,re,sys,xml.etree.ElementTree as ET
+          root=pathlib.Path(sys.argv[1]); ns='http://schemas.android.com/apk/res/android'; ET.register_namespace('android',ns)
+          manifest=root/'app/src/main/AndroidManifest.xml'; tree=ET.parse(manifest); app=tree.getroot().find('application'); assert app is not None
+          app.set('{%s}enableOnBackInvokedCallback'%ns,'true'); tree.write(manifest,encoding='utf-8',xml_declaration=True)
+          mains=list((root/'app/src/main/java').rglob('MainActivity.java')); assert len(mains)==1,mains
+          p=mains[0]; s=p.read_text(encoding='utf-8')
+          old='@Override public void onBackPressed() { if (webView!=null && webView.canGoBack()) webView.goBack(); else super.onBackPressed(); }'
+          assert s.count(old)==1,'expected legacy onBackPressed contract not found exactly once'
+          modern='''@android.annotation.SuppressLint("GestureBackNavigation")\n    @Override public void onBackPressed() { thfHandleBack(); }\n    private void thfHandleBack() { if (webView!=null && webView.canGoBack()) webView.goBack(); else finish(); }\n    private void thfInstallPredictiveBack() {\n      if (android.os.Build.VERSION.SDK_INT >= 33) {\n        getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::thfHandleBack);\n      }\n    }'''
+          s=s.replace(old,modern)
+          s2,n=re.subn(r'(super\.onCreate\([^;]*\);)',r'\1 thfInstallPredictiveBack();',s,count=1)
+          assert n==1,'onCreate super call not found exactly once'
+          p.write_text(s2,encoding='utf-8')
+          PY
+          python3 ReleaseOps/scripts/thf_game_real_function_audit_v2.py "$root" --kind "$KIND" --json-out "out/$KIND.real-function.json"
+          grep -q '"source_contract_status": "PASS"' "out/$KIND.real-function.json"
+          grep -Rqs 'registerOnBackInvokedCallback' "$root/app/src/main/java"
+          grep -q 'enableOnBackInvokedCallback="true"' "$root/app/src/main/AndroidManifest.xml"
+          find "$root" -type f -not -path '*/.gradle/*' -not -path '*/build/*' -print0 | sort -z | xargs -0 sha256sum > "out/$KIND.candidate-tree.sha256"
+          tree_sha=$(sha256sum "out/$KIND.candidate-tree.sha256"|awk '{print $1}')
+          printf 'CANDIDATE_TREE_MANIFEST_SHA256=%s\nREAL_FUNCTION_SOURCE_CONTRACT=PASS\nPREDICTIVE_BACK_API36_OVERLAY=PASS\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' "$tree_sha" >> "out/$KIND.summary.txt"
+          echo "root=$root" >> "$GITHUB_OUTPUT"
+
+      - name: Generate ephemeral QA signing matching source contract
+        env:
+          KIND: ${{ matrix.kind }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          QA_PASS=$(openssl rand -hex 24); QA_KEYSTORE="$RUNNER_TEMP/thf-${KIND}-qa.jks"
+          echo "::add-mask::$QA_PASS"; echo "::add-mask::$QA_KEYSTORE"
+          keytool -genkeypair -keystore "$QA_KEYSTORE" -storepass "$QA_PASS" -keypass "$QA_PASS" -alias thf-qa -dname "CN=THF QA,O=THF,C=US" -keyalg RSA -keysize 2048 -validity 2 >/dev/null 2>&1
+          printf 'THF_KEYSTORE_PATH=%s\nTHF_KEYSTORE_PASSWORD=%s\nTHF_KEY_ALIAS=thf-qa\nTHF_KEY_PASSWORD=%s\n' "$QA_KEYSTORE" "$QA_PASS" "$QA_PASS" >> "$GITHUB_ENV"
+          printf 'SIGNING_CLASS=EPHEMERAL_QA_ONLY\nPRODUCTION_SIGNING=NO\nQA_KEY_PERSISTED=NO\n' >> "out/$KIND.summary.txt"
+
+      - name: API36 lint tests assemble package signature and payload evidence
+        env:
+          KIND: ${{ matrix.kind }}
+          PACKAGE_ID: ${{ matrix.package_id }}
+          APP_BASE_URL: ${{ steps.staging.outputs.url }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root='${{ steps.overlay.outputs.root }}'; printf 'sdk.dir=%s\n' "$ANDROID_HOME" > "$root/local.properties"; cd "$root"
+          GR=(gradle --no-daemon -PAPP_BASE_URL="$APP_BASE_URL")
+          "${GR[@]}" app:lintRelease --stacktrace
+          "${GR[@]}" app:testReleaseUnitTest --stacktrace
+          "${GR[@]}" app:assembleRelease --stacktrace
+          apk=$(find . -type f -path '*/build/outputs/apk/release/*.apk' | head -1); test -n "$apk"; unzip -tq "$apk" >/dev/null
+          bt=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1); aapt="$bt/aapt"; apksigner="$bt/apksigner"; test -x "$aapt"; test -x "$apksigner"
+          "$aapt" dump badging "$apk" > "$GITHUB_WORKSPACE/out/$KIND.badging.txt"
+          pkg=$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" "$GITHUB_WORKSPACE/out/$KIND.badging.txt"|head -1); sdk=$(sed -n "s/^targetSdkVersion:'\([^']*\)'.*/\1/p" "$GITHUB_WORKSPACE/out/$KIND.badging.txt"|head -1)
+          test "$pkg" = "$PACKAGE_ID"; test "$sdk" = 36
+          "$apksigner" verify --verbose --print-certs "$apk" > "$GITHUB_WORKSPACE/out/$KIND.apksigner.txt"
+          sha=$(sha256sum "$apk"|awk '{print $1}'); cert=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$GITHUB_WORKSPACE/out/$KIND.apksigner.txt"|head -1)
+          cp "$apk" "$GITHUB_WORKSPACE/out/$KIND-android36-backfix-v2-release.apk"; printf '%s  %s\n' "$sha" "$KIND-android36-backfix-v2-release.apk" > "$GITHUB_WORKSPACE/out/$KIND.apk.sha256"
+          unzip -l "$apk" > "$GITHUB_WORKSPACE/out/$KIND.apk-contents.txt"; grep -Eq 'classes\.dex|assets/' "$GITHUB_WORKSPACE/out/$KIND.apk-contents.txt"
+          rm -f "$THF_KEYSTORE_PATH"; test ! -e "$THF_KEYSTORE_PATH"
+          printf 'LINT_RELEASE=PASS\nTEST_RELEASE_UNIT=PASS_OR_NO_SOURCE\nASSEMBLE_RELEASE=PASS\nAPK_ZIP_INTEGRITY=PASS\nAPK_SIGNATURE_VERIFY=PASS\nAPK_PACKAGE=%s\nTARGET_SDK=%s\nAPK_SHA256=%s\nQA_CERT_SHA256=%s\nEXPORTED_PAYLOAD_PRESENT=PASS\nQA_KEY_REMOVED_AFTER_BUILD=YES\nPRODUCTION_SIGNING=NO\nPHYSICAL_DEVICE_REQUIRED=YES\nPLAY_READY=NO\n' "$pkg" "$sdk" "$sha" "$cert" >> "$GITHUB_WORKSPACE/out/$KIND.summary.txt"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-${{ matrix.kind }}-ANDROID36-BACKFIX-V2
+          path: out/
+          retention-days: 14
