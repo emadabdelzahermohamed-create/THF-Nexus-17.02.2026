@@ -1,0 +1,137 @@
+name: THF Apps Runtime Configured Staging V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-apps-runtime-configured-staging-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with: {distribution: temurin, java-version: '17'}
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+        with: {gradle-version: '8.13'}
+
+      - name: Resolve existing healthy HTTPS staging endpoint read-only
+        id: runtime
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PUB=$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=60m --quiet --command='bash -lc '\''f="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/runtime/public-url.txt"; test -f "$f"; cat "$f"'\'')
+          case "$PUB" in https://*.trycloudflare.com) ;; *) echo 'No approved existing staging URL'; exit 2;; esac
+          python - "$PUB" <<'PY'
+          import json,sys,urllib.request
+          u=sys.argv[1].rstrip('/')
+          with urllib.request.urlopen(u+'/health',timeout=10) as r:
+              d=json.load(r)
+              assert d.get('ok') is True
+          print('STAGING_HEALTH=PASS')
+          PY
+          echo "url=$PUB" >> "$GITHUB_OUTPUT"
+          mkdir -p out
+          printf 'staging_endpoint_class=cloudflare_quick_existing\nhealth=PASS\nendpoint_mutation=false\n' > out/runtime-endpoint.txt
+          code=$(curl -sS -o out/openapi.json -w '%{http_code}' --connect-timeout 8 --max-time 15 "$PUB/openapi.json" || true)
+          echo "openapi_http_code=${code:-000}" >> out/runtime-endpoint.txt
+          if [ "$code" = 200 ]; then
+            python - <<'PY' >> out/runtime-endpoint.txt
+          import json
+          d=json.load(open('out/openapi.json')); paths=sorted(d.get('paths',{}))
+          print('openapi_path_count='+str(len(paths)))
+          for p in paths: print('openapi_path='+p)
+          PY
+          else rm -f out/openapi.json; fi
+
+      - name: Download verify and clean-extract exact authoritative sources
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -rf src work && mkdir -p src work
+          cat > src/matrix.tsv <<'EOF'
+          pulse	RC3	71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10	com.topherofit.thf.pulse	1AbcoAGpkhtOTiwxVIPaDFgOL8ZSs02KF
+          forge	RC3	0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51	com.topherofit.thf.forge	1hoq_PHHAKihrUYeJ6DXsBjAleAkc1LwQ
+          echo	RC4	87c6a532fc56870b9a4c1039ac1f44b43e1a2f4c5c4518caf0d6537c61704226	com.topherofit.thf.echo	113ncXza3VjYjGHv9-5HSFXAXFJjGLP8T
+          codex	RC4	c5108b257b5e9af6849c43df7b7aa671e586bb4a9c91964566c85b1a6329e83d	com.topherofit.thf.codex	1d5l5TcI0gphbs6O9F8_kpYkCayrmV9hZ
+          spark	RC3	dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0	com.topherofit.thf.spark	1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+          rush	RC3	bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b	com.topherofit.thf.rush	1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+          vault	RC4-BF1	dd6db86d7532f773a8d1d2662bf466bdcc0f1c64a863602ecdd1267c8f82fa33	com.topherofit.thf.vault	1uxsDgpOF5ZknvCnYIZTgIYNnO2cwVVJI
+          signal	RC4-BF1	377044263fa0fc366afe67c6b42ccf4f3e2d1bc75769350f2ee885983f820ddf	com.topherofit.thf.signal	1za4Ibh8Lm5gt0DNe2oNLxmxYp0bb_gLh
+          command	RC3	f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408	com.topherofit.thf.command	1eOdaj9IYsExCgzV0evwkW2hTpRie1Yke
+          EOF
+          printf 'app\tcheckpoint\tpackage\tsource_sha256\n' > out/source-verified.tsv
+          while IFS=$'\t' read -r app cp sha pkg fid; do
+            f="src/$app.zip"; d="work/$app"
+            code=$(curl -sSLo "$f" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$fid?alt=media&supportsAllDrives=true")
+            [ "$code" = 200 ]; [ "$(sha256sum "$f"|awk '{print $1}')" = "$sha" ]; unzip -tq "$f" >/dev/null
+            mkdir -p "$d"; unzip -q "$f" -d "$d"
+            printf '%s\t%s\t%s\t%s\n' "$app" "$cp" "$pkg" "$sha" >> out/source-verified.tsv
+          done < src/matrix.tsv
+
+      - name: Build QA-sign inspect and prove staging URL embedding
+        env:
+          STAGING_URL: ${{ steps.runtime.outputs.url }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          BT=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1); AAPT="$BT/aapt"; APKSIGNER="$BT/apksigner"; ZIPALIGN="$BT/zipalign"
+          KS="$RUNNER_TEMP/thf-apps-staging-qa.keystore"
+          keytool -genkeypair -noprompt -keystore "$KS" -storepass android -alias androiddebugkey -keypass android -dname 'CN=Android Debug,O=THF Staging QA,C=US' -keyalg RSA -keysize 2048 -validity 3650 >/dev/null 2>&1
+          printf 'app\tcheckpoint\tpackage\tsource_sha256\tbuild\tapk_sha256\tpackage_ok\ttarget36_ok\tsignature_ok\tdebuggable\tbase_embedded\tpass_embedded\n' > out/results.tsv
+          while IFS=$'\t' read -r app cp sha pkg fid; do
+            root=$(find "work/$app" -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1); test -n "$root"
+            android="$root/android"; printf 'sdk.dir=%s\n' "$ANDROID_HOME" > "$android/local.properties"
+            (cd "$android" && gradle --no-daemon clean assembleRelease -PTHF_BASE_URL="$STAGING_URL" -PTHF_PASS_URL="$STAGING_URL") >"out/$app.gradle.log" 2>&1
+            cfg=$(find "$android" -type f -path '*/build/generated/source/buildConfig/release/*/BuildConfig.java' | head -1); test -n "$cfg"
+            python ReleaseOps/validators/validate_generated_endpoint_binding.py "$cfg" --json-out "out/$app.endpoint-binding.json" --require-pass >/dev/null
+            raw=$(find "$android" -type f -name '*.apk' -path '*/build/outputs/apk/release/*' | head -1); test -n "$raw"
+            aligned="out/$app-aligned.apk"; final="out/THF-${app^^}-${cp}-RUNTIME-STAGING-QA.apk"
+            "$ZIPALIGN" -f -p 4 "$raw" "$aligned"; "$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$final" "$aligned"
+            "$APKSIGNER" verify "$final" >/dev/null; badging=$("$AAPT" dump badging "$final")
+            p=false; grep -q "package: name='$pkg'" <<<"$badging" && p=true; t=false; grep -q "targetSdkVersion:'36'" <<<"$badging" && t=true; dbg=false; grep -q application-debuggable <<<"$badging" && dbg=true
+            base=false; pass=false; unzip -p "$final" classes.dex | strings | grep -F "$STAGING_URL" >/dev/null && base=true && pass=true
+            ah=$(sha256sum "$final"|awk '{print $1}'); st=FAIL; [ "$p" = true ] && [ "$t" = true ] && [ "$dbg" = false ] && [ "$base" = true ] && [ "$pass" = true ] && st=PASS
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\ttrue\t%s\t%s\t%s\n' "$app" "$cp" "$pkg" "$sha" "$st" "$ah" "$p" "$t" "$dbg" "$base" "$pass" >> out/results.tsv
+            rm -f "$aligned"
+          done < src/matrix.tsv
+          cat out/results.tsv
+          python - <<'PY'
+          import csv,json
+          rows=list(csv.DictReader(open('out/results.tsv'),delimiter='\t'))
+          d={'schema':1,'mode':'REVERSIBLE_STAGING_QA','apps':rows,'counts':{'total':len(rows),'pass':sum(x['build']=='PASS' for x in rows)},
+             'runtime_truth':{'health_proven':True,'auth_proven':False,'thf_pass_contract_proven':False,'physical_device_proven':False,'production_signing':False,'public_rollout':False,'final_or_play_ready':False}}
+          json.dump(d,open('out/summary.json','w'),indent=2); print(d['counts']); assert len(rows)==9 and d['counts']['pass']==9
+          PY
+          printf '%s\n' 'RUNTIME_STAGING_BINDING=PASS' 'HEALTH=PASS' 'AUTH_FLOW=NOT_PROVEN' 'THF_PASS_CONTRACT=NOT_PROVEN' 'PHYSICAL_DEVICE=NOT_PROVEN' 'FINAL_OR_PLAY_READY=FALSE' > out/TRUTH.txt
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-APPS-RUNTIME-CONFIGURED-STAGING-V1
+          path: out/
+          retention-days: 14
+          compression-level: 0
