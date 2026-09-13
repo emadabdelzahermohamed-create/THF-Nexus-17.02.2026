@@ -24,6 +24,17 @@ def test_legacy_named_id_and_form_helper_are_handlers():
   </script>""")
   a=m.audit(r); assert not a['orphan_buttons']; assert not a['orphan_forms']
 
+def test_selector_helper_and_generic_wire_are_handlers():
+ with tempfile.TemporaryDirectory() as d:
+  r=tree(d,"""<button id='react'>React</button><form id='vendor'><button>Save</button></form><script>
+  const $=s=>document.querySelector(s); $('#react').onclick=()=>{}; function wire(f,u){f.onsubmit=e=>e.preventDefault()} wire(vendor,'/api/vendors');
+  </script>""","""from fastapi import FastAPI
+app=FastAPI()
+@app.post('/api/vendors')
+def v(): return {}
+""")
+  a=m.audit(r); assert not a['orphan_buttons']; assert not a['orphan_forms']
+
 def test_orphan_button_and_dead_anchor_fail():
  with tempfile.TemporaryDirectory() as d:
   a=m.audit(tree(d,"<button id='x'>X</button><a href='#'>Dead</a>"))
