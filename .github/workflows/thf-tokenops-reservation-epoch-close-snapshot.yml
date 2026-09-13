@@ -1,0 +1,85 @@
+name: THF TokenOps Reservation Epoch-Close Snapshot Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/reservation_epoch_close_snapshot.py'
+      - 'ReleaseOps/TokenOps/test_reservation_epoch_close_snapshot.py'
+      - 'ReleaseOps/TokenOps/reservation_lifecycle_accounting.py'
+      - '.github/workflows/thf-tokenops-reservation-epoch-close-snapshot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reservation-epoch-close-snapshot:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run append-only epoch-close tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-epoch-close
+          PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_reservation_epoch_close_snapshot.py | tee tokenops-epoch-close/tests.log
+
+      - name: Compile production-policy fail-closed accounting probe
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONPATH=ReleaseOps/TokenOps python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from reservation_epoch_close_snapshot import CANONICAL_MINT, CANONICAL_NETWORK, canonical_sha256, compile_epoch_close_snapshot
+          lifecycle={
+            'schema':'thf-tokenops-reservation-lifecycle-accounting/v1','network':CANONICAL_NETWORK,'mint':CANONICAL_MINT,
+            'request_id':'production-epoch-close-probe-lifecycle','budget_envelope_sha256':'a'*64,'source_reservation_reconciliation_sha256':'b'*64,
+            'prior_reservation_lifecycle_sha256':None,
+            'active_reservations':[],
+            'lifecycle_events':[{'event_id':'probe-release-event','action':'release','reservation_id':'probe-reservation','subject_id':'probe','wallet':'review-only-wallet-placeholder','released_amount_raw':'1','replacement':None}],
+            'accounting':{'source_reserved_total_raw':'1','active_reserved_total_raw':'0','released_or_cancelled_net_raw':'1','active_reservation_count':0,'lifecycle_event_count':1},
+            'lifecycle_review_eligible':False,
+            'blockers':['anti_whale_caps_not_authoritatively_configured','production_caps_not_approved','governance_provenance_incomplete'],
+            'execution':{'transaction_created':False,'transaction_signed':False,'transaction_submitted':False,'broadcast_allowed':False,'financial_effect':False,'settlement_executed':False,'burn_executed':False,'treasury_migrated':False,'dao_decision_executed':False,'private_key_used':False,'external_multisig_required':True,'wave_mawja_untouched':True},
+          }
+          lifecycle['reservation_lifecycle_sha256']=canonical_sha256(lifecycle)
+          req={'network':CANONICAL_NETWORK,'mint':CANONICAL_MINT,'epoch_id':'production-probe','request_id':'production-epoch-close-probe','budget_envelope_sha256':lifecycle['budget_envelope_sha256'],'source_reservation_reconciliation_sha256':lifecycle['source_reservation_reconciliation_sha256'],'source_reservation_lifecycle_sha256':lifecycle['reservation_lifecycle_sha256'],'expected_prior_epoch_close_snapshot_sha256':None}
+          out=compile_epoch_close_snapshot(lifecycle,req)
+          assert out['epoch_close_review_eligible'] is False
+          assert out['journal_event_count']==1
+          assert out['accounting']['active_reserved_total_raw']=='0'
+          assert 'production_caps_not_approved' in out['blockers']
+          for key in ('transaction_created','transaction_signed','transaction_submitted','broadcast_allowed','financial_effect','settlement_executed','burn_executed','treasury_migrated','dao_decision_executed','private_key_used'): assert out['execution'][key] is False
+          assert out['execution']['wave_mawja_untouched'] is True
+          Path('tokenops-epoch-close/production-lifecycle-evidence.json').write_text(json.dumps(lifecycle,sort_keys=True,indent=2)+'\n')
+          Path('tokenops-epoch-close/production-epoch-close-snapshot.json').write_text(json.dumps(out,sort_keys=True,indent=2)+'\n')
+          print('THF_TOKENOPS_PRODUCTION_EPOCH_CLOSE_PROBE=FAIL_CLOSED_AS_EXPECTED')
+          print('EPOCH_CLOSE_SNAPSHOT_SHA256='+out['epoch_close_snapshot_sha256'])
+          print('TRANSACTION_CREATED=FALSE'); print('TRANSACTION_SIGNED=FALSE'); print('TRANSACTION_SUBMITTED=FALSE'); print('FINANCIAL_EFFECT=FALSE'); print('PRIVATE_KEY_USED=FALSE'); print('WAVE_UNTOUCHED=TRUE')
+          PY
+
+      - name: Assert hard safety boundary and hash evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -qx 'THF_RESERVATION_EPOCH_CLOSE_SNAPSHOT_TESTS=PASS' tokenops-epoch-close/tests.log
+          grep -qx 'TRANSACTION_CREATED=FALSE' tokenops-epoch-close/tests.log
+          grep -qx 'TRANSACTION_SIGNED=FALSE' tokenops-epoch-close/tests.log
+          grep -qx 'TRANSACTION_SUBMITTED=FALSE' tokenops-epoch-close/tests.log
+          grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-epoch-close/tests.log
+          grep -qx 'PRIVATE_KEY_USED=FALSE' tokenops-epoch-close/tests.log
+          grep -qx 'WAVE_UNTOUCHED=TRUE' tokenops-epoch-close/tests.log
+          sha256sum ReleaseOps/TokenOps/reservation_epoch_close_snapshot.py ReleaseOps/TokenOps/test_reservation_epoch_close_snapshot.py ReleaseOps/TokenOps/reservation_lifecycle_accounting.py tokenops-epoch-close/production-lifecycle-evidence.json tokenops-epoch-close/production-epoch-close-snapshot.json tokenops-epoch-close/tests.log > tokenops-epoch-close/SHA256SUMS.txt
+
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Reservation-Epoch-Close-Snapshot-Gate
+          path: tokenops-epoch-close/
+          if-no-files-found: error
+          retention-days: 30
