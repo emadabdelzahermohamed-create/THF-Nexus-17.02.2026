@@ -1,0 +1,71 @@
+name: THF Game Candidate Artifact Provenance V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json'
+      - '.github/workflows/thf-game-candidate-artifact-provenance-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        with:
+          python-version: '3.12'
+      - name: Verify artifact provenance against GitHub Actions API
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          python3 - <<'PY'
+          import json, os, pathlib, urllib.request
+          reg=json.loads(pathlib.Path('ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json').read_text())
+          repo=os.environ['REPO']; token=os.environ['GH_TOKEN']
+          cache={}; evidence=[]
+          for row in reg['candidates']:
+              aid=row['artifact_id']
+              if aid not in cache:
+                  req=urllib.request.Request(
+                      f'https://api.github.com/repos/{repo}/actions/artifacts/{aid}',
+                      headers={'Authorization':f'Bearer {token}','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+                  )
+                  with urllib.request.urlopen(req,timeout=20) as r: cache[aid]=json.load(r)
+              a=cache[aid]
+              got_digest=str(a.get('digest','')).removeprefix('sha256:')
+              wr=a.get('workflow_run') or {}
+              ok=(a.get('id')==aid and wr.get('id')==row['workflow_run'] and got_digest==row['artifact_digest'] and a.get('expired') is False)
+              evidence.append({
+                  'app':row['app'],'artifact_id':aid,'workflow_run':row['workflow_run'],
+                  'artifact_digest':row['artifact_digest'],'artifact_expired':a.get('expired'),
+                  'live_binding_pass':ok
+              })
+          out={
+              'schema':'thf-game-candidate-artifact-provenance-v1',
+              'repository':repo,'candidate_count':len(evidence),'all_live_bindings_pass':all(x['live_binding_pass'] for x in evidence),
+              'production_signing':False,'physical_device_status':'PENDING','final_or_play_ready':False,'candidates':evidence
+          }
+          pathlib.Path('out/artifact-provenance.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          assert len(evidence)==6
+          assert out['all_live_bindings_pass'] is True, evidence
+          print('THF_GAME_CANDIDATE_ARTIFACT_PROVENANCE=PASS')
+          print('CANDIDATE_COUNT=6')
+          print('PHYSICAL_DEVICE_STATUS=PENDING')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-GAME-CANDIDATE-ARTIFACT-PROVENANCE-V1
+          path: out/
+          retention-days: 14
