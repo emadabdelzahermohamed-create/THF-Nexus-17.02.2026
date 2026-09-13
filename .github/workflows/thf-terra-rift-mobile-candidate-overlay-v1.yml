@@ -1,0 +1,153 @@
+name: THF Terra Rift Mobile Candidate Overlay V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py'
+      - 'ReleaseOps/scripts/thf_game_real_function_audit_v2.py'
+      - 'ReleaseOps/tests/test_thf_terra_rift_mobile_overlay_v1.py'
+      - '.github/workflows/thf-terra-rift-mobile-candidate-overlay-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  overlay-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Regression tests
+        run: |
+          python3 -m py_compile ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/thf_game_real_function_audit_v2.py
+          python3 -m unittest ReleaseOps/tests/test_thf_terra_rift_mobile_overlay_v1.py
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage candidate tools
+        run: |
+          gcloud compute scp ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/thf_game_real_function_audit_v2.py \
+            "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Build reversible mobile overlays and run Godot 4.7.2 gates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=35m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-terra-rift-mobile-overlay-v1"
+          GODOT="$HOME/thf-tools/godot/4.7.2-stable/godot"
+          rm -rf "$ROOT"; mkdir -p "$ROOT/out"
+          test -x "$GODOT"
+          "$GODOT" --version | tee "$ROOT/out/godot-version.txt"
+
+          safe_extract() {
+            python3 - "$1" "$2" <<'PY'
+          import pathlib, shutil, sys, zipfile
+          src, dst = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).resolve()
+          dst.mkdir(parents=True, exist_ok=True)
+          with zipfile.ZipFile(src) as z:
+              for info in z.infolist():
+                  rel = pathlib.PurePosixPath(info.filename)
+                  if rel.is_absolute() or '..' in rel.parts: raise SystemExit('unsafe zip member')
+                  target = (dst / pathlib.Path(*rel.parts)).resolve()
+                  if target != dst and dst not in target.parents: raise SystemExit('zip escape')
+                  if info.is_dir(): target.mkdir(parents=True, exist_ok=True); continue
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  with z.open(info) as r, open(target, 'wb') as w: shutil.copyfileobj(r, w)
+          PY
+          }
+
+          run_one() {
+            kind="$1"; src="$2"; expected="$3"; tag="$4"
+            work="$ROOT/$tag/work"; evidence="$ROOT/out/$tag"
+            mkdir -p "$work" "$evidence"
+            echo "=== $tag ==="
+            test -f "$src"
+            actual=$(sha256sum "$src" | awk '{print $1}')
+            echo "canonical_sha256=$actual"
+            test "$actual" = "$expected"
+            safe_extract "$src" "$work"
+            echo "clean_extract_files=$(find "$work" -type f | wc -l)"
+
+            python3 /tmp/thf_terra_rift_mobile_overlay_v1.py "$work" --kind "$kind" --json-out "$evidence/overlay.json" > "$evidence/overlay.txt"
+            PG=$(find "$work" -type f -name project.godot -print -quit); test -n "$PG"; PROJECT=$(dirname "$PG")
+
+            set +e
+            python3 /tmp/thf_game_real_function_audit_v2.py "$work" --kind "$kind" --json-out "$evidence/audit.json" > "$evidence/audit.txt"
+            audit_rc=$?
+            set -e
+            python3 - "$evidence/audit.json" "$evidence/overlay.json" <<'PY'
+          import json,sys
+          audit=json.load(open(sys.argv[1])); overlay=json.load(open(sys.argv[2]))
+          checks={x['name']:x['status'] for x in audit['checks']}
+          for name in ('sensor_landscape','expandable_aspect','no_desktop_window_override'):
+              if checks.get(name) != 'PASS': raise SystemExit(f'mobile gate failed: {name}={checks.get(name)}')
+          failures=audit['summary']['required_failures']
+          forbidden={'sensor_landscape','expandable_aspect','no_desktop_window_override'} & set(failures)
+          if forbidden: raise SystemExit('mobile remediation did not clear: '+','.join(sorted(forbidden)))
+          print('source_contract_status='+audit['source_contract_status'])
+          print('remaining_required_failures='+','.join(failures))
+          print('network_authority_gate='+overlay['network']['network_authority_gate'])
+          print('placeholder_marker_count='+str(overlay['network']['placeholder_marker_count']))
+          print('endpoint_values_redacted='+str(overlay['network']['endpoint_values_redacted']).lower())
+          PY
+
+            timeout 15m "$GODOT" --headless --editor --path "$PROJECT" --quit --verbose > "$evidence/import.log" 2>&1
+            timeout 5m "$GODOT" --headless --path "$PROJECT" --quit-after 30 --verbose > "$evidence/boot.log" 2>&1
+            echo "godot_import=PASS"
+            echo "godot_headless_boot=PASS"
+
+            python3 - "$work" "$evidence/tree-sha256.txt" <<'PY'
+          import hashlib,pathlib,sys
+          root=pathlib.Path(sys.argv[1]); out=pathlib.Path(sys.argv[2]); rows=[]
+          for p in sorted(x for x in root.rglob('*') if x.is_file()):
+              h=hashlib.sha256(p.read_bytes()).hexdigest(); rows.append(f'{h}  {p.relative_to(root).as_posix()}')
+          out.write_text('\n'.join(rows)+'\n')
+          print('candidate_manifest_sha256='+hashlib.sha256(out.read_bytes()).hexdigest())
+          PY
+            test "$(sha256sum "$src" | awk '{print $1}')" = "$expected"
+            echo "canonical_archive_unchanged=true"
+            echo "device_status=PENDING"
+            echo "final_status=NOT_FINAL"
+          }
+
+          run_one terra "$HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip" eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68 terra_rc34_mobile
+          run_one rift "$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip" 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914 rift_rc37_mobile
+          echo 'wave_files_read_or_changed=false'
+          echo 'production_signing=false'
+          echo 'canonical_archives_mutated=false'
+          REMOTE
+      - name: Retrieve evidence
+        run: |
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rift-mobile-overlay-v1/out/*" out/ \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/summary.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TERRA-RIFT-MOBILE-CANDIDATE-OVERLAY-V1
+          path: out/
+          retention-days: 14
+      - name: Safety and truth assertions
+        run: |
+          grep -q '^canonical_archives_mutated=false$' out/summary.txt
+          grep -q '^wave_files_read_or_changed=false$' out/summary.txt
+          grep -q '^production_signing=false$' out/summary.txt
+          test "$(grep -c '^canonical_archive_unchanged=true$' out/summary.txt)" -eq 2
+          test "$(grep -c '^device_status=PENDING$' out/summary.txt)" -eq 2
+          test "$(grep -c '^final_status=NOT_FINAL$' out/summary.txt)" -eq 2
