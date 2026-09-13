@@ -1,0 +1,93 @@
+name: THF Spark Rush Runtime Wiring Forensics V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-spark-rush-runtime-wiring-forensics-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  forensic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only wiring forensics
+        shell: bash
+        run: |
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/wiring.raw <<'PY'
+          import hashlib,json,pathlib,re,zipfile,tempfile,shutil
+          home=pathlib.Path.home(); cases={'spark':(home/'thf-apps-rc2-exact-candidate-v2/source/spark.zip','6b74f8d75df8c0b7f74d8c2fee8be7e3517f3803cb42968735bc7a10939bc18c'),'rush':(home/'thf-apps-rc2-exact-candidate-v2/source/rush.zip','bb6ff035186b13cdde853145f42e66259c205889de2a7b368da34c9cb0582ba7')}
+          def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+          def safe_extract(src,dst):
+              with zipfile.ZipFile(src) as z:
+                  for i in z.infolist():
+                      r=pathlib.PurePosixPath(i.filename)
+                      if r.is_absolute() or '..' in r.parts: raise RuntimeError('unsafe zip')
+                      t=(dst/pathlib.Path(*r.parts)).resolve()
+                      if t!=dst and dst not in t.parents: raise RuntimeError('zip escape')
+                      if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+                      t.parent.mkdir(parents=True,exist_ok=True)
+                      with z.open(i) as a,open(t,'wb') as b: shutil.copyfileobj(a,b)
+          out={'schema':'thf-spark-rush-runtime-wiring-forensics-v1','cases':{},'read_only':True,'endpoint_values_redacted':True,'wave_files_read_or_changed':False}
+          for name,(src,expected) in cases.items():
+              assert src.is_file() and sha(src)==expected
+              with tempfile.TemporaryDirectory() as td:
+                  root=pathlib.Path(td).resolve(); safe_extract(src,root)
+                  java='\n'.join(p.read_text(errors='ignore') for p in root.rglob('*.java') if p.stat().st_size<1000000)
+                  py='\n'.join(p.read_text(errors='ignore') for p in root.rglob('*.py') if p.stat().st_size<1000000)
+                  web='\n'.join(p.read_text(errors='ignore') for p in root.rglob('*') if p.is_file() and p.suffix.lower() in {'.html','.js'} and p.stat().st_size<1000000)
+                  methods=sorted(set(re.findall(r'\b(?:public|private|protected)\s+(?:static\s+)?[\w<>\[\]]+\s+([A-Za-z_]\w*)\s*\(',java)))[:100]
+                  routes=sorted(set(re.findall(r"['\"](/[^'\"\s]{1,120})['\"]",py)))[:120]
+                  # Keep route paths only; redact absolute endpoint literals.
+                  event_types=sorted(set(re.findall(r"addEventListener\s*\(\s*['\"]([^'\"]+)['\"]",web,re.I)))[:80]
+                  keywords={k:bool(re.search(pat,java+'\n'+web+'\n'+py,re.I)) for k,pat in {
+                    'webview':r'\bWebView\b','javascript_interface':r'addJavascriptInterface|@JavascriptInterface','touch':r'onTouch|MotionEvent|touchstart|pointerdown|pointermove','key_input':r'onKey|keydown|keyup','canvas':r'<canvas|CanvasRenderingContext|requestAnimationFrame','game_loop':r'gameLoop|updateGame|requestAnimationFrame|setInterval\s*\(','player_state':r'player(?:State|X|Y|Position|Health|Score)|avatar','learning_logic':r'question|quiz|answer|lesson|learning|mastery','fitness_logic':r'exercise|rep|workout|fitness|calorie|movement','offline_storage':r'localStorage|IndexedDB|SharedPreferences|sqlite|Room','network_client':r'fetch\s*\(|XMLHttpRequest|HttpURLConnection|OkHttp|requests\.|urllib','ranking':r'leaderboard|ranking|ranked','economy':r'wallet|token|economy|reward','sensor':r'SensorManager|accelerometer|gyroscope','camera':r'camera|Camera2|CameraX'}.items()}
+                  endpoint_literal_count=len(re.findall(r'https?://[^\s"\']+|wss?://[^\s"\']+',java+'\n'+web+'\n'+py,re.I))
+                  out['cases'][name]={'source_sha256':expected,'java_methods':methods,'route_literals':routes,'web_event_types':event_types,'markers':keywords,'absolute_endpoint_literal_count':endpoint_literal_count,'endpoint_values_redacted':True}
+              assert sha(src)==expected
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/wiring.raw').read_text(errors='ignore'); i=raw.find('{')
+          if i<0: raise SystemExit('wiring JSON missing')
+          x=json.loads(raw[i:]); pathlib.Path('out/wiring.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Summarize wiring truth
+        run: |
+          python3 - <<'PY'
+          import json
+          x=json.load(open('out/wiring.json')); assert x['read_only'] and x['endpoint_values_redacted'] and not x['wave_files_read_or_changed']
+          for n,c in x['cases'].items():
+              print('=== '+n+' ===')
+              for k,v in c['markers'].items(): print(k+'='+str(v).lower())
+              print('java_method_count='+str(len(c['java_methods'])))
+              print('route_literal_count='+str(len(c['route_literals'])))
+              print('web_event_count='+str(len(c['web_event_types'])))
+              print('absolute_endpoint_literal_count='+str(c['absolute_endpoint_literal_count']))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-SPARK-RUSH-RUNTIME-WIRING-FORENSICS-V1
+          path: out/
+          retention-days: 14
