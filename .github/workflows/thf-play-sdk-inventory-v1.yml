@@ -1,0 +1,87 @@
+name: THF Play SDK Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-play-sdk-inventory-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CANDIDATE_PATH: /home/sa_115575029018678177962/thf-release-candidates/permission-min-v1-34708908483
+  EXPECTED_CANDIDATE_SHA: 36b049848fb2002bc11358290fb6d95451d9c407055bb140cba2eb595888f3b7
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect Play-facing SDK and manifest facts read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=10m --quiet \
+            --command="CANDIDATE_PATH='$CANDIDATE_PATH' EXPECTED_CANDIDATE_SHA='$EXPECTED_CANDIDATE_SHA' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          SRC="$CANDIDATE_PATH/source"
+          test -d "$SRC"
+          before=$(cd "$SRC" && find . -type f -not -path '*/build/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          echo "CANDIDATE_SHA256_BEFORE=$before"
+          test "$before" = "$EXPECTED_CANDIDATE_SHA"
+          manifest="$SRC/app/src/main/AndroidManifest.xml"
+          gradle="$SRC/app/build.gradle"
+          test -f "$manifest"; test -f "$gradle"
+          python3 - "$manifest" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          p=sys.argv[1]
+          root=ET.parse(p).getroot()
+          ns='{http://schemas.android.com/apk/res/android}'
+          perms=sorted({e.attrib.get(ns+'name','') for e in root.findall('uses-permission') if e.attrib.get(ns+'name')})
+          print('MANIFEST_XML_PARSE=PASS')
+          print('DECLARED_PERMISSIONS_COUNT='+str(len(perms)))
+          for x in perms: print('PERMISSION='+x)
+          PY
+          scan() { label="$1"; regex="$2"; count=$(grep -RIE --exclude-dir=build --exclude='*.lock' "$regex" "$SRC" 2>/dev/null | wc -l || true); echo "$label=$count"; }
+          scan GOOGLE_MOBILE_ADS_REFERENCES 'com\.google\.android\.gms\.ads|play-services-ads|admob|MobileAds'
+          scan FIREBASE_ANALYTICS_REFERENCES 'firebase-analytics|com\.google\.firebase\.analytics|FirebaseAnalytics'
+          scan FACEBOOK_ADS_REFERENCES 'facebook.*ads|audience-network|com\.facebook\.ads'
+          scan APPLOVIN_REFERENCES 'applovin|AppLovin'
+          scan UNITY_ADS_REFERENCES 'unity-ads|UnityAds'
+          scan PLAY_INTEGRITY_REFERENCES 'play-integrity|com\.google\.android\.play\.core\.integrity|IntegrityManager|StandardIntegrityManager'
+          scan BILLING_REFERENCES 'billingclient|com\.android\.billingclient|play-billing'
+          scan INSTALL_REFERRER_REFERENCES 'installreferrer|install-referrer'
+          scan AD_ID_REFERENCES 'AD_ID|com\.google\.android\.gms\.permission\.AD_ID'
+          scan CONSENT_UMP_REFERENCES 'user-messaging-platform|ConsentInformation|UserMessagingPlatform'
+          if find "$SRC" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then echo THF_WAVE_ISOLATION=FAIL; exit 41; fi
+          echo THF_WAVE_ISOLATION=PASS
+          after=$(cd "$SRC" && find . -type f -not -path '*/build/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')
+          echo "CANDIDATE_SHA256_AFTER=$after"
+          test "$after" = "$before"
+          echo SOURCE_MUTATION=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo PLAY_SDK_INVENTORY=PASS
+          REMOTE
