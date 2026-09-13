@@ -1,0 +1,97 @@
+name: THF Apps Backend Reachability V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-apps-backend-reachability-v1.yml'
+      - 'ReleaseOps/validators/audit_runtime_endpoints.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Probe HTTPS origins referenced by exact authoritative app sources
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -rf src out && mkdir -p src out
+          cat > src/matrix.tsv <<'EOF'
+          pulse	RC3	71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10	1AbcoAGpkhtOTiwxVIPaDFgOL8ZSs02KF
+          forge	RC3	0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51	1hoq_PHHAKihrUYeJ6DXsBjAleAkc1LwQ
+          echo	RC4	87c6a532fc56870b9a4c1039ac1f44b43e1a2f4c5c4518caf0d6537c61704226	113ncXza3VjYjGHv9-5HSFXAXFJjGLP8T
+          codex	RC4	c5108b257b5e9af6849c43df7b7aa671e586bb4a9c91964566c85b1a6329e83d	1d5l5TcI0gphbs6O9F8_kpYkCayrmV9hZ
+          spark	RC3	dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0	1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+          rush	RC3	bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b	1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+          vault	RC4-BF1	dd6db86d7532f773a8d1d2662bf466bdcc0f1c64a863602ecdd1267c8f82fa33	1uxsDgpOF5ZknvCnYIZTgIYNnO2cwVVJI
+          signal	RC4-BF1	377044263fa0fc366afe67c6b42ccf4f3e2d1bc75769350f2ee885983f820ddf	1za4Ibh8Lm5gt0DNe2oNLxmxYp0bb_gLh
+          command	RC3	f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408	1eOdaj9IYsExCgzV0evwkW2hTpRie1Yke
+          EOF
+          printf 'app\tcheckpoint\tsource_sha256\torigin\thttp_code\ttransport_result\n' > out/summary.tsv
+          while IFS=$'\t' read -r app cp sha fid; do
+            zip="src/$app.zip"; dir="src/$app"
+            code=$(curl -sSLo "$zip" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$fid?alt=media&supportsAllDrives=true")
+            [ "$code" = 200 ]; [ "$(sha256sum "$zip" | awk '{print $1}')" = "$sha" ]; unzip -tq "$zip" >/dev/null
+            mkdir -p "$dir"; unzip -q "$zip" -d "$dir"
+            root=$(find "$dir" -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1); test -n "$root"
+            python ReleaseOps/validators/audit_runtime_endpoints.py "$root" --json-out "out/$app.runtime.json" >/dev/null
+            python - "$app" "$cp" "$sha" "out/$app.runtime.json" >> out/origins.tsv <<'PY'
+          import json,sys,urllib.parse
+          app,cp,sha,path=sys.argv[1:]
+          d=json.load(open(path)); seen=set()
+          for x in d['runtime_urls']:
+              u=x['url']; p=urllib.parse.urlsplit(u)
+              if p.scheme.lower()!='https' or not p.hostname: continue
+              origin=f'https://{p.hostname}' + ((f':{p.port}') if p.port and p.port!=443 else '')
+              if origin in seen: continue
+              seen.add(origin); print('\t'.join([app,cp,sha,origin]))
+          PY
+          done < src/matrix.tsv
+          touch out/origins.tsv
+          while IFS=$'\t' read -r app cp sha origin; do
+            [ -n "${origin:-}" ] || continue
+            http=$(curl --connect-timeout 8 --max-time 15 --retry 1 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "$origin/" || true)
+            case "$http" in
+              200|204|301|302|307|308|401|403|404|405) result=REACHABLE ;;
+              000|'') result=UNREACHABLE ;;
+              *) result=RESPONDED ;;
+            esac
+            printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$cp" "$sha" "$origin" "${http:-000}" "$result" >> out/summary.tsv
+          done < out/origins.tsv
+          cat out/summary.tsv
+          python - <<'PY'
+          from pathlib import Path
+          rows=Path('out/summary.tsv').read_text().splitlines()[1:]
+          bad=[r for r in rows if r.endswith('\tUNREACHABLE')]
+          Path('out/truth-boundary.txt').write_text(
+            'BACKEND_REACHABILITY_AUDIT=NON_PROMOTIONAL\n'
+            'TLS_ORIGIN_RESPONSE_IS_NOT_AUTH_FLOW_PROOF=TRUE\n'
+            'PHYSICAL_DEVICE_PROOF_REQUIRED=TRUE\n'
+            f'UNREACHABLE_ORIGIN_COUNT={len(bad)}\n')
+          print(f'UNREACHABLE_ORIGIN_COUNT={len(bad)}')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-APPS-BACKEND-REACHABILITY-V1
+          path: out/
+          retention-days: 14
