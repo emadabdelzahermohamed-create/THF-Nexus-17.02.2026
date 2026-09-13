@@ -1,0 +1,159 @@
+name: THF Pass Federation Handoff Candidate V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-pass-federation-handoff-candidate-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Build and test disposable lifecycle plus federation candidate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='bash -s' <<'REMOTE' | tee out/result.txt
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"; command -v python3 >/dev/null
+          ORIG_APP=$(sha256sum "$ROOT/src/thf/app.py"|awk '{print $1}')
+          ORIG_ID=$(sha256sum "$ROOT/src/thf/identity/service.py"|awk '{print $1}')
+          test "$ORIG_APP" = "471a8e0c6b67320386db6efcd32a3718265a645a30af3d7a9ea95060258058be"
+          test "$ORIG_ID" = "8421a63db2e05bbd3b10b60da3edb0a3190ad7c2ea0498f4a1a704c3f7827b9f"
+          WORK=$(mktemp -d "$HOME/thf-pass-fed-v1.XXXXXX"); trap 'rm -rf "$WORK"' EXIT
+          cp -a "$ROOT/." "$WORK/"
+
+          python3 - "$WORK" <<'PY'
+          from pathlib import Path
+          import sys
+          r=Path(sys.argv[1])
+          p=r/'src/thf/identity/service.py'; s=p.read_text()
+          s=s.replace('import hashlib, hmac, os, secrets','import hashlib, hmac, os, secrets')
+          anchor='    def user_from_token(self, token: str|None) -> dict|None:\n'
+          assert anchor in s
+          methods='''    def refresh_session(self, token: str|None) -> dict:\n        if not token: raise PermissionError('authentication required')\n        row=self.db.one("SELECT s.user_id,s.expires_at,u.username FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=?",(token,))\n        if not row: raise PermissionError('invalid session')\n        if row['expires_at'] < utcnow():\n            self.db.execute("DELETE FROM sessions WHERE token=?",(token,)); raise PermissionError('expired session')\n        self.db.execute("DELETE FROM sessions WHERE token=?",(token,))\n        return {'id':row['user_id'],'username':row['username'],'token':self._new_session(int(row['user_id'])),'rotated':True}\n\n    def logout_session(self, token: str|None) -> dict:\n        if not token: raise PermissionError('authentication required')\n        existed=self.db.one("SELECT 1 ok FROM sessions WHERE token=?",(token,)) is not None\n        self.db.execute("DELETE FROM sessions WHERE token=?",(token,))\n        return {'ok':True,'revoked':existed}\n\n    def revoke_all(self, uid:int) -> dict:\n        self.db.execute("DELETE FROM sessions WHERE user_id=?",(uid,))\n        return {'ok':True,'all_sessions_revoked':True}\n\n    @staticmethod\n    def _handoff_audiences() -> set[str]:\n        return {\n            'com.topherofit.thf.core','com.topherofit.thf.pulse','com.topherofit.thf.forge',\n            'com.topherofit.thf.echo','com.topherofit.thf.codex','com.topherofit.thf.spark',\n            'com.topherofit.thf.rush','com.topherofit.thf.vault','com.topherofit.thf.signal',\n            'com.topherofit.thf.command'\n        }\n\n    def _ensure_handoff_table(self) -> None:\n        self.db.execute("CREATE TABLE IF NOT EXISTS auth_handoffs(code_hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL,audience TEXT NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL)")\n\n    def create_handoff(self, uid:int, audience:str) -> dict:\n        audience=str(audience or '').strip()\n        if audience not in self._handoff_audiences(): raise ValueError('invalid handoff audience')\n        self._ensure_handoff_table()\n        code=secrets.token_urlsafe(32); digest=hashlib.sha256(code.encode()).hexdigest()\n        now=datetime.now(timezone.utc); exp=(now+timedelta(seconds=90)).isoformat().replace('+00:00','Z')\n        self.db.execute("INSERT INTO auth_handoffs(code_hash,user_id,audience,expires_at,created_at) VALUES(?,?,?,?,?)",(digest,uid,audience,exp,utcnow()))\n        return {'code':code,'audience':audience,'expires_in':90,'one_time':True}\n\n    def exchange_handoff(self, code:str, audience:str) -> dict:\n        code=str(code or '').strip(); audience=str(audience or '').strip()\n        if not code or audience not in self._handoff_audiences(): raise PermissionError('invalid handoff')\n        self._ensure_handoff_table(); digest=hashlib.sha256(code.encode()).hexdigest()\n        with self.db.connect() as con:\n            con.execute('BEGIN IMMEDIATE')\n            row=con.execute("SELECT user_id,audience,expires_at FROM auth_handoffs WHERE code_hash=?",(digest,)).fetchone()\n            if not row or row['audience'] != audience or row['expires_at'] < utcnow():\n                if row: con.execute("DELETE FROM auth_handoffs WHERE code_hash=?",(digest,))\n                raise PermissionError('invalid or expired handoff')\n            uid=int(row['user_id']); con.execute("DELETE FROM auth_handoffs WHERE code_hash=?",(digest,))\n        user=self.db.one("SELECT username FROM users WHERE id=?",(uid,))\n        if not user: raise PermissionError('invalid handoff subject')\n        return {'id':uid,'username':user['username'],'audience':audience,'token':self._new_session(uid),'exchanged':True}\n\n'''
+          p.write_text(s.replace(anchor,methods+anchor,1))
+
+          p=r/'src/thf/app.py'; s=p.read_text()
+          login="        if path=='/api/auth/login' and method=='POST':\n            b=self._body();return self._send(rt.identity.login(str(b.get('username','')),str(b.get('password',''))))\n"
+          assert login in s
+          routes=login+"        if path=='/api/auth/refresh' and method=='POST':return self._send(rt.identity.refresh_session(self._token()))\n        if path=='/api/auth/logout' and method=='POST':return self._send(rt.identity.logout_session(self._token()))\n        if path=='/api/auth/revoke-all' and method=='POST':return self._send(rt.identity.revoke_all(self._need_user()['id']))\n        if path=='/api/auth/handoff/create' and method=='POST':\n            b=self._body();return self._send(rt.identity.create_handoff(self._need_user()['id'],str(b.get('audience',''))),201)\n        if path=='/api/auth/handoff/exchange' and method=='POST':\n            b=self._body();return self._send(rt.identity.exchange_handoff(str(b.get('code','')),str(b.get('audience',''))))\n"
+          p.write_text(s.replace(login,routes,1))
+          PY
+
+          cat > "$WORK/tests/test_pass_federation_candidate.py" <<'PYTEST'
+          import json, os, tempfile, threading, time, unittest, urllib.error, urllib.request
+          from datetime import datetime, timedelta, timezone
+          from pathlib import Path
+          from thf.app import Runtime, make_server
+
+          AUD='com.topherofit.thf.pulse'
+          OTHER='com.topherofit.thf.echo'
+
+          class FederationService(unittest.TestCase):
+              def setUp(self):
+                  self.t=tempfile.TemporaryDirectory(); self.root=Path(self.t.name)
+                  self.rt=Runtime(self.root,str(self.root/'db.sqlite')); self.u=self.rt.identity.register('feduser','strong-pass-123')
+              def tearDown(self): self.t.cleanup()
+              def test_one_time_audience_bound_exchange(self):
+                  h=self.rt.identity.create_handoff(self.u['id'],AUD)
+                  with self.assertRaises(PermissionError): self.rt.identity.exchange_handoff(h['code'],OTHER)
+                  h=self.rt.identity.create_handoff(self.u['id'],AUD)
+                  x=self.rt.identity.exchange_handoff(h['code'],AUD)
+                  self.assertEqual(x['audience'],AUD); self.assertIsNotNone(self.rt.identity.user_from_token(x['token']))
+                  with self.assertRaises(PermissionError): self.rt.identity.exchange_handoff(h['code'],AUD)
+              def test_expired_handoff_rejected(self):
+                  h=self.rt.identity.create_handoff(self.u['id'],AUD); digest=__import__('hashlib').sha256(h['code'].encode()).hexdigest()
+                  past=(datetime.now(timezone.utc)-timedelta(seconds=1)).isoformat().replace('+00:00','Z')
+                  self.rt.db.execute('UPDATE auth_handoffs SET expires_at=? WHERE code_hash=?',(past,digest))
+                  with self.assertRaises(PermissionError): self.rt.identity.exchange_handoff(h['code'],AUD)
+              def test_unlocked_audience_rejected(self):
+                  with self.assertRaises(ValueError): self.rt.identity.create_handoff(self.u['id'],'com.example.attacker')
+
+          class FederationHttp(unittest.TestCase):
+              @classmethod
+              def setUpClass(cls):
+                  cls.t=tempfile.TemporaryDirectory(); cls.root=Path(__file__).resolve().parents[1]; os.environ['THF_QUIET']='1'
+                  cls.srv=make_server('127.0.0.1',0,cls.root,str(Path(cls.t.name)/'http.db')); cls.port=cls.srv.server_address[1]
+                  cls.th=threading.Thread(target=cls.srv.serve_forever,daemon=True); cls.th.start(); time.sleep(.05)
+              @classmethod
+              def tearDownClass(cls): cls.srv.shutdown(); cls.srv.server_close(); cls.t.cleanup()
+              def req(self,path,method='GET',body=None,token=None):
+                  h={'Content-Type':'application/json'}
+                  if token: h['Authorization']='Bearer '+token
+                  d=json.dumps(body).encode() if body is not None else None
+                  try:
+                      r=urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{self.port}{path}',data=d,method=method,headers=h),timeout=3); return r.status,json.loads(r.read())
+                  except urllib.error.HTTPError as e: return e.code,json.loads(e.read())
+              def test_http_handoff_and_no_query_token(self):
+                  st,u=self.req('/api/auth/register','POST',{'username':'http-fed','password':'http-pass-123'}); self.assertEqual(st,201)
+                  st,h=self.req('/api/auth/handoff/create','POST',{'audience':AUD},u['token']); self.assertEqual(st,201)
+                  code=h['code']
+                  st,x=self.req('/api/auth/handoff/exchange','POST',{'code':code,'audience':AUD}); self.assertEqual(st,200)
+                  self.assertEqual(self.req('/api/profile',token=x['token'])[0],200)
+                  self.assertEqual(self.req('/api/auth/handoff/exchange','POST',{'code':code,'audience':AUD})[0],403)
+                  # Credentials in query strings are never accepted; exchange reads JSON body only.
+                  self.assertIn(self.req('/api/auth/handoff/exchange?code='+code+'&audience='+AUD,'POST',{})[0],(400,403))
+
+          if __name__=='__main__': unittest.main()
+          PYTEST
+
+          cd "$WORK"
+          PYTHONPATH=src python3 -m unittest tests.test_pass_federation_candidate -v
+          PYTHONPATH=src python3 -m unittest tests.test_http_e2e tests.test_security_boundaries tests.test_unified_runtime -v
+          NEW_APP=$(sha256sum src/thf/app.py|awk '{print $1}'); NEW_ID=$(sha256sum src/thf/identity/service.py|awk '{print $1}')
+          test "$NEW_APP" != "$ORIG_APP"; test "$NEW_ID" != "$ORIG_ID"
+          test "$(sha256sum "$ROOT/src/thf/app.py"|awk '{print $1}')" = "$ORIG_APP"
+          test "$(sha256sum "$ROOT/src/thf/identity/service.py"|awk '{print $1}')" = "$ORIG_ID"
+          echo BASELINE_APP_SHA256=$ORIG_APP
+          echo BASELINE_IDENTITY_SHA256=$ORIG_ID
+          echo FEDERATION_CANDIDATE_APP_SHA256=$NEW_APP
+          echo FEDERATION_CANDIDATE_IDENTITY_SHA256=$NEW_ID
+          echo HANDOFF_ONE_TIME=PASS
+          echo HANDOFF_AUDIENCE_BOUND=PASS
+          echo HANDOFF_EXPIRY=PASS
+          echo HANDOFF_REPLAY_REJECTED=PASS
+          echo HANDOFF_QUERY_TOKEN_FORBIDDEN=PASS
+          echo MUTATION_PERFORMED=FALSE
+          echo DEPLOYMENT_PERFORMED=FALSE
+          echo FINAL_OR_PLAY_READY=FALSE
+          REMOTE
+      - name: Assert truth boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -qx 'HANDOFF_ONE_TIME=PASS' out/result.txt
+          grep -qx 'HANDOFF_AUDIENCE_BOUND=PASS' out/result.txt
+          grep -qx 'HANDOFF_REPLAY_REJECTED=PASS' out/result.txt
+          grep -qx 'HANDOFF_QUERY_TOKEN_FORBIDDEN=PASS' out/result.txt
+          grep -qx 'MUTATION_PERFORMED=FALSE' out/result.txt
+          grep -qx 'DEPLOYMENT_PERFORMED=FALSE' out/result.txt
+          grep -qx 'FINAL_OR_PLAY_READY=FALSE' out/result.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THF-PASS-FEDERATION-HANDOFF-CANDIDATE-V1
+          path: out/
+          retention-days: 14
