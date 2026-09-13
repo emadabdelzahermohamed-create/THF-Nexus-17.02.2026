@@ -84,7 +84,21 @@ jobs:
           gradle --no-daemon app:assembleRelease --stacktrace
           apk=$(find . -type f -path '*/build/outputs/apk/release/*.apk' | head -1)
           test -n "$apk"
-          printf 'APP=%s\nCHECKPOINT=%s\nSOURCE_SHA256=%s\nPACKAGE_ID=%s\nANDROID_REGRESSION_TASKS_RUN=%s\nASSEMBLE_RELEASE=PASS\nREADINESS_PROMOTION=NO\nPHYSICAL_DEVICE_REQUIRED=YES\n' "$APP" "$CP" "$SOURCE_SHA" "$PACKAGE_ID" "$ran" | tee "$GITHUB_WORKSPACE/out/$APP.summary.txt"
+
+          # Package evidence is deliberately non-promotional: physical-phone acceptance is still required.
+          unzip -tq "$apk" >/dev/null
+          apk_sha=$(sha256sum "$apk" | awk '{print $1}')
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          test -n "$build_tools"
+          aapt_bin="$build_tools/aapt"
+          test -x "$aapt_bin"
+          "$aapt_bin" dump badging "$apk" > "$GITHUB_WORKSPACE/out/$APP.badging.txt"
+          package_name=$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" "$GITHUB_WORKSPACE/out/$APP.badging.txt" | head -1)
+          target_sdk=$(sed -n "s/^targetSdkVersion:'\([^']*\)'.*/\1/p" "$GITHUB_WORKSPACE/out/$APP.badging.txt" | head -1)
+          test "$package_name" = "$PACKAGE_ID"
+          test "$target_sdk" = "36"
+          printf '%s  %s\n' "$apk_sha" "$(basename "$apk")" > "$GITHUB_WORKSPACE/out/$APP.apk.sha256"
+          printf 'APP=%s\nCHECKPOINT=%s\nSOURCE_SHA256=%s\nPACKAGE_ID=%s\nANDROID_REGRESSION_TASKS_RUN=%s\nASSEMBLE_RELEASE=PASS\nAPK_ZIP_INTEGRITY=PASS\nAPK_SHA256=%s\nAPK_PACKAGE=%s\nTARGET_SDK=%s\nREADINESS_PROMOTION=NO\nPHYSICAL_DEVICE_REQUIRED=YES\n' "$APP" "$CP" "$SOURCE_SHA" "$PACKAGE_ID" "$ran" "$apk_sha" "$package_name" "$target_sdk" | tee "$GITHUB_WORKSPACE/out/$APP.summary.txt"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
