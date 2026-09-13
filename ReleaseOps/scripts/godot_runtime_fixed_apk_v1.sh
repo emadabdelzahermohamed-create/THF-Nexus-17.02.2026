@@ -21,7 +21,7 @@ PHASE=init
 on_err() {
   rc=$?
   echo "GODOT_RUNTIME_FIXED_GATE=FAIL phase=$PHASE rc=$rc" >&2
-  for f in "$OUT/import.log" "$OUT/boot.log" "$OUT/template.log" "$OUT/export.log" "$OUT/apksigner.txt" "$OUT/zipalign.txt" "$OUT/badging.txt"; do
+  for f in "$OUT/import.log" "$OUT/boot.log" "$OUT/template.log" "$OUT/export.log" "$OUT/apksigner.txt" "$OUT/apksigner-final.txt" "$OUT/zipalign-recovery.txt" "$OUT/zipalign.txt" "$OUT/badging.txt"; do
     if [ -f "$f" ]; then
       echo "===== $(basename "$f") tail =====" >&2
       tail -n 160 "$f" >&2 || true
@@ -99,10 +99,11 @@ timeout 15m "$GODOT" --headless --editor --path "$PROJECT" --quit --verbose >"$O
 PHASE=godot_boot
 timeout 5m "$GODOT" --headless --path "$PROJECT" --quit-after 30 --verbose >"$OUT/boot.log" 2>&1
 PHASE=android_template_install
-set +e
-timeout 5m "$GODOT" --headless --editor --path "$PROJECT" --install-android-build-template --quit >"$OUT/template.log" 2>&1
-template_rc=$?
-set -e
+if timeout 5m "$GODOT" --headless --editor --path "$PROJECT" --install-android-build-template --quit >"$OUT/template.log" 2>&1; then
+  template_rc=0
+else
+  template_rc=$?
+fi
 echo "ANDROID_TEMPLATE_INSTALL_RC=$template_rc"
 
 PHASE=android_template_fallback
@@ -140,13 +141,11 @@ ZIPALIGN="$SDK/build-tools/36.0.0/zipalign"
 AAPT2="$SDK/build-tools/36.0.0/aapt2"
 
 # Godot can emit a structurally valid but unsigned APK when the isolated HOME has no debug keystore.
-# Recover only with an ephemeral QA keystore. This is intentionally NOT production signing.
+# Test the signature in an if-condition so the global ERR trap does not abort before safe QA recovery.
 PHASE=apk_signature_verify_initial
-set +e
-"$APKSIGNER" verify --verbose "$APK" >"$OUT/apksigner.txt" 2>&1
-verify_rc=$?
-set -e
-if [ "$verify_rc" -ne 0 ]; then
+if "$APKSIGNER" verify --verbose "$APK" >"$OUT/apksigner.txt" 2>&1; then
+  QA_SIGN_RECOVERY=false
+else
   PHASE=apk_qa_sign_recovery
   echo "APK_SIGNATURE_INITIAL=FAIL; applying ephemeral QA signing recovery" | tee -a "$OUT/apksigner.txt"
   ALIGNED="$OUT/aligned-unsigned.apk"
@@ -160,8 +159,6 @@ if [ "$verify_rc" -ne 0 ]; then
   mv "$SIGNED" "$APK"
   rm -f "$ALIGNED" "$KS"
   QA_SIGN_RECOVERY=true
-else
-  QA_SIGN_RECOVERY=false
 fi
 
 PHASE=apk_signature_verify_final
