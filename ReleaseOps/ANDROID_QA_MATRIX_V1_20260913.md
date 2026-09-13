@@ -1,38 +1,46 @@
-# Unified Android QA Matrix — 2026-09-13
+# Unified Android QA Matrix — reconciled 2026-09-14
 
 Status: ACTIVE EVIDENCE MATRIX
-Scope: THF Core / Terra / Rift plus isolated WAVE_MAWJA lane.
+Scope: THF Android/game candidates plus isolated WAVE_MAWJA lane.
 
-| App | Canonical checkpoint | Package | Version evidence | targetSdk | Runtime/package gate | Candidate APK SHA-256 | Physical device | Play Internal | Primary blocker |
-|---|---|---|---|---:|---|---|---|---|---|
-| THF Core | RC6 | `com.topherofit.thf.core` | `6.2.2-rc6`, versionCode `62200` from prior package gate | 36 | PASS — HTTPS staging endpoint embedded + service health PASS, run `34743356308` | `262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba` | PENDING — exact-SHA evidence now mandatory | NOT UPLOADED | Real-device acceptance; stable production hostname before final AAB |
-| THF Terra | RC34 | `com.topherofit.thf.terra` | RC34 canonical stream; package gate current | 36 | PASS — Godot payload/project.binary, assets=461, signature/alignment/package/API gate PASS, run `34752636192` | `388f3c09bd8e0d64ebb5ad5e9c10b92d3b17f05851949936a07fb5b3db5b18c7` | PENDING — exact-SHA evidence now mandatory | NOT UPLOADED | Real-device touch/orientation/layout/interactive scene/GPU acceptance |
-| THF Rift | RC37 | `com.topherofit.thf.rift` | `4.7.1-rc37`, versionCode `42071` from package evidence | 36 | PASS — Godot payload/project.binary, assets=450, signature/alignment/package/API gate PASS, run `34752636187` | `fe35328b6ec4ed98a4c26cd5067e8056310fd773d9a3e7c3212943249eb024b1` | PENDING — exact-SHA evidence now mandatory | NOT UPLOADED | Real-device touch/orientation/layout/interactive scene/GPU acceptance |
-| WAVE_MAWJA | RC14 live-gate wrapper over RC13 verification contract | UNKNOWN until exact canonical runtime is recovered; do not infer from older RC9 | RC14 state record only | UNKNOWN-current | BLOCKED — full canonical `/root/workspace/wave-mawja` runtime/source not recoverable on WIF builder or current Library search | N/A-current | PENDING | NOT UPLOADED | `WAVE-LIVE-SOURCE-MISSING`; recover exact RC13/RC14 workspace and verify SHA before any build |
+> Historical Terra/Rift runtime-fixed APKs `388f3c09...` and `fe35328b...` are REJECTED as phone candidates because direct aapt inspection showed a portrait hardware requirement. They remain historical package evidence only and must not receive device evidence.
+
+| App | Canonical/source checkpoint | Package | targetSdk | Runtime/package gate | Current exact candidate APK SHA-256 | Physical device | Final/Play | Primary blocker |
+|---|---|---|---:|---|---|---|---|---|
+| THF Core | RC6 | `com.topherofit.thf.core` | 36 | PASS — HTTPS staging endpoint + service health, run `34743356308` | `262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA physical acceptance; stable production hostname before final AAB |
+| THF Terra / Nexus World | RC34 canonical source SHA `eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68` | `com.topherofit.thf.terra` | 36 | PASS — Godot 4.7.2 import/headless/export, real payload, sensor-landscape overlay, expand aspect, zeroed desktop overrides, staged HTTPS, no portrait hardware requirement; run `34782130639` SUCCESS | `8539af9a7d531f80b14c1b2e4366ac2dda666d042ae8520b4fa1ea299d2d2165` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA phone touch/orientation/HUD/avatar/locomotion/camera/world/FPS-RAM-thermal |
+| THF Rift / Nexus Arena | RC37 canonical source SHA `3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914` | `com.topherofit.thf.rift` | 36 | PASS — Godot 4.7.2 import/headless/export, real payload, sensor-landscape overlay, expand aspect, zeroed desktop overrides, staged HTTPS, no portrait hardware requirement; run `34782130639` SUCCESS | `3577175821a91d4d76da77d9fc982575704a85e20162e4b66afe37565f63b5fb` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA phone touch/orientation/HUD/avatar/locomotion/camera/combat/FPS-RAM-thermal |
+| THF Spark | APPS RC3 source SHA `dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0` + changed-byte real-game overlay | `com.topherofit.thf.spark` | 36 | PASS — real frame/game loop, touch hit-testing, score/streak/level learning progression, package/API36/DEX checks | `9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA physical gameplay/touch/layout/lifecycle/offline-network/performance |
+| THF Rush | APPS RC3 source SHA `bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b` + changed-byte real-game overlay | `com.topherofit.thf.rush` | 36 | PASS — Choreographer game loop + SensorManager motion/repetition behavior + package/API36/DEX checks | `3e9aabaebdf1b321430abb3286156aeeaf8cf0174f2abff593a3ee3dc50d0e3a` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA phone sensor-driven repetitions + lifecycle/gameplay/performance |
+| THF Learn Games | authoritative outer source SHA `ce8547851c9573db02603ea6f11e020a1b7d346af0cac51e07947304f1a7c1f9` + real-game overlay | `com.thf.topherofit.learngames` | 36 | PASS — real-function contract, Choreographer/runtime learning-mastery markers, lint/package/API36, optional camera hardware; run `34781606154` SUCCESS | `e0667eef4c03aaf78ff8f14c74873fae5ad5c5a3a6f4a28f7c36a73505eb4727` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA physical user journey/touch/layout/lifecycle/offline-network/performance |
+| THF Fitness Games | authoritative outer source SHA `cf5d73c3a03ab503dbd7c36a2d4db3ec1449ec8281304627b9463e2cb8732a25` + real-game overlay | `com.thf.topherofit.fitnessgames` | 36 | PASS — Choreographer + SensorManager/motion-reps runtime markers, lint/package/API36, optional camera hardware; run `34781606154` SUCCESS | `7404d3ff644253109e36d4fad25edb6cb3313ad8676e3aa7e87c42ab7088832a` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA physical sensor/motion gameplay + lifecycle/layout/performance |
+| WAVE_MAWJA | RC14 state / exact RC13-RC14 runtime still missing | UNKNOWN-current | UNKNOWN-current | BLOCKED — do not infer from RC9 | N/A-current | PENDING | NOT_FINAL / NOT_UPLOADED | `WAVE-LIVE-SOURCE-MISSING`; remains technically isolated from THF |
+
+## Terra/Rift rebuilt artifact reconciliation
+
+- Workflow: `THF Terra Rift Staging APK V1`, run `34782130639`, conclusion `SUCCESS`.
+- Artifact: `THF-TERRA-RIFT-STAGING-QA-APKS-V1`, ID `10324994861`, digest `sha256:53004a3fe2690399fd208f137ed256802dcef5fc18f4a5f0a4419de54d566dae`.
+- Exact downloaded APK rehash:
+  - Terra: `8539af9a7d531f80b14c1b2e4366ac2dda666d042ae8520b4fa1ea299d2d2165`.
+  - Rift: `3577175821a91d4d76da77d9fc982575704a85e20162e4b66afe37565f63b5fb`.
+- Both: canonical archive unchanged, QA signing only, production signing false, device status PENDING, final status NOT_FINAL.
+- aapt evidence: package identities correct, targetSdk 36, no `android.hardware.screen.portrait` declaration.
+- Network overlay evidence: remaining explicit placeholder URL markers = 0; endpoint values redacted; production cutover=false.
 
 ## Evidence rules
 
-- SHA-256 is verified before build/export and canonical archives are never overwritten.
-- Godot apps require project payload, package identity, API 36, signature, zipalign, and runtime packaging gates before candidate acceptance.
-- Service-native apps require a non-placeholder HTTPS runtime endpoint plus health verification; temporary Quick Tunnel values are staging evidence only and are not final production configuration.
-- CI PASS is not equivalent to physical-device PASS.
-- Physical-device evidence must contain the exact APK SHA-256 and the gate recomputes the APK SHA locally; a mismatched evidence record is an automatic FAIL.
-- Mobile game source must show sensor-landscape, expandable stretch, touch-input evidence, and no desktop-window override before promotion.
-- Offline/network transition evidence is mandatory; offline behavior must not fabricate ranked/social/economy state.
-- Production signing, Play upload, Cloudflare production cutover, Solana financial actions, and destructive cloud changes remain outside this matrix unless separately authorized.
-- WAVE and THF build paths remain mutually isolated.
-
-## Gate implementation evidence
-
-- `ReleaseOps/mobile/mobile_real_function_gate.py` exact-SHA hardening commit: `14df8c03c03be0fbbcd09043d0479bfa6e93a5ae`.
-- Regression tests commit: `a04f6b3db1f3455025eac0584965376bd7b0432a`.
-- CI workflow commit: `00c34cb0025fcb6452074ef86b02489ac3bfdc26`.
-- GitHub Actions run `34760535595`: PASS; compile step PASS; release-gate unit tests PASS.
+- Verify exact SHA-256 before any install/export evidence is accepted; never overwrite canonical archives.
+- Source/static/build/package PASS is necessary but never equivalent to DEVICE-PASS.
+- Godot phone candidates require real exported payload, sensor-landscape (`orientation=4`), `expand` aspect, touch-safe runtime and no active desktop override. A desktop override explicitly neutralized to `0` is acceptable; a non-zero active override is a FAIL.
+- Online ranked/social/economy/world mutation remains backend-authoritative. Offline/local mode may be real local gameplay but must not fabricate online state.
+- Physical evidence must cover exact candidate install/launch/touch/orientation-layout/background-resume/offline-network/core journey/crash-free smoke. Games additionally require player/avatar where applicable, movement/camera/gameplay interaction, plus FPS/RAM/thermal observation. Rift requires combat evidence; Rush/Fitness require sensor-motion evidence.
+- `ReleaseOps/mobile/mobile_real_function_gate.py` is fail-closed for exact-SHA mismatch and now exposes `--requires-combat` and `--requires-sensor-motion` for product-specific device contracts.
+- `ReleaseOps/mobile/capture_android_device_evidence_v2.py` may collect objective adb evidence, but intentionally leaves human gameplay/touch/orientation/offline-network assertions false until actually observed.
+- No production signing, Google Play publishing, Cloudflare production cutover, Solana/token action, destructive cloud mutation, or persistent cloud key is authorized by this matrix.
 
 ## Next safe sequence
 
-1. Physical-device install/cold-launch/runtime acceptance for Core, Terra and Rift using only the exact candidate SHAs above.
-2. Capture install, launch, touch, orientation/layout, background/resume, offline/network transition, core-user-journey and crash-free evidence; games additionally require player/avatar load, movement/camera/gameplay interaction plus FPS/RAM/thermal observation.
-3. Run the mobile real-function gate against each exact APK plus its device-evidence JSON; any SHA mismatch or missing device evidence remains BLOCKED.
-4. Continue reversible Play/compliance preparation while production hostname, signing and publication remain blocked by their explicit gates.
-5. Resume WAVE immediately if the exact RC13/RC14 canonical workspace/source becomes recoverable; verify identity and SHA before staging.
+1. Use only the current exact candidate SHAs above for device testing; reject historical hashes automatically.
+2. Capture objective adb install/launch/lifecycle/memory/gfx/thermal/log evidence, then complete human-observed touch/orientation/core-gameplay fields without fabricating PASS.
+3. Run `mobile_real_function_gate.py` against the exact APK and completed device JSON; use `--requires-combat` for Rift and `--requires-sensor-motion` for Rush/Fitness Games.
+4. Continue source/gameplay improvements only when candidate bytes or authoritative sources actually change; do not rerun proven gates for unchanged SHAs.
