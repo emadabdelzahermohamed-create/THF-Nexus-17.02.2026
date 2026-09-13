@@ -1,0 +1,32 @@
+name: THF Apps Pass Contract Gate V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/apps_factory/contracts/thf_pass_federation_handoff_v1.json'
+      - 'tools/releaseops/validate_thf_pass_contract.py'
+      - 'tests/releaseops/test_validate_thf_pass_contract.py'
+      - '.github/workflows/thf-apps-pass-contract-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-pass-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Validate candidate contract
+        run: python3 tools/releaseops/validate_thf_pass_contract.py
+      - name: Run regression tests
+        run: python3 -m unittest tests.releaseops.test_validate_thf_pass_contract -v
+      - name: Assert truth boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 tools/releaseops/validate_thf_pass_contract.py | tee /tmp/pass-contract.txt
+          grep -qx 'THF_PASS_FEDERATION_CONTRACT=PASS' /tmp/pass-contract.txt
+          grep -qx 'FINAL_OR_PLAY_READY=FALSE' /tmp/pass-contract.txt
