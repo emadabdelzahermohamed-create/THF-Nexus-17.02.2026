@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "observed_at": "2026-09-13T22:31:48+03:00",
+  "workflow_run": 34777926029,
+  "workflow_head_sha": "e239fb438fd3018294c5607c6c34850560b08e33",
+  "artifact_id": 10324232850,
+  "artifact_digest_sha256": "9bd6a61c6efaca5a15607537a8b2d4434f021c6bf139f370ac8b761fcd2eeb61",
+  "staging_class": "REVERSIBLE_CLOUDFLARE_QUICK_STAGING",
+  "health_json_ok": true,
+  "safe_negative_route_surface": {
+    "login": true,
+    "refresh": false,
+    "logout": false,
+    "revoke": false,
+    "federation_handoff": false,
+    "surface_complete": false
+  },
+  "valid_credential_flow_proven": false,
+  "expired_session_refresh_proven": false,
+  "logout_proven": false,
+  "server_side_revocation_proven": false,
+  "federation_handoff_success_proven": false,
+  "physical_device_proven": false,
+  "production_signing": false,
+  "public_rollout": false,
+  "final_or_play_ready": false,
+  "interpretation": "The live staging runtime exposes a distinct login/token-like route surface, but the required refresh, logout, revoke, and federation/handoff surfaces were not detected by the safe negative probe. No real credentials or accounts were used, so login success and session semantics remain unproven. This evidence must not promote THF Pass or any app to FINAL/PLAY_READY."
+}
