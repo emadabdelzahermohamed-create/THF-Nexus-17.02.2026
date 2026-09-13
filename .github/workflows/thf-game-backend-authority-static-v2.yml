@@ -30,21 +30,23 @@ jobs:
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Read-only registration-shape-aware authority audit
+      - name: Read-only registration and dispatcher authority audit
         shell: bash
         run: |
           set -Eeuo pipefail
           mkdir -p out
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/authority-static.raw <<'PY'
-          import ast,hashlib,json,pathlib
+          import ast,hashlib,json,pathlib,re
           root=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
           assert root.is_dir()
           mutation_methods={'POST','PUT','PATCH','DELETE'}
+          all_methods=mutation_methods|{'GET','HEAD','OPTIONS'}
           sensitive=('world','arena','social','econom','wallet','leader','rank','inventory','avatar','fishing','competition','fitness')
           auth_words=('auth','token','session','user','identity','principal','claim','require','permission','scope','verify')
-          files=[]; parsed=[]; defs={}
+          files=[]; parsed=[]; defs={}; fn_nodes=[]
           def identifiers(node):
               ids=set()
+              if node is None: return ids
               for x in ast.walk(node):
                   if isinstance(x,ast.Name): ids.add(x.id.lower())
                   elif isinstance(x,ast.Attribute): ids.add(x.attr.lower())
@@ -71,8 +73,8 @@ jobs:
               return None
           def method_list(node):
               if isinstance(node,(ast.List,ast.Tuple,ast.Set)):
-                  return [x.value.upper() for x in node.elts if isinstance(x,ast.Constant) and isinstance(x.value,str) and x.value.upper() in mutation_methods|{'GET','HEAD','OPTIONS'}]
-              s=const_str(node); return [s.upper()] if s and s.upper() in mutation_methods|{'GET','HEAD','OPTIONS'} else []
+                  return [x.value.upper() for x in node.elts if isinstance(x,ast.Constant) and isinstance(x.value,str) and x.value.upper() in all_methods]
+              s=const_str(node); return [s.upper()] if s and s.upper() in all_methods else []
           def route_literals(node):
               vals=[]
               for x in ast.walk(node):
@@ -87,20 +89,41 @@ jobs:
               files.append((rel,text.encode())); parsed.append((rel,tree))
               for n in ast.walk(tree):
                   if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)):
-                      defs.setdefault(n.name,[]).append((rel,n,markers_for(n)))
+                      defs.setdefault(n.name,[]).append((rel,n,markers_for(n))); fn_nodes.append((rel,n))
+          # Resolve custom BaseHTTPRequestHandler-style dispatcher methods through helper call graph.
+          fn_methods={n.name:set() for _,n in fn_nodes}
+          call_edges=[]
+          for rel,n in fn_nodes:
+              m=re.fullmatch(r'do_(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)',n.name,re.I)
+              if m: fn_methods[n.name].add(m.group(1).upper())
+              for x in ast.walk(n):
+                  if isinstance(x,ast.Call):
+                      target=dotted(x.func).split('.')[-1]
+                      if target and target in defs and target != n.name: call_edges.append((n.name,target))
+              # Some dispatchers compare a method argument/attribute to a literal HTTP verb.
+              for x in ast.walk(n):
+                  if isinstance(x,ast.Compare):
+                      vals=[]
+                      for y in [x.left,*x.comparators]:
+                          s=const_str(y)
+                          if s and s.upper() in all_methods: vals.append(s.upper())
+                      fn_methods[n.name].update(vals)
+          for _ in range(max(1,len(fn_methods))):
+              changed=False
+              for caller,target in call_edges:
+                  before=len(fn_methods[target]); fn_methods[target].update(fn_methods.get(caller,set()))
+                  changed |= len(fn_methods[target])!=before
+              if not changed: break
           rows=[]; contexts=[]
           for rel,tree in parsed:
               parent={child:node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
               for call in [n for n in ast.walk(tree) if isinstance(n,ast.Call)]:
                   paths=route_literals(call)
                   if not paths: continue
-                  callee=dotted(call.func)
-                  attr=getattr(call.func,'attr','').lower()
-                  methods=[]
-                  if attr.upper() in mutation_methods|{'GET','HEAD','OPTIONS'}: methods=[attr.upper()]
+                  callee=dotted(call.func); attr=getattr(call.func,'attr','').lower(); methods=[]
+                  if attr.upper() in all_methods: methods=[attr.upper()]
                   for kw in call.keywords:
                       if kw.arg in ('methods','method'): methods.extend(method_list(kw.value))
-                  methods=list(dict.fromkeys(methods))
                   handler=''
                   if attr=='add_api_route' and len(call.args)>=2: handler=dotted(call.args[1]).split('.')[-1]
                   for kw in call.keywords:
@@ -110,6 +133,8 @@ jobs:
                       cur=parent[cur]
                       if isinstance(cur,(ast.FunctionDef,ast.AsyncFunctionDef)):
                           enclosing=cur; break
+                  if not methods and enclosing: methods=sorted(fn_methods.get(enclosing.name,set()))
+                  methods=list(dict.fromkeys(methods))
                   local_markers=markers_for(enclosing) if enclosing else []
                   candidates=defs.get(handler,[]) if handler else []
                   handler_markers=sorted(set(local_markers).union(*(set(m) for _,_,m in candidates))) if candidates else local_markers
@@ -118,8 +143,7 @@ jobs:
                       contexts.append({'file':rel,'path':path,'callee':callee or '<call>','methods':methods or ['UNKNOWN'],'enclosing':enclosing.name if enclosing else '<module>','handler':handler or '<unresolved>'})
                       for method in methods:
                           if method in mutation_methods:
-                              rows.append({'registration':'generic_call_context','file':rel,'method':method,'path':path,'callee':callee or '<call>','handler':handler or (enclosing.name if enclosing else '<unresolved>'),'handler_source_file':handler_file,'auth_guard_signal':bool(handler_markers),'auth_marker_classes':handler_markers})
-              # Decorators may use a direct route string even when the call-context resolver misses handler association.
+                              rows.append({'registration':'dispatcher_or_route','file':rel,'method':method,'path':path,'callee':callee or '<call>','handler':handler or (enclosing.name if enclosing else '<unresolved>'),'handler_source_file':handler_file,'auth_guard_signal':bool(handler_markers),'auth_marker_classes':handler_markers})
               for fn in [n for n in ast.walk(tree) if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef))]:
                   local_markers=markers_for(fn)
                   for dec in fn.decorator_list:
@@ -128,18 +152,18 @@ jobs:
                       if method not in mutation_methods: continue
                       for path in route_literals(dec):
                           rows.append({'registration':'decorator','file':rel,'method':method,'path':path,'callee':dotted(dec.func),'handler':fn.name,'handler_source_file':rel,'auth_guard_signal':bool(local_markers),'auth_marker_classes':local_markers})
-          def uniq(rows,keyfields):
+          def uniq(items,keyfields):
               out=[]; seen=set()
-              for r in rows:
+              for r in items:
                   key=tuple(json.dumps(r.get(k),sort_keys=True) for k in keyfields)
                   if key not in seen: seen.add(key); out.append(r)
               return out
           rows=uniq(rows,('method','path','handler')); contexts=uniq(contexts,('file','path','callee','methods','handler'))
           h=hashlib.sha256()
           for rel,b in files: h.update(rel.encode()+b'\0'+b)
-          missing=[r for r in rows if not r['auth_guard_signal']]
-          unknown=[c for c in contexts if c['methods']==['UNKNOWN']]
-          out={'schema':'thf-game-backend-authority-static-v2-shape-aware','runtime_source_sha256':h.hexdigest(),'sensitive_route_context_count':len(contexts),'sensitive_mutation_route_count':len(rows),'unknown_method_context_count':len(unknown),'auth_guard_signal_count':len(rows)-len(missing),'missing_handler_guard_signal_count':len(missing),'routes':rows,'registration_contexts':contexts[:200],'interpretation':'static handler/registration signal only; middleware/global dependencies may supply additional authority and dynamic unauthorized-mutation proof remains required','read_only':True,'host_values_emitted':False,'secrets_emitted':False,'wave_files_read_or_changed':False}
+          missing=[r for r in rows if not r['auth_guard_signal']]; unknown=[c for c in contexts if c['methods']==['UNKNOWN']]
+          public_method_map={k:sorted(v) for k,v in fn_methods.items() if v and (k.startswith('do_') or k in {'_api','_dispatch'})}
+          out={'schema':'thf-game-backend-authority-static-v2-callgraph','runtime_source_sha256':h.hexdigest(),'sensitive_route_context_count':len(contexts),'sensitive_mutation_route_count':len(rows),'unknown_method_context_count':len(unknown),'auth_guard_signal_count':len(rows)-len(missing),'missing_handler_guard_signal_count':len(missing),'dispatcher_method_map':public_method_map,'routes':rows,'registration_contexts':contexts[:200],'interpretation':'conservative static dispatcher/handler signal only; method propagation may over-approximate helper reachability; middleware/global dependencies may supply authority; dynamic unauthorized-mutation proof remains required','read_only':True,'host_values_emitted':False,'secrets_emitted':False,'wave_files_read_or_changed':False}
           print(json.dumps(out,indent=2,sort_keys=True))
           PY
           python3 - <<'PY'
@@ -148,7 +172,7 @@ jobs:
           x=json.loads(raw[start:]); pathlib.Path('out/authority-static.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
           assert x['read_only'] is True and x['host_values_emitted'] is False and x['secrets_emitted'] is False and x['wave_files_read_or_changed'] is False
           assert x['sensitive_route_context_count'] > 0, 'parser found no sensitive route contexts; authority audit blind spot'
-          assert x['sensitive_mutation_route_count'] > 0, 'sensitive routes found but mutation methods unresolved; inspect registration_contexts before changing security status'
+          assert x['sensitive_mutation_route_count'] > 0, 'sensitive routes found but mutation methods unresolved; inspect dispatcher_method_map and registration_contexts before changing security status'
           print('SENSITIVE_ROUTE_CONTEXTS='+str(x['sensitive_route_context_count']))
           print('SENSITIVE_MUTATION_ROUTES='+str(x['sensitive_mutation_route_count']))
           print('UNKNOWN_METHOD_CONTEXTS='+str(x['unknown_method_context_count']))
