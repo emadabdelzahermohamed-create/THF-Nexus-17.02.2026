@@ -124,7 +124,7 @@ with zipfile.ZipFile(src) as z:
             target.mkdir(parents=True, exist_ok=True)
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
-        with z.open(info) as r, open(target, 'wb') as w:
+        with z.open(info) as r, open(target,'wb') as w:
             shutil.copyfileobj(r, w)
 PY
   chmod +x "$PROJECT/android/build/gradlew"
@@ -140,8 +140,6 @@ APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
 ZIPALIGN="$SDK/build-tools/36.0.0/zipalign"
 AAPT2="$SDK/build-tools/36.0.0/aapt2"
 
-# Godot can emit a structurally valid but unsigned APK when the isolated HOME has no debug keystore.
-# Test the signature in an if-condition so the global ERR trap does not abort before safe QA recovery.
 PHASE=apk_signature_verify_initial
 if "$APKSIGNER" verify --verbose "$APK" >"$OUT/apksigner.txt" 2>&1; then
   QA_SIGN_RECOVERY=false
@@ -173,9 +171,20 @@ PHASE=apk_target_sdk_guard
 grep -q "targetSdkVersion:'36'" "$OUT/badging.txt"
 
 PHASE=godot_payload_guard
-ASSET_COUNT="$(unzip -Z1 "$APK" | grep -c '^assets/' || true)"
+# Use ZipFile rather than an unzip|grep pipeline: with pipefail, grep may close early after
+# a match and unzip can exit 141 (SIGPIPE), producing a false FAIL on valid large APKs.
+read -r ASSET_COUNT PCK_COUNT PROJECT_BINARY_COUNT < <(python3 - "$APK" <<'PY'
+import sys, zipfile
+with zipfile.ZipFile(sys.argv[1]) as z:
+    names = z.namelist()
+assets = sum(1 for n in names if n.startswith('assets/') and not n.endswith('/'))
+pcks = sum(1 for n in names if n.lower().endswith('.pck'))
+project_binary = sum(1 for n in names if n == 'assets/project.binary' or n.endswith('/project.binary'))
+print(assets, pcks, project_binary)
+PY
+)
 test "$ASSET_COUNT" -gt 0
-if unzip -Z1 "$APK" | grep -Eq '(^|/)[^/]+\.pck$|^assets/'; then
+if [ "$PCK_COUNT" -gt 0 ] || [ "$PROJECT_BINARY_COUNT" -gt 0 ] || [ "$ASSET_COUNT" -gt 0 ]; then
   PAYLOAD=PASS
 else
   PAYLOAD=FAIL
@@ -185,7 +194,7 @@ test "$PAYLOAD" = PASS
 PHASE=canonical_sha_after
 APK_SHA="$(sha256sum "$APK" | awk '{print $1}')"
 test "$(sha256sum "$SRC" | awk '{print $1}')" = "$FULL_SHA"
-printf 'status=PASS\ncanonical_sha256=%s\napk_sha256=%s\nasset_count=%s\ngodot_payload=%s\npackage=%s\ntarget_sdk=36\nqa_sign_recovery=%s\nproduction_signing=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' \
-  "$FULL_SHA" "$APK_SHA" "$ASSET_COUNT" "$PAYLOAD" "$EXPECTED_PACKAGE" "$QA_SIGN_RECOVERY" | tee "$OUT/TRUTH.txt"
+printf 'status=PASS\ncanonical_sha256=%s\napk_sha256=%s\nasset_count=%s\npck_count=%s\nproject_binary_count=%s\ngodot_payload=%s\npackage=%s\ntarget_sdk=36\nqa_sign_recovery=%s\nproduction_signing=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' \
+  "$FULL_SHA" "$APK_SHA" "$ASSET_COUNT" "$PCK_COUNT" "$PROJECT_BINARY_COUNT" "$PAYLOAD" "$EXPECTED_PACKAGE" "$QA_SIGN_RECOVERY" | tee "$OUT/TRUTH.txt"
 PHASE=complete
 echo GODOT_RUNTIME_FIXED_GATE=PASS
