@@ -29,6 +29,12 @@ def test_fail_closed_placeholders_and_fake_offline():
   assert not r['critical_source_contract']['no_fake_offline_authority_pattern']
   assert not r['critical_source_contract_complete']
 
+def test_cross_line_offline_requirement_is_not_false_positive():
+ with tempfile.TemporaryDirectory() as d:
+  root=wr(d,"requirements=['offline_fallback','anti-cheat_for_ranked']\nrepo.commit()")
+  r=m.audit(root)
+  assert r['critical_source_contract']['no_fake_offline_authority_pattern']
+
 def test_cleartext_rejected():
  with tempfile.TemporaryDirectory() as d:
   r=m.audit(wr(d,'val u="http://api.test.invalid"'))
