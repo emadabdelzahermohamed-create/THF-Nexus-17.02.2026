@@ -55,16 +55,26 @@ jobs:
           echo "url=$PUB" >> "$GITHUB_OUTPUT"
           mkdir -p out
           printf 'staging_endpoint_class=cloudflare_quick_existing\nhealth=PASS\nendpoint_mutation=false\n' > out/runtime-endpoint.txt
-          code=$(curl -sS -o out/openapi.json -w '%{http_code}' --connect-timeout 8 --max-time 15 "$PUB/openapi.json" || true)
+          code=$(curl -sS -o out/openapi.raw -w '%{http_code}' --connect-timeout 8 --max-time 15 "$PUB/openapi.json" || true)
           echo "openapi_http_code=${code:-000}" >> out/runtime-endpoint.txt
-          if [ "$code" = 200 ]; then
+          if [ "$code" = 200 ] && python -m json.tool out/openapi.raw >/dev/null 2>&1; then
+            mv out/openapi.raw out/openapi.json
+            python ReleaseOps/validators/audit_openapi_identity_contract.py out/openapi.json --json-out out/pass-openapi-audit.json >/dev/null
             python - <<'PY' >> out/runtime-endpoint.txt
           import json
           d=json.load(open('out/openapi.json')); paths=sorted(d.get('paths',{}))
+          a=json.load(open('out/pass-openapi-audit.json'))
+          print('openapi_json=true')
           print('openapi_path_count='+str(len(paths)))
-          for p in paths: print('openapi_path='+p)
+          print('identity_lifecycle_surface_complete='+str(a['identity_lifecycle_surface_complete']).lower())
+          print('shared_pass_surface_complete='+str(a['shared_pass_surface_complete']).lower())
           PY
-          else rm -f out/openapi.json; fi
+          else
+            rm -f out/openapi.raw
+            echo 'openapi_json=false' >> out/runtime-endpoint.txt
+            echo 'identity_lifecycle_surface_complete=false' >> out/runtime-endpoint.txt
+            echo 'shared_pass_surface_complete=false' >> out/runtime-endpoint.txt
+          fi
 
       - name: Download verify and clean-extract exact authoritative sources
         env:
@@ -123,13 +133,14 @@ jobs:
           python - <<'PY'
           import csv,json
           rows=list(csv.DictReader(open('out/results.tsv'),delimiter='\t'))
-          d={'schema':1,'mode':'REVERSIBLE_STAGING_QA','apps':rows,'counts':{'total':len(rows),'pass':sum(x['build']=='PASS' for x in rows)},
+          d={'schema':2,'mode':'REVERSIBLE_STAGING_QA','apps':rows,'counts':{'total':len(rows),'pass':sum(x['build']=='PASS' for x in rows)},
              'runtime_truth':{'health_proven':True,'auth_proven':False,'thf_pass_contract_proven':False,'physical_device_proven':False,'production_signing':False,'public_rollout':False,'final_or_play_ready':False}}
           json.dump(d,open('out/summary.json','w'),indent=2); print(d['counts']); assert len(rows)==9 and d['counts']['pass']==9
           PY
           printf '%s\n' 'RUNTIME_STAGING_BINDING=PASS' 'HEALTH=PASS' 'AUTH_FLOW=NOT_PROVEN' 'THF_PASS_CONTRACT=NOT_PROVEN' 'PHYSICAL_DEVICE=NOT_PROVEN' 'FINAL_OR_PLAY_READY=FALSE' > out/TRUTH.txt
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: THF-APPS-RUNTIME-CONFIGURED-STAGING-V1
           path: out/
