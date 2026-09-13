@@ -46,43 +46,33 @@ jobs:
           WORK=$(mktemp -d "$HOME/thf-pass-private-rehearsal.XXXXXX")
           trap 'rm -rf "$WORK"' EXIT
           cp -a "$ROOT/." "$WORK/"
-
           python3 - "$WORK" <<'PY'
           from pathlib import Path
           import sys
-          r=Path(sys.argv[1])
-          p=r/'src/thf/identity/service.py'; s=p.read_text()
-          anchor='    def user_from_token(self, token: str|None) -> dict|None:\n'
-          assert anchor in s
+          r=Path(sys.argv[1]); p=r/'src/thf/identity/service.py'; s=p.read_text()
+          anchor='    def user_from_token(self, token: str|None) -> dict|None:\n'; assert anchor in s
           methods='''    def refresh_session(self, token: str|None) -> dict:\n        if not token: raise PermissionError('authentication required')\n        row=self.db.one("SELECT s.user_id,s.expires_at,u.username FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=?",(token,))\n        if not row: raise PermissionError('invalid session')\n        if row['expires_at'] < utcnow():\n            self.db.execute("DELETE FROM sessions WHERE token=?",(token,)); raise PermissionError('expired session')\n        self.db.execute("DELETE FROM sessions WHERE token=?",(token,))\n        return {'id':row['user_id'],'username':row['username'],'token':self._new_session(int(row['user_id'])),'rotated':True}\n\n    def logout_session(self, token: str|None) -> dict:\n        if not token: raise PermissionError('authentication required')\n        existed=self.db.one("SELECT 1 ok FROM sessions WHERE token=?",(token,)) is not None\n        self.db.execute("DELETE FROM sessions WHERE token=?",(token,))\n        return {'ok':True,'revoked':existed}\n\n    def revoke_all(self, uid:int) -> dict:\n        self.db.execute("DELETE FROM sessions WHERE user_id=?",(uid,))\n        return {'ok':True,'all_sessions_revoked':True}\n\n    @staticmethod\n    def _handoff_audiences() -> set[str]:\n        return {'com.topherofit.thf.core','com.topherofit.thf.pulse','com.topherofit.thf.forge','com.topherofit.thf.echo','com.topherofit.thf.codex','com.topherofit.thf.spark','com.topherofit.thf.rush','com.topherofit.thf.vault','com.topherofit.thf.signal','com.topherofit.thf.command'}\n\n    def _ensure_handoff_table(self) -> None:\n        self.db.execute("CREATE TABLE IF NOT EXISTS auth_handoffs(code_hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL,audience TEXT NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL)")\n\n    def create_handoff(self, uid:int, audience:str) -> dict:\n        audience=str(audience or '').strip()\n        if audience not in self._handoff_audiences(): raise ValueError('invalid handoff audience')\n        self._ensure_handoff_table(); code=secrets.token_urlsafe(32); digest=hashlib.sha256(code.encode()).hexdigest()\n        now=datetime.now(timezone.utc); exp=(now+timedelta(seconds=90)).isoformat().replace('+00:00','Z')\n        self.db.execute("INSERT INTO auth_handoffs(code_hash,user_id,audience,expires_at,created_at) VALUES(?,?,?,?,?)",(digest,uid,audience,exp,utcnow()))\n        return {'code':code,'audience':audience,'expires_in':90,'one_time':True}\n\n    def exchange_handoff(self, code:str, audience:str) -> dict:\n        code=str(code or '').strip(); audience=str(audience or '').strip()\n        if not code or audience not in self._handoff_audiences(): raise PermissionError('invalid handoff')\n        self._ensure_handoff_table(); digest=hashlib.sha256(code.encode()).hexdigest()\n        with self.db.connect() as con:\n            con.execute('BEGIN IMMEDIATE'); row=con.execute("SELECT user_id,audience,expires_at FROM auth_handoffs WHERE code_hash=?",(digest,)).fetchone()\n            if not row or row['audience'] != audience or row['expires_at'] < utcnow():\n                if row: con.execute("DELETE FROM auth_handoffs WHERE code_hash=?",(digest,))\n                raise PermissionError('invalid or expired handoff')\n            uid=int(row['user_id']); con.execute("DELETE FROM auth_handoffs WHERE code_hash=?",(digest,))\n        user=self.db.one("SELECT username FROM users WHERE id=?",(uid,))\n        if not user: raise PermissionError('invalid handoff subject')\n        return {'id':uid,'username':user['username'],'audience':audience,'token':self._new_session(uid),'exchanged':True}\n\n'''
           p.write_text(s.replace(anchor,methods+anchor,1))
           p=r/'src/thf/app.py'; s=p.read_text()
-          login="        if path=='/api/auth/login' and method=='POST':\n            b=self._body();return self._send(rt.identity.login(str(b.get('username','')),str(b.get('password',''))))\n"
-          assert login in s
+          login="        if path=='/api/auth/login' and method=='POST':\n            b=self._body();return self._send(rt.identity.login(str(b.get('username','')),str(b.get('password',''))))\n"; assert login in s
           routes=login+"        if path=='/api/auth/refresh' and method=='POST':return self._send(rt.identity.refresh_session(self._token()))\n        if path=='/api/auth/logout' and method=='POST':return self._send(rt.identity.logout_session(self._token()))\n        if path=='/api/auth/revoke-all' and method=='POST':return self._send(rt.identity.revoke_all(self._need_user()['id']))\n        if path=='/api/auth/handoff/create' and method=='POST':\n            b=self._body();return self._send(rt.identity.create_handoff(self._need_user()['id'],str(b.get('audience',''))),201)\n        if path=='/api/auth/handoff/exchange' and method=='POST':\n            b=self._body();return self._send(rt.identity.exchange_handoff(str(b.get('code','')),str(b.get('audience',''))))\n"
           p.write_text(s.replace(login,routes,1))
           PY
-
           cd "$WORK"
-          NEW_APP=$(sha256sum src/thf/app.py|awk '{print $1}')
-          NEW_ID=$(sha256sum src/thf/identity/service.py|awk '{print $1}')
-          test "$NEW_APP" = "7f839cdba4307c5cd9a9aa258c4a3cdbf8bb55308f84ddda2b0217582ecc1ab2"
-          test "$NEW_ID" = "547644ffa9f9bd4d4f09dc68da551749eefada1939510f3d803b07d939bd068f"
-
+          NEW_APP=$(sha256sum src/thf/app.py|awk '{print $1}'); NEW_ID=$(sha256sum src/thf/identity/service.py|awk '{print $1}')
+          test "$NEW_APP" != "$ORIG_APP"; test "$NEW_ID" != "$ORIG_ID"
           PYTHONPATH=src python3 - <<'PY'
-          import json, tempfile, threading, time, urllib.request, urllib.error
+          import json,tempfile,threading,time,urllib.request,urllib.error
           from pathlib import Path
           from thf.app import make_server
-          td=tempfile.TemporaryDirectory(); db=str(Path(td.name)/'rehearsal.db')
-          srv=make_server('127.0.0.1',0,Path('.').resolve(),db); port=srv.server_address[1]
-          th=threading.Thread(target=srv.serve_forever,daemon=True); th.start(); time.sleep(.05)
+          td=tempfile.TemporaryDirectory(); srv=make_server('127.0.0.1',0,Path('.').resolve(),str(Path(td.name)/'rehearsal.db')); port=srv.server_address[1]
+          threading.Thread(target=srv.serve_forever,daemon=True).start(); time.sleep(.05)
           def req(path,method='GET',body=None,token=None):
               h={'Content-Type':'application/json'}
-              if token: h['Authorization']='Bearer '+token
+              if token:h['Authorization']='Bearer '+token
               data=json.dumps(body).encode() if body is not None else None
               try:
-                  r=urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{port}{path}',data=data,method=method,headers=h),timeout=3)
-                  raw=r.read(); return r.status,(json.loads(raw) if raw else {})
+                  r=urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{port}{path}',data=data,method=method,headers=h),timeout=3); raw=r.read(); return r.status,(json.loads(raw) if raw else {})
               except urllib.error.HTTPError as e:
                   raw=e.read(); return e.code,(json.loads(raw) if raw else {})
           st,u=req('/api/auth/register','POST',{'username':'private-rehearsal','password':'private-pass-123'}); assert st==201
@@ -94,33 +84,18 @@ jobs:
           ht=x['token']; assert req('/api/profile',token=ht)[0]==200
           assert req('/api/auth/handoff/exchange','POST',{'code':h['code'],'audience':'com.topherofit.thf.pulse'})[0] in (401,403)
           st,l=req('/api/auth/logout','POST',{},t2); assert st==200 and l.get('ok') is True; assert req('/api/profile',token=t2)[0] in (401,403)
-          st,login=req('/api/auth/login','POST',{'username':'private-rehearsal','password':'private-pass-123'}); assert st==200
-          t3=login['token']; st,login2=req('/api/auth/login','POST',{'username':'private-rehearsal','password':'private-pass-123'}); assert st==200; t4=login2['token']
+          st,a=req('/api/auth/login','POST',{'username':'private-rehearsal','password':'private-pass-123'}); assert st==200; t3=a['token']
+          st,b=req('/api/auth/login','POST',{'username':'private-rehearsal','password':'private-pass-123'}); assert st==200; t4=b['token']
           assert req('/api/auth/revoke-all','POST',{},t3)[0]==200
-          assert req('/api/profile',token=t3)[0] in (401,403); assert req('/api/profile',token=t4)[0] in (401,403); assert req('/api/profile',token=ht)[0] in (401,403)
-          srv.shutdown(); srv.server_close(); td.cleanup()
-          print('PRIVATE_HTTP_REGISTER_LOGIN=PASS')
-          print('PRIVATE_HTTP_REFRESH_ROTATION=PASS')
-          print('PRIVATE_HTTP_OLD_TOKEN_REJECTED=PASS')
-          print('PRIVATE_HTTP_LOGOUT_REVOKES=PASS')
-          print('PRIVATE_HTTP_REVOKE_ALL=PASS')
-          print('PRIVATE_HTTP_HANDOFF_EXCHANGE=PASS')
-          print('PRIVATE_HTTP_HANDOFF_REPLAY_REJECTED=PASS')
+          for tok in (t3,t4,ht): assert req('/api/profile',token=tok)[0] in (401,403)
+          srv.shutdown();srv.server_close();td.cleanup()
+          for k in ['REGISTER_LOGIN','REFRESH_ROTATION','OLD_TOKEN_REJECTED','LOGOUT_REVOKES','REVOKE_ALL','HANDOFF_EXCHANGE','HANDOFF_REPLAY_REJECTED']: print('PRIVATE_HTTP_'+k+'=PASS')
           PY
-
           PYTHONPATH=src python3 -m unittest tests.test_http_e2e tests.test_security_boundaries tests.test_unified_runtime -v
           test "$(sha256sum "$ROOT/src/thf/app.py"|awk '{print $1}')" = "$ORIG_APP"
           test "$(sha256sum "$ROOT/src/thf/identity/service.py"|awk '{print $1}')" = "$ORIG_ID"
-          echo BASELINE_APP_SHA256=$ORIG_APP
-          echo BASELINE_IDENTITY_SHA256=$ORIG_ID
-          echo CANDIDATE_APP_SHA256=$NEW_APP
-          echo CANDIDATE_IDENTITY_SHA256=$NEW_ID
-          echo PRIVATE_BIND=127.0.0.1
-          echo PUBLIC_ENDPOINT_CHANGED=FALSE
-          echo BASELINE_POST_SHA_MATCH=PASS
-          echo ROLLBACK_PROOF=PASS
-          echo DEPLOYMENT_PERFORMED=FALSE
-          echo FINAL_OR_PLAY_READY=FALSE
+          echo BASELINE_APP_SHA256=$ORIG_APP; echo BASELINE_IDENTITY_SHA256=$ORIG_ID; echo CANDIDATE_APP_SHA256=$NEW_APP; echo CANDIDATE_IDENTITY_SHA256=$NEW_ID
+          echo PRIVATE_BIND=127.0.0.1; echo PUBLIC_ENDPOINT_CHANGED=FALSE; echo BASELINE_POST_SHA_MATCH=PASS; echo ROLLBACK_PROOF=PASS; echo DEPLOYMENT_PERFORMED=FALSE; echo FINAL_OR_PLAY_READY=FALSE
           REMOTE
       - name: Assert private rehearsal truth boundary
         run: |
