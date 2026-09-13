@@ -9,8 +9,8 @@ GOOD_GD='''extends CharacterBody3D\nvar run_speed=8.0\nfunc _input(event):\n if 
 RIFT_GD='''# attack weapon damage hitbox hurtbox reload anti_cheat validate_hit proof_of_human\n'''
 
 class AuditTests(unittest.TestCase):
- def make(self,game='terra',project=GOOD_PROJECT,gd=GOOD_GD):
-  td=tempfile.TemporaryDirectory(); root=pathlib.Path(td.name); (root/'project.godot').write_text(project); (root/'export_presets.cfg').write_text('[preset.0]\nname="Android"\nplatform="Android"\n'); (root/'main.gd').write_text(gd+(RIFT_GD if game=='rift' else ''))
+ def make(self,project=GOOD_PROJECT,gd=GOOD_GD,with_combat=False):
+  td=tempfile.TemporaryDirectory(); root=pathlib.Path(td.name); (root/'project.godot').write_text(project); (root/'export_presets.cfg').write_text('[preset.0]\nname="Android"\nplatform="Android"\n'); (root/'main.gd').write_text(gd+(RIFT_GD if with_combat else ''))
   return td,root
  def statuses(self,root,game):
   checks,_=audit.audit(root,game); return {c['name']:c['status'] for c in checks}
@@ -21,9 +21,9 @@ class AuditTests(unittest.TestCase):
  def test_placeholder_endpoint_rejected(self):
   td,r=self.make(gd=GOOD_GD+'\n# https://example.com/api\n'); self.assertEqual(self.statuses(r,'terra')['no_placeholder_endpoint'],'FAIL'); td.cleanup()
  def test_rift_requires_combat(self):
-  td,r=self.make(game='rift',gd=GOOD_GD); self.assertEqual(self.statuses(r,'rift')['combat_wiring'],'FAIL'); td.cleanup()
+  td,r=self.make(with_combat=False); self.assertEqual(self.statuses(r,'rift')['combat_wiring'],'FAIL'); td.cleanup()
  def test_rift_combat_passes(self):
-  td,r=self.make(game='rift'); self.assertEqual(self.statuses(r,'rift')['combat_wiring'],'PASS'); td.cleanup()
+  td,r=self.make(with_combat=True); self.assertEqual(self.statuses(r,'rift')['combat_wiring'],'PASS'); td.cleanup()
  def test_duplicate_project_rejected(self):
   td,r=self.make(); (r/'nested').mkdir(); (r/'nested'/'project.godot').write_text(GOOD_PROJECT); self.assertEqual(self.statuses(r,'terra')['unique_project_root'],'FAIL'); td.cleanup()
 if __name__=='__main__': unittest.main()
