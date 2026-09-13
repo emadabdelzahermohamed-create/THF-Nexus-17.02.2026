@@ -1,0 +1,41 @@
+name: THF Core MobileFix1 Failure Inspect
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-core-mobilefix1-failure-inspect.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Read failed build evidence
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='set -u
+          ROOT="$HOME/thf-core-mobilefix1-live"; OUT="$ROOT/out"
+          echo "=== public url ==="; cat "$OUT/PUBLIC_URL.txt" 2>/dev/null || true
+          echo "=== local health ==="; cat "$OUT/local-health.json" 2>/dev/null || true
+          echo "=== public health ==="; cat "$OUT/public-health.json" 2>/dev/null || true
+          echo "=== backend tail ==="; tail -80 "$OUT/backend.log" 2>/dev/null || true
+          echo "=== cloudflared tail ==="; tail -80 "$OUT/cloudflared.log" 2>/dev/null || true
+          echo "=== gradle tail ==="; tail -160 "$OUT/gradle.log" 2>/dev/null || true
+          echo "=== outputs ==="; find "$OUT" -maxdepth 1 -type f -printf "%f %s bytes\n" | sort
+          echo "=== apk exists ==="; ls -l "$OUT/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk" 2>/dev/null || true
+          '
