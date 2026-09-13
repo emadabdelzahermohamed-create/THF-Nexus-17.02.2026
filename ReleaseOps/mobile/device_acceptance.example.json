@@ -1,0 +1,20 @@
+{
+  "exact_candidate_sha256": "REPLACE_WITH_64_HEX_SHA256",
+  "device_class": "low_or_mid_android_phone",
+  "android_version": "record_actual_version",
+  "install_pass": false,
+  "launch_pass": false,
+  "touch_pass": false,
+  "orientation_layout_pass": false,
+  "background_resume_pass": false,
+  "offline_network_transition_pass": false,
+  "backend_https_pass": false,
+  "backend_health_auth_pass": false,
+  "core_user_journey_pass": false,
+  "crash_free_smoke_pass": false,
+  "avatar_or_player_load_pass": false,
+  "movement_camera_pass": false,
+  "gameplay_interaction_pass": false,
+  "fps_ram_thermal_observed": false,
+  "notes": "Never set a field true without testing the exact candidate SHA on a physical phone. App-only products may omit game-specific fields."
+}
