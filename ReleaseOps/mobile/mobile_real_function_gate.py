@@ -35,6 +35,26 @@ def read_tree(root: Path) -> str:
     return '\n'.join(chunks)
 
 
+def godot_setting_values(text: str, key: str) -> list[str]:
+    """Return uncommented Godot setting values for an exact key."""
+    pat = re.compile(rf'^\s*{re.escape(key)}\s*=\s*(.*?)\s*$', re.M)
+    values=[]
+    for match in pat.finditer(text):
+        line_start=text.rfind('\n', 0, match.start()) + 1
+        prefix=text[line_start:match.start()].lstrip()
+        if prefix.startswith((';','#')):
+            continue
+        values.append(match.group(1).strip())
+    return values
+
+
+def neutralized_numeric_setting(text: str, key: str) -> bool:
+    values=godot_setting_values(text,key)
+    if not values:
+        return True
+    return all(v in {'0','0.0','0.00'} for v in values)
+
+
 def apk_payload_gate(apk: Path, kind: str) -> list[str]:
     errs=[]
     if not apk.exists(): return [f"APK missing: {apk}"]
@@ -65,14 +85,15 @@ def source_gate(root: Path, kind: str, online_required: bool) -> list[str]:
             errs.append(f'exactly one project.godot required for game source; found {len(projects)}')
         else:
             pgt=projects[0].read_text('utf-8', errors='ignore')
-            if 'window/handheld/orientation=1' in pgt:
-                errs.append('portrait orientation is forbidden for THF Terra/Rift landscape games')
-            if 'window/handheld/orientation=4' not in pgt:
-                errs.append('sensor-landscape orientation=4 required for THF Terra/Rift phone builds')
-            if 'window/stretch/aspect="expand"' not in pgt:
-                errs.append('mobile stretch aspect=expand required')
-            if 'window/size/window_width_override' in pgt or 'window/size/window_height_override' in pgt:
-                errs.append('desktop window override found in mobile game source')
+            orientation=godot_setting_values(pgt,'window/handheld/orientation')
+            if orientation != ['4']:
+                errs.append(f'sensor-landscape orientation=4 required for THF Terra/Rift phone builds; found {orientation or "missing"}')
+            aspect=godot_setting_values(pgt,'window/stretch/aspect')
+            if aspect != ['"expand"']:
+                errs.append(f'mobile stretch aspect=expand required; found {aspect or "missing"}')
+            for key in ('window/size/window_width_override','window/size/window_height_override','window_width_override','window_height_override'):
+                if not neutralized_numeric_setting(pgt,key):
+                    errs.append(f'desktop window override is active in mobile game source: {key}')
         # Touch input must be present in game source; desktop-only keyboard/mouse shells are rejected.
         touch_markers=('InputEventScreenTouch','InputEventScreenDrag','TouchScreenButton','screen_touch','screen_drag')
         if not any(m in text for m in touch_markers):
@@ -80,7 +101,8 @@ def source_gate(root: Path, kind: str, online_required: bool) -> list[str]:
     return errs
 
 
-def device_gate(path: Path|None, kind: str, online_required: bool, expected_sha256: str|None) -> list[str]:
+def device_gate(path: Path|None, kind: str, online_required: bool, expected_sha256: str|None,
+                *, require_combat: bool=False, require_sensor_motion: bool=False) -> list[str]:
     if path is None or not path.exists():
         return ['physical-device acceptance evidence missing']
     try: d=json.loads(path.read_text('utf-8'))
@@ -88,6 +110,8 @@ def device_gate(path: Path|None, kind: str, online_required: bool, expected_sha2
     required=['exact_candidate_sha256','install_pass','launch_pass','touch_pass','orientation_layout_pass','background_resume_pass','offline_network_transition_pass','crash_free_smoke_pass','core_user_journey_pass']
     if online_required: required += ['backend_https_pass','backend_health_auth_pass']
     if kind == 'game': required += ['avatar_or_player_load_pass','movement_camera_pass','gameplay_interaction_pass','fps_ram_thermal_observed']
+    if require_combat: required += ['combat_pass']
+    if require_sensor_motion: required += ['sensor_motion_pass']
     errs=[]
     for k in required:
         v=d.get(k)
@@ -109,6 +133,8 @@ def main() -> int:
     ap.add_argument('--apk')
     ap.add_argument('--device-evidence')
     ap.add_argument('--online-required', action='store_true')
+    ap.add_argument('--requires-combat', action='store_true', help='Require physical combat interaction evidence (Rift/Arena).')
+    ap.add_argument('--requires-sensor-motion', action='store_true', help='Require physical sensor/motion gameplay evidence (Rush/Fitness Games).')
     a=ap.parse_args()
     root=Path(a.source)
     errs=[]
@@ -122,7 +148,12 @@ def main() -> int:
             apk_sha=sha256_file(apk)
     else:
         errs.append('installable APK package evidence missing')
-    errs += device_gate(Path(a.device_evidence) if a.device_evidence else None,a.kind,a.online_required,apk_sha)
+    errs += device_gate(
+        Path(a.device_evidence) if a.device_evidence else None,
+        a.kind,a.online_required,apk_sha,
+        require_combat=a.requires_combat,
+        require_sensor_motion=a.requires_sensor_motion,
+    )
     result={'product':a.product,'status':'PASS' if not errs else 'BLOCKED','apk_sha256':apk_sha,'errors':errs}
     print(json.dumps(result,ensure_ascii=False,indent=2))
     return 0 if not errs else 2
