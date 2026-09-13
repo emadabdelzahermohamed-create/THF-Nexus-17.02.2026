@@ -24,7 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Validator regression tests
-        run: python -m pytest -q ReleaseOps/validators/test_audit_identity_handoff_contract.py
+        run: |
+          python -m pip install --disable-pip-version-check pytest >/dev/null
+          python -m pytest -q ReleaseOps/validators/test_audit_identity_handoff_contract.py
       - id: auth
         uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
