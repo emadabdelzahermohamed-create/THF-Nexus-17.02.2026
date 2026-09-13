@@ -35,8 +35,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p out
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/runtime-shape.json <<'PY'
-          import ast,hashlib,json,pathlib,re
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/runtime-shape.raw <<'PY'
+          import ast,hashlib,json,pathlib
           src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src/thf/app.py"
           raw=src.read_bytes(); text=raw.decode('utf-8','replace'); tree=ast.parse(text)
           result={
@@ -77,20 +77,22 @@ jobs:
           result['server_constructor_calls']=constructors
           result['env_names']=sorted(envs)
           result['main_guard_calls']=sorted(set(main_calls))
+          print('__THF_JSON_BEGIN__')
           print(json.dumps(result,indent=2,sort_keys=True))
+          print('__THF_JSON_END__')
           PY
           python3 - <<'PY'
           import json,pathlib,re
-          p=pathlib.Path('out/runtime-shape.json'); x=json.loads(p.read_text())
+          raw=pathlib.Path('out/runtime-shape.raw').read_text(errors='ignore')
+          a=raw.rfind('__THF_JSON_BEGIN__'); b=raw.rfind('__THF_JSON_END__')
+          assert a>=0 and b>a, 'bounded JSON not found'
+          x=json.loads(raw[a+len('__THF_JSON_BEGIN__'):b].strip())
+          pathlib.Path('out/runtime-shape.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
           assert x['schema']=='thf-game-backend-runtime-shape-v1'
           assert re.fullmatch(r'[0-9a-f]{64}',x['app_py_sha256'])
-          assert x['sensitive_values_emitted'] is False
-          assert x['canonical_source_modified'] is False
-          assert x['wave_files_read_or_changed'] is False
-          assert x['production_credentials_used'] is False
-          assert x['external_network_allowed'] is False
-          assert x['final_or_play_ready'] is False
-          print(json.dumps(x,indent=2,sort_keys=True))
+          for k in ('sensitive_values_emitted','canonical_source_modified','wave_files_read_or_changed','production_credentials_used','external_network_allowed','final_or_play_ready'):
+            assert x[k] is False, k
+          assert any(f['name']=='make_server' for f in x['functions']), 'make_server not found'
           print('RUNTIME_SHAPE_INSPECTION=PASS')
           print('FINAL_OR_PLAY_READY=FALSE')
           PY
