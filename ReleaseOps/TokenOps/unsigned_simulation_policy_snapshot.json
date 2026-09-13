@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "source_head": "81c82de02d2cf7fe1ccdfec89aa66b0aef53dcf4",
+  "authoritative_policy_blob_sha": "f22f4b366b5861e4086470af163ab6f2f8c4e8cb",
+  "treasury_policy_blob_sha": "10265e7b5534dfcafabfcdeee2f03de7e678417f",
+  "economics": {
+    "active_user_revenue_share": 0.35,
+    "approved_supply_floor_target_ui": "8000000000",
+    "burn_source_policy": "treasury_controlled_balances_only"
+  },
+  "distribution_controls": {
+    "anti_sybil_required": true,
+    "activity_evidence_required": true,
+    "anti_whale_cap_required": true,
+    "per_user_cap": null,
+    "epoch_budget_cap": null,
+    "production_caps_configured": false
+  },
+  "vesting_rewards": {
+    "vesting_requires_external_multisig": true,
+    "reward_epoch_requires_external_multisig": true,
+    "minimum_reward_epoch_approvals": 2,
+    "minimum_vesting_settlement_approvals": 2
+  },
+  "burn_governance": {
+    "minimum_burn_approvals": 3,
+    "execution": "external_multisig",
+    "supply_floor_ui": "8000000000"
+  },
+  "safety": {
+    "production_signer_policy_approved": false,
+    "simulation_execution_permitted": false,
+    "execution_authorized": false,
+    "transaction_signing": false,
+    "transaction_broadcast": false,
+    "wave_mawja_untouched": true
+  },
+  "admission_status": "fail_closed_until_anti_whale_caps_are_authoritatively_configured"
+}
