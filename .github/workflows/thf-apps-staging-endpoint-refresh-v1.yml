@@ -1,0 +1,82 @@
+name: THF Apps Staging Endpoint Refresh V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-apps-staging-endpoint-refresh-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Refresh only the reversible THF quick staging tunnel if needed
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          RUNTIME="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          CF="$HOME/bin/cloudflared"
+          test -d "$RUNTIME"
+          test -x "$CF"
+          python3 - <<'PY'
+          import json,urllib.request
+          d=json.load(urllib.request.urlopen('http://127.0.0.1:18080/health',timeout=5))
+          assert d.get('ok') is True
+          PY
+          check_pub() {
+            python3 - "$1" <<'PY'
+          import json,sys,urllib.request
+          u=sys.argv[1]
+          if not u.startswith('https://') or not u.endswith('.trycloudflare.com'): raise SystemExit(2)
+          d=json.load(urllib.request.urlopen(u.rstrip('/')+'/health',timeout=8))
+          assert d.get('ok') is True
+          PY
+          }
+          PUB=""
+          [ -f "$RUNTIME/runtime/public-url.txt" ] && PUB="$(cat "$RUNTIME/runtime/public-url.txt" 2>/dev/null || true)"
+          if [ -n "$PUB" ] && check_pub "$PUB" >/dev/null 2>&1; then
+            MUTATED=false
+          else
+            mkdir -p "$RUNTIME/runtime/pids" "$RUNTIME/runtime/logs"
+            if [ -f "$RUNTIME/runtime/pids/cloudflared-quick.pid" ]; then
+              old="$(cat "$RUNTIME/runtime/pids/cloudflared-quick.pid" || true)"
+              [[ "$old" =~ ^[0-9]+$ ]] && kill "$old" 2>/dev/null || true
+            fi
+            : > "$RUNTIME/runtime/logs/cloudflared-quick.log"
+            nohup "$CF" tunnel --no-autoupdate --url http://127.0.0.1:18080 >"$RUNTIME/runtime/logs/cloudflared-quick.log" 2>&1 &
+            echo $! > "$RUNTIME/runtime/pids/cloudflared-quick.pid"
+            PUB=""
+            for _ in $(seq 1 60); do
+              PUB="$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' "$RUNTIME/runtime/logs/cloudflared-quick.log" | head -1 || true)"
+              [ -n "$PUB" ] && break
+              sleep .5
+            done
+            test -n "$PUB"
+            check_pub "$PUB"
+            printf '%s\n' "$PUB" > "$RUNTIME/runtime/public-url.txt"
+            chmod 600 "$RUNTIME/runtime/public-url.txt"
+            MUTATED=true
+          fi
+          printf 'status=PASS\nhealth=PASS\nendpoint_class=cloudflare_quick_staging\nendpoint_refreshed=%s\nproduction_cutover=false\nwave_untouched=true\n' "$MUTATED"
+          REMOTE
