@@ -47,7 +47,7 @@ jobs:
           ROOT="$HOME/thf-spark-rush-local-practice-candidate-v1"; rm -rf "$ROOT"; mkdir -p "$ROOT/out"
           SDK="$HOME/thf-builder-rc16-build/android-sdk"; DIST="$HOME/thf-builder-rc16-build/cache/gradle-dist-8.11.1/gradle-8.11.1/bin/gradle"
           test -d "$SDK"; test -x "$DIST"
-          BT=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1); test -x "$BT/aapt"; test -x "$BT/apksigner"
+          BT=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1); test -x "$BT/aapt"; test -x "$BT/apksigner"; test -x "$BT/zipalign"
           safe_extract(){ python3 - "$1" "$2" <<'PY'
           import pathlib,shutil,sys,zipfile
           src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve();dst.mkdir(parents=True,exist_ok=True)
@@ -69,35 +69,34 @@ jobs:
             safe_extract "$src" "$work"
             python3 /tmp/thf_spark_rush_local_practice_overlay_v1.py "$work" --kind "$kind" --evidence-out "$ev/overlay.txt"
             asset=$(find "$work" -path '*/android/app/src/main/assets/offline.html' -type f -print -quit);test -n "$asset"
-            grep -q 'Local offline practice only' "$asset"
-            grep -q "addEventListener('pointerdown'" "$asset"
-            grep -q 'requestAnimationFrame(gameLoop)' "$asset"
-            grep -q 'ranked, social, wallet, economy, rewards, or fitness-evidence' "$asset"
+            grep -q 'Local offline practice only' "$asset";grep -q "addEventListener('pointerdown'" "$asset";grep -q 'requestAnimationFrame(gameLoop)' "$asset";grep -q 'ranked, social, wallet, economy, rewards, or fitness-evidence' "$asset"
             if [ "$kind" = spark ]; then grep -q 'newLearningRound' "$asset"; else grep -q 'nextFitnessTarget' "$asset"; fi
             proj=$(dirname "$(find "$work" -path '*/android/settings.gradle' -type f -print -quit)");test -n "$proj"
             export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" GRADLE_USER_HOME="$ROOT/gradle-home-$tag";mkdir -p "$GRADLE_USER_HOME"
             printf 'sdk.dir=%s\n' "$SDK" > "$proj/local.properties"
-            (cd "$proj" && "$DIST" --no-daemon :app:assembleDebug > "$ev/gradle.log" 2>&1)
-            apk=$(find "$proj/app/build/outputs/apk" -type f -name '*.apk' -print -quit);test -s "$apk"
-            "$BT/apksigner" verify --verbose "$apk" > "$ev/apksigner.txt"
-            badging=$("$BT/aapt" dump badging "$apk");printf '%s\n' "$badging" > "$ev/badging.txt"
+            unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+            (cd "$proj" && "$DIST" --no-daemon :app:assembleRelease > "$ev/gradle.log" 2>&1)
+            apk=$(find "$proj/app/build/outputs/apk" -type f -name '*release*.apk' -print -quit);test -s "$apk"
+            qa="$ev/$tag-qa.apk"; aligned="$ev/aligned-unsigned.apk"; "$BT/zipalign" -f -p 4 "$apk" "$aligned"
+            ks="$ev/qa-only.keystore"; keytool -genkeypair -noprompt -keystore "$ks" -storepass android -alias qa -keypass android -dname 'CN=THF QA,O=TopHeroFit,C=EG' -keyalg RSA -keysize 2048 -validity 30 >/dev/null 2>&1
+            "$BT/apksigner" sign --ks "$ks" --ks-key-alias qa --ks-pass pass:android --key-pass pass:android --out "$qa" "$aligned";rm -f "$ks" "$aligned"
+            "$BT/apksigner" verify --verbose "$qa" > "$ev/apksigner.txt"; "$BT/zipalign" -c -p 4 "$qa" >/dev/null
+            badging=$("$BT/aapt" dump badging "$qa");printf '%s\n' "$badging" > "$ev/badging.txt"
             grep -q "package: name='$pkg'" <<<"$badging";grep -q "targetSdkVersion:'36'" <<<"$badging"
-            unzip -p "$apk" assets/offline.html > "$ev/offline-from-apk.html"
-            grep -q 'Local offline practice only' "$ev/offline-from-apk.html"
-            grep -q "addEventListener('pointerdown'" "$ev/offline-from-apk.html"
-            cp "$apk" "$ev/$tag-debug.apk"
-            apksha=$(sha256sum "$ev/$tag-debug.apk"|awk '{print $1}')
+            unzip -p "$qa" assets/offline.html > "$ev/offline-from-apk.html"
+            grep -q 'Local offline practice only' "$ev/offline-from-apk.html";grep -q "addEventListener('pointerdown'" "$ev/offline-from-apk.html"
+            apksha=$(sha256sum "$qa"|awk '{print $1}')
             python3 - "$ev/offline-from-apk.html" <<'PY'
           import pathlib,sys
           s=pathlib.Path(sys.argv[1]).read_text(errors='strict')
           required=['playerState','loadLocalAvatar','movePlayerTowardTarget','requestAnimationFrame(gameLoop)',"addEventListener('pointerdown'",'Local offline practice only']
           missing=[x for x in required if x not in s]
           if missing: raise SystemExit('missing runtime markers: '+','.join(missing))
-          if 'localStorage.setItem("rank' in s or 'wallet' in s and 'wallet, economy' not in s: raise SystemExit('unexpected online-state write marker')
+          if 'localStorage.setItem("rank' in s or ('wallet' in s and 'wallet, economy' not in s): raise SystemExit('unexpected online-state write marker')
           print('packaged_local_game_contract=PASS')
           PY
             test "$(sha256sum "$src"|awk '{print $1}')" = "$expected"
-            echo "=== $kind ===";echo "source_sha256=$expected";echo "candidate_apk_sha256=$apksha";echo 'target_sdk=36';echo 'offline_local_game=PASS';echo 'touch_input=PASS';echo 'player_state=PASS';echo 'game_loop=PASS';echo 'ranked_state_written=false';echo 'economy_state_written=false';echo 'fitness_evidence_written=false';echo 'canonical_archive_unchanged=true';echo 'device_status=PENDING';echo 'final_status=NOT_FINAL'
+            echo "=== $kind ===";echo "source_sha256=$expected";echo "candidate_apk_sha256=$apksha";echo 'target_sdk=36';echo 'offline_local_game=PASS';echo 'touch_input=PASS';echo 'player_state=PASS';echo 'game_loop=PASS';echo 'ranked_state_written=false';echo 'economy_state_written=false';echo 'fitness_evidence_written=false';echo 'qa_signing_only=true';echo 'canonical_archive_unchanged=true';echo 'device_status=PENDING';echo 'final_status=NOT_FINAL'
           }
           run_one spark "$HOME/thf-apps-rc2-exact-candidate-v2/source/spark.zip" 6b74f8d75df8c0b7f74d8c2fee8be7e3517f3803cb42968735bc7a10939bc18c com.topherofit.thf.spark THF-Spark-RC2-Local-Practice
           run_one rush "$HOME/thf-apps-rc2-exact-candidate-v2/source/rush.zip" bb6ff035186b13cdde853145f42e66259c205889de2a7b368da34c9cb0582ba7 com.topherofit.thf.rush THF-Rush-RC2-Local-Practice
@@ -129,5 +128,6 @@ jobs:
           grep -q '^production_signing=false$' out/summary.txt
           grep -q '^canonical_archives_mutated=false$' out/summary.txt
           test "$(grep -c '^offline_local_game=PASS$' out/summary.txt)" -eq 2
+          test "$(grep -c '^qa_signing_only=true$' out/summary.txt)" -eq 2
           test "$(grep -c '^device_status=PENDING$' out/summary.txt)" -eq 2
           test "$(grep -c '^final_status=NOT_FINAL$' out/summary.txt)" -eq 2
