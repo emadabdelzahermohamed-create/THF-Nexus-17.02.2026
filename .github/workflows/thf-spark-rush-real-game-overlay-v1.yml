@@ -26,15 +26,17 @@ jobs:
       matrix:
         include:
           - app: spark
+            checkpoint: RC4
             profile: learning
-            source_sha: dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0
+            source_sha: 58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43
             package_id: com.topherofit.thf.spark
-            drive_id: 1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+            drive_id: 1bwvy2huHjkpof3ZcH1QEJK23ep7SKKEm
           - app: rush
+            checkpoint: RC4
             profile: fitness
-            source_sha: bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b
+            source_sha: 766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c
             package_id: com.topherofit.thf.rush
-            drive_id: 1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+            drive_id: 1P4Z1r6l08rbCLuDsXX1YRjWo0seC8yQz
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - id: auth
@@ -51,11 +53,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
         with:
           gradle-version: '8.13'
-      - name: Verify authoritative source and apply disposable real-game overlay
+      - name: Verify authoritative RC4 source and apply disposable real-game overlay
         id: overlay
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           APP: ${{ matrix.app }}
+          CHECKPOINT: ${{ matrix.checkpoint }}
           PROFILE: ${{ matrix.profile }}
           SOURCE_SHA: ${{ matrix.source_sha }}
           PACKAGE_ID: ${{ matrix.package_id }}
@@ -78,7 +81,7 @@ jobs:
           candidate_tree_sha=$(sha256sum "out/$APP.candidate-tree.sha256" | awk '{print $1}')
           python ReleaseOps/validators/audit_game_like_real_function.py "$root" --profile "$PROFILE" --json-out "out/$APP.game-like-contract.json" | tee "out/$APP.game-like-contract.log"
           grep -q '"source_contract": "PASS"' "out/$APP.game-like-contract.json"
-          printf 'APP=%s\nSOURCE_SHA256=%s\nCANDIDATE_TREE_MANIFEST_SHA256=%s\nGAME_LIKE_SOURCE_CONTRACT=PASS\nCANONICAL_ARCHIVE_MUTATED=NO\nOFFLINE_AUTHORITY=LOCAL_ONLY\nREADINESS_PROMOTION=NO\nPHYSICAL_DEVICE_REQUIRED=YES\n' "$APP" "$SOURCE_SHA" "$candidate_tree_sha" > "out/$APP.overlay-summary.txt"
+          printf 'APP=%s\nCHECKPOINT=%s\nSOURCE_SHA256=%s\nCANDIDATE_TREE_MANIFEST_SHA256=%s\nGAME_LIKE_SOURCE_CONTRACT=PASS\nCANONICAL_ARCHIVE_MUTATED=NO\nOFFLINE_AUTHORITY=LOCAL_ONLY_NO_FAKE_ONLINE_STATE\nREADINESS_PROMOTION=NO\nPHYSICAL_DEVICE_REQUIRED=YES\n' "$APP" "$CHECKPOINT" "$SOURCE_SHA" "$candidate_tree_sha" > "out/$APP.overlay-summary.txt"
           echo "root=$root" >> "$GITHUB_OUTPUT"
       - name: Compile regression and API36 package evidence
         env:
@@ -111,12 +114,12 @@ jobs:
           sdk=$(sed -n "s/^targetSdkVersion:'\([^']*\)'.*/\1/p" "$GITHUB_WORKSPACE/out/$APP.badging.txt" | head -1)
           test "$pkg" = "$PACKAGE_ID"
           test "$sdk" = 36
-          cp "$apk" "$GITHUB_WORKSPACE/out/$APP-real-game-overlay-release.apk"
-          printf '%s  %s\n' "$apk_sha" "$APP-real-game-overlay-release.apk" > "$GITHUB_WORKSPACE/out/$APP.apk.sha256"
+          cp "$apk" "$GITHUB_WORKSPACE/out/$APP-RC4-real-game-overlay-release.apk"
+          printf '%s  %s\n' "$apk_sha" "$APP-RC4-real-game-overlay-release.apk" > "$GITHUB_WORKSPACE/out/$APP.apk.sha256"
           printf 'ANDROID_REGRESSION_TASKS_RUN=%s\nASSEMBLE_RELEASE=PASS\nAPK_ZIP_INTEGRITY=PASS\nAPK_SHA256=%s\nAPK_PACKAGE=%s\nTARGET_SDK=%s\nPRODUCTION_SIGNING=NO\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' "$ran" "$apk_sha" "$pkg" "$sdk" >> "$GITHUB_WORKSPACE/out/$APP.overlay-summary.txt"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: THF-${{ matrix.app }}-REAL-GAME-OVERLAY-V1
+          name: THF-${{ matrix.app }}-RC4-REAL-GAME-OVERLAY-V1
           path: out/
           retention-days: 14
