@@ -1,0 +1,92 @@
+name: THF Play Store Asset Source Discovery V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-play-store-asset-source-discovery-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    env:
+      GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+      GCP_ZONE: europe-west1-b
+      GCP_BUILDER: thf-wave-builder
+      GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+      GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Discover THF-owned store/brand asset sources read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo MODE=READ_ONLY
+          echo WAVE_FILES_COPIED=FALSE
+          echo CANONICAL_ARCHIVES_MUTATED=FALSE
+          python3 - <<'PY'
+          import os,re,hashlib,struct
+          roots=[os.path.expanduser('~/thf-builder'), os.path.expanduser('~/thf-terra-rc34-gate'), os.path.expanduser('~/thf-rift-rc37-gate'), os.path.expanduser('~/workspace/thf-nexus')]
+          exts={'.png','.jpg','.jpeg','.webp','.svg'}
+          rx=re.compile(r'(logo|icon|launcher|brand|feature|graphic|screenshot|screen[-_ ]?shot|store|marketing|promo)',re.I)
+          def sha256(path):
+              h=hashlib.sha256()
+              with open(path,'rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          def pngdim(path):
+              try:
+                  with open(path,'rb') as f:
+                      b=f.read(24)
+                  if b[:8]==b'\x89PNG\r\n\x1a\n': return struct.unpack('>II',b[16:24])
+              except Exception: pass
+              return None
+          seen=set(); total=0
+          for root in roots:
+              if not os.path.isdir(root): continue
+              for dp,dns,fns in os.walk(root):
+                  low=dp.lower()
+                  if 'wave-mawja' in low or 'wave_mawja' in low:
+                      dns[:] = []
+                      continue
+                  dns[:] = [d for d in dns if d not in {'.git','node_modules','.gradle','build','dist','.cache'} and 'wave-mawja' not in d.lower() and 'wave_mawja' not in d.lower()]
+                  for fn in fns:
+                      p=os.path.join(dp,fn)
+                      ext=os.path.splitext(fn)[1].lower()
+                      if ext not in exts or not rx.search(fn): continue
+                      rp=os.path.realpath(p)
+                      if rp in seen: continue
+                      seen.add(rp); total+=1
+                      size=os.path.getsize(p)
+                      dim=pngdim(p)
+                      print('ASSET_PATH='+p)
+                      print('ASSET_SHA256='+sha256(p))
+                      print('ASSET_BYTES='+str(size))
+                      print('ASSET_DIMENSIONS='+((f'{dim[0]}x{dim[1]}') if dim else 'UNKNOWN_NONPNG_OR_UNPARSED'))
+                      if total>=80: break
+                  if total>=80: break
+              if total>=80: break
+          print('THF_ASSET_SOURCE_CANDIDATES='+str(total))
+          print('THF_ASSET_SOURCE_DISCOVERY_V1=PASS')
+          PY
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          REMOTE
