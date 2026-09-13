@@ -34,14 +34,7 @@ This closes the previous CI/tooling blocker caused by unqualified Gradle task as
 
 ## Spark/Rush APK-bound package evidence — PASS
 
-The same exact-source workflow was strengthened at commit `93b662bebdda07fa3f738600d5caba2bf001692f` so `assembleRelease=PASS` is no longer accepted alone. It now also:
-
-- runs APK ZIP integrity;
-- calculates the generated APK SHA-256 and stores it in the evidence artifact;
-- extracts APK badging with Android build-tools `aapt`;
-- fail-closes unless the APK package exactly equals the canonical app package;
-- fail-closes unless `targetSdkVersion=36`;
-- explicitly records `READINESS_PROMOTION=NO` and `PHYSICAL_DEVICE_REQUIRED=YES`.
+The same exact-source workflow was strengthened at commit `93b662bebdda07fa3f738600d5caba2bf001692f` so `assembleRelease=PASS` is no longer accepted alone. It now also runs APK ZIP integrity, calculates/stores the generated APK SHA-256, extracts APK badging with Android build-tools `aapt`, fail-closes unless the APK package exactly equals the canonical package, fail-closes unless `targetSdkVersion=36`, and explicitly records `READINESS_PROMOTION=NO` / `PHYSICAL_DEVICE_REQUIRED=YES`.
 
 Run `34773862098` completed `SUCCESS` for both Spark and Rush matrix jobs. Updated artifacts:
 
@@ -54,14 +47,18 @@ The exact APK SHA values are carried inside those evidence artifacts; this check
 
 Added `ReleaseOps/validators/audit_game_like_real_function.py` plus four regression tests and workflow `.github/workflows/thf-game-like-real-function-validator-v1.yml`.
 
-The auditor is intentionally separate from generic mobile/API36 validation and rejects UI-only shells unless current shipping source demonstrates all of the following high-confidence source signals:
+The auditor rejects UI-only shells unless current shipping source demonstrates interactive input, state/progression, a timed/frame loop or real render/motion wiring, and the appropriate learning/fitness domain signals. It always preserves the runtime/device truth boundary. CI run `34773912828` completed `SUCCESS`: Python syntax PASS and all four positive/negative regression tests PASS.
 
-- interactive input;
-- state/progression;
-- timed/frame loop or real render/motion wiring;
-- domain-specific learning signals for Spark or fitness signals for Rush.
+## Exact Spark/Rush RC3 game-like contract — FAIL, precise blockers captured
 
-It always preserves the runtime/device truth boundary and never treats source signals as gameplay/device PASS. CI run `34773912828` completed `SUCCESS`: Python syntax PASS and all four regression tests PASS, including explicit UI-only and wrong-domain negative cases.
+Workflow `.github/workflows/thf-spark-rush-game-like-contract-v1.yml` reuses only exact-source download/SHA/integrity plus the new source auditor; it intentionally does **not** repeat Gradle/build/package work already proven for the same SHA.
+
+Initial run `34774018878` failed closed for both exact sources. Evidence naming was then made self-describing at commit `fbf60bb43860f3c41c928d62e151c70efab8fe32` so missing required signals are visible without exposing source bytes or secrets. Run `34774066695` emitted:
+
+- Spark RC3: `FAIL` — missing `timed_or_frame_loop_OR_render_or_motion` only. Artifact id `10322867697`, digest `sha256:d580f041f982b1abd772e6aa185b10b64899f653670ce194a65edb57e6e10755`.
+- Rush RC3: `FAIL` — missing `timed_or_frame_loop_OR_render_or_motion` **and** `fitness_domain`. Artifact id `10322977488`, digest `sha256:903cd22510d58a80c5ff3dac5dc0fd3df3b695059878e556e2629523df8e7d3a`.
+
+Because the auditor lists only missing requirements, the exact sources did demonstrate the other required high-confidence source signals such as interactive input and state/progression; however, those source signals are not runtime proof. Spark therefore currently behaves more like an interactive learning app without proven game loop/render-motion wiring. Rush additionally lacks high-confidence shipping-source fitness-domain wiring under the current RC3 source contract. Neither may be marketed or promoted as a complete game-like experience on current evidence.
 
 ## Game real-function invariants retained
 
@@ -74,10 +71,11 @@ It always preserves the runtime/device truth boundary and never treats source si
 
 ## Highest-priority next executable work
 
-1. Apply the new game-like real-function auditor to the exact Spark/Rush RC3 source roots and record PASS/FAIL evidence per source SHA; no promotion on source evidence alone.
-2. Reconcile latest Terra/Rift candidate overlays against source-contract/mobile-real-function gates without rerunning unchanged canonical PASS work; rerun only when candidate bytes/config changed.
-3. For Learn Games/Fitness Games, prioritize real input/player/camera/game-loop implementation evidence before packaging promotion.
-4. Continue shared avatar/MPFB/MakeHuman/UAL, locomotion/IK, touch HUD, NPC/world, weather/day-night/PBR/audio/VFX/LOD/occlusion, anti-cheat/server-authority and offline-mode audits only where current SHA evidence is incomplete.
-5. Physical-device exact-SHA acceptance remains the final non-delegable gate before any FINAL/PLAY_READY label.
+1. Spark RC3: add/recover real timed/frame loop or render/motion gameplay wiring in a reversible candidate overlay, then rerun only the source contract affected by changed bytes before build/package/device gates.
+2. Rush RC3: add/recover real fitness-domain behavior plus timed/frame loop or render/motion wiring in a reversible candidate overlay; do not fake fitness state with static labels.
+3. Reconcile latest Terra/Rift candidate overlays against source-contract/mobile-real-function gates without rerunning unchanged canonical PASS work; rerun only when candidate bytes/config changed.
+4. Learn Games/Fitness Games remain engineering-first: real input/player/camera/game-loop evidence before packaging promotion.
+5. Continue shared avatar/MPFB/MakeHuman/UAL, locomotion/IK, touch HUD, NPC/world, weather/day-night/PBR/audio/VFX/LOD/occlusion, anti-cheat/server-authority and offline-mode audits only where current SHA evidence is incomplete.
+6. Physical-device exact-SHA acceptance remains the final non-delegable gate before any FINAL/PLAY_READY label.
 
 Rollback is Git-native; all changes in this batch are CI/validator/evidence changes and do not mutate validated source archives or production infrastructure.
