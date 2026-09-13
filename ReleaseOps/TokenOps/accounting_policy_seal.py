@@ -19,6 +19,11 @@ def file_sha256(text: str) -> str:
     if not isinstance(text, str): raise ValueError("policy source must be UTF-8 text")
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
+def git_blob_sha1(text: str) -> str:
+    if not isinstance(text, str): raise ValueError("policy source must be UTF-8 text")
+    data = text.encode("utf-8")
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+
 def _scan(value: Any, path: str = "$") -> None:
     if isinstance(value, dict):
         for key, item in value.items():
@@ -89,12 +94,15 @@ def compile_accounting_policy_seal(lineage: Dict[str, Any], policy_text: str, tr
     _scan(policy); _scan(treasury_policy)
     blockers = set(_verify_policy(policy)); _verify_treasury_policy(treasury_policy)
     policy_sha = file_sha256(policy_text); treasury_sha = file_sha256(treasury_policy_text)
+    policy_blob_actual = git_blob_sha1(policy_text); treasury_blob_actual = git_blob_sha1(treasury_policy_text)
     if request.get("network") != CANONICAL_NETWORK or request.get("mint") != CANONICAL_MINT: raise ValueError("seal request target mismatch")
     if request.get("lineage_checkpoint_sha256") != lineage_sha: raise ValueError("seal detached from lineage checkpoint")
     if request.get("policy_file_sha256") != policy_sha: raise ValueError("policy source SHA-256 mismatch")
     if request.get("treasury_policy_file_sha256") != treasury_sha: raise ValueError("treasury policy source SHA-256 mismatch")
     policy_blob = _hex(request.get("policy_git_blob_sha"), 40, "policy git blob SHA")
     treasury_blob = _hex(request.get("treasury_policy_git_blob_sha"), 40, "treasury policy git blob SHA")
+    if policy_blob != policy_blob_actual: raise ValueError("policy git blob identity mismatch")
+    if treasury_blob != treasury_blob_actual: raise ValueError("treasury policy git blob identity mismatch")
     source_commit = _hex(request.get("source_commit_sha"), 40, "source commit SHA")
     lineage_source_sha = _hex(request.get("lineage_source_sha256"), 64, "lineage source SHA-256")
     blockers |= set(str(x) for x in lineage.get("blockers", []))
