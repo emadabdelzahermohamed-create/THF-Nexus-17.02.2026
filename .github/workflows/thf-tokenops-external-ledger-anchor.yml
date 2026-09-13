@@ -1,0 +1,89 @@
+name: THF TokenOps External Ledger Anchor Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/external_ledger_anchor_gate.py'
+      - 'ReleaseOps/TokenOps/test_external_ledger_anchor_gate.py'
+      - '.github/workflows/thf-tokenops-external-ledger-anchor.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  anchor-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run external-anchor fail-closed tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_external_ledger_anchor_gate.py 2>&1 | tee external-ledger-anchor-tests.log
+
+      - name: Assert non-execution boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/external-ledger-anchor-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' \
+            ReleaseOps/TokenOps/external_ledger_anchor_gate.py \
+            ReleaseOps/TokenOps/test_external_ledger_anchor_gate.py
+          printf '%s\n' \
+            'THF_TOKENOPS_EXTERNAL_LEDGER_ANCHOR_GATE=PASS' \
+            'EXTERNAL_IMMUTABLE_RECEIPT_REQUIRED=TRUE' \
+            'PREFERRED_IDENTITY=WIF_SHORT_LIVED' \
+            'PERSISTENT_SERVICE_ACCOUNT_KEY_ALLOWED=FALSE' \
+            'SIMULATION_REVIEW_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'WAVE_UNTOUCHED=TRUE'
+
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-external-ledger-anchor
+          sha256sum \
+            ReleaseOps/TokenOps/external_ledger_anchor_gate.py \
+            ReleaseOps/TokenOps/test_external_ledger_anchor_gate.py \
+            .github/workflows/thf-tokenops-external-ledger-anchor.yml \
+            > tokenops-external-ledger-anchor/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/external-ledger-anchor-tests.log tokenops-external-ledger-anchor/
+          printf '%s\n' \
+            'THF_TOKENOPS_EXTERNAL_LEDGER_ANCHOR_GATE=PASS' \
+            'EXTERNAL_IMMUTABLE_RECEIPT_REQUIRED=TRUE' \
+            'PREFERRED_IDENTITY=WIF_SHORT_LIVED' \
+            'PERSISTENT_SERVICE_ACCOUNT_KEY_ALLOWED=FALSE' \
+            'SIMULATION_REVIEW_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-external-ledger-anchor/SAFETY.txt
+
+      - name: Upload anchor-gate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-External-Ledger-Anchor-Gate
+          path: tokenops-external-ledger-anchor/
+          if-no-files-found: error
+          retention-days: 90

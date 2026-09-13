@@ -1,0 +1,97 @@
+name: THF TokenOps External Anchor Continuity Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/external_anchor_continuity_gate.py'
+      - 'ReleaseOps/TokenOps/test_external_anchor_continuity_gate.py'
+      - 'ReleaseOps/TokenOps/external_ledger_anchor_gate.py'
+      - 'ReleaseOps/TokenOps/audit_export.py'
+      - '.github/workflows/thf-tokenops-external-anchor-continuity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  continuity-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run immutable-anchor continuity tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_external_anchor_continuity_gate.py 2>&1 | tee external-anchor-continuity-tests.log
+
+      - name: Assert review-only boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/external-anchor-continuity-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' \
+            ReleaseOps/TokenOps/external_anchor_continuity_gate.py \
+            ReleaseOps/TokenOps/test_external_anchor_continuity_gate.py
+          printf '%s\n' \
+            'THF_TOKENOPS_EXTERNAL_ANCHOR_CONTINUITY_GATE=PASS' \
+            'EXTERNAL_IMMUTABLE_ANCHOR_REQUIRED=TRUE' \
+            'EXACT_LEDGER_HEAD_REQUIRED=TRUE' \
+            'EXACT_LEDGER_BYTES_REQUIRED=TRUE' \
+            'PREFERRED_IDENTITY=WIF_SHORT_LIVED' \
+            'PERSISTENT_SERVICE_ACCOUNT_KEY_ALLOWED=FALSE' \
+            'REPLAY_GUARD_PRIOR_HEAD_ELIGIBLE=TRUE' \
+            'SIMULATION_REVIEW_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'WAVE_UNTOUCHED=TRUE'
+
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-external-anchor-continuity
+          sha256sum \
+            ReleaseOps/TokenOps/external_anchor_continuity_gate.py \
+            ReleaseOps/TokenOps/test_external_anchor_continuity_gate.py \
+            .github/workflows/thf-tokenops-external-anchor-continuity.yml \
+            > tokenops-external-anchor-continuity/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/external-anchor-continuity-tests.log tokenops-external-anchor-continuity/
+          printf '%s\n' \
+            'THF_TOKENOPS_EXTERNAL_ANCHOR_CONTINUITY_GATE=PASS' \
+            'EXTERNAL_IMMUTABLE_ANCHOR_REQUIRED=TRUE' \
+            'EXACT_LEDGER_HEAD_REQUIRED=TRUE' \
+            'EXACT_LEDGER_BYTES_REQUIRED=TRUE' \
+            'PREFERRED_IDENTITY=WIF_SHORT_LIVED' \
+            'PERSISTENT_SERVICE_ACCOUNT_KEY_ALLOWED=FALSE' \
+            'REPLAY_GUARD_PRIOR_HEAD_ELIGIBLE=TRUE' \
+            'SIMULATION_REVIEW_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-external-anchor-continuity/SAFETY.txt
+
+      - name: Upload continuity-gate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-External-Anchor-Continuity-Gate
+          path: tokenops-external-anchor-continuity/
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,83 @@
+name: THF TokenOps Reservation Lifecycle Accounting Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/reservation_lifecycle_accounting.py'
+      - 'ReleaseOps/TokenOps/test_reservation_lifecycle_accounting.py'
+      - 'ReleaseOps/TokenOps/budget_envelope_reservation_reconciliation.py'
+      - 'ReleaseOps/TokenOps/reward_vesting_budget_envelope.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-reservation-lifecycle-accounting.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reservation-lifecycle-accounting:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run lifecycle accounting tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-reservation-lifecycle
+          PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_reservation_lifecycle_accounting.py | tee tokenops-reservation-lifecycle/tests.log
+
+      - name: Compile production-policy fail-closed probe
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONPATH=ReleaseOps/TokenOps python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from reward_vesting_budget_envelope import canonical_sha256 as envelope_sha, compile_budget_envelope
+          from budget_envelope_reservation_reconciliation import compile_reservation_reconciliation
+          from reservation_lifecycle_accounting import compile_reservation_lifecycle
+          policy=json.load(open('ReleaseOps/TokenOps/policy.json')); treasury=json.load(open('ReleaseOps/TokenOps/treasury_policy.json'))
+          mint=policy['mint']; network=policy['network']
+          bound={'gate':'THF_TOKENOPS_POLICY_COMPLETION_BOUND_UNSIGNED_ADMISSION_V1','network':network,'mint':mint,'intent':'reward_epoch','policy_completion_evidence_sha256':'5747de9d10e1fd2894baea38e0690c39a4d220885585ab296b0c1b65200bb190','base_admission_sha256':'0'*64,'authoritative_policy_sha256':envelope_sha(policy),'treasury_policy_sha256':envelope_sha(treasury),'simulation_review_eligible':False,'blockers':['anti_whale_caps_not_authoritatively_configured','production_caps_not_approved','policy_completion_not_authoritatively_completed'],'simulation_execution_permitted':False,'execution_authorized':False,'transaction_created':False,'transaction_signed':False,'transaction_submitted':False,'broadcast_allowed':False,'financial_effect':False,'private_key_used':False,'wave_mawja_untouched':True}
+          bound['bound_admission_sha256']=envelope_sha(bound)
+          budget=compile_budget_envelope(bound,policy,treasury,{'network':network,'mint':mint,'intent':'reward_epoch','request_id':'production-lifecycle-probe-budget','bound_admission_sha256':bound['bound_admission_sha256'],'epoch_revenue_minor':'0','entries':[{'subject_id':'probe','wallet':'review-only-wallet-placeholder','amount_raw':'1'}]})
+          reservation=compile_reservation_reconciliation(budget,{'network':network,'mint':mint,'request_id':'production-lifecycle-probe-reservation','budget_envelope_sha256':budget['envelope_sha256'],'reservations':[{'reservation_id':'probe-reservation','subject_id':'probe','wallet':'review-only-wallet-placeholder','amount_raw':'1'}]})
+          out=compile_reservation_lifecycle(reservation,{'network':network,'mint':mint,'request_id':'production-lifecycle-probe-release','budget_envelope_sha256':budget['envelope_sha256'],'source_reservation_reconciliation_sha256':reservation['reservation_reconciliation_sha256'],'expected_prior_reservation_lifecycle_sha256':None,'operations':[{'event_id':'probe-release-event','action':'release','reservation_id':'probe-reservation'}]})
+          assert reservation['reservation_review_eligible'] is False and out['lifecycle_review_eligible'] is False
+          assert out['accounting']['active_reserved_total_raw']=='0' and out['accounting']['released_or_cancelled_net_raw']=='1'
+          assert 'budget_envelope_not_review_eligible' in out['blockers']
+          for key in ('transaction_created','transaction_signed','transaction_submitted','broadcast_allowed','financial_effect','settlement_executed','burn_executed','treasury_migrated','dao_decision_executed','private_key_used'): assert out['execution'][key] is False
+          assert out['execution']['wave_mawja_untouched'] is True
+          Path('tokenops-reservation-lifecycle/production-budget-envelope.json').write_text(json.dumps(budget,sort_keys=True,indent=2)+'\n')
+          Path('tokenops-reservation-lifecycle/production-reservation-reconciliation.json').write_text(json.dumps(reservation,sort_keys=True,indent=2)+'\n')
+          Path('tokenops-reservation-lifecycle/production-reservation-lifecycle.json').write_text(json.dumps(out,sort_keys=True,indent=2)+'\n')
+          print('THF_TOKENOPS_PRODUCTION_RESERVATION_LIFECYCLE_PROBE=FAIL_CLOSED_AS_EXPECTED')
+          print('RESERVATION_LIFECYCLE_SHA256='+out['reservation_lifecycle_sha256'])
+          print('TRANSACTION_CREATED=FALSE'); print('TRANSACTION_SIGNED=FALSE'); print('TRANSACTION_SUBMITTED=FALSE'); print('FINANCIAL_EFFECT=FALSE'); print('PRIVATE_KEY_USED=FALSE'); print('WAVE_UNTOUCHED=TRUE')
+          PY
+
+      - name: Assert hard safety boundary and hash evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -qx 'THF_RESERVATION_LIFECYCLE_ACCOUNTING_TESTS=PASS' tokenops-reservation-lifecycle/tests.log
+          grep -qx 'TRANSACTION_CREATED=FALSE' tokenops-reservation-lifecycle/tests.log
+          grep -qx 'TRANSACTION_SIGNED=FALSE' tokenops-reservation-lifecycle/tests.log
+          grep -qx 'TRANSACTION_SUBMITTED=FALSE' tokenops-reservation-lifecycle/tests.log
+          grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-reservation-lifecycle/tests.log
+          grep -qx 'PRIVATE_KEY_USED=FALSE' tokenops-reservation-lifecycle/tests.log
+          grep -qx 'WAVE_UNTOUCHED=TRUE' tokenops-reservation-lifecycle/tests.log
+          sha256sum ReleaseOps/TokenOps/reservation_lifecycle_accounting.py ReleaseOps/TokenOps/test_reservation_lifecycle_accounting.py ReleaseOps/TokenOps/budget_envelope_reservation_reconciliation.py ReleaseOps/TokenOps/reward_vesting_budget_envelope.py ReleaseOps/TokenOps/policy.json ReleaseOps/TokenOps/treasury_policy.json tokenops-reservation-lifecycle/production-budget-envelope.json tokenops-reservation-lifecycle/production-reservation-reconciliation.json tokenops-reservation-lifecycle/production-reservation-lifecycle.json tokenops-reservation-lifecycle/tests.log > tokenops-reservation-lifecycle/SHA256SUMS.txt
+
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Reservation-Lifecycle-Accounting-Gate
+          path: tokenops-reservation-lifecycle/
+          if-no-files-found: error
+          retention-days: 30

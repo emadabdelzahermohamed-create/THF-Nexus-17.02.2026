@@ -1,0 +1,52 @@
+name: THF TokenOps Accounting Policy Source Seal Gate
+on:
+  push:
+    branches: [tokenops/read-only-audit-20260911]
+    paths:
+      - 'ReleaseOps/TokenOps/accounting_policy_seal.py'
+      - 'ReleaseOps/TokenOps/test_accounting_policy_seal.py'
+      - 'ReleaseOps/TokenOps/epoch_accounting_lineage.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-accounting-policy-seal.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run deterministic fail-closed tests
+        working-directory: ReleaseOps/TokenOps
+        run: python3 test_accounting_policy_seal.py
+      - name: Build immutable policy/source evidence
+        run: |
+          set -Eeuo pipefail
+          mkdir -p evidence
+          cp ReleaseOps/TokenOps/accounting_policy_seal.py evidence/
+          cp ReleaseOps/TokenOps/test_accounting_policy_seal.py evidence/
+          cp ReleaseOps/TokenOps/policy.json evidence/
+          cp ReleaseOps/TokenOps/treasury_policy.json evidence/
+          cp ReleaseOps/TokenOps/epoch_accounting_lineage.py evidence/
+          printf '%s\n' \
+            "SOURCE_COMMIT_SHA=${GITHUB_SHA}" \
+            "POLICY_GIT_BLOB_SHA=$(git rev-parse HEAD:ReleaseOps/TokenOps/policy.json)" \
+            "TREASURY_POLICY_GIT_BLOB_SHA=$(git rev-parse HEAD:ReleaseOps/TokenOps/treasury_policy.json)" \
+            "POLICY_FILE_SHA256=$(sha256sum ReleaseOps/TokenOps/policy.json | awk '{print $1}')" \
+            "TREASURY_POLICY_FILE_SHA256=$(sha256sum ReleaseOps/TokenOps/treasury_policy.json | awk '{print $1}')" \
+            "LINEAGE_SOURCE_SHA256=$(sha256sum ReleaseOps/TokenOps/epoch_accounting_lineage.py | awk '{print $1}')" \
+            'ACCOUNTING_REVIEW_ONLY=TRUE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' > evidence/SAFETY.txt
+          sha256sum evidence/accounting_policy_seal.py evidence/test_accounting_policy_seal.py evidence/policy.json evidence/treasury_policy.json evidence/epoch_accounting_lineage.py evidence/SAFETY.txt > evidence/SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Accounting-Policy-Source-Seal-Gate
+          path: evidence/
+          if-no-files-found: error

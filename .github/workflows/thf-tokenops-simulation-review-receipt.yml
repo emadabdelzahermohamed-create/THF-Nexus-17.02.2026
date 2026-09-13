@@ -1,0 +1,92 @@
+name: THF TokenOps Simulation Review Receipt Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/simulation_review_receipt.py'
+      - 'ReleaseOps/TokenOps/test_simulation_review_receipt.py'
+      - '.github/workflows/thf-tokenops-simulation-review-receipt.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  THF_TOKEN_MINT: HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run fail-closed unit tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_simulation_review_receipt.py |& tee simulation-review-receipt-tests.log
+
+      - name: Build deterministic safety evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-simulation-review-receipt-evidence
+          cp ReleaseOps/TokenOps/simulation_review_receipt.py tokenops-simulation-review-receipt-evidence/
+          cp ReleaseOps/TokenOps/test_simulation_review_receipt.py tokenops-simulation-review-receipt-evidence/
+          cp ReleaseOps/TokenOps/simulation-review-receipt-tests.log tokenops-simulation-review-receipt-evidence/
+          cat > tokenops-simulation-review-receipt-evidence/SAFETY.txt <<'EOF'
+          CANONICAL_NETWORK=solana-mainnet-beta
+          CANONICAL_MINT=HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv
+          SANITIZED_HASH_ONLY_SIMULATION_REVIEW=TRUE
+          RAW_RPC_RESPONSE_STORED=FALSE
+          RAW_LOGS_STORED=FALSE
+          RAW_ACCOUNT_DATA_STORED=FALSE
+          SOLANA_INSTRUCTIONS_CREATED=FALSE
+          TRANSACTION_BYTES_CREATED=FALSE
+          TRANSACTION_CREATED=FALSE
+          TRANSACTION_SIGNED=FALSE
+          TRANSACTION_SUBMITTED=FALSE
+          BROADCAST_ALLOWED=FALSE
+          EXECUTION_AUTHORIZED=FALSE
+          FINANCIAL_EFFECT=FALSE
+          PRIVATE_KEY_USED=FALSE
+          EXTERNAL_MULTISIG_REQUIRED=TRUE
+          USER_CONTROLLED_APPROVAL_REQUIRED=TRUE
+          WAVE_UNTOUCHED=TRUE
+          EOF
+          (
+            cd tokenops-simulation-review-receipt-evidence
+            sha256sum simulation_review_receipt.py test_simulation_review_receipt.py simulation-review-receipt-tests.log SAFETY.txt > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+
+      - name: Assert safety evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          f=tokenops-simulation-review-receipt-evidence/SAFETY.txt
+          grep -qx 'SANITIZED_HASH_ONLY_SIMULATION_REVIEW=TRUE' "$f"
+          grep -qx 'RAW_RPC_RESPONSE_STORED=FALSE' "$f"
+          grep -qx 'RAW_LOGS_STORED=FALSE' "$f"
+          grep -qx 'RAW_ACCOUNT_DATA_STORED=FALSE' "$f"
+          grep -qx 'TRANSACTION_BYTES_CREATED=FALSE' "$f"
+          grep -qx 'TRANSACTION_SIGNED=FALSE' "$f"
+          grep -qx 'TRANSACTION_SUBMITTED=FALSE' "$f"
+          grep -qx 'BROADCAST_ALLOWED=FALSE' "$f"
+          grep -qx 'EXECUTION_AUTHORIZED=FALSE' "$f"
+          grep -qx 'FINANCIAL_EFFECT=FALSE' "$f"
+          grep -qx 'PRIVATE_KEY_USED=FALSE' "$f"
+          grep -qx 'WAVE_UNTOUCHED=TRUE' "$f"
+
+      - name: Upload evidence artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Simulation-Review-Receipt-Gate
+          path: tokenops-simulation-review-receipt-evidence/
+          if-no-files-found: error
+          retention-days: 30

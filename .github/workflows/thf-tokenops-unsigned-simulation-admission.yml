@@ -1,0 +1,89 @@
+name: THF TokenOps Unsigned Simulation Admission Gate
+
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/unsigned_simulation_admission_gate.py'
+      - 'ReleaseOps/TokenOps/test_unsigned_simulation_admission_gate.py'
+      - 'ReleaseOps/TokenOps/unsigned_simulation_policy_snapshot.json'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-unsigned-simulation-admission.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-simulation-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed admission tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_unsigned_simulation_admission_gate.py 2>&1 | tee unsigned-simulation-admission-tests.log
+      - name: Validate production snapshot remains fail-closed
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY' | tee ReleaseOps/TokenOps/production-admission-status.json
+          import json, sys
+          sys.path.insert(0, 'ReleaseOps/TokenOps')
+          from unsigned_simulation_admission_gate import canonical_sha256, evaluate_unsigned_simulation_admission
+          snapshot=json.load(open('ReleaseOps/TokenOps/unsigned_simulation_policy_snapshot.json'))
+          provenance={'gate':'THF_TOKENOPS_UNIFIED_REVIEW_PROVENANCE_V1','manifest_sha256':'1'*64,'source_head':'2'*40,'review_only':True}
+          plan={'network':snapshot['network'],'mint':snapshot['mint'],'intent':'reward_epoch','unsigned':True,'active_user_revenue_share':0.35,'unified_review_provenance_sha256':canonical_sha256(provenance),'policy_snapshot_sha256':canonical_sha256(snapshot),'sign':False,'submit':False,'broadcast':False,'financial_effect':False}
+          out=evaluate_unsigned_simulation_admission(provenance,plan,snapshot)
+          assert out['simulation_review_eligible'] is False
+          assert 'anti_whale_caps_not_authoritatively_configured' in out['blockers']
+          assert out['execution_authorized'] is False
+          print(json.dumps(out,sort_keys=True,indent=2))
+          PY
+      - name: Assert non-execution boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/unsigned-simulation-admission-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' ReleaseOps/TokenOps/unsigned_simulation_admission_gate.py ReleaseOps/TokenOps/test_unsigned_simulation_admission_gate.py
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-unsigned-simulation-admission
+          sha256sum \
+            ReleaseOps/TokenOps/unsigned_simulation_admission_gate.py \
+            ReleaseOps/TokenOps/test_unsigned_simulation_admission_gate.py \
+            ReleaseOps/TokenOps/unsigned_simulation_policy_snapshot.json \
+            ReleaseOps/TokenOps/policy.json \
+            ReleaseOps/TokenOps/treasury_policy.json \
+            .github/workflows/thf-tokenops-unsigned-simulation-admission.yml \
+            > tokenops-unsigned-simulation-admission/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/unsigned-simulation-admission-tests.log tokenops-unsigned-simulation-admission/
+          cp ReleaseOps/TokenOps/production-admission-status.json tokenops-unsigned-simulation-admission/
+          printf '%s\n' \
+            'THF_TOKENOPS_UNSIGNED_SIMULATION_ADMISSION_GATE=PASS' \
+            'PRODUCTION_SIMULATION_REVIEW_ELIGIBLE=FALSE' \
+            'BLOCKER=ANTI_WHALE_CAPS_NOT_AUTHORITATIVELY_CONFIGURED' \
+            'ACTIVE_USER_REVENUE_SHARE=0.35' \
+            'SUPPLY_FLOOR_UI=8000000000' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-unsigned-simulation-admission/SAFETY.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Unsigned-Simulation-Admission-Gate
+          path: tokenops-unsigned-simulation-admission/
+          if-no-files-found: error
+          retention-days: 90

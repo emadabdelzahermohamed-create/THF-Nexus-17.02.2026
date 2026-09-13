@@ -1,0 +1,85 @@
+name: THF TokenOps Accounting Policy Seal Bound Admission Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/accounting_policy_seal_bound_admission.py'
+      - 'ReleaseOps/TokenOps/test_accounting_policy_seal_bound_admission.py'
+      - '.github/workflows/thf-tokenops-accounting-policy-seal-bound-admission.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  THF_TOKEN_MINT: HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run fail-closed unit tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_accounting_policy_seal_bound_admission.py |& tee accounting-policy-seal-bound-admission-tests.log
+
+      - name: Build deterministic evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-accounting-seal-bound-admission-evidence
+          cp ReleaseOps/TokenOps/accounting_policy_seal_bound_admission.py tokenops-accounting-seal-bound-admission-evidence/
+          cp ReleaseOps/TokenOps/test_accounting_policy_seal_bound_admission.py tokenops-accounting-seal-bound-admission-evidence/
+          cp ReleaseOps/TokenOps/accounting-policy-seal-bound-admission-tests.log tokenops-accounting-seal-bound-admission-evidence/
+          cat > tokenops-accounting-seal-bound-admission-evidence/SAFETY.txt <<'EOF'
+          CANONICAL_NETWORK=solana-mainnet-beta
+          CANONICAL_MINT=HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv
+          TRANSACTION_CREATED=FALSE
+          TRANSACTION_SIGNED=FALSE
+          TRANSACTION_SUBMITTED=FALSE
+          BROADCAST_ALLOWED=FALSE
+          FINANCIAL_EFFECT=FALSE
+          PRIVATE_KEY_USED=FALSE
+          EXTERNAL_MULTISIG_REQUIRED=TRUE
+          USER_CONTROLLED_APPROVAL_REQUIRED=TRUE
+          WAVE_UNTOUCHED=TRUE
+          EOF
+          (
+            cd tokenops-accounting-seal-bound-admission-evidence
+            sha256sum accounting_policy_seal_bound_admission.py \
+              test_accounting_policy_seal_bound_admission.py \
+              accounting-policy-seal-bound-admission-tests.log \
+              SAFETY.txt > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+
+      - name: Assert safety evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          f=tokenops-accounting-seal-bound-admission-evidence/SAFETY.txt
+          grep -qx 'TRANSACTION_CREATED=FALSE' "$f"
+          grep -qx 'TRANSACTION_SIGNED=FALSE' "$f"
+          grep -qx 'TRANSACTION_SUBMITTED=FALSE' "$f"
+          grep -qx 'BROADCAST_ALLOWED=FALSE' "$f"
+          grep -qx 'FINANCIAL_EFFECT=FALSE' "$f"
+          grep -qx 'PRIVATE_KEY_USED=FALSE' "$f"
+          grep -qx 'EXTERNAL_MULTISIG_REQUIRED=TRUE' "$f"
+          grep -qx 'USER_CONTROLLED_APPROVAL_REQUIRED=TRUE' "$f"
+          grep -qx 'WAVE_UNTOUCHED=TRUE' "$f"
+
+      - name: Upload evidence artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Accounting-Policy-Seal-Bound-Admission-Gate
+          path: tokenops-accounting-seal-bound-admission-evidence/
+          if-no-files-found: error
+          retention-days: 30

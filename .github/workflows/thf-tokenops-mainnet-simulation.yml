@@ -1,0 +1,73 @@
+name: THF TokenOps Mainnet Read-Only Simulation
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/readonly_mainnet_simulation.py'
+      - 'ReleaseOps/TokenOps/test_readonly_mainnet_simulation.py'
+      - '.github/workflows/thf-tokenops-mainnet-simulation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulate-readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Test read-only transaction compiler offline
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONPATH=ReleaseOps/TokenOps python3 ReleaseOps/TokenOps/test_readonly_mainnet_simulation.py | tee tokenops-mainnet-simulation-compiler.log
+          grep -qx 'READONLY_PROBE_COMPILER=PASS' tokenops-mainnet-simulation-compiler.log
+          grep -qx 'REAL_SIGNATURE_USED=FALSE' tokenops-mainnet-simulation-compiler.log
+          grep -qx 'SEND_TRANSACTION_CALLED=FALSE' tokenops-mainnet-simulation-compiler.log
+          grep -qx 'TRANSACTION_BROADCAST=FALSE' tokenops-mainnet-simulation-compiler.log
+          grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-mainnet-simulation-compiler.log
+
+      - name: Simulate SPL Token read-only instruction on Mainnet
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-mainnet-simulation
+          python3 ReleaseOps/TokenOps/readonly_mainnet_simulation.py \
+            --rpc https://api.mainnet-beta.solana.com \
+            --output tokenops-mainnet-simulation/evidence.json \
+            | tee tokenops-mainnet-simulation/run.log
+          grep -qx 'THF_TOKENOPS_MAINNET_SIMULATION=PASS' tokenops-mainnet-simulation/run.log
+          grep -qx 'TOKEN_PROGRAM_INVOKED=TRUE' tokenops-mainnet-simulation/run.log
+          grep -qx 'PRIVATE_KEY_USED=FALSE' tokenops-mainnet-simulation/run.log
+          grep -qx 'REAL_SIGNATURE_USED=FALSE' tokenops-mainnet-simulation/run.log
+          grep -qx 'SEND_TRANSACTION_CALLED=FALSE' tokenops-mainnet-simulation/run.log
+          grep -qx 'TRANSACTION_BROADCAST=FALSE' tokenops-mainnet-simulation/run.log
+          grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-mainnet-simulation/run.log
+          grep -qx 'WAVE_UNTOUCHED=TRUE' tokenops-mainnet-simulation/run.log
+
+      - name: Hash simulation evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sha256sum \
+            ReleaseOps/TokenOps/readonly_mainnet_simulation.py \
+            ReleaseOps/TokenOps/test_readonly_mainnet_simulation.py \
+            tokenops-mainnet-simulation/evidence.json \
+            tokenops-mainnet-simulation/run.log \
+            tokenops-mainnet-simulation-compiler.log \
+            > tokenops-mainnet-simulation/SHA256SUMS.txt
+
+      - name: Upload simulation evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Mainnet-ReadOnly-Simulation
+          path: |
+            tokenops-mainnet-simulation/
+            tokenops-mainnet-simulation-compiler.log
+          if-no-files-found: error
+          retention-days: 30

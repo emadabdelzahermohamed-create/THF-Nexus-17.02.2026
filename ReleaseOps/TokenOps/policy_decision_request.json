@@ -1,0 +1,26 @@
+{
+  "schema": "thf-tokenops-policy-decision-request/v1",
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "fixed_constraints": {
+    "active_user_revenue_share": "35%",
+    "approved_supply_floor_target_ui": "8000000000",
+    "minting": "forbidden",
+    "authority_change": "forbidden"
+  },
+  "requested_decisions": [
+    {"id": "distribution.per_user_cap", "value": null, "status": "unapproved"},
+    {"id": "distribution.epoch_budget_cap", "value": null, "status": "unapproved"},
+    {"id": "distribution.claim_or_push_model", "value": null, "status": "unapproved"},
+    {"id": "distribution.reserve_account", "value": null, "status": "public_evidence_required"},
+    {"id": "signer.production_policy", "value": null, "status": "unapproved"},
+    {"id": "vesting.locking_terms", "value": null, "status": "unapproved"},
+    {"id": "rewards.lock_reward_terms", "value": null, "status": "unapproved"},
+    {"id": "treasury.inventory_ownership_balances", "value": null, "status": "public_evidence_required"},
+    {"id": "governance.policy_mutation_charter", "value": null, "status": "unapproved"}
+  ],
+  "self_approving": false,
+  "financial_effect": false,
+  "execution_authorized": false,
+  "wave_mawja_untouched": true
+}

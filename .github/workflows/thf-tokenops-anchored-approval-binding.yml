@@ -1,0 +1,49 @@
+name: THF TokenOps Anchored Approval Binding Gate
+
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/anchored_approval_binding.py'
+      - 'ReleaseOps/TokenOps/test_anchored_approval_binding.py'
+      - '.github/workflows/thf-tokenops-anchored-approval-binding.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  anchored-approval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_anchored_approval_binding.py 2>&1 | tee anchored-approval-binding-tests.log
+      - name: Assert non-execution boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/anchored-approval-binding-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' ReleaseOps/TokenOps/anchored_approval_binding.py ReleaseOps/TokenOps/test_anchored_approval_binding.py
+          printf '%s\n' 'EXTERNAL_ANCHOR_REQUIRED=TRUE' 'ONE_TIME_REPLAY_CONSUMPTION_REQUIRED=TRUE' 'APPROVAL_REVIEW_ONLY=TRUE' 'SIMULATION_EXECUTION_PERMITTED=FALSE' 'EXECUTION_AUTHORIZED=FALSE' 'FINANCIAL_EFFECT=FALSE' 'PRIVATE_KEY_USED=FALSE' 'WAVE_UNTOUCHED=TRUE'
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-anchored-approval-binding
+          sha256sum ReleaseOps/TokenOps/anchored_approval_binding.py ReleaseOps/TokenOps/test_anchored_approval_binding.py .github/workflows/thf-tokenops-anchored-approval-binding.yml > tokenops-anchored-approval-binding/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/anchored-approval-binding-tests.log tokenops-anchored-approval-binding/
+          printf '%s\n' 'THF_TOKENOPS_ANCHORED_APPROVAL_BINDING=PASS' 'EXTERNAL_ANCHOR_REQUIRED=TRUE' 'ONE_TIME_REPLAY_CONSUMPTION_REQUIRED=TRUE' 'APPROVAL_REVIEW_ONLY=TRUE' 'SIMULATION_EXECUTION_PERMITTED=FALSE' 'EXECUTION_AUTHORIZED=FALSE' 'FINANCIAL_EFFECT=FALSE' 'PRIVATE_KEY_USED=FALSE' 'WAVE_UNTOUCHED=TRUE' > tokenops-anchored-approval-binding/SAFETY.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Anchored-Approval-Binding-Gate
+          path: tokenops-anchored-approval-binding/
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,84 @@
+name: THF TokenOps Freshness Ledger Binding
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/freshness_ledger_binding.py'
+      - 'ReleaseOps/TokenOps/test_freshness_ledger_binding.py'
+      - '.github/workflows/thf-tokenops-freshness-ledger-binding.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freshness-ledger-binding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run freshness-ledger fail-closed tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_freshness_ledger_binding.py 2>&1 | tee freshness-ledger-tests.log
+
+      - name: Assert ledger and non-execution boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/freshness-ledger-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|seed phrase|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' \
+            ReleaseOps/TokenOps/freshness_ledger_binding.py \
+            ReleaseOps/TokenOps/test_freshness_ledger_binding.py
+          echo THF_TOKENOPS_FRESHNESS_LEDGER_BINDING=PASS
+          echo AUDIT_CHAIN_BOUND=TRUE
+          echo APPROVAL_RECORD_BOUND=TRUE
+          echo SIMULATION_REVIEW_ONLY=TRUE
+          echo EXECUTION_AUTHORIZED=FALSE
+          echo TRANSACTION_CREATED=FALSE
+          echo TRANSACTION_SIGNED=FALSE
+          echo TRANSACTION_SUBMITTED=FALSE
+          echo BROADCAST_ALLOWED=FALSE
+          echo PRIVATE_KEY_USED=FALSE
+          echo FINANCIAL_EFFECT=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-freshness-ledger-binding
+          sha256sum \
+            ReleaseOps/TokenOps/freshness_ledger_binding.py \
+            ReleaseOps/TokenOps/test_freshness_ledger_binding.py \
+            .github/workflows/thf-tokenops-freshness-ledger-binding.yml \
+            > tokenops-freshness-ledger-binding/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/freshness-ledger-tests.log tokenops-freshness-ledger-binding/
+          printf '%s\n' \
+            'THF_TOKENOPS_FRESHNESS_LEDGER_BINDING=PASS' \
+            'AUDIT_CHAIN_BOUND=TRUE' \
+            'APPROVAL_RECORD_BOUND=TRUE' \
+            'SIMULATION_REVIEW_ONLY=TRUE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-freshness-ledger-binding/SAFETY.txt
+
+      - name: Upload binding evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Freshness-Ledger-Binding
+          path: tokenops-freshness-ledger-binding/
+          if-no-files-found: error
+          retention-days: 90

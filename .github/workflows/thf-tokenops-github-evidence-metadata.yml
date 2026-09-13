@@ -1,0 +1,80 @@
+name: THF TokenOps GitHub Evidence Metadata Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/github_evidence_metadata.py'
+      - 'ReleaseOps/TokenOps/test_github_evidence_metadata.py'
+      - '.github/workflows/thf-tokenops-github-evidence-metadata.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  github-evidence-metadata-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run fail-closed metadata tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_github_evidence_metadata.py 2>&1 | tee github-evidence-metadata-tests.log
+
+      - name: Assert non-executing boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/github-evidence-metadata-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|seed phrase|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' \
+            ReleaseOps/TokenOps/github_evidence_metadata.py \
+            ReleaseOps/TokenOps/test_github_evidence_metadata.py
+          echo THF_TOKENOPS_GITHUB_EVIDENCE_METADATA_GATE=PASS
+          echo METADATA_ONLY=TRUE
+          echo SIMULATION_EXECUTION_PERMITTED=FALSE
+          echo TRANSACTION_CREATED=FALSE
+          echo TRANSACTION_SIGNED=FALSE
+          echo TRANSACTION_SUBMITTED=FALSE
+          echo BROADCAST_ALLOWED=FALSE
+          echo PRIVATE_KEY_USED=FALSE
+          echo FINANCIAL_EFFECT=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-github-evidence-metadata
+          sha256sum \
+            ReleaseOps/TokenOps/github_evidence_metadata.py \
+            ReleaseOps/TokenOps/test_github_evidence_metadata.py \
+            .github/workflows/thf-tokenops-github-evidence-metadata.yml \
+            > tokenops-github-evidence-metadata/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/github-evidence-metadata-tests.log tokenops-github-evidence-metadata/
+          printf '%s\n' \
+            'THF_TOKENOPS_GITHUB_EVIDENCE_METADATA_GATE=PASS' \
+            'METADATA_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-github-evidence-metadata/SAFETY.txt
+
+      - name: Upload gate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-GitHub-Evidence-Metadata-Gate
+          path: tokenops-github-evidence-metadata/
+          if-no-files-found: error
+          retention-days: 90

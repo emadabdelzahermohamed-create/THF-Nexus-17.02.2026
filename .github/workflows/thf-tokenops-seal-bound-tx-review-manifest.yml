@@ -1,0 +1,87 @@
+name: THF TokenOps Seal Bound Unsigned TX Review Manifest Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/seal_bound_tx_review_manifest.py'
+      - 'ReleaseOps/TokenOps/test_seal_bound_tx_review_manifest.py'
+      - '.github/workflows/thf-tokenops-seal-bound-tx-review-manifest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  THF_TOKEN_MINT: HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run fail-closed unit tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_seal_bound_tx_review_manifest.py |& tee seal-bound-tx-review-manifest-tests.log
+
+      - name: Build deterministic safety evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-seal-bound-tx-review-manifest-evidence
+          cp ReleaseOps/TokenOps/seal_bound_tx_review_manifest.py tokenops-seal-bound-tx-review-manifest-evidence/
+          cp ReleaseOps/TokenOps/test_seal_bound_tx_review_manifest.py tokenops-seal-bound-tx-review-manifest-evidence/
+          cp ReleaseOps/TokenOps/seal-bound-tx-review-manifest-tests.log tokenops-seal-bound-tx-review-manifest-evidence/
+          cat > tokenops-seal-bound-tx-review-manifest-evidence/SAFETY.txt <<'EOF'
+          CANONICAL_NETWORK=solana-mainnet-beta
+          CANONICAL_MINT=HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv
+          REVIEW_MANIFEST_ONLY=TRUE
+          SOLANA_INSTRUCTIONS_CREATED=FALSE
+          TRANSACTION_BYTES_CREATED=FALSE
+          TRANSACTION_CREATED=FALSE
+          TRANSACTION_SIGNED=FALSE
+          TRANSACTION_SUBMITTED=FALSE
+          BROADCAST_ALLOWED=FALSE
+          EXECUTION_AUTHORIZED=FALSE
+          FINANCIAL_EFFECT=FALSE
+          PRIVATE_KEY_USED=FALSE
+          EXTERNAL_MULTISIG_REQUIRED=TRUE
+          USER_CONTROLLED_APPROVAL_REQUIRED=TRUE
+          WAVE_UNTOUCHED=TRUE
+          EOF
+          (
+            cd tokenops-seal-bound-tx-review-manifest-evidence
+            sha256sum seal_bound_tx_review_manifest.py test_seal_bound_tx_review_manifest.py seal-bound-tx-review-manifest-tests.log SAFETY.txt > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+
+      - name: Assert safety evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          f=tokenops-seal-bound-tx-review-manifest-evidence/SAFETY.txt
+          grep -qx 'SOLANA_INSTRUCTIONS_CREATED=FALSE' "$f"
+          grep -qx 'TRANSACTION_BYTES_CREATED=FALSE' "$f"
+          grep -qx 'TRANSACTION_CREATED=FALSE' "$f"
+          grep -qx 'TRANSACTION_SIGNED=FALSE' "$f"
+          grep -qx 'TRANSACTION_SUBMITTED=FALSE' "$f"
+          grep -qx 'BROADCAST_ALLOWED=FALSE' "$f"
+          grep -qx 'EXECUTION_AUTHORIZED=FALSE' "$f"
+          grep -qx 'FINANCIAL_EFFECT=FALSE' "$f"
+          grep -qx 'PRIVATE_KEY_USED=FALSE' "$f"
+          grep -qx 'WAVE_UNTOUCHED=TRUE' "$f"
+
+      - name: Upload evidence artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Seal-Bound-Unsigned-TX-Review-Manifest-Gate
+          path: tokenops-seal-bound-tx-review-manifest-evidence/
+          if-no-files-found: error
+          retention-days: 30

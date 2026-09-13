@@ -1,0 +1,52 @@
+name: THF TokenOps Autonomous Large Batch Gate
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/governance_authority_requirements.py'
+      - 'ReleaseOps/TokenOps/treasury_evidence_bundle.py'
+      - 'ReleaseOps/TokenOps/tokenops_readiness_compiler.py'
+      - 'ReleaseOps/TokenOps/policy_decision_request.json'
+      - 'ReleaseOps/TokenOps/test_autonomous_large_batch_round11.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-autonomous-large-batch.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run governance treasury readiness tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_autonomous_large_batch_round11.py |& tee autonomous-large-batch-tests.log
+      - name: Build immutable evidence hashes
+        run: |
+          set -Eeuo pipefail
+          mkdir evidence
+          cp ReleaseOps/TokenOps/{governance_authority_requirements.py,treasury_evidence_bundle.py,tokenops_readiness_compiler.py,policy_decision_request.json,test_autonomous_large_batch_round11.py,autonomous-large-batch-tests.log,policy.json,treasury_policy.json} evidence/
+          cd evidence
+          sha256sum * > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          printf '%s\n' \
+            'POLICY_MUTATION=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'SIGNING=FALSE' \
+            'BROADCAST=FALSE' \
+            'TRANSACTION_BYTES_CREATED=FALSE' \
+            'PRIVATE_KEY_ACCEPTED=FALSE' \
+            'PERSISTENT_SERVICE_ACCOUNT_KEY=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' > SAFETY.txt
+          sha256sum SAFETY.txt >> SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Autonomous-Large-Batch-Gate
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,34 @@
+{
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "epoch_id": "sample-2026-09",
+  "revenue_currency": "USD",
+  "epoch_revenue_minor": 1000000,
+  "revenue_share_bps": 3500,
+  "approved_token_budget_raw": "100000000000",
+  "epoch_budget_cap_raw": "100000000000",
+  "per_user_cap_raw": "40000000000",
+  "participants": [
+    {
+      "participant_id": "user-a",
+      "wallet": "11111111111111111111111111111111",
+      "activity_score": "50",
+      "activity_evidence_verified": true,
+      "anti_sybil_pass": true
+    },
+    {
+      "participant_id": "user-b",
+      "wallet": "11111111111111111111111111111111",
+      "activity_score": "30",
+      "activity_evidence_verified": true,
+      "anti_sybil_pass": true
+    },
+    {
+      "participant_id": "user-rejected",
+      "wallet": "11111111111111111111111111111111",
+      "activity_score": "20",
+      "activity_evidence_verified": false,
+      "anti_sybil_pass": true
+    }
+  ]
+}

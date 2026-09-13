@@ -1,0 +1,77 @@
+name: THF TokenOps Atomic Commit-Bound Simulation Review Gate
+
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/atomic_commit_bound_simulation_review.py'
+      - 'ReleaseOps/TokenOps/test_atomic_commit_bound_simulation_review.py'
+      - 'ReleaseOps/TokenOps/anchored_approval_ledger_commit.py'
+      - '.github/workflows/thf-tokenops-atomic-commit-bound-simulation-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  atomic-commit-bound-simulation-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed review-binding tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_atomic_commit_bound_simulation_review.py 2>&1 | tee atomic-commit-bound-simulation-review-tests.log
+      - name: Assert non-execution boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/atomic-commit-bound-simulation-review-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' ReleaseOps/TokenOps/atomic_commit_bound_simulation_review.py ReleaseOps/TokenOps/test_atomic_commit_bound_simulation_review.py
+          printf '%s\n' \
+            'ATOMIC_APPROVAL_COMMIT_REQUIRED=TRUE' \
+            'EXACT_FINAL_LEDGER_HEAD_REQUIRED=TRUE' \
+            'SIMULATION_REVIEW_ELIGIBLE_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE'
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-atomic-commit-bound-simulation-review
+          sha256sum \
+            ReleaseOps/TokenOps/atomic_commit_bound_simulation_review.py \
+            ReleaseOps/TokenOps/test_atomic_commit_bound_simulation_review.py \
+            ReleaseOps/TokenOps/anchored_approval_ledger_commit.py \
+            ReleaseOps/TokenOps/audit_export.py \
+            ReleaseOps/TokenOps/simulation_plan.py \
+            .github/workflows/thf-tokenops-atomic-commit-bound-simulation-review.yml \
+            > tokenops-atomic-commit-bound-simulation-review/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/atomic-commit-bound-simulation-review-tests.log tokenops-atomic-commit-bound-simulation-review/
+          printf '%s\n' \
+            'THF_TOKENOPS_ATOMIC_COMMIT_BOUND_SIMULATION_REVIEW=PASS' \
+            'SIMULATION_REVIEW_ELIGIBLE_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-atomic-commit-bound-simulation-review/SAFETY.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Atomic-Commit-Bound-Simulation-Review-Gate
+          path: tokenops-atomic-commit-bound-simulation-review/
+          if-no-files-found: error
+          retention-days: 90

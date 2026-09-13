@@ -1,0 +1,78 @@
+name: THF TokenOps Anchored Approval Ledger Commit Gate
+
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/anchored_approval_ledger_commit.py'
+      - 'ReleaseOps/TokenOps/test_anchored_approval_ledger_commit.py'
+      - '.github/workflows/thf-tokenops-anchored-approval-ledger-commit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  anchored-approval-ledger-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run atomic fail-closed tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_anchored_approval_ledger_commit.py 2>&1 | tee anchored-approval-ledger-commit-tests.log
+      - name: Assert non-execution boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/anchored-approval-ledger-commit-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' ReleaseOps/TokenOps/anchored_approval_ledger_commit.py ReleaseOps/TokenOps/test_anchored_approval_ledger_commit.py
+          printf '%s\n' \
+            'EXTERNAL_ANCHOR_REQUIRED=TRUE' \
+            'ONE_TIME_REPLAY_CONSUMPTION_REQUIRED=TRUE' \
+            'ATOMIC_LOCAL_LEDGER_COMMIT_REQUIRED=TRUE' \
+            'APPROVAL_REVIEW_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE'
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-anchored-approval-ledger-commit
+          sha256sum \
+            ReleaseOps/TokenOps/anchored_approval_ledger_commit.py \
+            ReleaseOps/TokenOps/test_anchored_approval_ledger_commit.py \
+            ReleaseOps/TokenOps/anchored_approval_binding.py \
+            ReleaseOps/TokenOps/anchored_review_replay_guard.py \
+            ReleaseOps/TokenOps/audit_export.py \
+            .github/workflows/thf-tokenops-anchored-approval-ledger-commit.yml \
+            > tokenops-anchored-approval-ledger-commit/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/anchored-approval-ledger-commit-tests.log tokenops-anchored-approval-ledger-commit/
+          printf '%s\n' \
+            'THF_TOKENOPS_ANCHORED_APPROVAL_LEDGER_COMMIT=PASS' \
+            'ATOMIC_LOCAL_LEDGER_COMMIT_REQUIRED=TRUE' \
+            'APPROVAL_REVIEW_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-anchored-approval-ledger-commit/SAFETY.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Anchored-Approval-Ledger-Commit-Gate
+          path: tokenops-anchored-approval-ledger-commit/
+          if-no-files-found: error
+          retention-days: 90

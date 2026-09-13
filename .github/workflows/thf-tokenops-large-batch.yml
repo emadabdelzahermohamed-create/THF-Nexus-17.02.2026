@@ -1,0 +1,38 @@
+name: THF TokenOps Large Batch Gate
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/control_plane_guardrails.py'
+      - 'ReleaseOps/TokenOps/integration_contracts.py'
+      - 'ReleaseOps/TokenOps/incident_monitoring.py'
+      - 'ReleaseOps/TokenOps/test_large_batch.py'
+      - '.github/workflows/thf-tokenops-large-batch.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Test deterministic safe control plane
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_large_batch.py |& tee large-batch-tests.log
+      - name: Evidence hashes
+        run: |
+          set -Eeuo pipefail
+          mkdir evidence
+          cp ReleaseOps/TokenOps/{control_plane_guardrails.py,integration_contracts.py,incident_monitoring.py,test_large_batch.py,large-batch-tests.log,policy.json,treasury_policy.json} evidence/
+          cd evidence
+          sha256sum * > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Large-Batch-Gate
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,50 @@
+name: THF TokenOps Operational Planning Batch Gate
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/reward_allocation_accounting.py'
+      - 'ReleaseOps/TokenOps/burn_program_planner.py'
+      - 'ReleaseOps/TokenOps/approval_evidence_chain.py'
+      - 'ReleaseOps/TokenOps/test_operational_planning_batch.py'
+      - 'ReleaseOps/TokenOps/financial_evidence_reconciliation.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-operational-planning-batch.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run operational planning fail-closed tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_operational_planning_batch.py |& tee operational-planning-tests.log
+      - name: Build immutable evidence hashes
+        run: |
+          set -Eeuo pipefail
+          mkdir evidence
+          cp ReleaseOps/TokenOps/{reward_allocation_accounting.py,burn_program_planner.py,approval_evidence_chain.py,test_operational_planning_batch.py,operational-planning-tests.log,financial_evidence_reconciliation.py,policy.json,treasury_policy.json} evidence/
+          cd evidence
+          sha256sum * > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          printf '%s\n' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'SIGNING=FALSE' \
+            'BROADCAST=FALSE' \
+            'TRANSACTION_BYTES_CREATED=FALSE' \
+            'PRIVATE_KEY_ACCEPTED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' > SAFETY.txt
+          sha256sum SAFETY.txt >> SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Operational-Planning-Batch-Gate
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

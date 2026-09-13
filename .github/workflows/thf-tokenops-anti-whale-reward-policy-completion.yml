@@ -1,0 +1,96 @@
+name: THF TokenOps Anti-Whale Reward Policy Completion Gate
+
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/anti_whale_reward_policy_completion_gate.py'
+      - 'ReleaseOps/TokenOps/test_anti_whale_reward_policy_completion_gate.py'
+      - 'ReleaseOps/TokenOps/anti_whale_reward_policy_completion.json'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-anti-whale-reward-policy-completion.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  policy-completion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed policy completion tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_anti_whale_reward_policy_completion_gate.py 2>&1 | tee anti-whale-reward-policy-completion-tests.log
+      - name: Validate current production completion remains fail-closed
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY' | tee ReleaseOps/TokenOps/anti-whale-reward-policy-completion-status.json
+          import json, sys
+          sys.path.insert(0, 'ReleaseOps/TokenOps')
+          from anti_whale_reward_policy_completion_gate import evaluate_policy_completion
+          base='ReleaseOps/TokenOps/'
+          completion=json.load(open(base+'anti_whale_reward_policy_completion.json'))
+          policy=json.load(open(base+'policy.json'))
+          treasury=json.load(open(base+'treasury_policy.json'))
+          out=evaluate_policy_completion(completion, policy, treasury)
+          assert out['authoritatively_completed'] is False
+          assert 'anti_whale_caps_not_authoritatively_configured' in out['blockers']
+          assert 'governance_provenance_incomplete' in out['blockers']
+          assert 'production_caps_not_approved' in out['blockers']
+          assert out['simulation_review_eligible'] is False
+          assert out['execution_authorized'] is False
+          print(json.dumps(out,sort_keys=True,indent=2))
+          PY
+      - name: Assert non-execution boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/anti-whale-reward-policy-completion-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' \
+            ReleaseOps/TokenOps/anti_whale_reward_policy_completion_gate.py \
+            ReleaseOps/TokenOps/test_anti_whale_reward_policy_completion_gate.py
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-anti-whale-reward-policy-completion
+          sha256sum \
+            ReleaseOps/TokenOps/anti_whale_reward_policy_completion_gate.py \
+            ReleaseOps/TokenOps/test_anti_whale_reward_policy_completion_gate.py \
+            ReleaseOps/TokenOps/anti_whale_reward_policy_completion.json \
+            ReleaseOps/TokenOps/policy.json \
+            ReleaseOps/TokenOps/treasury_policy.json \
+            .github/workflows/thf-tokenops-anti-whale-reward-policy-completion.yml \
+            > tokenops-anti-whale-reward-policy-completion/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/anti-whale-reward-policy-completion-tests.log tokenops-anti-whale-reward-policy-completion/
+          cp ReleaseOps/TokenOps/anti-whale-reward-policy-completion-status.json tokenops-anti-whale-reward-policy-completion/
+          printf '%s\n' \
+            'THF_TOKENOPS_ANTI_WHALE_REWARD_POLICY_COMPLETION_GATE=PASS' \
+            'PRODUCTION_POLICY_COMPLETED=FALSE' \
+            'BLOCKER=ANTI_WHALE_CAPS_NOT_AUTHORITATIVELY_CONFIGURED' \
+            'BLOCKER=GOVERNANCE_PROVENANCE_INCOMPLETE' \
+            'BLOCKER=PRODUCTION_CAPS_NOT_APPROVED' \
+            'ACTIVE_USER_REVENUE_SHARE=0.35' \
+            'SIMULATION_REVIEW_ELIGIBLE=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-anti-whale-reward-policy-completion/SAFETY.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Anti-Whale-Reward-Policy-Completion-Gate
+          path: tokenops-anti-whale-reward-policy-completion/
+          if-no-files-found: error
+          retention-days: 90

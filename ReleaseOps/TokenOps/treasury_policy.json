@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "control_model": "external_multisig_required",
+  "roles": {
+    "observer": {"may_generate_reports": true, "may_construct_unsigned_manifests": false},
+    "planner": {"may_generate_reports": true, "may_construct_unsigned_manifests": true, "may_sign": false},
+    "approver": {"may_approve_manifest": true, "may_sign": false},
+    "external_signer": {"may_sign_only_after_threshold_approval": true, "key_material_in_repo": false}
+  },
+  "approval_classes": {
+    "reward_epoch": {"minimum_approvals": 2, "execution": "external_multisig"},
+    "vesting_settlement": {"minimum_approvals": 2, "execution": "external_multisig"},
+    "burn": {"minimum_approvals": 3, "execution": "external_multisig", "supply_floor_ui": "8000000000"},
+    "treasury_transfer": {"minimum_approvals": 3, "execution": "external_multisig"}
+  },
+  "hard_guards": {
+    "seed_phrase_forbidden": true,
+    "private_key_forbidden": true,
+    "persistent_hot_wallet_forbidden": true,
+    "broadcast_from_ci_forbidden": true,
+    "authority_change_forbidden": true,
+    "minting_forbidden": true,
+    "third_party_balance_burn_forbidden": true,
+    "wave_mawja_untouched": true
+  }
+}

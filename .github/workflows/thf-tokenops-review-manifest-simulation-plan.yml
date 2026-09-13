@@ -1,0 +1,89 @@
+name: THF TokenOps Review Manifest Bound Simulation Plan Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/review_manifest_simulation_plan.py'
+      - 'ReleaseOps/TokenOps/test_review_manifest_simulation_plan.py'
+      - '.github/workflows/thf-tokenops-review-manifest-simulation-plan.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  THF_TOKEN_MINT: HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run fail-closed unit tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_review_manifest_simulation_plan.py |& tee review-manifest-simulation-plan-tests.log
+
+      - name: Build deterministic safety evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-review-manifest-simulation-plan-evidence
+          cp ReleaseOps/TokenOps/review_manifest_simulation_plan.py tokenops-review-manifest-simulation-plan-evidence/
+          cp ReleaseOps/TokenOps/test_review_manifest_simulation_plan.py tokenops-review-manifest-simulation-plan-evidence/
+          cp ReleaseOps/TokenOps/review-manifest-simulation-plan-tests.log tokenops-review-manifest-simulation-plan-evidence/
+          cat > tokenops-review-manifest-simulation-plan-evidence/SAFETY.txt <<'EOF'
+          CANONICAL_NETWORK=solana-mainnet-beta
+          CANONICAL_MINT=HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv
+          SIMULATION_PLAN_ONLY=TRUE
+          SOLANA_INSTRUCTIONS_CREATED=FALSE
+          TRANSACTION_BYTES_CREATED=FALSE
+          TRANSACTION_CREATED=FALSE
+          TRANSACTION_SIGNED=FALSE
+          TRANSACTION_SUBMITTED=FALSE
+          RPC_SIMULATION_SUBMITTED=FALSE
+          BROADCAST_ALLOWED=FALSE
+          EXECUTION_AUTHORIZED=FALSE
+          FINANCIAL_EFFECT=FALSE
+          PRIVATE_KEY_USED=FALSE
+          EXTERNAL_MULTISIG_REQUIRED=TRUE
+          USER_CONTROLLED_APPROVAL_REQUIRED=TRUE
+          WAVE_UNTOUCHED=TRUE
+          EOF
+          (
+            cd tokenops-review-manifest-simulation-plan-evidence
+            sha256sum review_manifest_simulation_plan.py test_review_manifest_simulation_plan.py review-manifest-simulation-plan-tests.log SAFETY.txt > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+
+      - name: Assert safety evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          f=tokenops-review-manifest-simulation-plan-evidence/SAFETY.txt
+          grep -qx 'SOLANA_INSTRUCTIONS_CREATED=FALSE' "$f"
+          grep -qx 'TRANSACTION_BYTES_CREATED=FALSE' "$f"
+          grep -qx 'TRANSACTION_CREATED=FALSE' "$f"
+          grep -qx 'TRANSACTION_SIGNED=FALSE' "$f"
+          grep -qx 'TRANSACTION_SUBMITTED=FALSE' "$f"
+          grep -qx 'RPC_SIMULATION_SUBMITTED=FALSE' "$f"
+          grep -qx 'BROADCAST_ALLOWED=FALSE' "$f"
+          grep -qx 'EXECUTION_AUTHORIZED=FALSE' "$f"
+          grep -qx 'FINANCIAL_EFFECT=FALSE' "$f"
+          grep -qx 'PRIVATE_KEY_USED=FALSE' "$f"
+          grep -qx 'WAVE_UNTOUCHED=TRUE' "$f"
+
+      - name: Upload evidence artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Review-Manifest-Bound-Simulation-Plan-Gate
+          path: tokenops-review-manifest-simulation-plan-evidence/
+          if-no-files-found: error
+          retention-days: 30

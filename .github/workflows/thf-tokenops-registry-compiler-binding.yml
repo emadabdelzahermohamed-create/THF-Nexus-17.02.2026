@@ -1,0 +1,39 @@
+name: THF TokenOps Registry Compiler Binding Gate
+on:
+  push:
+    branches: [tokenops/read-only-audit-20260911]
+    paths:
+      - 'ReleaseOps/TokenOps/registry_driven_compiler_binding.py'
+      - 'ReleaseOps/TokenOps/test_registry_driven_compiler_binding.py'
+      - 'ReleaseOps/TokenOps/registry_driven_mainnet_verifier.py'
+      - 'ReleaseOps/TokenOps/verifier_compiler_binding.py'
+      - '.github/workflows/thf-tokenops-registry-compiler-binding.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ReleaseOps/TokenOps
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Test fail-closed registry compiler binding
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/registry-compiler-binding
+          python3 -m unittest -v test_registry_driven_compiler_binding.py 2>&1 | tee evidence/registry-compiler-binding/tests.log
+          printf '%s\n' 'TRANSACTION_CREATED=FALSE' 'TRANSACTION_SIGNED=FALSE' 'TRANSACTION_SUBMITTED=FALSE' 'SIMULATION_EXECUTED=FALSE' 'FINANCIAL_EFFECT=FALSE' 'WAVE_UNTOUCHED=TRUE' | tee evidence/registry-compiler-binding/SAFETY.txt
+      - name: SHA-256 evidence
+        run: |
+          set -euo pipefail
+          sha256sum registry_driven_compiler_binding.py test_registry_driven_compiler_binding.py registry_driven_mainnet_verifier.py verifier_compiler_binding.py evidence/registry-compiler-binding/tests.log evidence/registry-compiler-binding/SAFETY.txt > evidence/registry-compiler-binding/SHA256SUMS.txt
+          cat evidence/registry-compiler-binding/SHA256SUMS.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Registry-Compiler-Binding-Gate
+          path: ReleaseOps/TokenOps/evidence/registry-compiler-binding/
+          if-no-files-found: error
+          retention-days: 90

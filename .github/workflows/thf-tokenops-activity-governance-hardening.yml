@@ -1,0 +1,48 @@
+name: THF TokenOps Activity + Governance Hardening
+on:
+  workflow_dispatch:
+  push:
+    branches: [tokenops/read-only-audit-20260911]
+    paths:
+      - 'ReleaseOps/TokenOps/recent_activity_classifier.py'
+      - 'ReleaseOps/TokenOps/governance_parameter_proposal.py'
+      - 'ReleaseOps/TokenOps/policy_transition_guard.py'
+      - 'ReleaseOps/TokenOps/test_governance_and_activity.py'
+      - '.github/workflows/thf-tokenops-activity-governance-hardening.yml'
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - name: Offline governance transition tests
+        working-directory: ReleaseOps/TokenOps
+        run: python3 -m unittest -v test_governance_and_activity.py |& tee activity-governance-tests.log
+      - name: Recent canonical mint activity classification (read-only)
+        working-directory: ReleaseOps/TokenOps
+        run: |
+          set +e
+          python3 recent_activity_classifier.py --limit 5 --output recent-activity.json | tee recent-activity-summary.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            printf '{"status":"unavailable","reason":"rpc_or_optional_query_failure","read_only":true,"financial_effect":false}\n' > recent-activity.json
+            echo 'Optional recent transaction classification unavailable; core safety gate continues.' | tee recent-activity-summary.log
+          fi
+          exit 0
+      - name: Evidence hashes
+        working-directory: ReleaseOps/TokenOps
+        run: |
+          sha256sum recent_activity_classifier.py governance_parameter_proposal.py policy_transition_guard.py test_governance_and_activity.py recent-activity.json activity-governance-tests.log recent-activity-summary.log > SHA256SUMS-activity-governance.txt
+          cat SHA256SUMS-activity-governance.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Activity-Governance-Hardening-Gate
+          path: |
+            ReleaseOps/TokenOps/recent-activity.json
+            ReleaseOps/TokenOps/recent-activity-summary.log
+            ReleaseOps/TokenOps/activity-governance-tests.log
+            ReleaseOps/TokenOps/SHA256SUMS-activity-governance.txt
+          if-no-files-found: error
+          retention-days: 30

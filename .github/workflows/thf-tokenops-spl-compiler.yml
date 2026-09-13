@@ -1,0 +1,65 @@
+name: THF TokenOps SPL Compiler Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/spl_instruction_compiler.py'
+      - 'ReleaseOps/TokenOps/test_spl_instruction_compiler.py'
+      - '.github/workflows/thf-tokenops-spl-compiler.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compiler-gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run compiler unit tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-spl-compiler
+          python3 ReleaseOps/TokenOps/test_spl_instruction_compiler.py | tee tokenops-spl-compiler-tests.log
+          grep -qx 'THF_TOKENOPS_SPL_COMPILER_TESTS=PASS' tokenops-spl-compiler-tests.log
+          grep -qx 'UNVERIFIED_TREASURY_REJECTED=TRUE' tokenops-spl-compiler-tests.log
+          grep -qx 'THIRD_PARTY_SOURCE_REJECTED=TRUE' tokenops-spl-compiler-tests.log
+          grep -qx 'TRANSACTION_SERIALIZED=FALSE' tokenops-spl-compiler-tests.log
+          grep -qx 'TRANSACTION_SIGNED=FALSE' tokenops-spl-compiler-tests.log
+          grep -qx 'TRANSACTION_SUBMITTED=FALSE' tokenops-spl-compiler-tests.log
+          grep -qx 'FINANCIAL_EFFECT=FALSE' tokenops-spl-compiler-tests.log
+          grep -qx 'WAVE_UNTOUCHED=TRUE' tokenops-spl-compiler-tests.log
+
+      - name: Build evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sha256sum \
+            ReleaseOps/TokenOps/spl_instruction_compiler.py \
+            ReleaseOps/TokenOps/test_spl_instruction_compiler.py \
+            tokenops-spl-compiler-tests.log \
+            > tokenops-spl-compiler/SHA256SUMS.txt
+          cat > tokenops-spl-compiler/SAFETY.txt <<'EOF'
+          THF_TOKENOPS_SPL_COMPILER_GATE=PASS
+          CANONICAL_MINT=HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv
+          TRANSACTION_SERIALIZED=FALSE
+          TRANSACTION_SIGNED=FALSE
+          TRANSACTION_SUBMITTED=FALSE
+          FINANCIAL_EFFECT=FALSE
+          WAVE_UNTOUCHED=TRUE
+          EOF
+
+      - name: Upload compiler evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-SPL-Compiler-Gate
+          path: |
+            tokenops-spl-compiler/
+            tokenops-spl-compiler-tests.log
+          if-no-files-found: error
+          retention-days: 30

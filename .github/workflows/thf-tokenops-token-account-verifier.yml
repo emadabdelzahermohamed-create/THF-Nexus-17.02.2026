@@ -1,0 +1,49 @@
+name: THF Token Account Verifier Gate
+
+on:
+  push:
+    branches: [tokenops/read-only-audit-20260911]
+    paths:
+      - 'ReleaseOps/TokenOps/mainnet_token_account_verifier.py'
+      - 'ReleaseOps/TokenOps/test_mainnet_token_account_verifier.py'
+      - '.github/workflows/thf-tokenops-token-account-verifier.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Unit tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_mainnet_token_account_verifier.py | tee token-account-verifier-tests.log
+      - name: Assert safety invariants
+        run: |
+          set -Eeuo pipefail
+          grep -q 'transaction_created.*False' ReleaseOps/TokenOps/mainnet_token_account_verifier.py
+          grep -q 'transaction_signed.*False' ReleaseOps/TokenOps/mainnet_token_account_verifier.py
+          grep -q 'transaction_submitted.*False' ReleaseOps/TokenOps/mainnet_token_account_verifier.py
+          grep -q 'balance_or_rank_used_as_control_evidence.*False' ReleaseOps/TokenOps/mainnet_token_account_verifier.py
+          ! grep -Eq 'sendTransaction|requestAirdrop|setAuthority' ReleaseOps/TokenOps/mainnet_token_account_verifier.py
+          echo THF_TOKEN_ACCOUNT_VERIFIER_SAFETY_GATE=PASS
+      - name: Evidence hashes
+        run: |
+          set -Eeuo pipefail
+          mkdir -p token-account-verifier-evidence
+          cp ReleaseOps/TokenOps/mainnet_token_account_verifier.py token-account-verifier-evidence/
+          cp ReleaseOps/TokenOps/test_mainnet_token_account_verifier.py token-account-verifier-evidence/
+          cp ReleaseOps/TokenOps/token-account-verifier-tests.log token-account-verifier-evidence/
+          sha256sum token-account-verifier-evidence/* > token-account-verifier-evidence/SHA256SUMS.txt
+          cat token-account-verifier-evidence/SHA256SUMS.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Token-Account-Verifier-Gate
+          path: token-account-verifier-evidence/
+          retention-days: 30

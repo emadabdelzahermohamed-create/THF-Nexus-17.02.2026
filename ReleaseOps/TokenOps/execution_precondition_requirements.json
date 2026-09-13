@@ -1,0 +1,17 @@
+{
+  "schema": "thf-tokenops-execution-precondition-requirements/v1",
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "intent_evidence": {
+    "reward_epoch": ["mainnet_audit", "policy_snapshot", "treasury_policy_snapshot", "simulation_receipt", "activity_eligibility", "anti_sybil_review", "distribution_reserve", "allocation_accounting", "governance_authority"],
+    "vesting_settlement": ["mainnet_audit", "policy_snapshot", "treasury_policy_snapshot", "simulation_receipt", "vesting_terms", "vesting_liability", "vesting_reserve", "governance_authority"],
+    "burn": ["mainnet_audit", "policy_snapshot", "treasury_policy_snapshot", "simulation_receipt", "treasury_ownership", "treasury_balance", "burn_reserve", "governance_authority"],
+    "treasury_transfer": ["mainnet_audit", "policy_snapshot", "treasury_policy_snapshot", "simulation_receipt", "treasury_ownership", "treasury_balance", "destination_review", "governance_authority"]
+  },
+  "safety": {
+    "execution_authorized": false,
+    "broadcast_allowed": false,
+    "signing_allowed": false,
+    "wave_mawja_untouched": true
+  }
+}

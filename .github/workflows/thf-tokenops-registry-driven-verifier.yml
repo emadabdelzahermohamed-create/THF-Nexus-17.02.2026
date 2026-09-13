@@ -1,0 +1,107 @@
+name: THF TokenOps Registry Driven Verifier Gate
+
+on:
+  push:
+    branches:
+      - tokenops/read-only-audit-20260911
+    paths:
+      - 'ReleaseOps/TokenOps/registry_driven_mainnet_verifier.py'
+      - 'ReleaseOps/TokenOps/test_registry_driven_mainnet_verifier.py'
+      - 'ReleaseOps/TokenOps/treasury_control_registry.py'
+      - 'ReleaseOps/TokenOps/mainnet_token_account_verifier.py'
+      - '.github/workflows/thf-tokenops-registry-driven-verifier.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  registry-driven-verifier-gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ReleaseOps/TokenOps
+    steps:
+      - name: Checkout exact branch state
+        uses: actions/checkout@v4
+
+      - name: Run fail-closed unit tests
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/registry-driven-verifier
+          python3 -m unittest -v test_registry_driven_mainnet_verifier.py 2>&1 | tee evidence/registry-driven-verifier/tests.log
+
+      - name: Produce synthetic public-only fixture evidence
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' | tee evidence/registry-driven-verifier/fixture.log
+          import json
+          from registry_driven_mainnet_verifier import build_registry_driven_verification
+          from treasury_control_registry import MINT, NETWORK, normalize_registry
+
+          owner='So11111111111111111111111111111111111111112'
+          account='11111111111111111111111111111111'
+          registry=normalize_registry({
+              'network': NETWORK,
+              'mint': MINT,
+              'entries': [{
+                  'owner_wallet': owner,
+                  'token_accounts': [account],
+                  'control_evidence_sha256': 'a'*64,
+                  'evidence_type': 'multisig_config_snapshot',
+                  'governance_reference': 'synthetic CI fixture only',
+              }],
+          })
+          value={
+              'owner':'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+              'data':{'parsed':{'type':'account','info':{
+                  'mint':MINT,
+                  'owner':owner,
+                  'state':'initialized',
+                  'tokenAmount':{'amount':'1','decimals':8},
+              }}},
+          }
+          out=build_registry_driven_verification(registry, account, owner, value)
+          assert out['candidate_source']=='validated_treasury_control_registry_only'
+          assert out['caller_supplied_allowlist'] is False
+          assert out['caller_supplied_control_evidence'] is False
+          assert out['transaction_created'] is False
+          assert out['transaction_signed'] is False
+          assert out['transaction_submitted'] is False
+          assert out['ready_for_simulation'] is False
+          assert out['ready_for_signing'] is False
+          assert out['broadcast_allowed'] is False
+          assert out['financial_effect'] is False
+          json.dump(out, open('evidence/registry-driven-verifier/fixture-output.json','w'), indent=2, sort_keys=True)
+          print('REGISTRY_DRIVEN_VERIFIER_SAFETY=PASS')
+          print('PRODUCTION_TREASURY_ASSUMED=FALSE')
+          print('READY_FOR_SIMULATION=FALSE')
+          print('TRANSACTION_SIGNING=FALSE')
+          print('TRANSACTION_BROADCAST=FALSE')
+          print('WAVE_UNTOUCHED=TRUE')
+          PY
+
+      - name: Generate evidence SHA-256
+        run: |
+          set -euo pipefail
+          sha256sum \
+            registry_driven_mainnet_verifier.py \
+            test_registry_driven_mainnet_verifier.py \
+            treasury_control_registry.py \
+            mainnet_token_account_verifier.py \
+            evidence/registry-driven-verifier/tests.log \
+            evidence/registry-driven-verifier/fixture.log \
+            evidence/registry-driven-verifier/fixture-output.json \
+            > evidence/registry-driven-verifier/SHA256SUMS.txt
+          cat evidence/registry-driven-verifier/SHA256SUMS.txt
+
+      - name: Upload immutable evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-TokenOps-Registry-Driven-Verifier-Gate
+          path: ReleaseOps/TokenOps/evidence/registry-driven-verifier/
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,32 @@
+name: THF TokenOps Cross-Epoch Roll-Forward Gate
+on:
+  push:
+    branches: [tokenops/read-only-audit-20260911]
+    paths:
+      - 'ReleaseOps/TokenOps/cross_epoch_accounting_rollforward.py'
+      - 'ReleaseOps/TokenOps/test_cross_epoch_accounting_rollforward.py'
+      - '.github/workflows/thf-tokenops-cross-epoch-rollforward.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run deterministic fail-closed tests
+        working-directory: ReleaseOps/TokenOps
+        run: python3 test_cross_epoch_accounting_rollforward.py
+      - name: Build evidence
+        run: |
+          mkdir -p evidence
+          cp ReleaseOps/TokenOps/cross_epoch_accounting_rollforward.py evidence/
+          cp ReleaseOps/TokenOps/test_cross_epoch_accounting_rollforward.py evidence/
+          sha256sum evidence/* > evidence/SHA256SUMS.txt
+          printf '%s\n' 'ACCOUNTING_REVIEW_ONLY=TRUE' 'TRANSACTION_CREATED=FALSE' 'TRANSACTION_SIGNED=FALSE' 'TRANSACTION_SUBMITTED=FALSE' 'FINANCIAL_EFFECT=FALSE' 'PRIVATE_KEY_USED=FALSE' 'WAVE_UNTOUCHED=TRUE' > evidence/SAFETY.txt
+          sha256sum evidence/SAFETY.txt >> evidence/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THF-TokenOps-Cross-Epoch-Roll-Forward-Gate
+          path: evidence/
+          if-no-files-found: error

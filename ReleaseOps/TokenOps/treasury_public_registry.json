@@ -1,0 +1,9 @@
+{
+  "schema": "thf-tokenops-public-treasury-registry/v1",
+  "version": 1,
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "status": "not_authoritatively_configured",
+  "accounts": [],
+  "notes": "Public-key-only registry. Never place seed phrases, private keys, keypairs, signatures or credentials here."
+}

@@ -1,0 +1,80 @@
+name: THF TokenOps Evidence-Bound Simulation Gate
+
+on:
+  push:
+    branches:
+      - 'tokenops/**'
+    paths:
+      - 'ReleaseOps/TokenOps/evidence_bound_simulation_gate.py'
+      - 'ReleaseOps/TokenOps/test_evidence_bound_simulation_gate.py'
+      - '.github/workflows/thf-tokenops-evidence-bound-simulation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-bound-simulation-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run fail-closed evidence-bound simulation tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_evidence_bound_simulation_gate.py 2>&1 | tee evidence-bound-simulation-tests.log
+
+      - name: Assert review-only safety boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/evidence-bound-simulation-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|seed phrase|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' \
+            ReleaseOps/TokenOps/evidence_bound_simulation_gate.py \
+            ReleaseOps/TokenOps/test_evidence_bound_simulation_gate.py
+          echo THF_TOKENOPS_EVIDENCE_BOUND_SIMULATION_GATE=PASS
+          echo SIMULATION_REVIEW_ONLY=TRUE
+          echo SIMULATION_EXECUTION_PERMITTED=FALSE
+          echo TRANSACTION_CREATED=FALSE
+          echo TRANSACTION_SIGNED=FALSE
+          echo TRANSACTION_SUBMITTED=FALSE
+          echo BROADCAST_ALLOWED=FALSE
+          echo PRIVATE_KEY_USED=FALSE
+          echo FINANCIAL_EFFECT=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-evidence-bound-simulation
+          sha256sum \
+            ReleaseOps/TokenOps/evidence_bound_simulation_gate.py \
+            ReleaseOps/TokenOps/test_evidence_bound_simulation_gate.py \
+            .github/workflows/thf-tokenops-evidence-bound-simulation.yml \
+            > tokenops-evidence-bound-simulation/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/evidence-bound-simulation-tests.log tokenops-evidence-bound-simulation/
+          printf '%s\n' \
+            'THF_TOKENOPS_EVIDENCE_BOUND_SIMULATION_GATE=PASS' \
+            'SIMULATION_REVIEW_ONLY=TRUE' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-evidence-bound-simulation/SAFETY.txt
+
+      - name: Upload gate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Evidence-Bound-Simulation-Gate
+          path: tokenops-evidence-bound-simulation/
+          if-no-files-found: error
+          retention-days: 90
