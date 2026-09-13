@@ -69,7 +69,7 @@ jobs:
           done < src/matrix.tsv
           cat out/summary.tsv
           printf '%s\n' 'SOURCE_AUDIT_ONLY=TRUE' 'BACKEND_HEALTH_AUTH_NOT_PROVEN=TRUE' 'PHYSICAL_DEVICE_NOT_PROVEN=TRUE' 'FINAL_OR_PLAY_READY=FALSE' > out/truth-boundary.txt
-      - uses: actions/upload-artifact@ea165f8d65b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: THF-APPS-RUNTIME-CONTRACT-AUDIT-V2
           path: out/
