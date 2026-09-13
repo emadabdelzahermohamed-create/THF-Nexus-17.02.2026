@@ -1,0 +1,68 @@
+name: THF Terra Rift Mobile Config Forensics V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-terra-rift-mobile-config-forensics-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: { project_id: '${{ env.GCP_PROJECT_ID }}' }
+      - name: Inspect only safe mobile config and placeholder token locations
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' > out/forensics.txt <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-game-mobile-forensics-v1"; rm -rf "$ROOT"; mkdir -p "$ROOT"
+          inspect_one() {
+            game="$1"; src="$2"; sha="$3"; work="$ROOT/$game"; mkdir -p "$work"
+            echo "=== $game ==="; echo "$sha  $src" | sha256sum -c -
+            unzip -q "$src" -d "$work"
+            pg=$(find "$work" -type f -name project.godot -print -quit); test -n "$pg"
+            echo '--- project mobile/window keys ---'
+            grep -nE '^\[display/window\]|^(size/|stretch/|handheld/|display/window/)' "$pg" || true
+            echo '--- placeholder token locations (values redacted) ---'
+            python3 - "$work" <<'PY'
+import pathlib,re,sys
+root=pathlib.Path(sys.argv[1]); pats=[('localhost',re.compile(r'localhost|127\.0\.0\.1|0\.0\.0\.0',re.I)),('example',re.compile(r'example\.com',re.I)),('replace_me',re.compile(r'REPLACE[_ -]?ME|YOUR[_ -]?(API|URL|HOST)|placeholder[_ -]?(url|endpoint)',re.I))]
+for p in root.rglob('*'):
+  if not p.is_file() or p.stat().st_size>2_000_000 or p.suffix.lower() not in {'.gd','.tscn','.tres','.godot','.cfg','.ini','.json','.txt','.md','.kt','.java','.xml','.properties'}: continue
+  try: lines=p.read_text(errors='ignore').splitlines()
+  except OSError: continue
+  for n,line in enumerate(lines,1):
+    for name,rx in pats:
+      if rx.search(line): print(f'{p.relative_to(root)}:{n}:TOKEN={name}')
+PY
+            echo "$sha  $src" | sha256sum -c -
+          }
+          inspect_one terra "$HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip" eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+          inspect_one rift "$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip" 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+          REMOTE
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TERRA-RIFT-MOBILE-CONFIG-FORENSICS
+          path: out/forensics.txt
+          retention-days: 14
