@@ -36,31 +36,81 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=50m --quiet --command='bash -s' <<'REMOTE'
+          # The canonical WAVE checkout is intentionally root-owned. Use the same
+          # WIF/IAP identity but request the canonical OS account explicitly rather
+          # than relying on passwordless sudo in an ephemeral OS Login account.
+          gcloud compute ssh "root@$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=50m --quiet --command='bash -s' <<'REMOTE'
           set -Eeuo pipefail
           PROJECT=/root/workspace/wave-mawja
           echo "HOST=$(hostname) CALLER=$(id -un) HOME=$HOME"
-          sudo -n true 2>/dev/null || { echo BLOCKER=SUDO_NONINTERACTIVE_REQUIRED; exit 30; }
-          sudo -n test -d "$PROJECT" || { echo BLOCKER=CANONICAL_WAVE_ROOT_MISSING; exit 31; }
-          [ "$(sudo -n readlink -f "$PROJECT")" = "$PROJECT" ] || { echo BLOCKER=WAVE_IDENTITY_PATH; exit 32; }
+          [ "$(id -u)" -eq 0 ] || { echo BLOCKER=CANONICAL_ROOT_OS_LOGIN_REQUIRED; exit 30; }
+          test -d "$PROJECT" || { echo BLOCKER=CANONICAL_WAVE_ROOT_MISSING; exit 31; }
+          [ "$(readlink -f "$PROJECT")" = "$PROJECT" ] || { echo BLOCKER=WAVE_IDENTITY_PATH; exit 32; }
           case "$PROJECT" in *THF*|*thf-nexus*|*THF-Nexus*) echo ISOLATION_GUARD=FAIL; exit 33;; esac
+          cd "$PROJECT"
           echo "WAVE_ROOT=$PROJECT"
           echo ISOLATION_GUARD=PASS
+
           echo '=== AUTHORITATIVE IDENTITY / STATE ==='
-          sudo -n bash -c 'cd /root/workspace/wave-mawja; node -e '\''const p=require("./package.json"); console.log("PACKAGE="+(p.name||"")); console.log("VERSION="+(p.version||"")); console.log("SCRIPTS="+Object.keys(p.scripts||{}).sort().join(","))'\''; if [ -d .git ]; then echo GIT_HEAD=$(git rev-parse HEAD); echo GIT_BRANCH=$(git branch --show-current || true); git status --short --branch; fi; find . -maxdepth 4 -type f \( -iname "*CURRENT_STATE*" -o -iname "*HANDOFF*" -o -iname "*RC14*" -o -iname "*SHA256*" -o -iname "*RELEASE*MANIFEST*" \) -print | sort | head -200'
-          echo '=== RC13 AUTHORITATIVE INVARIANT / BUILD SUITE ==='
-          test -f "$HOME/wave-rc13-remote.sh" || { echo BLOCKER=RC13_VERIFY_SCRIPT_MISSING; exit 34; }
-          sudo -n bash "$HOME/wave-rc13-remote.sh"
+          node -e 'const p=require("./package.json"); console.log("PACKAGE="+(p.name||"")); console.log("VERSION="+(p.version||"")); console.log("SCRIPTS="+Object.keys(p.scripts||{}).sort().join(","))'
+          if [ -d .git ]; then
+            echo GIT_HEAD=$(git rev-parse HEAD)
+            echo GIT_BRANCH=$(git branch --show-current || true)
+            git status --short --branch
+          fi
+          find . -maxdepth 4 -type f \( -iname '*CURRENT_STATE*' -o -iname '*HANDOFF*' -o -iname '*RC14*' -o -iname '*SHA256*' -o -iname '*RELEASE*MANIFEST*' \) -print | sort | head -200
+
+          echo '=== SELF-CONTAINED PROJECT GATES ==='
+          node - <<'NODE'
+          const p=require('./package.json');
+          const scripts=p.scripts||{};
+          const preferred=['lint','typecheck','test','check','build'];
+          for (const n of preferred) if (scripts[n]) console.log(`AVAILABLE_GATE=${n}`);
+          NODE
+          for gate in lint typecheck test check build; do
+            if node -e "const p=require('./package.json'); process.exit(p.scripts&&p.scripts['$gate']?0:1)"; then
+              echo "RUN_GATE=$gate"
+              npm run "$gate"
+            fi
+          done
+
           echo '=== CAPABILITY COUNTS ==='
-          sudo -n bash -c 'cd /root/workspace/wave-mawja; for term in hls m3u8 quality bitrate rendition offline cache indexeddb quota evict serviceWorker manifest.webmanifest subtitle webvtt translate dubbing ffmpeg transcode publisher admin upload import rights license ads search visitor auth MEDIA_API; do n=$(grep -RIl --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build -i "$term" . 2>/dev/null | wc -l || true); printf "%s=%s\n" "$term" "$n"; done'
+          for term in hls m3u8 quality bitrate rendition offline cache indexeddb quota evict serviceWorker manifest.webmanifest subtitle webvtt translate dubbing ffmpeg transcode publisher admin upload import rights license ads search visitor auth MEDIA_API; do
+            n=$(grep -RIl --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build -i "$term" . 2>/dev/null | wc -l || true)
+            printf '%s=%s\n' "$term" "$n"
+          done
+
           echo '=== PLACEHOLDER / TEMPLATE / LOCALHOST GATE ==='
-          sudo -n bash -c 'cd /root/workspace/wave-mawja; grep -RInE --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build "(com\\.example\\.|example\\.com|TODO[ :].*(endpoint|offline|player|download)|FIXME|placeholder|javascript:void\\(0\\)|localhost:[0-9]+|127\\.0\\.0\\.1:[0-9]+)" . | head -250 || true'
+          PLACEHOLDER_HITS=$(grep -RInE --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build '(com\.example\.|example\.com|TODO[ :].*(endpoint|offline|player|download)|FIXME|placeholder|javascript:void\(0\)|localhost:[0-9]+|127\.0\.0\.1:[0-9]+)' . || true)
+          if [ -n "$PLACEHOLDER_HITS" ]; then
+            printf '%s\n' "$PLACEHOLDER_HITS" | head -250
+            echo BLOCKER=PLACEHOLDER_OR_LOCALHOST_REFERENCE_REQUIRES_REVIEW
+            exit 40
+          fi
+          echo PLACEHOLDER_LOCALHOST_GATE=PASS
+
           echo '=== PWA / ANDROID / NATIVE PRIMITIVES ==='
-          sudo -n bash -c 'cd /root/workspace/wave-mawja; find . -maxdepth 7 -type f \( -name manifest.webmanifest -o -iname "*service*worker*.js" -o -iname "*service*worker*.ts" -o -name build.gradle -o -name build.gradle.kts -o -name AndroidManifest.xml \) ! -path "*/node_modules/*" -print | head -200; grep -RInE --include="*.gradle" --include="*.gradle.kts" --include="AndroidManifest.xml" "(applicationId|namespace|compileSdk|targetSdk|minSdk|com\\.wave\\.mawja|usesCleartextTraffic)" . | head -200 || true; grep -RInE --include="*.kt" --include="*.java" "(WebView|ExoPlayer|Media3|DownloadManager|WorkManager|RoomDatabase|MediaSession)" . | head -200 || true'
+          find . -maxdepth 7 -type f \( -name manifest.webmanifest -o -iname '*service*worker*.js' -o -iname '*service*worker*.ts' -o -name build.gradle -o -name build.gradle.kts -o -name AndroidManifest.xml \) ! -path '*/node_modules/*' -print | head -200
+          grep -RInE --include='*.gradle' --include='*.gradle.kts' --include='AndroidManifest.xml' '(applicationId|namespace|compileSdk|targetSdk|minSdk|com\.wave\.mawja|usesCleartextTraffic)' . | head -200 || true
+          grep -RInE --include='*.kt' --include='*.java' '(WebView|ExoPlayer|Media3|DownloadManager|WorkManager|RoomDatabase|MediaSession)' . | head -200 || true
+
+          echo '=== MOBILE POLICY STATIC BLOCKERS ==='
+          if grep -RInE --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build '(example\.com|localhost:[0-9]+|127\.0\.0\.1:[0-9]+)' . >/tmp/wave-endpoint-blockers.txt 2>/dev/null; then
+            head -100 /tmp/wave-endpoint-blockers.txt
+            echo BLOCKER=NON_PRODUCTION_OR_UNREACHABLE_ENDPOINT_REFERENCE
+            exit 41
+          fi
+          if grep -RInE --include='*.gradle' --include='*.gradle.kts' 'targetSdk[^0-9]*([0-9]+)' . | grep -Ev 'targetSdk[^0-9]*36([^0-9]|$)' >/tmp/wave-targetsdk-blockers.txt 2>/dev/null; then
+            cat /tmp/wave-targetsdk-blockers.txt
+            echo BLOCKER=TARGET_SDK_36_REQUIRED
+            exit 42
+          fi
+
           echo '=== CLEAN SOURCE INTEGRITY SHA ==='
-          sudo -n bash -c 'cd /root/workspace/wave-mawja; find . -maxdepth 3 -type f \( -name package.json -o -name package-lock.json -o -name pnpm-lock.yaml -o -name "*CURRENT_STATE*" -o -name "*HANDOFF*" \) -print0 | sort -z | xargs -0 -r sha256sum'
+          find . -maxdepth 3 -type f \( -name package.json -o -name package-lock.json -o -name pnpm-lock.yaml -o -name '*CURRENT_STATE*' -o -name '*HANDOFF*' \) -print0 | sort -z | xargs -0 -r sha256sum
+
           echo FINAL_OR_PLAY_READY=NO
-          echo RELEASE_BLOCKER=PHYSICAL_PHONE_INSTALL_LAUNCH_TOUCH_LAYOUT_BACKGROUND_RESUME_OFFLINE_NETWORK_CORE_PLAYBACK_CRASHFREE_EVIDENCE_REQUIRED
+          echo RELEASE_BLOCKER=EXACT_CANDIDATE_PHYSICAL_PHONE_INSTALL_LAUNCH_TOUCH_LAYOUT_ORIENTATION_BACKGROUND_RESUME_OFFLINE_NETWORK_CORE_PLAYBACK_CRASHFREE_EVIDENCE_REQUIRED
           echo THF_SOURCE_RELEASE_TREES_TOUCHED=FALSE
           echo WAVE_CANONICAL_GATE=COMPLETE
           REMOTE
