@@ -8,8 +8,8 @@
     "identity_service_py_sha256": "8421a63db2e05bbd3b10b60da3edb0a3190ad7c2ea0498f4a1a704c3f7827b9f"
   },
   "candidate": {
-    "app_py_sha256": "d2eec7b71af0dfeadf7b2a7f7bdabff951174a8baa6b2b2f5baa718267be14bd",
-    "identity_service_py_sha256": "97fe0a689681f1c0b578621f1df562cb616a18cb4d4f6273780a64558b30b6d5"
+    "app_py_sha256": "7f839cdba4307c5cd9a9aa258c4a3cdbf8bb55308f84ddda2b0217582ecc1ab2",
+    "identity_service_py_sha256": "547644ffa9f9bd4d4f09dc68da551749eefada1939510f3d803b07d939bd068f"
   },
   "required_session_semantics": {
     "refresh_rotates_token": true,
