@@ -1,0 +1,82 @@
+name: THF Device Runtime Fix Discovery
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-runtime-device-fix-discovery.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect exact Core/Terra runtime packaging inputs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-device-runtime-fix-discovery"
+          rm -rf "$ROOT" && mkdir -p "$ROOT/core" "$ROOT/terra"
+
+          CORE_SRC="$HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
+          CORE_SHA="6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a"
+          TERRA_SRC="$HOME/thf-terra-rc34-gate/THF_Terra_v4.6.8_RC34_FULL.zip"
+          [ -f "$TERRA_SRC" ] || TERRA_SRC="$HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_FULL.zip"
+          TERRA_SHA="eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68"
+
+          test "$(sha256sum "$CORE_SRC" | awk '{print $1}')" = "$CORE_SHA"
+          unzip -q "$CORE_SRC" -d "$ROOT/core"
+          echo CORE_CONFIG_DISCOVERY_BEGIN
+          grep -RInE --exclude='*.class' --exclude='*.jar' --exclude='*.png' --exclude='*.jpg' --exclude='*.webp' '(الخدمة غير معدة|service.*not.*configured|THF_.*URL|API_.*URL|BASE_.*URL|SERVICE_.*URL|BuildConfig|buildConfigField|resValue|https://)' "$ROOT/core/android" 2>/dev/null | head -n 160 || true
+          echo CORE_CONFIG_DISCOVERY_END
+
+          echo TERRA_SOURCE_PATH="$TERRA_SRC"
+          if [ -f "$TERRA_SRC" ]; then
+            test "$(sha256sum "$TERRA_SRC" | awk '{print $1}')" = "$TERRA_SHA"
+            python3 - "$TERRA_SRC" "$ROOT/terra" <<'PY'
+import sys, zipfile, os
+src,out=sys.argv[1:]
+with zipfile.ZipFile(src) as z:
+    for i in z.infolist():
+        p=os.path.realpath(os.path.join(out,i.filename))
+        if not p.startswith(os.path.realpath(out)+os.sep): raise SystemExit('unsafe zip path')
+        z.extract(i,out)
+PY
+            PROJ=$(dirname "$(find "$ROOT/terra" -type f -name project.godot -print -quit)")
+            echo TERRA_PROJECT_ROOT="$PROJ"
+            test -f "$PROJ/project.godot"
+            echo TERRA_EXPORT_PRESET_BEGIN
+            sed -n '1,260p' "$PROJ/export_presets.cfg" | grep -E '(^\[preset|name=|platform=|export_filter=|gradle_build/export_format|package/unique_name|version/code|version/name)' || true
+            echo TERRA_EXPORT_PRESET_END
+            echo TERRA_GODOT_BINARIES
+            command -v godot || true
+            command -v godot4 || true
+            find "$HOME" -maxdepth 5 -type f -name 'Godot_v4.7.2*' -o -name 'godot-4.7.2*' 2>/dev/null | head -n 20 || true
+          else
+            echo TERRA_SOURCE_NOT_FOUND
+            exit 31
+          fi
+          echo CANONICAL_SOURCE_MUTATION=FALSE
+          echo WAVE_UNTOUCHED=TRUE
+          REMOTE
