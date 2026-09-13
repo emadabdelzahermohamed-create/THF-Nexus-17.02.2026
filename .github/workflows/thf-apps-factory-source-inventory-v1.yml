@@ -1,0 +1,126 @@
+name: THF Apps Factory Locked Source Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-apps-factory-source-inventory-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only locked-source discovery
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=35m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          OUT="$HOME/thf-apps-factory-inventory-v1"
+          rm -rf "$OUT" && mkdir -p "$OUT"
+          cat > "$OUT/expected.tsv" <<'EOF'
+          pulse	a13bdceed8c1ad08436f2b4114dbf6017459107fb3239545194304f344ab4954	com.topherofit.thf.pulse
+          forge	8092c8d1d06ee8409d13a704e2c8c834db832a3a823be43487353a2a4d9dd188	com.topherofit.thf.forge
+          echo	cb38e9c7be53578e6dbdd3e2b818ee981a8d80032ce113df144c62637594febd	com.topherofit.thf.echo
+          codex	47e4b8eb70b3dd4894f7bb4e24e77c8ae58e8d277ddf90afb01ff3f6803fbcd5	com.topherofit.thf.codex
+          spark	2b7149b22b2c4d198e36e99aa41a10bf72b400c279f1b7302d1cbb6275e4d03d	com.topherofit.thf.spark
+          rush	fbfffef5475ebb51d8c75b242c8ec7a32646c02021372a20a978149c6070b341	com.topherofit.thf.rush
+          vault	b4fb8ae79bfc174cf0131c90c735e512b6220466b156290dcc6a4750bd4d2aac	com.topherofit.thf.vault
+          signal	15e3494c655e40959a8a8b77278d1a50ddb04388d503cc36a12724235640a697	com.topherofit.thf.signal
+          command	a549104e3a87374379889d119485e81cf585eca3f53b68a165be6b094ab65f48	com.topherofit.thf.command
+          EOF
+          printf 'app\texpected_sha256\tpackage\tpath\tactual_sha256\tmatch\tkind\n' > "$OUT/inventory.tsv"
+
+          # First use existing manifests/checksum files and app-name discovery; do not crawl protected roots.
+          find "$HOME" -maxdepth 7 -type f \( -iname '*.zip' -o -iname '*.tar' -o -iname '*.tar.gz' -o -iname '*.tgz' -o -iname '*.sha256' -o -iname '*manifest*' \) -print 2>/dev/null > "$OUT/candidates.all"
+          while IFS=$'\t' read -r app expected pkg; do
+            : > "$OUT/$app.candidates"
+            grep -iE "/[^/]*${app}[^/]*(zip|tar|tgz|gz|sha256)$" "$OUT/candidates.all" >> "$OUT/$app.candidates" || true
+            grep -RIl --exclude-dir='.cache' --exclude-dir='.gradle' --exclude-dir='.npm' "$expected" "$HOME" 2>/dev/null | head -50 >> "$OUT/$app.candidates" || true
+            sort -u "$OUT/$app.candidates" -o "$OUT/$app.candidates"
+            matched=0
+            while IFS= read -r f; do
+              [ -f "$f" ] || continue
+              case "$f" in
+                *.zip|*.tar|*.tar.gz|*.tgz)
+                  actual=$(sha256sum "$f" | awk '{print $1}')
+                  kind=archive
+                  ;;
+                *)
+                  actual='TEXT_REFERENCE'
+                  kind=reference
+                  ;;
+              esac
+              ismatch=false
+              if [ "$actual" = "$expected" ]; then ismatch=true; matched=1; fi
+              printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$expected" "$pkg" "$f" "$actual" "$ismatch" "$kind" >> "$OUT/inventory.tsv"
+              if [ "$ismatch" = true ]; then
+                case "$f" in
+                  *.zip) unzip -l "$f" | sed -n '1,160p' > "$OUT/$app.archive-list.txt" || true ;;
+                  *.tar|*.tar.gz|*.tgz) tar -tf "$f" | sed -n '1,160p' > "$OUT/$app.archive-list.txt" || true ;;
+                esac
+              fi
+            done < "$OUT/$app.candidates"
+            if [ "$matched" -eq 0 ]; then
+              printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$expected" "$pkg" 'NOT_FOUND' 'N/A' false missing >> "$OUT/inventory.tsv"
+            fi
+          done < "$OUT/expected.tsv"
+
+          python3 - "$OUT/inventory.tsv" "$OUT/summary.json" <<'PY'
+          import csv,json,sys
+          rows=list(csv.DictReader(open(sys.argv[1]), delimiter='\t'))
+          apps={}
+          for r in rows:
+              a=apps.setdefault(r['app'], {'package':r['package'],'expected_sha256':r['expected_sha256'],'exact_matches':[],'references':[]})
+              if r['match']=='true': a['exact_matches'].append(r['path'])
+              elif r['kind']=='reference': a['references'].append(r['path'])
+          for a in apps.values(): a['status']='EXACT_SOURCE_FOUND' if a['exact_matches'] else 'LOCKED_SOURCE_NOT_FOUND'
+          json.dump({'schema':1,'mode':'READ_ONLY','canonical_mutation':False,'production_signing':False,'public_rollout':False,'apps':apps},open(sys.argv[2],'w'),indent=2)
+          PY
+          cat "$OUT/summary.json"
+          REMOTE
+      - name: Retrieve inventory evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-apps-factory-inventory-v1/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-APPS-FACTORY-LOCKED-SOURCE-INVENTORY-V1
+          path: out/
+          retention-days: 14
+      - name: Truthfulness gate
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('out/summary.json'))
+          assert d['mode']=='READ_ONLY'
+          assert d['canonical_mutation'] is False
+          assert d['production_signing'] is False
+          assert d['public_rollout'] is False
+          assert len(d['apps'])==9
+          print('APPS_FACTORY_SOURCE_INVENTORY=PASS')
+          PY
