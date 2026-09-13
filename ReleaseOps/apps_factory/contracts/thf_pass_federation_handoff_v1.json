@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "contract": "thf-pass-federation-handoff",
+  "status": "candidate-only",
+  "final_or_play_ready": false,
+  "baseline": {
+    "app_py_sha256": "471a8e0c6b67320386db6efcd32a3718265a645a30af3d7a9ea95060258058be",
+    "identity_service_py_sha256": "8421a63db2e05bbd3b10b60da3edb0a3190ad7c2ea0498f4a1a704c3f7827b9f"
+  },
+  "candidate": {
+    "app_py_sha256": "d2eec7b71af0dfeadf7b2a7f7bdabff951174a8baa6b2b2f5baa718267be14bd",
+    "identity_service_py_sha256": "97fe0a689681f1c0b578621f1df562cb616a18cb4d4f6273780a64558b30b6d5"
+  },
+  "required_session_semantics": {
+    "refresh_rotates_token": true,
+    "refresh_reuse_rejected": true,
+    "expired_refresh_rejected": true,
+    "logout_revokes_current_session": true,
+    "revoke_all_revokes_user_sessions": true
+  },
+  "required_federation_semantics": {
+    "handoff_is_one_time": true,
+    "handoff_has_short_expiry": true,
+    "handoff_binds_audience_app": true,
+    "handoff_binds_subject": true,
+    "handoff_replay_rejected": true,
+    "handoff_query_token_forbidden": true,
+    "cross_app_session_exchange_requires_https": true
+  },
+  "required_runtime_evidence": {
+    "reachable_https_health": false,
+    "nonprod_login": false,
+    "refresh": false,
+    "logout": false,
+    "revoke": false,
+    "federation_handoff": false,
+    "rollback_rehearsal": false
+  },
+  "owner_or_device_gates": {
+    "production_signing": false,
+    "public_rollout": false,
+    "physical_phone_acceptance": false
+  }
+}
