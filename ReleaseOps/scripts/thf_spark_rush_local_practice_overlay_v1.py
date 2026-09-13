@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Install a genuine local-only touch game into Spark/Rush offline.html on a disposable tree.
-The mode never writes ranked/social/economy state and never claims fitness evidence.
+"""Install a genuine local-only touch game into Spark/Rush on a disposable tree.
+The candidate never writes ranked/social/economy state, never claims fitness evidence,
+and removes debug applicationIdSuffix only in the disposable QA tree so package identity
+matches the canonical app while the source archive remains byte-for-byte unchanged.
 """
 from __future__ import annotations
-import argparse, hashlib, pathlib, sys
+import argparse, hashlib, pathlib, re, sys
 
 HEAD = r'''<!doctype html><html lang="en" dir="auto"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>THF Local Practice</title><style>
 :root{color-scheme:dark;--bg:#101418;--fg:#fff;--panel:#1d252c;--accent:#8fe3ff}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;touch-action:none}#app{position:fixed;inset:0;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));display:grid;grid-template-rows:auto 1fr auto;gap:8px}#hud{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel);padding:8px 12px;border-radius:12px}#game{width:100%;height:100%;min-height:0;border:1px solid #52616b;border-radius:14px;background:#15202a;touch-action:none}#note{font-size:12px;text-align:center;opacity:.9}.btn{border:1px solid #6d8796;background:#21313c;color:#fff;border-radius:10px;padding:8px 12px;font-weight:700}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}@media(prefers-contrast:more){:root{--bg:#000;--fg:#fff;--panel:#000;--accent:#0ff}#game,.btn{border-width:3px}}</style></head><body><main id="app"><div id="hud"><strong>THF Local Practice</strong><span id="status"></span><button class="btn" id="reset" type="button">Reset</button></div><canvas id="game" width="960" height="540" aria-label="Local touch practice game"></canvas><div id="note">Local offline practice only — no ranked, social, wallet, economy, rewards, or fitness-evidence state is written.</div></main><script>'use strict';
@@ -22,12 +24,28 @@ def sha256(p:pathlib.Path)->str:
         for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
     return h.hexdigest()
 
+def preserve_canonical_package(root:pathlib.Path)->tuple[int,list[str]]:
+    """Remove debug applicationIdSuffix in the extracted disposable QA tree only."""
+    changed=[]
+    pat=re.compile(r'(?m)^[ \t]*applicationIdSuffix(?:\s*=)?\s*["\'][^"\']+["\'][ \t]*$')
+    for name in ('build.gradle','build.gradle.kts'):
+        for p in root.rglob(name):
+            if '/app/' not in '/'+p.as_posix()+'/':
+                continue
+            text=p.read_text(errors='ignore')
+            new,n=pat.subn('',text)
+            if n:
+                p.write_text(new)
+                changed.append(p.relative_to(root).as_posix())
+    return len(changed),changed
+
 def main()->int:
     ap=argparse.ArgumentParser(); ap.add_argument('root'); ap.add_argument('--kind',choices=['spark','rush'],required=True); ap.add_argument('--evidence-out',required=True); a=ap.parse_args()
     root=pathlib.Path(a.root).resolve(); candidates=sorted(root.rglob('android/app/src/main/assets/offline.html'))
     if len(candidates)!=1: raise SystemExit(f'expected one Android offline asset, found {len(candidates)}')
     out=candidates[0]; before=sha256(out); out.write_text(HEAD+(SPARK if a.kind=='spark' else RUSH)+TAIL); after=sha256(out)
-    lines=['schema=thf-spark-rush-local-practice-overlay-v1',f'kind={a.kind}',f'offline_asset={out.relative_to(root).as_posix()}',f'offline_sha256_before={before}',f'offline_sha256_after={after}','local_mode=true','touch_input=true','player_state=true','game_loop=true',f"domain_loop={'learning' if a.kind=='spark' else 'fitness_practice'}",'ranked_state_written=false','social_state_written=false','economy_state_written=false','fitness_evidence_written=false','network_required=false','candidate_only=true','canonical_archive_mutated=false','device_status=PENDING','final_status=NOT_FINAL','']
+    package_files_changed,package_files=preserve_canonical_package(root)
+    lines=['schema=thf-spark-rush-local-practice-overlay-v1',f'kind={a.kind}',f'offline_asset={out.relative_to(root).as_posix()}',f'offline_sha256_before={before}',f'offline_sha256_after={after}',f'qa_package_suffix_files_changed={package_files_changed}',f"qa_package_suffix_files={','.join(package_files)}",'canonical_package_identity_required=true','local_mode=true','touch_input=true','player_state=true','game_loop=true',f"domain_loop={'learning' if a.kind=='spark' else 'fitness_practice'}",'ranked_state_written=false','social_state_written=false','economy_state_written=false','fitness_evidence_written=false','network_required=false','candidate_only=true','canonical_archive_mutated=false','device_status=PENDING','final_status=NOT_FINAL','']
     ev=pathlib.Path(a.evidence_out); ev.write_text('\n'.join(lines)); print(ev.read_text(),end=''); return 0
 
 if __name__=='__main__': sys.exit(main())
