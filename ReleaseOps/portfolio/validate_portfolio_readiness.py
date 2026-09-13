@@ -10,6 +10,31 @@ REQUIRED_PRODUCTS = [
 ]
 SHA_RE = re.compile(r'^[0-9a-f]{64}$')
 PROMOTED = {'FINAL','PLAY_READY','RELEASE_READY','PRODUCTION_READY'}
+MOBILE_LANES = {'mobile-app','private-mobile-app','mobile-game','isolated-mobile-platform'}
+PROMOTED_EVIDENCE = (
+    'payload_inspection_pass',
+    'package_identity_pass',
+    'reachable_backend_health_auth_pass',
+    'phone_install_launch_pass',
+    'touch_layout_orientation_pass',
+    'background_resume_pass',
+    'offline_network_transition_pass',
+    'core_journey_pass',
+    'crash_free_smoke_pass',
+    'localization_rtl_pass',
+    'accessibility_pass',
+    'data_saver_pass',
+    'rollback_pass',
+)
+GAME_EVIDENCE = (
+    'player_avatar_load_pass',
+    'movement_camera_gameplay_pass',
+    'fps_ram_thermal_observed',
+)
+PROHIBITED_FINAL_TOKENS = (
+    'UI_ONLY','SHELL_ONLY','WRAPPER_ONLY','TEMPLATE_ONLY','SOURCE_ONLY','STATIC_ONLY',
+    'PLACEHOLDER_ENDPOINT','FAKE_OFFLINE','FAKE_NETWORK'
+)
 
 
 def fail(msg: str, errors: list[str]) -> None:
@@ -43,6 +68,7 @@ def validate(doc: dict) -> list[str]:
         device = p.get('physical_device_gate')
         runtime = p.get('runtime_gate')
         static = p.get('static_package_gate')
+        lane = p.get('lane')
 
         if sha is not None and (not isinstance(sha,str) or not SHA_RE.fullmatch(sha)):
             fail(f'{name}: candidate_sha256 must be lowercase SHA-256 or null', errors)
@@ -50,6 +76,7 @@ def validate(doc: dict) -> list[str]:
             if pkg in known_packages:
                 fail(f'package identity collision: {name} and {known_packages[pkg]} use {pkg}', errors)
             known_packages[pkg] = name
+
         if readiness in PROMOTED:
             if not sha:
                 fail(f'{name}: promoted readiness without exact candidate SHA', errors)
@@ -57,8 +84,34 @@ def validate(doc: dict) -> list[str]:
                 fail(f'{name}: promoted readiness without runtime/static PASS', errors)
             if device != 'PASS':
                 fail(f'{name}: promoted readiness without physical-device PASS', errors)
-            if p.get('play_internal') not in {'PASS','UPLOADED_PASS'}:
-                fail(f'{name}: promoted readiness without Play Internal evidence', errors)
+            if p.get('play_internal') not in {'PASS','UPLOADED_PASS','PRIVATE_INTERNAL_ONLY'}:
+                fail(f'{name}: promoted readiness without Play/Internal distribution evidence', errors)
+
+            combined = ' '.join(str(p.get(k,'')) for k in ('runtime_gate','static_package_gate','readiness','evidence')).upper()
+            for token in PROHIBITED_FINAL_TOKENS:
+                if token in combined:
+                    fail(f'{name}: prohibited weak-release marker present at promotion: {token}', errors)
+
+            if lane in MOBILE_LANES:
+                ev = p.get('candidate_evidence')
+                if not isinstance(ev, dict):
+                    fail(f'{name}: promoted mobile readiness without candidate_evidence object', errors)
+                else:
+                    for key in PROMOTED_EVIDENCE:
+                        if ev.get(key) is not True:
+                            fail(f'{name}: promoted mobile readiness without {key}=true', errors)
+                    if lane == 'mobile-game':
+                        for key in GAME_EVIDENCE:
+                            if ev.get(key) is not True:
+                                fail(f'{name}: promoted game readiness without {key}=true', errors)
+                    if ev.get('candidate_sha256') != sha:
+                        fail(f'{name}: candidate evidence is not bound to exact candidate SHA', errors)
+                    backend = ev.get('backend')
+                    if not isinstance(backend, dict) or backend.get('scheme') not in {'https','wss','https+wss'}:
+                        fail(f'{name}: promoted network candidate lacks reachable HTTPS/WSS backend evidence', errors)
+                    if isinstance(backend, dict) and backend.get('placeholder_or_loopback') is not False:
+                        fail(f'{name}: promoted candidate backend may be placeholder/loopback', errors)
+
         if name == 'WAVE MAWJA' and readiness == 'BLOCKED_CANONICAL_SOURCE':
             if pkg is not None or sha is not None:
                 fail('WAVE: current package/SHA must not be inferred while canonical source is missing', errors)
