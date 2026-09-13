@@ -1,0 +1,57 @@
+name: THF Spark Rush Package Identity Diagnose V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-spark-rush-package-identity-diagnose-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read APK identity safely
+        shell: bash
+        run: |
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=12m --quiet --command='bash -s' > out/identity.txt <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-spark-rush-local-practice-candidate-v1"; SDK="$HOME/thf-builder-rc16-build/android-sdk"; BT=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1); AAPT="$BT/aapt"
+          for tag in THF-Spark-RC2-Local-Practice THF-Rush-RC2-Local-Practice; do
+            echo "=== $tag ==="
+            apk=$(find "$ROOT/$tag/work" -path '*/app/build/outputs/apk/*' -type f -name '*.apk' -print -quit 2>/dev/null || true)
+            if [ -z "$apk" ]; then echo 'apk_exists=false'; continue; fi
+            echo 'apk_exists=true'
+            badging=$("$AAPT" dump badging "$apk")
+            pkg=$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" <<<"$badging" | head -1)
+            target=$(sed -n "s/^targetSdkVersion:'\([^']*\)'.*/\1/p" <<<"$badging" | head -1)
+            version=$(sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p" <<<"$badging" | head -1)
+            echo "package=$pkg"; echo "target_sdk=$target"; echo "version_name=$version"; echo "apk_sha256=$(sha256sum "$apk"|awk '{print $1}')"
+            if unzip -l "$apk" assets/offline.html >/dev/null 2>&1; then echo 'offline_asset_packaged=true'; else echo 'offline_asset_packaged=false'; fi
+          done
+          echo 'read_only=true'; echo 'wave_files_read_or_changed=false'
+          REMOTE
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-SPARK-RUSH-PACKAGE-IDENTITY-DIAGNOSE-V1
+          path: out/
+          retention-days: 7
