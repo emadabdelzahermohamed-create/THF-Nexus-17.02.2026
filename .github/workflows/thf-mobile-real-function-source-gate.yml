@@ -1,0 +1,24 @@
+name: THF Mobile Real-Function Source Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/validators/validate_mobile_real_function_source.py'
+      - 'ReleaseOps/validators/test_validate_mobile_real_function_source.py'
+      - '.github/workflows/thf-mobile-real-function-source-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Python syntax
+        run: python3 -m py_compile ReleaseOps/validators/validate_mobile_real_function_source.py ReleaseOps/validators/test_validate_mobile_real_function_source.py
+      - name: Real-function source gate regressions
+        run: python3 -m pytest -q ReleaseOps/validators/test_validate_mobile_real_function_source.py
