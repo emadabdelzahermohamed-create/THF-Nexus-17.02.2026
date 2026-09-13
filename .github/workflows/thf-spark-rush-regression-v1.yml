@@ -1,0 +1,88 @@
+name: THF Spark Rush Regression V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-spark-rush-regression-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: spark
+            checkpoint: RC3
+            source_sha: dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0
+            package_id: com.topherofit.thf.spark
+            drive_id: 1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+          - app: rush
+            checkpoint: RC3
+            source_sha: bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b
+            package_id: com.topherofit.thf.rush
+            drive_id: 1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify exact source and run Android regression tasks
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          APP: ${{ matrix.app }}
+          CP: ${{ matrix.checkpoint }}
+          SOURCE_SHA: ${{ matrix.source_sha }}
+          PACKAGE_ID: ${{ matrix.package_id }}
+          DRIVE_ID: ${{ matrix.drive_id }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out src
+          code=$(curl -sSLo src/app.zip -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$DRIVE_ID?alt=media&supportsAllDrives=true")
+          [ "$code" = 200 ]
+          actual=$(sha256sum src/app.zip | awk '{print $1}'); [ "$actual" = "$SOURCE_SHA" ]
+          unzip -tq src/app.zip >/dev/null
+          unzip -q src/app.zip -d src/extracted
+          root=$(find src/extracted -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1)
+          test -n "$root"
+          python ReleaseOps/validators/validate_mobile_real_function_source.py "$root" --package "$PACKAGE_ID" --json-out "out/$APP.source-policy.json" >/dev/null
+          cd "$root/android"
+          chmod +x gradlew
+          ./gradlew --no-daemon tasks --all > "$GITHUB_WORKSPACE/out/$APP.gradle-tasks.txt"
+          ran=0
+          for task in testReleaseUnitTest testDebugUnitTest lintRelease lintDebug; do
+            if grep -Eq "^${task}[[:space:]-]" "$GITHUB_WORKSPACE/out/$APP.gradle-tasks.txt"; then
+              echo "RUNNING=$task" | tee -a "$GITHUB_WORKSPACE/out/$APP.regression.txt"
+              ./gradlew --no-daemon "$task" --stacktrace
+              ran=$((ran+1))
+            fi
+          done
+          ./gradlew --no-daemon assembleRelease --stacktrace
+          apk=$(find . -type f -path '*/build/outputs/apk/release/*.apk' | head -1)
+          test -n "$apk"
+          printf 'APP=%s\nCHECKPOINT=%s\nSOURCE_SHA256=%s\nPACKAGE_ID=%s\nANDROID_REGRESSION_TASKS_RUN=%s\nASSEMBLE_RELEASE=PASS\nREADINESS_PROMOTION=NO\nPHYSICAL_DEVICE_REQUIRED=YES\n' "$APP" "$CP" "$SOURCE_SHA" "$PACKAGE_ID" "$ran" | tee "$GITHUB_WORKSPACE/out/$APP.summary.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-${{ matrix.app }}-REGRESSION-V1
+          path: out/
+          retention-days: 14
