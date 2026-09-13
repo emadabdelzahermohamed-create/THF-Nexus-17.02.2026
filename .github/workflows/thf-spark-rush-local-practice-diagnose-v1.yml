@@ -1,0 +1,73 @@
+name: THF Spark Rush Local Practice Diagnose V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-spark-rush-local-practice-diagnose-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read prior candidate build diagnostics only
+        shell: bash
+        run: |
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='python3 -' > out/diagnostic.raw <<'PY'
+          import json,pathlib,re
+          root=pathlib.Path.home()/'thf-spark-rush-local-practice-candidate-v1/out'
+          out={'schema':'thf-spark-rush-local-practice-diagnose-v1','cases':{},'read_only':True,'wave_files_read_or_changed':False}
+          for tag in ('THF-Spark-RC2-Local-Practice','THF-Rush-RC2-Local-Practice'):
+              p=root/tag/'gradle.log'; case={'gradle_log_exists':p.is_file()}
+              if p.is_file():
+                  lines=p.read_text(errors='ignore').splitlines(); tail=lines[-120:]
+                  # redact URL-like values and any password/token assignment in diagnostics
+                  clean=[]
+                  for line in tail:
+                      line=re.sub(r'https?://\S+','<URL_REDACTED>',line)
+                      line=re.sub(r'(?i)(password|token|secret|key)\s*[=:]\s*\S+',r'\1=<REDACTED>',line)
+                      clean.append(line[:500])
+                  case['tail']=clean
+                  txt='\n'.join(lines)
+                  case['classifications']={
+                    'dependency_resolution':bool(re.search(r'Could not resolve|Could not find|UnknownHost|repository',txt,re.I)),
+                    'compile_error':bool(re.search(r'Compilation failed|error:|cannot find symbol|Execution failed for task .*compile',txt,re.I)),
+                    'sdk_error':bool(re.search(r'SDK location|platforms;android|build-tools|failed to find target',txt,re.I)),
+                    'manifest_error':bool(re.search(r'manifest merger|AndroidManifest',txt,re.I)),
+                    'resource_error':bool(re.search(r'Android resource linking failed|AAPT',txt,re.I))}
+              out['cases'][tag]=case
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/diagnostic.raw').read_text(errors='ignore');i=raw.find('{')
+          if i<0:raise SystemExit('diagnostic JSON missing')
+          x=json.loads(raw[i:]);pathlib.Path('out/diagnostic.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          for k,v in x['cases'].items():print(k,v.get('gradle_log_exists'),v.get('classifications'))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-SPARK-RUSH-LOCAL-PRACTICE-DIAGNOSE-V1
+          path: out/
+          retention-days: 7
