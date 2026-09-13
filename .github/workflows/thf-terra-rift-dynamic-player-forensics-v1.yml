@@ -1,0 +1,72 @@
+name: THF Terra Rift Dynamic Player Forensics V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-terra-rift-dynamic-player-forensics-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect dynamic construction markers from exact canonical SHAs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/dynamic-player.raw <<'PY'
+          import pathlib,zipfile,hashlib,json,re
+          cases={
+            'terra':(pathlib.Path.home()/'thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip','eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68'),
+            'rift':(pathlib.Path.home()/'thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip','3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914')}
+          pats={
+            'character_body':r'CharacterBody3D', 'mesh_instance':r'MeshInstance3D', 'skeleton':r'Skeleton3D',
+            'packed_scene':r'PackedScene|instantiate\s*\(', 'runtime_load':r'\bload\s*\(|\bpreload\s*\(',
+            'camera_node':r'Camera3D|SpringArm3D', 'human_motion':r'HumanMotionController|HumanIKRuntime',
+            'avatar_model':r'avatar|humanoid|character|player', 'gltf_runtime':r'GLTFDocument|GLTFState|\.glb|\.gltf|\.fbx',
+            'add_child':r'add_child\s*\(', 'animation_runtime':r'AnimationTree|AnimationPlayer|AnimationNodeStateMachine'}
+          out={'schema':'thf-terra-rift-dynamic-player-forensics-v1','read_only':True,'wave_files_read_or_changed':False,'cases':{}}
+          for kind,(zp,sha) in cases.items():
+            assert hashlib.sha256(zp.read_bytes()).hexdigest()==sha
+            hits={k:[] for k in pats}; scanned=0
+            with zipfile.ZipFile(zp) as z:
+              for n in z.namelist():
+                if not n.lower().endswith(('.gd','.tscn','.tres','.cfg','.godot')): continue
+                try:t=z.read(n).decode('utf-8','replace')
+                except:continue
+                scanned+=1
+                for k,p in pats.items():
+                  if re.search(p,t,re.I|re.M):hits[k].append(n[:240])
+            out['cases'][kind]={'outer_sha256':sha,'text_files_scanned':scanned,'marker_files':{k:sorted(set(v))[:30] for k,v in hits.items()},'canonical_archive_unchanged':hashlib.sha256(zp.read_bytes()).hexdigest()==sha,'device_status':'PENDING','final_status':'NOT_FINAL'}
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('out/dynamic-player.raw');raw=p.read_text(errors='ignore');i=raw.find('{');assert i>=0;x=json.loads(raw[i:]);pathlib.Path('out/dynamic-player.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n');p.unlink();print(json.dumps(x,indent=2,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TERRA-RIFT-DYNAMIC-PLAYER-FORENSICS-V1
+          path: out/
+          retention-days: 14
