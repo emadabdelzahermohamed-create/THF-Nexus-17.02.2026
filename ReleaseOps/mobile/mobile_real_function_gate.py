@@ -5,7 +5,7 @@ Static/package checks are intentionally strict. A PASS here is necessary but not
 sufficient: FINAL/PLAY_READY also requires exact-candidate physical-device evidence.
 """
 from __future__ import annotations
-import argparse, json, re, sys, zipfile
+import argparse, hashlib, json, re, zipfile
 from pathlib import Path
 
 BAD_PLACEHOLDERS = (
@@ -13,6 +13,14 @@ BAD_PLACEHOLDERS = (
     "PROJECT_ID: 'my-project'",
     "SERVICE: 'my-service'",
 )
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open('rb') as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b''):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def read_tree(root: Path) -> str:
@@ -52,9 +60,11 @@ def source_gate(root: Path, kind: str, online_required: bool) -> list[str]:
     if online_required and any(x in text for x in BAD_PLACEHOLDERS):
         errs.append('production placeholder remains in network/deploy configuration')
     if kind == 'game':
-        pg=root/'project.godot'
-        if pg.exists():
-            pgt=pg.read_text('utf-8', errors='ignore')
+        projects=list(root.rglob('project.godot'))
+        if len(projects) != 1:
+            errs.append(f'exactly one project.godot required for game source; found {len(projects)}')
+        else:
+            pgt=projects[0].read_text('utf-8', errors='ignore')
             if 'window/handheld/orientation=1' in pgt:
                 errs.append('portrait orientation is forbidden for THF Terra/Rift landscape games')
             if 'window/handheld/orientation=4' not in pgt:
@@ -63,24 +73,29 @@ def source_gate(root: Path, kind: str, online_required: bool) -> list[str]:
                 errs.append('mobile stretch aspect=expand required')
             if 'window/size/window_width_override' in pgt or 'window/size/window_height_override' in pgt:
                 errs.append('desktop window override found in mobile game source')
-        else:
-            errs.append('project.godot missing for game source')
+        # Touch input must be present in game source; desktop-only keyboard/mouse shells are rejected.
+        touch_markers=('InputEventScreenTouch','InputEventScreenDrag','TouchScreenButton','screen_touch','screen_drag')
+        if not any(m in text for m in touch_markers):
+            errs.append('touch-control evidence not found in game source')
     return errs
 
 
-def device_gate(path: Path|None, kind: str, online_required: bool) -> list[str]:
+def device_gate(path: Path|None, kind: str, online_required: bool, expected_sha256: str|None) -> list[str]:
     if path is None or not path.exists():
         return ['physical-device acceptance evidence missing']
     try: d=json.loads(path.read_text('utf-8'))
     except Exception as e: return [f'invalid device evidence: {e}']
-    required=['exact_candidate_sha256','install_pass','launch_pass','touch_pass','orientation_layout_pass','background_resume_pass','crash_free_smoke_pass','core_user_journey_pass']
+    required=['exact_candidate_sha256','install_pass','launch_pass','touch_pass','orientation_layout_pass','background_resume_pass','offline_network_transition_pass','crash_free_smoke_pass','core_user_journey_pass']
     if online_required: required += ['backend_https_pass','backend_health_auth_pass']
     if kind == 'game': required += ['avatar_or_player_load_pass','movement_camera_pass','gameplay_interaction_pass','fps_ram_thermal_observed']
     errs=[]
     for k in required:
         v=d.get(k)
         if k=='exact_candidate_sha256':
-            if not isinstance(v,str) or not re.fullmatch(r'[0-9a-fA-F]{64}',v): errs.append(f'{k}=missing/invalid')
+            if not isinstance(v,str) or not re.fullmatch(r'[0-9a-fA-F]{64}',v):
+                errs.append(f'{k}=missing/invalid')
+            elif expected_sha256 and v.lower() != expected_sha256.lower():
+                errs.append(f'exact candidate SHA mismatch: evidence={v.lower()} apk={expected_sha256.lower()}')
         elif v is not True:
             errs.append(f'{k} != true')
     return errs
@@ -99,10 +114,16 @@ def main() -> int:
     errs=[]
     if not root.is_dir(): errs.append('source directory missing')
     else: errs += source_gate(root,a.kind,a.online_required)
-    if a.apk: errs += apk_payload_gate(Path(a.apk),a.kind)
-    else: errs.append('installable APK package evidence missing')
-    errs += device_gate(Path(a.device_evidence) if a.device_evidence else None,a.kind,a.online_required)
-    result={'product':a.product,'status':'PASS' if not errs else 'BLOCKED','errors':errs}
+    apk_sha=None
+    if a.apk:
+        apk=Path(a.apk)
+        errs += apk_payload_gate(apk,a.kind)
+        if apk.exists() and apk.is_file():
+            apk_sha=sha256_file(apk)
+    else:
+        errs.append('installable APK package evidence missing')
+    errs += device_gate(Path(a.device_evidence) if a.device_evidence else None,a.kind,a.online_required,apk_sha)
+    result={'product':a.product,'status':'PASS' if not errs else 'BLOCKED','apk_sha256':apk_sha,'errors':errs}
     print(json.dumps(result,ensure_ascii=False,indent=2))
     return 0 if not errs else 2
 
