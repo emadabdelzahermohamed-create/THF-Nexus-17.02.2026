@@ -44,14 +44,14 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 |---|---|---|
 | Create/verify Play Console entries for all 3 apps | TODO-VERIFY | Correct package IDs; ownership confirmed |
 | Store listing assets | TODO | Name, short/full description, icon, feature graphic, screenshots |
-| Privacy Policy | BLOCKED-CONTENT | Run `34715148011`: `/privacy` is SPA fallback identical to `/`; requires reviewed distinct public HTTPS policy + in-app access. Evidence `ReleaseOps/Compliance/THF_POLICY_ACCOUNT_DELETION_AUDIT_V2_20260912.md` |
-| Account deletion | BLOCKED-IMPLEMENTATION | Run `34715148011`: `/account-deletion` is SPA fallback and no self-service account-delete route was identified; requires authenticated in-app deletion flow plus public deletion information URL and reviewed retention semantics |
-| Terms | BLOCKED-CONTENT | Run `34715148011`: `/terms` is SPA fallback identical to `/`; reviewed distinct terms resource required where product/legal policy requires it |
-| Security contact resource | BLOCKED-CONTENT | Run `34715148011`: `/.well-known/security.txt` returns the SPA root as `text/html`; provide a real approved resource if retained as a release requirement |
-| Data Safety | IN-PROGRESS | Runtime/native/provider facts audited; final declaration waits on final permission/provider configuration and approved retention/deletion semantics |
+| Privacy Policy | PASS-TECHNICAL / BLOCKED-LEGAL-APPROVAL | Run `34726147267`: `/privacy` is now a distinct `text/html` resource in isolated candidate SHA-256 `a2989295b495a717eb8890537f1a348b6cabe78f261fa13ae763f76e1b835310`; wording remains explicitly draft and not approved for production. Evidence `ReleaseOps/Compliance/THF_POLICY_RESOURCES_CANDIDATE_V1_20260913.md` |
+| Account deletion | PASS-CANDIDATE | Account-client run `34723424879`: authenticated self-service `DELETE /api/account`, explicit client confirmation, old-session rejection, and distinct `/account-deletion` information resource PASS on disposable runtime/SQLite; candidate SHA-256 `8b0b892d1f32bdc7d5daa9867a442a349f6306969f29e9771dab2af3a9178784`. Production deployment still waits final release gates. |
+| Terms | PASS-TECHNICAL / BLOCKED-LEGAL-APPROVAL | Run `34726147267`: `/terms` is now a distinct `text/html` resource in isolated candidate; wording remains draft and requires owner/legal approval before production. |
+| Security contact resource | PASS-TECHNICAL / BLOCKED-PRODUCTION-VALUES | Run `34726147267`: `/.well-known/security.txt` is distinct and served as `text/plain`; draft marker remains and production contact/canonical values require approval. |
+| Data Safety | IN-PROGRESS | Runtime/native/provider facts audited; final declaration waits on final provider configuration and approved retention/deletion semantics. Permission-minimized candidate removes Camera/Microphone/Fine+Coarse Location requests. |
 | App content / content rating | TODO | Required questionnaires complete |
 | Ads declaration / consent flow | TODO-VERIFY | Correct declaration and consent where applicable |
-| Permissions review | PASS-CANDIDATE | Four latent sensitive permissions can be removed without breaking API-36 debug/test-AAB builds; candidate run `34700180841`; apply only to a versioned release source, never overwrite canonical archive |
+| Permissions review | PASS-CANDIDATE | Four latent sensitive permissions can be removed without breaking API-36 debug/test-AAB builds; versioned candidate retained; canonical archive unchanged |
 | Play Integrity production configuration | TODO-VERIFY | Production project/app linkage and verification path PASS where enabled |
 | Countries / pricing / distribution | TODO | Launch countries and free/paid configuration set |
 
@@ -68,7 +68,7 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 
 | Task | State | Acceptance |
 |---|---|---|
-| Final release manifest | IN-PROGRESS | Current unsigned/test AAB hashes captured; stable runtime hostname, signed AAB hashes and rollback reference still required |
+| Final release manifest | IN-PROGRESS | Current unsigned/test AAB hashes and compliance-candidate hashes captured; stable runtime hostname, signed AAB hashes and rollback reference still required |
 | Staged rollout | BLOCKED-AUTHORIZATION | Start controlled rollout only after exact authorization; monitor crashes/ANRs/backend health |
 | Public availability | BLOCKED-AUTHORIZATION | Core/Terra/Rift visible and installable from Google Play only after explicit release authorization |
 
@@ -80,18 +80,20 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 - Local `/health`: PASS; audit run `34715148011` returned HTTP 200 with a distinct JSON response.
 - External HTTPS `/health`: PASS in run `34687446254`.
 - GCP inventory run `34702891468` verified the builder/runtime read-only and performed no mutation.
-- Policy/deletion audit run `34715148011` verified that `/privacy`, `/terms`, `/account-deletion` and `/.well-known/security.txt` currently resolve to the same SPA root and therefore are not compliance resources.
+- Account deletion backend/client candidate is technically PASS on isolated disposable runtime/database; run `34723424879`.
+- Policy routing/resources candidate is technically PASS; run `34726147267`, output SHA-256 `a2989295b495a717eb8890537f1a348b6cabe78f261fa13ae763f76e1b835310`.
+- Policy/terms/security text remains draft and explicitly not approved for production.
 - The Quick Tunnel hostname is temporary evidence only and MUST NOT be embedded as a production API URL.
 - Public SSH/RDP firewall rules are recorded for later hardening but remain unchanged pending exact authorization.
 
 ## Release order
 
-1. Obtain exact authorization for Cloudflare production cutover, then freeze a stable production API hostname.
-2. Maintain the versioned permission-minimized release-source candidate while preserving the canonical archive unchanged.
-3. Complete distinct Privacy/Terms/account-deletion/security resources and an authenticated self-service deletion path; obtain required legal/owner approval for wording and retention semantics.
-4. Rebuild and inspect Core/Terra/Rift final AABs against the frozen hostname.
+1. Continue all reversible compliance/readiness work that does not require production authorization.
+2. Obtain owner/legal approval for Privacy/Terms wording, deletion-retention wording, and production `security.txt` values.
+3. Obtain exact authorization for Cloudflare production cutover, then freeze a stable production API hostname.
+4. Rebuild and inspect Core/Terra/Rift final AABs against the frozen hostname while preserving canonical archives.
 5. Perform production upload-key signing only after exact signing authorization and verify Play App Signing.
-6. Complete Play Console store/compliance forms.
+6. Complete Play Console store/compliance forms and user-only ownership/legal acceptances.
 7. Upload to Internal testing only after exact Play publishing authorization and install from Play on real devices.
 8. Complete Closed testing / production-access gate only if the developer account is subject to it.
 9. Submit staged Production rollout only after explicit final release authorization.
@@ -99,7 +101,7 @@ Policy: No public Play release until every P0 gate below is PASS. WAVE remains i
 ## Hard blockers before first Play upload
 
 - Explicit authorization for Cloudflare production cutover and a stable production API endpoint instead of Quick Tunnel URL.
-- Distinct approved Privacy Policy and account-deletion information resource; authenticated self-service deletion implementation and reviewed retention semantics.
+- Owner/legal approval for distinct Privacy Policy, Terms, deletion-retention wording, and production `security.txt` values. Technical resource/deletion implementations are already PASS-CANDIDATE.
 - Final production-configured AAB rebuild for Core/Terra/Rift after the API hostname is frozen.
 - Explicit production-signing authorization plus upload-key / Play App Signing path.
 - Play Console app records and remaining mandatory store/app-content metadata.
