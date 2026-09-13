@@ -90,6 +90,20 @@ jobs:
             echo RIFT_GRADLE_VERSION_FIX=EPHEMERAL_WRAPPER_8_13
           fi
 
+          # Godot .import sidecars are source/import metadata, not Android resources.
+          # Android's resource merger rejects names like ic_launcher.png.import.
+          # Remove them only from the disposable Android extraction and fail if any
+          # unsupported resource suffix remains. The canonical archive is untouched.
+          IMPORT_COUNT=$(find "$PROJ/app/src/main/res" -type f -name '*.import' | wc -l | tr -d ' ')
+          echo RIFT_EPHEMERAL_GODOT_IMPORT_SIDECARS_FOUND="$IMPORT_COUNT"
+          find "$PROJ/app/src/main/res" -type f -name '*.import' -delete
+          if find "$PROJ/app/src/main/res" -type f | grep -Ev '\.(xml|png|webp|jpg|jpeg|gif)$' | grep -q .; then
+            echo RIFT_ANDROID_RES_EXTENSION_GATE=FAIL
+            find "$PROJ/app/src/main/res" -type f | grep -Ev '\.(xml|png|webp|jpg|jpeg|gif)$' | head -50
+            exit 42
+          fi
+          echo RIFT_ANDROID_RES_EXTENSION_GATE=PASS
+
           cd "$PROJ"
           "$GRADLE" --version
           "$GRADLE" --no-daemon clean assembleDebug
