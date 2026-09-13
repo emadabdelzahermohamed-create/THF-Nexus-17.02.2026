@@ -7,6 +7,7 @@ on:
       - 'ReleaseOps/scripts/godot_candidate_tree_apk_v1.sh'
       - 'ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py'
       - 'ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py'
+      - 'ReleaseOps/scripts/kv_summary_gate_v1.py'
       - '.github/workflows/thf-terra-rift-staging-apk-v1.yml'
   workflow_dispatch:
 
@@ -30,7 +31,7 @@ jobs:
       - name: Syntax gate
         run: |
           bash -n ReleaseOps/scripts/godot_candidate_tree_apk_v1.sh
-          python3 -m py_compile ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py
+          python3 -m py_compile ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/kv_summary_gate_v1.py
       - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
@@ -83,6 +84,30 @@ jobs:
         run: |
           gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rift-staging-apk-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
           cat out/summary.txt
+      - name: Enforce mobile and network truth on exact staged candidates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import json,pathlib
+          required={'window/handheld/orientation','window/stretch/aspect'}
+          overrides={'window/size/window_height_override','window/size/window_width_override'}
+          for kind in ('terra','rift'):
+              p=pathlib.Path('out')/kind/'mobile.json'; d=json.loads(p.read_text())
+              changed=set(d['mobile_settings']['changed_keys'])
+              assert required <= changed, (kind,'mobile required keys not proven',changed)
+              assert overrides <= changed, (kind,'desktop overrides not neutralized',changed)
+              assert d['canonical_archive_mutated'] is False
+              n=(pathlib.Path('out')/kind/'network.txt').read_text()
+              assert 'remaining_explicit_placeholder_url_markers=0' in n
+              b=(pathlib.Path('out')/kind/'badging.txt').read_text()
+              assert 'android.hardware.screen.portrait' not in b
+          print('MOBILE_SENSOR_LANDSCAPE_OVERLAY=PASS')
+          print('MOBILE_EXPANDABLE_ASPECT=PASS')
+          print('DESKTOP_WINDOW_OVERRIDE_NEUTRALIZED=PASS')
+          print('APK_PORTRAIT_HARDWARE_REQUIREMENT_ABSENT=PASS')
+          print('PLACEHOLDER_ENDPOINT_MARKERS=0')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: THF-TERRA-RIFT-STAGING-QA-APKS-V1
@@ -91,11 +116,12 @@ jobs:
           compression-level: 0
       - name: Final reversible QA gate
         run: |
-          test "$(grep -c '^status=PASS$' out/summary.txt)" -eq 2
-          test "$(grep -c '^target_sdk=36$' out/summary.txt)" -eq 2
-          test "$(grep -c '^payload=PASS$' out/summary.txt)" -eq 2
-          test "$(grep -c '^qa_signing_only=true$' out/summary.txt)" -eq 2
-          test "$(grep -c '^canonical_archive_unchanged=true$' out/summary.txt)" -eq 2
-          grep -q '^production_cutover=false$' out/summary.txt
-          grep -q '^production_signing=false$' out/summary.txt
-          grep -q '^wave_files_read_or_changed=false$' out/summary.txt
+          python3 ReleaseOps/scripts/kv_summary_gate_v1.py out/summary.txt \
+            --require 'status=PASS:2' \
+            --require 'target_sdk=36:2' \
+            --require 'payload=PASS:2' \
+            --require 'qa_signing_only=true:2' \
+            --require 'canonical_archive_unchanged=true:2' \
+            --require 'production_cutover=false:1' \
+            --require 'production_signing=false:1' \
+            --require 'wave_files_read_or_changed=false:1'
