@@ -1,0 +1,89 @@
+name: THF Pass Runtime Source Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-pass-runtime-source-inventory-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read deployed runtime identity route source through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' <<'REMOTE' > out/runtime-source-inventory.txt
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"
+          echo "RUNTIME_ROOT_PRESENT=TRUE"
+          echo "WAVE_UNTOUCHED=TRUE"
+          echo "MUTATION_PERFORMED=FALSE"
+          echo "SOURCE_FILES_BEGIN"
+          find "$ROOT" -maxdepth 4 -type f \( -name '*.py' -o -name '*.js' -o -name '*.ts' -o -name '*.json' \) -print | sort | head -400
+          echo "SOURCE_FILES_END"
+          echo "IDENTITY_ROUTE_EVIDENCE_BEGIN"
+          grep -RniE --include='*.py' --include='*.js' --include='*.ts' --include='*.json' '(login|token|refresh|logout|revoke|revocation|federat|handoff|session|oauth|openid)' "$ROOT" 2>/dev/null | head -1200 || true
+          echo "IDENTITY_ROUTE_EVIDENCE_END"
+          REMOTE
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          text=Path('out/runtime-source-inventory.txt').read_text(errors='replace')
+          patterns={
+            'login': r'(?i)login|token',
+            'refresh': r'(?i)refresh',
+            'logout': r'(?i)logout',
+            'revoke': r'(?i)revoke|revocation',
+            'federation_handoff': r'(?i)federat|handoff|oauth|openid',
+            'session': r'(?i)session',
+          }
+          evidence={k: bool(re.search(v,text)) for k,v in patterns.items()}
+          truth={
+            'runtime_root_present': 'RUNTIME_ROOT_PRESENT=TRUE' in text,
+            'source_keyword_evidence': evidence,
+            'mutation_performed': False,
+            'wave_untouched': True,
+            'valid_credential_flow_proven': False,
+            'physical_device_proven': False,
+            'production_signing': False,
+            'public_rollout': False,
+            'final_or_play_ready': False,
+          }
+          Path('out/TRUTH.json').write_text(json.dumps(truth,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(truth,sort_keys=True))
+          assert truth['runtime_root_present'] is True
+          assert truth['mutation_performed'] is False
+          assert truth['wave_untouched'] is True
+          assert truth['final_or_play_ready'] is False
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-PASS-RUNTIME-SOURCE-INVENTORY-V1
+          path: out/
+          retention-days: 14
