@@ -1,0 +1,24 @@
+name: THF Pass OpenAPI Contract Tests V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/validators/audit_openapi_identity_contract.py'
+      - 'ReleaseOps/validators/test_audit_openapi_identity_contract.py'
+      - '.github/workflows/thf-pass-openapi-contract-tests-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Identity contract regression tests
+        run: |
+          python -m pip install --disable-pip-version-check pytest >/dev/null
+          python -m pytest -q ReleaseOps/validators/test_audit_openapi_identity_contract.py
