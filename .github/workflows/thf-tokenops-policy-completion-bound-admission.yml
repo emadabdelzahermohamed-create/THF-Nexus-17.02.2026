@@ -1,0 +1,123 @@
+name: THF TokenOps Policy Completion Bound Admission Gate
+
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/policy_completion_bound_unsigned_admission.py'
+      - 'ReleaseOps/TokenOps/test_policy_completion_bound_unsigned_admission.py'
+      - 'ReleaseOps/TokenOps/anti_whale_reward_policy_completion_gate.py'
+      - 'ReleaseOps/TokenOps/anti_whale_reward_policy_completion.json'
+      - 'ReleaseOps/TokenOps/unsigned_simulation_admission_gate.py'
+      - 'ReleaseOps/TokenOps/unsigned_simulation_policy_snapshot.json'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-policy-completion-bound-admission.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  policy-completion-bound-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed binding tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_policy_completion_bound_unsigned_admission.py 2>&1 | tee policy-completion-bound-admission-tests.log
+      - name: Validate production state remains fail-closed
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY' | tee ReleaseOps/TokenOps/production-policy-completion-bound-admission.json
+          import json, sys
+          sys.path.insert(0, 'ReleaseOps/TokenOps')
+          from anti_whale_reward_policy_completion_gate import evaluate_policy_completion
+          from policy_completion_bound_unsigned_admission import evaluate_policy_completion_bound_admission
+          from unsigned_simulation_admission_gate import canonical_sha256
+
+          def load(name):
+              with open('ReleaseOps/TokenOps/' + name, encoding='utf-8') as fh:
+                  return json.load(fh)
+
+          policy = load('policy.json')
+          treasury = load('treasury_policy.json')
+          completion = load('anti_whale_reward_policy_completion.json')
+          snapshot = load('unsigned_simulation_policy_snapshot.json')
+          provenance = {'gate':'THF_TOKENOPS_UNIFIED_REVIEW_PROVENANCE_V1','manifest_sha256':'1'*64,'source_head':'2'*40,'review_only':True}
+          completion_result = evaluate_policy_completion(completion, policy, treasury)
+          plan = {
+              'network': snapshot['network'],
+              'mint': snapshot['mint'],
+              'intent': 'reward_epoch',
+              'unsigned': True,
+              'active_user_revenue_share': 0.35,
+              'unified_review_provenance_sha256': canonical_sha256(provenance),
+              'policy_snapshot_sha256': canonical_sha256(snapshot),
+              'policy_completion_evidence_sha256': completion_result['completion_sha256'],
+              'sign': False,
+              'submit': False,
+              'broadcast': False,
+              'financial_effect': False,
+          }
+          out = evaluate_policy_completion_bound_admission(completion, policy, treasury, provenance, plan, snapshot)
+          assert out['simulation_review_eligible'] is False
+          assert 'policy_completion_not_authoritatively_completed' in out['blockers']
+          assert out['execution_authorized'] is False
+          assert out['transaction_signed'] is False
+          assert out['transaction_submitted'] is False
+          print(json.dumps(out, sort_keys=True, indent=2))
+          PY
+      - name: Assert non-execution boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -q '^OK$' ReleaseOps/TokenOps/policy-completion-bound-admission-tests.log
+          ! grep -R -nE 'sendTransaction|send_transaction|broadcast_transaction|Keypair\.from|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' \
+            ReleaseOps/TokenOps/policy_completion_bound_unsigned_admission.py \
+            ReleaseOps/TokenOps/test_policy_completion_bound_unsigned_admission.py
+      - name: Produce evidence hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p tokenops-policy-completion-bound-admission
+          sha256sum \
+            ReleaseOps/TokenOps/policy_completion_bound_unsigned_admission.py \
+            ReleaseOps/TokenOps/test_policy_completion_bound_unsigned_admission.py \
+            ReleaseOps/TokenOps/anti_whale_reward_policy_completion_gate.py \
+            ReleaseOps/TokenOps/anti_whale_reward_policy_completion.json \
+            ReleaseOps/TokenOps/unsigned_simulation_admission_gate.py \
+            ReleaseOps/TokenOps/unsigned_simulation_policy_snapshot.json \
+            ReleaseOps/TokenOps/policy.json \
+            ReleaseOps/TokenOps/treasury_policy.json \
+            .github/workflows/thf-tokenops-policy-completion-bound-admission.yml \
+            > tokenops-policy-completion-bound-admission/SHA256SUMS.txt
+          cp ReleaseOps/TokenOps/policy-completion-bound-admission-tests.log tokenops-policy-completion-bound-admission/
+          cp ReleaseOps/TokenOps/production-policy-completion-bound-admission.json tokenops-policy-completion-bound-admission/
+          printf '%s\n' \
+            'THF_TOKENOPS_POLICY_COMPLETION_BOUND_UNSIGNED_ADMISSION=PASS' \
+            'PRODUCTION_SIMULATION_REVIEW_ELIGIBLE=FALSE' \
+            'POLICY_COMPLETION_REQUIRED=TRUE' \
+            'ACTIVE_USER_REVENUE_SHARE=0.35' \
+            'SUPPLY_FLOOR_UI=8000000000' \
+            'SIMULATION_EXECUTION_PERMITTED=FALSE' \
+            'EXECUTION_AUTHORIZED=FALSE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' \
+            > tokenops-policy-completion-bound-admission/SAFETY.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Policy-Completion-Bound-Admission-Gate
+          path: tokenops-policy-completion-bound-admission/
+          if-no-files-found: error
+          retention-days: 90
