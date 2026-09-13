@@ -1,0 +1,37 @@
+{
+  "schema": "thf.notifications.contract.v1",
+  "truth_boundary": {
+    "push_ready": false,
+    "final_or_play_ready": false,
+    "source_inventory_status": "NONE_ACROSS_NINE_APPS",
+    "source_inventory_is_runtime_proof": false
+  },
+  "scope": ["pulse","forge","echo","codex","spark","rush","vault","signal","command"],
+  "requirements": {
+    "android_api": 36,
+    "runtime_endpoint_scheme": ["https","wss"],
+    "permission_request_contextual": true,
+    "permission_denial_non_blocking": true,
+    "channel_creation_required_before_post": true,
+    "provider_token_secure_storage": true,
+    "provider_token_never_in_query_string": true,
+    "provider_token_registration_authenticated": true,
+    "provider_token_rotation_supported": true,
+    "provider_token_revocation_on_logout": true,
+    "notification_deeplink_allowlist_required": true,
+    "notification_deeplink_must_not_embed_credentials": true,
+    "data_saver_aware": true,
+    "rtl_localized_content_required": true,
+    "accessibility_label_required": true,
+    "offline_behavior": "local_inbox_may_render_cached_items_but_must_not_fake_remote_delivery_or_social_economy_ranked_state",
+    "background_behavior": "no_claim_without_device_evidence",
+    "physical_device_evidence_required": true
+  },
+  "promotion": {
+    "source_only_pass_forbidden": true,
+    "mock_only_pass_forbidden": true,
+    "provider_config_required_for_push_ready": true,
+    "reachable_authenticated_registration_required_for_push_ready": true,
+    "physical_receive_tap_background_resume_required_for_push_ready": true
+  }
+}
