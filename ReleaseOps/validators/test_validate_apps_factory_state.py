@@ -1,4 +1,3 @@
-import copy
 import json
 import subprocess
 import sys
@@ -24,6 +23,7 @@ def test_authoritative_state_passes(tmp_path):
     assert cp.returncode == 0, cp.stdout + cp.stderr
     assert report["validation"] == "PASS"
     assert report["apps_exact_package_gate_pass"] == 9
+    assert report["apps_runtime_binding_pass"] == 9
     assert report["apps_physical_pending"] == 9
     assert report["pytest_missing_apps"] == ["rush", "spark"]
 
@@ -35,25 +35,19 @@ def test_rejects_false_final(tmp_path):
 
 
 def test_rejects_package_drift(tmp_path):
-    def mutate(d):
-        d["apps"][0]["package"] = "com.example.wrong"
-    cp, report = run_state(tmp_path, mutate)
+    cp, report = run_state(tmp_path, lambda d: d["apps"][0].__setitem__("package", "com.example.wrong"))
     assert cp.returncode != 0
     assert any("package drift" in e for e in report["errors"])
 
 
 def test_rejects_api36_regression(tmp_path):
-    def mutate(d):
-        d["apps"][1]["target_sdk"] = 35
-    cp, report = run_state(tmp_path, mutate)
+    cp, report = run_state(tmp_path, lambda d: d["apps"][1].__setitem__("target_sdk", 35))
     assert cp.returncode != 0
     assert any("targetSdk" in e for e in report["errors"])
 
 
 def test_rejects_fabricated_physical_pass(tmp_path):
-    def mutate(d):
-        d["apps"][2]["physical_phone_acceptance"] = "PASS"
-    cp, report = run_state(tmp_path, mutate)
+    cp, report = run_state(tmp_path, lambda d: d["apps"][2].__setitem__("physical_phone_acceptance", "PASS"))
     assert cp.returncode != 0
     assert any("physical evidence" in e for e in report["errors"])
 
@@ -62,3 +56,29 @@ def test_rejects_unsafe_rollout_truth(tmp_path):
     cp, report = run_state(tmp_path, lambda d: d["truth_boundary"].__setitem__("public_rollout_performed", True))
     assert cp.returncode != 0
     assert any("public_rollout_performed" in e for e in report["errors"])
+
+
+def test_rejects_missing_runtime_binding(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["apps"][0].__setitem__("runtime_endpoint_binding", "PENDING"))
+    assert cp.returncode != 0
+    assert any("runtime endpoint binding" in e for e in report["errors"])
+
+
+def test_rejects_false_auth_promotion(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["apps"][0].__setitem__("auth_flow", "PASS"))
+    assert cp.returncode != 0
+    assert any("auth flow cannot be promoted" in e for e in report["errors"])
+
+
+def test_rejects_unbound_candidate_alias(tmp_path):
+    def mutate(d):
+        d["apps"][0]["apk_sha256"] = d["apps"][0]["previous_unbound_qa_apk_sha256"]
+    cp, report = run_state(tmp_path, mutate)
+    assert cp.returncode != 0
+    assert any("must not alias prior unbound QA SHA" in e for e in report["errors"])
+
+
+def test_rejects_wave_isolation_regression(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["shared_runtime"].__setitem__("wave_untouched", False))
+    assert cp.returncode != 0
+    assert any("WAVE isolation" in e for e in report["errors"])
