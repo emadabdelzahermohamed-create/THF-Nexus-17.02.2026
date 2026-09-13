@@ -1,0 +1,40 @@
+name: THF TokenOps Multi-Epoch Accounting Lineage Gate
+on:
+  push:
+    branches: [tokenops/read-only-audit-20260911]
+    paths:
+      - 'ReleaseOps/TokenOps/epoch_accounting_lineage.py'
+      - 'ReleaseOps/TokenOps/test_epoch_accounting_lineage.py'
+      - '.github/workflows/thf-tokenops-multi-epoch-lineage.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run deterministic fail-closed tests
+        working-directory: ReleaseOps/TokenOps
+        run: python3 test_epoch_accounting_lineage.py
+      - name: Build evidence
+        run: |
+          set -Eeuo pipefail
+          mkdir -p evidence
+          cp ReleaseOps/TokenOps/epoch_accounting_lineage.py evidence/
+          cp ReleaseOps/TokenOps/test_epoch_accounting_lineage.py evidence/
+          printf '%s\n' \
+            'ACCOUNTING_REVIEW_ONLY=TRUE' \
+            'TRANSACTION_CREATED=FALSE' \
+            'TRANSACTION_SIGNED=FALSE' \
+            'TRANSACTION_SUBMITTED=FALSE' \
+            'BROADCAST_ALLOWED=FALSE' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'PRIVATE_KEY_USED=FALSE' \
+            'WAVE_UNTOUCHED=TRUE' > evidence/SAFETY.txt
+          sha256sum evidence/epoch_accounting_lineage.py evidence/test_epoch_accounting_lineage.py evidence/SAFETY.txt > evidence/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THF-TokenOps-Multi-Epoch-Accounting-Lineage-Gate
+          path: evidence/
+          if-no-files-found: error
