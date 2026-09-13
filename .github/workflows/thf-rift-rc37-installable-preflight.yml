@@ -1,0 +1,97 @@
+name: THF Rift RC37 Installable QA Preflight
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-rift-rc37-installable-preflight.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect pinned Rift RC37 source and build context read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p evidence
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='bash -s' > evidence/rift-rc37-preflight.txt <<'REMOTE'
+          set -Eeuo pipefail
+          SRC="$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
+          EXPECTED=3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+          test -f "$SRC"
+          GOT=$(sha256sum "$SRC" | awk '{print $1}')
+          echo RIFT_RC37_SOURCE_SHA256="$GOT"
+          test "$GOT" = "$EXPECTED"
+          unzip -tq "$SRC" >/dev/null
+          echo RIFT_RC37_ZIP_INTEGRITY=PASS
+          echo RIFT_RC37_SOURCE_SIZE_BYTES=$(stat -c %s "$SRC")
+          echo '--- ARCHIVE BUILD/METADATA CANDIDATES ---'
+          unzip -Z1 "$SRC" | grep -Ei '(^|/)(project\.godot|export_presets\.cfg|build\.gradle(\.kts)?|settings\.gradle(\.kts)?|gradlew|AndroidManifest\.xml|strings\.xml)$' | sed -n '1,200p' || true
+          echo '--- EXISTING RIFT GATE DIRECTORIES ---'
+          find "$HOME/thf-rift-rc37-gate" -maxdepth 4 -type d \( -name android -o -name build -o -name gradle -o -name output -o -name out -o -name source -o -name work -o -name 'work-*' \) -print 2>/dev/null | sed -n '1,200p' || true
+          echo '--- EXISTING RIFT PROJECT FILES ---'
+          find "$HOME/thf-rift-rc37-gate" -maxdepth 7 -type f \( -name project.godot -o -name export_presets.cfg -o -name build.gradle -o -name build.gradle.kts -o -name settings.gradle -o -name settings.gradle.kts -o -name gradlew -o -name AndroidManifest.xml \) -print 2>/dev/null | sed -n '1,240p' || true
+          echo '--- RIFT ID/VERSION MARKERS ---'
+          TMP=$(mktemp -d /tmp/thf-rift-rc37-preflight.XXXXXX)
+          trap 'rm -rf "$TMP"' EXIT
+          python3 - "$SRC" "$TMP" <<'PY'
+          import pathlib,sys,zipfile,re
+          src=pathlib.Path(sys.argv[1]); out=pathlib.Path(sys.argv[2]).resolve()
+          with zipfile.ZipFile(src) as z:
+              bad=z.testzip()
+              if bad: raise SystemExit('ZIP_BAD_MEMBER='+bad)
+              names=z.namelist()
+              picks=[n for n in names if n.endswith(('project.godot','export_presets.cfg','AndroidManifest.xml','build.gradle','build.gradle.kts','strings.xml'))]
+              for n in picks[:120]:
+                  try: text=z.read(n).decode('utf-8','replace')
+                  except Exception: continue
+                  for line in text.splitlines():
+                      if re.search(r'(package|applicationId|namespace|versionCode|versionName|unique_name|package/unique_name|name=|config/name)', line, re.I):
+                          print(f'{n}: {line[:500]}')
+          PY
+          AFTER=$(sha256sum "$SRC" | awk '{print $1}')
+          echo RIFT_RC37_SOURCE_SHA256_AFTER="$AFTER"
+          test "$AFTER" = "$EXPECTED"
+          if find "$HOME/thf-rift-rc37-gate" -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' | grep -q .; then
+            echo RIFT_WAVE_ISOLATION=FAIL
+            exit 41
+          fi
+          echo RIFT_WAVE_ISOLATION=PASS
+          echo CANONICAL_SOURCE_MUTATION=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo RIFT_RC37_INSTALLABLE_PREFLIGHT=PASS
+          REMOTE
+          cat evidence/rift-rc37-preflight.txt
+      - name: Upload preflight evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-Rift-RC37-INSTALLABLE-PREFLIGHT
+          path: evidence/rift-rc37-preflight.txt
+          if-no-files-found: error
+          retention-days: 14
