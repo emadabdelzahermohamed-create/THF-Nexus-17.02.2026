@@ -36,7 +36,7 @@ jobs:
           set -Eeuo pipefail
           mkdir -p out
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/authority-dynamic.raw <<'PY'
-          import hashlib,http.client,importlib,inspect,json,os,pathlib,shutil,socket,sys,tempfile,threading,traceback
+          import hashlib,http.client,importlib,json,os,pathlib,shutil,socket,sys,tempfile,threading,traceback
 
           src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
           assert src.is_dir()
@@ -55,7 +55,7 @@ jobs:
           result={
               'schema':'thf-game-backend-authority-dynamic-v1',
               'runtime_source_sha256':before,
-              'isolation':'temporary source copy + loopback-only outbound socket guard',
+              'isolation':'temporary source copy + canonical make_server factory + loopback-only outbound socket guard',
               'canonical_source_modified':False,
               'external_network_allowed':False,
               'production_credentials_used':False,
@@ -65,16 +65,18 @@ jobs:
           }
 
           with tempfile.TemporaryDirectory(prefix='thf-authority-') as td:
-              td=pathlib.Path(td); work=td/'src'
+              td=pathlib.Path(td); work=td/'src'; data=td/'data'; home=td/'home'
               shutil.copytree(src,work,symlinks=True)
+              data.mkdir(parents=True,exist_ok=True); home.mkdir(parents=True,exist_ok=True)
+              db_path=data/'authority.sqlite3'
               os.environ.update({
                   'THF_ENV':'test','THF_OFFLINE':'1',
-                  'THF_DATA_DIR':str(td/'data'),
-                  'THF_DB_PATH':str(td/'data'/'authority.sqlite3'),
+                  'THF_DATA_DIR':str(data),
+                  'THF_DB_PATH':str(db_path),
                   'THF_RUNTIME_DIR':str(td/'runtime'),
-                  'HOME':str(td/'home'),
+                  'HOME':str(home),
+                  'THF_HOST':'127.0.0.1','THF_PORT':'0','THF_QUIET':'1'
               })
-              (td/'data').mkdir(parents=True,exist_ok=True); (td/'home').mkdir(parents=True,exist_ok=True)
               sys.path.insert(0,str(work)); os.chdir(work)
 
               real_connect=socket.socket.connect; real_create=socket.create_connection
@@ -89,80 +91,76 @@ jobs:
                   return real_create(address,*a,**kw)
               socket.socket.connect=guarded_connect; socket.create_connection=guarded_create
 
+              server=None; thread=None
               try:
                   mod=importlib.import_module('thf.app')
-                  from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
-                  handlers=[]
-                  for name,obj in inspect.getmembers(mod,inspect.isclass):
-                      try:
-                          if issubclass(obj,BaseHTTPRequestHandler) and obj is not BaseHTTPRequestHandler: handlers.append((name,obj))
-                      except TypeError: pass
-                  assert handlers, 'no BaseHTTPRequestHandler subclass found; dynamic harness needs adapter'
-                  handlers.sort(key=lambda x:(0 if 'handler' in x[0].lower() else 1,x[0]))
-                  handler_name,handler=handlers[0]; result['handler_class']=handler_name
-                  server=ThreadingHTTPServer(('127.0.0.1',0),handler); port=server.server_address[1]
+                  assert callable(getattr(mod,'make_server',None)), 'canonical make_server factory missing'
+                  server=mod.make_server('127.0.0.1',0,work,db_path)
+                  port=server.server_address[1]
+                  result['server_factory']='make_server'
+                  result['server_class']=type(server).__name__
                   thread=threading.Thread(target=server.serve_forever,daemon=True); thread.start()
-                  try:
-                      def request(method,path,payload=None,headers=None):
-                          body=None if payload is None else json.dumps(payload,separators=(',',':'))
-                          hs={'Accept':'application/json','Connection':'close'}
-                          if body is not None:
-                              hs['Content-Type']='application/json'; hs['Content-Length']=str(len(body.encode()))
-                          if headers: hs.update(headers)
-                          c=http.client.HTTPConnection('127.0.0.1',port,timeout=5)
-                          try:
-                              c.request(method,path,body=body,headers=hs); r=c.getresponse(); data=r.read(4096)
-                              return r.status,data
-                          finally: c.close()
 
-                      # Health is informational because the raw handler can require server-level runtime state
-                      # that the isolated harness intentionally does not attach. Authority proof is evaluated
-                      # directly on sensitive mutation requests and remains fail-closed.
+                  def request(method,path,payload=None,headers=None):
+                      body=None if payload is None else json.dumps(payload,separators=(',',':'))
+                      hs={'Accept':'application/json','Connection':'close'}
+                      if body is not None:
+                          hs['Content-Type']='application/json'; hs['Content-Length']=str(len(body.encode()))
+                      if headers: hs.update(headers)
+                      c=http.client.HTTPConnection('127.0.0.1',port,timeout=5)
                       try:
-                          health_status,_=request('GET','/health'); result['health_status']=health_status
-                      except Exception as e:
-                          result['health_probe_error']=type(e).__name__
+                          c.request(method,path,body=body,headers=hs); r=c.getresponse(); data=r.read(4096)
+                          return r.status,data
+                      finally: c.close()
 
-                      probes=[
-                          ('world_environment','/api/world/environment',{}),
-                          ('social_position','/api/social/position',{}),
-                          ('social_send','/api/social/send',{}),
-                          ('avatar_generate','/api/avatar/generate',{}),
-                          ('arena_start','/api/arena/start',{}),
-                          ('arena_action','/api/arena/action',{}),
-                          ('economy_internal_award','/api/economy/internal-award',{}),
-                      ]
-                      for name,path,payload in probes:
-                          try:
-                              status,_=request('POST',path,payload)
-                              passed=status in (401,403)
-                              result['probes'].append({'name':name,'path':path,'method':'POST','status':status,'unauthorized_rejected':passed})
-                          except Exception as e:
-                              result['probes'].append({'name':name,'path':path,'method':'POST','status':None,'unauthorized_rejected':False,'probe_error':type(e).__name__})
-                      result['probe_count']=len(result['probes'])
-                      result['unauthorized_rejection_count']=sum(1 for p in result['probes'] if p['unauthorized_rejected'])
-                      result['all_unauthorized_mutations_rejected']=all(p['unauthorized_rejected'] for p in result['probes'])
-                  finally:
-                      server.shutdown(); server.server_close(); thread.join(timeout=5)
+                  health_status,_=request('GET','/health'); result['health_status']=health_status
+                  probes=[
+                      ('world_environment','/api/world/environment',{}),
+                      ('social_position','/api/social/position',{}),
+                      ('social_send','/api/social/send',{}),
+                      ('avatar_generate','/api/avatar/generate',{}),
+                      ('arena_start','/api/arena/start',{}),
+                      ('arena_action','/api/arena/action',{}),
+                      ('economy_internal_award','/api/economy/internal-award',{}),
+                  ]
+                  for name,path,payload in probes:
+                      try:
+                          status,_=request('POST',path,payload)
+                          passed=status in (401,403)
+                          result['probes'].append({'name':name,'path':path,'method':'POST','status':status,'unauthorized_rejected':passed})
+                      except Exception as e:
+                          result['probes'].append({'name':name,'path':path,'method':'POST','status':None,'unauthorized_rejected':False,'probe_error':type(e).__name__})
+                  result['probe_count']=len(result['probes'])
+                  result['unauthorized_rejection_count']=sum(1 for p in result['probes'] if p['unauthorized_rejected'])
+                  result['all_unauthorized_mutations_rejected']=all(p['unauthorized_rejected'] for p in result['probes'])
               except Exception as e:
                   result['tooling_error']=type(e).__name__+': '+str(e)
                   result['trace_tail']=traceback.format_exc().splitlines()[-8:]
               finally:
+                  if server is not None:
+                      server.shutdown(); server.server_close()
+                  if thread is not None: thread.join(timeout=5)
                   socket.socket.connect=real_connect; socket.create_connection=real_create
 
           after=tree_sha(src); result['canonical_source_modified']=(before!=after); result['canonical_source_sha256_after']=after
+          print('__THF_JSON_BEGIN__')
           print(json.dumps(result,indent=2,sort_keys=True))
+          print('__THF_JSON_END__')
           PY
 
           python3 - <<'PY'
           import json,pathlib
-          raw=pathlib.Path('out/authority-dynamic.raw').read_text(errors='ignore'); start=raw.find('{'); assert start>=0, 'no JSON result emitted'
-          x=json.loads(raw[start:]); pathlib.Path('out/authority-dynamic.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          raw=pathlib.Path('out/authority-dynamic.raw').read_text(errors='ignore')
+          a=raw.rfind('__THF_JSON_BEGIN__'); b=raw.rfind('__THF_JSON_END__')
+          assert a>=0 and b>a, 'no bounded JSON result emitted'
+          x=json.loads(raw[a+len('__THF_JSON_BEGIN__'):b].strip())
+          pathlib.Path('out/authority-dynamic.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
           assert x.get('wave_files_read_or_changed') is False
           assert x.get('production_credentials_used') is False
           assert x.get('external_network_allowed') is False
           assert x.get('canonical_source_modified') is False
           assert 'tooling_error' not in x, x.get('tooling_error')
+          assert x.get('health_status') == 200, x.get('health_status')
           assert x.get('probe_count',0) >= 5
           assert x.get('all_unauthorized_mutations_rejected') is True, x.get('probes')
           print('DYNAMIC_UNAUTHORIZED_MUTATION_REJECTION=PASS')
