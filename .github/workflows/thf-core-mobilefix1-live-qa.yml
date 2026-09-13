@@ -1,0 +1,167 @@
+name: THF Core MobileFix1 Live QA
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-core-mobilefix1-live-qa.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CORE_ARTIFACT: THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip
+  CORE_SHA256: 6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a
+
+jobs:
+  build_live_qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Stage isolated runtime and build script
+        run: |
+          set -Eeuo pipefail
+          cat > "$RUNNER_TEMP/core-mobilefix1-remote.sh" <<'REMOTE'
+          #!/usr/bin/env bash
+          set -Eeuo pipefail
+          SRC="$HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
+          EXPECTED="6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a"
+          ROOT="$HOME/thf-core-mobilefix1-live"
+          APP="$ROOT/app"
+          OUT="$ROOT/out"
+          PORT=18080
+          RC16="$HOME/thf-builder-rc16-build"
+          SDK="$RC16/android-sdk"
+          CACHE="$RC16/cache"
+          
+          echo "$EXPECTED  $SRC" | sha256sum -c -
+          # Stop only this dedicated QA runtime/tunnel if an earlier attempt exists.
+          for f in "$ROOT/backend.pid" "$ROOT/cloudflared.pid"; do
+            if [ -f "$f" ]; then p=$(cat "$f" 2>/dev/null || true); [[ "$p" =~ ^[0-9]+$ ]] && kill "$p" 2>/dev/null || true; fi
+          done
+          rm -rf "$APP" "$OUT" "$ROOT/venv"
+          mkdir -p "$APP" "$OUT"
+          unzip -q "$SRC" -d "$APP"
+          python3 -m venv "$ROOT/venv"
+          "$ROOT/venv/bin/python" -m pip install -q --upgrade pip
+          "$ROOT/venv/bin/python" -m pip install -q -r "$APP/requirements.txt"
+          
+          cd "$APP"
+          export PYTHONPATH="$APP/src"
+          export THF_HOST=127.0.0.1 THF_PORT="$PORT"
+          nohup "$ROOT/venv/bin/python" scripts/run.py >"$OUT/backend.log" 2>&1 & echo $! > "$ROOT/backend.pid"
+          for i in $(seq 1 60); do
+            if curl -fsS "http://127.0.0.1:$PORT/health" >"$OUT/local-health.json" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS "http://127.0.0.1:$PORT/health" >"$OUT/local-health.json"
+          grep -q '"ok"' "$OUT/local-health.json"
+          
+          CF="$ROOT/cloudflared"
+          if [ ! -x "$CF" ]; then
+            curl -fsSL --retry 3 "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64" -o "$CF"
+            chmod 755 "$CF"
+          fi
+          : > "$OUT/cloudflared.log"
+          nohup "$CF" tunnel --no-autoupdate --url "http://127.0.0.1:$PORT" >"$OUT/cloudflared.log" 2>&1 & echo $! > "$ROOT/cloudflared.pid"
+          PUBLIC=""
+          for i in $(seq 1 60); do
+            PUBLIC=$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' "$OUT/cloudflared.log" | tail -1 || true)
+            [ -n "$PUBLIC" ] && break
+            sleep 1
+          done
+          [ -n "$PUBLIC" ]
+          printf '%s\n' "$PUBLIC" > "$OUT/PUBLIC_URL.txt"
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 10 "$PUBLIC/health" >"$OUT/public-health.json" 2>/dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS --max-time 15 "$PUBLIC/health" >"$OUT/public-health.json"
+          grep -q '"ok"' "$OUT/public-health.json"
+          curl -fsS --max-time 15 "$PUBLIC/" -o "$OUT/home.html"
+          test -s "$OUT/home.html"
+          
+          # Advance only the QA phone candidate metadata; canonical source remains unchanged.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle')
+          s=p.read_text()
+          s=s.replace('versionCode 62200','versionCode 62201',1)
+          s=s.replace("versionName '6.2.2-rc6'","versionName '6.2.2-rc6-mobilefix1'",1)
+          p.write_text(s)
+          PY
+          export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$ROOT/gradle-home"
+          export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$SDK/cmdline-tools/latest/bin:$PATH"
+          mkdir -p "$GRADLE_USER_HOME"
+          GVER=8.11.1
+          GDIST="$CACHE/gradle-${GVER}-bin.zip"
+          GBIN="$CACHE/gradle-dist-${GVER}/gradle-${GVER}/bin/gradle"
+          test -x "$GBIN"; echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $GDIST" | sha256sum -c -
+          cd android
+          "$GBIN" --no-daemon wrapper --gradle-version "$GVER" --distribution-type bin >/dev/null
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace -PTHF_BASE_URL="$PUBLIC" -PTHF_PASS_URL="$PUBLIC" clean :app:assembleDebug >"$OUT/gradle.log" 2>&1
+          cp app/build/outputs/apk/debug/app-debug.apk "$OUT/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk"
+          
+          AAPT2="$SDK/build-tools/36.0.0/aapt2"
+          APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
+          APK="$OUT/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk"
+          "$AAPT2" dump badging "$APK" > "$OUT/badging.txt"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > "$OUT/apksigner.txt"
+          grep -q "package: name='com.topherofit.thf.core.debug'" "$OUT/badging.txt"
+          grep -q "versionCode='62201'" "$OUT/badging.txt"
+          grep -q "targetSdkVersion:'36'" "$OUT/badging.txt"
+          grep -q 'CN=Android Debug' "$OUT/apksigner.txt"
+          # The endpoint must actually be embedded in the DEX, otherwise fail the release gate.
+          grep -aFq "$PUBLIC" "$APK"
+          APK_SHA=$(sha256sum "$APK" | awk '{print $1}')
+          cat > "$OUT/EVIDENCE.txt" <<EOF
+          THF_CORE_MOBILEFIX1=PASS
+          source_sha256=$EXPECTED
+          package=com.topherofit.thf.core.debug
+          versionCode=62201
+          versionName=6.2.2-rc6-mobilefix1-debug
+          targetSdk=36
+          endpoint=$PUBLIC
+          endpoint_health=PASS
+          home_http=PASS
+          apk_sha256=$APK_SHA
+          production_signing=false
+          play_upload=false
+          EOF
+          cat "$OUT/EVIDENCE.txt"
+          REMOTE
+          chmod +x "$RUNNER_TEMP/core-mobilefix1-remote.sh"
+          gcloud compute scp "$RUNNER_TEMP/core-mobilefix1-remote.sh" "$GCP_BUILDER:/tmp/core-mobilefix1-remote.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='bash /tmp/core-mobilefix1-remote.sh'
+
+      - name: Retrieve verified phone candidate
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-core-mobilefix1-live/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          grep -q '^THF_CORE_MOBILEFIX1=PASS$' out/EVIDENCE.txt
+          test -s out/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk
+          cat out/EVIDENCE.txt
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-CORE-RC6-MOBILEFIX1-LIVE-QA
+          path: out/
+          retention-days: 14
+          compression-level: 0
