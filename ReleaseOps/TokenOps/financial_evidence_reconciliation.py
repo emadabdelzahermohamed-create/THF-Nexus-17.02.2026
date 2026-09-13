@@ -10,6 +10,7 @@ from typing import Any,Dict
 
 MINT="HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv"; NETWORK="solana-mainnet-beta"; DECIMALS=8
 FLOOR_UI=8_000_000_000; FLOOR_RAW=FLOOR_UI*10**DECIMALS
+UNAPPROVED_DELIVERY_VALUES={None,"to_be_selected_after_treasury_design","not_yet_approved","unapproved"}
 def sha(v): return hashlib.sha256(json.dumps(v,sort_keys=True,separators=(",",":"),ensure_ascii=True).encode()).hexdigest()
 
 def reconcile(policy:Dict[str,Any], treasury_policy:Dict[str,Any], audit:Dict[str,Any],
@@ -27,7 +28,9 @@ def reconcile(policy:Dict[str,Any], treasury_policy:Dict[str,Any], audit:Dict[st
     dc=policy.get("distribution_controls",{})
     blockers=[]
     per_user=dc.get("per_user_cap"); epoch_cap=dc.get("epoch_budget_cap")
-    reserve=dc.get("distribution_reserve_account"); delivery=dc.get("distribution_delivery_model")
+    reserve=dc.get("distribution_reserve_account")
+    delivery=dc.get("claim_or_push_model",dc.get("distribution_delivery_model"))
+    if delivery in UNAPPROVED_DELIVERY_VALUES: delivery=None
     if per_user is None: blockers.append("per_user_cap_not_approved")
     if epoch_cap is None: blockers.append("epoch_budget_cap_not_approved")
     if reserve is None: blockers.append("distribution_reserve_account_not_approved")
