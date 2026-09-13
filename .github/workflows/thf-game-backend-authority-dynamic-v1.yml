@@ -1,0 +1,197 @@
+name: THF Game Backend Authority Dynamic V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-game-backend-authority-dynamic-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  authority-dynamic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Isolated loopback unauthorized-mutation rejection probe
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/authority-dynamic.raw <<'PY'
+          import contextlib,hashlib,http.client,importlib,inspect,json,os,pathlib,shutil,socket,sys,tempfile,threading,time,traceback
+
+          src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
+          assert src.is_dir()
+          app_file=src/'thf/app.py'
+          assert app_file.is_file()
+
+          def tree_sha(root):
+              h=hashlib.sha256()
+              for p in sorted(root.rglob('*.py')):
+                  rel=p.relative_to(root).as_posix()
+                  if 'wave' in rel.lower():
+                      continue
+                  h.update(rel.encode()+b'\0'+p.read_bytes())
+              return h.hexdigest()
+
+          before=tree_sha(src)
+          result={
+              'schema':'thf-game-backend-authority-dynamic-v1',
+              'runtime_source_sha256':before,
+              'isolation':'temporary source copy + loopback-only outbound socket guard',
+              'canonical_source_modified':False,
+              'external_network_allowed':False,
+              'production_credentials_used':False,
+              'wave_files_read_or_changed':False,
+              'final_or_play_ready':False,
+              'probes':[]
+          }
+
+          with tempfile.TemporaryDirectory(prefix='thf-authority-') as td:
+              td=pathlib.Path(td)
+              work=td/'src'
+              shutil.copytree(src,work,symlinks=True)
+              os.environ.update({
+                  'THF_ENV':'test',
+                  'THF_OFFLINE':'1',
+                  'THF_DATA_DIR':str(td/'data'),
+                  'THF_DB_PATH':str(td/'data'/'authority.sqlite3'),
+                  'THF_RUNTIME_DIR':str(td/'runtime'),
+                  'HOME':str(td/'home'),
+              })
+              (td/'data').mkdir(parents=True,exist_ok=True)
+              (td/'home').mkdir(parents=True,exist_ok=True)
+              sys.path.insert(0,str(work))
+              os.chdir(work)
+
+              real_connect=socket.socket.connect
+              real_create=socket.create_connection
+              def is_loopback_host(host):
+                  return host in ('127.0.0.1','::1','localhost')
+              def guarded_connect(self,address):
+                  host=address[0] if isinstance(address,tuple) and address else None
+                  if not is_loopback_host(host):
+                      raise RuntimeError('external network blocked by authority test harness')
+                  return real_connect(self,address)
+              def guarded_create(address,*a,**kw):
+                  host=address[0] if isinstance(address,tuple) and address else None
+                  if not is_loopback_host(host):
+                      raise RuntimeError('external network blocked by authority test harness')
+                  return real_create(address,*a,**kw)
+              socket.socket.connect=guarded_connect
+              socket.create_connection=guarded_create
+
+              try:
+                  mod=importlib.import_module('thf.app')
+                  from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
+                  handlers=[]
+                  for name,obj in inspect.getmembers(mod,inspect.isclass):
+                      try:
+                          if issubclass(obj,BaseHTTPRequestHandler) and obj is not BaseHTTPRequestHandler:
+                              handlers.append((name,obj))
+                      except TypeError:
+                          pass
+                  assert handlers, 'no BaseHTTPRequestHandler subclass found; dynamic harness needs adapter'
+                  handlers.sort(key=lambda x: (0 if 'handler' in x[0].lower() else 1,x[0]))
+                  handler_name,handler=handlers[0]
+                  result['handler_class']=handler_name
+
+                  server=ThreadingHTTPServer(('127.0.0.1',0),handler)
+                  port=server.server_address[1]
+                  thread=threading.Thread(target=server.serve_forever,daemon=True)
+                  thread.start()
+                  try:
+                      def request(method,path,payload=None,headers=None):
+                          body=None if payload is None else json.dumps(payload,separators=(',',':'))
+                          hs={'Accept':'application/json','Connection':'close'}
+                          if body is not None:
+                              hs['Content-Type']='application/json'; hs['Content-Length']=str(len(body.encode()))
+                          if headers: hs.update(headers)
+                          c=http.client.HTTPConnection('127.0.0.1',port,timeout=5)
+                          try:
+                              c.request(method,path,body=body,headers=hs)
+                              r=c.getresponse(); data=r.read(4096)
+                              return r.status,data
+                          finally:
+                              c.close()
+
+                      health_status,_=request('GET','/health')
+                      result['health_status']=health_status
+                      assert 200 <= health_status < 500, f'loopback handler unhealthy/unreachable: {health_status}'
+
+                      # Only paths with no path-id requirement are used. Payloads are intentionally minimal.
+                      # On this isolated temporary copy, any status other than 401/403 proves the request
+                      # advanced past authentication or missed routing and is therefore fail-closed.
+                      probes=[
+                          ('world_environment','/api/world/environment',{}),
+                          ('social_position','/api/social/position',{}),
+                          ('social_send','/api/social/send',{}),
+                          ('avatar_generate','/api/avatar/generate',{}),
+                          ('arena_start','/api/arena/start',{}),
+                          ('arena_action','/api/arena/action',{}),
+                          ('economy_internal_award','/api/economy/internal-award',{}),
+                      ]
+                      for name,path,payload in probes:
+                          status,_=request('POST',path,payload)
+                          passed=status in (401,403)
+                          result['probes'].append({'name':name,'path':path,'method':'POST','status':status,'unauthorized_rejected':passed})
+                      result['probe_count']=len(result['probes'])
+                      result['unauthorized_rejection_count']=sum(1 for p in result['probes'] if p['unauthorized_rejected'])
+                      result['all_unauthorized_mutations_rejected']=all(p['unauthorized_rejected'] for p in result['probes'])
+                  finally:
+                      server.shutdown(); server.server_close(); thread.join(timeout=5)
+              except Exception as e:
+                  result['tooling_error']=type(e).__name__+': '+str(e)
+                  result['trace_tail']=traceback.format_exc().splitlines()[-8:]
+              finally:
+                  socket.socket.connect=real_connect
+                  socket.create_connection=real_create
+
+          after=tree_sha(src)
+          result['canonical_source_modified']=(before!=after)
+          result['canonical_source_sha256_after']=after
+          print(json.dumps(result,indent=2,sort_keys=True))
+          PY
+
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/authority-dynamic.raw').read_text(errors='ignore')
+          start=raw.find('{'); assert start>=0, 'no JSON result emitted'
+          x=json.loads(raw[start:])
+          pathlib.Path('out/authority-dynamic.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          assert x.get('wave_files_read_or_changed') is False
+          assert x.get('production_credentials_used') is False
+          assert x.get('external_network_allowed') is False
+          assert x.get('canonical_source_modified') is False
+          assert 'tooling_error' not in x, x.get('tooling_error')
+          assert x.get('probe_count',0) >= 5
+          assert x.get('all_unauthorized_mutations_rejected') is True, x.get('probes')
+          print('DYNAMIC_UNAUTHORIZED_MUTATION_REJECTION=PASS')
+          print('PROBE_COUNT='+str(x['probe_count']))
+          print('UNAUTHORIZED_REJECTION_COUNT='+str(x['unauthorized_rejection_count']))
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-GAME-BACKEND-AUTHORITY-DYNAMIC-V1
+          path: out/
+          retention-days: 14
