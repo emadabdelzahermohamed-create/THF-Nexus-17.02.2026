@@ -1,0 +1,24 @@
+name: THF Game-Like Real Function Validator V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/validators/audit_game_like_real_function.py'
+      - 'ReleaseOps/tests/test_audit_game_like_real_function.py'
+      - '.github/workflows/thf-game-like-real-function-validator-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validator-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Python syntax
+        run: python -m py_compile ReleaseOps/validators/audit_game_like_real_function.py ReleaseOps/tests/test_audit_game_like_real_function.py
+      - name: Regression tests
+        run: python -m unittest ReleaseOps.tests.test_audit_game_like_real_function -v
