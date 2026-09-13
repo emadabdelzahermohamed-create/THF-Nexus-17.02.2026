@@ -1,0 +1,29 @@
+name: THF Game Authority Tooling Regression V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/validators/validate_game_backend_authority_dynamic_v1.py'
+      - 'ReleaseOps/validators/test_validate_game_backend_authority_dynamic_v1.py'
+      - '.github/workflows/thf-game-authority-tooling-regression-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        with:
+          python-version: '3.12'
+      - name: Compile validators
+        run: python -m py_compile ReleaseOps/validators/validate_game_backend_authority_dynamic_v1.py ReleaseOps/validators/test_validate_game_backend_authority_dynamic_v1.py
+      - name: Run fail-closed regression tests
+        run: |
+          python -m pip install --disable-pip-version-check pytest
+          python -m pytest -q ReleaseOps/validators/test_validate_game_backend_authority_dynamic_v1.py
