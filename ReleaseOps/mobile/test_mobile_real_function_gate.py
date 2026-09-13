@@ -13,7 +13,7 @@ assert spec.loader is not None
 spec.loader.exec_module(gate)
 
 
-def write_device(path: Path, sha: str, *, kind='app', online=True):
+def write_device(path: Path, sha: str, *, kind='app', online=True, combat=False, sensor_motion=False):
     d = {
         'exact_candidate_sha256': sha,
         'install_pass': True,
@@ -34,6 +34,10 @@ def write_device(path: Path, sha: str, *, kind='app', online=True):
             gameplay_interaction_pass=True,
             fps_ram_thermal_observed=True,
         )
+    if combat:
+        d['combat_pass'] = True
+    if sensor_motion:
+        d['sensor_motion_pass'] = True
     path.write_text(json.dumps(d), encoding='utf-8')
 
 
@@ -51,6 +55,17 @@ class MobileRealFunctionGateTests(unittest.TestCase):
             sha = 'c' * 64
             write_device(p, sha)
             self.assertEqual(gate.device_gate(p, 'app', True, sha), [])
+
+    def test_combat_and_sensor_requirements_are_fail_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / 'device.json'
+            sha = 'd' * 64
+            write_device(p, sha, kind='game')
+            errs = gate.device_gate(p, 'game', False, sha, require_combat=True, require_sensor_motion=True)
+            self.assertIn('combat_pass != true', errs)
+            self.assertIn('sensor_motion_pass != true', errs)
+            write_device(p, sha, kind='game', combat=True, sensor_motion=True)
+            self.assertEqual(gate.device_gate(p, 'game', False, sha, require_combat=True, require_sensor_motion=True), [])
 
     def test_godot_engine_only_apk_is_rejected(self):
         with tempfile.TemporaryDirectory() as td:
@@ -70,17 +85,37 @@ class MobileRealFunctionGateTests(unittest.TestCase):
                 z.writestr('assets/project.binary', b'project')
             self.assertEqual(gate.apk_payload_gate(apk, 'game'), [])
 
-    def test_nested_godot_source_requires_sensor_landscape_expand_and_touch(self):
+    def test_nested_godot_source_requires_sensor_landscape_expand_touch_and_allows_zero_overrides(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / 'build.gradle').write_text('targetSdk = 36', encoding='utf-8')
             project = root / 'game'
             project.mkdir()
             (project / 'project.godot').write_text(
-                'window/handheld/orientation=4\nwindow/stretch/aspect="expand"\n', encoding='utf-8'
+                '[display]\n'
+                'window/handheld/orientation=4\n'
+                'window/stretch/aspect="expand"\n'
+                'window/size/window_width_override=0\n'
+                'window/size/window_height_override=0\n', encoding='utf-8'
             )
             (project / 'touch.gd').write_text('if event is InputEventScreenTouch:\n    pass\n', encoding='utf-8')
             self.assertEqual(gate.source_gate(root, 'game', False), [])
+
+    def test_active_desktop_override_is_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / 'build.gradle').write_text('targetSdk = 36', encoding='utf-8')
+            project = root / 'game'
+            project.mkdir()
+            (project / 'project.godot').write_text(
+                '[display]\n'
+                'window/handheld/orientation=4\n'
+                'window/stretch/aspect="expand"\n'
+                'window/size/window_width_override=1920\n', encoding='utf-8'
+            )
+            (project / 'touch.gd').write_text('InputEventScreenTouch', encoding='utf-8')
+            errs = gate.source_gate(root, 'game', False)
+            self.assertTrue(any('desktop window override is active' in e for e in errs), errs)
 
     def test_placeholder_network_configuration_is_rejected(self):
         with tempfile.TemporaryDirectory() as td:
