@@ -1,0 +1,96 @@
+name: THF Game Backend Authority Contract Discovery V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-game-backend-authority-contract-discovery-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  discover-authority-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only game authority contract discovery
+        shell: bash
+        run: |
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/authority-contract.json <<'PY'
+          import ast, hashlib, json, pathlib, re
+          root=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
+          assert root.is_dir()
+          route_keywords=('world','arena','game','leader','rank','match','social','econom','wallet','inventory','avatar','session','auth','health')
+          routes=[]; symbols=[]; files=[]
+          for p in sorted(root.rglob('*.py')):
+              low=p.as_posix().lower()
+              if 'wave' in low: continue
+              try: text=p.read_text(errors='ignore')
+              except OSError: continue
+              rel=p.relative_to(root).as_posix(); files.append(rel)
+              # Literal route strings only; never emit environment values, headers, tokens, DSNs or hosts.
+              for m in re.finditer(r"['\"](/[^'\"\s]{1,160})['\"]", text):
+                  route=m.group(1)
+                  if any(k in route.lower() for k in route_keywords):
+                      routes.append({'file':rel,'path':route})
+              try: tree=ast.parse(text)
+              except SyntaxError: continue
+              for n in ast.walk(tree):
+                  if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and any(k in n.name.lower() for k in route_keywords):
+                      symbols.append({'file':rel,'symbol':n.name,'async':isinstance(n,ast.AsyncFunctionDef)})
+          def uniq(rows, keys):
+              seen=set(); out=[]
+              for r in rows:
+                  k=tuple(r[x] for x in keys)
+                  if k not in seen: seen.add(k); out.append(r)
+              return out
+          routes=uniq(routes,('file','path'))[:300]; symbols=uniq(symbols,('file','symbol'))[:300]
+          h=hashlib.sha256()
+          for rel in files:
+              p=root/rel; h.update(rel.encode()+b'\0'); h.update(p.read_bytes())
+          print(json.dumps({
+            'schema':'thf-game-backend-authority-contract-discovery-v1',
+            'runtime_source_sha256':h.hexdigest(),
+            'route_count':len(routes),'routes':routes,
+            'symbol_count':len(symbols),'symbols':symbols,
+            'host_values_emitted':False,'secrets_emitted':False,'read_only':True,
+            'wave_files_read_or_changed':False
+          },indent=2,sort_keys=True))
+          PY
+      - name: Safety assertions
+        run: |
+          python3 - <<'PY'
+          import json
+          x=json.load(open('out/authority-contract.json'))
+          assert x['host_values_emitted'] is False
+          assert x['secrets_emitted'] is False
+          assert x['read_only'] is True
+          assert x['wave_files_read_or_changed'] is False
+          print('route_count='+str(x['route_count']))
+          print('symbol_count='+str(x['symbol_count']))
+          print('runtime_source_sha256='+x['runtime_source_sha256'])
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-GAME-BACKEND-AUTHORITY-CONTRACT-V1
+          path: out/
+          retention-days: 14
