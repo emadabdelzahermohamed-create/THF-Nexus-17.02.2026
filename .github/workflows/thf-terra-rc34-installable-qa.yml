@@ -1,0 +1,113 @@
+name: THF Terra RC34 Installable QA APK
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-terra-rc34-installable-qa.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  build-installable-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Build canonical installable Terra RC34 QA APK
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-terra-rc34-gate"
+          PROJ="$ROOT/work-android-v3/android/build"
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"
+          OUT="$ROOT/out-android-v3"
+          FINAL="$OUT/THF-Terra-RC34-INSTALLABLE-QA.apk"
+          test -d "$PROJ"
+          test -d "$SDK"
+          export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"
+          BT=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          AAPT="$BT/aapt"
+          APKSIGNER="$BT/apksigner"
+          ZIPALIGN="$BT/zipalign"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+          test -x "$ZIPALIGN"
+
+          cd "$PROJ"
+          printf "sdk.dir=%s\n" "$SDK" > local.properties
+          ./gradlew --no-daemon clean assembleStandardDebug \
+            -Pexport_package_name=com.topherofit.thf.terra \
+            -Pexport_version_code=42068 \
+            -Pexport_version_name=4.6.8-rc34
+
+          APK=$(find . -type f -name "*.apk" -path "*/build/outputs/apk/*" | head -1)
+          test -n "$APK"
+          echo "RAW_APK=$APK"
+          "$AAPT" dump badging "$APK" | head -5
+          "$AAPT" dump badging "$APK" | grep -q "package: name='com.topherofit.thf.terra'"
+
+          KS="$ROOT/qa-debug.keystore"
+          if [ ! -f "$KS" ]; then
+            keytool -genkeypair -noprompt -keystore "$KS" -storepass android -alias androiddebugkey -keypass android \
+              -dname "CN=Android Debug,O=THF QA,C=US" -keyalg RSA -keysize 2048 -validity 3650 >/dev/null 2>&1
+          fi
+
+          TMP="$OUT/terra-rc34-aligned-unsigned.apk"
+          mkdir -p "$OUT"
+          if "$ZIPALIGN" -c -p 4 "$APK" >/dev/null 2>&1; then
+            cp "$APK" "$TMP"
+          else
+            "$ZIPALIGN" -f -p 4 "$APK" "$TMP"
+          fi
+          rm -f "$FINAL"
+          "$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$FINAL" "$TMP"
+          "$APKSIGNER" verify --verbose --print-certs "$FINAL"
+          "$ZIPALIGN" -c -p 4 "$FINAL"
+          "$AAPT" dump badging "$FINAL" | tee "$OUT/THF-Terra-RC34-INSTALLABLE-QA.badging.txt"
+          "$AAPT" dump badging "$FINAL" | grep -q "package: name='com.topherofit.thf.terra'"
+          "$AAPT" dump badging "$FINAL" | grep -q "versionCode='42068'"
+          "$AAPT" dump badging "$FINAL" | grep -q "versionName='4.6.8-rc34'"
+          sha256sum "$FINAL" | tee "$OUT/THF-Terra-RC34-INSTALLABLE-QA.sha256"
+          echo TERRA_RC34_INSTALLABLE_QA=PASS
+          REMOTE
+
+      - name: Retrieve installable APK evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p terra-rc34-installable
+          for f in THF-Terra-RC34-INSTALLABLE-QA.apk THF-Terra-RC34-INSTALLABLE-QA.badging.txt THF-Terra-RC34-INSTALLABLE-QA.sha256; do
+            gcloud compute scp "$GCP_BUILDER:~/thf-terra-rc34-gate/out-android-v3/$f" terra-rc34-installable/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          done
+          sha256sum terra-rc34-installable/THF-Terra-RC34-INSTALLABLE-QA.apk
+
+      - name: Upload installable QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-Terra-RC34-INSTALLABLE-QA
+          path: terra-rc34-installable/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
