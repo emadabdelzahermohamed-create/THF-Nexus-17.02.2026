@@ -119,7 +119,7 @@ jobs:
               if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
               if i.is_dir():t.mkdir(parents=True,exist_ok=True);continue
               t.parent.mkdir(parents=True,exist_ok=True)
-              with z.open(i) as a,open(t,'wb') as b:shutil.copyfileobj(a,b)
+              with z.open(i) as aa,open(t,'wb') as bb:shutil.copyfileobj(aa,bb)
           PY
           root=$(find src/extracted -type f -name settings.gradle -path '*/ANDROID_PLAY_SOURCE/settings.gradle' -printf '%h\n' | head -1)
           test -n "$root"
@@ -131,7 +131,7 @@ jobs:
           tree_sha=$(sha256sum "out/$KIND.candidate-tree.sha256" | awk '{print $1}')
           printf 'CANDIDATE_TREE_MANIFEST_SHA256=%s\nREAL_FUNCTION_SOURCE_CONTRACT=PASS\nCANONICAL_ARCHIVE_MUTATED=NO\nOFFLINE_AUTHORITY=LOCAL_ONLY_NO_FAKE_ONLINE_STATE\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' "$tree_sha" >> "out/$KIND.summary.txt"
           echo "root=$root" >> "$GITHUB_OUTPUT"
-      - name: Generate throwaway QA signing material
+      - name: Generate throwaway QA signing material matching source contract
         env:
           KIND: ${{ matrix.kind }}
         shell: bash
@@ -140,11 +140,9 @@ jobs:
           QA_PASS=$(openssl rand -hex 24)
           QA_KEYSTORE="$RUNNER_TEMP/thf-${KIND}-qa.jks"
           echo "::add-mask::$QA_PASS"
+          echo "::add-mask::$QA_KEYSTORE"
           keytool -genkeypair -keystore "$QA_KEYSTORE" -storepass "$QA_PASS" -keypass "$QA_PASS" -alias thf-qa -dname "CN=THF QA,O=THF,C=US" -keyalg RSA -keysize 2048 -validity 2 >/dev/null 2>&1
-          QA_B64=$(base64 -w0 "$QA_KEYSTORE")
-          echo "::add-mask::$QA_B64"
-          printf 'RELEASE_KEYSTORE_B64=%s\nRELEASE_STORE_PASSWORD=%s\nRELEASE_KEY_ALIAS=thf-qa\nRELEASE_KEY_PASSWORD=%s\n' "$QA_B64" "$QA_PASS" "$QA_PASS" >> "$GITHUB_ENV"
-          rm -f "$QA_KEYSTORE"
+          printf 'THF_KEYSTORE_PATH=%s\nTHF_KEYSTORE_PASSWORD=%s\nTHF_KEY_ALIAS=thf-qa\nTHF_KEY_PASSWORD=%s\n' "$QA_KEYSTORE" "$QA_PASS" "$QA_PASS" >> "$GITHUB_ENV"
           printf 'SIGNING_CLASS=EPHEMERAL_QA_ONLY\nPRODUCTION_SIGNING=NO\nQA_KEY_PERSISTED=NO\n' >> "out/$KIND.summary.txt"
       - name: Android regression, API36 package and payload evidence
         env:
@@ -176,7 +174,9 @@ jobs:
           cert_sha=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$GITHUB_WORKSPACE/out/$KIND.apksigner.txt"|head -1)
           cp "$apk" "$GITHUB_WORKSPACE/out/$KIND-real-game-overlay-release.apk"
           printf '%s  %s\n' "$apk_sha" "$KIND-real-game-overlay-release.apk" > "$GITHUB_WORKSPACE/out/$KIND.apk.sha256"
-          printf 'ANDROID_REGRESSION_TASKS_RUN=%s\nASSEMBLE_RELEASE=PASS\nAPK_ZIP_INTEGRITY=PASS\nAPK_SIGNATURE_VERIFY=PASS\nQA_CERT_SHA256=%s\nAPK_SHA256=%s\nAPK_PACKAGE=%s\nTARGET_SDK=%s\nPRODUCTION_SIGNING=NO\nPHYSICAL_DEVICE_REQUIRED=YES\n' "$ran" "$cert_sha" "$apk_sha" "$pkg" "$sdk" >> "$GITHUB_WORKSPACE/out/$KIND.summary.txt"
+          rm -f "$THF_KEYSTORE_PATH"
+          test ! -e "$THF_KEYSTORE_PATH"
+          printf 'ANDROID_REGRESSION_TASKS_RUN=%s\nASSEMBLE_RELEASE=PASS\nAPK_ZIP_INTEGRITY=PASS\nAPK_SIGNATURE_VERIFY=PASS\nQA_CERT_SHA256=%s\nAPK_SHA256=%s\nAPK_PACKAGE=%s\nTARGET_SDK=%s\nQA_KEY_REMOVED_AFTER_BUILD=YES\nPRODUCTION_SIGNING=NO\nPHYSICAL_DEVICE_REQUIRED=YES\n' "$ran" "$cert_sha" "$apk_sha" "$pkg" "$sdk" >> "$GITHUB_WORKSPACE/out/$KIND.summary.txt"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
