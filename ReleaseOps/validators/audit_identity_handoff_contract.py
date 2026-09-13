@@ -21,7 +21,9 @@ PATTERNS={
  'handoff_send': re.compile(r'(?i)(Intent\s*\(|startActivity|ACTION_VIEW|deep.?link|app.?link|handoff)'),
  'handoff_receive': re.compile(r'(?i)(getIntent\s*\(|intent\.data|getData\s*\(|onNewIntent|intent-filter|scheme=|host=)'),
 }
-SENSITIVE_QUERY=re.compile(r'(?i)(access[_-]?token|refresh[_-]?token|bearer|session|password|secret)=')
+# Only URL-query style transport of secrets is a violation here. Normal in-memory assignments
+# such as `accessToken = ...` must not be misclassified as query-string leakage.
+SENSITIVE_QUERY=re.compile(r'(?i)[?&](?:access[_-]?token|refresh[_-]?token|bearer|session|password|secret)=')
 CLEAR_HTTP=re.compile(r'(?i)\b(?:http|ws)://(?!schemas\.android\.com)[^\s\"\'<>)]*')
 
 
