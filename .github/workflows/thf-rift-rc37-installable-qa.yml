@@ -1,0 +1,165 @@
+name: THF Rift RC37 Installable QA APK
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-rift-rc37-installable-qa.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  build-installable-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Build isolated canonical Rift RC37 QA APK
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-rift-rc37-gate"
+          SRC="$ROOT/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
+          EXPECTED="3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914"
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"
+          WORK="$ROOT/work-installable-v1"
+          OUT="$ROOT/out-installable-v1"
+          FINAL="$OUT/THF-Rift-RC37-INSTALLABLE-QA.apk"
+
+          test -f "$SRC"
+          BEFORE=$(sha256sum "$SRC" | awk '{print $1}')
+          echo RIFT_RC37_SOURCE_SHA256="$BEFORE"
+          test "$BEFORE" = "$EXPECTED"
+          unzip -tq "$SRC" >/dev/null
+          test -d "$SDK"
+
+          rm -rf "$WORK" "$OUT"
+          mkdir -p "$WORK" "$OUT"
+          unzip -q "$SRC" -d "$WORK"
+          PROJ="$WORK/THF_Nexus_Arena_Core/android-arena"
+          test -f "$PROJ/app/build.gradle"
+          test -f "$PROJ/settings.gradle"
+
+          export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"
+          printf "sdk.dir=%s\n" "$SDK" > "$PROJ/local.properties"
+
+          if [ -x "$PROJ/gradlew" ]; then
+            GRADLE="$PROJ/gradlew"
+          elif command -v gradle >/dev/null 2>&1; then
+            GRADLE=$(command -v gradle)
+          else
+            TERRA_GRADLE="$HOME/thf-terra-rc34-gate/work-android-v3/android/build/gradlew"
+            TERRA_WRAPPER="$HOME/thf-terra-rc34-gate/work-android-v3/android/build/gradle"
+            test -x "$TERRA_GRADLE"
+            test -d "$TERRA_WRAPPER/wrapper"
+            cp "$TERRA_GRADLE" "$PROJ/gradlew"
+            cp -a "$TERRA_WRAPPER" "$PROJ/gradle"
+            chmod +x "$PROJ/gradlew"
+            GRADLE="$PROJ/gradlew"
+            echo RIFT_GRADLE_TOOLING_SOURCE=THF_TERRA_WRAPPER_COPY_IN_EPHEMERAL_WORKDIR
+          fi
+
+          cd "$PROJ"
+          "$GRADLE" --version
+          "$GRADLE" --no-daemon clean assembleDebug
+
+          APK=$(find . -type f -name "*.apk" -path "*/build/outputs/apk/*" | head -1)
+          test -n "$APK"
+          echo RAW_APK="$APK"
+
+          BT=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          AAPT="$BT/aapt"
+          APKSIGNER="$BT/apksigner"
+          ZIPALIGN="$BT/zipalign"
+          test -x "$AAPT" && test -x "$APKSIGNER" && test -x "$ZIPALIGN"
+
+          BADGING=$("$AAPT" dump badging "$APK")
+          printf '%s\n' "$BADGING" | sed -n '1,8p'
+          grep -q "package: name='com.topherofit.thf.rift'" <<<"$BADGING"
+          grep -q "versionCode='42071'" <<<"$BADGING"
+          grep -q "versionName='4.7.1-rc37'" <<<"$BADGING"
+
+          TMP="$OUT/rift-rc37-aligned.apk"
+          if "$ZIPALIGN" -c -p 4 "$APK" >/dev/null 2>&1; then
+            cp "$APK" "$TMP"
+          else
+            "$ZIPALIGN" -f -p 4 "$APK" "$TMP"
+          fi
+
+          if "$APKSIGNER" verify "$TMP" >/dev/null 2>&1; then
+            cp "$TMP" "$FINAL"
+            echo RIFT_QA_SIGNING=EXISTING_DEBUG_SIGNATURE
+          else
+            KS="$ROOT/qa-debug.keystore"
+            if [ ! -f "$KS" ]; then
+              keytool -genkeypair -noprompt -keystore "$KS" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=THF QA,C=US" -keyalg RSA -keysize 2048 -validity 3650 >/dev/null 2>&1
+            fi
+            "$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$FINAL" "$TMP"
+            echo RIFT_QA_SIGNING=THF_QA_DEBUG_KEYSTORE
+          fi
+
+          "$APKSIGNER" verify --verbose --print-certs "$FINAL"
+          "$ZIPALIGN" -c -p 4 "$FINAL"
+          FINAL_BADGING=$("$AAPT" dump badging "$FINAL")
+          printf '%s\n' "$FINAL_BADGING" | tee "$OUT/THF-Rift-RC37-INSTALLABLE-QA.badging.txt"
+          grep -q "package: name='com.topherofit.thf.rift'" <<<"$FINAL_BADGING"
+          grep -q "versionCode='42071'" <<<"$FINAL_BADGING"
+          grep -q "versionName='4.7.1-rc37'" <<<"$FINAL_BADGING"
+          sha256sum "$FINAL" | tee "$OUT/THF-Rift-RC37-INSTALLABLE-QA.sha256"
+          stat -c 'RIFT_QA_APK_SIZE_BYTES=%s' "$FINAL"
+
+          AFTER=$(sha256sum "$SRC" | awk '{print $1}')
+          echo RIFT_RC37_SOURCE_SHA256_AFTER="$AFTER"
+          test "$AFTER" = "$EXPECTED"
+          if find "$WORK" -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' | grep -q .; then
+            echo RIFT_WAVE_ISOLATION=FAIL
+            exit 41
+          fi
+          echo RIFT_WAVE_ISOLATION=PASS
+          echo CANONICAL_SOURCE_MUTATION=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo RIFT_RC37_INSTALLABLE_QA=PASS
+          REMOTE
+
+      - name: Retrieve Rift QA evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p rift-rc37-installable
+          for f in THF-Rift-RC37-INSTALLABLE-QA.apk THF-Rift-RC37-INSTALLABLE-QA.badging.txt THF-Rift-RC37-INSTALLABLE-QA.sha256; do
+            gcloud compute scp "$GCP_BUILDER:~/thf-rift-rc37-gate/out-installable-v1/$f" rift-rc37-installable/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          done
+          sha256sum rift-rc37-installable/THF-Rift-RC37-INSTALLABLE-QA.apk
+
+      - name: Upload Rift installable QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-Rift-RC37-INSTALLABLE-QA
+          path: rift-rc37-installable/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
