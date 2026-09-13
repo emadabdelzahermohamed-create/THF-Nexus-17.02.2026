@@ -1,0 +1,33 @@
+name: THF Games Tooling Regression V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/games_factory/patch_android36_predictive_back_v1.py'
+      - 'ReleaseOps/tests/test_android36_candidate_manifest_v1.py'
+      - 'ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py'
+      - 'ReleaseOps/tests/test_game_runtime_binding_audit_v2.py'
+      - '.github/workflows/thf-games-tooling-regression-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Python syntax and fail-closed regression suite
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile \
+            ReleaseOps/games_factory/patch_android36_predictive_back_v1.py \
+            ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py \
+            ReleaseOps/tests/test_android36_candidate_manifest_v1.py \
+            ReleaseOps/tests/test_game_runtime_binding_audit_v2.py
+          python3 -m unittest \
+            ReleaseOps.tests.test_android36_candidate_manifest_v1 \
+            ReleaseOps.tests.test_game_runtime_binding_audit_v2 -v
