@@ -36,8 +36,8 @@ jobs:
           set -Eeuo pipefail
           mkdir -p out
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
-            --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='python3 -' > out/discovery.json <<'PY'
-          import hashlib, json, os, pathlib, re
+            --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='python3 -' > out/discovery.raw <<'PY'
+          import hashlib, json, pathlib
           home=pathlib.Path.home()
           skip_tokens=('wave-mawja','/wave/','wave_','wave-')
           game_tokens=('learn_games','learn-games','fitness_games','fitness-games','spark','rush')
@@ -49,58 +49,53 @@ jobs:
               if any(t in low for t in skip_tokens): continue
               if child.name.startswith('.') or child.name in {'go','snap'}: continue
               roots.append(child)
-          source=[]; assets=[]
+          source=[]; assets=[]; seen=set()
           def file_sha(p):
               h=hashlib.sha256()
               with p.open('rb') as f:
                   for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
               return h.hexdigest()
-          seen=set()
           for base in roots:
               for p in base.rglob('*'):
-                  try:
-                      rel=p.relative_to(home).as_posix(); low=rel.lower()
+                  try: rel=p.relative_to(home).as_posix(); low=rel.lower()
                   except Exception: continue
                   if any(t in low for t in skip_tokens): continue
                   if p.is_dir():
                       if any(t in low for t in game_tokens):
                           key=('d',rel)
-                          if key in seen: continue
-                          seen.add(key)
-                          markers=[]
-                          for name in ('project.godot','package.json','build.gradle','settings.gradle','AndroidManifest.xml','README.md'):
-                              if (p/name).is_file(): markers.append(name)
-                          try: direct_files=sum(1 for x in p.iterdir() if x.is_file())
-                          except OSError: direct_files=-1
-                          if markers or direct_files>2:
-                              source.append({'path':rel,'type':'dir','markers':markers,'direct_files':direct_files})
+                          if key not in seen:
+                              seen.add(key); markers=[]
+                              for name in ('project.godot','package.json','build.gradle','settings.gradle','AndroidManifest.xml','README.md'):
+                                  if (p/name).is_file(): markers.append(name)
+                              try: direct_files=sum(1 for x in p.iterdir() if x.is_file())
+                              except OSError: direct_files=-1
+                              if markers or direct_files>2: source.append({'path':rel,'type':'dir','markers':markers,'direct_files':direct_files})
                       if any(t in low for t in avatar_tokens):
                           key=('a',rel)
-                          if key not in seen:
-                              seen.add(key); assets.append({'path':rel,'type':'dir'})
+                          if key not in seen: seen.add(key); assets.append({'path':rel,'type':'dir'})
                       continue
-                  name=p.name.lower()
                   if any(t in low for t in game_tokens) and p.suffix.lower() in {'.zip','.tar','.gz','.xz','.json','.godot'}:
                       key=('f',rel)
-                      if key in seen: continue
-                      seen.add(key)
-                      row={'path':rel,'type':'file','size':p.stat().st_size}
-                      if p.suffix.lower()=='.zip' and p.stat().st_size < 2_000_000_000:
-                          try: row['sha256']=file_sha(p)
-                          except OSError: row['sha256_error']=True
-                      source.append(row)
+                      if key not in seen:
+                          seen.add(key); row={'path':rel,'type':'file','size':p.stat().st_size}
+                          if p.suffix.lower()=='.zip' and p.stat().st_size < 2_000_000_000:
+                              try: row['sha256']=file_sha(p)
+                              except OSError: row['sha256_error']=True
+                          source.append(row)
                   if any(t in low for t in avatar_tokens) and p.suffix.lower() in {'.zip','.blend','.glb','.gltf','.fbx','.bvh','.json'}:
                       key=('af',rel)
-                      if key in seen: continue
-                      seen.add(key); assets.append({'path':rel,'type':'file','size':p.stat().st_size})
+                      if key not in seen: seen.add(key); assets.append({'path':rel,'type':'file','size':p.stat().st_size})
                   if len(source)>=160 and len(assets)>=160: break
               if len(source)>=160 and len(assets)>=160: break
-          print(json.dumps({
-              'schema':'thf-small-games-lineage-avatar-discovery-v2',
-              'source_candidates':source[:160], 'source_candidate_count':len(source[:160]),
-              'avatar_asset_candidates':assets[:160], 'avatar_asset_candidate_count':len(assets[:160]),
-              'wave_paths_included':False,'read_only':True,'canonical_archives_mutated':False
-          },indent=2,sort_keys=True))
+          print(json.dumps({'schema':'thf-small-games-lineage-avatar-discovery-v2','source_candidates':source[:160],'source_candidate_count':len(source[:160]),'avatar_asset_candidates':assets[:160],'avatar_asset_candidate_count':len(assets[:160]),'wave_paths_included':False,'read_only':True,'canonical_archives_mutated':False},indent=2,sort_keys=True))
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/discovery.raw').read_text(errors='ignore')
+          start=raw.find('{')
+          if start < 0: raise SystemExit('no JSON object in discovery output')
+          x=json.loads(raw[start:])
+          pathlib.Path('out/discovery.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
           PY
       - name: Validate isolation and summarize
         run: |
@@ -115,6 +110,7 @@ jobs:
           print('wave_paths_included=false')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: THF-SMALL-GAMES-LINEAGE-AVATAR-DISCOVERY-V2
           path: out/
