@@ -1,0 +1,76 @@
+name: THF Pass Auth Candidate Source Snapshot V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-pass-auth-candidate-source-snapshot-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Snapshot exact auth/runtime source through IAP without mutation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out/src/thf/identity out/src/thf/infrastructure out/tests
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          REMOTE_LIST='src/thf/app.py src/thf/identity/service.py src/thf/infrastructure/database.py src/thf/platform/runtime.py tests/test_http_e2e.py tests/test_security_boundaries.py tests/test_unified_runtime.py'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' <<'REMOTE' > out/remote-manifest.txt
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          test -d "$ROOT"
+          echo 'SOURCE_ROOT_PRESENT=TRUE'
+          echo 'MUTATION_PERFORMED=FALSE'
+          echo 'WAVE_UNTOUCHED=TRUE'
+          for f in src/thf/app.py src/thf/identity/service.py src/thf/infrastructure/database.py src/thf/platform/runtime.py tests/test_http_e2e.py tests/test_security_boundaries.py tests/test_unified_runtime.py; do
+            test -f "$ROOT/$f"
+            sha256sum "$ROOT/$f"
+          done
+          REMOTE
+          for f in $REMOTE_LIST; do
+            mkdir -p "out/$(dirname "$f")"
+            gcloud compute scp "$GCP_BUILDER:~/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/$f" "out/$f" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          done
+          sha256sum out/src/thf/app.py out/src/thf/identity/service.py out/src/thf/infrastructure/database.py out/src/thf/platform/runtime.py out/tests/*.py > out/local-sha256.txt
+          python - <<'PY'
+          from pathlib import Path
+          remote=Path('out/remote-manifest.txt').read_text(errors='replace')
+          local=Path('out/local-sha256.txt').read_text(errors='replace')
+          assert 'SOURCE_ROOT_PRESENT=TRUE' in remote
+          assert 'MUTATION_PERFORMED=FALSE' in remote
+          assert 'WAVE_UNTOUCHED=TRUE' in remote
+          remote_hashes={line.split()[1].split('THF_NEXUS_6_FINAL/',1)[-1]:line.split()[0] for line in remote.splitlines() if len(line.split())==2 and len(line.split()[0])==64}
+          local_hashes={line.split()[1].replace('out/','',1):line.split()[0] for line in local.splitlines() if len(line.split())==2}
+          assert remote_hashes == local_hashes, (remote_hashes, local_hashes)
+          Path('out/TRUTH.txt').write_text('EXACT_SOURCE_HASH_MATCH=TRUE\nMUTATION_PERFORMED=FALSE\nWAVE_UNTOUCHED=TRUE\nDEPLOYMENT_PERFORMED=FALSE\nFINAL_OR_PLAY_READY=FALSE\n')
+          print('AUTH_SOURCE_SNAPSHOT=PASS')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-PASS-AUTH-CANDIDATE-SOURCE-SNAPSHOT-V1
+          path: out/
+          retention-days: 14
+          compression-level: 9
