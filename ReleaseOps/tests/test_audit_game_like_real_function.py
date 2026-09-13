@@ -43,6 +43,22 @@ class GameLikeRealFunctionTests(unittest.TestCase):
         r = mod.audit(root, 'fitness')
         self.assertEqual(r['source_contract'], 'PASS')
 
+    def test_fitness_contract_accepts_sensor_motion_and_plural_reps(self):
+        root = self._root('''
+            import android.view.MotionEvent
+            import android.view.Choreographer
+            import android.hardware.SensorManager
+            class MotionSession {
+              var reps = 0
+              fun onTouchEvent(event: MotionEvent): Boolean { reps = 0; return true }
+              fun doFrame(frameTimeNanos: Long) { Choreographer.getInstance().postFrameCallback { } }
+              fun sample(sensorManager: SensorManager) { reps += 1 }
+            }
+        ''')
+        r = mod.audit(root, 'fitness')
+        self.assertEqual(r['source_contract'], 'PASS')
+        self.assertNotIn('fitness_domain', r['missing_required_signals'])
+
     def test_ui_only_shell_fails(self):
         root = self._root('class Main { val title = "Welcome" }')
         r = mod.audit(root, 'learning')
