@@ -25,17 +25,22 @@ jobs:
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
-      - name: Read failed build evidence
+      - name: Read v2 failed verification evidence
         run: |
           set -Eeuo pipefail
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='set -u
-          ROOT="$HOME/thf-core-mobilefix1-live"; OUT="$ROOT/out"
+          ROOT="$HOME/thf-core-mobilefix1-live-v2"; OUT="$ROOT/out"; APK="$OUT/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk"
           echo "=== public url ==="; cat "$OUT/PUBLIC_URL.txt" 2>/dev/null || true
+          echo "=== pids/ports ==="; cat "$ROOT/backend.pid" 2>/dev/null || true; cat "$ROOT/cloudflared.pid" 2>/dev/null || true; ss -ltnp 2>/dev/null | grep ":18181" || true
           echo "=== local health ==="; cat "$OUT/local-health.json" 2>/dev/null || true
           echo "=== public health ==="; cat "$OUT/public-health.json" 2>/dev/null || true
           echo "=== backend tail ==="; tail -80 "$OUT/backend.log" 2>/dev/null || true
-          echo "=== cloudflared tail ==="; tail -80 "$OUT/cloudflared.log" 2>/dev/null || true
-          echo "=== gradle tail ==="; tail -160 "$OUT/gradle.log" 2>/dev/null || true
+          echo "=== cloudflared tail ==="; tail -60 "$OUT/cloudflared.log" 2>/dev/null || true
+          echo "=== gradle tail ==="; tail -120 "$OUT/gradle.log" 2>/dev/null || true
+          echo "=== badging ==="; cat "$OUT/badging.txt" 2>/dev/null || true
+          echo "=== signer ==="; cat "$OUT/apksigner.txt" 2>/dev/null || true
+          echo "=== generated build config ==="; BC=$(find "$ROOT/app/android/app/build/generated" -type f -name BuildConfig.java 2>/dev/null | head -1 || true); echo "$BC"; [ -n "$BC" ] && cat "$BC" || true
+          echo "=== dex url occurrences ==="; if [ -f "$APK" ]; then for d in $(zipinfo -1 "$APK" "classes*.dex" 2>/dev/null); do echo "DEX=$d"; unzip -p "$APK" "$d" | strings | grep -E "https://.*trycloudflare\.com|THF_BASE_URL|THF_PASS_URL" | head -20 || true; done; fi
           echo "=== outputs ==="; find "$OUT" -maxdepth 1 -type f -printf "%f %s bytes\n" | sort
-          echo "=== apk exists ==="; ls -l "$OUT/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk" 2>/dev/null || true
+          echo "=== apk sha ==="; [ -f "$APK" ] && sha256sum "$APK" || true
           '
