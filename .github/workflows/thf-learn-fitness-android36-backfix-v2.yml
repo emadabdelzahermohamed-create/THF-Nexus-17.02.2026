@@ -127,8 +127,15 @@ jobs:
           python3 - "$root" <<'PY'
           import pathlib,re,sys,xml.etree.ElementTree as ET
           root=pathlib.Path(sys.argv[1]); ns='http://schemas.android.com/apk/res/android'; ET.register_namespace('android',ns)
-          manifest=root/'app/src/main/AndroidManifest.xml'; tree=ET.parse(manifest); app=tree.getroot().find('application'); assert app is not None
-          app.set('{%s}enableOnBackInvokedCallback'%ns,'true'); tree.write(manifest,encoding='utf-8',xml_declaration=True)
+          manifest=root/'app/src/main/AndroidManifest.xml'; tree=ET.parse(manifest); manifest_root=tree.getroot(); app=manifest_root.find('application'); assert app is not None
+          app.set('{%s}enableOnBackInvokedCallback'%ns,'true')
+          camera_name='{%s}name'%ns; required_name='{%s}required'%ns
+          camera_features=[e for e in manifest_root.findall('uses-feature') if e.attrib.get(camera_name)=='android.hardware.camera']
+          if camera_features:
+            for e in camera_features: e.set(required_name,'false')
+          else:
+            e=ET.Element('uses-feature'); e.set(camera_name,'android.hardware.camera'); e.set(required_name,'false'); manifest_root.insert(0,e)
+          tree.write(manifest,encoding='utf-8',xml_declaration=True)
           mains=list((root/'app/src/main/java').rglob('MainActivity.java')); assert len(mains)==1,mains
           p=mains[0]; s=p.read_text(encoding='utf-8')
           old='@Override public void onBackPressed() { if (webView!=null && webView.canGoBack()) webView.goBack(); else super.onBackPressed(); }'
@@ -143,9 +150,11 @@ jobs:
           grep -q '"source_contract_status": "PASS"' "out/$KIND.real-function.json"
           grep -Rqs 'registerOnBackInvokedCallback' "$root/app/src/main/java"
           grep -q 'enableOnBackInvokedCallback="true"' "$root/app/src/main/AndroidManifest.xml"
+          grep -q 'android.hardware.camera' "$root/app/src/main/AndroidManifest.xml"
+          grep -q 'required="false"' "$root/app/src/main/AndroidManifest.xml"
           find "$root" -type f -not -path '*/.gradle/*' -not -path '*/build/*' -print0 | sort -z | xargs -0 sha256sum > "out/$KIND.candidate-tree.sha256"
           tree_sha=$(sha256sum "out/$KIND.candidate-tree.sha256"|awk '{print $1}')
-          printf 'CANDIDATE_TREE_MANIFEST_SHA256=%s\nREAL_FUNCTION_SOURCE_CONTRACT=PASS\nPREDICTIVE_BACK_API36_OVERLAY=PASS\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' "$tree_sha" >> "out/$KIND.summary.txt"
+          printf 'CANDIDATE_TREE_MANIFEST_SHA256=%s\nREAL_FUNCTION_SOURCE_CONTRACT=PASS\nPREDICTIVE_BACK_API36_OVERLAY=PASS\nCAMERA_HARDWARE_OPTIONAL=PASS\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' "$tree_sha" >> "out/$KIND.summary.txt"
           echo "root=$root" >> "$GITHUB_OUTPUT"
 
       - name: Generate ephemeral QA signing matching source contract
