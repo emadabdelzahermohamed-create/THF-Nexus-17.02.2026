@@ -65,8 +65,11 @@ jobs:
           APK=$(find . -type f -name "*.apk" -path "*/build/outputs/apk/*" | head -1)
           test -n "$APK"
           echo "RAW_APK=$APK"
-          "$AAPT" dump badging "$APK" | head -5
-          "$AAPT" dump badging "$APK" | grep -q "package: name='com.topherofit.thf.terra'"
+          BADGING=$("$AAPT" dump badging "$APK")
+          printf '%s\n' "$BADGING" | sed -n '1,5p'
+          grep -q "package: name='com.topherofit.thf.terra'" <<<"$BADGING"
+          grep -q "versionCode='42068'" <<<"$BADGING"
+          grep -q "versionName='4.6.8-rc34'" <<<"$BADGING"
 
           KS="$ROOT/qa-debug.keystore"
           if [ ! -f "$KS" ]; then
@@ -85,10 +88,11 @@ jobs:
           "$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$FINAL" "$TMP"
           "$APKSIGNER" verify --verbose --print-certs "$FINAL"
           "$ZIPALIGN" -c -p 4 "$FINAL"
-          "$AAPT" dump badging "$FINAL" | tee "$OUT/THF-Terra-RC34-INSTALLABLE-QA.badging.txt"
-          "$AAPT" dump badging "$FINAL" | grep -q "package: name='com.topherofit.thf.terra'"
-          "$AAPT" dump badging "$FINAL" | grep -q "versionCode='42068'"
-          "$AAPT" dump badging "$FINAL" | grep -q "versionName='4.6.8-rc34'"
+          FINAL_BADGING=$("$AAPT" dump badging "$FINAL")
+          printf '%s\n' "$FINAL_BADGING" | tee "$OUT/THF-Terra-RC34-INSTALLABLE-QA.badging.txt"
+          grep -q "package: name='com.topherofit.thf.terra'" <<<"$FINAL_BADGING"
+          grep -q "versionCode='42068'" <<<"$FINAL_BADGING"
+          grep -q "versionName='4.6.8-rc34'" <<<"$FINAL_BADGING"
           sha256sum "$FINAL" | tee "$OUT/THF-Terra-RC34-INSTALLABLE-QA.sha256"
           echo TERRA_RC34_INSTALLABLE_QA=PASS
           REMOTE
