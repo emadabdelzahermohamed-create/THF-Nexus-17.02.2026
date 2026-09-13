@@ -21,10 +21,10 @@ PHASE=init
 on_err() {
   rc=$?
   echo "GODOT_RUNTIME_FIXED_GATE=FAIL phase=$PHASE rc=$rc" >&2
-  for f in "$OUT/import.log" "$OUT/boot.log" "$OUT/template.log" "$OUT/export.log"; do
+  for f in "$OUT/import.log" "$OUT/boot.log" "$OUT/template.log" "$OUT/export.log" "$OUT/apksigner.txt" "$OUT/zipalign.txt" "$OUT/badging.txt"; do
     if [ -f "$f" ]; then
       echo "===== $(basename "$f") tail =====" >&2
-      tail -n 120 "$f" >&2 || true
+      tail -n 160 "$f" >&2 || true
     fi
   done
   exit "$rc"
@@ -135,14 +135,44 @@ APK="$OUT/$OUTPUT_BASENAME"
 timeout 20m "$GODOT" --headless --path "$PROJECT" --export-debug "$PRESET" "$APK" >"$OUT/export.log" 2>&1
 test -s "$APK"
 
-PHASE=apk_verification
 APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
 ZIPALIGN="$SDK/build-tools/36.0.0/zipalign"
 AAPT2="$SDK/build-tools/36.0.0/aapt2"
+
+# Godot can emit a structurally valid but unsigned APK when the isolated HOME has no debug keystore.
+# Recover only with an ephemeral QA keystore. This is intentionally NOT production signing.
+PHASE=apk_signature_verify_initial
+set +e
 "$APKSIGNER" verify --verbose "$APK" >"$OUT/apksigner.txt" 2>&1
+verify_rc=$?
+set -e
+if [ "$verify_rc" -ne 0 ]; then
+  PHASE=apk_qa_sign_recovery
+  echo "APK_SIGNATURE_INITIAL=FAIL; applying ephemeral QA signing recovery" | tee -a "$OUT/apksigner.txt"
+  ALIGNED="$OUT/aligned-unsigned.apk"
+  "$ZIPALIGN" -f -p 4 "$APK" "$ALIGNED" >"$OUT/zipalign-recovery.txt" 2>&1
+  KS="$ROOT/qa-debug.keystore"
+  keytool -genkeypair -noprompt -keystore "$KS" -storepass android -alias androiddebugkey -keypass android \
+    -dname 'CN=THF Runtime QA,O=THF,C=US' -keyalg RSA -keysize 2048 -validity 3650 >/dev/null 2>&1
+  SIGNED="$OUT/signed-recovered.apk"
+  "$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android \
+    --out "$SIGNED" "$ALIGNED"
+  mv "$SIGNED" "$APK"
+  rm -f "$ALIGNED" "$KS"
+  QA_SIGN_RECOVERY=true
+else
+  QA_SIGN_RECOVERY=false
+fi
+
+PHASE=apk_signature_verify_final
+"$APKSIGNER" verify --verbose "$APK" >"$OUT/apksigner-final.txt" 2>&1
+PHASE=apk_zipalign_verify
 "$ZIPALIGN" -c -v 4 "$APK" >"$OUT/zipalign.txt" 2>&1
+PHASE=apk_badging_dump
 "$AAPT2" dump badging "$APK" >"$OUT/badging.txt"
+PHASE=apk_package_guard
 grep -q "package: name='$EXPECTED_PACKAGE'" "$OUT/badging.txt"
+PHASE=apk_target_sdk_guard
 grep -q "targetSdkVersion:'36'" "$OUT/badging.txt"
 
 PHASE=godot_payload_guard
@@ -158,7 +188,7 @@ test "$PAYLOAD" = PASS
 PHASE=canonical_sha_after
 APK_SHA="$(sha256sum "$APK" | awk '{print $1}')"
 test "$(sha256sum "$SRC" | awk '{print $1}')" = "$FULL_SHA"
-printf 'status=PASS\ncanonical_sha256=%s\napk_sha256=%s\nasset_count=%s\ngodot_payload=%s\npackage=%s\ntarget_sdk=36\nproduction_signing=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' \
-  "$FULL_SHA" "$APK_SHA" "$ASSET_COUNT" "$PAYLOAD" "$EXPECTED_PACKAGE" | tee "$OUT/TRUTH.txt"
+printf 'status=PASS\ncanonical_sha256=%s\napk_sha256=%s\nasset_count=%s\ngodot_payload=%s\npackage=%s\ntarget_sdk=36\nqa_sign_recovery=%s\nproduction_signing=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' \
+  "$FULL_SHA" "$APK_SHA" "$ASSET_COUNT" "$PAYLOAD" "$EXPECTED_PACKAGE" "$QA_SIGN_RECOVERY" | tee "$OUT/TRUTH.txt"
 PHASE=complete
 echo GODOT_RUNTIME_FIXED_GATE=PASS
