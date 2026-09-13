@@ -35,8 +35,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p out
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/source-structure.json <<'PY'
-          import hashlib,json,pathlib,tempfile,zipfile,collections,re
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/source-structure.raw <<'PY'
+          import hashlib,json,pathlib,zipfile,collections
           home=pathlib.Path.home()
           cases={
             'learn':(home/'thf-small-learn-games/source.zip','ce8547851c9573db02603ea6f11e020a1b7d346af0cac51e07947304f1a7c1f9'),
@@ -48,7 +48,6 @@ jobs:
             with zipfile.ZipFile(zp) as z:
               bad=z.testzip(); assert bad is None,(name,bad)
               names=[n for n in z.namelist() if not n.endswith('/')]
-              # Path-only inventory: no arbitrary source contents, URLs, tokens or credentials are emitted.
               ext=collections.Counter(pathlib.PurePosixPath(n).suffix.lower() or '<none>' for n in names)
               safe=[]
               for n in names:
@@ -66,14 +65,19 @@ jobs:
           print(json.dumps(out,indent=2,sort_keys=True))
           PY
           python3 - <<'PY'
-          import json
-          x=json.load(open('out/source-structure.json'))
+          import json,pathlib
+          raw=pathlib.Path('out/source-structure.raw').read_text(errors='ignore')
+          start=raw.find('{')
+          if start < 0: raise SystemExit('source structure JSON missing')
+          x=json.loads(raw[start:])
+          pathlib.Path('out/source-structure.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
           assert x['read_only'] and not x['wave_files_read_or_changed']
           for n,c in x['cases'].items():
             assert c['zip_integrity']=='PASS'
             print(n,'files=',c['file_count'],'android_gradle=',c['has_android_gradle'],'godot=',c['has_godot_project'],'web=',c['has_web_package'])
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: THF-LEARN-FITNESS-SOURCE-STRUCTURE-V1
           path: out/
