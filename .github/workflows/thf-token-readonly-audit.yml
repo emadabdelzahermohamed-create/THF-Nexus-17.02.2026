@@ -24,12 +24,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
+      - name: Unit-test canonical invariant gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_readonly_invariant_gate.py
+
       - name: Read-only Solana mainnet audit
         shell: bash
         run: |
           set -Eeuo pipefail
           chmod +x ReleaseOps/TokenOps/readonly_audit.sh
           TOKENOPS_OUT=tokenops-audit ReleaseOps/TokenOps/readonly_audit.sh | tee tokenops-audit-run.log
+
+      - name: Assert canonical mint invariants
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 ReleaseOps/TokenOps/readonly_invariant_gate.py tokenops-audit/token-audit.json --out tokenops-audit/invariant-receipt.json | tee tokenops-audit-invariant.log
+          grep -Eq '^THF_TOKENOPS_INVARIANT_GATE=(PASS|DEGRADED)$' tokenops-audit-invariant.log
 
       - name: Assert no signing or transaction execution
         shell: bash
@@ -42,6 +56,13 @@ jobs:
           grep -qx 'WAVE_UNTOUCHED=TRUE' tokenops-audit/SUMMARY.txt
           echo THF_TOKENOPS_SAFETY_GATE=PASS
 
+      - name: Refresh evidence SHA-256 including invariant receipt
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          (cd tokenops-audit && sha256sum token-audit.json mint-account.json token-supply.json largest-accounts.json largest-account-details.json recent-signatures.json rpc-slot.json SUMMARY.txt invariant-receipt.json > SHA256SUMS.txt)
+          (cd tokenops-audit && sha256sum -c SHA256SUMS.txt)
+
       - name: Upload audit evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -49,5 +70,6 @@ jobs:
           path: |
             tokenops-audit/
             tokenops-audit-run.log
+            tokenops-audit-invariant.log
           if-no-files-found: error
           retention-days: 30
