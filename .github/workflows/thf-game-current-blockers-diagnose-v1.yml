@@ -1,0 +1,85 @@
+name: THF Game Current Blockers Diagnose V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-game-current-blockers-diagnose-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only blocker classification
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='python3 -' > out/diagnose.raw <<'PY'
+          import json,pathlib,re
+          home=pathlib.Path.home(); out={'schema':'thf-game-current-blockers-diagnose-v1','terra_rift':{},'spark_build':{},'read_only':True,'secrets_emitted':False,'wave_files_read_or_changed':False}
+          classes={
+            'localhost':re.compile(r'https?://(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?',re.I),
+            'example_com':re.compile(r'https?://example\.com(?::\d+)?',re.I),
+            'replace_me':re.compile(r'REPLACE[_ -]?ME',re.I),
+            'your_endpoint':re.compile(r'YOUR[_ -]?(?:API|URL|HOST)',re.I),
+            'placeholder_name':re.compile(r'placeholder[_ -]?(?:url|endpoint)',re.I),
+          }
+          ext={'.gd','.tscn','.tres','.godot','.cfg','.ini','.json','.cs','.java','.kt','.xml','.gradle','.properties','.js','.ts','.tsx','.html','.py'}
+          for kind in ('terra','rift'):
+              root=home/'thf-terra-rift-staging-authority-v1'/kind/'work'; hits=[]
+              if root.is_dir():
+                  for p in root.rglob('*'):
+                      if not p.is_file() or p.suffix.lower() not in ext or p.stat().st_size>2_000_000: continue
+                      try:s=p.read_text(errors='ignore')
+                      except OSError:continue
+                      found=[name for name,rx in classes.items() if rx.search(s)]
+                      if found:hits.append({'file':p.relative_to(root).as_posix(),'classes':found})
+              out['terra_rift'][kind]={'tree_exists':root.is_dir(),'marker_files':hits,'marker_file_count':len(hits)}
+          # Spark prior build daemon evidence: filenames/status only plus redacted tail.
+          root=home/'thf-spark-rush-local-practice-candidate-v1'; logs=[]
+          for p in sorted(root.rglob('*.log')) if root.is_dir() else []:
+              rel=p.relative_to(root).as_posix()
+              if 'gradle-home-THF-Spark' not in rel and 'THF-Spark-RC2-Local-Practice' not in rel: continue
+              text=p.read_text(errors='ignore'); tail=[]
+              for line in text.splitlines()[-100:]:
+                  line=re.sub(r'https?://\S+','<URL_REDACTED>',line)
+                  line=re.sub(r'(?i)(password|token|secret|key)\s*[=:]\s*\S+',r'\1=<REDACTED>',line)
+                  tail.append(line[:600])
+              logs.append({'file':rel,'size':p.stat().st_size,'tail':tail})
+          out['spark_build']={'root_exists':root.is_dir(),'log_count':len(logs),'logs':logs[:12]}
+          print(json.dumps(out,indent=2,sort_keys=True))
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/diagnose.raw').read_text(errors='ignore');i=raw.find('{')
+          if i<0:raise SystemExit('diagnostic JSON missing')
+          x=json.loads(raw[i:]);pathlib.Path('out/diagnose.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          for k,v in x['terra_rift'].items(): print(k+'_marker_files='+str(v['marker_file_count']),v['marker_files'])
+          print('spark_log_count='+str(x['spark_build']['log_count']))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-GAME-CURRENT-BLOCKERS-DIAGNOSE-V1
+          path: out/
+          retention-days: 7
