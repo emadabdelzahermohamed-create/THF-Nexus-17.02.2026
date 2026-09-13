@@ -1,0 +1,112 @@
+name: THF Core Terra Rift Play SDK Matrix V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-play-sdk-matrix-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect pinned Core Terra Rift sources read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          CORE="$HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
+          TERRA="$HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip"
+          RIFT="$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
+          CORE_SHA=6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a
+          TERRA_SHA=eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+          RIFT_SHA=3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+          for spec in "CORE:$CORE:$CORE_SHA" "TERRA:$TERRA:$TERRA_SHA" "RIFT:$RIFT:$RIFT_SHA"; do
+            IFS=: read -r label path sha <<<"$spec"
+            test -f "$path"
+            got=$(sha256sum "$path" | awk '{print $1}')
+            echo "${label}_SOURCE_SHA256=$got"
+            test "$got" = "$sha"
+          done
+          TMP=$(mktemp -d /tmp/thf-play-sdk-matrix-v1.XXXXXX)
+          trap 'rm -rf "$TMP"' EXIT
+          python3 - "$CORE" "$TERRA" "$RIFT" "$TMP" <<'PY'
+          import pathlib,sys,zipfile,shutil
+          dst=pathlib.Path(sys.argv[4]).resolve()
+          for label,src in zip(('CORE','TERRA','RIFT'),sys.argv[1:4]):
+              out=(dst/label).resolve(); out.mkdir()
+              with zipfile.ZipFile(src) as z:
+                  bad=z.testzip()
+                  if bad: raise SystemExit(f'{label}_ZIP_INTEGRITY_FAIL={bad}')
+                  for info in z.infolist():
+                      rel=pathlib.PurePosixPath(info.filename)
+                      if rel.is_absolute() or '..' in rel.parts: raise SystemExit(f'{label}_UNSAFE_MEMBER={info.filename}')
+                      target=(out/pathlib.Path(*rel.parts)).resolve()
+                      if target != out and out not in target.parents: raise SystemExit(f'{label}_ZIP_ESCAPE={info.filename}')
+                  z.extractall(out)
+              print(f'{label}_ZIP_INTEGRITY=PASS')
+          PY
+          scan_one() {
+            label="$1"; root="$2"
+            echo "APP=$label"
+            if find "$root" \( -path '*wave-mawja*' -o -path '*WAVE_MAWJA*' \) -print -quit | grep -q .; then echo "${label}_WAVE_ISOLATION=FAIL"; exit 41; fi
+            echo "${label}_WAVE_ISOLATION=PASS"
+            scan() { key="$1"; re="$2"; n=$(grep -RIE --binary-files=without-match --exclude-dir=.godot --exclude-dir=build --exclude='*.lock' "$re" "$root" 2>/dev/null | wc -l || true); echo "${label}_${key}=$n"; }
+            scan GOOGLE_MOBILE_ADS_REFERENCES 'com\.google\.android\.gms\.ads|play-services-ads|admob|MobileAds'
+            scan FIREBASE_ANALYTICS_REFERENCES 'firebase-analytics|com\.google\.firebase\.analytics|FirebaseAnalytics'
+            scan FACEBOOK_ADS_REFERENCES 'facebook.*ads|audience-network|com\.facebook\.ads'
+            scan APPLOVIN_REFERENCES 'applovin|AppLovin'
+            scan UNITY_ADS_REFERENCES 'unity-ads|UnityAds'
+            scan PLAY_INTEGRITY_REFERENCES 'play-integrity|com\.google\.android\.play\.core\.integrity|IntegrityManager|StandardIntegrityManager'
+            scan BILLING_REFERENCES 'billingclient|com\.android\.billingclient|play-billing'
+            scan INSTALL_REFERRER_REFERENCES 'installreferrer|install-referrer'
+            scan AD_ID_REFERENCES 'AD_ID|com\.google\.android\.gms\.permission\.AD_ID'
+            scan CONSENT_UMP_REFERENCES 'user-messaging-platform|ConsentInformation|UserMessagingPlatform'
+            scan CAMERA_PERMISSION_REFERENCES 'android.permission.CAMERA|permissions/camera=true'
+            scan RECORD_AUDIO_PERMISSION_REFERENCES 'android.permission.RECORD_AUDIO|permissions/record_audio=true'
+            scan FINE_LOCATION_PERMISSION_REFERENCES 'android.permission.ACCESS_FINE_LOCATION|permissions/access_fine_location=true'
+            scan COARSE_LOCATION_PERMISSION_REFERENCES 'android.permission.ACCESS_COARSE_LOCATION|permissions/access_coarse_location=true'
+            scan INTERNET_PERMISSION_REFERENCES 'android.permission.INTERNET|permissions/internet=true'
+            manifests=$(find "$root" -type f -name AndroidManifest.xml -not -path '*/build/*' | wc -l)
+            echo "${label}_SOURCE_MANIFEST_COUNT=$manifests"
+          }
+          scan_one CORE "$TMP/CORE"
+          scan_one TERRA "$TMP/TERRA"
+          scan_one RIFT "$TMP/RIFT"
+          for spec in "CORE:$CORE:$CORE_SHA" "TERRA:$TERRA:$TERRA_SHA" "RIFT:$RIFT:$RIFT_SHA"; do
+            IFS=: read -r label path sha <<<"$spec"
+            got=$(sha256sum "$path" | awk '{print $1}')
+            echo "${label}_SOURCE_SHA256_AFTER=$got"
+            test "$got" = "$sha"
+          done
+          echo CANONICAL_SOURCE_MUTATION=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo THF_PLAY_SDK_MATRIX_V1=PASS
+          REMOTE
