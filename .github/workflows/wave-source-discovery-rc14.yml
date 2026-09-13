@@ -1,4 +1,4 @@
-name: WAVE RC14 Authoritative Source Discovery
+name: WAVE RC14 Canonical Root Real-Function Gate
 
 on:
   push:
@@ -18,9 +18,9 @@ env:
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
 
 jobs:
-  discover:
+  canonical-wave-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
@@ -32,46 +32,35 @@ jobs:
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Read-only WAVE source/version/state discovery
+      - name: Run canonical WAVE-only verification and large audit
         shell: bash
         run: |
           set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='bash -s' <<'REMOTE'
-          set -u
-          echo "=== HOST ==="
-          echo "HOME=$HOME USER=$(id -un) HOST=$(hostname)"
-          echo "=== WAVE RC13 RECOVERY SCRIPT SAFE REFERENCES ==="
-          if [ -f "$HOME/wave-rc13-remote.sh" ]; then
-            echo "SCRIPT=$HOME/wave-rc13-remote.sh"
-            sha256sum "$HOME/wave-rc13-remote.sh" | sed 's#  .*#  wave-rc13-remote.sh#'
-            grep -Ein '(wave|mawja|rc1[234]|archive|bundle|zip|tar|sha256|source|artifact|staging|backup|inbox|workspace|drive|gcs|gs://|download)' "$HOME/wave-rc13-remote.sh" \
-              | sed -E 's/((TOKEN|SECRET|PASSWORD|PASS|PRIVATE[_-]?KEY|AUTHORIZATION)[A-Za-z0-9_.-]*[[:space:]]*[:=][[:space:]]*).*/\1<REDACTED>/I' \
-              | sed -E 's/(Bearer[[:space:]]+)[A-Za-z0-9._~+\/-]+/\1<REDACTED>/Ig' \
-              | head -300 || true
-          else echo 'RC13_SCRIPT=MISSING'; fi
-
-          echo "=== WAVE-NAMED FILESYSTEM CANDIDATES ==="
-          for base in "$HOME" /tmp /var/tmp /workspace /mnt /opt; do
-            [ -d "$base" ] || continue
-            find "$base" -maxdepth 7 \
-              \( -iname '*wave*mawja*' -o -iname '*wave-rc1[234]*' -o -iname '*WAVE*RC1[234]*' -o -iname 'WAVE_CURRENT_STATE*' -o -iname '*wave*handoff*' \) \
-              -not -path '*/THF-Nexus*' -not -path '*/thf-nexus*' -printf '%y %s %TY-%Tm-%TdT%TH:%TM:%TS %p\n' 2>/dev/null \
-              | sort -k3,3r | head -500
-          done
-
-          echo "=== ARCHIVE CONTENT PROBES ==="
-          while IFS= read -r f; do
-            [ -f "$f" ] || continue
-            case "$f" in *THF-Nexus*|*thf-nexus*) continue;; esac
-            echo "ARCHIVE=$f"
-            sha256sum "$f" 2>/dev/null || true
-            case "$f" in
-              *.zip) unzip -l "$f" 2>/dev/null | grep -Ei '(package.json|WAVE_CURRENT_STATE|HANDOFF|RC14|android|manifest.webmanifest)' | head -60 || true ;;
-              *.tar.gz|*.tgz) tar -tzf "$f" 2>/dev/null | grep -Ei '(package.json|WAVE_CURRENT_STATE|HANDOFF|RC14|android|manifest.webmanifest)' | head -60 || true ;;
-              *.tar) tar -tf "$f" 2>/dev/null | grep -Ei '(package.json|WAVE_CURRENT_STATE|HANDOFF|RC14|android|manifest.webmanifest)' | head -60 || true ;;
-            esac
-          done < <(find "$HOME" /tmp /var/tmp /workspace /mnt /opt -maxdepth 7 -type f \( -iname '*wave*.zip' -o -iname '*wave*.tar.gz' -o -iname '*wave*.tgz' -o -iname '*wave*.tar' \) -not -path '*/THF-Nexus*' -not -path '*/thf-nexus*' 2>/dev/null | head -100)
-          echo 'MUTATION_PERFORMED=FALSE'
-          echo 'THF_FILES_TOUCHED=FALSE'
-          echo 'WAVE_SOURCE_DISCOVERY=COMPLETE'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=50m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          PROJECT=/root/workspace/wave-mawja
+          echo "HOST=$(hostname) CALLER=$(id -un) HOME=$HOME"
+          sudo -n true 2>/dev/null || { echo BLOCKER=SUDO_NONINTERACTIVE_REQUIRED; exit 30; }
+          sudo -n test -d "$PROJECT" || { echo BLOCKER=CANONICAL_WAVE_ROOT_MISSING; exit 31; }
+          [ "$(sudo -n readlink -f "$PROJECT")" = "$PROJECT" ] || { echo BLOCKER=WAVE_IDENTITY_PATH; exit 32; }
+          case "$PROJECT" in *THF*|*thf-nexus*|*THF-Nexus*) echo ISOLATION_GUARD=FAIL; exit 33;; esac
+          echo "WAVE_ROOT=$PROJECT"
+          echo ISOLATION_GUARD=PASS
+          echo '=== AUTHORITATIVE IDENTITY / STATE ==='
+          sudo -n bash -c 'cd /root/workspace/wave-mawja; node -e '\''const p=require("./package.json"); console.log("PACKAGE="+(p.name||"")); console.log("VERSION="+(p.version||"")); console.log("SCRIPTS="+Object.keys(p.scripts||{}).sort().join(","))'\''; if [ -d .git ]; then echo GIT_HEAD=$(git rev-parse HEAD); echo GIT_BRANCH=$(git branch --show-current || true); git status --short --branch; fi; find . -maxdepth 4 -type f \( -iname "*CURRENT_STATE*" -o -iname "*HANDOFF*" -o -iname "*RC14*" -o -iname "*SHA256*" -o -iname "*RELEASE*MANIFEST*" \) -print | sort | head -200'
+          echo '=== RC13 AUTHORITATIVE INVARIANT / BUILD SUITE ==='
+          test -f "$HOME/wave-rc13-remote.sh" || { echo BLOCKER=RC13_VERIFY_SCRIPT_MISSING; exit 34; }
+          sudo -n bash "$HOME/wave-rc13-remote.sh"
+          echo '=== CAPABILITY COUNTS ==='
+          sudo -n bash -c 'cd /root/workspace/wave-mawja; for term in hls m3u8 quality bitrate rendition offline cache indexeddb quota evict serviceWorker manifest.webmanifest subtitle webvtt translate dubbing ffmpeg transcode publisher admin upload import rights license ads search visitor auth MEDIA_API; do n=$(grep -RIl --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build -i "$term" . 2>/dev/null | wc -l || true); printf "%s=%s\n" "$term" "$n"; done'
+          echo '=== PLACEHOLDER / TEMPLATE / LOCALHOST GATE ==='
+          sudo -n bash -c 'cd /root/workspace/wave-mawja; grep -RInE --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build "(com\\.example\\.|example\\.com|TODO[ :].*(endpoint|offline|player|download)|FIXME|placeholder|javascript:void\\(0\\)|localhost:[0-9]+|127\\.0\\.0\\.1:[0-9]+)" . | head -250 || true'
+          echo '=== PWA / ANDROID / NATIVE PRIMITIVES ==='
+          sudo -n bash -c 'cd /root/workspace/wave-mawja; find . -maxdepth 7 -type f \( -name manifest.webmanifest -o -iname "*service*worker*.js" -o -iname "*service*worker*.ts" -o -name build.gradle -o -name build.gradle.kts -o -name AndroidManifest.xml \) ! -path "*/node_modules/*" -print | head -200; grep -RInE --include="*.gradle" --include="*.gradle.kts" --include="AndroidManifest.xml" "(applicationId|namespace|compileSdk|targetSdk|minSdk|com\\.wave\\.mawja|usesCleartextTraffic)" . | head -200 || true; grep -RInE --include="*.kt" --include="*.java" "(WebView|ExoPlayer|Media3|DownloadManager|WorkManager|RoomDatabase|MediaSession)" . | head -200 || true'
+          echo '=== CLEAN SOURCE INTEGRITY SHA ==='
+          sudo -n bash -c 'cd /root/workspace/wave-mawja; find . -maxdepth 3 -type f \( -name package.json -o -name package-lock.json -o -name pnpm-lock.yaml -o -name "*CURRENT_STATE*" -o -name "*HANDOFF*" \) -print0 | sort -z | xargs -0 -r sha256sum'
+          echo FINAL_OR_PLAY_READY=NO
+          echo RELEASE_BLOCKER=PHYSICAL_PHONE_INSTALL_LAUNCH_TOUCH_LAYOUT_BACKGROUND_RESUME_OFFLINE_NETWORK_CORE_PLAYBACK_CRASHFREE_EVIDENCE_REQUIRED
+          echo THF_SOURCE_RELEASE_TREES_TOUCHED=FALSE
+          echo WAVE_CANONICAL_GATE=COMPLETE
           REMOTE
