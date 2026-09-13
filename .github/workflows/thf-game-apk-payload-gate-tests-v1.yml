@@ -21,5 +21,6 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          python3 -m pip install -q pytest
           python3 -m py_compile ReleaseOps/validators/audit_game_apk_payload_v1.py ReleaseOps/tests/test_audit_game_apk_payload_v1.py
           python3 -m pytest -q ReleaseOps/tests/test_audit_game_apk_payload_v1.py
