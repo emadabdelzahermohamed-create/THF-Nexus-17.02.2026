@@ -1,0 +1,54 @@
+name: THF TokenOps Execution Precondition Graph
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/execution_precondition_graph.py'
+      - 'ReleaseOps/TokenOps/execution_precondition_requirements.json'
+      - 'ReleaseOps/TokenOps/credential_posture.py'
+      - 'ReleaseOps/TokenOps/blocker_action_map.py'
+      - 'ReleaseOps/TokenOps/test_execution_precondition_graph.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-execution-precondition-graph.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run execution-precondition and credential-posture tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_execution_precondition_graph.py |& tee execution-precondition-tests.log
+      - name: Build immutable evidence bundle
+        run: |
+          set -Eeuo pipefail
+          mkdir evidence
+          cp ReleaseOps/TokenOps/{execution_precondition_graph.py,execution_precondition_requirements.json,credential_posture.py,blocker_action_map.py,test_execution_precondition_graph.py,execution-precondition-tests.log,policy.json,treasury_policy.json} evidence/
+          cd evidence
+          sha256sum * > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          printf '%s\n' \
+            'FINANCIAL_EFFECT=FALSE' \
+            'SIGNING=FALSE' \
+            'SUBMISSION=FALSE' \
+            'BROADCAST=FALSE' \
+            'TRANSACTION_BYTES_CREATED=FALSE' \
+            'INSTRUCTION_BYTES_CREATED=FALSE' \
+            'PRIVATE_KEY_ACCEPTED=FALSE' \
+            'PERSISTENT_SERVICE_ACCOUNT_KEY=FALSE' \
+            'WIF_SHORT_LIVED_POSTURE_ENFORCED=TRUE' \
+            'WAVE_UNTOUCHED=TRUE' > SAFETY.txt
+          sha256sum SAFETY.txt >> SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Execution-Precondition-Graph
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
