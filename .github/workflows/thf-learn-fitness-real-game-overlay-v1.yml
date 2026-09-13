@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'ReleaseOps/games_factory/apply_learn_fitness_real_game_overlay_v1.py'
+      - 'ReleaseOps/games_factory/patch_android36_predictive_back_v1.py'
       - '.github/workflows/thf-learn-fitness-real-game-overlay-v1.yml'
       - 'ReleaseOps/scripts/thf_game_real_function_audit_v2.py'
   workflow_dispatch:
@@ -100,7 +101,7 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
           rm -f out/staging.raw
           printf 'STAGING_HTTPS_HEALTH=PASS\nSTAGING_ENDPOINT_CLASS=REVERSIBLE_QUICK_TUNNEL\nPRODUCTION_CUTOVER=NO\n' >> "out/$KIND.summary.txt"
-      - name: Clean extract, apply disposable overlay, real-function audit
+      - name: Clean extract, apply disposable gameplay and API36 overlays, real-function audit
         id: overlay
         env:
           KIND: ${{ matrix.kind }}
@@ -123,13 +124,14 @@ jobs:
           PY
           root=$(find src/extracted -type f -name settings.gradle -path '*/ANDROID_PLAY_SOURCE/settings.gradle' -printf '%h\n' | head -1)
           test -n "$root"
-          python3 -m py_compile ReleaseOps/games_factory/apply_learn_fitness_real_game_overlay_v1.py ReleaseOps/scripts/thf_game_real_function_audit_v2.py
+          python3 -m py_compile ReleaseOps/games_factory/apply_learn_fitness_real_game_overlay_v1.py ReleaseOps/games_factory/patch_android36_predictive_back_v1.py ReleaseOps/scripts/thf_game_real_function_audit_v2.py
           python3 ReleaseOps/games_factory/apply_learn_fitness_real_game_overlay_v1.py "$root" --kind "$KIND" --manifest-out "out/$KIND.overlay.sha256" | tee "out/$KIND.overlay.log"
+          python3 ReleaseOps/games_factory/patch_android36_predictive_back_v1.py "$root" --manifest-out "out/$KIND.predictive-back.sha256" | tee "out/$KIND.predictive-back.log"
           python3 ReleaseOps/scripts/thf_game_real_function_audit_v2.py "$root" --kind "$KIND" --json-out "out/$KIND.real-function.json" | tee "out/$KIND.real-function.log"
           grep -q '"source_contract_status": "PASS"' "out/$KIND.real-function.json"
           find "$root" -type f -not -path '*/.gradle/*' -not -path '*/build/*' -print0 | sort -z | xargs -0 sha256sum > "out/$KIND.candidate-tree.sha256"
           tree_sha=$(sha256sum "out/$KIND.candidate-tree.sha256" | awk '{print $1}')
-          printf 'CANDIDATE_TREE_MANIFEST_SHA256=%s\nREAL_FUNCTION_SOURCE_CONTRACT=PASS\nCANONICAL_ARCHIVE_MUTATED=NO\nOFFLINE_AUTHORITY=LOCAL_ONLY_NO_FAKE_ONLINE_STATE\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' "$tree_sha" >> "out/$KIND.summary.txt"
+          printf 'CANDIDATE_TREE_MANIFEST_SHA256=%s\nREAL_FUNCTION_SOURCE_CONTRACT=PASS\nPREDICTIVE_BACK_API36_MIGRATION=APPLIED\nCANONICAL_ARCHIVE_MUTATED=NO\nOFFLINE_AUTHORITY=LOCAL_ONLY_NO_FAKE_ONLINE_STATE\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' "$tree_sha" >> "out/$KIND.summary.txt"
           echo "root=$root" >> "$GITHUB_OUTPUT"
       - name: Generate throwaway QA signing material matching source contract
         env:
@@ -159,7 +161,17 @@ jobs:
           "${GR[@]}" tasks --all > "$GITHUB_WORKSPACE/out/$KIND.gradle-tasks.txt"
           ran=0
           for task in testReleaseUnitTest testDebugUnitTest lintRelease lintDebug; do
-            if grep -Eq "(^|:)${task}[[:space:]-]" "$GITHUB_WORKSPACE/out/$KIND.gradle-tasks.txt"; then "${GR[@]}" "app:$task" --stacktrace; ran=$((ran+1)); fi
+            if grep -Eq "(^|:)${task}[[:space:]-]" "$GITHUB_WORKSPACE/out/$KIND.gradle-tasks.txt"; then
+              set +e
+              "${GR[@]}" "app:$task" --stacktrace
+              rc=$?
+              set -e
+              if [ "$rc" -ne 0 ]; then
+                find app/build -type f -name 'lint-results-*.txt' -exec cp {} "$GITHUB_WORKSPACE/out/" \; 2>/dev/null || true
+                exit "$rc"
+              fi
+              ran=$((ran+1))
+            fi
           done
           test "$ran" -ge 1
           "${GR[@]}" app:assembleRelease --stacktrace
