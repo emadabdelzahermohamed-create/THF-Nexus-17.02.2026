@@ -1,0 +1,23 @@
+name: THF Game Source Contract Tests V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/thf_game_source_contract_audit_v1.py'
+      - 'ReleaseOps/tests/test_thf_game_source_contract_audit_v1.py'
+      - '.github/workflows/thf-game-source-contract-tests-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Compile auditor
+        run: python3 -m py_compile ReleaseOps/scripts/thf_game_source_contract_audit_v1.py
+      - name: Regression tests
+        run: python3 -m unittest -v ReleaseOps/tests/test_thf_game_source_contract_audit_v1.py
