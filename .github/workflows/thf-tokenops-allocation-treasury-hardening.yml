@@ -1,0 +1,44 @@
+name: THF TokenOps Allocation Treasury Hardening Gate
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/allocation_epoch_simulator.py'
+      - 'ReleaseOps/TokenOps/treasury_inventory_gate.py'
+      - 'ReleaseOps/TokenOps/intent_manifest_gate.py'
+      - 'ReleaseOps/TokenOps/readiness_matrix.py'
+      - 'ReleaseOps/TokenOps/test_allocation_treasury_hardening.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-allocation-treasury-hardening.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed allocation and treasury hardening tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_allocation_treasury_hardening.py |& tee allocation-treasury-hardening-tests.log
+      - name: Build immutable evidence hashes
+        run: |
+          set -Eeuo pipefail
+          mkdir evidence
+          cp ReleaseOps/TokenOps/{allocation_epoch_simulator.py,treasury_inventory_gate.py,intent_manifest_gate.py,readiness_matrix.py,test_allocation_treasury_hardening.py,allocation-treasury-hardening-tests.log,policy.json,treasury_policy.json} evidence/
+          cd evidence
+          sha256sum * > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          printf '%s\n' 'FINANCIAL_EFFECT=FALSE' 'SIGNING=FALSE' 'BROADCAST=FALSE' 'WAVE_UNTOUCHED=TRUE' > SAFETY.txt
+          sha256sum SAFETY.txt >> SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Allocation-Treasury-Hardening-Gate
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
