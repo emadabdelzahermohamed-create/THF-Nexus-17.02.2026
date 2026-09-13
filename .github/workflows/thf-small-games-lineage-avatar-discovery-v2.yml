@@ -1,0 +1,121 @@
+name: THF Small Games Lineage Avatar Discovery V2
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-small-games-lineage-avatar-discovery-v2.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Discover THF-only source lineages and shared avatar assets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='python3 -' > out/discovery.json <<'PY'
+          import hashlib, json, os, pathlib, re
+          home=pathlib.Path.home()
+          skip_tokens=('wave-mawja','/wave/','wave_','wave-')
+          game_tokens=('learn_games','learn-games','fitness_games','fitness-games','spark','rush')
+          avatar_tokens=('makehuman','mpfb','universal animation','universal_animation','ual','faceunits','visemes','skins01','skins02','haireditor')
+          roots=[]
+          for child in home.iterdir():
+              if not child.is_dir(): continue
+              low=child.as_posix().lower()
+              if any(t in low for t in skip_tokens): continue
+              if child.name.startswith('.') or child.name in {'go','snap'}: continue
+              roots.append(child)
+          source=[]; assets=[]
+          def file_sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
+              return h.hexdigest()
+          seen=set()
+          for base in roots:
+              for p in base.rglob('*'):
+                  try:
+                      rel=p.relative_to(home).as_posix(); low=rel.lower()
+                  except Exception: continue
+                  if any(t in low for t in skip_tokens): continue
+                  if p.is_dir():
+                      if any(t in low for t in game_tokens):
+                          key=('d',rel)
+                          if key in seen: continue
+                          seen.add(key)
+                          markers=[]
+                          for name in ('project.godot','package.json','build.gradle','settings.gradle','AndroidManifest.xml','README.md'):
+                              if (p/name).is_file(): markers.append(name)
+                          try: direct_files=sum(1 for x in p.iterdir() if x.is_file())
+                          except OSError: direct_files=-1
+                          if markers or direct_files>2:
+                              source.append({'path':rel,'type':'dir','markers':markers,'direct_files':direct_files})
+                      if any(t in low for t in avatar_tokens):
+                          key=('a',rel)
+                          if key not in seen:
+                              seen.add(key); assets.append({'path':rel,'type':'dir'})
+                      continue
+                  name=p.name.lower()
+                  if any(t in low for t in game_tokens) and p.suffix.lower() in {'.zip','.tar','.gz','.xz','.json','.godot'}:
+                      key=('f',rel)
+                      if key in seen: continue
+                      seen.add(key)
+                      row={'path':rel,'type':'file','size':p.stat().st_size}
+                      if p.suffix.lower()=='.zip' and p.stat().st_size < 2_000_000_000:
+                          try: row['sha256']=file_sha(p)
+                          except OSError: row['sha256_error']=True
+                      source.append(row)
+                  if any(t in low for t in avatar_tokens) and p.suffix.lower() in {'.zip','.blend','.glb','.gltf','.fbx','.bvh','.json'}:
+                      key=('af',rel)
+                      if key in seen: continue
+                      seen.add(key); assets.append({'path':rel,'type':'file','size':p.stat().st_size})
+                  if len(source)>=160 and len(assets)>=160: break
+              if len(source)>=160 and len(assets)>=160: break
+          print(json.dumps({
+              'schema':'thf-small-games-lineage-avatar-discovery-v2',
+              'source_candidates':source[:160], 'source_candidate_count':len(source[:160]),
+              'avatar_asset_candidates':assets[:160], 'avatar_asset_candidate_count':len(assets[:160]),
+              'wave_paths_included':False,'read_only':True,'canonical_archives_mutated':False
+          },indent=2,sort_keys=True))
+          PY
+      - name: Validate isolation and summarize
+        run: |
+          python3 - <<'PY'
+          import json
+          x=json.load(open('out/discovery.json'))
+          assert x['wave_paths_included'] is False
+          assert x['read_only'] is True
+          assert x['canonical_archives_mutated'] is False
+          print('source_candidate_count='+str(x['source_candidate_count']))
+          print('avatar_asset_candidate_count='+str(x['avatar_asset_candidate_count']))
+          print('wave_paths_included=false')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-SMALL-GAMES-LINEAGE-AVATAR-DISCOVERY-V2
+          path: out/
+          retention-days: 14
