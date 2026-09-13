@@ -1,0 +1,100 @@
+name: THF Learn Fitness Games Recovered Candidate Audit V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-learn-fitness-games-recovered-candidate-audit-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit-candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage auditor
+        run: gcloud compute scp ReleaseOps/scripts/thf_game_real_function_audit_v2.py "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Verify candidate lineage and real-function source contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-learn-fitness-recovered-audit-v1"; rm -rf "$ROOT"; mkdir -p "$ROOT/out"
+          safe_extract() { python3 - "$1" "$2" <<'PY'
+          import pathlib,shutil,sys,zipfile
+          src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve(); dst.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile(src) as z:
+              for i in z.infolist():
+                  r=pathlib.PurePosixPath(i.filename)
+                  if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip')
+                  t=(dst/pathlib.Path(*r.parts)).resolve()
+                  if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
+                  if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+                  t.parent.mkdir(parents=True,exist_ok=True)
+                  with z.open(i) as a,open(t,'wb') as b: shutil.copyfileobj(a,b)
+          PY
+          }
+          run_one() {
+            kind="$1"; recovered="$2"; recovered_sha="$3"; canonical="$4"; canonical_sha="$5"
+            ev="$ROOT/out/$kind"; work="$ROOT/work-$kind"; mkdir -p "$ev" "$work"
+            echo "=== $kind ==="
+            test "$(sha256sum "$recovered"|awk '{print $1}')" = "$recovered_sha"
+            test "$(sha256sum "$canonical"|awk '{print $1}')" = "$canonical_sha"
+            echo "recovered_source_sha256=$recovered_sha"; echo "canonical_p49_rc2_sha256=$canonical_sha"
+            safe_extract "$recovered" "$work"
+            echo "recovered_clean_extract_files=$(find "$work" -type f | wc -l)"
+            set +e; python3 /tmp/thf_game_real_function_audit_v2.py "$work" --kind "$kind" --json-out "$ev/audit.json" > "$ev/audit.txt"; rc=$?; set -e
+            python3 - "$ev/audit.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); print('source_contract_status='+x['source_contract_status']); print('required_failures='+','.join(x['summary']['required_failures'])); print('device_status='+x['device_status'])
+          PY
+            python3 - "$work" "$ev/source-markers.json" <<'PY'
+          import json,pathlib,re,sys
+          root=pathlib.Path(sys.argv[1]); text='\n'.join(p.read_text(errors='ignore') for p in root.rglob('*') if p.is_file() and p.suffix.lower() in {'.java','.kt','.xml','.gradle','.properties','.html','.js','.py'} and p.stat().st_size<1000000)
+          obj={'android_manifest_count':sum(1 for _ in root.rglob('AndroidManifest.xml')),'java_count':sum(1 for _ in root.rglob('*.java')),'kotlin_count':sum(1 for _ in root.rglob('*.kt')),'has_target_36':bool(re.search(r'targetSdk(?:Version)?\s*[= ]\s*36|targetSdkVersion\s+36',text)),'has_touch_or_input':bool(re.search(r'onTouch|Gesture|MotionEvent|pointer|touch|keydown|keyup|addEventListener',text,re.I)),'has_placeholder_endpoint':bool(re.search(r'localhost|127\.0\.0\.1|0\.0\.0\.0|REPLACE[_ -]?ME|YOUR[_ -]?(API|URL|HOST)',text,re.I))}
+          pathlib.Path(sys.argv[2]).write_text(json.dumps(obj,indent=2,sort_keys=True)+'\n')
+          for k,v in obj.items(): print(str(k)+'='+str(v).lower() if isinstance(v,bool) else str(k)+'='+str(v))
+          PY
+            test "$(sha256sum "$recovered"|awk '{print $1}')" = "$recovered_sha"
+            test "$(sha256sum "$canonical"|awk '{print $1}')" = "$canonical_sha"
+            echo 'archives_unchanged=true'; echo 'candidate_authority_status=PROVENANCE_PENDING'; echo 'final_status=NOT_FINAL'
+          }
+          run_one learn "$HOME/thf-small-learn-games/source.zip" ce8547851c9573db02603ea6f11e020a1b7d346af0cac51e07947304f1a7c1f9 "$HOME/thf-small-learn-games/src/08_THF_LEARN_GAMES/SOURCE/THF_LEARN_GAMES_P49_RC2_SOURCE.zip" dbd259b224924e60902fb0e1b2ebca77bc243e5f29a64d04fd3114438fd41484
+          run_one fitness "$HOME/thf-small-fitness-games/source.zip" cf5d73c3a03ab503dbd7c36a2d4db3ec1449ec8281304627b9463e2cb8732a25 "$HOME/thf-small-fitness-games/src/09_THF_FITNESS_GAMES/SOURCE/THF_FITNESS_GAMES_P49_RC2_SOURCE.zip" da3c865a76848c170d679547e05d6edbc0b5ffd6a48002b12ad0d26415fd0273
+          echo 'wave_files_read_or_changed=false'; echo 'canonical_archives_mutated=false'
+          REMOTE
+      - name: Retrieve evidence
+        run: |
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-learn-fitness-recovered-audit-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/summary.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-LEARN-FITNESS-RECOVERED-CANDIDATE-AUDIT-V1
+          path: out/
+          retention-days: 14
+      - name: Safety assertions
+        run: |
+          grep -q '^wave_files_read_or_changed=false$' out/summary.txt
+          grep -q '^canonical_archives_mutated=false$' out/summary.txt
+          test "$(grep -c '^archives_unchanged=true$' out/summary.txt)" -eq 2
+          test "$(grep -c '^candidate_authority_status=PROVENANCE_PENDING$' out/summary.txt)" -eq 2
