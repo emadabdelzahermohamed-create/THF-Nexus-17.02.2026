@@ -1,0 +1,98 @@
+name: THF Core Terra Rift Play Store Asset Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-play-store-asset-inventory-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect pinned release sources for Play store assets read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          CORE="$HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
+          TERRA="$HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip"
+          RIFT="$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
+          CORE_SHA=6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a
+          TERRA_SHA=eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+          RIFT_SHA=3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+          for spec in "CORE:$CORE:$CORE_SHA" "TERRA:$TERRA:$TERRA_SHA" "RIFT:$RIFT:$RIFT_SHA"; do
+            IFS=: read -r label path sha <<<"$spec"
+            test -f "$path"
+            got=$(sha256sum "$path" | awk '{print $1}')
+            echo "${label}_SOURCE_SHA256=$got"
+            test "$got" = "$sha"
+          done
+          python3 - "$CORE" "$TERRA" "$RIFT" <<'PY'
+          import re,sys,zipfile
+          apps=(('CORE',sys.argv[1]),('TERRA',sys.argv[2]),('RIFT',sys.argv[3]))
+          image_ext=('.png','.jpg','.jpeg','.webp')
+          def count(names, pred): return sum(1 for n in names if pred(n))
+          for label,path in apps:
+              with zipfile.ZipFile(path) as z:
+                  bad=z.testzip()
+                  if bad: raise SystemExit(f'{label}_ZIP_INTEGRITY_FAIL={bad}')
+                  names=[i.filename for i in z.infolist() if not i.is_dir()]
+                  low=[n.lower() for n in names]
+                  if any('wave-mawja' in n or 'wave_mawja' in n for n in low):
+                      raise SystemExit(f'{label}_WAVE_ISOLATION=FAIL')
+                  print(f'APP={label}')
+                  print(f'{label}_ZIP_INTEGRITY=PASS')
+                  print(f'{label}_WAVE_ISOLATION=PASS')
+                  launcher=[n for n in names if re.search(r'(?i)(ic_launcher|launcher|app[_-]?icon)',n) and n.lower().endswith(image_ext)]
+                  feature=[n for n in names if re.search(r'(?i)(feature[_ -]?graphic|play[_ -]?feature|store[_ -]?feature)',n) and n.lower().endswith(image_ext)]
+                  screenshots=[n for n in names if re.search(r'(?i)(screenshot|screen[_ -]?[0-9]|store[_ -]?shot|play[_ -]?shot)',n) and n.lower().endswith(image_ext)]
+                  store=[n for n in names if re.search(r'(?i)(store|play|listing|marketing|promo)',n) and n.lower().endswith(image_ext)]
+                  strings=[n for n in names if re.search(r'(?i)res/values[^/]*/strings\.xml$',n)]
+                  manifests=[n for n in names if n.endswith('AndroidManifest.xml')]
+                  print(f'{label}_LAUNCHER_ICON_CANDIDATES={len(launcher)}')
+                  print(f'{label}_FEATURE_GRAPHIC_CANDIDATES={len(feature)}')
+                  print(f'{label}_SCREENSHOT_CANDIDATES={len(screenshots)}')
+                  print(f'{label}_STORE_MARKETING_IMAGE_CANDIDATES={len(store)}')
+                  print(f'{label}_STRINGS_XML_COUNT={len(strings)}')
+                  print(f'{label}_MANIFEST_COUNT={len(manifests)}')
+                  for kind,items in [('LAUNCHER_ICON',launcher),('FEATURE_GRAPHIC',feature),('SCREENSHOT',screenshots)]:
+                      for n in items[:12]: print(f'{label}_{kind}_PATH={n}')
+          PY
+          for spec in "CORE:$CORE:$CORE_SHA" "TERRA:$TERRA:$TERRA_SHA" "RIFT:$RIFT:$RIFT_SHA"; do
+            IFS=: read -r label path sha <<<"$spec"
+            got=$(sha256sum "$path" | awk '{print $1}')
+            echo "${label}_SOURCE_SHA256_AFTER=$got"
+            test "$got" = "$sha"
+          done
+          echo CANONICAL_SOURCE_MUTATION=FALSE
+          echo PRODUCTION_SIGNING_PERFORMED=FALSE
+          echo PLAY_UPLOAD_PERFORMED=FALSE
+          echo CLOUDFLARE_PRODUCTION_CUTOVER_PERFORMED=FALSE
+          echo SOLANA_FINANCIAL_ACTION_PERFORMED=FALSE
+          echo THF_PLAY_STORE_ASSET_INVENTORY_V1=PASS
+          REMOTE
