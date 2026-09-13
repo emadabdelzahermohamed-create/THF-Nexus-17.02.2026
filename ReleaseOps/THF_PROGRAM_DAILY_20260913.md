@@ -32,7 +32,7 @@ Interpretation: **APK structure/signing/installability packaging gate is green.*
 - No production signing or public rollout was performed.
 
 ### Repository / operational review
-- Current `main` head inspected: `2d335f3463f915ce47ad231cef11240c8d29d469` (`releaseops: add Core RC6 canonical-package installable QA gate`).
+- Earlier `main` head inspected: `2d335f3463f915ce47ad231cef11240c8d29d469` (`releaseops: add Core RC6 canonical-package installable QA gate`).
 - `ReleaseOps/` contains current GCP/WIF inventory, Google Play roadmap, WAVE recovery inventory, compliance material, and RC intake evidence.
 - Connected operational Drive evidence for WAVE/THF is older than today's GitHub build evidence in several places. Treat those older state files as historical until reconciled; do not regress newer installability evidence to an older blocked snapshot.
 
@@ -102,3 +102,24 @@ The older installability-only entries above are retained as historical evidence;
 5. Production signing and any Play upload/publication remain closed gates until separately authorized.
 
 Open PR review: PR #2 remains open/draft and isolated to TokenOps read-only work. No Solana transaction, signing, burn, transfer or authority mutation was performed.
+
+---
+
+## Release Factory addendum — WAVE RC14 canonical builder access (2026-09-13)
+
+### Repair/checkpoint
+- WAVE RC14 workflow was made self-contained in commit `070f9542ffa6d5df05ac9a53465ca976ad7c8d6f`; it no longer depends on an ad-hoc `$HOME/wave-rc13-remote.sh` or assumes passwordless sudo.
+- The rerun (`34763097317`) proved WIF authentication, `setup-gcloud`, IAP TCP tunneling, SSH key generation and VM reachability are all functioning.
+- GCP OS Login **rewrites an explicit `root@thf-wave-builder` request** to the mapped service-account OS user `sa_115575029018678177962`. The job therefore fails closed before reading or mutating `/root/workspace/wave-mawja` with `BLOCKER=CANONICAL_ROOT_OS_LOGIN_REQUIRED`.
+
+### Exact remaining WAVE infrastructure requirement
+One of the following owner/admin-controlled changes is required before unattended CI can verify canonical RC14:
+1. Grant the release-builder service account an approved OS Login admin path (`roles/compute.osAdminLogin`) scoped as narrowly as practical; **or**
+2. Preferably, expose a read/build-capable copy of the canonical WAVE checkout under a dedicated service-account-owned release workspace, with its source SHA/manifest bound to `/root/workspace/wave-mawja`, avoiding persistent root automation.
+
+This is not a WIF/IAP outage and must not be repaired by weakening SSH, disabling OS Login, or granting broad project Owner permissions.
+
+### Mobile Real-Function posture
+- Core RC6, Terra RC34 and Rift RC37 retain exact-candidate CI/package integrity evidence above, but remain **NO-GO final** until the exact candidate hashes complete physical-device acceptance.
+- WAVE RC14 remains **NO-GO** until canonical source/runtime access is restored, a real candidate is produced/inspected, stable production endpoints are validated, and exact-candidate phone evidence exists.
+- No production signing key, Play approval, physical-device/GPU evidence, Cloudflare production cutover or public deployment is claimed by this checkpoint.
