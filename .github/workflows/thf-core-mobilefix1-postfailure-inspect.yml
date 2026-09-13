@@ -1,0 +1,67 @@
+name: THF Core MobileFix1 Postfailure Inspect
+
+on:
+  workflow_run:
+    workflows: ["THF Core MobileFix1 Live QA"]
+    types: [completed]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect_completed_failure:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read immutable completed-run evidence
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" \
+            --zone "$GCP_ZONE" \
+            --tunnel-through-iap \
+            --ssh-key-expire-after=20m \
+            --quiet \
+            --command='set -u
+          ROOT="$HOME/thf-core-mobilefix1-live-v2"; OUT="$ROOT/out"; APK="$OUT/THF-CORE-RC6-MOBILEFIX1-LIVE-QA.apk"
+          echo "workflow_run_id=${{ github.event.workflow_run.id }}"
+          echo "workflow_head_sha=${{ github.event.workflow_run.head_sha }}"
+          echo "workflow_conclusion=${{ github.event.workflow_run.conclusion }}"
+          echo "=== public url ==="; cat "$OUT/PUBLIC_URL.txt" 2>/dev/null || true
+          echo "=== local health ==="; cat "$OUT/local-health.json" 2>/dev/null || true
+          echo "=== public health ==="; cat "$OUT/public-health.json" 2>/dev/null || true
+          echo "=== gradle tail ==="; tail -240 "$OUT/gradle.log" 2>/dev/null || true
+          echo "=== badging ==="; cat "$OUT/badging.txt" 2>/dev/null || true
+          echo "=== signer ==="; cat "$OUT/apksigner.txt" 2>/dev/null || true
+          echo "=== generated build configs ==="; find "$ROOT/app/android/app/build/generated" -type f -name BuildConfig.java -print -exec sed -n "1,220p" {} \; 2>/dev/null || true
+          echo "=== dex endpoint strings ==="; if [ -f "$APK" ]; then for d in $(zipinfo -1 "$APK" "classes*.dex" 2>/dev/null); do echo "DEX=$d"; unzip -p "$APK" "$d" | strings | grep -E "https://.*trycloudflare\\.com|THF_BASE_URL|THF_PASS_URL" | head -80 || true; done; fi
+          echo "=== outputs ==="; find "$OUT" -maxdepth 1 -type f -printf "%f %s bytes\n" 2>/dev/null | sort
+          echo "=== apk sha ==="; [ -f "$APK" ] && sha256sum "$APK" || true
+          echo "=== backend tail ==="; tail -100 "$OUT/backend.log" 2>/dev/null || true
+          echo "=== cloudflared tail ==="; tail -100 "$OUT/cloudflared.log" 2>/dev/null || true
+          ' | tee out/POSTFAILURE_EVIDENCE.txt
+          sha256sum out/POSTFAILURE_EVIDENCE.txt | tee out/POSTFAILURE_EVIDENCE.txt.sha256
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-CORE-MOBILEFIX1-POSTFAILURE-EVIDENCE-${{ github.event.workflow_run.id }}
+          path: out/
+          retention-days: 14
+          compression-level: 0
