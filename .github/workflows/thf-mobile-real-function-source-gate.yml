@@ -20,5 +20,7 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Python syntax
         run: python3 -m py_compile ReleaseOps/validators/validate_mobile_real_function_source.py ReleaseOps/validators/test_validate_mobile_real_function_source.py
+      - name: Provision regression runner
+        run: python3 -m pip install --disable-pip-version-check 'pytest>=8,<9'
       - name: Real-function source gate regressions
         run: python3 -m pytest -q ReleaseOps/validators/test_validate_mobile_real_function_source.py
