@@ -39,7 +39,7 @@ A release-tooling correction was committed at `65dab598cb5dbb2ddf8ef2628c34f95dd
 - canonical archives remain immutable;
 - signature recovery cannot touch WAVE.
 
-Replacement Terra run triggered from that commit: `34748278028` (status to be consumed on the next checkpoint).
+Replacement Terra run triggered from that commit: `34748278235` (status to be consumed on the next checkpoint).
 
 ## Rift RC37 — FAIL-APK-VERIFICATION; SAFE RECOVERY ACTIVE
 Canonical source:
@@ -69,7 +69,7 @@ PR #2 remains a draft TokenOps read-only lane. No Solana transaction, signing, b
 No production signing, irreversible Play publishing, Cloudflare production cutover or destructive cloud change was performed.
 
 ## Next
-1. Consume Terra `34748278028` and Rift `34748278032`; accept artifacts only on full payload/package/API36/signature/zipalign PASS.
+1. Consume Terra `34748278235` and Rift `34748278032`; accept artifacts only on full payload/package/API36/signature/zipalign PASS.
 2. If either fails, use its now-specific phase and evidence rather than rerunning blindly.
 3. Apply the reusable runtime-release guard to accepted Core/Terra/Rift artifacts.
 4. Extend the same classification/gates across remaining THF Android apps and games.
