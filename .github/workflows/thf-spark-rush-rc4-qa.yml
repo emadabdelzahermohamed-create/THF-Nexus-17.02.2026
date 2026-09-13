@@ -3,7 +3,9 @@ name: THF Spark Rush RC4 QA
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/thf-spark-rush-rc4-qa.yml']
+    paths:
+      - '.github/workflows/thf-spark-rush-rc4-qa.yml'
+      - 'ReleaseOps/validators/audit_game_apk_payload_v1.py'
   workflow_dispatch:
 
 permissions:
@@ -37,10 +39,10 @@ jobs:
           set -Eeuo pipefail
           mkdir -p src work out
           cat > src/matrix.tsv <<'EOF'
-          spark	RC4	58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43	com.topherofit.thf.spark	1bwvy2huHjkpof3ZcH1QEJK23ep7SKKEm
-          rush	RC4	766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c	com.topherofit.thf.rush	1P4Z1r6l08rbCLuDsXX1YRjWo0seC8yQz
+          spark	RC4	learning	58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43	com.topherofit.thf.spark	1bwvy2huHjkpof3ZcH1QEJK23ep7SKKEm
+          rush	RC4	fitness	766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c	com.topherofit.thf.rush	1P4Z1r6l08rbCLuDsXX1YRjWo0seC8yQz
           EOF
-          while IFS=$'\t' read -r app cp sha pkg fid; do
+          while IFS=$'\t' read -r app cp profile sha pkg fid; do
             f="src/$app.zip"
             code=$(curl -sSLo "$f" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$fid?alt=media&supportsAllDrives=true")
             [ "$code" = 200 ]
@@ -48,7 +50,7 @@ jobs:
             unzip -tq "$f" >/dev/null
             mkdir -p "work/$app" && unzip -q "$f" -d "work/$app"
           done < src/matrix.tsv
-      - name: Test build inspect
+      - name: Test build inspect and enforce packaged game payload
         run: |
           set -Eeuo pipefail
           python3 -m venv "$RUNNER_TEMP/venv"; . "$RUNNER_TEMP/venv/bin/activate"
@@ -57,7 +59,7 @@ jobs:
           BT=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1); AAPT="$BT/aapt"; APKSIGNER="$BT/apksigner"; ZIPALIGN="$BT/zipalign"
           KS="$RUNNER_TEMP/qa.keystore"; keytool -genkeypair -noprompt -keystore "$KS" -storepass android -alias androiddebugkey -keypass android -dname 'CN=Android Debug,O=THF QA,C=US' -keyalg RSA -keysize 2048 -validity 3650 >/dev/null 2>&1
           printf 'game\tcheckpoint\tpackage\tapk_sha256\ttarget36\tsigned\tdebuggable\tversion_code\tversion_name\n' > out/results.tsv
-          while IFS=$'\t' read -r app cp sha pkg fid; do
+          while IFS=$'\t' read -r app cp profile sha pkg fid; do
             root=$(find "work/$app" -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1)
             python -m compileall -q "$root"; (cd "$root" && python -m pytest -q) | tee "out/$app.pytest.log"
             python ReleaseOps/validators/validate_mobile_real_function_source.py "$root" --package "$pkg" --json-out "out/$app.source-policy.json"
@@ -69,7 +71,19 @@ jobs:
             vc=$(sed -n "s/^package:.*versionCode='\([^']*\)'.*/\1/p" <<<"$badging" | head -1); vn=$(sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p" <<<"$badging" | head -1); ah=$(sha256sum "$final"|awk '{print $1}')
             printf '%s\t%s\t%s\t%s\ttrue\ttrue\tfalse\t%s\t%s\n' "$app" "$cp" "$pkg" "$ah" "$vc" "$vn" >> out/results.tsv; rm -f "$aligned"
           done < src/matrix.tsv
-          cat out/results.tsv; [ "$(tail -n +2 out/results.tsv | wc -l)" -eq 2 ]; echo THF_SPARK_RUSH_RC4_QA=PASS | tee out/TRUTH.txt
+          cat out/results.tsv; [ "$(tail -n +2 out/results.tsv | wc -l)" -eq 2 ]
+          fail=0
+          while IFS=$'\t' read -r app cp profile sha pkg fid; do
+            final="out/THF-${app^^}-${cp}-EXACT-QA.apk"
+            ah=$(sha256sum "$final" | awk '{print $1}')
+            set +e
+            python ReleaseOps/validators/audit_game_apk_payload_v1.py "$final" --profile "$profile" --expected-sha256 "$ah" --json-out "out/$app.apk-payload.json"
+            rc=$?
+            set -e
+            if [ "$rc" -ne 0 ]; then fail=1; fi
+          done < src/matrix.tsv
+          if [ "$fail" -ne 0 ]; then echo 'THF_SPARK_RUSH_RC4_QA=REJECTED_WRAPPER_OR_MISSING_GAME_PAYLOAD' | tee out/TRUTH.txt; exit 1; fi
+          echo THF_SPARK_RUSH_RC4_QA=PASS | tee out/TRUTH.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with: {name: THF-SPARK-RUSH-RC4-QA-APKS, path: out/, retention-days: 14, compression-level: 0}
