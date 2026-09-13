@@ -1,0 +1,88 @@
+name: THF Game Shared Systems Audit V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/thf_game_shared_systems_audit_v1.py'
+      - '.github/workflows/thf-game-shared-systems-audit-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Syntax gate
+        run: python3 -m py_compile ReleaseOps/scripts/thf_game_shared_systems_audit_v1.py
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage audit tool
+        run: gcloud compute scp ReleaseOps/scripts/thf_game_shared_systems_audit_v1.py "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Audit canonical game source systems
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-game-shared-systems-audit-v1"; rm -rf "$ROOT"; mkdir -p "$ROOT/out"
+          safe_extract(){ python3 - "$1" "$2" <<'PY'
+          import pathlib,shutil,sys,zipfile
+          src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve();dst.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile(src) as z:
+            for i in z.infolist():
+              r=pathlib.PurePosixPath(i.filename)
+              if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip member')
+              t=(dst/pathlib.Path(*r.parts)).resolve()
+              if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
+              if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+              t.parent.mkdir(parents=True,exist_ok=True)
+              with z.open(i) as a,open(t,'wb') as b: shutil.copyfileobj(a,b)
+          PY
+          }
+          locate(){ find "$HOME" -type f -name "$1" -print -quit 2>/dev/null; }
+          audit_one(){ kind="$1"; name="$2"; sha="$3"; src=$(locate "$name"); [ -n "$src" ]; test "$(sha256sum "$src"|awk '{print $1}')" = "$sha"; w="$ROOT/$kind"; safe_extract "$src" "$w"; set +e; python3 /tmp/thf_game_shared_systems_audit_v1.py "$w" --kind "$kind" --json-out "$ROOT/out/$kind.json" >/dev/null; rc=$?; set -e; python3 - "$ROOT/out/$kind.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1]));print('kind='+x['kind']);print('files_scanned='+str(x['files_scanned']));print('shared_systems_status='+x['shared_systems_status']);print('required_missing='+','.join(x['required_missing']));print('device_status='+x['device_status']);print('final_status='+x['final_status'])
+          PY
+          test "$(sha256sum "$src"|awk '{print $1}')" = "$sha"; echo canonical_archive_unchanged=true
+          }
+          audit_one terra THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+          audit_one rift THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+          audit_one learn THF_LEARN_GAMES_P49_RC2_SOURCE.zip dbd259b224924e60902fb0e1b2ebca77bc243e5f29a64d04fd3114438fd41484
+          audit_one fitness THF_FITNESS_GAMES_P49_RC2_SOURCE.zip da3c865a76848c170d679547e05d6edbc0b5ffd6a48002b12ad0d26415fd0273
+          echo wave_files_read_or_changed=false
+          REMOTE
+      - name: Retrieve evidence
+        run: |
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-game-shared-systems-audit-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/summary.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-GAME-SHARED-SYSTEMS-AUDIT-V1
+          path: out/
+          retention-days: 14
+      - name: Safety gate
+        run: |
+          test "$(grep -c '^canonical_archive_unchanged=true$' out/summary.txt)" -eq 4
+          grep -q '^wave_files_read_or_changed=false$' out/summary.txt
+          test "$(grep -c '^device_status=PENDING$' out/summary.txt)" -eq 4
+          test "$(grep -c '^final_status=NOT_FINAL$' out/summary.txt)" -eq 4
