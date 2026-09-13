@@ -1,0 +1,57 @@
+name: THF TokenOps Financial Evidence Reconciliation Gate
+on:
+  push:
+    branches: ['tokenops/**']
+    paths:
+      - 'ReleaseOps/TokenOps/holder_concentration_evidence.py'
+      - 'ReleaseOps/TokenOps/public_treasury_registry.py'
+      - 'ReleaseOps/TokenOps/financial_evidence_reconciliation.py'
+      - 'ReleaseOps/TokenOps/financial_evidence_lineage.py'
+      - 'ReleaseOps/TokenOps/treasury_public_registry.json'
+      - 'ReleaseOps/TokenOps/treasury_evidence_requirements.json'
+      - 'ReleaseOps/TokenOps/test_financial_evidence_reconciliation.py'
+      - 'ReleaseOps/TokenOps/policy.json'
+      - 'ReleaseOps/TokenOps/treasury_policy.json'
+      - '.github/workflows/thf-tokenops-financial-evidence-reconciliation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Run fail-closed financial evidence reconciliation tests
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 -m unittest -v test_financial_evidence_reconciliation.py |& tee financial-evidence-reconciliation-tests.log
+      - name: Validate public-only treasury registry current state
+        run: |
+          set -Eeuo pipefail
+          cd ReleaseOps/TokenOps
+          python3 - <<'PY' | tee treasury-registry-current-state.json
+          import json
+          from public_treasury_registry import validate_registry
+          with open("treasury_public_registry.json",encoding="utf-8") as f:
+              registry=json.load(f)
+          print(json.dumps(validate_registry(registry),sort_keys=True,indent=2))
+          PY
+      - name: Build immutable evidence hashes
+        run: |
+          set -Eeuo pipefail
+          mkdir evidence
+          cp ReleaseOps/TokenOps/{holder_concentration_evidence.py,public_treasury_registry.py,financial_evidence_reconciliation.py,financial_evidence_lineage.py,treasury_public_registry.json,treasury_evidence_requirements.json,test_financial_evidence_reconciliation.py,financial-evidence-reconciliation-tests.log,treasury-registry-current-state.json,policy.json,treasury_policy.json} evidence/
+          cd evidence
+          sha256sum * > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          printf '%s\n' 'FINANCIAL_EFFECT=FALSE' 'SIGNING=FALSE' 'BROADCAST=FALSE' 'ADDRESS_DISCOVERY=FALSE' 'PRIVATE_KEY_ACCEPTED=FALSE' 'WAVE_UNTOUCHED=TRUE' > SAFETY.txt
+          sha256sum SAFETY.txt >> SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Financial-Evidence-Reconciliation-Gate
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30

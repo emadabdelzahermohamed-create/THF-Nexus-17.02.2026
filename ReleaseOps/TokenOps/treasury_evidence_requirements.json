@@ -1,0 +1,16 @@
+{
+  "schema": "thf-tokenops-treasury-evidence-requirements/v1",
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "accepted_material": "public_or_hash_only",
+  "account_fields_required": ["token_account_pubkey","owner_pubkey","roles","governance_approval_hash","balance_observation_hash","observed_balance_raw"],
+  "allowed_roles": ["distribution_reserve","vesting_reserve","lock_reward_reserve","burn_reserve","operations_treasury"],
+  "distribution_reserve_cardinality": 1,
+  "ownership_evidence": {"required": true, "representation": "sha256_hash_only"},
+  "balance_evidence": {"required": true, "representation": "sha256_hash_plus_read_only_observed_balance_raw"},
+  "forbidden_material": ["seed_phrase","mnemonic","private_key","secret_key","keypair","signature","transaction_bytes","instruction_bytes","service_account_key"],
+  "execution_authorized": false,
+  "broadcast_allowed": false,
+  "financial_effect": false,
+  "wave_mawja_untouched": true
+}
