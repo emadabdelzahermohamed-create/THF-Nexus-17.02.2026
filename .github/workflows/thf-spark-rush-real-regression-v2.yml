@@ -1,0 +1,91 @@
+name: THF Spark Rush Real Regression V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/apps_factory/tests/test_spark_rc3_real.py'
+      - 'ReleaseOps/apps_factory/tests/test_rush_rc3_real.py'
+      - '.github/workflows/thf-spark-rush-real-regression-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: spark
+            checkpoint: RC3
+            source_sha256: dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0
+            file_id: 1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+            test_file: ReleaseOps/apps_factory/tests/test_spark_rc3_real.py
+          - app: rush
+            checkpoint: RC3
+            source_sha256: bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b
+            file_id: 1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+            test_file: ReleaseOps/apps_factory/tests/test_rush_rc3_real.py
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Stage exact source SHA
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p work out
+          code=$(curl -sSLo source.zip -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/${{ matrix.file_id }}?alt=media&supportsAllDrives=true")
+          test "$code" = 200
+          actual=$(sha256sum source.zip | awk '{print $1}')
+          test "$actual" = "${{ matrix.source_sha256 }}"
+          unzip -tq source.zip >/dev/null
+          unzip -q source.zip -d work
+          root=$(find work -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1)
+          test -n "$root"
+          printf '%s' "$root" > root.txt
+          echo SOURCE_SHA256=$actual | tee out/source.txt
+      - name: Install exact source dependencies
+        run: |
+          set -Eeuo pipefail
+          root=$(cat root.txt)
+          python3 -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --disable-pip-version-check --upgrade pip >/dev/null
+          python -m pip install -r "$root/requirements.txt" >/dev/null
+      - name: Run genuine external exact-source tests
+        run: |
+          set -Eeuo pipefail
+          root=$(cat root.txt)
+          cp "${{ matrix.test_file }}" "$root/test_external_real_regression.py"
+          . .venv/bin/activate
+          set +e
+          (cd "$root" && python -m pytest -q test_external_real_regression.py) | tee "out/${{ matrix.app }}.pytest.txt"
+          rc=${PIPESTATUS[0]}
+          set -e
+          test $rc -eq 0
+          grep -Eq '[1-9][0-9]* passed' "out/${{ matrix.app }}.pytest.txt"
+          echo REAL_TESTS_PRESENT=PASS | tee -a out/source.txt
+          echo NO_SOURCE_FALSE_PASS_REJECTED=PASS | tee -a out/source.txt
+          echo FINAL_OR_PLAY_READY=FALSE | tee -a out/source.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: THF-${{ matrix.app }}-${{ matrix.checkpoint }}-REAL-REGRESSION-V2
+          path: out/
+          retention-days: 14
