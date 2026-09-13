@@ -1,9 +1,11 @@
 import importlib.util
+import sys
 from pathlib import Path
 
 P = Path(__file__).resolve().parents[1] / "validators" / "probe_identity_runtime_semantics.py"
 spec = importlib.util.spec_from_file_location("probe", P)
 probe = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = probe
 spec.loader.exec_module(probe)
 
 
