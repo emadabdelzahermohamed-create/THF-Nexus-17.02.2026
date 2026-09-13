@@ -80,6 +80,16 @@ jobs:
             echo RIFT_GRADLE_TOOLING_SOURCE=THF_TERRA_WRAPPER_COPY_IN_EPHEMERAL_WORKDIR
           fi
 
+          # Rift's Android Gradle Plugin requires Gradle >= 8.13. Update only the
+          # disposable extraction; canonical RC37 remains byte-for-byte untouched.
+          WRAPPER_PROPS="$PROJ/gradle/wrapper/gradle-wrapper.properties"
+          if [ -f "$WRAPPER_PROPS" ]; then
+            sed -i -E 's#^distributionUrl=.*#distributionUrl=https\\://services.gradle.org/distributions/gradle-8.13-bin.zip#' "$WRAPPER_PROPS"
+            grep -q 'gradle-8.13-bin.zip' "$WRAPPER_PROPS"
+            GRADLE="$PROJ/gradlew"
+            echo RIFT_GRADLE_VERSION_FIX=EPHEMERAL_WRAPPER_8_13
+          fi
+
           cd "$PROJ"
           "$GRADLE" --version
           "$GRADLE" --no-daemon clean assembleDebug
