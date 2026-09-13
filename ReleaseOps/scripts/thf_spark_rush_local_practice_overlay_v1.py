@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Install a genuine local-only touch game into Spark/Rush on a disposable tree.
 The candidate never writes ranked/social/economy state, never claims fitness evidence,
-and removes debug applicationIdSuffix only in the disposable QA tree so package identity
-matches the canonical app while the source archive remains byte-for-byte unchanged.
+and forces the canonical applicationId only in the disposable QA tree while the source
+archive remains byte-for-byte unchanged.
 """
 from __future__ import annotations
 import argparse, hashlib, pathlib, re, sys
@@ -24,17 +24,19 @@ def sha256(p:pathlib.Path)->str:
         for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
     return h.hexdigest()
 
-def preserve_canonical_package(root:pathlib.Path)->tuple[int,list[str]]:
-    """Remove debug applicationIdSuffix in the extracted disposable QA tree only."""
+def preserve_canonical_package(root:pathlib.Path,kind:str)->tuple[int,list[str]]:
+    canonical={'spark':'com.topherofit.thf.spark','rush':'com.topherofit.thf.rush'}[kind]
     changed=[]
-    pat=re.compile(r'(?m)^[ \t]*applicationIdSuffix(?:\s*=)?\s*["\'][^"\']+["\'][ \t]*$')
+    suffix_pat=re.compile(r'(?m)^[ \t]*(?:applicationIdSuffix|versionNameSuffix)\b[^\n]*$')
+    appid_pat=re.compile(r'(?m)^(?P<i>[ \t]*)applicationId\b(?:\s*=)?\s*["\'][^"\']+["\'][^\n]*$')
     for name in ('build.gradle','build.gradle.kts'):
         for p in root.rglob(name):
-            if '/app/' not in '/'+p.as_posix()+'/':
-                continue
             text=p.read_text(errors='ignore')
-            new,n=pat.subn('',text)
-            if n:
+            if 'applicationId' not in text: continue
+            new,n1=suffix_pat.subn('',text)
+            def repl(m): return f'{m.group("i")}applicationId "{canonical}"'
+            new,n2=appid_pat.subn(repl,new)
+            if n1 or n2:
                 p.write_text(new)
                 changed.append(p.relative_to(root).as_posix())
     return len(changed),changed
@@ -44,8 +46,8 @@ def main()->int:
     root=pathlib.Path(a.root).resolve(); candidates=sorted(root.rglob('android/app/src/main/assets/offline.html'))
     if len(candidates)!=1: raise SystemExit(f'expected one Android offline asset, found {len(candidates)}')
     out=candidates[0]; before=sha256(out); out.write_text(HEAD+(SPARK if a.kind=='spark' else RUSH)+TAIL); after=sha256(out)
-    package_files_changed,package_files=preserve_canonical_package(root)
-    lines=['schema=thf-spark-rush-local-practice-overlay-v1',f'kind={a.kind}',f'offline_asset={out.relative_to(root).as_posix()}',f'offline_sha256_before={before}',f'offline_sha256_after={after}',f'qa_package_suffix_files_changed={package_files_changed}',f"qa_package_suffix_files={','.join(package_files)}",'canonical_package_identity_required=true','local_mode=true','touch_input=true','player_state=true','game_loop=true',f"domain_loop={'learning' if a.kind=='spark' else 'fitness_practice'}",'ranked_state_written=false','social_state_written=false','economy_state_written=false','fitness_evidence_written=false','network_required=false','candidate_only=true','canonical_archive_mutated=false','device_status=PENDING','final_status=NOT_FINAL','']
+    package_files_changed,package_files=preserve_canonical_package(root,a.kind)
+    lines=['schema=thf-spark-rush-local-practice-overlay-v1',f'kind={a.kind}',f'offline_asset={out.relative_to(root).as_posix()}',f'offline_sha256_before={before}',f'offline_sha256_after={after}',f'qa_package_files_changed={package_files_changed}',f"qa_package_files={','.join(package_files)}",f"canonical_package_id={'com.topherofit.thf.spark' if a.kind=='spark' else 'com.topherofit.thf.rush'}",'canonical_package_identity_required=true','local_mode=true','touch_input=true','player_state=true','game_loop=true',f"domain_loop={'learning' if a.kind=='spark' else 'fitness_practice'}",'ranked_state_written=false','social_state_written=false','economy_state_written=false','fitness_evidence_written=false','network_required=false','candidate_only=true','canonical_archive_mutated=false','device_status=PENDING','final_status=NOT_FINAL','']
     ev=pathlib.Path(a.evidence_out); ev.write_text('\n'.join(lines)); print(ev.read_text(),end=''); return 0
 
 if __name__=='__main__': sys.exit(main())
