@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "app": "THF Example",
+  "lane": "mobile-app",
+  "checkpoint": "APPS-RC3",
+  "package": "com.topherofit.thf.example",
+  "candidate_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "target_sdk": 36,
+  "payload_inspection": "PENDING",
+  "package_identity": "PENDING",
+  "qa_signature_only": true,
+  "production_signing": false,
+  "network": {
+    "required": true,
+    "base_url": "https://staging.example.invalid",
+    "health": "PENDING",
+    "auth": "PENDING",
+    "placeholder_or_loopback": true,
+    "authoritative_remote_state_offline": false
+  },
+  "device": {
+    "model": "",
+    "android_version": "",
+    "candidate_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "checks": {
+      "install": "PENDING",
+      "launch": "PENDING",
+      "touch": "PENDING",
+      "responsive_layout": "PENDING",
+      "orientation": "PENDING",
+      "background_resume": "PENDING",
+      "offline_network_transition": "PENDING",
+      "core_user_journey": "PENDING",
+      "crash_free_smoke": "PENDING",
+      "accessibility": "PENDING",
+      "data_saver": "PENDING",
+      "rtl": "PENDING",
+      "localization_smoke": "PENDING",
+      "rollback": "PENDING"
+    }
+  },
+  "notes": "Template is intentionally non-passing until real exact-candidate and physical-device evidence is supplied. Never convert PENDING to PASS without observed evidence."
+}
