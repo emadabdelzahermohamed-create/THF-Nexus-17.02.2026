@@ -1,0 +1,109 @@
+name: THF Spark Rush Authoritative Source Audit V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-spark-rush-authoritative-source-audit-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage real-function auditor
+        run: |
+          gcloud compute scp ReleaseOps/scripts/thf_game_real_function_audit_v2.py "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Verify and audit recovered Spark Rush sources
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-spark-rush-source-audit-v1"; rm -rf "$ROOT"; mkdir -p "$ROOT/out"
+          safe_extract() { python3 - "$1" "$2" <<'PY'
+          import pathlib,shutil,sys,zipfile
+          src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve(); dst.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile(src) as z:
+              for i in z.infolist():
+                  r=pathlib.PurePosixPath(i.filename)
+                  if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip')
+                  t=(dst/pathlib.Path(*r.parts)).resolve()
+                  if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
+                  if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+                  t.parent.mkdir(parents=True,exist_ok=True)
+                  with z.open(i) as a,open(t,'wb') as b: shutil.copyfileobj(a,b)
+          PY
+          }
+          run_one() {
+            kind="$1"; src="$2"; expected="$3"
+            work="$ROOT/$kind"; ev="$ROOT/out/$kind"; mkdir -p "$work" "$ev"
+            test -f "$src"; actual=$(sha256sum "$src"|awk '{print $1}'); test "$actual" = "$expected"
+            echo "=== $kind ==="; echo "source_sha256=$actual"
+            safe_extract "$src" "$work"
+            echo "clean_extract_files=$(find "$work" -type f | wc -l)"
+            echo "project_godot_count=$(find "$work" -name project.godot -type f | wc -l)"
+            echo "android_manifest_count=$(find "$work" -name AndroidManifest.xml -type f | wc -l)"
+            echo "gradle_settings_count=$(find "$work" -name settings.gradle -o -name settings.gradle.kts | wc -l)"
+            set +e
+            python3 /tmp/thf_game_real_function_audit_v2.py "$work" --kind "$kind" --json-out "$ev/audit.json" > "$ev/audit.txt"
+            rc=$?
+            set -e
+            python3 - "$ev/audit.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); print('source_contract_status='+x['source_contract_status']); print('required_failures='+','.join(x['summary']['required_failures'])); print('device_status='+x['device_status'])
+          PY
+            python3 - "$work" "$ev/inventory.json" <<'PY'
+          import json,pathlib,re,sys
+          root=pathlib.Path(sys.argv[1]); rows=[]
+          for p in sorted(x for x in root.rglob('*') if x.is_file()):
+              rel=p.relative_to(root).as_posix()
+              if '/build/' in '/'+rel or '/.gradle/' in '/'+rel: continue
+              rows.append({'path':rel,'size':p.stat().st_size})
+          markers={'java':sum(1 for r in rows if r['path'].endswith('.java')),'kotlin':sum(1 for r in rows if r['path'].endswith('.kt')),'xml':sum(1 for r in rows if r['path'].endswith('.xml')),'web':sum(1 for r in rows if r['path'].endswith(('.js','.html','.css'))),'godot':sum(1 for r in rows if r['path'].endswith(('.gd','.tscn','.godot')))}
+          pathlib.Path(sys.argv[2]).write_text(json.dumps({'file_count':len(rows),'markers':markers,'files':rows[:200]},indent=2)+'\n')
+          print('source_inventory_files='+str(len(rows))); print('source_java='+str(markers['java'])); print('source_kotlin='+str(markers['kotlin'])); print('source_web='+str(markers['web'])); print('source_godot='+str(markers['godot']))
+          PY
+            test "$(sha256sum "$src"|awk '{print $1}')" = "$expected"
+            echo 'canonical_archive_unchanged=true'; echo 'final_status=NOT_FINAL'
+          }
+          run_one spark "$HOME/thf-apps-rc2-exact-candidate-v2/source/spark.zip" 6b74f8d75df8c0b7f74d8c2fee8be7e3517f3803cb42968735bc7a10939bc18c
+          run_one rush "$HOME/thf-apps-rc2-exact-candidate-v2/source/rush.zip" bb6ff035186b13cdde853145f42e66259c205889de2a7b368da34c9cb0582ba7
+          echo 'wave_files_read_or_changed=false'; echo 'canonical_archives_mutated=false'; echo 'production_signing=false'
+          REMOTE
+      - name: Retrieve evidence
+        run: |
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-spark-rush-source-audit-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/summary.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-SPARK-RUSH-AUTHORITATIVE-SOURCE-AUDIT-V1
+          path: out/
+          retention-days: 14
+      - name: Safety assertions
+        run: |
+          grep -q '^wave_files_read_or_changed=false$' out/summary.txt
+          grep -q '^canonical_archives_mutated=false$' out/summary.txt
+          grep -q '^production_signing=false$' out/summary.txt
+          test "$(grep -c '^canonical_archive_unchanged=true$' out/summary.txt)" -eq 2
+          test "$(grep -c '^final_status=NOT_FINAL$' out/summary.txt)" -eq 2
