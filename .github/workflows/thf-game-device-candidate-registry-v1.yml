@@ -1,0 +1,32 @@
+name: THF Game Device Candidate Registry V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json'
+      - 'ReleaseOps/validators/validate_game_device_candidates_v1.py'
+      - 'ReleaseOps/validators/test_validate_game_device_candidates_v1.py'
+      - '.github/workflows/thf-game-device-candidate-registry-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        with:
+          python-version: '3.12'
+      - name: Compile validator and tests
+        run: python -m py_compile ReleaseOps/validators/validate_game_device_candidates_v1.py ReleaseOps/validators/test_validate_game_device_candidates_v1.py
+      - name: Validate authoritative device registry
+        run: python ReleaseOps/validators/validate_game_device_candidates_v1.py ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json
+      - name: Run fail-closed regression tests
+        run: |
+          python -m pip install --disable-pip-version-check pytest
+          python -m pytest -q ReleaseOps/validators/test_validate_game_device_candidates_v1.py
