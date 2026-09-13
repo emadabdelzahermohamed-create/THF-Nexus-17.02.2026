@@ -1,0 +1,64 @@
+import copy
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+VALIDATOR = ROOT / "ReleaseOps/validators/validate_apps_factory_state.py"
+STATE = ROOT / "ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260913_2035_EET.json"
+
+
+def run_state(tmp_path, mutate=None):
+    d = json.loads(STATE.read_text())
+    if mutate:
+        mutate(d)
+    p = tmp_path / "state.json"
+    p.write_text(json.dumps(d))
+    cp = subprocess.run([sys.executable, str(VALIDATOR), str(p)], text=True, capture_output=True)
+    return cp, json.loads(cp.stdout)
+
+
+def test_authoritative_state_passes(tmp_path):
+    cp, report = run_state(tmp_path)
+    assert cp.returncode == 0, cp.stdout + cp.stderr
+    assert report["validation"] == "PASS"
+    assert report["apps_exact_package_gate_pass"] == 9
+    assert report["apps_physical_pending"] == 9
+    assert report["pytest_missing_apps"] == ["rush", "spark"]
+
+
+def test_rejects_false_final(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["truth_boundary"].__setitem__("final_or_play_ready", True))
+    assert cp.returncode != 0
+    assert report["validation"] == "FAIL"
+
+
+def test_rejects_package_drift(tmp_path):
+    def mutate(d):
+        d["apps"][0]["package"] = "com.example.wrong"
+    cp, report = run_state(tmp_path, mutate)
+    assert cp.returncode != 0
+    assert any("package drift" in e for e in report["errors"])
+
+
+def test_rejects_api36_regression(tmp_path):
+    def mutate(d):
+        d["apps"][1]["target_sdk"] = 35
+    cp, report = run_state(tmp_path, mutate)
+    assert cp.returncode != 0
+    assert any("targetSdk" in e for e in report["errors"])
+
+
+def test_rejects_fabricated_physical_pass(tmp_path):
+    def mutate(d):
+        d["apps"][2]["physical_phone_acceptance"] = "PASS"
+    cp, report = run_state(tmp_path, mutate)
+    assert cp.returncode != 0
+    assert any("physical evidence" in e for e in report["errors"])
+
+
+def test_rejects_unsafe_rollout_truth(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["truth_boundary"].__setitem__("public_rollout_performed", True))
+    assert cp.returncode != 0
+    assert any("public_rollout_performed" in e for e in report["errors"])
