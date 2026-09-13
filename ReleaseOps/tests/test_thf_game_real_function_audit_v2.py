@@ -6,7 +6,7 @@ spec=importlib.util.spec_from_file_location('auditv2',SCRIPT); mod=importlib.uti
 class AuditV2Tests(unittest.TestCase):
     def mk(self,kind='terra',placeholder=False):
         td=tempfile.TemporaryDirectory(); r=pathlib.Path(td.name)
-        (r/'project.godot').write_text('[display]\nhandheld/orientation=3\nstretch/aspect="expand"\n')
+        (r/'project.godot').write_text('[display]\nwindow/handheld/orientation=4\nwindow/stretch/aspect="expand"\n')
         (r/'export_presets.cfg').write_text('[preset.0]\nname="Android"\n')
         body='''extends CharacterBody3D\nfunc _physics_process(delta):\n velocity.x=1\n move_and_slide()\nfunc _input(e):\n if e is InputEventScreenTouch: pass\nvar avatar=preload("res://player.tscn")\nvar camera_controller=true\nvar score=0\nfunc interact(): pass\n'''
         if placeholder: body+='var api="http://localhost:8080"\n'
