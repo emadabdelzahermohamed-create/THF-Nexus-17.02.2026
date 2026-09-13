@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          PUB=$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=60m --quiet --command='bash -lc '\''f="$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/runtime/public-url.txt"; test -f "$f"; cat "$f"'\'')
+          PUB="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=60m --quiet --command='cat "$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/runtime/public-url.txt"' | tail -1 | tr -d '\r')"
           case "$PUB" in https://*.trycloudflare.com) ;; *) echo 'No approved existing staging URL'; exit 2;; esac
           python - "$PUB" <<'PY'
           import json,sys,urllib.request
@@ -112,11 +112,11 @@ jobs:
             raw=$(find "$android" -type f -name '*.apk' -path '*/build/outputs/apk/release/*' | head -1); test -n "$raw"
             aligned="out/$app-aligned.apk"; final="out/THF-${app^^}-${cp}-RUNTIME-STAGING-QA.apk"
             "$ZIPALIGN" -f -p 4 "$raw" "$aligned"; "$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$final" "$aligned"
-            "$APKSIGNER" verify "$final" >/dev/null; badging=$("$AAPT" dump badging "$final")
+            sig=false; "$APKSIGNER" verify "$final" >/dev/null 2>&1 && sig=true; badging=$("$AAPT" dump badging "$final")
             p=false; grep -q "package: name='$pkg'" <<<"$badging" && p=true; t=false; grep -q "targetSdkVersion:'36'" <<<"$badging" && t=true; dbg=false; grep -q application-debuggable <<<"$badging" && dbg=true
             base=false; pass=false; unzip -p "$final" classes.dex | strings | grep -F "$STAGING_URL" >/dev/null && base=true && pass=true
-            ah=$(sha256sum "$final"|awk '{print $1}'); st=FAIL; [ "$p" = true ] && [ "$t" = true ] && [ "$dbg" = false ] && [ "$base" = true ] && [ "$pass" = true ] && st=PASS
-            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\ttrue\t%s\t%s\t%s\n' "$app" "$cp" "$pkg" "$sha" "$st" "$ah" "$p" "$t" "$dbg" "$base" "$pass" >> out/results.tsv
+            ah=$(sha256sum "$final"|awk '{print $1}'); st=FAIL; [ "$p" = true ] && [ "$t" = true ] && [ "$sig" = true ] && [ "$dbg" = false ] && [ "$base" = true ] && [ "$pass" = true ] && st=PASS
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$cp" "$pkg" "$sha" "$st" "$ah" "$p" "$t" "$sig" "$dbg" "$base" "$pass" >> out/results.tsv
             rm -f "$aligned"
           done < src/matrix.tsv
           cat out/results.tsv
