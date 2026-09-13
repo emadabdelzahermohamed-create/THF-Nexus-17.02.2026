@@ -1,0 +1,83 @@
+name: THF Apps Notification Contract Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-apps-notification-contract-inventory-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Verify exact source and classify notification support
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out src work
+          cat > src/matrix.tsv <<'EOF'
+          pulse	RC3	71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10	com.topherofit.thf.pulse	1AbcoAGpkhtOTiwxVIPaDFgOL8ZSs02KF
+          forge	RC3	0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51	com.topherofit.thf.forge	1hoq_PHHAKihrUYeJ6DXsBjAleAkc1LwQ
+          echo	RC4	87c6a532fc56870b9a4c1039ac1f44b43e1a2f4c5c4518caf0d6537c61704226	com.topherofit.thf.echo	113ncXza3VjYjGHv9-5HSFXAXFJjGLP8T
+          codex	RC4	c5108b257b5e9af6849c43df7b7aa671e586bb4a9c91964566c85b1a6329e83d	com.topherofit.thf.codex	1d5l5TcI0gphbs6O9F8_kpYkCayrmV9hZ
+          spark	RC3	dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0	com.topherofit.thf.spark	1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+          rush	RC3	bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b	com.topherofit.thf.rush	1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+          vault	RC4-BF1	dd6db86d7532f773a8d1d2662bf466bdcc0f1c64a863602ecdd1267c8f82fa33	com.topherofit.thf.vault	1uxsDgpOF5ZknvCnYIZTgIYNnO2cwVVJI
+          signal	RC4-BF1	377044263fa0fc366afe67c6b42ccf4f3e2d1bc75769350f2ee885983f820ddf	com.topherofit.thf.signal	1za4Ibh8Lm5gt0DNe2oNLxmxYp0bb_gLh
+          command	RC3	f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408	com.topherofit.thf.command	1eOdaj9IYsExCgzV0evwkW2hTpRie1Yke
+          EOF
+          printf 'app\tcheckpoint\tpackage\tsource_sha\tpost_notifications_permission\tnotification_api_code\tchannel_code\tfirebase_messaging_dep\tfcm_service_or_receiver\ttoken_registration_code\tprovider_delivery_proven\tclassification\n' > out/notifications.tsv
+          while IFS=$'\t' read -r app cp sha pkg fid; do
+            z="src/$app.zip"; d="work/$app"
+            code=$(curl -sSLo "$z" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$fid?alt=media&supportsAllDrives=true")
+            [ "$code" = 200 ]; [ "$(sha256sum "$z"|awk '{print $1}')" = "$sha" ]; unzip -tq "$z" >/dev/null; mkdir -p "$d"; unzip -q "$z" -d "$d"
+            root=$(find "$d" -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1); test -n "$root"
+            scan="$root/android"
+            perm=false; grep -Rqs --include='AndroidManifest.xml' 'android.permission.POST_NOTIFICATIONS' "$scan" && perm=true
+            api=false; grep -RqsE --include='*.kt' --include='*.java' 'NotificationCompat|NotificationManager|NotificationChannel|notify\(' "$scan/app/src" && api=true
+            chan=false; grep -RqsE --include='*.kt' --include='*.java' 'NotificationChannel|createNotificationChannel' "$scan/app/src" && chan=true
+            dep=false; grep -RqsEi --include='*.gradle' --include='*.kts' 'firebase[^[:alnum:]]*messaging|com\.google\.firebase:firebase-messaging' "$scan" && dep=true
+            service=false; grep -RqsEi --include='AndroidManifest.xml' --include='*.kt' --include='*.java' 'FirebaseMessagingService|MESSAGING_EVENT|firebase.*messaging' "$scan/app/src" && service=true
+            token=false; grep -RqsEi --include='*.kt' --include='*.java' 'onNewToken|getToken\(|FirebaseMessaging\.getInstance|push.?token|device.?token|register.*notification|register.*push' "$scan/app/src" && token=true
+            class=NONE
+            if [ "$api" = true ]; then class=LOCAL_ONLY_SOURCE_EVIDENCE; fi
+            if [ "$dep" = true ] || [ "$service" = true ] || [ "$token" = true ]; then class=PUSH_WIRING_INCOMPLETE; fi
+            if [ "$dep" = true ] && [ "$service" = true ] && [ "$token" = true ]; then class=PUSH_CLIENT_WIRING_SOURCE_EVIDENCE; fi
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\tfalse\t%s\n' "$app" "$cp" "$pkg" "$sha" "$perm" "$api" "$chan" "$dep" "$service" "$token" "$class" >> out/notifications.tsv
+          done < src/matrix.tsv
+          python3 - <<'PY'
+          import csv,json
+          rows=list(csv.DictReader(open('out/notifications.tsv'),delimiter='\t'))
+          assert len(rows)==9
+          out={'schema':1,'exact_source_sha_bound':True,'apps':rows,'truth':{'provider_delivery_proven':False,'permission_runtime_behavior_proven':False,'physical_device_proven':False,'push_ready':False,'final_or_play_ready':False}}
+          json.dump(out,open('out/notifications.json','w'),indent=2,sort_keys=True)
+          print('NOTIFICATION_INVENTORY=PASS')
+          print('PUSH_READY=FALSE')
+          for r in rows: print(r['app'],r['classification'])
+          PY
+          printf '%s\n' 'EXACT_SOURCE_SHA_BOUND=TRUE' 'PROVIDER_DELIVERY_PROVEN=FALSE' 'PHYSICAL_DEVICE_PROVEN=FALSE' 'PUSH_READY=FALSE' 'FINAL_OR_PLAY_READY=FALSE' > out/TRUTH.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-APPS-NOTIFICATION-CONTRACT-INVENTORY-V1
+          path: out/
+          retention-days: 14
