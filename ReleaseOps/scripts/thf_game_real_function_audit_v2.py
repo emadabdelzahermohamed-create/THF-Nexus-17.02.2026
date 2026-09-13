@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse, json, pathlib, re, sys
 
 TEXT_EXT={'.gd','.tscn','.tres','.godot','.cfg','.ini','.json','.md','.txt','.cs','.java','.kt','.xml','.gradle','.properties','.shader','.gdshader','.js','.ts','.tsx','.html','.css','.py'}
+ENDPOINT_RUNTIME_EXT={'.gd','.tscn','.tres','.godot','.cfg','.ini','.json','.cs','.java','.kt','.xml','.gradle','.properties','.js','.ts','.tsx','.html','.py'}
 MAX_FILE=2_000_000
 
 def read_texts(root:pathlib.Path):
@@ -26,6 +27,8 @@ def audit(root:pathlib.Path,kind:str):
     projects=list(root.rglob('project.godot'))
     project_root=projects[0].parent if len(projects)==1 else root
     items=read_texts(project_root); blob='\n'.join(f'### {n}\n{t}' for n,t in items)
+    endpoint_items=[(n,t) for n,t in items if pathlib.PurePosixPath(n).suffix.lower() in ENDPOINT_RUNTIME_EXT or pathlib.PurePosixPath(n).name in {'project.godot','export_presets.cfg','package.json'}]
+    endpoint_blob='\n'.join(f'### {n}\n{t}' for n,t in endpoint_items)
     pg=(projects[0].read_text(errors='ignore') if len(projects)==1 else '')
     checks=[]
     engine='godot' if len(projects)==1 else ('web' if (project_root/'package.json').exists() or list(project_root.rglob('index.html')) else 'unknown')
@@ -38,7 +41,7 @@ def audit(root:pathlib.Path,kind:str):
     checks.append(c('camera_or_view_control',m(blob,r'Camera3D|camera[_ -]?(controller|follow)|look_at|mouse_sensitivity|drag.*camera|pinch|viewport'),'camera/view marker',kind not in {'learn','fitness','spark','rush'}))
     checks.append(c('offline_mode_truthful',m(blob,r'offline|local[_ -]?(mode|training|explore|practice)|training[_ -]?mode|practice[_ -]?mode|cached[_ -]?local'),'local/offline marker',False))
     checks.append(c('backend_authority_marker',m(blob,r'authoritative|server[_ -]?author|validate.*server|https://|wss://|WebSocket|RPC'),'server/network authority marker',False))
-    checks.append(c('no_placeholder_endpoint',not m(blob,r'https?://(example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?',r'REPLACE[_ -]?ME',r'YOUR[_ -]?(API|URL|HOST)',r'placeholder[_ -]?(url|endpoint)'),'no obvious placeholder endpoint'))
+    checks.append(c('no_placeholder_endpoint',not m(endpoint_blob,r'https?://(example\.com|localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?',r'REPLACE[_ -]?ME',r'YOUR[_ -]?(API|URL|HOST)',r'placeholder[_ -]?(url|endpoint)'),'no obvious placeholder endpoint in runtime/config files'))
     checks.append(c('anti_cheat_or_validation',m(blob,r'anti[_ -]?cheat|server.*validate|validate.*(hit|move|position|score|rep|answer)|proof[_ -]?of[_ -]?human|integrity'),'anti-cheat/validation marker',False))
     checks.append(c('avatar_animation_pipeline',m(blob,r'MakeHuman|MPFB|Universal Animation Library|\bUAL\b|AnimationTree|Skeleton3D|humanoid|avatar[_ -]?(rig|skeleton|animation)'),'avatar/animation integration marker',False))
     checks.append(c('ik_marker',m(blob,r'SkeletonIK3D|TwoBoneIK3D|\bIK\b|inverse[_ -]?kinematic'),'IK marker',False))
