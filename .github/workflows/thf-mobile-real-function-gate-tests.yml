@@ -6,11 +6,15 @@ on:
     paths:
       - 'ReleaseOps/mobile/mobile_real_function_gate.py'
       - 'ReleaseOps/mobile/test_mobile_real_function_gate.py'
+      - 'ReleaseOps/mobile/capture_android_device_evidence_v2.py'
+      - 'ReleaseOps/mobile/test_capture_android_device_evidence_v2.py'
       - '.github/workflows/thf-mobile-real-function-gate-tests.yml'
   pull_request:
     paths:
       - 'ReleaseOps/mobile/mobile_real_function_gate.py'
       - 'ReleaseOps/mobile/test_mobile_real_function_gate.py'
+      - 'ReleaseOps/mobile/capture_android_device_evidence_v2.py'
+      - 'ReleaseOps/mobile/test_capture_android_device_evidence_v2.py'
       - '.github/workflows/thf-mobile-real-function-gate-tests.yml'
   workflow_dispatch:
 
@@ -23,7 +27,15 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - name: Compile release gate
-        run: python3 -m py_compile ReleaseOps/mobile/mobile_real_function_gate.py ReleaseOps/mobile/test_mobile_real_function_gate.py
-      - name: Run release-gate tests
-        run: python3 -m unittest -v ReleaseOps/mobile/test_mobile_real_function_gate.py
+      - name: Compile release and device evidence gates
+        run: |
+          python3 -m py_compile \
+            ReleaseOps/mobile/mobile_real_function_gate.py \
+            ReleaseOps/mobile/test_mobile_real_function_gate.py \
+            ReleaseOps/mobile/capture_android_device_evidence_v2.py \
+            ReleaseOps/mobile/test_capture_android_device_evidence_v2.py
+      - name: Run fail-closed gate tests
+        run: |
+          python3 -m unittest -v \
+            ReleaseOps/mobile/test_mobile_real_function_gate.py \
+            ReleaseOps/mobile/test_capture_android_device_evidence_v2.py
