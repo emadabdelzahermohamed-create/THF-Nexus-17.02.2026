@@ -1,0 +1,85 @@
+name: THF Pass Live Semantics Probe V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-pass-live-semantics-probe-v1.yml'
+      - 'ReleaseOps/validators/probe_identity_runtime_semantics.py'
+      - 'ReleaseOps/tests/test_identity_runtime_semantics_probe.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Regression-test probe truth boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m py_compile ReleaseOps/validators/probe_identity_runtime_semantics.py
+          python -m pytest -q ReleaseOps/tests/test_identity_runtime_semantics_probe.py
+
+      - name: Resolve approved existing staging endpoint
+        id: runtime
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PUB="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='cat "$HOME/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/runtime/public-url.txt"' | tail -1 | tr -d '\r')"
+          case "$PUB" in https://*.trycloudflare.com) ;; *) echo 'No approved existing reversible staging URL'; exit 2;; esac
+          echo "url=$PUB" >> "$GITHUB_OUTPUT"
+
+      - name: Probe live identity surfaces with safe negative requests
+        shell: bash
+        env:
+          STAGING_URL: ${{ steps.runtime.outputs.url }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          python ReleaseOps/validators/probe_identity_runtime_semantics.py "$STAGING_URL" --json-out out/identity-live-semantics.json | tee out/summary.txt
+          python - <<'PY'
+          import json
+          d=json.load(open('out/identity-live-semantics.json'))
+          truth={
+            'health_json_ok': d['health_json_ok'],
+            'identity_route_surface_complete': d['surface_complete'],
+            'valid_credential_flow_proven': False,
+            'server_side_revocation_proven': False,
+            'physical_device_proven': False,
+            'production_signing': False,
+            'public_rollout': False,
+            'final_or_play_ready': False,
+          }
+          json.dump(truth,open('out/TRUTH.json','w'),indent=2); print(json.dumps(truth,sort_keys=True))
+          assert truth['health_json_ok'] is True
+          assert truth['final_or_play_ready'] is False
+          PY
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-PASS-LIVE-SEMANTICS-PROBE-V1
+          path: out/
+          retention-days: 14
