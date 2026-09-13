@@ -41,7 +41,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p out
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=35m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=35m --quiet --command='bash -s' > out/summary.txt 2>&1 <<'REMOTE'
           set -Eeuo pipefail
           ROOT="$HOME/thf-spark-rush-local-practice-candidate-v1"; rm -rf "$ROOT"; mkdir -p "$ROOT/out"
           SDK="$HOME/thf-builder-rc16-build/android-sdk"; DIST="$HOME/thf-builder-rc16-build/cache/gradle-dist-8.11.1/gradle-8.11.1/bin/gradle"
@@ -102,11 +103,19 @@ jobs:
           run_one rush "$HOME/thf-apps-rc2-exact-candidate-v2/source/rush.zip" bb6ff035186b13cdde853145f42e66259c205889de2a7b368da34c9cb0582ba7 com.topherofit.thf.rush THF-Rush-RC2-Local-Practice
           echo 'online_authority_status=BLOCKED_PENDING_REAL_HTTPS_ENDPOINT';echo 'wave_files_read_or_changed=false';echo 'production_signing=false';echo 'canonical_archives_mutated=false'
           REMOTE
+          rc=$?
+          set -e
+          printf '\nremote_exit_code=%s\n' "$rc" >> out/summary.txt
       - name: Retrieve candidate evidence
+        if: always()
+        shell: bash
         run: |
+          set +e
           gcloud compute scp --recurse "$GCP_BUILDER:~/thf-spark-rush-local-practice-candidate-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          set -e
           cat out/summary.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: THF-SPARK-RUSH-LOCAL-PRACTICE-CANDIDATE-V1
           path: out/
@@ -114,6 +123,7 @@ jobs:
           compression-level: 0
       - name: Safety truth gate
         run: |
+          grep -q '^remote_exit_code=0$' out/summary.txt
           grep -q '^online_authority_status=BLOCKED_PENDING_REAL_HTTPS_ENDPOINT$' out/summary.txt
           grep -q '^wave_files_read_or_changed=false$' out/summary.txt
           grep -q '^production_signing=false$' out/summary.txt
