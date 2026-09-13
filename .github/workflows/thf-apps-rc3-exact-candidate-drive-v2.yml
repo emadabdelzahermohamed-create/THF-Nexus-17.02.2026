@@ -1,0 +1,192 @@
+name: THF Apps RC3 Exact Candidate Drive V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-apps-rc3-exact-candidate-drive-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  exact-candidate-drive-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Download and verify authoritative APPS-RC3 sources
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -rf source-staging && mkdir -p source-staging
+          cat > source-staging/expected.tsv <<'EOF'
+          pulse	71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10	com.topherofit.thf.pulse	1AbcoAGpkhtOTiwxVIPaDFgOL8ZSs02KF
+          forge	0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51	com.topherofit.thf.forge	1hoq_PHHAKihrUYeJ6DXsBjAleAkc1LwQ
+          echo	40a197b60563e560cab93ba0a64c859d9b650da222fdaec933993977d63902ab	com.topherofit.thf.echo	1PsttnJ7-eEEXO-ZZcibqs7LqGp9uTkhg
+          codex	3d60cc550732468c89fe120f552def53ac798646d065e94efa153f8979e15b1e	com.topherofit.thf.codex	1E4deAEnAJKI24XHR0JNKAz6cKef7Q_yM
+          spark	dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0	com.topherofit.thf.spark	1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+          rush	bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b	com.topherofit.thf.rush	1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+          vault	7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793	com.topherofit.thf.vault	1OuR6dm89A3aIu0UwcaUVs_VYQJxbReac
+          signal	51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0	com.topherofit.thf.signal	1WtqjtPgPxyOPGk5T9FHQTF7lyAzPLBXA
+          command	f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408	com.topherofit.thf.command	1eOdaj9IYsExCgzV0evwkW2hTpRie1Yke
+          EOF
+          printf 'app\tpackage\tsha256\tdrive_id\n' > source-staging/verified.tsv
+          while IFS=$'\t' read -r app expected pkg drive_id; do
+            f="source-staging/${app}.zip"
+            code=$(curl --silent --show-error --location \
+              -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+              -o "$f" -w '%{http_code}' \
+              "https://www.googleapis.com/drive/v3/files/${drive_id}?alt=media&supportsAllDrives=true")
+            [ "$code" = 200 ]
+            unzip -tq "$f" >/dev/null
+            actual=$(sha256sum "$f" | awk '{print $1}')
+            [ "$actual" = "$expected" ]
+            printf '%s\t%s\t%s\t%s\n' "$app" "$pkg" "$actual" "$drive_id" >> source-staging/verified.tsv
+          done < source-staging/expected.tsv
+          [ "$(wc -l < source-staging/verified.tsv)" -eq 10 ]
+          echo APPS_RC3_DRIVE_SOURCE_STAGING=PASS
+
+      - name: Stage exact sources to isolated builder
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=65m --quiet \
+            --command='rm -rf "$HOME/thf-apps-rc3-exact-candidate-v2" && mkdir -p "$HOME/thf-apps-rc3-exact-candidate-v2/source"'
+          gcloud compute scp source-staging/*.zip source-staging/expected.tsv \
+            "$GCP_BUILDER:~/thf-apps-rc3-exact-candidate-v2/source/" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
+      - name: Build QA-sign and inspect exact candidates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=65m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-apps-rc3-exact-candidate-v2"
+          SRC="$ROOT/source"; WORK="$ROOT/work"; OUT="$ROOT/out"
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"
+          rm -rf "$WORK" "$OUT" && mkdir -p "$WORK" "$OUT"
+          test -d "$SDK"
+          export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"
+          BT=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          AAPT="$BT/aapt"; APKSIGNER="$BT/apksigner"; ZIPALIGN="$BT/zipalign"
+          test -x "$AAPT"; test -x "$APKSIGNER"; test -x "$ZIPALIGN"
+          GRADLE=$(find "$HOME/.gradle/wrapper/dists" -type f -path '*/bin/gradle' -perm -u+x 2>/dev/null | sort -V | tail -1 || true)
+          [ -n "$GRADLE" ] || GRADLE=$(command -v gradle || true)
+          test -n "$GRADLE"
+          KS="$ROOT/qa-debug.keystore"
+          if [ ! -f "$KS" ]; then
+            keytool -genkeypair -noprompt -keystore "$KS" -storepass android -alias androiddebugkey -keypass android \
+              -dname 'CN=Android Debug,O=THF QA,C=US' -keyalg RSA -keysize 2048 -validity 3650 >/dev/null 2>&1
+          fi
+          printf 'app\tpackage\tsource_sha256\tbuild_status\tapk_sha256\tpackage_ok\ttarget36_ok\tsignature_ok\tdebuggable\tmin_sdk\tversion_code\tversion_name\tnote\n' > "$OUT/results.tsv"
+          while IFS=$'\t' read -r app expected pkg drive_id; do
+            z="$SRC/$app.zip"
+            actual=$(sha256sum "$z" | awk '{print $1}')
+            if [ "$actual" != "$expected" ]; then
+              printf '%s\t%s\t%s\tSOURCE_SHA_MISMATCH\t\tfalse\tfalse\tfalse\t\t\t\t\tstaged source mismatch\n' "$app" "$pkg" "$expected" >> "$OUT/results.tsv"; continue
+            fi
+            d="$WORK/$app"; mkdir -p "$d"; unzip -q "$z" -d "$d"
+            root=$(find "$d" -type f \( -path '*/android/settings.gradle' -o -path '*/android/settings.gradle.kts' \) -printf '%h\n' | head -1 || true)
+            if [ -z "$root" ]; then
+              printf '%s\t%s\t%s\tNO_ANDROID_ROOT\t\tfalse\tfalse\tfalse\t\t\t\t\tno Android Gradle root\n' "$app" "$pkg" "$expected" >> "$OUT/results.tsv"; continue
+            fi
+            printf 'sdk.dir=%s\n' "$SDK" > "$root/local.properties"
+            set +e
+            (cd "$root" && "$GRADLE" --no-daemon clean assembleRelease) >"$OUT/$app.gradle.log" 2>&1
+            rc=$?
+            set -e
+            if [ $rc -ne 0 ]; then
+              printf '%s\t%s\t%s\tBUILD_FAIL\t\tfalse\tfalse\tfalse\t\t\t\t\tassembleRelease failed\n' "$app" "$pkg" "$expected" >> "$OUT/results.tsv"; continue
+            fi
+            raw=$(find "$root" -type f -name '*.apk' -path '*/build/outputs/apk/release/*' | head -1 || true)
+            if [ -z "$raw" ]; then
+              printf '%s\t%s\t%s\tBUILD_NO_APK\t\tfalse\tfalse\tfalse\t\t\t\t\tno release APK\n' "$app" "$pkg" "$expected" >> "$OUT/results.tsv"; continue
+            fi
+            aligned="$OUT/$app-aligned.apk"; final="$OUT/THF-${app^^}-APPS-RC3-EXACT-QA.apk"
+            "$ZIPALIGN" -f -p 4 "$raw" "$aligned"
+            "$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$final" "$aligned"
+            "$APKSIGNER" verify --verbose --print-certs "$final" > "$OUT/$app.signature.txt"
+            "$ZIPALIGN" -c -p 4 "$final"
+            badging=$("$AAPT" dump badging "$final"); printf '%s\n' "$badging" > "$OUT/$app.badging.txt"
+            p_ok=false; grep -q "package: name='$pkg'" <<<"$badging" && p_ok=true
+            t_ok=false; grep -q "targetSdkVersion:'36'" <<<"$badging" && t_ok=true
+            sig_ok=false; "$APKSIGNER" verify "$final" >/dev/null 2>&1 && sig_ok=true
+            debug=false; grep -q 'application-debuggable' <<<"$badging" && debug=true
+            min_sdk=$(sed -n "s/^sdkVersion:'\([^']*\)'.*/\1/p" <<<"$badging" | head -1)
+            vc=$(sed -n "s/^package:.*versionCode='\([^']*\)'.*/\1/p" <<<"$badging" | head -1)
+            vn=$(sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p" <<<"$badging" | head -1)
+            apksha=$(sha256sum "$final" | awk '{print $1}')
+            printf '%s  %s\n' "$apksha" "$(basename "$final")" > "$OUT/$app.sha256"
+            status=APK_INSPECTION_FAIL
+            [ "$p_ok" = true ] && [ "$t_ok" = true ] && [ "$sig_ok" = true ] && [ "$debug" = false ] && status=APK_INSPECTION_PASS
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$pkg" "$expected" "$status" "$apksha" "$p_ok" "$t_ok" "$sig_ok" "$debug" "$min_sdk" "$vc" "$vn" 'QA signature only; runtime and physical-device gates remain mandatory' >> "$OUT/results.tsv"
+            rm -f "$aligned"
+          done < "$SRC/expected.tsv"
+          python3 - "$OUT/results.tsv" "$OUT/summary.json" <<'PY'
+          import csv,json,sys
+          rows=list(csv.DictReader(open(sys.argv[1]),delimiter='\t'))
+          d={'schema':4,'checkpoint':'APPS-RC3','mode':'QA_ONLY_REVERSIBLE','exact_source_required':True,'production_signing':False,'public_rollout':False,'runtime_endpoint_gate':'REQUIRED_BEFORE_FINAL','physical_device_gate':'REQUIRED_BEFORE_FINAL','apps':rows}
+          d['counts']={'total':len(rows),'inspection_pass':sum(x['build_status']=='APK_INSPECTION_PASS' for x in rows),'fail':sum(x['build_status']!='APK_INSPECTION_PASS' for x in rows)}
+          json.dump(d,open(sys.argv[2],'w'),indent=2); print(json.dumps(d['counts']))
+          PY
+          REMOTE
+
+      - name: Retrieve exact candidate evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -rf out && mkdir out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-apps-rc3-exact-candidate-v2/out/*" out/ \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          cp source-staging/verified.tsv out/drive-source-verified.tsv
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-APPS-RC3-EXACT-QA-CANDIDATES-DRIVE-V2
+          path: out/
+          retention-days: 14
+          compression-level: 0
+
+      - name: Fail closed unless all exact candidates pass package inspection
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('out/summary.json'))
+          assert d['checkpoint']=='APPS-RC3' and d['mode']=='QA_ONLY_REVERSIBLE'
+          assert d['counts']['total']==9, d['counts']
+          assert d['counts']['inspection_pass']==9 and d['counts']['fail']==0, d['counts']
+          for a in d['apps']:
+              assert a['build_status']=='APK_INSPECTION_PASS', a
+              assert a['package_ok']=='true' and a['target36_ok']=='true' and a['signature_ok']=='true'
+              assert a['debuggable']=='false' and len(a['apk_sha256'])==64
+          print('THF_APPS_RC3_EXACT_CANDIDATES_DRIVE_V2=PASS')
+          PY
