@@ -1,0 +1,75 @@
+name: THF Apps Identity Handoff Audit V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/validators/audit_identity_handoff_contract.py'
+      - 'ReleaseOps/validators/test_audit_identity_handoff_contract.py'
+      - '.github/workflows/thf-apps-identity-handoff-audit-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Validator regression tests
+        run: python -m pytest -q ReleaseOps/validators/test_audit_identity_handoff_contract.py
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Audit exact authoritative sources
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -rf src out && mkdir -p src out
+          cat > src/matrix.tsv <<'EOF'
+          pulse	RC3	71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10	com.topherofit.thf.pulse	1AbcoAGpkhtOTiwxVIPaDFgOL8ZSs02KF
+          forge	RC3	0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51	com.topherofit.thf.forge	1hoq_PHHAKihrUYeJ6DXsBjAleAkc1LwQ
+          echo	RC4	87c6a532fc56870b9a4c1039ac1f44b43e1a2f4c5c4518caf0d6537c61704226	com.topherofit.thf.echo	113ncXza3VjYjGHv9-5HSFXAXFJjGLP8T
+          codex	RC4	c5108b257b5e9af6849c43df7b7aa671e586bb4a9c91964566c85b1a6329e83d	com.topherofit.thf.codex	1d5l5TcI0gphbs6O9F8_kpYkCayrmV9hZ
+          spark	RC3	dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0	com.topherofit.thf.spark	1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+          rush	RC3	bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b	com.topherofit.thf.rush	1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+          vault	RC4-BF1	dd6db86d7532f773a8d1d2662bf466bdcc0f1c64a863602ecdd1267c8f82fa33	com.topherofit.thf.vault	1uxsDgpOF5ZknvCnYIZTgIYNnO2cwVVJI
+          signal	RC4-BF1	377044263fa0fc366afe67c6b42ccf4f3e2d1bc75769350f2ee885983f820ddf	com.topherofit.thf.signal	1za4Ibh8Lm5gt0DNe2oNLxmxYp0bb_gLh
+          command	RC3	f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408	com.topherofit.thf.command	1eOdaj9IYsExCgzV0evwkW2hTpRie1Yke
+          EOF
+          printf 'app\tcheckpoint\tpackage\tsource_sha256\tsession_lifecycle\tsecure_storage\tpass_binding\thandoff\tno_sensitive_query_tokens\tno_cleartext_runtime\tcontract_surface_complete\n' > out/summary.tsv
+          while IFS=$'\t' read -r app cp sha pkg fid; do
+            zip="src/$app.zip"; dir="src/$app"
+            code=$(curl -sSLo "$zip" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$fid?alt=media&supportsAllDrives=true")
+            [ "$code" = 200 ]; [ "$(sha256sum "$zip" | awk '{print $1}')" = "$sha" ]; unzip -tq "$zip" >/dev/null
+            mkdir -p "$dir"; unzip -q "$zip" -d "$dir"
+            root=$(find "$dir" -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1); test -n "$root"
+            python ReleaseOps/validators/audit_identity_handoff_contract.py "$root" --json-out "out/$app.identity.json" >/dev/null
+            python - "$app" "$cp" "$pkg" "$sha" "out/$app.identity.json" >> out/summary.tsv <<'PY'
+          import json,sys
+          app,cp,pkg,sha,path=sys.argv[1:]
+          d=json.load(open(path)); m=d['minimum_contract_surfaces']
+          vals=[app,cp,pkg,sha,m['session_lifecycle_surface'],m['secure_storage_surface'],m['federation_binding_surface'],m['cross_app_handoff_surface'],m['no_sensitive_query_token_pattern'],m['no_cleartext_runtime_endpoint'],d['contract_surface_complete']]
+          print('\t'.join(map(str,vals)))
+          PY
+          done < src/matrix.tsv
+          cat out/summary.tsv
+          printf '%s\n' 'IDENTITY_HANDOFF_AUDIT=NON_PROMOTIONAL' 'AUTH_BACKEND_SUCCESS_NOT_PROVEN=TRUE' 'PHYSICAL_CROSS_APP_HANDOFF_NOT_PROVEN=TRUE' > out/truth-boundary.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-APPS-IDENTITY-HANDOFF-AUDIT-V1
+          path: out/
+          retention-days: 14
