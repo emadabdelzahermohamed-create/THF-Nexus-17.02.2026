@@ -7,6 +7,7 @@ on:
       - 'ReleaseOps/games_factory/apply_spark_rush_real_game_overlay_v1.py'
       - '.github/workflows/thf-spark-rush-real-game-overlay-v1.yml'
       - 'ReleaseOps/validators/audit_game_like_real_function.py'
+      - 'ReleaseOps/validators/audit_game_apk_payload_v1.py'
   workflow_dispatch:
 
 permissions:
@@ -83,9 +84,10 @@ jobs:
           grep -q '"source_contract": "PASS"' "out/$APP.game-like-contract.json"
           printf 'APP=%s\nCHECKPOINT=%s\nSOURCE_SHA256=%s\nCANDIDATE_TREE_MANIFEST_SHA256=%s\nGAME_LIKE_SOURCE_CONTRACT=PASS\nCANONICAL_ARCHIVE_MUTATED=NO\nOFFLINE_AUTHORITY=LOCAL_ONLY_NO_FAKE_ONLINE_STATE\nREADINESS_PROMOTION=NO\nPHYSICAL_DEVICE_REQUIRED=YES\n' "$APP" "$CHECKPOINT" "$SOURCE_SHA" "$candidate_tree_sha" > "out/$APP.overlay-summary.txt"
           echo "root=$root" >> "$GITHUB_OUTPUT"
-      - name: Compile regression and API36 package evidence
+      - name: Compile regression API36 package and packaged-game-payload evidence
         env:
           APP: ${{ matrix.app }}
+          PROFILE: ${{ matrix.profile }}
           PACKAGE_ID: ${{ matrix.package_id }}
         shell: bash
         run: |
@@ -114,9 +116,11 @@ jobs:
           sdk=$(sed -n "s/^targetSdkVersion:'\([^']*\)'.*/\1/p" "$GITHUB_WORKSPACE/out/$APP.badging.txt" | head -1)
           test "$pkg" = "$PACKAGE_ID"
           test "$sdk" = 36
+          python "$GITHUB_WORKSPACE/ReleaseOps/validators/audit_game_apk_payload_v1.py" "$apk" --profile "$PROFILE" --expected-sha256 "$apk_sha" --json-out "$GITHUB_WORKSPACE/out/$APP.apk-payload.json"
+          grep -q '"payload_status": "PASS"' "$GITHUB_WORKSPACE/out/$APP.apk-payload.json"
           cp "$apk" "$GITHUB_WORKSPACE/out/$APP-RC4-real-game-overlay-release.apk"
           printf '%s  %s\n' "$apk_sha" "$APP-RC4-real-game-overlay-release.apk" > "$GITHUB_WORKSPACE/out/$APP.apk.sha256"
-          printf 'ANDROID_REGRESSION_TASKS_RUN=%s\nASSEMBLE_RELEASE=PASS\nAPK_ZIP_INTEGRITY=PASS\nAPK_SHA256=%s\nAPK_PACKAGE=%s\nTARGET_SDK=%s\nPRODUCTION_SIGNING=NO\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' "$ran" "$apk_sha" "$pkg" "$sdk" >> "$GITHUB_WORKSPACE/out/$APP.overlay-summary.txt"
+          printf 'ANDROID_REGRESSION_TASKS_RUN=%s\nASSEMBLE_RELEASE=PASS\nAPK_ZIP_INTEGRITY=PASS\nAPK_GAME_PAYLOAD=PASS\nAPK_SHA256=%s\nAPK_PACKAGE=%s\nTARGET_SDK=%s\nPRODUCTION_SIGNING=NO\nDEVICE_STATUS=PENDING\nFINAL_STATUS=NOT_FINAL\n' "$ran" "$apk_sha" "$pkg" "$sdk" >> "$GITHUB_WORKSPACE/out/$APP.overlay-summary.txt"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
