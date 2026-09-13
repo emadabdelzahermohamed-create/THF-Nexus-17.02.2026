@@ -16,7 +16,7 @@ jobs:
   gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Run deterministic fail-closed tests
         working-directory: ReleaseOps/TokenOps
         run: python3 test_accounting_policy_seal.py
@@ -45,7 +45,7 @@ jobs:
             'PRIVATE_KEY_USED=FALSE' \
             'WAVE_UNTOUCHED=TRUE' > evidence/SAFETY.txt
           sha256sum evidence/accounting_policy_seal.py evidence/test_accounting_policy_seal.py evidence/policy.json evidence/treasury_policy.json evidence/epoch_accounting_lineage.py evidence/SAFETY.txt > evidence/SHA256SUMS.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: THF-TokenOps-Accounting-Policy-Source-Seal-Gate
           path: evidence/
