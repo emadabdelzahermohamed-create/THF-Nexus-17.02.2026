@@ -55,9 +55,9 @@ def audit(root:pathlib.Path,kind:str):
         ]
         if kind in {'terra','rift'}:
             checks += [
-              c('sensor_landscape',m(pg,r'(display/window/)?handheld/orientation\s*=\s*3\b',r'orientation.*sensor.*landscape'),'sensor-landscape'),
-              c('expandable_aspect',m(pg,r'(display/window/)?stretch/aspect\s*=\s*"?expand"?',r'stretch/aspect.*expand'),'expand stretch aspect'),
-              c('no_desktop_window_override',not m(pg,r'window_(width|height)_override\s*=\s*[1-9]',r'size/window_(width|height)_override\s*=\s*[1-9]'),'no non-zero desktop override'),
+              c('sensor_landscape',m(pg,r'(?:display/)?window/handheld/orientation\s*=\s*4\b'),'Godot SCREEN_SENSOR_LANDSCAPE=4'),
+              c('expandable_aspect',m(pg,r'(?:display/)?window/stretch/aspect\s*=\s*"expand"'),'Godot stretch aspect expand'),
+              c('no_desktop_window_override',not m(pg,r'window/size/window_(width|height)_override\s*=\s*[1-9]',r'window_(width|height)_override\s*=\s*[1-9]'),'no non-zero desktop override'),
             ]
     if kind=='rift': checks.append(c('combat_wiring',m(blob,r'\battack\b|\bweapon\b|\bdamage\b|\bhitbox\b|\bhurtbox\b|\breload\b|\bammo\b'),'combat marker'))
     if kind=='terra': checks.append(c('world_interaction',m(blob,r'\binteract\b|quest|inventory|\bNPC\b|world[_ -]?state|pickup'),'world interaction marker'))
