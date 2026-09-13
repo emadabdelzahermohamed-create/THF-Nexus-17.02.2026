@@ -1,0 +1,102 @@
+name: THF Game Backend Runtime Shape V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-game-backend-runtime-shape-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  runtime-shape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect runtime structure safely
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/runtime-shape.json <<'PY'
+          import ast,hashlib,json,pathlib,re
+          src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src/thf/app.py"
+          raw=src.read_bytes(); text=raw.decode('utf-8','replace'); tree=ast.parse(text)
+          result={
+            'schema':'thf-game-backend-runtime-shape-v1',
+            'app_py_sha256':hashlib.sha256(raw).hexdigest(),
+            'classes':[], 'functions':[], 'handler_server_attrs':[], 'server_constructor_calls':[],
+            'main_guard_calls':[], 'env_names':[], 'sensitive_values_emitted':False,
+            'canonical_source_modified':False, 'wave_files_read_or_changed':False,
+            'production_credentials_used':False, 'external_network_allowed':False,
+            'final_or_play_ready':False
+          }
+          for n in tree.body:
+            if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)):
+              result['functions'].append({'name':n.name,'args':[a.arg for a in n.args.args]})
+            elif isinstance(n,ast.ClassDef):
+              methods=[]
+              for m in n.body:
+                if isinstance(m,(ast.FunctionDef,ast.AsyncFunctionDef)):
+                  methods.append({'name':m.name,'args':[a.arg for a in m.args.args]})
+              result['classes'].append({'name':n.name,'bases':[ast.unparse(b) for b in n.bases], 'methods':methods})
+          attrs=set(); constructors=[]; envs=set(); main_calls=[]
+          for n in ast.walk(tree):
+            if isinstance(n,ast.Attribute) and isinstance(n.value,ast.Attribute):
+              v=n.value
+              if isinstance(v.value,ast.Name) and v.value.id=='self' and v.attr=='server': attrs.add(n.attr)
+            if isinstance(n,ast.Call):
+              fn=ast.unparse(n.func)
+              if fn.endswith('HTTPServer') or fn.endswith('ThreadingHTTPServer'):
+                constructors.append({'call':fn,'argc':len(n.args),'keywords':[k.arg for k in n.keywords if k.arg]})
+              if fn in ('os.getenv','os.environ.get') and n.args and isinstance(n.args[0],ast.Constant) and isinstance(n.args[0].value,str): envs.add(n.args[0].value)
+          for n in tree.body:
+            if isinstance(n,ast.If) and isinstance(n.test,ast.Compare):
+              test=ast.unparse(n.test)
+              if '__name__' in test and '__main__' in test:
+                for x in ast.walk(n):
+                  if isinstance(x,ast.Call): main_calls.append(ast.unparse(x.func))
+          result['handler_server_attrs']=sorted(attrs)
+          result['server_constructor_calls']=constructors
+          result['env_names']=sorted(envs)
+          result['main_guard_calls']=sorted(set(main_calls))
+          print(json.dumps(result,indent=2,sort_keys=True))
+          PY
+          python3 - <<'PY'
+          import json,pathlib,re
+          p=pathlib.Path('out/runtime-shape.json'); x=json.loads(p.read_text())
+          assert x['schema']=='thf-game-backend-runtime-shape-v1'
+          assert re.fullmatch(r'[0-9a-f]{64}',x['app_py_sha256'])
+          assert x['sensitive_values_emitted'] is False
+          assert x['canonical_source_modified'] is False
+          assert x['wave_files_read_or_changed'] is False
+          assert x['production_credentials_used'] is False
+          assert x['external_network_allowed'] is False
+          assert x['final_or_play_ready'] is False
+          print(json.dumps(x,indent=2,sort_keys=True))
+          print('RUNTIME_SHAPE_INSPECTION=PASS')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-GAME-BACKEND-RUNTIME-SHAPE-V1
+          path: out/
+          retention-days: 14
