@@ -74,13 +74,14 @@ jobs:
           gradle --no-daemon tasks --all > "$GITHUB_WORKSPACE/out/$APP.gradle-tasks.txt"
           ran=0
           for task in testReleaseUnitTest testDebugUnitTest lintRelease lintDebug; do
-            if grep -Eq "^${task}[[:space:]-]" "$GITHUB_WORKSPACE/out/$APP.gradle-tasks.txt"; then
-              echo "RUNNING=$task" | tee -a "$GITHUB_WORKSPACE/out/$APP.regression.txt"
-              gradle --no-daemon "$task" --stacktrace
+            if grep -Eq "(^|:)${task}[[:space:]-]" "$GITHUB_WORKSPACE/out/$APP.gradle-tasks.txt"; then
+              echo "RUNNING=app:$task" | tee -a "$GITHUB_WORKSPACE/out/$APP.regression.txt"
+              gradle --no-daemon "app:$task" --stacktrace
               ran=$((ran+1))
             fi
           done
-          gradle --no-daemon assembleRelease --stacktrace
+          test "$ran" -ge 2
+          gradle --no-daemon app:assembleRelease --stacktrace
           apk=$(find . -type f -path '*/build/outputs/apk/release/*.apk' | head -1)
           test -n "$apk"
           printf 'APP=%s\nCHECKPOINT=%s\nSOURCE_SHA256=%s\nPACKAGE_ID=%s\nANDROID_REGRESSION_TASKS_RUN=%s\nASSEMBLE_RELEASE=PASS\nREADINESS_PROMOTION=NO\nPHYSICAL_DEVICE_REQUIRED=YES\n' "$APP" "$CP" "$SOURCE_SHA" "$PACKAGE_ID" "$ran" | tee "$GITHUB_WORKSPACE/out/$APP.summary.txt"
