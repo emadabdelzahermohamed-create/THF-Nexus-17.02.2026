@@ -1,0 +1,87 @@
+name: THF Core RC6 Runtime Config Diagnostic V1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-core-rc6-runtime-config-diagnostic-v1.yml']
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  diagnose-core-runtime-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect canonical Core source without mutation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/thf-core-runtime-config-diagnostic-v1"
+          SRC="$HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
+          EXPECTED="6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a"
+          WORK="$ROOT/work"
+          OUT="$ROOT/out"
+          rm -rf "$ROOT"
+          mkdir -p "$WORK" "$OUT"
+          BEFORE=$(sha256sum "$SRC" | awk '{print $1}')
+          test "$BEFORE" = "$EXPECTED"
+          unzip -tq "$SRC" >/dev/null
+          unzip -q "$SRC" -d "$WORK"
+          PROJ="$WORK/android"
+          test -d "$PROJ"
+
+          {
+            echo "status=INSPECTED"
+            echo "canonical_sha256=$BEFORE"
+            echo "canonical_archive_mutated=false"
+            echo "wave_untouched=true"
+            echo "production_signing=false"
+            echo "play_upload=false"
+            echo "cloudflare_cutover=false"
+            echo
+            echo "== CONFIG SYMBOL MATCHES =="
+            grep -RInE --exclude-dir=build --exclude='*.png' --exclude='*.jpg' --exclude='*.jpeg' --exclude='*.webp' \
+              'BASE_URL|API_URL|SERVICE_URL|ENDPOINT|BuildConfig|buildConfigField|resValue|gradleProperty|manifestPlaceholders|غير معدة|not configured|service.*configured' "$PROJ" 2>/dev/null | head -400 || true
+            echo
+            echo "== HTTPS LITERALS (HOST/PATH ONLY; QUERY/FRAGMENT REDACTED) =="
+            grep -RhoE --exclude-dir=build --exclude='*.png' --exclude='*.jpg' --exclude='*.jpeg' --exclude='*.webp' 'https://[^"'"'"'[:space:]<>]+' "$PROJ" 2>/dev/null \
+              | sed -E 's/[?#].*$//' | sort -u | head -100 || true
+            echo
+            echo "== BUILD FILES =="
+            find "$PROJ" -maxdepth 3 -type f \( -name 'build.gradle' -o -name 'build.gradle.kts' -o -name 'gradle.properties' -o -name 'AndroidManifest.xml' \) -print
+          } > "$OUT/diagnostic.txt"
+
+          AFTER=$(sha256sum "$SRC" | awk '{print $1}')
+          test "$AFTER" = "$EXPECTED"
+          echo "canonical_sha256_after=$AFTER" >> "$OUT/diagnostic.txt"
+          REMOTE
+      - name: Retrieve diagnostic evidence
+        run: |
+          mkdir -p out
+          gcloud compute scp "$GCP_BUILDER:~/thf-core-runtime-config-diagnostic-v1/out/diagnostic.txt" out/ \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-Core-RC6-Runtime-Config-Diagnostic-V1
+          path: out/
+          retention-days: 14
