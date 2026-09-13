@@ -1,0 +1,98 @@
+name: THF Pulse V4.1 Source Provenance Audit
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-pulse-v410-provenance-audit.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Audit discovered source in disposable workspace
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          SRC="$HOME/thf-pulse-gp1/src/02_THF_PULSE/SOURCE/THF_PULSE_V4.1.0_SOURCE.zip"
+          EXPECTED_OBSERVED_SHA=31116912623767ebc2edcd56ad55fb2358a4cf398d2765f5eb1de9d842a75ad2
+          APPS_RC1_SHA=a13bdceed8c1ad08436f2b4114dbf6017459107fb3239545194304f344ab4954
+          OUT="$HOME/thf-pulse-v410-provenance-audit"
+          WORK="$OUT/work"
+          rm -rf "$OUT" && mkdir -p "$WORK"
+          test -f "$SRC"
+          ACTUAL=$(sha256sum "$SRC" | awk '{print $1}')
+          test "$ACTUAL" = "$EXPECTED_OBSERVED_SHA"
+          unzip -tq "$SRC" > "$OUT/zip_integrity.txt"
+          unzip -q "$SRC" -d "$WORK"
+          [ -z "$(find "$WORK" -type l -print -quit)" ] || { echo symlink_rejected; exit 1; }
+          find "$WORK" -type f -printf '%P\n' | LC_ALL=C sort > "$OUT/files.txt"
+          (grep -RInE --exclude-dir=.git --exclude='*.min.js' 'com\.topherofit\.thf\.pulse|version(Name|Code)|compileSdk|targetSdk|THF_BASE_URL|THF_PASS_URL|https?://|wss?://' "$WORK" || true) > "$OUT/identity_endpoints.txt"
+          (find "$WORK" -type f \( -name 'build.gradle' -o -name 'build.gradle.kts' -o -name 'settings.gradle' -o -name 'settings.gradle.kts' -o -name 'gradlew' -o -name 'AndroidManifest.xml' \) -print) > "$OUT/android_files.txt"
+          (find "$WORK" -type f \( -name 'pytest.ini' -o -name 'pyproject.toml' -o -name 'requirements.txt' -o -path '*/tests/*' \) -print | sed -n '1,250p') > "$OUT/test_files.txt"
+          python3 - "$OUT" "$ACTUAL" "$APPS_RC1_SHA" <<'PY'
+          import json,sys,os,re
+          out,sha,rc1=sys.argv[1:]
+          files=open(out+'/files.txt').read().splitlines()
+          ident=open(out+'/identity_endpoints.txt',errors='replace').read()
+          android=open(out+'/android_files.txt').read().splitlines()
+          tests=open(out+'/test_files.txt').read().splitlines()
+          placeholders=sorted(set(re.findall(r'(?i)(?:example\.com|localhost|127\.0\.0\.1|TODO|PLACEHOLDER)',ident)))
+          d={
+            'schema':1,'source':'THF_PULSE_V4.1.0_SOURCE.zip','sha256':sha,
+            'apps_rc1_sha256':rc1,'same_as_apps_rc1':sha==rc1,
+            'package_identity_present':'com.topherofit.thf.pulse' in ident,
+            'android_build_files':android,'has_android_gradle_host':any(os.path.basename(x) in ('build.gradle','build.gradle.kts') for x in android),
+            'test_files_count':len(tests),'file_count':len(files),'placeholder_tokens_observed':placeholders,
+            'classification':'SOURCE_DRIFT_NEEDS_PROVENANCE','promoted':False,'canonical_mutation':False,'production_signing':False
+          }
+          json.dump(d,open(out+'/summary.json','w'),indent=2)
+          PY
+          cat "$OUT/summary.json"
+          rm -rf "$WORK"
+          REMOTE
+      - name: Retrieve provenance evidence
+        run: |
+          mkdir -p out
+          for f in summary.json zip_integrity.txt files.txt identity_endpoints.txt android_files.txt test_files.txt; do
+            gcloud compute scp "$GCP_BUILDER:~/thf-pulse-v410-provenance-audit/$f" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-PULSE-V410-PROVENANCE-AUDIT
+          path: out/
+          retention-days: 14
+      - name: Fail-closed promotion guard
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('out/summary.json'))
+          assert d['sha256']=='31116912623767ebc2edcd56ad55fb2358a4cf398d2765f5eb1de9d842a75ad2'
+          assert d['same_as_apps_rc1'] is False
+          assert d['promoted'] is False
+          assert d['canonical_mutation'] is False
+          assert d['production_signing'] is False
+          print('PULSE_V410_PROVENANCE_AUDIT=PASS_NON_PROMOTED')
+          PY
