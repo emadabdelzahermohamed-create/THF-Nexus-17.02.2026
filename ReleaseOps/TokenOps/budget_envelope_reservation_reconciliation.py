@@ -132,6 +132,8 @@ def compile_reservation_reconciliation(
     request: Dict[str, Any],
     prior_evidence: Iterable[Dict[str, Any]] = (),
 ) -> Dict[str, Any]:
+    # Materialize once so generators/iterators are verified and reconciled identically.
+    prior_evidence = list(prior_evidence)
     _scan(envelope)
     _scan(request)
     for prior in prior_evidence:

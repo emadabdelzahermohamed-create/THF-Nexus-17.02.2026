@@ -104,6 +104,13 @@ def main():
     assert second["accounting"]["reserved_total_raw"] == "70"
     assert second["allocation_status"][0]["remaining_raw"] == "0"
 
+    # Iterable safety regression: prior evidence supplied as a one-shot generator
+    # must still be scanned and reconciled instead of being silently exhausted.
+    generator_second = compile_reservation_reconciliation(env, second_req, (item for item in [out]))
+    assert generator_second["prior_reservation_count"] == 2
+    assert generator_second["accounting"]["reserved_total_raw"] == "70"
+    assert generator_second["reservation_reconciliation_sha256"] == second["reservation_reconciliation_sha256"]
+
     over_req = request(env, [
         {"reservation_id": "r3", "subject_id": "u1", "wallet": "w1", "amount_raw": "21"},
     ])
