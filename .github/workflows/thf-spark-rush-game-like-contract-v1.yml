@@ -24,13 +24,15 @@ jobs:
       matrix:
         include:
           - app: spark
+            checkpoint: RC4
             profile: learning
-            source_sha: dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0
-            drive_id: 1FFOkrjtEhKz_Ubj-MErw5UB7tQzZHZ7k
+            source_sha: 58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43
+            drive_id: 1bwvy2huHjkpof3ZcH1QEJK23ep7SKKEm
           - app: rush
+            checkpoint: RC4
             profile: fitness
-            source_sha: bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b
-            drive_id: 1AX9eoqi8I8SJRKmJSb6czFyjIif-JFxD
+            source_sha: 766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c
+            drive_id: 1P4Z1r6l08rbCLuDsXX1YRjWo0seC8yQz
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - id: auth
@@ -41,10 +43,11 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
       - id: audit
-        name: Verify exact source and audit game-like contract
+        name: Verify exact authoritative RC4 source and audit game-like contract
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           APP: ${{ matrix.app }}
+          CHECKPOINT: ${{ matrix.checkpoint }}
           PROFILE: ${{ matrix.profile }}
           SOURCE_SHA: ${{ matrix.source_sha }}
           DRIVE_ID: ${{ matrix.drive_id }}
@@ -64,18 +67,20 @@ jobs:
           python ReleaseOps/validators/audit_game_like_real_function.py "$root" --profile "$PROFILE" --json-out "out/$APP.game-like-contract.json"
           audit_rc=$?
           set -e
-          python - "$APP" "$PROFILE" "$SOURCE_SHA" "out/$APP.game-like-contract.json" "$GITHUB_OUTPUT" > "out/$APP.summary.txt" <<'PY'
+          python - "$APP" "$CHECKPOINT" "$PROFILE" "$SOURCE_SHA" "out/$APP.game-like-contract.json" "$GITHUB_OUTPUT" > "out/$APP.summary.txt" <<'PY'
           import json,re,sys
-          app,profile,sha,path,out=sys.argv[1:]
+          app,checkpoint,profile,sha,path,out=sys.argv[1:]
           d=json.load(open(path))
           missing=d['missing_required_signals']
           key='none' if not missing else '+'.join(re.sub(r'[^A-Za-z0-9_.+-]','_',x) for x in missing)
           print(f'APP={app}')
+          print(f'CHECKPOINT={checkpoint}')
           print(f'PROFILE={profile}')
           print(f'SOURCE_SHA256={sha}')
           print(f'FILES_SCANNED={d["files_scanned"]}')
           print(f'GAME_LIKE_SOURCE_CONTRACT={d["source_contract"]}')
           print(f'MISSING_REQUIRED_SIGNALS={",".join(missing) if missing else "none"}')
+          print('CANONICAL_ARCHIVE_MUTATED=NO')
           print('READINESS_PROMOTION=NO')
           print('PHYSICAL_DEVICE_REQUIRED=YES')
           with open(out,'a') as f:
@@ -86,7 +91,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: THF-${{ matrix.app }}-GAME-LIKE-${{ steps.audit.outputs.status }}-${{ steps.audit.outputs.missing_key }}
+          name: THF-${{ matrix.app }}-RC4-GAME-LIKE-${{ steps.audit.outputs.status }}-${{ steps.audit.outputs.missing_key }}
           path: out/
           retention-days: 14
       - name: Enforce game-like contract
