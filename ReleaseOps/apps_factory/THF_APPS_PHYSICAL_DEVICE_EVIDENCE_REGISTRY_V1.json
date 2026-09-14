@@ -1,0 +1,18 @@
+{
+  "schema": "thf.apps.physical_device.registry.v1",
+  "policy": "MOBILE_REAL_FUNCTION_RELEASE_POLICY",
+  "truth_boundary": {"all_pending": true, "final_or_play_ready": false},
+  "required_checks": ["install","launch","touch","responsive_layout","orientation","background_resume","offline_network","core_user_journey","crash_free","accessibility","data_saver","rtl","localization_20_language_readiness","notification_permission","notification_channel","notification_receive","notification_tap_deeplink"],
+  "candidates": [
+    {"name":"core","package":"com.topherofit.thf.core","apk_sha256":"262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba","source_sha256":null,"status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"pulse","package":"com.topherofit.thf.pulse","apk_sha256":"e043b5555f793d4bd226b865c8a5a400068d05948f1104583f5e9f2e028607dc","source_sha256":"71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10","status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"forge","package":"com.topherofit.thf.forge","apk_sha256":"c93b26b2b59b0f09671ecf632bbc3304e27b52e7b0d07470ee284e5a565cd8b5","source_sha256":"0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51","status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"echo","package":"com.topherofit.thf.echo","apk_sha256":"ddc0c48ec0c149d2f6ab424f9b6576f64a0c7888f021771076ff32b3a9728d94","source_sha256":"87c6a532fc56870b9a4c1039ac1f44b43e1a2f4c5c4518caf0d6537c61704226","status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"codex","package":"com.topherofit.thf.codex","apk_sha256":"cad4bed914e006c294ddbd37fcebbf9ef2f4c9baac161f852e7c6d2433d3884c","source_sha256":"c5108b257b5e9af6849c43df7b7aa671e586bb4a9c91964566c85b1a6329e83d","status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"spark","package":"com.topherofit.thf.spark","apk_sha256":"92bc7f913d560a185044af2df7b1955d3a0b29eca920034edf3cd9741bce0c23","source_sha256":"dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0","status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"rush","package":"com.topherofit.thf.rush","apk_sha256":"304164035cc4b82d23e2b2e6bf48abca3c466c46f5668a203cf0b4cfca223e99","source_sha256":"bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b","status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"vault","package":"com.topherofit.thf.vault","apk_sha256":"76e20915e4bc6dee23adf43fdfcca9705815cf990164ccb8649032118dd42ce0","source_sha256":"dd6db86d7532f773a8d1d2662bf466bdcc0f1c64a863602ecdd1267c8f82fa33","status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"signal","package":"com.topherofit.thf.signal","apk_sha256":"9d370142a251c2515fe19e7598a35213e8285fab4ed74f804d88ea6b5a21f05a","source_sha256":"377044263fa0fc366afe67c6b42ccf4f3e2d1bc75769350f2ee885983f820ddf","status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"command","package":"com.topherofit.thf.command","apk_sha256":"b556e1aaa622de044aa6de609c9911aff5def3d738146c57ae3b8a842777958c","source_sha256":"f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408","status":"PENDING_PHYSICAL_PHONE"}
+  ]
+}
