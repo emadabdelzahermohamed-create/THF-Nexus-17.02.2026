@@ -26,6 +26,7 @@ INVENTORY = (
     ".github/workflows/thf-tokenops-integration-contract-gate-v1.yml",
     ".github/workflows/thf-tokenops-resolution-dag-gate-v1.yml",
     ".github/workflows/thf-tokenops-governance-decision-packet-gate-v1.yml",
+    ".github/workflows/thf-tokenops-governance-decision-evidence-gate-v1.yml",
     "ReleaseOps/TokenOps/policy.json",
     "ReleaseOps/TokenOps/treasury_policy.json",
     "ReleaseOps/TokenOps/treasury_registry.json",
@@ -51,6 +52,8 @@ INVENTORY = (
     "ReleaseOps/TokenOps/test_resolution_dag.py",
     "ReleaseOps/TokenOps/governance_decision_packets.py",
     "ReleaseOps/TokenOps/test_governance_decision_packets.py",
+    "ReleaseOps/TokenOps/governance_decision_validation.py",
+    "ReleaseOps/TokenOps/test_governance_decision_validation.py",
     "ReleaseOps/TokenOps/source_provenance.py",
 )
 
