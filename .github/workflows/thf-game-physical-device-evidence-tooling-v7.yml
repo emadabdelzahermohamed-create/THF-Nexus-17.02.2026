@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/thf-game-physical-device-evidence-tooling-v7.yml'
+      - 'ReleaseOps/mobile/capture_android_device_evidence_v3.py'
+      - 'ReleaseOps/mobile/capture_installed_apk_identity_v1.py'
+      - 'ReleaseOps/mobile/test_capture_installed_apk_identity_v1.py'
       - 'ReleaseOps/mobile/validate_game_device_evidence_v7.py'
       - 'ReleaseOps/mobile/test_validate_game_device_evidence_v7.py'
       - 'ReleaseOps/mobile/validate_game_device_evidence_v6.py'
@@ -22,12 +25,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - name: Compile validators
-        run: python3 -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v3.py ReleaseOps/mobile/validate_game_device_evidence_v4.py ReleaseOps/mobile/validate_game_device_evidence_v5.py ReleaseOps/mobile/validate_game_device_evidence_v6.py ReleaseOps/mobile/validate_game_device_evidence_v7.py
+      - name: Compile validators and capture helpers
+        run: python3 -m py_compile ReleaseOps/mobile/capture_android_device_evidence_v3.py ReleaseOps/mobile/capture_installed_apk_identity_v1.py ReleaseOps/mobile/validate_game_device_evidence_v3.py ReleaseOps/mobile/validate_game_device_evidence_v4.py ReleaseOps/mobile/validate_game_device_evidence_v5.py ReleaseOps/mobile/validate_game_device_evidence_v6.py ReleaseOps/mobile/validate_game_device_evidence_v7.py
       - name: Run V6 capture-integrity regression
         run: PYTHONPATH=ReleaseOps/mobile python3 -m unittest -v ReleaseOps/mobile/test_validate_game_device_evidence_v6.py
       - name: Run V7 installed-byte regression
         run: PYTHONPATH=ReleaseOps/mobile python3 -m unittest -v ReleaseOps/mobile/test_validate_game_device_evidence_v7.py
+      - name: Run installed identity capture-helper regression
+        run: PYTHONPATH=ReleaseOps/mobile python3 -m unittest -v ReleaseOps/mobile/test_capture_installed_apk_identity_v1.py
       - name: Preserve release truth
         run: |
           set -Eeuo pipefail
@@ -35,6 +40,7 @@ jobs:
           grep -q '"physical_device_status": "PENDING"' ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json
           echo 'INSTALLED_APK_SHA256_REQUIRED=TRUE'
           echo 'INSTALLED_APK_BYTES_MUST_MATCH_EXACT_CANDIDATE=TRUE'
+          echo 'INSTALLED_APK_IDENTITY_SESSION_BOUND=TRUE'
           echo 'SINGLE_BASE_APK_REQUIRED=TRUE'
           echo 'SINGLE_DEVICE_SESSION_BINDING_REQUIRED=TRUE'
           echo 'PHYSICAL_DEVICE_STATUS=PENDING'
