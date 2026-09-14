@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - automation/apps-vault-signal-canonical-source-v2
+      - apps-vs-v2
     paths:
       - .github/workflows/thf-vault-signal-canonical-native-v2.yml
       - ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
