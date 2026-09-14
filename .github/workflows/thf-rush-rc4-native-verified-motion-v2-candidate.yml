@@ -80,18 +80,22 @@ jobs:
           grep -q '^manual_activity_values_accepted=false$' out/rush.native-verified-motion-v2.txt
           grep -q '^touch_repetition_increment=false$' out/rush.native-verified-motion-v2.txt
           grep -q '^reward_bearing_health_evidence=BACKEND_REQUIRED$' out/rush.native-verified-motion-v2.txt
-          # Approved user-facing identity; package ID remains canonical.
+          grep -q '^product_specific_icon=true$' out/rush.native-verified-motion-v2.txt
+          grep -q '^launcher_icon=@drawable/thf_motion_games_icon$' out/rush.native-verified-motion-v2.txt
+          grep -Eq '^launcher_icon_sha256=[0-9a-f]{64}$' out/rush.native-verified-motion-v2.txt
           manifest=$(find "$root/android/app/src/main" -maxdepth 1 -name AndroidManifest.xml -print -quit)
           python3 - "$manifest" <<'PY'
           import sys,xml.etree.ElementTree as ET
-          p=sys.argv[1]; ns='http://schemas.android.com/apk/res/android'; ET.register_namespace('android',ns)
+          p=sys.argv[1]; ns='http://schemas.android.com/apk/res/android'
           t=ET.parse(p); a=t.getroot().find('application'); assert a is not None
-          a.set('{%s}label'%ns,'THF Motion Games')
-          t.write(p,encoding='utf-8',xml_declaration=True)
+          assert a.get('{%s}label'%ns) == 'THF Motion Games'
+          assert a.get('{%s}icon'%ns) == '@drawable/thf_motion_games_icon'
+          assert a.get('{%s}roundIcon'%ns) == '@drawable/thf_motion_games_icon'
           PY
+          test -s "$root/android/app/src/main/res/drawable/thf_motion_games_icon.xml"
           find "$root" -type f -not -path '*/.gradle/*' -not -path '*/build/*' -print0 | sort -z | xargs -0 sha256sum > out/rush.candidate-tree.sha256
           echo "root=$root" >> "$GITHUB_OUTPUT"
-      - name: API36 build QA sign package payload and installability gates
+      - name: API36 build QA sign package payload identity and installability gates
         run: |
           set -Eeuo pipefail
           root='${{ steps.overlay.outputs.root }}'
@@ -122,12 +126,21 @@ jobs:
           grep -q "package: name='$PACKAGE_ID'" "$GITHUB_WORKSPACE/out/rush.badging.txt"
           grep -q "targetSdkVersion:'36'" "$GITHUB_WORKSPACE/out/rush.badging.txt"
           grep -q "application-label:'THF Motion Games'" "$GITHUB_WORKSPACE/out/rush.badging.txt"
+          python3 - "$GITHUB_WORKSPACE/out/rush.badging.txt" <<'PY'
+          import pathlib,re,sys
+          s=pathlib.Path(sys.argv[1]).read_text()
+          m=re.search(r"^application:.*icon='([^']+)'",s,re.M)
+          assert m, 'launcher icon missing from aapt badging'
+          assert m.group(1), 'launcher icon empty in packaged APK'
+          assert 'thf_motion_games_icon' in m.group(1), f'unexpected launcher icon: {m.group(1)}'
+          print('THF_RUSH_PACKAGED_PRODUCT_ICON=PASS',m.group(1))
+          PY
           ! grep -q application-debuggable "$GITHUB_WORKSPACE/out/rush.badging.txt"
           sha=$(sha256sum "$final" | awk '{print $1}')
           python3 "$GITHUB_WORKSPACE/ReleaseOps/validators/audit_game_apk_payload_v1.py" "$final" --profile fitness --expected-sha256 "$sha" --json-out "$GITHUB_WORKSPACE/out/rush.apk-payload.json"
           grep -q '"payload_status": "PASS"' "$GITHUB_WORKSPACE/out/rush.apk-payload.json"
           unzip -l "$final" > "$GITHUB_WORKSPACE/out/rush.apk-list.txt"
-          printf 'schema=thf-rush-rc4-native-verified-motion-v2-candidate\nsource_sha256=%s\napk_sha256=%s\npackage_id=%s\nuser_facing_name=THF Motion Games\ntarget_sdk=36\nqa_signature=PASS\nzipalign=PASS\napk_zip_integrity=PASS\npackaged_game_payload=PASS\nmanual_activity_values_accepted=false\ntouch_repetition_increment=false\nreward_bearing_health_evidence=BACKEND_REQUIRED\nproduction_signing=false\nphysical_device_status=PENDING\nfinal_or_play_ready=false\n' "$SOURCE_SHA" "$sha" "$PACKAGE_ID" > "$GITHUB_WORKSPACE/out/RUSH_CANDIDATE.txt"
+          printf 'schema=thf-rush-rc4-native-verified-motion-v2-candidate\nsource_sha256=%s\napk_sha256=%s\npackage_id=%s\nuser_facing_name=THF Motion Games\ntarget_sdk=36\nqa_signature=PASS\nzipalign=PASS\napk_zip_integrity=PASS\npackaged_game_payload=PASS\nproduct_specific_launcher_icon=PASS\nmanual_activity_values_accepted=false\ntouch_repetition_increment=false\nreward_bearing_health_evidence=BACKEND_REQUIRED\nproduction_signing=false\nphysical_device_status=PENDING\nfinal_or_play_ready=false\n' "$SOURCE_SHA" "$sha" "$PACKAGE_ID" > "$GITHUB_WORKSPACE/out/RUSH_CANDIDATE.txt"
           cat "$GITHUB_WORKSPACE/out/RUSH_CANDIDATE.txt"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
