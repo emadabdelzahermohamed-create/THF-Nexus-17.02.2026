@@ -1,0 +1,70 @@
+name: THF App Physical Device Evidence Tooling V10
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/mobile/validate_app_device_evidence_v*.py'
+      - 'ReleaseOps/mobile/test_validate_app_device_evidence_v*.py'
+      - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
+      - '.github/workflows/thf-app-physical-device-evidence-tooling-v10.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/mobile/validate_app_device_evidence_v*.py'
+      - 'ReleaseOps/mobile/test_validate_app_device_evidence_v*.py'
+      - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
+      - '.github/workflows/thf-app-physical-device-evidence-tooling-v10.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-tooling-v10:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile fail-closed app evidence tooling V2-V10
+        run: |
+          for v in 2 3 4 5 6 7 8 9 10; do
+            python -m py_compile ReleaseOps/mobile/validate_app_device_evidence_v${v}.py
+            python -m py_compile ReleaseOps/mobile/test_validate_app_device_evidence_v${v}.py
+          done
+      - name: Run complete V2 through V10 evidence regressions
+        working-directory: ReleaseOps/mobile
+        run: |
+          for v in 2 3 4 5 6 7 8 9 10; do
+            python -m unittest -v test_validate_app_device_evidence_v${v}.py
+          done
+      - name: Verify V10 semantic raw-ADB gate preserves pending truth
+        env:
+          PYTHONPATH: ReleaseOps/mobile
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from validate_app_device_evidence_v10 import STDOUT_BEGIN, STDOUT_END
+          p=Path('ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['truth_boundary']['all_pending'] is True
+          assert d['truth_boundary']['final_or_play_ready'] is False
+          assert len(d['candidates']) == 10
+          assert all(row['status'] == 'PENDING_PHYSICAL_PHONE' for row in d['candidates'])
+          assert STDOUT_BEGIN == 'THF_ADB_STDOUT_BEGIN'
+          assert STDOUT_END == 'THF_ADB_STDOUT_END'
+          src=Path('ReleaseOps/mobile/validate_app_device_evidence_v10.py').read_text(encoding='utf-8')
+          assert 'FINAL_OR_PLAY_READY=TRUE' not in src
+          assert 'VALIDATED network' in src
+          assert 'uiautomator hierarchy' in src
+          print('APP_CANDIDATES=10')
+          print('RAW_ADB_SEMANTIC_VALIDATION_REQUIRED=TRUE')
+          print('OFFLINE_VALIDATED_NETWORK_REJECTED=TRUE')
+          print('ONLINE_VALIDATED_NETWORK_REQUIRED=TRUE')
+          print('LOCAL_UI_EXACT_PACKAGE_REQUIRED=TRUE')
+          print('PHYSICAL_DEVICE_STATUS=PENDING')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
