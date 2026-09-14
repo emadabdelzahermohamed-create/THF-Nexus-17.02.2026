@@ -24,7 +24,7 @@ permissions:
 
 concurrency:
   group: thf-vault-signal-native-real-function-v2-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
