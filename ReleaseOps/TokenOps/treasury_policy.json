@@ -1,0 +1,26 @@
+{
+  "schema": "thf-tokenops-treasury-policy/v1",
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "control_model": "external_multisig_required",
+  "treasury_accounts": [],
+  "approval_classes": {
+    "reward_epoch": {"minimum_approvals": 2, "execution": "external_multisig"},
+    "vesting_settlement": {"minimum_approvals": 2, "execution": "external_multisig"},
+    "burn": {"minimum_approvals": 3, "execution": "external_multisig", "supply_floor_ui": "8000000000"},
+    "treasury_transfer": {"minimum_approvals": 3, "execution": "external_multisig"}
+  },
+  "policy_mutation_governance": {
+    "status": "not_approved",
+    "minimum_approvals": null,
+    "authority_model": null,
+    "evidence_sha256": null
+  },
+  "requirements": {
+    "treasury_ownership_evidence_required": true,
+    "treasury_balance_evidence_required": true,
+    "transaction_manifest_required": true,
+    "simulation_required_before_signing": true,
+    "user_controlled_final_approval_required": true
+  }
+}
