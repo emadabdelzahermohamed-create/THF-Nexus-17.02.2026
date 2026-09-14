@@ -1,0 +1,33 @@
+{
+  "schema": "thf.public-names-and-access.v1",
+  "date": "2026-09-14",
+  "policy": {
+    "internal_codenames_remain_for_engineering": true,
+    "package_ids_change": false,
+    "consumer_apps_must_not_show_admin_entry_to_normal_users": true,
+    "admin_authorization_must_be_server_role_based": true,
+    "hidden_gesture_is_not_security": true
+  },
+  "products": [
+    {"id":"core","codename":"THF Core","package":"com.topherofit.thf.core","kind":"app","display_en":"THF Hub","display_ar":"مركز THF","subtitle_en":"Your THF services in one place","subtitle_ar":"كل خدمات THF في مكان واحد","visibility":"PUBLIC"},
+    {"id":"pulse","codename":"THF Pulse","package":"com.topherofit.thf.pulse","kind":"app","display_en":"THF Fitness","display_ar":"لياقة THF","subtitle_en":"AI coach, workouts and health tracking","subtitle_ar":"مدرب ذكي وتمارين وتتبع صحي","visibility":"PUBLIC"},
+    {"id":"forge","codename":"THF Forge","package":"com.topherofit.thf.forge","kind":"app","display_en":"THF Market","display_ar":"سوق THF","subtitle_en":"Store, memberships and THF economy","subtitle_ar":"المتجر والاشتراكات واقتصاد THF","visibility":"PUBLIC"},
+    {"id":"echo","codename":"THF Echo","package":"com.topherofit.thf.echo","kind":"app","display_en":"THF Community","display_ar":"مجتمع THF","subtitle_en":"Social, communities, chat and media","subtitle_ar":"المجتمع والدردشة والمحتوى","visibility":"PUBLIC"},
+    {"id":"codex","codename":"THF Codex","package":"com.topherofit.thf.codex","kind":"app","display_en":"THF Learn","display_ar":"تعلّم THF","subtitle_en":"Learning, skills and mastery","subtitle_ar":"التعلم والمهارات والإتقان","visibility":"PUBLIC"},
+    {"id":"vault","codename":"THF Vault","package":"com.topherofit.thf.vault","kind":"app","display_en":"THF Wallet","display_ar":"محفظة THF","subtitle_en":"Wallet, rewards and governance","subtitle_ar":"المحفظة والمكافآت والحوكمة","visibility":"PUBLIC"},
+    {"id":"signal","codename":"THF Signal","package":"com.topherofit.thf.signal","kind":"operator_app","display_en":"THF Publisher","display_ar":"ناشر THF","subtitle_en":"Internal publishing console","subtitle_ar":"لوحة النشر الداخلية","visibility":"PRIVATE_INTERNAL"},
+    {"id":"command","codename":"THF Command","package":"com.topherofit.thf.command","kind":"operator_app","display_en":"THF Admin","display_ar":"إدارة THF","subtitle_en":"Private operations and control center","subtitle_ar":"مركز الإدارة والتحكم الخاص","visibility":"PRIVATE_INTERNAL"},
+    {"id":"pass","codename":"THF Pass","package":"com.topherofit.thf.pass","kind":"service","display_en":"THF Identity","display_ar":"هوية THF","subtitle_en":"Shared identity and session service","subtitle_ar":"خدمة الهوية والجلسات الموحدة","visibility":"NO_LISTING"},
+    {"id":"terra","codename":"THF Terra","package":"com.topherofit.thf.terra","kind":"game","display_en":"THF World","display_ar":"عالم THF","subtitle_en":"Living 3D social world","subtitle_ar":"عالم اجتماعي ثلاثي الأبعاد","visibility":"PUBLIC"},
+    {"id":"rift","codename":"THF Rift","package":"com.topherofit.thf.rift","kind":"game","display_en":"THF Arena","display_ar":"ساحة THF","subtitle_en":"Ranked tactical arena","subtitle_ar":"ساحة تكتيكية تنافسية","visibility":"PUBLIC"},
+    {"id":"spark","codename":"THF Spark","package":"com.topherofit.thf.spark","kind":"game","display_en":"THF Learn Games","display_ar":"ألعاب تعلم THF","subtitle_en":"Learning games and challenges","subtitle_ar":"ألعاب وتحديات تعليمية","visibility":"PUBLIC"},
+    {"id":"rush","codename":"THF Rush","package":"com.topherofit.thf.rush","kind":"game","display_en":"THF Motion Games","display_ar":"ألعاب حركة THF","subtitle_en":"Verified movement and fitness games","subtitle_ar":"ألعاب حركة ولياقة موثقة","visibility":"PUBLIC"}
+  ],
+  "admin_access": {
+    "primary": "THF Admin private app + private web control center",
+    "consumer_app_behavior": "Do not render any admin entry unless the authenticated server session includes an authorized staff role.",
+    "required_roles": ["owner","super_admin","admin","moderator","publisher","support","finance_readonly"],
+    "required_controls": ["MFA_or_passkey","short_lived_session","server_side_RBAC","audit_log","device_or_integrity_signal"],
+    "normal_user_visibility": "NONE"
+  }
+}
