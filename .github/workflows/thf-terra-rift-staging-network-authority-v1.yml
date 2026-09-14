@@ -1,4 +1,4 @@
-name: THF Terra Rift Staging Network Authority V1
+name: THF Terra Staging Network Authority V2
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
       - 'ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py'
       - 'ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py'
       - 'ReleaseOps/scripts/thf_game_real_function_audit_v2.py'
+      - 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
       - '.github/workflows/thf-terra-rift-staging-network-authority-v1.yml'
   workflow_dispatch:
 
@@ -20,6 +21,8 @@ env:
   GCP_BUILDER: thf-wave-builder
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  TERRA_SHA: eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+  RIFT_LATEST_SHA: 29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d
 
 jobs:
   staging-authority:
@@ -27,6 +30,15 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Latest authority guard
+        run: |
+          set -Eeuo pipefail
+          python3 ReleaseOps/scripts/validate_latest_game_authority_v1.py > latest-authority.txt
+          grep -q '^rift_version=4.7.5-rc41$' latest-authority.txt
+          grep -q '^rift_candidate_apk_sha256=NONE$' latest-authority.txt
+          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-authority.txt
       - name: Syntax gate
         run: python3 -m py_compile ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/thf_game_real_function_audit_v2.py
       - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
@@ -36,92 +48,101 @@ jobs:
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Stage candidate tools
+      - name: Stage Terra-only validation tools
         run: |
+          set -Eeuo pipefail
           gcloud compute scp ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/thf_game_real_function_audit_v2.py "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-      - name: Validate existing or reversible quick-tunnel staging authority
+      - name: Validate Terra staging authority without substituting old Rift
         shell: bash
         run: |
           set -Eeuo pipefail
           mkdir -p out
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=35m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
           set -Eeuo pipefail
-          BASE="$HOME"; RUNTIME="$BASE/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"; ROOT="$BASE/thf-terra-rift-staging-authority-v1"; GODOT="$BASE/thf-tools/godot/4.7.2-stable/godot"; CF="$BASE/bin/cloudflared"
-          rm -rf "$ROOT";mkdir -p "$ROOT/out" "$RUNTIME/runtime/pids" "$RUNTIME/runtime/logs"
+          BASE="$HOME"; RUNTIME="$BASE/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"; ROOT="$BASE/thf-terra-staging-authority-v2"; GODOT="$BASE/thf-tools/godot/4.7.2-stable/godot"; CF="$BASE/bin/cloudflared"
+          rm -rf "$ROOT"; mkdir -p "$ROOT/out" "$RUNTIME/runtime/pids" "$RUNTIME/runtime/logs"
           python3 - <<'PY'
           import json,urllib.request
-          d=json.load(urllib.request.urlopen('http://127.0.0.1:18080/health',timeout=5));assert d.get('ok') is True
+          d=json.load(urllib.request.urlopen('http://127.0.0.1:18080/health',timeout=5)); assert d.get('ok') is True
           print('local_runtime_health=PASS')
           PY
           check_pub(){ python3 - "$1" <<'PY'
           import json,sys,urllib.request
           u=sys.argv[1]
-          if not u.startswith('https://'):raise SystemExit(2)
-          d=json.load(urllib.request.urlopen(u.rstrip('/')+'/health',timeout=8));assert d.get('ok') is True
+          if not u.startswith('https://'): raise SystemExit(2)
+          d=json.load(urllib.request.urlopen(u.rstrip('/')+'/health',timeout=8)); assert d.get('ok') is True
           PY
           }
           PUB=''; [ -f "$RUNTIME/runtime/public-url.txt" ] && PUB=$(cat "$RUNTIME/runtime/public-url.txt" 2>/dev/null || true)
           if [ -z "$PUB" ] || ! check_pub "$PUB" >/dev/null 2>&1; then
             test -x "$CF"; : > "$RUNTIME/runtime/logs/cloudflared-games-staging.log"
-            nohup "$CF" tunnel --no-autoupdate --url http://127.0.0.1:18080 > "$RUNTIME/runtime/logs/cloudflared-games-staging.log" 2>&1 & cpid=$!
-            echo "$cpid" > "$RUNTIME/runtime/pids/cloudflared-games-staging.pid"
-            PUB='';for _ in $(seq 1 60);do PUB=$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' "$RUNTIME/runtime/logs/cloudflared-games-staging.log"|head -1||true);[ -n "$PUB" ]&&break;sleep .5;done
-            test -n "$PUB";check_pub "$PUB"
-          else check_pub "$PUB";fi
+            nohup "$CF" tunnel --no-autoupdate --url http://127.0.0.1:18080 > "$RUNTIME/runtime/logs/cloudflared-games-staging.log" 2>&1 &
+            PUB=''; for _ in $(seq 1 60); do PUB=$(grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com' "$RUNTIME/runtime/logs/cloudflared-games-staging.log"|head -1||true); [ -n "$PUB" ] && break; sleep .5; done
+            test -n "$PUB"; check_pub "$PUB"
+          else check_pub "$PUB"; fi
           WSS=$(python3 - "$PUB" <<'PY'
           import sys
           print('wss://'+sys.argv[1].split('://',1)[1])
           PY
           )
           echo 'public_https_health=PASS'
-          # Authority should reject or constrain protected mutation without credentials; any 2xx on arena action is a blocker.
           code=$(python3 - "$PUB" <<'PY'
-          import sys,urllib.request,urllib.error,json
+          import sys,urllib.request,urllib.error
           req=urllib.request.Request(sys.argv[1].rstrip('/')+'/api/arena/action',data=b'{}',headers={'Content-Type':'application/json'},method='POST')
           try:r=urllib.request.urlopen(req,timeout=8);print(r.status)
           except urllib.error.HTTPError as e:print(e.code)
           except Exception:print(0)
           PY
           )
-          case "$code" in 401|403|400|404|405|422) echo 'unauthenticated_arena_mutation_guard=PASS';; *) echo "unauthenticated_arena_mutation_guard=FAIL_CODE_$code";exit 51;; esac
-          safe_extract(){ python3 - "$1" "$2" <<'PY'
+          case "$code" in 401|403|400|404|405|422) echo 'unauthenticated_arena_mutation_guard=PASS';; *) echo "unauthenticated_arena_mutation_guard=FAIL_CODE_$code"; exit 51;; esac
+          SRC="$BASE/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip"
+          test "$(sha256sum "$SRC"|awk '{print $1}')" = "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68"
+          python3 - "$SRC" "$ROOT/work" <<'PY'
           import pathlib,shutil,sys,zipfile
-          src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve();dst.mkdir(parents=True,exist_ok=True)
+          src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve(); dst.mkdir(parents=True,exist_ok=True)
           with zipfile.ZipFile(src) as z:
             for i in z.infolist():
               r=pathlib.PurePosixPath(i.filename)
-              if r.is_absolute() or '..' in r.parts:raise SystemExit('unsafe zip')
+              if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip')
               t=(dst/pathlib.Path(*r.parts)).resolve()
-              if t!=dst and dst not in t.parents:raise SystemExit('zip escape')
-              if i.is_dir():t.mkdir(parents=True,exist_ok=True);continue
+              if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
+              if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
               t.parent.mkdir(parents=True,exist_ok=True)
-              with z.open(i) as a,open(t,'wb') as b:shutil.copyfileobj(a,b)
+              with z.open(i) as a,open(t,'wb') as b: shutil.copyfileobj(a,b)
           PY
-          }
-          run_one(){ kind="$1";src="$2";expected="$3";tag="$4";work="$ROOT/$tag/work";ev="$ROOT/out/$tag";mkdir -p "$work" "$ev";test "$(sha256sum "$src"|awk '{print $1}')" = "$expected";safe_extract "$src" "$work";python3 /tmp/thf_terra_rift_mobile_overlay_v1.py "$work" --kind "$kind" --json-out "$ev/mobile.json" >/dev/null;python3 /tmp/thf_game_network_endpoint_overlay_v1.py "$work" --https-url "$PUB" --wss-url "$WSS" --evidence-out "$ev/network.txt" >/dev/null;set +e;python3 /tmp/thf_game_real_function_audit_v2.py "$work" --kind "$kind" --json-out "$ev/audit.json" > "$ev/audit.txt";rc=$?;set -e;python3 - "$ev/audit.json" <<'PY'
-          import json,sys
-          x=json.load(open(sys.argv[1]));print('source_contract_status='+x['source_contract_status']);print('required_failures='+','.join(x['summary']['required_failures']));assert x['source_contract_status']=='PASS',x['summary']['required_failures']
-          PY
-          PG=$(find "$work" -name project.godot -type f -print -quit);test -n "$PG";P=$(dirname "$PG");timeout 15m "$GODOT" --headless --editor --path "$P" --quit --verbose > "$ev/import.log" 2>&1;timeout 5m "$GODOT" --headless --path "$P" --quit-after 30 --verbose > "$ev/boot.log" 2>&1;test "$(sha256sum "$src"|awk '{print $1}')" = "$expected";echo "=== $kind ===";echo 'staging_endpoint_embedded=true';echo 'endpoint_value_redacted=true';echo 'source_contract_status=PASS';echo 'godot_import=PASS';echo 'godot_headless_boot=PASS';echo 'canonical_archive_unchanged=true';echo 'device_status=PENDING';echo 'final_status=NOT_FINAL';}
-          run_one terra "$BASE/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip" eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68 terra
-          run_one rift "$BASE/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip" 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914 rift
-          echo 'endpoint_class=cloudflare_quick_staging';echo 'production_cutover=false';echo 'production_signing=false';echo 'wave_files_read_or_changed=false';echo 'canonical_archives_mutated=false'
+          python3 /tmp/thf_terra_rift_mobile_overlay_v1.py "$ROOT/work" --kind terra --json-out "$ROOT/out/mobile.json" >/dev/null
+          python3 /tmp/thf_game_network_endpoint_overlay_v1.py "$ROOT/work" --https-url "$PUB" --wss-url "$WSS" --evidence-out "$ROOT/out/network.txt" >/dev/null
+          python3 /tmp/thf_game_real_function_audit_v2.py "$ROOT/work" --kind terra --json-out "$ROOT/out/audit.json" > "$ROOT/out/audit.txt"
+          PG=$(find "$ROOT/work" -name project.godot -type f -print -quit); test -n "$PG"; P=$(dirname "$PG")
+          timeout 15m "$GODOT" --headless --editor --path "$P" --quit --verbose > "$ROOT/out/import.log" 2>&1
+          timeout 5m "$GODOT" --headless --path "$P" --quit-after 30 --verbose > "$ROOT/out/boot.log" 2>&1
+          test "$(sha256sum "$SRC"|awk '{print $1}')" = "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68"
+          echo 'terra_source_contract=PASS'
+          echo 'terra_godot_4_7_2_import=PASS'
+          echo 'terra_godot_headless_boot=PASS'
+          echo 'rift_latest_source_required=29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d'
+          echo 'rift_older_source_substitution=FALSE'
+          echo 'production_cutover=false'
+          echo 'canonical_archives_mutated=false'
+          echo 'physical_device_status=PENDING'
+          echo 'final_or_play_ready=false'
           REMOTE
-      - name: Retrieve redacted evidence
-        run: |
-          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rift-staging-authority-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          cat out/summary.txt
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: THF-TERRA-RIFT-STAGING-NETWORK-AUTHORITY-V1
-          path: out/
-          retention-days: 14
       - name: Safety truth gate
         run: |
+          set -Eeuo pipefail
           grep -q '^public_https_health=PASS$' out/summary.txt
           grep -q '^unauthenticated_arena_mutation_guard=PASS$' out/summary.txt
+          grep -q '^terra_source_contract=PASS$' out/summary.txt
+          grep -q '^terra_godot_4_7_2_import=PASS$' out/summary.txt
+          grep -q '^terra_godot_headless_boot=PASS$' out/summary.txt
+          grep -q '^rift_older_source_substitution=FALSE$' out/summary.txt
           grep -q '^production_cutover=false$' out/summary.txt
-          grep -q '^wave_files_read_or_changed=false$' out/summary.txt
           grep -q '^canonical_archives_mutated=false$' out/summary.txt
-          test "$(grep -c '^source_contract_status=PASS$' out/summary.txt)" -ge 2
-          test "$(grep -c '^device_status=PENDING$' out/summary.txt)" -eq 2
+          grep -q '^physical_device_status=PENDING$' out/summary.txt
+          grep -q '^final_or_play_ready=false$' out/summary.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-TERRA-STAGING-NETWORK-AUTHORITY-V2
+          path: out/
+          retention-days: 14
