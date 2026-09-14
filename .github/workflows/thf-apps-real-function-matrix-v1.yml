@@ -1,0 +1,157 @@
+name: THF Apps Real Function Matrix V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-apps-real-function-matrix-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect exact RC3 candidate line without mutation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" \
+            --zone "$GCP_ZONE" \
+            --tunnel-through-iap \
+            --ssh-key-expire-after=20m \
+            --quiet \
+            --command='python3 - <<'"'"'PY'"'"'
+          import hashlib, json, os, pathlib, re, shutil, subprocess, tempfile, zipfile
+
+          home = pathlib.Path.home().resolve()
+          exact_root = home / "thf-apps-rc3-exact-candidate-v2"
+          expected = ["pulse", "forge", "echo", "codex", "spark", "rush", "vault", "signal", "command"]
+          forbidden = re.compile(r"(^|[/_.-])(terra|rift|arena|nexus[-_ ]?world|token|solana|finance)([/_.-]|$)", re.I)
+          placeholder = re.compile(r"https?://(?:example\.com|localhost|127\.0\.0\.1)(?:[:/]|$)|\b(?:TODO_ENDPOINT|PLACEHOLDER_ENDPOINT|MOCK_ENDPOINT)\b", re.I)
+
+          if not exact_root.is_dir():
+              raise SystemExit(f"EXACT_RC3_ROOT_MISSING={exact_root}")
+
+          def sha256(path):
+              h = hashlib.sha256()
+              with open(path, "rb") as f:
+                  for chunk in iter(lambda: f.read(1024*1024), b""):
+                      h.update(chunk)
+              return h.hexdigest()
+
+          def run(argv, cwd=None):
+              p = subprocess.run(argv, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+              return p.returncode, p.stdout
+
+          rows=[]
+          for app in expected:
+              app_rx = re.compile(rf"(^|[^a-z0-9]){re.escape(app)}([^a-z0-9]|$)", re.I)
+              candidates=[]
+              for p in exact_root.rglob("*"):
+                  if not p.is_file() or forbidden.search(str(p)) or not app_rx.search(str(p)):
+                      continue
+                  n=p.name.lower()
+                  if n.endswith((".zip", ".apk", ".aab")):
+                      candidates.append(p)
+              sources=[p for p in candidates if p.suffix.lower()==".zip" and "source" in p.name.lower()]
+              apks=[p for p in candidates if p.suffix.lower()==".apk"]
+              aabs=[p for p in candidates if p.suffix.lower()==".aab"]
+              row={
+                  "app":app,
+                  "source_count":len(sources),
+                  "apk_count":len(apks),
+                  "aab_count":len(aabs),
+                  "source_only":bool(sources and not apks and not aabs),
+                  "installable_payload_present":bool(apks),
+                  "play_payload_present":bool(aabs),
+                  "sources":[],"apks":[],"aabs":[],
+                  "source_contract":None,
+              }
+              for p in sorted(sources):
+                  rc,out=run(["unzip","-tq",str(p)])
+                  row["sources"].append({"path":str(p),"sha256":sha256(p),"size":p.stat().st_size,"zip_integrity":"PASS" if rc==0 else "FAIL"})
+              for p in sorted(apks):
+                  row["apks"].append({"path":str(p),"sha256":sha256(p),"size":p.stat().st_size})
+              for p in sorted(aabs):
+                  row["aabs"].append({"path":str(p),"sha256":sha256(p),"size":p.stat().st_size})
+
+              if len(sources)==1:
+                  with tempfile.TemporaryDirectory(prefix=f"thf-{app}-matrix-") as td:
+                      t=pathlib.Path(td)
+                      with zipfile.ZipFile(sources[0]) as z:
+                          z.extractall(t)
+                      files=[p for p in t.rglob("*") if p.is_file() and p.stat().st_size <= 3_000_000]
+                      build_files=[p for p in files if p.name in {"build.gradle","build.gradle.kts"}]
+                      manifests=[p for p in files if p.name=="AndroidManifest.xml"]
+                      gradle="\n".join(p.read_text(errors="ignore") for p in build_files)
+                      manifest="\n".join(p.read_text(errors="ignore") for p in manifests)
+                      appid=re.findall(r"applicationId\s*[=( ]\s*[\"'"'"']([^\"'"'"']+)",gradle)
+                      targets=[int(x) for x in re.findall(r"targetSdk(?:Version)?\s*[=( ]\s*(\d+)",gradle)]
+                      compiles=[int(x) for x in re.findall(r"compileSdk(?:Version)?\s*[=( ]\s*(\d+)",gradle)]
+                      launcher=("android.intent.action.MAIN" in manifest and "android.intent.category.LAUNCHER" in manifest)
+                      locale_dirs=sorted({p.parent.name for p in files if p.name=="strings.xml" and p.parent.name.startswith("values")})
+                      scan=[]
+                      for p in files:
+                          if p.suffix.lower() not in {".kt",".java",".xml",".json",".js",".ts",".py",".properties"}: continue
+                          text=p.read_text(errors="ignore")
+                          if placeholder.search(text): scan.append(str(p.relative_to(t)))
+                      row["source_contract"]={
+                          "application_ids":sorted(set(appid)),
+                          "target_sdk_values":sorted(set(targets)),
+                          "compile_sdk_values":sorted(set(compiles)),
+                          "target_api_36_declared":36 in targets,
+                          "compile_api_36_declared":36 in compiles,
+                          "launcher_declared":launcher,
+                          "locale_resource_dirs":locale_dirs,
+                          "locale_resource_dir_count":len(locale_dirs),
+                          "placeholder_endpoint_files":sorted(scan)[:50],
+                          "placeholder_endpoint_free":not scan,
+                      }
+              row["release_policy_candidate"] = bool(
+                  row["installable_payload_present"] and row["source_count"]==1 and
+                  row["source_contract"] and row["source_contract"]["target_api_36_declared"] and
+                  row["source_contract"]["launcher_declared"] and row["source_contract"]["placeholder_endpoint_free"]
+              )
+              rows.append(row)
+
+          truth={
+              "schema":"thf-apps-real-function-matrix-v1",
+              "mode":"READ_ONLY",
+              "exact_root":str(exact_root),
+              "excluded_streams":["dedicated-native-games","token-finance"],
+              "rows":rows,
+              "source_only_apps":[r["app"] for r in rows if r["source_only"]],
+              "no_installable_payload_apps":[r["app"] for r in rows if not r["installable_payload_present"]],
+              "candidate_apps":[r["app"] for r in rows if r["release_policy_candidate"]],
+              "final_or_play_ready":False,
+              "physical_phone_evidence_required":True,
+          }
+          print("THF_APPS_REAL_FUNCTION_MATRIX_BEGIN")
+          print(json.dumps(truth,indent=2,sort_keys=True))
+          print("THF_APPS_REAL_FUNCTION_MATRIX_END")
+          print("FINAL_OR_PLAY_READY=FALSE")
+          print("PHYSICAL_PHONE_EVIDENCE_REQUIRED=TRUE")
+          PY'
