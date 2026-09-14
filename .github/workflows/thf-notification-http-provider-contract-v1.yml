@@ -6,6 +6,7 @@ on:
       - 'ReleaseOps/apps_factory/notification_lifecycle.py'
       - 'ReleaseOps/apps_factory/notification_http_contract.py'
       - 'ReleaseOps/apps_factory/notification_provider_contract.py'
+      - 'ReleaseOps/apps_factory/tests/test_notification_lifecycle.py'
       - 'ReleaseOps/apps_factory/tests/test_notification_http_contract.py'
       - 'ReleaseOps/apps_factory/tests/test_notification_provider_contract.py'
       - 'ReleaseOps/apps_factory/THF_NOTIFICATION_DEVICE_EVIDENCE_TEMPLATE_V1.json'
