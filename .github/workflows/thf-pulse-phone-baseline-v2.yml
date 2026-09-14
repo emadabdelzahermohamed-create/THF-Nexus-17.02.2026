@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/thf-pulse-phone-baseline-v2.yml
+      - ReleaseOps/Pulse/verify_phone_candidate.py
       - ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh
       - ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh
   workflow_dispatch:
@@ -59,7 +60,7 @@ jobs:
           gcloud compute scp --recurse "$GCP_BUILDER:~/thf-pulse-phone-baseline-v2/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
           find out -maxdepth 2 -type f -printf '%p %s bytes\n' | sort
           if test -s out/DIAGNOSTIC.txt; then cat out/DIAGNOSTIC.txt; fi
-      - name: Fail-closed gate candidate
+      - name: Fail-closed gate candidate and moving-human runtime
         if: steps.remote_build.outcome == 'success'
         run: |
           set -Eeuo pipefail
@@ -95,7 +96,26 @@ jobs:
           test "$APK_SHA_ACTUAL" = "$APK_SHA_RECORDED"
           grep -q 'avatar.glb' out/runtime-assets.sha256
           grep -q 'health-contracts.json' out/runtime-assets.sha256
+          python3 ReleaseOps/Pulse/verify_phone_candidate.py \
+            out/THF-PULSE-PHONE-BASELINE-QA2.apk \
+            --out out/MOTION_SEMANTIC_EVIDENCE.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('out/MOTION_SEMANTIC_EVIDENCE.json')
+          d = json.loads(p.read_text())
+          assert d['package_semantic_gate'] == 'PASS_PHONE_VALIDATION_STILL_REQUIRED'
+          assert d['physical_phone_visible_motion'] == 'PENDING_REQUIRED'
+          assert d['legacy_text_workout_console_active'] is False
+          assert d['motion_runtime_semantic_bone_driver'] == 'PASS'
+          assert d['motion_runtime_render_loop'] == 'PASS'
+          assert d['avatar_skins'] >= 1
+          assert d['avatar_max_joint_count'] >= 60
+          assert d['avatar_animation_count'] >= 10
+          assert d['avatar_ual_animation_count'] >= 1
+          PY
           cat "$E"
+          cat out/MOTION_SEMANTIC_EVIDENCE.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
