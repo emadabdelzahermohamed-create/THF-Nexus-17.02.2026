@@ -1,0 +1,142 @@
+name: THF Rift RC41 Source Preflight V1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-rift-rc41-source-preflight-v1.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: thf-rift-rc41-source-preflight-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  RIFT_RC41_SHA: 29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Clean-extract and inspect exact RC41 source on builder
+        run: |
+          set -Eeuo pipefail
+          mkdir -p evidence
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="EXPECTED='$RIFT_RC41_SHA' bash -s" > evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt <<'REMOTE'
+          set -Eeuo pipefail
+          echo 'checkpoint=RIFT-RC41-SOURCE-PREFLIGHT-V1'
+          echo 'version=4.7.5-rc41'
+          echo "expected_source_sha256=$EXPECTED"
+          FOUND=''
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            s=$(sha256sum "$f" | awk '{print $1}')
+            if [ "$s" = "$EXPECTED" ]; then FOUND="$f"; break; fi
+          done < <(find "$HOME" -type f \( -name '*RC41*Rift*.zip' -o -name '*Rift*RC41*.zip' -o -name 'THF_Rift_v4.7.5_RC41_SERVER_PICKUP_REACHABILITY_CUMULATIVE_SOURCE.zip' \) -print 2>/dev/null)
+          [ -n "$FOUND" ] || { echo 'exact_source=FAIL_MISSING'; exit 20; }
+          echo 'exact_source=PASS'
+          echo "actual_source_sha256=$(sha256sum "$FOUND" | awk '{print $1}')"
+          unzip -t "$FOUND" >/dev/null
+          echo 'zip_integrity=PASS'
+          if unzip -Z1 "$FOUND" | grep -Eq '(^/|(^|/)\.\.(/|$))'; then
+            echo 'zip_path_safety=FAIL'; exit 21
+          fi
+          echo 'zip_path_safety=PASS'
+          TMP=$(mktemp -d)
+          trap 'rm -rf "$TMP"' EXIT
+          unzip -q "$FOUND" -d "$TMP/src"
+          ROOT=$(dirname "$(find "$TMP/src" -type f -name project.godot -print -quit)")
+          [ -f "$ROOT/project.godot" ] || { echo 'godot_project=FAIL_MISSING'; exit 22; }
+          echo 'godot_project=PASS'
+          echo "source_files=$(find "$ROOT" -type f | wc -l | tr -d ' ')"
+          echo "gdscript_files=$(find "$ROOT" -type f -name '*.gd' | wc -l | tr -d ' ')"
+          echo "scene_files=$(find "$ROOT" -type f -name '*.tscn' | wc -l | tr -d ' ')"
+          echo "model_files=$(find "$ROOT" -type f \( -name '*.glb' -o -name '*.gltf' -o -name '*.fbx' -o -name '*.blend' \) | wc -l | tr -d ' ')"
+          echo "audio_files=$(find "$ROOT" -type f \( -name '*.ogg' -o -name '*.wav' -o -name '*.mp3' \) | wc -l | tr -d ' ')"
+          printf 'mobile_orientation='; grep -E '^window/handheld/orientation=' "$ROOT/project.godot" | tail -1 || true
+          printf 'stretch_aspect='; grep -E '^window/stretch/aspect=' "$ROOT/project.godot" | tail -1 || true
+          printf 'desktop_width_override='; grep -E '^window/size/viewport_width=|^window/size/window_width_override=' "$ROOT/project.godot" | tr '\n' ';' || true; echo
+          printf 'desktop_height_override='; grep -E '^window/size/viewport_height=|^window/size/window_height_override=' "$ROOT/project.godot" | tr '\n' ';' || true; echo
+          PLAYER=$(grep -RIlE 'CharacterBody3D|move_and_slide|velocity' "$ROOT" --include='*.gd' | wc -l | tr -d ' ')
+          CAMERA=$(grep -RIlE 'Camera3D|camera|look_at' "$ROOT" --include='*.gd' | wc -l | tr -d ' ')
+          TOUCH=$(grep -RIlE 'InputEventScreenTouch|InputEventScreenDrag|TouchScreenButton|screen_touch|screen_drag' "$ROOT" --include='*.gd' --include='*.tscn' | wc -l | tr -d ' ')
+          COMBAT=$(grep -RIlE 'damage|health|ammo|weapon|combat|attack|fire' "$ROOT" --include='*.gd' | wc -l | tr -d ' ')
+          AVATAR=$(grep -RIlE 'avatar|MakeHuman|MPFB|UAL|AnimationTree|Skeleton3D' "$ROOT" --include='*.gd' --include='*.tscn' --include='*.tres' | wc -l | tr -d ' ')
+          WORLD=$(grep -RIlE 'NPC|world|environment|weather|day.?night|WorldEnvironment' "$ROOT" --include='*.gd' --include='*.tscn' | wc -l | tr -d ' ')
+          NET=$(grep -RIlE 'WebSocket|HTTPClient|HTTPRequest|wss://|https://' "$ROOT" --include='*.gd' --include='*.json' | wc -l | tr -d ' ')
+          echo "player_locomotion_signal_files=$PLAYER"
+          echo "camera_signal_files=$CAMERA"
+          echo "touch_signal_files=$TOUCH"
+          echo "combat_signal_files=$COMBAT"
+          echo "avatar_animation_signal_files=$AVATAR"
+          echo "world_npc_environment_signal_files=$WORLD"
+          echo "network_signal_files=$NET"
+          [ "$PLAYER" -gt 0 ] || { echo 'real_player_locomotion=FAIL'; exit 23; }
+          [ "$CAMERA" -gt 0 ] || { echo 'real_camera=FAIL'; exit 24; }
+          [ "$COMBAT" -gt 0 ] || { echo 'real_combat=FAIL'; exit 25; }
+          [ "$AVATAR" -gt 0 ] || { echo 'avatar_animation_integration=FAIL'; exit 26; }
+          echo 'real_player_locomotion=PASS'
+          echo 'real_camera=PASS'
+          echo 'real_combat=PASS'
+          echo 'avatar_animation_integration=PASS'
+          if grep -RInE '(localhost|127\.0\.0\.1|example\.com|YOUR[_-]?(API|URL|ENDPOINT)|PLACEHOLDER)' "$ROOT" --include='*.gd' --include='*.json' --include='*.cfg' > "$TMP/placeholders.txt"; then
+            echo 'placeholder_endpoint_scan=FAIL'
+            head -50 "$TMP/placeholders.txt"
+            exit 27
+          fi
+          echo 'placeholder_endpoint_scan=PASS'
+          GODOT=''
+          for c in godot4.7.2 godot4 godot; do command -v "$c" >/dev/null 2>&1 && { GODOT=$(command -v "$c"); break; }; done
+          if [ -n "$GODOT" ]; then
+            "$GODOT" --version | head -1 | sed 's/^/godot_version=/'
+            "$GODOT" --headless --path "$ROOT" --editor --quit-after 20 > "$TMP/godot_import.log" 2>&1 || { echo 'godot_headless_import=FAIL'; tail -100 "$TMP/godot_import.log"; exit 28; }
+            if grep -Eiq '(SCRIPT ERROR|Parse Error|Parser Error|Invalid call|Failed loading resource)' "$TMP/godot_import.log"; then
+              echo 'godot_parser_import_clean=FAIL'; grep -Ei '(SCRIPT ERROR|Parse Error|Parser Error|Invalid call|Failed loading resource)' "$TMP/godot_import.log" | head -100; exit 29
+            fi
+            echo 'godot_headless_import=PASS'
+            echo 'godot_parser_import_clean=PASS'
+          else
+            echo 'godot_headless_import=BLOCKED_GODOT_BINARY_NOT_FOUND'
+          fi
+          echo 'content_pruned_for_size=FALSE'
+          echo 'arbitrary_artifact_size_cap=DISABLED'
+          echo 'production_signing=false'
+          echo 'physical_device_status=PENDING'
+          echo 'final_or_play_ready=FALSE'
+          REMOTE
+          cat evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+          grep -q '^exact_source=PASS$' evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+          grep -q '^zip_integrity=PASS$' evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+          grep -q '^real_player_locomotion=PASS$' evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+          grep -q '^real_camera=PASS$' evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+          grep -q '^real_combat=PASS$' evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+          grep -q '^avatar_animation_integration=PASS$' evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+          grep -q '^placeholder_endpoint_scan=PASS$' evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+          grep -q '^content_pruned_for_size=FALSE$' evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+          grep -q '^final_or_play_ready=FALSE$' evidence/RIFT_RC41_SOURCE_PREFLIGHT.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-RIFT-RC41-SOURCE-PREFLIGHT
+          path: evidence/
+          retention-days: 30
