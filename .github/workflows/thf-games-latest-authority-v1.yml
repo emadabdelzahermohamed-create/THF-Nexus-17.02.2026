@@ -9,6 +9,7 @@ on:
       - '.github/workflows/thf-apps-authoritative-lineage-v3.yml'
       - 'ReleaseOps/apps_factory/THF_APPS_LINEAGE_RECONCILIATION_20260914_1745_EET.json'
       - 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
+      - 'ReleaseOps/games/RUSH_RC4_NATIVE_V2_CANDIDATE_20260915.json'
       - 'ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md'
       - 'ReleaseOps/scripts/validate_latest_game_authority_v1.py'
       - '.github/workflows/*terra*.yml'
@@ -45,7 +46,7 @@ jobs:
           grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
           grep -q '^spark_version=APPS RC4 + real-game overlay$' latest-game-authority.txt
           grep -q '^rush_version=APPS RC4 + Native Verified-Motion V2 + product identity fix$' latest-game-authority.txt
-          grep -q '^rush_candidate_apk_sha256=NONE$' latest-game-authority.txt
+          grep -q '^rush_candidate_apk_sha256=f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f$' latest-game-authority.txt
           grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -53,5 +54,6 @@ jobs:
           path: |
             latest-game-authority.txt
             ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json
+            ReleaseOps/games/RUSH_RC4_NATIVE_V2_CANDIDATE_20260915.json
             ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md
           retention-days: 14
