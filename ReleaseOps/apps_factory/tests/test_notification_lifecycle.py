@@ -1,11 +1,14 @@
 import importlib.util
 import sqlite3
+import sys
 from pathlib import Path
 import pytest
 
 P=Path(__file__).parents[1]/"notification_lifecycle.py"
 spec=importlib.util.spec_from_file_location("notification_lifecycle",P)
-m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+m=importlib.util.module_from_spec(spec)
+sys.modules[spec.name]=m
+spec.loader.exec_module(m)
 
 class Vault:
     def __init__(self): self.data={}
