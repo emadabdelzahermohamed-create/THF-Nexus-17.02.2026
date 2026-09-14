@@ -67,21 +67,21 @@ jobs:
           unzip -l "$APK" > "$OUT/apk_entries.txt"
           grep -q "thf_mpfb_stage16a_ual12_animated" "$OUT/apk_entries.txt"
           grep -q "world_main" "$OUT/apk_entries.txt"
-          cat > "$OUT/EVIDENCE.txt" <<EOF
-THF_TERRA_RC34_PHONE_V1=BUILT
-source=thf-terra-rift-staging-apk-v1/terra/work
-version=4.6.8-rc34-phonev1
-package=com.topherofit.thf.terra.phoneqa
-engine=Godot-4.7.2
-main_scene=res://native/scenes/world_main.tscn
-mpfb_runtime_asset=PASS
-avatar_model=thf_mpfb_stage16a_ual12_animated.glb
-architecture=arm64-v8a
-apk_size_bytes=$SIZE
-apk_sha256=$SHA
-under_100MiB=$([ "$SIZE" -lt 104857600 ] && echo PASS || echo FAIL)
-network_note=existing_RC34_endpoint_is_ephemeral_and_not_accepted_as_final_identity_backend
-EOF
+          UNDER=$([ "$SIZE" -lt 104857600 ] && echo PASS || echo FAIL)
+          printf "%s\n" \
+            "THF_TERRA_RC34_PHONE_V1=BUILT" \
+            "source=thf-terra-rift-staging-apk-v1/terra/work" \
+            "version=4.6.8-rc34-phonev1" \
+            "package=com.topherofit.thf.terra.phoneqa" \
+            "engine=Godot-4.7.2" \
+            "main_scene=res://native/scenes/world_main.tscn" \
+            "mpfb_runtime_asset=PASS" \
+            "avatar_model=thf_mpfb_stage16a_ual12_animated.glb" \
+            "architecture=arm64-v8a" \
+            "apk_size_bytes=$SIZE" \
+            "apk_sha256=$SHA" \
+            "under_100MiB=$UNDER" \
+            "network_note=existing_RC34_endpoint_is_ephemeral_and_not_accepted_as_final_identity_backend" > "$OUT/EVIDENCE.txt"
           cat "$OUT/EVIDENCE.txt"
           if [ "$SIZE" -ge 104857600 ]; then echo "SIZE_GATE_OVER_100M"; exit 2; fi
           '
