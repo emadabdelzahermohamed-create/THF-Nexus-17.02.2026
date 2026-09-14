@@ -1,0 +1,24 @@
+{
+  "schema": "thf-apps-phone-fundamentals-source-v2",
+  "generated_utc": "2026-09-14T22:00:00Z",
+  "base_main_sha": "ea8e99a2c4f08669913d8822650e5b8ac0cc2468",
+  "base_authority": "THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V1_MANIFEST.json",
+  "scope": ["core", "forge", "echo", "codex", "vault", "signal", "command"],
+  "excluded": ["pulse", "games", "wave"],
+  "core": {
+    "same_sha_skip": true,
+    "package_id": "com.topherofit.thf.core",
+    "source_sha256": "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a"
+  },
+  "source_candidates": {
+    "forge": {"name":"THF Market","package_id":"com.topherofit.thf.forge","filename":"THF_Forge_PHONE_FUNDAMENTALS_SRC2.zip","sha256":"c19e0b9feab81f72d07a07cb3b13960caf34c5f62eb73789bd9e0893c4dd4eac","version_code":21101,"version_name":"2.1.1-phone2","target_sdk":36,"android_build_status":"NEEDS_EXACT_SOURCE_BUILD","eligible_apk_sha256":null},
+    "echo": {"name":"THF Community","package_id":"com.topherofit.thf.echo","filename":"THF_Echo_PHONE_FUNDAMENTALS_SRC2.zip","sha256":"2b0c7097096d14fa257d6ba66e4a9dbb3c729d73ab710fb88316006b0ee191a5","version_code":21101,"version_name":"2.1.1-phone2","target_sdk":36,"android_build_status":"NEEDS_EXACT_SOURCE_BUILD","eligible_apk_sha256":null},
+    "codex": {"name":"THF Learn","package_id":"com.topherofit.thf.codex","filename":"THF_Codex_PHONE_FUNDAMENTALS_SRC2.zip","sha256":"06a79845ffb4901cbc054d38e7b32a37098012068e1977d2f3e64fc8e4e00e36","version_code":21101,"version_name":"2.1.1-phone2","target_sdk":36,"android_build_status":"NEEDS_EXACT_SOURCE_BUILD","eligible_apk_sha256":null},
+    "vault": {"name":"THF Wallet","package_id":"com.topherofit.thf.vault","filename":"THF_Vault_PHONE_FUNDAMENTALS_SRC2.zip","sha256":"5bcea1b79a8a37e1d3777aa2af7890fa1e0d83d83b0012aab1bcf74491080fb0","version_code":12001,"version_name":"1.2.0-apps-rc3","target_sdk":36,"android_build_status":"NEEDS_EXACT_SOURCE_BUILD","eligible_apk_sha256":null},
+    "signal": {"name":"THF Publisher","package_id":"com.topherofit.thf.signal","filename":"THF_Signal_PHONE_FUNDAMENTALS_SRC2.zip","sha256":"6a62afe8f00a6b48a9f369b145b1915e4aa3d089e625f95bd612296b02114dbe","version_code":12001,"version_name":"1.2.0-apps-rc3","target_sdk":36,"private_internal":true,"ordinary_launcher":false,"signature_entry_boundary":true,"server_roles":["publisher","admin","owner"],"android_build_status":"NEEDS_EXACT_SOURCE_BUILD","eligible_apk_sha256":null},
+    "command": {"name":"THF Admin","package_id":"com.topherofit.thf.command","filename":"THF_Command_PHONE_FUNDAMENTALS_SRC2.zip","sha256":"b41ae40be2b944874686098ab8438343d4fd438b6029bffa175d10a970055798","version_code":12001,"version_name":"1.2.0-apps-rc3","target_sdk":36,"private_internal":true,"ordinary_launcher":false,"signature_entry_boundary":true,"server_roles":["admin","owner"],"android_build_status":"NEEDS_EXACT_SOURCE_BUILD","eligible_apk_sha256":null}
+  },
+  "phone_fundamentals": {"onboarding":true,"explicit_account_route":true,"explicit_logout_route":true,"explicit_delete_account_route":true,"trusted_https_fail_closed":true,"rtl":true,"resource_locale_sets":20,"data_saver":true,"adaptive_icons":true,"monochrome_icons":true,"store_icons_512":true},
+  "validation": {"deterministic_zip":true,"zip_integrity":true,"clean_extract":true,"xml_parse":true,"forge_tests":"1/1 PASS","echo_tests":"4/4 PASS","codex_tests":"6/6 PASS","command_tests":"2/2 PASS","android_apk_build":"NOT_RUN_REMOTE_BUILDER_UNAVAILABLE"},
+  "release_truth": {"network_release_ready":false,"physical_device_pass":false,"production_signing":false,"final_or_play_ready":false}
+}
