@@ -11,7 +11,7 @@ def evidence(product, rsha, root):
     d=T9.evidence(product,rsha,root); pkg=d['package']; sid=d['session']['session_id']
     text='\n'.join([f'THF_PACKAGE={pkg}',f'THF_SESSION_ID={sid}','THF_TOUCH_OBSERVED=TRUE','THF_SENSOR_LANDSCAPE_OBSERVED=TRUE','THF_EXPANDABLE_ASPECT_OBSERVED=TRUE','THF_SAFE_AREA_OBSERVED=TRUE','THF_BACKGROUND_PID_BEFORE=2222','THF_BACKGROUND_PID_AFTER=2222','THF_BACKGROUND_RESUME_SAME_PID=TRUE','']).encode()
     p=root/'lifecycle-adb.txt'; p.write_bytes(text)
-    d['lifecycle_touch_orientation_observation']={'session_id':sid,'package':pkg,'method':'adb-shell-lifecycle-transcript-v1','started_at_utc':'2026-09-14T04:13:40Z','ended_at_utc':'2026-09-14T04:14:10Z','touch_observed':True,'sensor_landscape_observed':True,'expandable_aspect_observed':True,'safe_area_observed':True,'background_resume_same_pid':True,'evidence_ref':'lifecycle-adb.txt','evidence_sha256':hashlib.sha256(text).hexdigest()}
+    d['lifecycle_touch_orientation_observation']={'session_id':sid,'package':pkg,'method':'adb-shell-lifecycle-transcript-v1','started_at_utc':'2026-09-14T04:13:40Z','ended_at_utc':'2026-09-14T04:13:50Z','touch_observed':True,'sensor_landscape_observed':True,'expandable_aspect_observed':True,'safe_area_observed':True,'background_resume_same_pid':True,'evidence_ref':'lifecycle-adb.txt','evidence_sha256':hashlib.sha256(text).hexdigest()}
     return d
 
 class V10(unittest.TestCase):
