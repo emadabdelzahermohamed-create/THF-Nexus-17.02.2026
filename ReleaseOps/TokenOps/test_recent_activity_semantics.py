@@ -21,7 +21,7 @@ class RecentActivitySemanticsTests(unittest.TestCase):
         kinds = M.parsed_instruction_types(tx)
         self.assertCountEqual(kinds, ["mintTo", "transferChecked", "setAuthority", "burn"])
 
-    def test_summary_has_exact_category_counts_and_no_signatures(self):
+    def test_summary_has_exact_category_counts_and_no_signature_values(self):
         tx = {"result": {"slot": 1, "blockTime": 2, "transaction": {"message": {"instructions": [
             {"parsed": {"type": "mintToChecked"}},
             {"parsed": {"type": "transfer"}},
@@ -31,7 +31,8 @@ class RecentActivitySemanticsTests(unittest.TestCase):
         self.assertEqual(summary["burn_instruction_count"], 0)
         self.assertEqual(summary["transfer_instruction_count"], 1)
         self.assertFalse(summary["signatures_persisted"])
-        self.assertNotIn("signature", str(summary).lower())
+        self.assertTrue(all("signature" not in record for record in summary["records"]))
+        self.assertNotIn("signature", summary["instruction_type_counts"])
 
     def test_unknown_non_token_instruction_is_ignored(self):
         tx = {"result": {"transaction": {"message": {"instructions": [
