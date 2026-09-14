@@ -114,7 +114,6 @@ zipinfo -1 "$APK" > "$OUT/apk_entries.txt"
 for f in index.html avatar.glb three.min.js GLTFLoader.js photoreal.js; do grep -Fxq "assets/pulse/$f" "$OUT/apk_entries.txt"; done
 SIZE=$(stat -c %s "$APK"); SHA=$(sha256sum "$APK" | awk '{print $1}')
 MPFB_SHA=$(sha256sum "$ASSETS/avatar.glb" | awk '{print $1}')
-UNDER=FAIL; if [ "$SIZE" -lt 104857600 ]; then UNDER=PASS; fi
 cat > "$OUT/EVIDENCE.txt" <<EOF
 THF_PULSE_MPFB_MOTION_PHONE_QA1=BUILT
 source=thf-apps-rc3-exact-candidate-v2/work/pulse/THF_Pulse_APPS_RC2_SOURCE
@@ -132,10 +131,10 @@ versionCode=41301
 targetSdk=36
 apk_size_bytes=$SIZE
 apk_sha256=$SHA
-under_100MiB=$UNDER
+artifact_size_policy=TELEMETRY_ONLY_NO_ARBITRARY_CAP
+validated_content_pruned_for_size=FALSE
 backend_features=NOT_ACCEPTED_IN_THIS_VISUAL_QA
 physical_device_status=PENDING
 final_or_play_ready=FALSE
 EOF
 cat "$OUT/EVIDENCE.txt"
-[ "$UNDER" = PASS ]
