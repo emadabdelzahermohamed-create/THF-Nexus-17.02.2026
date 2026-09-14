@@ -1,0 +1,79 @@
+name: THF Vault Signal API36 Candidates
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-vault-signal-api36-candidates.yml
+      - ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: thf-vault-signal-api36-candidates
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage exact-source builder
+        run: |
+          set -Eeuo pipefail
+          chmod +x ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
+          bash -n ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
+          gcloud compute scp ReleaseOps/scripts/build_vault_signal_api36_candidates.sh "$GCP_BUILDER:/tmp/build_vault_signal_api36_candidates.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Build and validate Vault and Signal
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_vault_signal_api36_candidates.sh && /tmp/build_vault_signal_api36_candidates.sh'
+      - name: Retrieve exact candidates and evidence
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out/vault out/signal
+          for app in vault signal; do
+            gcloud compute scp --recurse "$GCP_BUILDER:~/thf-vault-signal-api36-candidates-v1/$app/out/*" "out/$app/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+            grep -q '^targetSdk=36$' "out/$app/EVIDENCE.txt"
+            grep -q '^under_100MiB=PASS$' "out/$app/EVIDENCE.txt"
+            grep -q '^physical_device_status=PENDING$' "out/$app/EVIDENCE.txt"
+            grep -q '^network_release_ready=FALSE$' "out/$app/EVIDENCE.txt"
+            grep -q '^final_or_play_ready=FALSE$' "out/$app/EVIDENCE.txt"
+            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' | head -n1)"
+            test -s "$APK"
+            ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
+            RECORDED="$(sed -n 's/^apk_sha256=//p' "out/$app/EVIDENCE.txt")"
+            test "$ACTUAL" = "$RECORDED"
+          done
+          grep -q '^source_sha256=7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793$' out/vault/EVIDENCE.txt
+          grep -q '^package=com.topherofit.thf.vault$' out/vault/EVIDENCE.txt
+          grep -q '^source_sha256=51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0$' out/signal/EVIDENCE.txt
+          grep -q '^package=com.topherofit.thf.signal$' out/signal/EVIDENCE.txt
+          cat out/vault/EVIDENCE.txt
+          cat out/signal/EVIDENCE.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-VAULT-SIGNAL-API36-EXACT-QA
+          path: out/
+          retention-days: 14
+          compression-level: 0
