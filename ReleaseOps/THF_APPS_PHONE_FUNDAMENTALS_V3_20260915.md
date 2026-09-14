@@ -34,6 +34,13 @@ Status: SOURCE_CANDIDATE_ONLY / NOT_FINAL / NO_GO
 ## Persistent source storage
 Exact V3 ZIPs, SHA list, manifest and clean-source checkpoint are stored under `/THF/ReleaseOps/Apps/2026-09-15/PhoneFundamentalsV3/` in Library.
 
+## GitHub evidence
+- PR #29 head `1ffcbf59987343febf75570270bc9425eabd156f`.
+- PR authority run `34907427052`: SUCCESS.
+- Merged main commit `541773ad0c73c019a303b887f8e5e4d3ed8b9e3d`.
+- Post-merge `THF Apps Phone Authority V3` run `34907464011`: SUCCESS on exact merge SHA.
+- Post-merge `THF No Arbitrary Artifact Size Cap V1` run `34907463960`: SUCCESS on exact merge SHA.
+
 ## Remaining hard gates
 Exact-source API36 APK/AAB build/package inspection; deployed production OAuth/JWK/session/logout/delete/role issuer; provider push credentials and delivery proof; private internal distribution/signer parity; exact-candidate physical-phone acceptance.
 
