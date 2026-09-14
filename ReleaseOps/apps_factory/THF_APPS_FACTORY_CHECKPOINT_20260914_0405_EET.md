@@ -37,7 +37,8 @@ Added `.github/workflows/thf-apps-physical-evidence-registry-v1.yml` to fail clo
 ## CI evidence
 - `THF Notification HTTP Provider Contract V1` run `34794517839`: SUCCESS before package-audience hardening.
 - Package-audience hardening commit `7d4fc89f3f398588922c861512cc8c2ffd8782ca` plus regression commit `a8fa43c9640a36afe49cb378764ba77509a526bb`.
-- Hardened run `34794565970`: SUCCESS, including compile, lifecycle + HTTP + provider regressions and fail-closed device template validation.
+- Hardened notification run `34794565970`: SUCCESS, including compile, lifecycle + HTTP + provider regressions and fail-closed device template validation.
+- `THF Apps Physical Evidence Registry V1` run `34794606131`: SUCCESS. The gate proves exact Core + nine app package/APK/source binding and requires all physical acceptance states to remain PENDING until real phone evidence exists.
 
 ## Truth boundary / blockers
 1. THF Pass isolated lifecycle/federation rehearsals exist, but a stable externally reachable non-public trusted-TLS staging endpoint is still not proven; do not report Pass as staging-live.
@@ -47,4 +48,4 @@ Added `.github/workflows/thf-apps-physical-evidence-registry-v1.yml` to fail clo
 5. Production signing, AAB/Play Internal, OAuth/legal/2FA and irreversible rollout remain untouched owner-controlled gates.
 
 ## Next executable block
-Validate the exact physical-evidence registry in CI, then integrate the notification HTTP candidate into the isolated Pass rehearsal without changing the public endpoint. Continue fail-closed contract work around session expiry/revocation linkage and provider-token revocation on logout. Do not promote PUSH_READY or FINAL/PLAY_READY until live reachable runtime and exact physical-phone evidence exist.
+Integrate the package-bound notification HTTP candidate into the isolated THF Pass rehearsal without changing the public endpoint. Continue fail-closed contract work around Pass session expiry/revocation linkage so an expired/revoked session cannot register/rotate/revoke provider tokens. Then prepare an adapter-specific FCM/APNs implementation only after an approved credential/KMS boundary exists. Do not promote PUSH_READY or FINAL/PLAY_READY until live reachable runtime and exact physical-phone evidence exist.
