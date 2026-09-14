@@ -1,0 +1,8 @@
+{
+  "schema": "thf-tokenops-treasury-registry/v1",
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "accounts": [],
+  "status": "awaiting_public_ownership_and_balance_evidence",
+  "notes": "Public addresses and read-only evidence only. Never place seed phrases, private keys, signatures, tokens, or transaction bytes here."
+}
