@@ -1,0 +1,39 @@
+{
+  "schema": "thf.notifications.physical_device_evidence.v1",
+  "truth_boundary": {
+    "template_only": true,
+    "physical_device_pass": false,
+    "push_ready": false,
+    "final_or_play_ready": false
+  },
+  "required_binding": {
+    "app_name": "REQUIRED",
+    "package_id": "REQUIRED",
+    "apk_sha256": "REQUIRED",
+    "source_sha256": "REQUIRED",
+    "device_model": "REQUIRED",
+    "android_version": "REQUIRED",
+    "test_timestamp_utc": "REQUIRED"
+  },
+  "required_observations": {
+    "install": "PENDING",
+    "launch": "PENDING",
+    "notification_permission_contextual_prompt": "PENDING",
+    "notification_channel_created": "PENDING",
+    "foreground_receive": "PENDING",
+    "background_receive": "PENDING",
+    "tap_opens_expected_credential_free_deeplink": "PENDING",
+    "background_resume_after_tap": "PENDING",
+    "rtl_notification_rendering": "PENDING",
+    "localized_notification_rendering": "PENDING",
+    "accessibility_announcement": "PENDING",
+    "data_saver_behavior": "PENDING",
+    "offline_cached_inbox_does_not_fake_remote_delivery": "PENDING",
+    "crash_free_smoke": "PENDING"
+  },
+  "evidence": {
+    "screenshots_or_recording_refs": [],
+    "adb_log_refs": [],
+    "notes": "No field may be changed to PASS unless observed on a physical phone using the exact bound APK SHA-256."
+  }
+}
