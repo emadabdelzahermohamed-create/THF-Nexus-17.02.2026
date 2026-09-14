@@ -53,10 +53,15 @@ jobs:
           bash -n ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
           bash -n ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
           grep -Fq 'CANONICAL_SOURCE_V2' ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
+          grep -Fq 'THF_NATIVE_REAL_FUNCTION_V2' ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
           grep -Fq 'AndroidKeyStore' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           grep -Fq 'HttpsURLConnection' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           grep -Fq 'getRestrictBackgroundStatus' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           grep -Fq 'com.topherofit.thf.pass' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          grep -Fq 'THF Wallet' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          grep -Fq 'THF Publisher' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          grep -Fq 'INTERNAL_ONLY_LOCKED' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          grep -Fq 'ic_thf_launcher' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           ! grep -Fq 'WebView' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
 
       - name: Stage canonical build inputs
@@ -89,10 +94,10 @@ jobs:
           for app in vault signal; do
             E="out/$app/EVIDENCE.txt"
             S="out/$app/source-package-evidence.txt"
-            SRC="$(find "out/$app" -maxdepth 1 -type f -name '*CANONICAL-NATIVE-SOURCE-V2.zip' | head -n1)"
-            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' | head -n1)"
+            SRC="$(find "out/$app" -maxdepth 1 -type f -name '*CANONICAL-NATIVE-SOURCE-V2.zip' -print -quit)"
+            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' -print -quit)"
             test -s "$E" && test -s "$S" && test -s "$SRC" && test -s "$APK"
-            grep -Fq 'native_overlay_id=THF_NATIVE_REAL_FUNCTION_V1' "$E"
+            grep -Fq 'native_overlay_id=THF_NATIVE_REAL_FUNCTION_V2' "$E"
             grep -Fq 'canonical_source_clean=PASS' "$E"
             grep -Fq 'canonical_source_authority=NEW_CANDIDATE_NOT_FINAL' "$E"
             grep -Fq 'targetSdk=36' "$E"
@@ -109,26 +114,43 @@ jobs:
             ! grep -Eq '(^|/)build/|\.apk$|\.aab$|\.jks$|\.keystore$|\.pem$|\.key$|local\.properties$' "$LIST"
             grep -Eq 'app/src/main/AndroidManifest\.xml$' "$LIST"
             grep -Eq 'MainActivity\.java$' "$LIST"
+            grep -Eq 'app/src/main/res/drawable/ic_thf_launcher\.xml$' "$LIST"
             TMP="$(mktemp -d)"
             unzip -q "$SRC" -d "$TMP"
-            MAIN="$(find "$TMP" -type f -name MainActivity.java | head -n1)"
-            MAN="$(find "$TMP" -type f -path '*/app/src/main/AndroidManifest.xml' | head -n1)"
+            MAIN="$(find "$TMP" -type f -name MainActivity.java -print -quit)"
+            MAN="$(find "$TMP" -type f -path '*/app/src/main/AndroidManifest.xml' -print -quit)"
             test -s "$MAIN" && test -s "$MAN"
             grep -Fq 'AndroidKeyStore' "$MAIN"
             grep -Fq 'AES/GCM/NoPadding' "$MAIN"
             grep -Fq 'HttpsURLConnection' "$MAIN"
             grep -Fq 'getRestrictBackgroundStatus' "$MAIN"
             grep -Fq 'com.topherofit.thf.pass' "$MAIN"
-            grep -Fq 'Remote state is never fabricated' "$MAIN"
             ! grep -Fq 'WebView' "$MAIN"
             ! grep -Fq 'loadUrl' "$MAIN"
             grep -Fq 'android:usesCleartextTraffic="false"' "$MAN"
+            grep -Fq 'android:icon="@drawable/ic_thf_launcher"' "$MAN"
+            grep -Fq 'android:roundIcon="@drawable/ic_thf_launcher"' "$MAN"
+            grep -Fq 'android:resizeableActivity="true"' "$MAN"
+            grep -Fq 'android:screenOrientation="unspecified"' "$MAN"
+            if [ "$app" = vault ]; then
+              grep -Fq 'android:label="THF Wallet"' "$MAN"
+              grep -Fq 'Remote state is never fabricated' "$MAIN"
+            else
+              grep -Fq 'android:label="THF Publisher"' "$MAN"
+              grep -Fq 'com.topherofit.internal_operator_only' "$MAN"
+              grep -Fq 'android:value="true"' "$MAN"
+              grep -Fq 'INTERNAL_ONLY_LOCKED' "$MAIN"
+              grep -Fq 'owner,admin,publisher' "$MAIN"
+              grep -Fq 'Publisher controls remain disabled until a server-verified owner/admin/publisher session is bound.' "$MAIN"
+            fi
             rm -rf "$TMP" "$LIST"
           done
           grep -Fq 'package=com.topherofit.thf.vault' out/vault/EVIDENCE.txt
           grep -Fq 'package=com.topherofit.thf.signal' out/signal/EVIDENCE.txt
           {
             echo 'CANONICAL_NATIVE_SOURCE_V2=PASS'
+            echo 'PHONE_BASELINE_NAMING_ICON_ORIENTATION=PASS_SOURCE_PACKAGE'
+            echo 'PUBLISHER_INTERNAL_LOCK=PASS_FAIL_CLOSED_SOURCE_PACKAGE'
             echo "VAULT_SOURCE_SHA256=$(sed -n 's/^canonical_source_sha256=//p' out/vault/EVIDENCE.txt)"
             echo "SIGNAL_SOURCE_SHA256=$(sed -n 's/^canonical_source_sha256=//p' out/signal/EVIDENCE.txt)"
             echo "VAULT_APK_SHA256=$(sed -n 's/^apk_sha256=//p' out/vault/EVIDENCE.txt)"
