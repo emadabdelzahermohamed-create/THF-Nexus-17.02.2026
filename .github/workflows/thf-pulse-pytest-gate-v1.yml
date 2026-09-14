@@ -54,7 +54,7 @@ jobs:
             --tunnel-through-iap \
             --ssh-key-expire-after=30m \
             --quiet \
-            --command="set -Eeuo pipefail; SRC='$PULSE_SRC'; EXPECT='$PULSE_SOURCE_SHA'; test -d \"\$SRC\"; ACTUAL=\$(cd \"\$SRC\" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); test \"\$ACTUAL\" = \"\$EXPECT\"; V=/tmp/thf-pulse-pytest-\$RANDOM; python3 -m venv \"\$V\"; \"\$V/bin/python\" -m pip install --disable-pip-version-check --quiet pytest; cd \"\$SRC\"; \"\$V/bin/python\" -m pytest -q tests | tee /tmp/thf-pulse-pytest.log; RC=\${PIPESTATUS[0]}; printf 'source_tree_sha256=%s\npytest_exit_code=%s\n' \"\$ACTUAL\" \"\$RC\" > /tmp/thf-pulse-pytest-evidence.txt; exit \"\$RC\""
+            --command="set -Eeuo pipefail; SRC='$PULSE_SRC'; EXPECT='$PULSE_SOURCE_SHA'; test -d \"\$SRC\"; ACTUAL=\$(cd \"\$SRC\" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); test \"\$ACTUAL\" = \"\$EXPECT\"; V=/tmp/thf-pulse-pytest-\$RANDOM; python3 -m venv \"\$V\"; \"\$V/bin/python\" -m pip install --disable-pip-version-check --quiet --upgrade pip; if test -f \"\$SRC/requirements.txt\"; then \"\$V/bin/python\" -m pip install --disable-pip-version-check --quiet -r \"\$SRC/requirements.txt\"; fi; \"\$V/bin/python\" -m pip install --disable-pip-version-check --quiet pytest fastapi httpx python-multipart; cd \"\$SRC\"; set +e; \"\$V/bin/python\" -m pytest -q tests | tee /tmp/thf-pulse-pytest.log; RC=\${PIPESTATUS[0]}; set -e; printf 'source_tree_sha256=%s\npytest_exit_code=%s\n' \"\$ACTUAL\" \"\$RC\" > /tmp/thf-pulse-pytest-evidence.txt; exit \"\$RC\""
 
       - name: Retrieve pytest evidence
         if: always()
