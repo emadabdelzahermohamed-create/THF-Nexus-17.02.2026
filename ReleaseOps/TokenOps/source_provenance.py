@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deterministic provenance manifest for the THF TokenOps control plane.
 
-Hashes only the explicit TokenOps control-plane inventory plus its workflow.
+Hashes only the explicit TokenOps control-plane inventory plus its workflows.
 WAVE and unrelated repository areas are intentionally outside this inventory.
 """
 from __future__ import annotations
@@ -18,6 +18,7 @@ from tokenops_guard import scan_for_secrets, sha256
 SCHEMA = "thf-tokenops-source-provenance/v1"
 INVENTORY = (
     ".github/workflows/thf-tokenops-autonomous-large-batch-v3.yml",
+    ".github/workflows/thf-tokenops-policy-governance-gate-v1.yml",
     "ReleaseOps/TokenOps/policy.json",
     "ReleaseOps/TokenOps/treasury_policy.json",
     "ReleaseOps/TokenOps/treasury_registry.json",
@@ -57,7 +58,7 @@ def build_provenance(repo_root: pathlib.Path, commit_sha: str | None = None) -> 
         "inventory_count": len(files),
         "files": dict(sorted(files.items())),
         "tokenops_source_root_sha256": sha256(root_material),
-        "scope": "ReleaseOps/TokenOps plus the dedicated v3 workflow only",
+        "scope": "ReleaseOps/TokenOps plus dedicated TokenOps workflows only",
         "wave_in_inventory": any("wave" in p.lower() for p in files),
         "financial_effect": False,
         "broadcast": False,
