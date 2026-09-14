@@ -41,8 +41,8 @@ jobs:
           grep -q '^LATEST_GAME_AUTHORITY=PASS$' latest-game-authority.txt
           grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
           grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
-          grep -q '^rush_version=APPS RC4 + Verified-Motion V2$' latest-game-authority.txt
-          grep -q '^rush_candidate_apk_sha256=NONE$' latest-game-authority.txt
+          grep -q '^rush_version=APPS RC4 + Native Verified-Motion V2$' latest-game-authority.txt
+          grep -q '^rush_candidate_apk_sha256=528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7$' latest-game-authority.txt
           grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
