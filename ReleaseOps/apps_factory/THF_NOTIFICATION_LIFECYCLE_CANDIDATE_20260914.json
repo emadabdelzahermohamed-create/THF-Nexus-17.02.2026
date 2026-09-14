@@ -1,0 +1,40 @@
+{
+  "schema": "thf.notifications.lifecycle.candidate.v1",
+  "generated_at": "2026-09-14T03:00:00+03:00",
+  "implementation": "ReleaseOps/apps_factory/notification_lifecycle.py",
+  "truth_boundary": {
+    "registration_rotation_revocation_candidate": true,
+    "provider_delivery_proven": false,
+    "physical_device_delivery_proven": false,
+    "push_ready": false,
+    "final_or_play_ready": false
+  },
+  "security": {
+    "authenticated_subject_required": true,
+    "locked_package_allowlist": true,
+    "raw_provider_token_not_stored_in_registry_db": true,
+    "opaque_secure_token_vault_required": true,
+    "logout_revocation_supported": true,
+    "cross_subject_access_fail_closed": true,
+    "provider_token_query_string_allowed": false
+  },
+  "apps": [
+    {"name":"pulse","package":"com.topherofit.thf.pulse","source_sha256":"71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10","target_sdk":36},
+    {"name":"forge","package":"com.topherofit.thf.forge","source_sha256":"0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51","target_sdk":36},
+    {"name":"echo","package":"com.topherofit.thf.echo","source_sha256":"87c6a532fc56870b9a4c1039ac1f44b43e1a2f4c5c4518caf0d6537c61704226","target_sdk":36},
+    {"name":"codex","package":"com.topherofit.thf.codex","source_sha256":"c5108b257b5e9af6849c43df7b7aa671e586bb4a9c91964566c85b1a6329e83d","target_sdk":36},
+    {"name":"spark","package":"com.topherofit.thf.spark","source_sha256":"dc312dc65e681e914c3421a20362cd0fba0c1e692a7becdb66d7d17a0b6299a0","target_sdk":36},
+    {"name":"rush","package":"com.topherofit.thf.rush","source_sha256":"bd7e365ded07fd569020fff1c699d74322fd5c767b16ac6336f2bc99f8b5958b","target_sdk":36},
+    {"name":"vault","package":"com.topherofit.thf.vault","source_sha256":"dd6db86d7532f773a8d1d2662bf466bdcc0f1c64a863602ecdd1267c8f82fa33","target_sdk":36},
+    {"name":"signal","package":"com.topherofit.thf.signal","source_sha256":"377044263fa0fc366afe67c6b42ccf4f3e2d1bc75769350f2ee885983f820ddf","target_sdk":36},
+    {"name":"command","package":"com.topherofit.thf.command","source_sha256":"f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408","target_sdk":36}
+  ],
+  "promotion_requirements_remaining": [
+    "wire candidate lifecycle behind authenticated reachable HTTPS registration endpoints",
+    "supply production-grade encrypted SecureTokenVault implementation without committing credentials",
+    "attach provider adapter and prove provider token registration/rotation/revocation",
+    "prove contextual Android notification permission and channel behavior on exact APK candidates",
+    "prove physical receive/tap/deeplink/background-resume and Data Saver behavior",
+    "keep cached offline inbox distinct from remote delivery and economy/social/ranked truth"
+  ]
+}
