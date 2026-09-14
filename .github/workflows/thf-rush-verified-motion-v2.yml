@@ -1,0 +1,40 @@
+name: THF Rush Verified Motion V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/thf_spark_rush_verified_motion_overlay_v2.py'
+      - 'ReleaseOps/scripts/test_spark_rush_verified_motion_overlay_v2.py'
+      - '.github/workflows/thf-rush-verified-motion-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verified-motion-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python syntax
+        run: |
+          python3 -m py_compile ReleaseOps/scripts/thf_spark_rush_verified_motion_overlay_v2.py
+          python3 -m py_compile ReleaseOps/scripts/test_spark_rush_verified_motion_overlay_v2.py
+      - name: Run synthetic clean-tree regression
+        run: python3 ReleaseOps/scripts/test_spark_rush_verified_motion_overlay_v2.py
+      - name: Assert no manual Rush repetition authority
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('ReleaseOps/scripts/thf_spark_rush_verified_motion_overlay_v2.py').read_text()
+          assert 'manual_activity_values_accepted=false' in s
+          assert 'verified_motion_required=true' in s
+          assert 'online_motion_reward_authority=BACKEND_REQUIRED_NOT_IMPLEMENTED_HERE' in s
+          assert 'server_verifiable_health_evidence_claimed=false' in s
+          assert "document.getElementById('title').textContent='THF Motion Games'" in s
+          assert "document.getElementById('title').textContent='THF Learn Games'" in s
+          print('THF_RUSH_VERIFIED_MOTION_STATIC_GATE=PASS')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
