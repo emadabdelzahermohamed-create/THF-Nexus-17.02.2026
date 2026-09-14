@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Protocol
+from urllib.parse import urlsplit, parse_qsl
 
 
 @dataclass(frozen=True)
@@ -33,7 +34,7 @@ class NotificationProviderAdapter(Protocol):
     provider_name: str
 
     def validate_configuration(self) -> bool: ...
-    def send(self, request: DeliveryRequest) -> DeliveryResult: ...
+    def send(self, *, provider_token: str, request: DeliveryRequest) -> DeliveryResult: ...
 
 
 def validate_delivery_request(request: DeliveryRequest) -> None:
@@ -44,9 +45,23 @@ def validate_delivery_request(request: DeliveryRequest) -> None:
     if not request.locale.strip():
         raise ValueError("locale required")
     if request.deeplink:
-        lowered=request.deeplink.lower()
-        if any(x in lowered for x in ("token=", "access_token=", "authorization=", "secret=", "credential=")):
+        parsed=urlsplit(request.deeplink)
+        if parsed.scheme not in {"thf","https"}:
+            raise PermissionError("notification deeplink must use thf or https scheme")
+        sensitive={"token","access_token","authorization","secret","credential","provider_token"}
+        keys={k.lower() for k,_ in parse_qsl(parsed.query,keep_blank_values=True)}
+        fragment=parsed.fragment.lower()
+        if keys & sensitive or any(f"{x}=" in fragment for x in sensitive):
             raise PermissionError("credentials are forbidden in notification deeplinks")
+
+
+def validate_delivery_result(result: DeliveryResult) -> None:
+    if result.accepted and (result.retryable or result.permanent_token_failure):
+        raise ValueError("accepted delivery cannot also be retryable or permanently failed")
+    if result.retryable and result.permanent_token_failure:
+        raise ValueError("delivery failure cannot be both retryable and permanent")
+    if result.accepted and not result.provider_message_id:
+        raise ValueError("accepted delivery requires provider_message_id")
 
 
 def assert_adapter_conformance(adapter: NotificationProviderAdapter) -> None:
@@ -55,8 +70,6 @@ def assert_adapter_conformance(adapter: NotificationProviderAdapter) -> None:
         raise ValueError("unsupported provider adapter")
     if not callable(getattr(adapter,"validate_configuration",None)) or not callable(getattr(adapter,"send",None)):
         raise TypeError("provider adapter is incomplete")
-    # Configuration must be explicit. A false result is acceptable before deployment;
-    # callers must not attempt live delivery when it is false.
     configured=adapter.validate_configuration()
     if not isinstance(configured,bool):
         raise TypeError("validate_configuration must return bool")
