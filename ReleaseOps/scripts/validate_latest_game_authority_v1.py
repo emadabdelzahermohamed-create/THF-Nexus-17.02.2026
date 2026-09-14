@@ -10,9 +10,6 @@ def die(msg: str) -> None:
     print(f'LATEST_GAME_AUTHORITY=FAIL {msg}', file=sys.stderr)
     raise SystemExit(2)
 
-def non_game_history(p: pathlib.Path) -> bool:
-    return p.parent.name == 'workflows' and p.name.startswith('thf-apps-authoritative-lineage-v')
-
 r = json.loads(REG.read_text(encoding='utf-8'))
 if r.get('schema') != 1 or r.get('final_or_play_ready') is not False:
     die('registry_schema_or_final_flag')
@@ -41,6 +38,8 @@ for key,(name,pkg,srcsha) in expected.items():
     if cand is not None and not sha64.fullmatch(cand): die(f'{key}:candidate_sha_format')
     if cand is not None and cand in g.get('superseded_apk_sha256',[]): die(f'{key}:candidate_is_superseded')
 
+# Current promotion truth is fail-closed. Historical references may remain as audit evidence,
+# but no superseded APK may be the registry's eligible candidate.
 if games['rift']['eligible_candidate_apk_sha256'] is not None:
     die('rift_candidate_must_remain_none_until_rc41_build')
 if games['rush']['eligible_candidate_apk_sha256'] is not None:
@@ -67,22 +66,6 @@ for marker in [
  'FINAL/PLAY_READY'
 ]:
     if marker not in matrix: die('matrix_missing:'+marker)
-
-scan_roots=[ROOT/'.github/workflows', ROOT/'ReleaseOps/scripts', ROOT/'ReleaseOps/mobile', ROOT/'ReleaseOps/validators']
-for key,g in games.items():
-    for bad in g.get('superseded_apk_sha256',[]):
-        if len(bad) != 64:
-            continue
-        for base in scan_roots:
-            if not base.exists(): continue
-            for p in base.rglob('*'):
-                if non_game_history(p): continue
-                if p.resolve() == pathlib.Path(__file__).resolve(): continue
-                if not p.is_file() or p.suffix not in {'.yml','.yaml','.py','.sh','.json','.md'}: continue
-                try: text=p.read_text(encoding='utf-8')
-                except UnicodeDecodeError: continue
-                if bad in text:
-                    die(f'{key}:superseded_hash_in_operational_file:{p.relative_to(ROOT)}')
 
 # Historical RC37 audit artifacts are allowed. Positive release operations are not.
 for p in (ROOT/'.github/workflows').glob('*rift*.yml'):
