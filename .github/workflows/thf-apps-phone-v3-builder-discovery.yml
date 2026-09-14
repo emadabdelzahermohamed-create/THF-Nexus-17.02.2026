@@ -1,0 +1,48 @@
+name: THF Apps Phone V3 Builder Discovery
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-apps-phone-v3-builder-discovery.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: thf-apps-phone-v3-builder-discovery
+  cancel-in-progress: true
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with: {persist-credentials: false}
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Prove current authority before builder inspection
+        run: python ReleaseOps/validate_thf_apps_phone_authority_v3.py
+      - name: Discover exact V3 source archives without touching excluded streams
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='set -Eeuo pipefail; OUT=/tmp/thf_apps_v3_discovery.txt; : > "$OUT"; for spec in "THF_Forge_PHONE_FUNDAMENTALS_SRC3.zip:75c3744af31f16273a174bdac53b9e812613e4d9ef8c2fa260521c7f7c40cbf8" "THF_Echo_PHONE_FUNDAMENTALS_SRC3.zip:3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9" "THF_Codex_PHONE_FUNDAMENTALS_SRC3.zip:44ff76cca12b6b13febc53e9e0b8748a01949eb07c40b020d76b82f45a094950" "THF_Vault_PHONE_FUNDAMENTALS_SRC3.zip:e33c7c7f1f6d7f913dfe6ca5d674aff2883f7a230c2a323724088c30c4497585" "THF_Signal_PHONE_FUNDAMENTALS_SRC3.zip:3b6ba96076decd62e31a90c60d91a101806d6a6e9be329a58baa55ece82227ef" "THF_Command_PHONE_FUNDAMENTALS_SRC3.zip:314a89f33f62d754edc9cc369fcc35b019d6081c6be0dcfbffa0fe5801ce0ffc"; do name=${spec%%:*}; want=${spec##*:}; hit=""; while IFS= read -r p; do got=$(sha256sum "$p" | awk "{print \$1}"); if [ "$got" = "$want" ]; then hit="$p"; break; fi; done < <(find "$HOME" /tmp -type f -name "$name" 2>/dev/null); if [ -n "$hit" ]; then printf "%s=EXACT:%s\n" "$name" "$hit" >> "$OUT"; else printf "%s=MISSING\n" "$name" >> "$OUT"; fi; done; cat "$OUT"'
+      - name: Record fail-closed discovery result
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp "$GCP_BUILDER:/tmp/thf_apps_v3_discovery.txt" discovery.txt --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat discovery.txt
+          test "$(wc -l < discovery.txt)" -eq 6
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thf-apps-phone-v3-builder-discovery
+          path: discovery.txt
+          retention-days: 30
