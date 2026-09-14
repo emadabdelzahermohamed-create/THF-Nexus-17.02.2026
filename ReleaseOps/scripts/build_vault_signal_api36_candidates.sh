@@ -12,8 +12,28 @@ mkdir -p "$ROOT"
 test -x "$GBIN"
 test -x "$AAPT"
 
+CURRENT_APP="bootstrap"
+diagnose() {
+  local rc=$?
+  echo "THF_VAULT_SIGNAL_BUILD_FAILURE app=$CURRENT_APP rc=$rc" >&2
+  if [ -d "$ROOT/$CURRENT_APP/out" ]; then
+    for f in "$ROOT/$CURRENT_APP/out"/gradle-*.log; do
+      [ -f "$f" ] || continue
+      echo "===== $f (tail 220) =====" >&2
+      tail -n 220 "$f" >&2 || true
+    done
+  fi
+  if [ -d "$ROOT/$CURRENT_APP/work" ]; then
+    echo "===== source layout (depth 4) =====" >&2
+    find "$ROOT/$CURRENT_APP/work" -maxdepth 4 -type f | sort | head -n 240 >&2 || true
+  fi
+  exit "$rc"
+}
+trap diagnose ERR
+
 build_one() {
   local app="$1" pkg="$2" src="$3" src_sha="$4"
+  CURRENT_APP="$app"
   local work="$ROOT/$app/work" out="$ROOT/$app/out"
   rm -rf "$ROOT/$app"
   mkdir -p "$work" "$out"
@@ -27,13 +47,14 @@ build_one() {
   settings="$(find "$work" -maxdepth 6 -type f \( -name settings.gradle -o -name settings.gradle.kts \) | head -n1)"
   test -n "$settings"
   project="$(dirname "$settings")"
+  echo "BUILD_APP=$app PROJECT=$project SOURCE_SHA=$actual_src_sha"
   cd "$project"
 
   export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$ROOT/$app/gradle-home"
   export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$SDK/cmdline-tools/latest/bin:$PATH"
   mkdir -p "$GRADLE_USER_HOME"
 
-  "$GBIN" --no-daemon --stacktrace :app:assembleDebug >"$out/gradle-debug.log" 2>&1
+  "$GBIN" --offline --no-daemon --stacktrace :app:assembleDebug >"$out/gradle-debug.log" 2>&1
   local apk
   apk="$(find "$project/app/build/outputs/apk" -type f -name '*.apk' | sort | head -n1)"
   test -s "$apk"
@@ -46,7 +67,7 @@ build_one() {
   # If debug changes the application id, try the unmodified release variant.
   local variant="debug"
   if [ "$found_pkg" != "$pkg" ] || [ "$target" != "36" ]; then
-    "$GBIN" --no-daemon --stacktrace :app:assembleRelease >"$out/gradle-release.log" 2>&1
+    "$GBIN" --offline --no-daemon --stacktrace :app:assembleRelease >"$out/gradle-release.log" 2>&1
     apk="$(find "$project/app/build/outputs/apk/release" -type f -name '*.apk' | sort | head -n1)"
     test -s "$apk"
     "$AAPT" dump badging "$apk" >"$out/badging.txt"
@@ -93,3 +114,5 @@ build_one vault com.topherofit.thf.vault \
 build_one signal com.topherofit.thf.signal \
   "$HOME/thf-apps-rc3-exact-candidate-v2/source/signal.zip" \
   51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0
+
+trap - ERR
