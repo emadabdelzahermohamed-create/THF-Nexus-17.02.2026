@@ -1,0 +1,48 @@
+name: THF Game Physical Device Evidence Tooling V3
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ReleaseOps/mobile/capture_android_device_evidence_v3.py'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v3.py'
+      - 'ReleaseOps/mobile/test_capture_android_device_evidence_v3.py'
+      - 'ReleaseOps/mobile/test_validate_game_device_evidence_v3.py'
+      - 'ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json'
+      - 'ReleaseOps/validators/validate_game_device_candidates_v1.py'
+      - '.github/workflows/thf-game-physical-device-evidence-tooling-v3.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  tooling-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile tooling
+        run: |
+          python -m py_compile \
+            ReleaseOps/mobile/capture_android_device_evidence_v3.py \
+            ReleaseOps/mobile/validate_game_device_evidence_v3.py \
+            ReleaseOps/mobile/test_capture_android_device_evidence_v3.py \
+            ReleaseOps/mobile/test_validate_game_device_evidence_v3.py
+      - name: Validate current exact candidate registry
+        run: |
+          python ReleaseOps/validators/validate_game_device_candidates_v1.py \
+            ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json
+      - name: Run V3 collector regression tests
+        run: python -m unittest -v ReleaseOps/mobile/test_capture_android_device_evidence_v3.py
+      - name: Run V3 evidence validator regression tests
+        run: python -m unittest -v ReleaseOps/mobile/test_validate_game_device_evidence_v3.py
+      - name: Assert no readiness promotion in tooling source
+        run: |
+          ! grep -R --line-number -E 'final_or_play_ready[[:space:]]*=[[:space:]]*True|FINAL_OR_PLAY_READY=TRUE|PLAY_READY=TRUE' \
+            ReleaseOps/mobile/capture_android_device_evidence_v3.py \
+            ReleaseOps/mobile/validate_game_device_evidence_v3.py
+          echo 'READINESS_PROMOTION=NO'
+          echo 'PHYSICAL_DEVICE_REQUIRED=YES'
