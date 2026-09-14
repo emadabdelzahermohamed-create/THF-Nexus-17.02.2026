@@ -7,8 +7,6 @@ on:
       - .github/workflows/thf-pulse-phone-baseline-v2.yml
       - ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh
       - ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh
-      - ReleaseOps/scripts/patch_pulse_healthconnect_java_kclass_v1.sh
-      - ReleaseOps/scripts/patch_pulse_generated_json_exceptions_v1.sh
   workflow_dispatch:
 
 permissions:
@@ -44,17 +42,15 @@ jobs:
       - name: Stage isolated Pulse-only builder
         run: |
           set -Eeuo pipefail
-          chmod +x ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh ReleaseOps/scripts/patch_pulse_healthconnect_java_kclass_v1.sh ReleaseOps/scripts/patch_pulse_generated_json_exceptions_v1.sh
+          chmod +x ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh
           gcloud compute scp ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh "$GCP_BUILDER:/tmp/build_pulse_phone_baseline_v2.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
           gcloud compute scp ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh "$GCP_BUILDER:/tmp/run_pulse_phone_baseline_v2_diagnostic.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          gcloud compute scp ReleaseOps/scripts/patch_pulse_healthconnect_java_kclass_v1.sh "$GCP_BUILDER:/tmp/patch_pulse_healthconnect_java_kclass_v1.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          gcloud compute scp ReleaseOps/scripts/patch_pulse_generated_json_exceptions_v1.sh "$GCP_BUILDER:/tmp/patch_pulse_generated_json_exceptions_v1.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
       - name: Build Pulse phone baseline with diagnostics
         id: remote_build
         continue-on-error: true
         run: |
           set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_pulse_phone_baseline_v2.sh /tmp/run_pulse_phone_baseline_v2_diagnostic.sh /tmp/patch_pulse_healthconnect_java_kclass_v1.sh /tmp/patch_pulse_generated_json_exceptions_v1.sh && /tmp/patch_pulse_healthconnect_java_kclass_v1.sh /tmp/build_pulse_phone_baseline_v2.sh && /tmp/patch_pulse_generated_json_exceptions_v1.sh /tmp/build_pulse_phone_baseline_v2.sh && /tmp/run_pulse_phone_baseline_v2_diagnostic.sh'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_pulse_phone_baseline_v2.sh /tmp/run_pulse_phone_baseline_v2_diagnostic.sh && /tmp/run_pulse_phone_baseline_v2_diagnostic.sh'
       - name: Retrieve Pulse candidate and diagnostics
         if: always()
         run: |
