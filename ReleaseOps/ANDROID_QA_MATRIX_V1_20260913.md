@@ -1,4 +1,4 @@
-# Unified Android QA Matrix — reconciled 2026-09-14
+# Unified Android QA Matrix — reconciled 2026-09-15
 
 Status: ACTIVE EVIDENCE MATRIX
 Scope: THF Android/game candidates plus isolated WAVE_MAWJA lane.
@@ -9,7 +9,7 @@ Scope: THF Android/game candidates plus isolated WAVE_MAWJA lane.
 
 > Rift RC37 APK `3577175821a91d4d76da77d9fc982575704a85e20162e4b66afe37565f63b5fb` is SUPERSEDED and is no longer eligible for new device evidence. Rift authority moved to RC41 source SHA `29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d`; an RC41 Android candidate must be built from those exact bytes before device acceptance resumes.
 
-> Rush APKs `3e9aabaebdf1b321430abb3286156aeeaf8cf0174f2abff593a3ee3dc50d0e3a` and `92663a7e2963b2b4d233808013bdb6c4bed279fc9cedb423b1bf74f1e1aae29a` are SUPERSEDED. The eligible Rush QA candidate is now Native Verified-Motion V2 SHA `528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7`, built from exact RC4 source SHA `766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c` in run `34893899367`.
+> Rush APK `528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7` is REJECTED — iconless candidate. It proved the Native Verified-Motion V2 runtime/package path but aapt showed no launcher icon. It must not receive new device evidence. The authoritative RC4 source remains `766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c`; a rebuilt candidate must include the product-specific THF Motion Games icon while preserving package ID `com.topherofit.thf.rush`.
 
 | App | Canonical/source checkpoint | Package | targetSdk | Runtime/package gate | Current exact candidate APK SHA-256 | Physical device | Final/Play | Primary blocker |
 |---|---|---|---:|---|---|---|---|---|
@@ -17,7 +17,7 @@ Scope: THF Android/game candidates plus isolated WAVE_MAWJA lane.
 | THF World / Terra | RC34 canonical source SHA `eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68` + Phone V4 local-explore overlay | canonical `com.topherofit.thf.terra`; QA `com.topherofit.thf.terra.phoneqa` | 36 | PASS — Godot 4.7.2 import/headless/export, exported payload, sensor-landscape, expand aspect, touch-safe local explore, no active desktop override, exact package/signature/installability gate | `e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec` (QA-only V4) | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA physical install/touch/orientation/HUD/avatar/locomotion/camera/world-NPC/offline-online/FPS-RAM-thermal |
 | THF Arena / Rift | RC41 `4.7.5-rc41` canonical source SHA `29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d` | `com.topherofit.thf.rift` | 36 required | SOURCE PASS — RC41 is authoritative and includes cumulative server-authoritative pickup reachability; old RC37 AAB lane is retired by a superseded guard; Godot 4.7.2 fresh preflight is blocked until exact RC41 archive bytes are staged on builder | NONE — RC37 APK superseded | PENDING | NOT_FINAL / NOT_UPLOADED | stage exact RC41 archive bytes, then Godot 4.7.2 import/headless/export + API36 arm64 package/signature/installability; afterwards physical combat acceptance |
 | THF Learn Games / Spark | APPS RC4 canonical source SHA `58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43` + reversible real-game overlay | `com.topherofit.thf.spark` | 36 | PASS — RC4 exact source verified; packaged frame/game loop, touch hit-testing and score/streak/level learning progression; raw wrapper APK rejected | `9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA physical gameplay/touch/layout/lifecycle/offline-network/performance |
-| THF Motion Games / Rush | APPS RC4 canonical source SHA `766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c` + Native Verified-Motion V2 | `com.topherofit.thf.rush` | 36 | PASS — run `34893899367`; exact RC4 clean extract; native SensorManager gameplay requires registered sensor identity, finite 3-axis values and monotonic hardware timestamp; touch/manual values cannot increment reps; QA signature/zipalign/package/API36/packaged-game-payload PASS; local reps never authorize rewards | `528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA physical sensor/motion gameplay, lifecycle/layout/performance; provider/server-verifiable health evidence remains required for reward-bearing paths |
+| THF Motion Games / Rush | APPS RC4 canonical source SHA `766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c` + Native Verified-Motion V2 + product identity fix | `com.topherofit.thf.rush` | 36 | SOURCE/CI PASS — native SensorManager gameplay requires registered sensor identity, finite 3-axis values and monotonic hardware timestamp; touch/manual values cannot increment reps; local reps never authorize rewards; product-specific launcher icon is now required in the overlay | NONE — rebuild required after product icon fix | PENDING | NOT_FINAL / NOT_UPLOADED | rebuild exact RC4 with fixed product icon, then exact APK API36/arm64/signature/zipalign/package/payload/icon gate; afterwards physical sensor/motion acceptance |
 | THF Learn Games legacy lane | authoritative outer source SHA `ce8547851c9573db02603ea6f11e020a1b7d346af0cac51e07947304f1a7c1f9` + real-game overlay | `com.thf.topherofit.learngames` | 36 | PASS — real-function contract, Choreographer/runtime learning-mastery markers, lint/package/API36, optional camera hardware; run `34781606154` SUCCESS | `e0667eef4c03aaf78ff8f14c74873fae5ad5c5a3a6f4a28f7c36a73505eb4727` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA physical user journey/touch/layout/lifecycle/offline-network/performance |
 | THF Fitness Games legacy lane | authoritative outer source SHA `cf5d73c3a03ab503dbd7c36a2d4db3ec1449ec8281304627b9463e2cb8732a25` + real-game overlay | `com.thf.topherofit.fitnessgames` | 36 | PASS — Choreographer + SensorManager/motion-reps runtime markers, lint/package/API36, optional camera hardware; run `34781606154` SUCCESS | `7404d3ff644253109e36d4fad25edb6cb3313ad8676e3aa7e87c42ab7088832a` | PENDING | NOT_FINAL / NOT_UPLOADED | exact-SHA physical sensor/motion gameplay + lifecycle/layout/performance |
 | WAVE_MAWJA | RC14 state / exact RC13-RC14 runtime still missing | UNKNOWN-current | UNKNOWN-current | BLOCKED — do not infer from RC9 | N/A-current | PENDING | NOT_FINAL / NOT_UPLOADED | `WAVE-LIVE-SOURCE-MISSING`; remains technically isolated from THF |
@@ -27,14 +27,14 @@ Scope: THF Android/game candidates plus isolated WAVE_MAWJA lane.
 - Terra authority remains RC34 source SHA `eaa2ae79...bdbd68`, with Phone V4 candidate SHA `e0ac997e...0cfbec`.
 - Rift authority is RC41 SHA `29edaa0e...cb95d`, not RC37. The former RC37 AAB workflow is now a fail-closed superseded guard and no longer builds RC37.
 - Spark authority remains APPS RC4 SHA `58a32690...48d43` plus the real-game overlay; its raw wrapper APK remains rejected.
-- Rush authority is APPS RC4 SHA `766936c2...f771c` plus Native Verified-Motion V2. Exact QA APK SHA `528f7d11...65ed7` passed run `34893899367`; artifact ID `10368186302`, digest `sha256:989137c623a8f137267dd7239d2d27b450512ddd9fabc6aa7656b3457ed22ac8`.
+- Rush authority is APPS RC4 SHA `766936c2...f771c` plus Native Verified-Motion V2 and the product-identity fix. The previous exact QA APK `528f7d11...65ed7` is rejected because its packaged launcher icon was empty; eligible candidate is NONE until a new exact build passes icon inspection.
 
 ## Rush Native Verified-Motion V2 evidence
 
 - Exact source SHA before extraction: `766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c`.
-- Exact candidate APK SHA: `528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7`.
-- User-facing label: `THF Motion Games`; canonical package remains `com.topherofit.thf.rush`.
-- targetSdk 36; QA signature verified; zipalign verified; APK ZIP integrity PASS; packaged real-game payload PASS.
+- Previous candidate APK SHA `528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7`: REJECTED — iconless candidate.
+- Required user-facing label: `THF Motion Games`; canonical package remains `com.topherofit.thf.rush`.
+- Required product identity: non-empty launcher icon plus round icon from the product-specific overlay.
 - Native repetition input is Android `SensorManager`/`SensorEvent` only. Events must originate from the registered sensor object, contain at least three finite axes, and carry a positive monotonic hardware timestamp.
 - Touch can reset a local session but cannot increment repetitions. Manual activity totals are not accepted.
 - Local repetitions are explicitly non-rewarding. Reward/economy/ranked paths continue to require backend-authoritative verified provider/health evidence with anti-replay/provenance controls.
@@ -71,6 +71,6 @@ Scope: THF Android/game candidates plus isolated WAVE_MAWJA lane.
 
 1. Reject all superseded hashes above before any new device evidence is captured.
 2. Rift: stage only exact RC41 archive bytes and continue Godot 4.7.2/API36 arm64 packaging; never fall back to RC37.
-3. Rush: use only exact Native Verified-Motion V2 QA candidate SHA `528f7d11...65ed7` for physical acceptance; never reuse a pre-V2 Rush APK.
+3. Rush: rebuild only from exact RC4 SHA `766936c2...f771c` with Native Verified-Motion V2 + product icon fix; do not accept the rejected iconless APK.
 4. Terra/Spark: do not rebuild unchanged proven bytes; proceed to physical-device acceptance only when a real phone is available.
 5. Never mark FINAL/PLAY_READY until exact candidates pass physical install/launch/touch/orientation/background-resume/offline-network/core gameplay/crash-free plus product-specific avatar/movement/camera/combat/learning/motion and FPS/RAM/thermal evidence.
