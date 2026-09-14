@@ -67,7 +67,9 @@ jobs:
           grep -q '^network_required_for_motion=false$' out/EVIDENCE.txt
           grep -q '^exercise_pattern_selector=PASS$' out/EVIDENCE.txt
           grep -q '^targetSdk=36$' out/EVIDENCE.txt
-          grep -q '^under_100MiB=PASS$' out/EVIDENCE.txt
+          grep -q '^artifact_size_policy=TELEMETRY_ONLY_NO_ARBITRARY_CAP$' out/EVIDENCE.txt
+          grep -q '^validated_content_pruned_for_size=FALSE$' out/EVIDENCE.txt
+          ! grep -q '^under_100MiB=' out/EVIDENCE.txt
           grep -q '^physical_device_status=PENDING$' out/EVIDENCE.txt
           grep -q '^final_or_play_ready=FALSE$' out/EVIDENCE.txt
           test -s out/THF-PULSE-MPFB-MOTION-PHONE-QA1.apk
