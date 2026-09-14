@@ -6,9 +6,11 @@ on:
       - 'ReleaseOps/apps_factory/notification_lifecycle.py'
       - 'ReleaseOps/apps_factory/notification_http_contract.py'
       - 'ReleaseOps/apps_factory/notification_provider_contract.py'
+      - 'ReleaseOps/apps_factory/notification_dispatch.py'
       - 'ReleaseOps/apps_factory/tests/test_notification_lifecycle.py'
       - 'ReleaseOps/apps_factory/tests/test_notification_http_contract.py'
       - 'ReleaseOps/apps_factory/tests/test_notification_provider_contract.py'
+      - 'ReleaseOps/apps_factory/tests/test_notification_dispatch.py'
       - 'ReleaseOps/apps_factory/THF_NOTIFICATION_DEVICE_EVIDENCE_TEMPLATE_V1.json'
       - '.github/workflows/thf-notification-http-provider-contract-v1.yml'
   workflow_dispatch:
@@ -32,14 +34,16 @@ jobs:
           python -m py_compile ReleaseOps/apps_factory/notification_lifecycle.py
           python -m py_compile ReleaseOps/apps_factory/notification_http_contract.py
           python -m py_compile ReleaseOps/apps_factory/notification_provider_contract.py
-      - name: Run notification HTTP and provider regressions
+          python -m py_compile ReleaseOps/apps_factory/notification_dispatch.py
+      - name: Run notification HTTP provider and dispatch regressions
         env:
           PYTHONPATH: ReleaseOps/apps_factory
         run: |
           python -m pytest -q \
             ReleaseOps/apps_factory/tests/test_notification_lifecycle.py \
             ReleaseOps/apps_factory/tests/test_notification_http_contract.py \
-            ReleaseOps/apps_factory/tests/test_notification_provider_contract.py
+            ReleaseOps/apps_factory/tests/test_notification_provider_contract.py \
+            ReleaseOps/apps_factory/tests/test_notification_dispatch.py
       - name: Enforce device evidence fail-closed template
         run: |
           python - <<'PY'
@@ -55,7 +59,7 @@ jobs:
           assert all(v == 'PENDING' for v in d['required_observations'].values())
           required={'app_name','package_id','apk_sha256','source_sha256','device_model','android_version','test_timestamp_utc'}
           assert required == set(d['required_binding'])
-          print('NOTIFICATION_HTTP_PROVIDER_CONTRACT=PASS')
+          print('NOTIFICATION_HTTP_PROVIDER_DISPATCH_CONTRACT=PASS')
           print('PHYSICAL_DEVICE_PASS=FALSE')
           print('PUSH_READY=FALSE')
           print('FINAL_OR_PLAY_READY=FALSE')
