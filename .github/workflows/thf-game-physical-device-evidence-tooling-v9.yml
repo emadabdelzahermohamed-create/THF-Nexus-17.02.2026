@@ -1,0 +1,44 @@
+name: THF Game Physical Device Evidence Tooling V9
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-game-physical-device-evidence-tooling-v9.yml'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v9.py'
+      - 'ReleaseOps/mobile/test_validate_game_device_evidence_v9.py'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v8.py'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v7.py'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v6.py'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v5.py'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v4.py'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v3.py'
+      - 'ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-v9-regression:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Compile validators
+        run: python3 -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v3.py ReleaseOps/mobile/validate_game_device_evidence_v4.py ReleaseOps/mobile/validate_game_device_evidence_v5.py ReleaseOps/mobile/validate_game_device_evidence_v6.py ReleaseOps/mobile/validate_game_device_evidence_v7.py ReleaseOps/mobile/validate_game_device_evidence_v8.py ReleaseOps/mobile/validate_game_device_evidence_v9.py
+      - name: Run V8 performance-provenance regression
+        run: PYTHONPATH=ReleaseOps/mobile python3 -m unittest -v ReleaseOps/mobile/test_validate_game_device_evidence_v8.py
+      - name: Run V9 crash-logcat provenance regression
+        run: PYTHONPATH=ReleaseOps/mobile python3 -m unittest -v ReleaseOps/mobile/test_validate_game_device_evidence_v9.py
+      - name: Preserve release truth
+        run: |
+          set -Eeuo pipefail
+          grep -q '"final_or_play_ready": false' ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json
+          grep -q '"physical_device_status": "PENDING"' ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json
+          echo 'CRASH_FREE_CLAIM_MUST_BIND_HASHED_LOGCAT=TRUE'
+          echo 'FATAL_EXCEPTION_AND_ANR_MARKERS_FORBIDDEN=TRUE'
+          echo 'PACKAGE_IDENTITY_REQUIRED_IN_LOGCAT=TRUE'
+          echo 'CRASH_CAPTURE_MUST_SHARE_DEVICE_SESSION=TRUE'
+          echo 'INSTALLED_APK_BYTES_MUST_MATCH_EXACT_CANDIDATE=TRUE'
+          echo 'PHYSICAL_DEVICE_STATUS=PENDING'
+          echo 'FINAL_OR_PLAY_READY=FALSE'
