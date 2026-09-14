@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "policy": "MOBILE_REAL_FUNCTION_RELEASE_POLICY",
+  "truth_boundary": {
+    "release_authority": false,
+    "physical_release_evidence_eligible": false,
+    "production_signing_eligible": false,
+    "play_upload_eligible": false,
+    "final_or_play_ready": false
+  },
+  "artifacts": [
+    {
+      "id": "core-phone-ui1-local-qa",
+      "app": "core",
+      "purpose": "physical_phone_design_compatibility_qa",
+      "artifact_path": "ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-LOCAL-QA.apk",
+      "evidence_path": "ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-EVIDENCE.txt",
+      "checkpoint_path": "ReleaseOps/apps_factory/THF_CORE_PHONE_UI1_LOCAL_QA_CHECKPOINT_20260914_1431_EET.md",
+      "source_sha256": "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a",
+      "package": "com.topherofit.thf.core.debug",
+      "version_code": 62203,
+      "version_name": "6.2.2-rc6-phoneui1-debug",
+      "target_sdk": 36,
+      "apk_sha256": "465faa1a04a276c648ef851f758b79640eddff0c2b3bf382a7cf8021cc6aca71",
+      "apk_size_bytes": 95799,
+      "production_candidate_package": "com.topherofit.thf.core",
+      "production_candidate_apk_sha256": "262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba",
+      "debug_signed": true,
+      "release_authority": false,
+      "physical_release_evidence_eligible": false,
+      "backend_dependent_features_accepted": false,
+      "production_signing": false,
+      "play_upload": false,
+      "final_or_play_ready": false
+    }
+  ]
+}
