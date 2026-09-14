@@ -1,0 +1,146 @@
+name: THF Vault Signal Canonical Native Source V2
+
+on:
+  push:
+    branches:
+      - main
+      - automation/apps-vault-signal-canonical-source-v2
+    paths:
+      - .github/workflows/thf-vault-signal-canonical-native-v2.yml
+      - ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
+      - ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+      - ReleaseOps/scripts/package_authoritative_android_source_v2.py
+      - ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: thf-vault-signal-canonical-native-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CANONICAL_ROOT: thf-vault-signal-canonical-native-v2
+
+jobs:
+  canonical-source-and-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Local syntax and policy preflight
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          python3 -m py_compile ReleaseOps/scripts/package_authoritative_android_source_v2.py
+          bash -n ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
+          bash -n ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
+          grep -Fq 'CANONICAL_SOURCE_V2' ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
+          grep -Fq 'AndroidKeyStore' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          grep -Fq 'HttpsURLConnection' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          grep -Fq 'getRestrictBackgroundStatus' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          grep -Fq 'com.topherofit.thf.pass' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          ! grep -Fq 'WebView' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+
+      - name: Stage canonical build inputs
+        run: |
+          set -Eeuo pipefail
+          for f in \
+            ReleaseOps/scripts/build_vault_signal_api36_candidates.sh \
+            ReleaseOps/scripts/nativeize_vault_signal_candidate.py \
+            ReleaseOps/scripts/package_authoritative_android_source_v2.py \
+            ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh; do
+            gcloud compute scp "$f" "$GCP_BUILDER:/tmp/$(basename "$f")" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          done
+
+      - name: Build canonical sources and API 36 APKs
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_vault_signal_canonical_native_v2.sh && /tmp/build_vault_signal_canonical_native_v2.sh'
+
+      - name: Retrieve exact evidence
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out/vault out/signal
+          for app in vault signal; do
+            gcloud compute scp --recurse "$GCP_BUILDER:~/$CANONICAL_ROOT/$app/out/*" "out/$app/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          done
+
+      - name: Validate canonical source and APK payloads
+        run: |
+          set -Eeuo pipefail
+          for app in vault signal; do
+            E="out/$app/EVIDENCE.txt"
+            S="out/$app/source-package-evidence.txt"
+            SRC="$(find "out/$app" -maxdepth 1 -type f -name '*CANONICAL-NATIVE-SOURCE-V2.zip' | head -n1)"
+            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' | head -n1)"
+            test -s "$E" && test -s "$S" && test -s "$SRC" && test -s "$APK"
+            grep -Fq 'native_overlay_id=THF_NATIVE_REAL_FUNCTION_V1' "$E"
+            grep -Fq 'canonical_source_clean=PASS' "$E"
+            grep -Fq 'canonical_source_authority=NEW_CANDIDATE_NOT_FINAL' "$E"
+            grep -Fq 'targetSdk=36' "$E"
+            grep -Fq 'physical_device_status=PENDING' "$E"
+            grep -Fq 'network_release_ready=FALSE' "$E"
+            grep -Fq 'final_or_play_ready=FALSE' "$E"
+            test "$(sha256sum "$SRC" | awk '{print $1}')" = "$(sed -n 's/^canonical_source_sha256=//p' "$E")"
+            test "$(sha256sum "$SRC" | awk '{print $1}')" = "$(sed -n 's/^canonical_source_sha256=//p' "$S")"
+            test "$(sha256sum "$APK" | awk '{print $1}')" = "$(sed -n 's/^apk_sha256=//p' "$E")"
+            unzip -t "$SRC" >/dev/null
+            unzip -t "$APK" >/dev/null
+            LIST="$(mktemp)"
+            unzip -Z1 "$SRC" > "$LIST"
+            ! grep -Eq '(^|/)build/|\.apk$|\.aab$|\.jks$|\.keystore$|\.pem$|\.key$|local\.properties$' "$LIST"
+            grep -Eq 'app/src/main/AndroidManifest\.xml$' "$LIST"
+            grep -Eq 'MainActivity\.java$' "$LIST"
+            TMP="$(mktemp -d)"
+            unzip -q "$SRC" -d "$TMP"
+            MAIN="$(find "$TMP" -type f -name MainActivity.java | head -n1)"
+            MAN="$(find "$TMP" -type f -path '*/app/src/main/AndroidManifest.xml' | head -n1)"
+            test -s "$MAIN" && test -s "$MAN"
+            grep -Fq 'AndroidKeyStore' "$MAIN"
+            grep -Fq 'AES/GCM/NoPadding' "$MAIN"
+            grep -Fq 'HttpsURLConnection' "$MAIN"
+            grep -Fq 'getRestrictBackgroundStatus' "$MAIN"
+            grep -Fq 'com.topherofit.thf.pass' "$MAIN"
+            grep -Fq 'Remote state is never fabricated' "$MAIN"
+            ! grep -Fq 'WebView' "$MAIN"
+            ! grep -Fq 'loadUrl' "$MAIN"
+            grep -Fq 'android:usesCleartextTraffic="false"' "$MAN"
+            rm -rf "$TMP" "$LIST"
+          done
+          grep -Fq 'package=com.topherofit.thf.vault' out/vault/EVIDENCE.txt
+          grep -Fq 'package=com.topherofit.thf.signal' out/signal/EVIDENCE.txt
+          {
+            echo 'CANONICAL_NATIVE_SOURCE_V2=PASS'
+            echo "VAULT_SOURCE_SHA256=$(sed -n 's/^canonical_source_sha256=//p' out/vault/EVIDENCE.txt)"
+            echo "SIGNAL_SOURCE_SHA256=$(sed -n 's/^canonical_source_sha256=//p' out/signal/EVIDENCE.txt)"
+            echo "VAULT_APK_SHA256=$(sed -n 's/^apk_sha256=//p' out/vault/EVIDENCE.txt)"
+            echo "SIGNAL_APK_SHA256=$(sed -n 's/^apk_sha256=//p' out/signal/EVIDENCE.txt)"
+            echo 'PHYSICAL_DEVICE_PASS=FALSE'
+            echo 'NETWORK_RELEASE_READY=FALSE'
+            echo 'FINAL_OR_PLAY_READY=FALSE'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-VAULT-SIGNAL-CANONICAL-NATIVE-SOURCE-V2
+          path: out/
+          retention-days: 30
+          compression-level: 0
