@@ -15,6 +15,11 @@ PRESETS="$PROJECT_ROOT/export_presets.cfg"
 test -f "$PROJECT_FILE"; test -f "$PRESETS"; test -x "$GODOT_BIN"
 PRESET="$(sed -n 's/^name="\([^"]*\)"/\1/p' "$PRESETS" | head -1)"; test -n "$PRESET"
 
+# Hard release-tooling prerequisites. Do not silently export against an older SDK
+# or a different package identity than the candidate declared by ReleaseOps.
+test -d "$ANDROID_SDK_ROOT/platforms/android-36"
+grep -Fq "$EXPECTED_PACKAGE" "$PRESETS"
+
 # Disposable candidate only. Canonical source archive is never modified.
 python3 - "$PRESETS" <<'PY'
 import pathlib,sys
@@ -27,6 +32,7 @@ p.write_text(s)
 PY
 
 BT="$(find "$ANDROID_SDK_ROOT/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+test -n "$BT"; test -d "$BT"
 JAVA_HOME_REAL="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"
 ISO="$(mktemp -d)"; trap 'rm -rf "$ISO"' EXIT
 mkdir -p "$ISO/.config/godot" "$ISO/.local/share/godot"
@@ -77,8 +83,13 @@ with zipfile.ZipFile(p) as z:
     if not any(n.endswith('manifest/AndroidManifest.xml') for n in names): raise SystemExit('missing base manifest')
     if not any('lib/arm64-v8a/libgodot_android.so' in n for n in names): raise SystemExit('missing arm64 Godot runtime')
     if not any('/assets/' in n or n.startswith('base/assets/') for n in names): raise SystemExit('missing packaged game assets')
-    if any(n.endswith('.import') and '/res/' in n for n in names): raise SystemExit('Godot import sidecars leaked into Android resources')
-print('bundle_structure=PASS')
+    # Godot project import metadata can legitimately be packaged inside game assets.
+    # Only fail when a sidecar actually leaks into Android compiled resources.
+    leaked=[n for n in names if n.startswith('base/res/') and n.endswith('.import')]
+    if leaked:
+        raise SystemExit('Godot import sidecars leaked into Android base/res: '+','.join(leaked[:20]))
+    asset_sidecars=sum(1 for n in names if n.startswith('base/assets/') and n.endswith('.import'))
+print(f'bundle_structure=PASS package_expected={pkg} asset_import_sidecars={asset_sidecars}')
 PY
 AAB_SHA="$(sha256sum "$OUTPUT_AAB"|awk '{print $1}')"
 SIZE="$(stat -c %s "$OUTPUT_AAB")"
