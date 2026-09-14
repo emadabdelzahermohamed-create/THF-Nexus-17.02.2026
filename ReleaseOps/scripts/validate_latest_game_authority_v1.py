@@ -5,6 +5,9 @@ import json, pathlib, re, sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 REG = ROOT / 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
 MATRIX = ROOT / 'ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md'
+EXPLICIT_NON_GAME_HISTORY = {
+    ROOT / '.github/workflows/thf-apps-authoritative-lineage-v2.yml',
+}
 
 def die(msg: str) -> None:
     print(f'LATEST_GAME_AUTHORITY=FAIL {msg}', file=sys.stderr)
@@ -58,8 +61,9 @@ for marker in [
 ]:
     if marker not in matrix: die('matrix_missing:'+marker)
 
-# Operational files must not silently re-promote superseded exact hashes. Historical
-# matrices/rejection docs and this registry are intentionally excluded because they record them.
+# Operational game files must not silently re-promote superseded exact hashes. The Apps
+# lineage V2 file is an explicitly non-game historical discovery lane and is exempt; the
+# game registry remains the sole authority for Spark/Rush promotion eligibility.
 scan_roots=[ROOT/'.github/workflows', ROOT/'ReleaseOps/scripts', ROOT/'ReleaseOps/mobile', ROOT/'ReleaseOps/validators']
 for key,g in games.items():
     for bad in g.get('superseded_apk_sha256',[]):
@@ -68,13 +72,13 @@ for key,g in games.items():
         for base in scan_roots:
             if not base.exists(): continue
             for p in base.rglob('*'):
+                if p.resolve() in {x.resolve() for x in EXPLICIT_NON_GAME_HISTORY}: continue
                 if not p.is_file() or p.suffix not in {'.yml','.yaml','.py','.sh','.json','.md'}: continue
                 try: text=p.read_text(encoding='utf-8')
                 except UnicodeDecodeError: continue
                 if bad in text:
                     die(f'{key}:superseded_hash_in_operational_file:{p.relative_to(ROOT)}')
 
-# Prevent stale Rift RC37 workflows from being treated as current promotion gates.
 for p in (ROOT/'.github/workflows').glob('*rift*.yml'):
     text=p.read_text(encoding='utf-8')
     if 'RC37' in text and ('FINAL' in text or 'PLAY_READY' in text or 'promot' in text.lower()):
