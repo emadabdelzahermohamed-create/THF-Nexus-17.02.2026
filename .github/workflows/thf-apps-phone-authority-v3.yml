@@ -1,0 +1,34 @@
+name: THF Apps Phone Authority V3
+on:
+  pull_request:
+    paths:
+      - 'ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V3_MANIFEST.json'
+      - 'ReleaseOps/validate_thf_apps_phone_authority_v3.py'
+      - 'ReleaseOps/test_thf_apps_phone_authority_v3.py'
+      - '.github/workflows/thf-apps-phone-authority-v3.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V3_MANIFEST.json'
+      - 'ReleaseOps/validate_thf_apps_phone_authority_v3.py'
+      - 'ReleaseOps/test_thf_apps_phone_authority_v3.py'
+      - '.github/workflows/thf-apps-phone-authority-v3.yml'
+permissions:
+  contents: read
+jobs:
+  authority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile authority checks
+        run: python -m py_compile ReleaseOps/validate_thf_apps_phone_authority_v3.py ReleaseOps/test_thf_apps_phone_authority_v3.py
+      - name: Require Shared Integration V4 checkpoint
+        run: test -f ReleaseOps/integration_factory/THF_SHARED_INTEGRATION_V4_CHECKPOINT_20260915.md
+      - name: Resolve and validate latest authority
+        run: python ReleaseOps/validate_thf_apps_phone_authority_v3.py
+      - name: Run fail-closed regression mutations
+        working-directory: ReleaseOps
+        run: python test_thf_apps_phone_authority_v3.py
