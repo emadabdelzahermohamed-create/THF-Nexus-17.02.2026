@@ -3,15 +3,35 @@ set -Eeuo pipefail
 
 SDK="$HOME/thf-builder-rc16-build/android-sdk"
 CACHE="$HOME/thf-builder-rc16-build/cache"
-GVER=8.11.1
-GBIN="$CACHE/gradle-dist-${GVER}/gradle-${GVER}/bin/gradle"
+GVER=8.13
+GRADLE_SHA256=dccb1612e69e36aa7f52082be0d820a27f90c1c7c58c7ab4e9df2eed1f3f7f65
+GDIST="$CACHE/gradle-dist-${GVER}"
+GBIN="$GDIST/gradle-${GVER}/bin/gradle"
 AAPT="$SDK/build-tools/36.0.0/aapt"
 APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
 ROOT="$HOME/thf-vault-signal-api36-candidates-v1"
 OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2"
-mkdir -p "$ROOT"
-test -x "$GBIN"
+mkdir -p "$ROOT" "$CACHE"
 test -x "$AAPT"
+
+ensure_gradle() {
+  if [ -x "$GBIN" ]; then
+    test "$("$GBIN" --version | sed -n 's/^Gradle \([0-9.]*\)$/\1/p' | head -n1)" = "$GVER"
+    return
+  fi
+  local zip="$CACHE/gradle-${GVER}-bin.zip"
+  rm -f "$zip"
+  curl --fail --location --silent --show-error --proto '=https' --tlsv1.2 \
+    "https://services.gradle.org/distributions/gradle-${GVER}-bin.zip" -o "$zip"
+  test "$(sha256sum "$zip" | awk '{print $1}')" = "$GRADLE_SHA256"
+  rm -rf "$GDIST"
+  mkdir -p "$GDIST"
+  unzip -q "$zip" -d "$GDIST"
+  rm -f "$zip"
+  test -x "$GBIN"
+  test "$("$GBIN" --version | sed -n 's/^Gradle \([0-9.]*\)$/\1/p' | head -n1)" = "$GVER"
+}
+ensure_gradle
 
 CURRENT_APP="bootstrap"
 diagnose() {
@@ -93,7 +113,7 @@ PY
   test "$gradle_before_sha" != "$gradle_after_sha"
   test -s "$overlay_map"
   ! grep -Eq "buildConfigField.*\.replace\(" "$gradle_file"
-  echo "BUILD_APP=$app PROJECT=$project SOURCE_SHA=$actual_src_sha OVERLAY=$OVERLAY_ID BEFORE=$gradle_before_sha AFTER=$gradle_after_sha"
+  echo "BUILD_APP=$app PROJECT=$project SOURCE_SHA=$actual_src_sha OVERLAY=$OVERLAY_ID BEFORE=$gradle_before_sha AFTER=$gradle_after_sha GRADLE=$GVER"
   cat "$overlay_map"
   cd "$project"
 
@@ -137,6 +157,8 @@ PY
 THF_${app^^}_API36_EXACT_QA=BUILT
 source_path=$src
 source_sha256=$actual_src_sha
+build_tool=gradle-$GVER
+build_tool_distribution_sha256=$GRADLE_SHA256
 build_overlay_id=$OVERLAY_ID
 build_overlay_repairs=$(wc -l < "$overlay_map")
 build_overlay_map_sha256=$(sha256sum "$overlay_map" | awk '{print $1}')
