@@ -13,7 +13,10 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 
-from tokenops_guard import MINT, NETWORK, PUBLIC_RPC, TOKEN_PROGRAM, choose_rpc, rpc, scan_for_secrets, sha256
+try:
+    from .tokenops_guard import MINT, NETWORK, TOKEN_PROGRAM, choose_rpc, rpc, scan_for_secrets, sha256
+except ImportError:  # direct script execution
+    from tokenops_guard import MINT, NETWORK, TOKEN_PROGRAM, choose_rpc, rpc, scan_for_secrets, sha256
 
 SCHEMA = "thf-tokenops-holder-concentration/v1"
 
