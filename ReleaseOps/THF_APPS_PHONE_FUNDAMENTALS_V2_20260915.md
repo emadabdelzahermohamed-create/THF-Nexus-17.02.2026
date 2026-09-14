@@ -31,6 +31,8 @@ Status: SOURCE_CANDIDATE_ONLY / NOT_FINAL / NO_GO
 - Package/API36/version/XML/20-locale/onboarding/account-routes/HTTPS-fail-closed/RTL/icon/launcher-policy assertions: PASS for all six.
 - Private Signal/Command signature-boundary + server-role-gate assertions: PASS.
 - Clean-extract backend tests: Forge 1/1 PASS; Echo 4/4 PASS with an ephemeral test-only `ADMIN_KEY`; Codex 6/6 PASS; Command 2/2 PASS. Python compileall PASS for these backend trees.
+- PR #28 head `d95ee7333ed04fbded3ac83cd6af41f987492265`: `THF Apps Phone Fundamentals V2` run `34902698519` PASS; `THF No Arbitrary Artifact Size Cap V1` run `34902698442` PASS.
+- PR #28 merged into `main` at `fff7f2a24ffa3e09ffcb8a0a6191f18d31330b48`.
 - Exact Android APK/AAB compile/package inspection: NOT RUN. The authorized remote Desktop Commander builder/device is currently unavailable and the local execution container has no Android SDK/Gradle toolchain. No previous APK was rebound to a new source SHA.
 
 ## Persistent artifacts
