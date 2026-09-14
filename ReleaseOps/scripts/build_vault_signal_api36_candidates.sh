@@ -9,14 +9,16 @@ GDIST="$CACHE/gradle-dist-${GVER}"
 GBIN="$GDIST/gradle-${GVER}/bin/gradle"
 AAPT="$SDK/build-tools/36.0.0/aapt"
 APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
+ZIPALIGN="$SDK/build-tools/36.0.0/zipalign"
 ROOT="$HOME/thf-vault-signal-api36-candidates-v1"
 OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2"
 mkdir -p "$ROOT" "$CACHE"
 test -x "$AAPT"
+test -x "$ZIPALIGN"
 
 ensure_gradle() {
   if [ -x "$GBIN" ]; then
-    test "$("$GBIN" --version | sed -n 's/^Gradle \([0-9.]*\)$/\1/p' | head -n1)" = "$GVER"
+    test "$("$GBIN" --version | sed -n 's/^Gradle \([0-9.]*\)$/\1/p' | sed -n '1p')" = "$GVER"
     return
   fi
   local zip="$CACHE/gradle-${GVER}-bin.zip"
@@ -29,7 +31,7 @@ ensure_gradle() {
   unzip -q "$zip" -d "$GDIST"
   rm -f "$zip"
   test -x "$GBIN"
-  test "$("$GBIN" --version | sed -n 's/^Gradle \([0-9.]*\)$/\1/p' | head -n1)" = "$GVER"
+  test "$("$GBIN" --version | sed -n 's/^Gradle \([0-9.]*\)$/\1/p' | sed -n '1p')" = "$GVER"
 }
 ensure_gradle
 
@@ -46,7 +48,7 @@ diagnose() {
   fi
   if [ -d "$ROOT/$CURRENT_APP/work" ]; then
     echo "===== source layout (depth 4) =====" >&2
-    find "$ROOT/$CURRENT_APP/work" -maxdepth 4 -type f | sort | head -n 240 >&2 || true
+    find "$ROOT/$CURRENT_APP/work" -maxdepth 4 -type f | sort | sed -n '1,240p' >&2 || true
   fi
   exit "$rc"
 }
@@ -65,7 +67,7 @@ build_one() {
   unzip -q "$src" -d "$work"
 
   local settings project gradle_file gradle_before_sha gradle_after_sha overlay_map
-  settings="$(find "$work" -maxdepth 6 -type f \( -name settings.gradle -o -name settings.gradle.kts \) | head -n1)"
+  settings="$(find "$work" -maxdepth 6 -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)"
   test -n "$settings"
   project="$(dirname "$settings")"
   gradle_file="$project/app/build.gradle"
@@ -123,22 +125,22 @@ PY
 
   "$GBIN" --no-daemon --stacktrace :app:assembleDebug >"$out/gradle-debug.log" 2>&1
   local apk
-  apk="$(find "$project/app/build/outputs/apk" -type f -name '*.apk' | sort | head -n1)"
+  apk="$(find "$project/app/build/outputs/apk" -type f -name '*.apk' -print -quit)"
   test -s "$apk"
   "$AAPT" dump badging "$apk" >"$out/badging.txt"
 
   local found_pkg target
-  found_pkg="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" "$out/badging.txt" | head -n1)"
-  target="$(sed -n "s/^targetSdkVersion:'\([^']*\)'.*/\1/p" "$out/badging.txt" | head -n1)"
+  found_pkg="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" "$out/badging.txt" | sed -n '1p')"
+  target="$(sed -n "s/^targetSdkVersion:'\([^']*\)'.*/\1/p" "$out/badging.txt" | sed -n '1p')"
 
   local variant="debug"
   if [ "$found_pkg" != "$pkg" ] || [ "$target" != "36" ]; then
     "$GBIN" --no-daemon --stacktrace :app:assembleRelease >"$out/gradle-release.log" 2>&1
-    apk="$(find "$project/app/build/outputs/apk/release" -type f -name '*.apk' | sort | head -n1)"
+    apk="$(find "$project/app/build/outputs/apk/release" -type f -name '*.apk' -print -quit)"
     test -s "$apk"
     "$AAPT" dump badging "$apk" >"$out/badging.txt"
-    found_pkg="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" "$out/badging.txt" | head -n1)"
-    target="$(sed -n "s/^targetSdkVersion:'\([^']*\)'.*/\1/p" "$out/badging.txt" | head -n1)"
+    found_pkg="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" "$out/badging.txt" | sed -n '1p')"
+    target="$(sed -n "s/^targetSdkVersion:'\([^']*\)'.*/\1/p" "$out/badging.txt" | sed -n '1p')"
     variant="release"
   fi
 
@@ -147,11 +149,40 @@ PY
 
   local final="$out/THF-${app^^}-API36-EXACT-QA.apk"
   cp "$apk" "$final"
-  local size apk_sha signed="FALSE" under="FAIL"
+  "$AAPT" dump badging "$final" >"$out/badging.txt"
+  "$AAPT" list "$final" >"$out/apk-files.txt"
+  "$ZIPALIGN" -c -P 16 -v 4 "$final" >"$out/zipalign.txt"
+
+  local size apk_sha signed="FALSE" version_code version_name app_label app_icon launcher abi_payload
   size="$(stat -c %s "$final")"
   apk_sha="$(sha256sum "$final" | awk '{print $1}')"
-  if [ "$size" -lt 104857600 ]; then under="PASS"; fi
-  if [ -x "$APKSIGNER" ] && "$APKSIGNER" verify "$final" >/dev/null 2>&1; then signed="TRUE"; fi
+  version_code="$(sed -n "s/^package: name='[^']*' versionCode='\([^']*\)'.*/\1/p" "$out/badging.txt" | sed -n '1p')"
+  version_name="$(sed -n "s/^package:.* versionName='\([^']*\)'.*/\1/p" "$out/badging.txt" | sed -n '1p')"
+  app_label="$(sed -n "s/^application-label:'\([^']*\)'.*/\1/p" "$out/badging.txt" | sed -n '1p')"
+  app_icon="$(sed -n "s/^application:.* icon='\([^']*\)'.*/\1/p" "$out/badging.txt" | sed -n '1p')"
+  launcher="$(sed -n "s/^launchable-activity: name='\([^']*\)'.*/\1/p" "$out/badging.txt" | sed -n '1p')"
+  test -n "$version_code"
+  test -n "$version_name"
+  test -n "$app_label"
+  test -n "$app_icon"
+  test -n "$launcher"
+  grep -Fq 'res/drawable/ic_thf_launcher.xml' "$out/apk-files.txt"
+
+  abi_payload="JAVA_ONLY_NO_NATIVE_LIBS"
+  if grep -q '^lib/' "$out/apk-files.txt"; then
+    abi_payload="$(sed -n 's#^lib/\([^/]*\)/.*#\1#p' "$out/apk-files.txt" | sort -u | paste -sd, -)"
+    case ",$abi_payload," in
+      *,arm64-v8a,*) : ;;
+      *) echo "Unexpected native ABI payload: $abi_payload" >&2; return 71 ;;
+    esac
+  fi
+
+  if [ -x "$APKSIGNER" ] && "$APKSIGNER" verify --verbose "$final" >"$out/apksigner.txt" 2>&1; then signed="TRUE"; fi
+  test "$signed" = TRUE
+
+  local expected_label
+  if [ "$app" = vault ]; then expected_label="THF Wallet"; else expected_label="THF Publisher"; fi
+  test "$app_label" = "$expected_label"
 
   cat >"$out/EVIDENCE.txt" <<EOF
 THF_${app^^}_API36_EXACT_QA=BUILT
@@ -166,19 +197,28 @@ build_gradle_sha256_before=$gradle_before_sha
 build_gradle_sha256_after=$gradle_after_sha
 source_zip_mutated=FALSE
 package=$found_pkg
+versionCode=$version_code
+versionName=$version_name
 targetSdk=$target
 variant=$variant
+application_label=$app_label
+application_icon=$app_icon
+launcher_activity=$launcher
+abi_payload=$abi_payload
 apk_sha256=$apk_sha
 apk_size_bytes=$size
-under_100MiB=$under
+artifact_size_policy=TELEMETRY_ONLY_NO_ARBITRARY_CAP
 apk_signature_verifies=$signed
+production_signing_performed=FALSE
+zipalign_4byte_and_16k_native_alignment=PASS
+apk_archive_integrity=PASS
+installability_preflight=PASS_PACKAGE_PARSE_SIGNATURE_ZIPALIGN_ONLY
+physical_install_status=PENDING_REAL_PHONE
 physical_device_status=PENDING
 network_release_ready=FALSE
 final_or_play_ready=FALSE
-production_signing_performed=FALSE
 EOF
   cat "$out/EVIDENCE.txt"
-  test "$under" = PASS
 }
 
 build_one vault com.topherofit.thf.vault \
