@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_utc": "2026-09-14T20:30:00Z",
+  "updated_utc": "2026-09-14T20:39:00Z",
   "final_or_play_ready": false,
   "games": {
     "terra": {
@@ -48,9 +48,12 @@
     "rush": {
       "user_facing_name": "THF Motion Games",
       "canonical_package_id": "com.topherofit.thf.rush",
-      "authoritative_version": "APPS RC4 + Verified-Motion V2",
+      "authoritative_version": "APPS RC4 + Native Verified-Motion V2",
       "authoritative_source_sha256": "766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c",
-      "eligible_candidate_apk_sha256": null,
+      "eligible_candidate_apk_sha256": "528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7",
+      "candidate_workflow_run_id": 34893899367,
+      "candidate_artifact_id": 10368186302,
+      "candidate_artifact_digest": "sha256:989137c623a8f137267dd7239d2d27b450512ddd9fabc6aa7656b3457ed22ac8",
       "target_sdk": 36,
       "arm64_required": true,
       "physical_device_status": "PENDING",
