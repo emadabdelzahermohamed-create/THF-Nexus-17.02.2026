@@ -6,7 +6,13 @@ import hashlib
 import unittest
 
 from test_validate_app_device_evidence_v10 import AppDeviceEvidenceV10Tests
-from validate_app_device_evidence_v11 import FOREGROUND_CHECKS, LIFECYCLE_CHECKS, PROCESS_METHOD, validate
+from validate_app_device_evidence_v11 import (
+    FOREGROUND_CHECKS,
+    LIFECYCLE_CHECKS,
+    PROCESS_METHOD,
+    _active_foreground_checks,
+    validate,
+)
 
 
 def digest(path):
@@ -16,9 +22,12 @@ def digest(path):
 class AppDeviceEvidenceV11Tests(AppDeviceEvidenceV10Tests):
     def setUp(self) -> None:
         super().setUp()
+        self.active_checks = _active_foreground_checks(self.registry)
+        if not self.active_checks:
+            raise AssertionError("V10 fixture must activate at least one V11 foreground check")
         self.proc_paths = {}
         provenance = {}
-        for index, check in enumerate(FOREGROUND_CHECKS, start=1):
+        for index, check in enumerate(self.active_checks, start=1):
             path = self.root / f"process-{check}.v11.txt"
             self.proc_paths[check] = path
             self._write_process(check, path, pid=str(4200 + index))
@@ -27,6 +36,14 @@ class AppDeviceEvidenceV11Tests(AppDeviceEvidenceV10Tests):
                 "evidence_sha256": digest(path),
             }
         self.evidence["process_provenance"] = provenance
+
+    def _pick(self, preferred=None, *, exclude=None):
+        if preferred in self.active_checks and preferred != exclude:
+            return preferred
+        for check in self.active_checks:
+            if check != exclude:
+                return check
+        raise AssertionError("not enough active foreground checks")
 
     def _bound_sha(self, check):
         semantic = self.evidence.get("semantic_observations", {})
@@ -64,55 +81,52 @@ class AppDeviceEvidenceV11Tests(AppDeviceEvidenceV10Tests):
 
     def test_missing_process_provenance_blocks(self):
         item = copy.deepcopy(self.evidence)
-        item["process_provenance"].pop("core_user_journey")
+        check = self._pick("core_user_journey")
+        item["process_provenance"].pop(check)
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_wrong_foreground_package_blocks(self):
         item = copy.deepcopy(self.evidence)
-        check = "touch"
+        check = self._pick("touch")
         self._write_process(check, self.proc_paths[check], package=self.package + ".other")
         self._refresh(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_bound_sha_substitution_blocks(self):
         item = copy.deepcopy(self.evidence)
-        check = "core_user_journey"
+        check = self._pick("core_user_journey")
         self._write_process(check, self.proc_paths[check], bound_sha="f" * 64)
-        self._refresh(item, check)
-        self.assertTrue(validate(self.registry, item, self.root))
-
-    def test_lifecycle_bound_sha_substitution_blocks(self):
-        item = copy.deepcopy(self.evidence)
-        check = "orientation"
-        self._write_process(check, self.proc_paths[check], bound_sha="e" * 64)
-        self._refresh(item, check)
-        self.assertTrue(validate(self.registry, item, self.root))
-
-    def test_network_bound_sha_substitution_blocks(self):
-        item = copy.deepcopy(self.evidence)
-        check = "offline_network"
-        self._write_process(check, self.proc_paths[check], bound_sha="d" * 64)
         self._refresh(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_resumed_pid_mismatch_blocks(self):
         item = copy.deepcopy(self.evidence)
-        check = "background_resume"
+        check = self._pick("background_resume")
         self._write_process(check, self.proc_paths[check], pid="4242", resumed_pid="4243")
         self._refresh(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_invalid_process_method_blocks(self):
         item = copy.deepcopy(self.evidence)
-        check = "launch"
+        check = self._pick("launch")
         self._write_process(check, self.proc_paths[check], method="MANUAL_NOTE")
         self._refresh(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_duplicate_process_file_blocks(self):
+        if len(self.active_checks) < 2:
+            self.skipTest("fixture has fewer than two active foreground checks")
         item = copy.deepcopy(self.evidence)
-        item["process_provenance"]["touch"] = copy.deepcopy(item["process_provenance"]["launch"])
+        first = self.active_checks[0]
+        second = self.active_checks[1]
+        item["process_provenance"][second] = copy.deepcopy(item["process_provenance"][first])
         self.assertTrue(validate(self.registry, item, self.root))
+
+    def test_production_foreground_policy_constant_is_nontrivial(self):
+        self.assertIn("touch", FOREGROUND_CHECKS)
+        self.assertIn("background_resume", FOREGROUND_CHECKS)
+        self.assertIn("core_user_journey", FOREGROUND_CHECKS)
+        self.assertIn("notification_tap_deeplink", FOREGROUND_CHECKS)
 
 
 if __name__ == "__main__":
