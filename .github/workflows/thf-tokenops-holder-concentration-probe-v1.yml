@@ -1,0 +1,78 @@
+name: THF TokenOps Holder Concentration Probe v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-holder-concentration-probe-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: thf-tokenops-holder-concentration-probe-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  readonly-holder-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+
+      - name: Compile and test holder probe
+        run: |
+          set -euo pipefail
+          python -m py_compile ReleaseOps/TokenOps/holder_concentration_probe.py
+          python -m pip install --disable-pip-version-check --no-input pytest
+          python -m pytest ReleaseOps/TokenOps/test_holder_concentration_probe.py -q
+
+      - name: Run bounded Solana Mainnet holder concentration probe
+        run: |
+          set -euo pipefail
+          rm -rf out/tokenops-holder
+          python ReleaseOps/TokenOps/holder_concentration_probe.py --attempts 4 --out out/tokenops-holder/holder-concentration.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('out/tokenops-holder/holder-concentration.json').read_text())
+          assert p['network'] == 'solana-mainnet-beta'
+          assert p['execution_authorized'] is False
+          assert p['transaction_bytes_created'] is False
+          assert p['instruction_bytes_created'] is False
+          assert p['signed'] is False
+          assert p['submitted'] is False
+          assert p['broadcast'] is False
+          assert p['financial_effect'] is False
+          assert p['private_key_used'] is False
+          assert p['wave_touched'] is False
+          print('HOLDER_PROBE_STATUS=' + p['status'])
+          print('HOLDER_PROBE_SHA256=' + p['probe_sha256'])
+          if p.get('concentration'):
+              print('TOP1_BPS=' + str(p['concentration']['top1_bps']))
+              print('TOP5_BPS=' + str(p['concentration']['top5_bps']))
+              print('TOP20_BPS=' + str(p['concentration']['top20_bps']))
+          else:
+              print('HOLDER_PROBE_ERRORS=' + str(len(p.get('probe_errors', []))))
+          PY
+
+      - name: Create evidence SHA-256
+        run: |
+          set -euo pipefail
+          cd out/tokenops-holder
+          sha256sum holder-concentration.json > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload read-only holder evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Holder-Concentration-v1-${{ github.run_id }}
+          path: out/tokenops-holder/
+          if-no-files-found: error
+          retention-days: 30
