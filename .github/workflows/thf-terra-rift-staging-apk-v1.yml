@@ -1,127 +1,40 @@
-name: THF Terra Rift Staging APK V1
+name: THF Terra Rift Staging APK V1 — SUPERSEDED
 
 on:
   push:
     branches: [main]
     paths:
-      - 'ReleaseOps/scripts/godot_candidate_tree_apk_v1.sh'
-      - 'ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py'
-      - 'ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py'
-      - 'ReleaseOps/scripts/kv_summary_gate_v1.py'
       - '.github/workflows/thf-terra-rift-staging-apk-v1.yml'
+      - 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write
-
-env:
-  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
-  GCP_ZONE: europe-west1-b
-  GCP_BUILDER: thf-wave-builder
-  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
-  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
 
 jobs:
-  build-qa-apks:
+  superseded-guard:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - name: Syntax gate
-        run: |
-          bash -n ReleaseOps/scripts/godot_candidate_tree_apk_v1.sh
-          python3 -m py_compile ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/kv_summary_gate_v1.py
-      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
-          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
-          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Stage tools
-        run: |
-          gcloud compute scp ReleaseOps/scripts/godot_candidate_tree_apk_v1.sh ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-      - name: Build disposable staging candidates
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          mkdir -p out
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=45m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
-          set -Eeuo pipefail
-          BASE="$HOME"
-          ROOT="$BASE/thf-terra-rift-staging-apk-v1"
-          RUNTIME="$BASE/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
-          SDK="$BASE/thf-builder-rc16-build/android-sdk"
-          GODOT="$BASE/thf-tools/godot/4.7.2-stable/godot"
-          TEMPL="$BASE/.local/share/godot/export_templates/4.7.2.stable"
-          rm -rf "$ROOT"; mkdir -p "$ROOT/out"
-          PUB=''; [ -f "$RUNTIME/runtime/public-url.txt" ] && PUB=$(cat "$RUNTIME/runtime/public-url.txt" 2>/dev/null || true)
-          python3 -c 'import json,sys,urllib.request;u=sys.argv[1];assert u.startswith("https://");d=json.load(urllib.request.urlopen(u.rstrip("/")+"/health",timeout=8));assert d.get("ok") is True;print("staging_https_health=PASS")' "$PUB"
-          WSS="wss://${PUB#https://}"
-          safe_extract(){ src="$1"; dst="$2"; if zipinfo -1 "$src" | grep -Eq '(^/|(^|/)\.\.(/|$))'; then echo unsafe_zip_member >&2; return 91; fi; mkdir -p "$dst"; unzip -q "$src" -d "$dst"; }
-          build_one(){
-            kind="$1"; src="$2"; sha="$3"; pkg="$4"; tag="$5"
-            work="$ROOT/$tag/work"; ev="$ROOT/out/$tag"; mkdir -p "$work" "$ev"
-            test "$(sha256sum "$src"|awk '{print $1}')" = "$sha"
-            safe_extract "$src" "$work"
-            python3 /tmp/thf_terra_rift_mobile_overlay_v1.py "$work" --kind "$kind" --json-out "$ev/mobile.json" >/dev/null
-            python3 /tmp/thf_game_network_endpoint_overlay_v1.py "$work" --https-url "$PUB" --wss-url "$WSS" --evidence-out "$ev/network.txt" >/dev/null
-            PG=$(find "$work" -name project.godot -type f -print -quit); test -n "$PG"; P=$(dirname "$PG")
-            PROJECT_ROOT="$P" EXPECTED_PACKAGE="$pkg" OUTPUT_APK="$ev/THF-${tag^^}-STAGING-QA.apk" ANDROID_SDK_ROOT="$SDK" GODOT_BIN="$GODOT" TEMPLATE_ROOT="$TEMPL" bash /tmp/godot_candidate_tree_apk_v1.sh
-            test "$(sha256sum "$src"|awk '{print $1}')" = "$sha"
-            echo "kind=$kind"; cat "$ev/TRUTH.txt"; echo canonical_archive_unchanged=true
-          }
-          build_one terra "$BASE/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip" eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68 com.topherofit.thf.terra terra
-          build_one rift "$BASE/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip" 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914 com.topherofit.thf.rift rift
-          echo endpoint_class=cloudflare_quick_staging
-          echo endpoint_value_redacted=true
-          echo production_cutover=false
-          echo production_signing=false
-          echo wave_files_read_or_changed=false
-          REMOTE
-      - name: Retrieve QA candidates and evidence
-        run: |
-          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rift-staging-apk-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          cat out/summary.txt
-      - name: Enforce mobile and network truth on exact staged candidates
-        shell: bash
+          persist-credentials: false
+      - name: Refuse stale V1 candidate generation
         run: |
           set -Eeuo pipefail
           python3 - <<'PY'
-          import json,pathlib
-          required={'window/handheld/orientation','window/stretch/aspect'}
-          overrides={'window/size/window_height_override','window/size/window_width_override'}
-          for kind in ('terra','rift'):
-              p=pathlib.Path('out')/kind/'mobile.json'; d=json.loads(p.read_text())
-              changed=set(d['mobile_settings']['changed_keys'])
-              assert required <= changed, (kind,'mobile required keys not proven',changed)
-              assert overrides <= changed, (kind,'desktop overrides not neutralized',changed)
-              assert d['canonical_archive_mutated'] is False
-              n=(pathlib.Path('out')/kind/'network.txt').read_text()
-              assert 'remaining_explicit_placeholder_url_markers=0' in n
-              b=(pathlib.Path('out')/kind/'badging.txt').read_text()
-              assert 'android.hardware.screen.portrait' not in b
-          print('MOBILE_SENSOR_LANDSCAPE_OVERLAY=PASS')
-          print('MOBILE_EXPANDABLE_ASPECT=PASS')
-          print('DESKTOP_WINDOW_OVERRIDE_NEUTRALIZED=PASS')
-          print('APK_PORTRAIT_HARDWARE_REQUIREMENT_ABSENT=PASS')
-          print('PLACEHOLDER_ENDPOINT_MARKERS=0')
+          import json, pathlib
+          d=json.loads(pathlib.Path('ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json').read_text())
+          terra=d['games']['terra']; rift=d['games']['rift']
+          assert terra['authoritative_source_sha256']=='eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68'
+          assert terra['eligible_candidate_apk_sha256']=='e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec'
+          assert rift['authoritative_version']=='4.7.5-rc41'
+          assert rift['authoritative_source_sha256']=='29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d'
+          assert rift['eligible_candidate_apk_sha256'] is None
+          assert d['final_or_play_ready'] is False
+          print('TERRA_RIFT_STAGING_V1=RETIRED_SUPERSEDED')
+          print('TERRA_CURRENT_CANDIDATE=e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec')
+          print('RIFT_LATEST_AUTHORITY=4.7.5-rc41')
+          print('RIFT_RC41_CANDIDATE_APK=NONE')
+          print('PHYSICAL_DEVICE_STATUS=PENDING')
+          print('FINAL_OR_PLAY_READY=FALSE')
           PY
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: THF-TERRA-RIFT-STAGING-QA-APKS-V1
-          path: out/
-          retention-days: 14
-          compression-level: 0
-      - name: Final reversible QA gate
-        run: |
-          python3 ReleaseOps/scripts/kv_summary_gate_v1.py out/summary.txt \
-            --require 'status=PASS:2' \
-            --require 'target_sdk=36:2' \
-            --require 'payload=PASS:2' \
-            --require 'qa_signing_only=true:2' \
-            --require 'canonical_archive_unchanged=true:2' \
-            --require 'production_cutover=false:1' \
-            --require 'production_signing=false:1' \
-            --require 'wave_files_read_or_changed=false:1'
