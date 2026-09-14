@@ -1,0 +1,69 @@
+name: THF App Physical Device Evidence Tooling V9
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/mobile/validate_app_device_evidence_v*.py'
+      - 'ReleaseOps/mobile/test_validate_app_device_evidence_v*.py'
+      - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
+      - '.github/workflows/thf-app-physical-device-evidence-tooling-v9.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/mobile/validate_app_device_evidence_v*.py'
+      - 'ReleaseOps/mobile/test_validate_app_device_evidence_v*.py'
+      - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
+      - '.github/workflows/thf-app-physical-device-evidence-tooling-v9.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-tooling-v9:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile fail-closed app evidence tooling V2-V9
+        run: |
+          for v in 2 3 4 5 6 7 8 9; do
+            python -m py_compile ReleaseOps/mobile/validate_app_device_evidence_v${v}.py
+            python -m py_compile ReleaseOps/mobile/test_validate_app_device_evidence_v${v}.py
+          done
+      - name: Run complete V2 through V9 evidence regressions
+        working-directory: ReleaseOps/mobile
+        run: |
+          for v in 2 3 4 5 6 7 8 9; do
+            python -m unittest -v test_validate_app_device_evidence_v${v}.py
+          done
+      - name: Verify V9 preserves authoritative pending truth
+        env:
+          PYTHONPATH: ReleaseOps/mobile
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from validate_app_device_evidence_v9 import APPROVED_RAW_COMMANDS, RAW_CAPTURE_ORDER, SUMMARY_SHA_KEYS
+          p=Path('ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['truth_boundary']['all_pending'] is True
+          assert d['truth_boundary']['final_or_play_ready'] is False
+          assert len(d['candidates']) == 10
+          assert all(row['status'] == 'PENDING_PHYSICAL_PHONE' for row in d['candidates'])
+          assert RAW_CAPTURE_ORDER == ('offline', 'local', 'online')
+          assert APPROVED_RAW_COMMANDS['offline'] == 'adb shell dumpsys connectivity'
+          assert APPROVED_RAW_COMMANDS['local'] == 'adb shell uiautomator dump /dev/tty'
+          assert APPROVED_RAW_COMMANDS['online'] == 'adb shell dumpsys connectivity'
+          assert set(SUMMARY_SHA_KEYS) == set(RAW_CAPTURE_ORDER)
+          print('APP_CANDIDATES=10')
+          print('RAW_ADB_CAPTURE_CHAIN_REQUIRED=TRUE')
+          print('RAW_CAPTURE_SHA_BINDING_REQUIRED=TRUE')
+          print('STRICT_OFFLINE_LOCAL_ONLINE_CAPTURE_ORDER=TRUE')
+          print('SELF_DECLARED_TRANSCRIPT_ONLY_REJECTED=TRUE')
+          print('PHYSICAL_DEVICE_STATUS=PENDING')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
