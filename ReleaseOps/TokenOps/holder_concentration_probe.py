@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""THF holder-concentration read-only probe with bounded RPC retries.
+"""THF holder-concentration read-only probe with bounded RPC failover retries.
 
 This module performs only Solana read calls. It never creates instructions or
 transactions, never signs or broadcasts, and never handles private keys.
@@ -14,11 +14,13 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List
 
 try:
-    from .tokenops_guard import MINT, NETWORK, TOKEN_PROGRAM, choose_rpc, rpc, scan_for_secrets, sha256
+    from .tokenops_guard import MINT, NETWORK, TOKEN_PROGRAM, rpc, scan_for_secrets, sha256
+    from .rpc_capability_probe import select_capable_rpc
 except ImportError:  # direct script execution
-    from tokenops_guard import MINT, NETWORK, TOKEN_PROGRAM, choose_rpc, rpc, scan_for_secrets, sha256
+    from tokenops_guard import MINT, NETWORK, TOKEN_PROGRAM, rpc, scan_for_secrets, sha256
+    from rpc_capability_probe import select_capable_rpc
 
-SCHEMA = "thf-tokenops-holder-concentration/v1"
+SCHEMA = "thf-tokenops-holder-concentration/v2"
 
 
 def summarize_largest_accounts(accounts: List[Dict[str, Any]], supply_raw: int) -> Dict[str, Any]:
@@ -46,16 +48,22 @@ def probe(
     base_delay_seconds: float = 1.5,
     sleeper: Callable[[float], None] = time.sleep,
 ) -> Dict[str, Any]:
-    endpoint, selection_errors = choose_rpc()
     observed_at = dt.datetime.now(dt.timezone.utc).isoformat()
-    supply_obj = rpc(endpoint, "getTokenSupply", [MINT, {"commitment": "confirmed"}])["result"]["value"]
-    supply_raw = int(supply_obj["amount"])
     errors: List[str] = []
+    capability_attempts: List[Dict[str, Any]] = []
     largest: List[Dict[str, Any]] | None = None
+    supply_raw: int | None = None
     used_attempts = 0
+
     for idx in range(max(1, attempts)):
         used_attempts = idx + 1
         try:
+            endpoint, capability = select_capable_rpc(("getTokenSupply", "getTokenLargestAccounts"))
+            capability_attempts.append(capability)
+            if endpoint is None:
+                raise RuntimeError("no configured RPC candidate supports holder concentration methods")
+            supply_obj = rpc(endpoint, "getTokenSupply", [MINT, {"commitment": "confirmed"}])["result"]["value"]
+            supply_raw = int(supply_obj["amount"])
             largest = rpc(endpoint, "getTokenLargestAccounts", [MINT, {"commitment": "confirmed"}])["result"]["value"]
             break
         except Exception as exc:
@@ -63,7 +71,7 @@ def probe(
             if idx + 1 < max(1, attempts):
                 sleeper(base_delay_seconds * (2**idx))
 
-    if largest is None:
+    if largest is None or supply_raw is None:
         result: Dict[str, Any] = {
             "schema": SCHEMA,
             "status": "UNAVAILABLE_FAIL_CLOSED",
@@ -71,10 +79,10 @@ def probe(
             "network": NETWORK,
             "mint": MINT,
             "token_program": TOKEN_PROGRAM,
-            "supply_raw": str(supply_raw),
+            "supply_raw": str(supply_raw) if supply_raw is not None else None,
             "attempts": used_attempts,
-            "rpc_selection_error_count": len(selection_errors),
             "probe_errors": errors,
+            "rpc_capability_attempts": capability_attempts,
             "concentration": None,
         }
     else:
@@ -87,8 +95,8 @@ def probe(
             "token_program": TOKEN_PROGRAM,
             "supply_raw": str(supply_raw),
             "attempts": used_attempts,
-            "rpc_selection_error_count": len(selection_errors),
             "probe_errors": errors,
+            "rpc_capability_attempts": capability_attempts,
             "concentration": summarize_largest_accounts(largest, supply_raw),
         }
     result.update({
