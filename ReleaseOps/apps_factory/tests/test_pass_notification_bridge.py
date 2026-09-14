@@ -47,7 +47,9 @@ def setup(now=1000.0, package="com.topherofit.thf.pulse"):
     h=http.NotificationHttpContract(registry)
     d=dispatch.NotificationDispatcher(registry,{"test":adapter})
     b=bridge_mod.PassNotificationBridge(authority=authority,http_contract=h,dispatcher=d,clock=lambda:now)
-    principal=http.SessionPrincipal("u1","s1",package,True,now+3600,False)
+    # The bridge authority owns the deterministic test clock; keep the already-verified
+    # principal structurally valid without coupling this fixture to wall-clock time.
+    principal=http.SessionPrincipal("u1","s1",package,True,None,False)
     return b,authority,registry,vault,adapter,principal
 
 def body(package="com.topherofit.thf.pulse", token="provider-token-123456"):
