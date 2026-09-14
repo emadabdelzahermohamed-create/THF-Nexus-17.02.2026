@@ -1,0 +1,97 @@
+name: THF TokenOps Governance Decision Packet Gate v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-governance-decision-packet-gate-v1.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-governance-decision-packet-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  governance-decision-packet-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+
+      - name: Compile and test decision packet factory
+        run: |
+          set -euo pipefail
+          python -m py_compile ReleaseOps/TokenOps/governance_decision_packets.py
+          python -m pip install --disable-pip-version-check --no-input pytest
+          python -m pytest ReleaseOps/TokenOps/test_governance_decision_packets.py -q
+
+      - name: Generate fresh read-only readiness evidence
+        run: |
+          set -euo pipefail
+          rm -rf out/tokenops-governance-decisions
+          python ReleaseOps/TokenOps/tokenops_guard.py --out out/tokenops-governance-decisions
+
+      - name: Build resolution DAG and governance decision packets
+        run: |
+          set -euo pipefail
+          PYTHONPATH=ReleaseOps/TokenOps python - <<'PY'
+          import json
+          from pathlib import Path
+          from resolution_dag import build_resolution_dag
+          from governance_decision_packets import build_governance_decision_packets, validate_governance_decision_packets
+
+          out = Path('out/tokenops-governance-decisions')
+          readiness = json.loads((out / 'financial-readiness.json').read_text())
+          dag = build_resolution_dag(readiness)
+          bundle = build_governance_decision_packets(dag)
+          errors = validate_governance_decision_packets(bundle)
+          assert errors == [], errors
+          assert bundle['execution_authorized'] is False
+          assert bundle['transaction_bytes_created'] is False
+          assert bundle['instruction_bytes_created'] is False
+          assert bundle['signed'] is False
+          assert bundle['submitted'] is False
+          assert bundle['broadcast'] is False
+          assert bundle['financial_effect'] is False
+          assert bundle['wave_touched'] is False
+          assert bundle['signer_action_now'] == 'NONE'
+          (out / 'resolution-dag.json').write_text(json.dumps(dag, sort_keys=True, indent=2) + '\n')
+          (out / 'governance-decision-packets.json').write_text(json.dumps(bundle, sort_keys=True, indent=2) + '\n')
+          print('GOVERNANCE_DECISION_PACKET_STATUS=' + bundle['status'])
+          print('GOVERNANCE_DECISION_PACKET_COUNT=' + str(bundle['packet_count']))
+          print('DEPENDENCY_BLOCKED_DECISIONS=' + str(bundle['dependency_blocked_count']))
+          print('EXACT_SIGNER_ACTION_NOW=' + bundle['signer_action_now'])
+          print('GOVERNANCE_DECISION_PACKET_ROOT_SHA256=' + bundle['decision_packet_root_sha256'])
+          PY
+
+      - name: Hash evidence
+        run: |
+          set -euo pipefail
+          cd out/tokenops-governance-decisions
+          sha256sum *.json | sort > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Enforce review-only output
+        run: |
+          set -euo pipefail
+          if find out/tokenops-governance-decisions -type f \( -name '*.txn' -o -name '*.tx' -o -name '*.key' -o -name '*.keypair' -o -name '*.secret' \) | grep -q .; then
+            echo 'Forbidden executable/sensitive payload file detected' >&2
+            exit 2
+          fi
+          echo REVIEW_ONLY_DECISION_PACKET_GATE=PASS
+
+      - name: Upload governance decision evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Governance-Decision-Packets-v1-${{ github.run_id }}
+          path: out/tokenops-governance-decisions/
+          if-no-files-found: error
+          retention-days: 30
