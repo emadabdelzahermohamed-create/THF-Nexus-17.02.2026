@@ -1,0 +1,74 @@
+name: THF Shared Integration V4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ReleaseOps/integration_factory/shared_integration_runtime_v4.py
+      - ReleaseOps/integration_factory/test_shared_integration_runtime_v4.py
+      - ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V4.json
+      - .github/workflows/thf-shared-integration-v4.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Compile shared integration V4
+        run: |
+          python3 -m py_compile \
+            ReleaseOps/integration_factory/shared_integration_contracts.py \
+            ReleaseOps/integration_factory/shared_integration_runtime_v4.py \
+            ReleaseOps/integration_factory/test_shared_integration_runtime_v4.py
+      - name: Run shared integration V3 and V4 tests
+        run: |
+          cd ReleaseOps/integration_factory
+          python3 -m unittest -v test_shared_integration_contracts.py test_shared_integration_runtime_v4.py
+      - name: Validate V4 manifest truth and package compatibility
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V4.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['schema']=='thf.android.shared.integration.v4'
+          assert d['baseline']['package_ids_preserved'] is True
+          assert d['credential_manager_google']['android_credential_manager'] is True
+          assert d['credential_manager_google']['mobile_client_secret_allowed'] is False
+          assert d['credential_manager_google']['nonce_server_verification_required'] is True
+          assert d['session_lifecycle']['refresh_rotation_required'] is True
+          assert d['session_lifecycle']['refresh_reuse_detection_required'] is True
+          assert d['operator_access']['ordinary_user_visible'] is False
+          assert d['operator_access']['client_role_override_allowed'] is False
+          assert d['cross_app_handoff']['target_package_bound'] is True
+          assert d['health_consent_and_sync']['revocation_fail_closed'] is True
+          assert d['health_consent_and_sync']['client_reward_authority'] is False
+          assert d['motion_verification']['server_verdict_required'] is True
+          assert d['motion_verification']['manual_reward_override_allowed'] is False
+          names=d['branding']['display_names']
+          expected={
+            'com.topherofit.thf.core','com.topherofit.thf.pulse','com.topherofit.thf.forge',
+            'com.topherofit.thf.echo','com.topherofit.thf.codex','com.topherofit.thf.vault',
+            'com.topherofit.thf.terra','com.topherofit.thf.rift','com.topherofit.thf.spark',
+            'com.topherofit.thf.rush','com.topherofit.thf.signal','com.topherofit.thf.command'
+          }
+          assert set(names)==expected
+          truth=d['release_truth']
+          assert all(truth[k] is False for k in (
+            'google_oauth_console_configured','google_server_signature_verifier_bound',
+            'durable_session_refresh_store_bound','operator_role_issuer_bound',
+            'health_consent_store_bound','cross_app_handoff_server_signer_bound',
+            'health_connect_physical_device_verified','samsung_partner_registration_verified',
+            'physical_device_pass','final_or_play_ready'))
+          print('THF_SHARED_INTEGRATION_V4_MANIFEST=PASS')
+          print('PACKAGE_IDS_PRESERVED=PASS')
+          print('OPERATOR_ORDINARY_USER_VISIBLE=FALSE')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
