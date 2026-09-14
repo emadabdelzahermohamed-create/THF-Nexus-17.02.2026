@@ -102,17 +102,17 @@ jobs:
           done
           AUDIT="$(ls -1 ReleaseOps/apps_factory/THF_VAULT_SIGNAL_REAL_FUNCTION_AUDIT_*.json | sort | tail -n1)"
           python3 - "$AUDIT" <<'PY'
-import json, sys
-p=sys.argv[1]
-d=json.load(open(p, encoding='utf-8'))
-assert d['release_policy_decision']['vault_apk_authority']=='REJECTED'
-assert d['release_policy_decision']['signal_apk_authority']=='REJECTED'
-assert d['release_policy_decision']['promote_apk_sha_to_authoritative_candidate'] is False
-assert d['release_policy_decision']['final_or_play_ready'] is False
-assert d['unchanged_global_gates']['physical_device_pass'] is False
-assert d['unchanged_global_gates']['network_release_ready'] is False
-print('REAL_FUNCTION_NON_PROMOTION=PASS')
-PY
+          import json, sys
+          p=sys.argv[1]
+          d=json.load(open(p, encoding='utf-8'))
+          assert d['release_policy_decision']['vault_apk_authority']=='REJECTED'
+          assert d['release_policy_decision']['signal_apk_authority']=='REJECTED'
+          assert d['release_policy_decision']['promote_apk_sha_to_authoritative_candidate'] is False
+          assert d['release_policy_decision']['final_or_play_ready'] is False
+          assert d['unchanged_global_gates']['physical_device_pass'] is False
+          assert d['unchanged_global_gates']['network_release_ready'] is False
+          print('REAL_FUNCTION_NON_PROMOTION=PASS')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: THF-VAULT-SIGNAL-API36-QA-REJECTED-WRAPPER
