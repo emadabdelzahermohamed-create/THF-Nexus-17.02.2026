@@ -3,7 +3,8 @@
 
 Extends V6 by proving that the APK bytes actually installed on the physical phone match
 the exact registered candidate APK SHA-256. Pre-install hashing alone is insufficient:
-V7 requires a post-install byte read from the package's real /data/app/.../base.apk.
+V7 requires a post-install byte read from the package's real /data/app/.../base.apk and
+binds that identity proof to the same physical-device session as all other observations.
 
 This validator is fail-closed and never promotes FINAL/PLAY_READY by itself.
 """
@@ -59,6 +60,21 @@ def validate_bundle(registry: dict, registry_sha: str, evidence: dict, evidence_
     if objective.get("package_dump_present") is not True:
         errors.append("objective.package_dump_present: true required")
 
+    session = evidence.get("session")
+    if not isinstance(session, dict):
+        errors.append("session: missing record")
+    else:
+        sid = session.get("session_id")
+        if objective.get("installed_apk_session_id") != sid:
+            errors.append("objective.installed_apk_session_id: session_id mismatch")
+        observed = V5._utc(objective.get("installed_apk_observed_at_utc"))
+        started = V5._utc(session.get("started_at_utc"))
+        ended = V5._utc(session.get("ended_at_utc"))
+        if observed is None:
+            errors.append("objective.installed_apk_observed_at_utc: strict UTC timestamp required")
+        elif started is not None and ended is not None and not (started <= observed <= ended):
+            errors.append("objective.installed_apk_observed_at_utc: observation outside declared session interval")
+
     return errors
 
 
@@ -81,6 +97,7 @@ def main() -> int:
     print(f"PRODUCT={evidence['product']}")
     print(f"EXACT_APK_SHA256={evidence['exact_candidate_sha256']}")
     print("INSTALLED_APK_BYTES_MATCH_CANDIDATE=TRUE")
+    print("INSTALLED_APK_IDENTITY_SESSION_BOUND=TRUE")
     print("SINGLE_DEVICE_SESSION_BOUND=TRUE")
     print("FINAL_OR_PLAY_READY=FALSE")
     return 0
