@@ -1,6 +1,7 @@
 import importlib.util
 import sqlite3
 import sys
+import time
 from pathlib import Path
 import pytest
 
@@ -25,8 +26,15 @@ def contract():
     r=life.NotificationTokenRegistry(sqlite3.connect(":memory:"),v)
     return http.NotificationHttpContract(r),r,v
 
-def principal(subject="u1", package="com.topherofit.thf.pulse", authenticated=True):
-    return http.SessionPrincipal(subject=subject,session_id="session-123",package_id=package,authenticated=authenticated)
+def principal(subject="u1", package="com.topherofit.thf.pulse", authenticated=True, session_expires_at=None, revoked=False):
+    return http.SessionPrincipal(
+        subject=subject,
+        session_id="session-123",
+        package_id=package,
+        authenticated=authenticated,
+        session_expires_at=session_expires_at,
+        revoked=revoked,
+    )
 
 def test_register_requires_verified_pass_session_and_returns_no_raw_token():
     c,_,v=contract()
@@ -36,6 +44,37 @@ def test_register_requires_verified_pass_session_and_returns_no_raw_token():
     assert out.status==201 and out.body["active"] is True
     assert "provider_token" not in out.body
     assert list(v.data.values())==["provider-token-123456"]
+
+def test_expired_or_revoked_pass_session_cannot_register_provider_token():
+    c,r,v=contract()
+    body={"package":"com.topherofit.thf.pulse","provider":"fcm","provider_token":"provider-token-123456"}
+    for p in (
+        principal(session_expires_at=time.time()-60),
+        principal(revoked=True),
+    ):
+        with pytest.raises(PermissionError):
+            c.register(principal=p,body=body)
+    assert r.db.execute("SELECT COUNT(*) FROM notification_tokens").fetchone()[0] == 0
+    assert v.data == {}
+
+def test_expired_or_revoked_pass_session_cannot_rotate_revoke_or_logout():
+    c,r,v=contract(); package="com.topherofit.thf.forge"
+    active=principal("u1",package,session_expires_at=time.time()+3600)
+    first=c.register(principal=active,body={"package":package,"provider":"fcm","provider_token":"old-token-123456"})
+    tid=first.body["token_id"]
+    blocked=(
+        principal("u1",package,session_expires_at=time.time()-60),
+        principal("u1",package,revoked=True),
+    )
+    for p in blocked:
+        with pytest.raises(PermissionError):
+            c.rotate(principal=p,body={"package":package,"provider":"fcm","old_token_id":tid,"provider_token":"new-token-123456"})
+        with pytest.raises(PermissionError):
+            c.revoke(principal=p,body={"token_id":tid})
+        with pytest.raises(PermissionError):
+            c.logout(principal=p,body={"package":package})
+    assert r.get(tid,subject="u1").active is True
+    assert v.data[tid] == "old-token-123456"
 
 def test_credentials_and_provider_tokens_are_rejected_in_query_strings():
     c,_,_=contract()
