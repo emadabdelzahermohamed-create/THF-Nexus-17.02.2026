@@ -1,0 +1,93 @@
+name: THF Pulse Phone Baseline QA2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-pulse-phone-baseline-v2.yml
+      - ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: thf-pulse-phone-baseline-v2
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage isolated Pulse-only builder
+        run: |
+          set -Eeuo pipefail
+          chmod +x ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh
+          gcloud compute scp ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh "$GCP_BUILDER:/tmp/build_pulse_phone_baseline_v2.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Build Pulse phone baseline
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_pulse_phone_baseline_v2.sh && /tmp/build_pulse_phone_baseline_v2.sh'
+      - name: Retrieve and fail-closed gate candidate
+        run: |
+          set -Eeuo pipefail
+          rm -rf out && mkdir -p out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-pulse-phone-baseline-v2/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          E=out/EVIDENCE.txt
+          grep -q '^THF_PULSE_PHONE_BASELINE_QA2=BUILT$' "$E"
+          grep -q '^source_tree_sha256=6a180cf6599f8827e824431caf4566f520cc3796d9366c30abc197b4aeb6ba34$' "$E"
+          grep -q '^source_authoritative_gate=PASS$' "$E"
+          grep -q '^non_pulse_code_modified=false$' "$E"
+          grep -q '^motion_runtime_local=true$' "$E"
+          grep -q '^runtime_asset_extract_integrity=PASS$' "$E"
+          grep -q '^onboarding_persistence=IMPLEMENTED$' "$E"
+          grep -q '^identity_handoff=THF_PASS_BOUNDARY_IMPLEMENTED_ENDPOINT_REQUIRED$' "$E"
+          grep -q '^identity_ticket_persisted=false$' "$E"
+          grep -q '^backend_offline_local_motion=IMPLEMENTED$' "$E"
+          grep -q '^health_connect_permission_bridge=IMPLEMENTED$' "$E"
+          grep -q '^health_connect_device_record_read=BOUNDARY_READY_DEVICE_TEST_PENDING$' "$E"
+          grep -q '^samsung_health_adapter=BOUNDARY_READY_SDK_BINARY_NOT_BUNDLED$' "$E"
+          grep -q '^provider_provenance_dedup=IMPLEMENTED_SHA256$' "$E"
+          grep -q '^pose_motion_verification_hook=IMPLEMENTED_NOT_PROOF_BY_ITSELF$' "$E"
+          grep -q '^arabic_english_rtl=IMPLEMENTED$' "$E"
+          grep -q '^targetSdk=36$' "$E"
+          grep -q '^physical_device_status=PENDING$' "$E"
+          grep -q '^visible_moving_human_phone_validation=PENDING$' "$E"
+          grep -q '^final_or_play_ready=FALSE$' "$E"
+          test -s out/THF-PULSE-PHONE-BASELINE-QA2.apk
+          APK_SHA_ACTUAL=$(sha256sum out/THF-PULSE-PHONE-BASELINE-QA2.apk | awk '{print $1}')
+          APK_SHA_RECORDED=$(sed -n 's/^apk_sha256=//p' "$E")
+          AVATAR_SHA=$(sed -n 's/^avatar_sha256=//p' "$E")
+          CONTRACT_SHA=$(sed -n 's/^health_contract_sha256=//p' "$E")
+          [[ "$APK_SHA_RECORDED" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$AVATAR_SHA" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$CONTRACT_SHA" =~ ^[0-9a-f]{64}$ ]]
+          test "$APK_SHA_ACTUAL" = "$APK_SHA_RECORDED"
+          grep -q 'avatar.glb' out/runtime-assets.sha256
+          grep -q 'health-contracts.json' out/runtime-assets.sha256
+          cat "$E"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-PULSE-PHONE-BASELINE-QA2
+          path: out/
+          retention-days: 14
+          compression-level: 0
