@@ -1,0 +1,160 @@
+name: THF Rift RC37 Phone V1 Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/thf_rift_local_training_phone_v1.py'
+      - '.github/workflows/thf-rift-rc37-phone-v1-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  RIFT_SOURCE_SHA: 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Syntax gate
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ReleaseOps/scripts/thf_rift_local_training_phone_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py
+          bash -n ReleaseOps/scripts/godot_candidate_tree_apk_v1.sh
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Stage disposable builder tools
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp ReleaseOps/scripts/thf_rift_local_training_phone_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py ReleaseOps/scripts/godot_candidate_tree_apk_v1.sh "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Build exact-source Rift Phone V1
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=45m --quiet --command="RIFT_SOURCE_SHA='$RIFT_SOURCE_SHA' bash -s" > out/remote-summary.txt <<'REMOTE'
+          set -Eeuo pipefail
+          BASE="$HOME"
+          SRC="$BASE/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
+          ROOT="$BASE/thf-rift-rc37-phone-v1"
+          WORK="$ROOT/work"
+          EV="$ROOT/out"
+          RUNTIME="$BASE/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
+          SDK="$BASE/thf-builder-rc16-build/android-sdk"
+          GODOT="$BASE/thf-tools/godot/4.7.2-stable/godot"
+          TEMPL="$BASE/.local/share/godot/export_templates/4.7.2.stable"
+          APK="$EV/THF-RIFT-4.7.1-RC37-PHONE-V1.apk"
+          test -f "$SRC"
+          test "$(sha256sum "$SRC"|awk '{print $1}')" = "$RIFT_SOURCE_SHA"
+          rm -rf "$ROOT"; mkdir -p "$WORK" "$EV"
+          if zipinfo -1 "$SRC" | grep -Eq '(^/|(^|/)\.\.(/|$))'; then echo unsafe_zip >&2; exit 91; fi
+          unzip -q "$SRC" -d "$WORK"
+          python3 /tmp/thf_terra_rift_mobile_overlay_v1.py "$WORK" --kind rift --json-out "$EV/mobile.json" > "$EV/mobile.log"
+          python3 /tmp/thf_rift_local_training_phone_v1.py "$WORK" --json-out "$EV/local-training.json" > "$EV/local-training.log"
+          PUB=''; [ -f "$RUNTIME/runtime/public-url.txt" ] && PUB=$(cat "$RUNTIME/runtime/public-url.txt" 2>/dev/null || true)
+          if [[ "$PUB" == https://* ]]; then
+            python3 -c 'import json,sys,urllib.request;u=sys.argv[1];d=json.load(urllib.request.urlopen(u.rstrip("/")+"/health",timeout=8));assert d.get("ok") is True' "$PUB"
+            python3 /tmp/thf_game_network_endpoint_overlay_v1.py "$WORK" --https-url "$PUB" --wss-url "wss://${PUB#https://}" --evidence-out "$EV/network.txt" > "$EV/network.log"
+            echo endpoint_class=cloudflare_quick_staging
+          else
+            echo missing_healthy_staging_endpoint >&2; exit 92
+          fi
+          PG=$(find "$WORK" -type f -name project.godot -print -quit); test -n "$PG"; P=$(dirname "$PG")
+          grep -q 'window/handheld/orientation=4' "$PG"
+          grep -q 'window/stretch/aspect="expand"' "$PG"
+          grep -q 'window/size/window_width_override=0' "$PG"
+          grep -q 'window/size/window_height_override=0' "$PG"
+          ARENA="$P/native/arena/ArenaMain.gd"; test -f "$ARENA"
+          grep -q 'local_training_mode = true' "$ARENA"
+          grep -q 'session.clear()' "$ARENA"
+          grep -q 'func _local_training_combat_action' "$ARENA"
+          grep -q 'local_training_bot_hp = maxi(0, local_training_bot_hp - 25)' "$ARENA"
+          grep -q 'target_position.x = clampf' "$ARENA"
+          grep -q 'target_position.z = clampf' "$ARENA"
+          grep -q 'Vector2(66.0, 62.0)' "$ARENA"
+          grep -q 'maxf(minimum_size.y, 62.0)' "$ARENA"
+          PROJECT_ROOT="$P" EXPECTED_PACKAGE='com.topherofit.thf.rift.phoneqa' OUTPUT_APK="$APK" ANDROID_SDK_ROOT="$SDK" GODOT_BIN="$GODOT" TEMPLATE_ROOT="$TEMPL" bash /tmp/godot_candidate_tree_apk_v1.sh
+          test "$(sha256sum "$SRC"|awk '{print $1}')" = "$RIFT_SOURCE_SHA"
+          # Parser/import/headless cleanliness: fail on real script/parser/load faults.
+          if grep -Eqi 'SCRIPT ERROR|Parse Error|Parser Error|Failed to load script|Invalid call|Invalid get index|Invalid set index' "$EV/import.log" "$EV/boot.log" "$EV/export.log"; then
+            grep -Ein 'SCRIPT ERROR|Parse Error|Parser Error|Failed to load script|Invalid call|Invalid get index|Invalid set index' "$EV/import.log" "$EV/boot.log" "$EV/export.log" | head -100 >&2
+            exit 93
+          fi
+          "$SDK/build-tools/$(ls "$SDK/build-tools"|sort -V|tail -1)/aapt" dump badging "$APK" > "$EV/badging-phone.txt"
+          grep -q "package: name='com.topherofit.thf.rift.phoneqa'" "$EV/badging-phone.txt"
+          grep -q "targetSdkVersion:'36'" "$EV/badging-phone.txt"
+          unzip -l "$APK" > "$EV/apk-entries.txt"
+          grep -q 'lib/arm64-v8a/libgodot_android.so' "$EV/apk-entries.txt"
+          APK_SHA=$(sha256sum "$APK"|awk '{print $1}')
+          ARENA_SHA=$(sha256sum "$ARENA"|awk '{print $1}')
+          PROJECT_SHA=$(sha256sum "$PG"|awk '{print $1}')
+          SIZE=$(stat -c %s "$APK")
+          cat > "$EV/EVIDENCE.txt" <<EOF
+          THF_RIFT_RC37_PHONE_V1=BUILT
+          canonical_source_sha256=$RIFT_SOURCE_SHA
+          canonical_archive_unchanged=true
+          candidate_package=com.topherofit.thf.rift.phoneqa
+          target_sdk=36
+          engine=Godot-4.7.2
+          arena_source_sha256=$ARENA_SHA
+          project_sha256=$PROJECT_SHA
+          sensor_landscape_setting=PASS
+          expandable_aspect=PASS
+          desktop_window_override=NONE
+          touch_targets_min_y=62
+          mpfb_avatar_path=res://web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb
+          local_training_mode=GENUINE_LOCAL_STATE
+          local_training_online_session_faked=FALSE
+          local_training_start_backend_calls=0
+          local_movement=TARGET_POSITION_LOCAL_ONLY
+          local_combat=CAMERA_AIM_CONE_TARGET_HP_AMMO_HITS_KILLS
+          online_act_authority=PRESERVED_WEBSOCKET_OR_HTTP_TICK
+          ranked_social_economy_world_local_mutation=DISABLED
+          placeholder_endpoint_markers=0
+          apk_size_bytes=$SIZE
+          apk_sha256=$APK_SHA
+          physical_device_status=PENDING
+          final_or_play_ready=FALSE
+          production_signing=false
+          production_cutover=false
+          EOF
+          cat "$EV/EVIDENCE.txt"
+          REMOTE
+      - name: Retrieve candidate and evidence
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-rift-rc37-phone-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/EVIDENCE.txt
+          grep -q '^THF_RIFT_RC37_PHONE_V1=BUILT$' out/EVIDENCE.txt
+          grep -q '^sensor_landscape_setting=PASS$' out/EVIDENCE.txt
+          grep -q '^expandable_aspect=PASS$' out/EVIDENCE.txt
+          grep -q '^desktop_window_override=NONE$' out/EVIDENCE.txt
+          grep -q '^local_training_mode=GENUINE_LOCAL_STATE$' out/EVIDENCE.txt
+          grep -q '^local_training_online_session_faked=FALSE$' out/EVIDENCE.txt
+          grep -q '^local_training_start_backend_calls=0$' out/EVIDENCE.txt
+          grep -q '^online_act_authority=PRESERVED_WEBSOCKET_OR_HTTP_TICK$' out/EVIDENCE.txt
+          grep -q '^physical_device_status=PENDING$' out/EVIDENCE.txt
+          grep -q '^final_or_play_ready=FALSE$' out/EVIDENCE.txt
+          test -s out/THF-RIFT-4.7.1-RC37-PHONE-V1.apk
+          sha256sum out/THF-RIFT-4.7.1-RC37-PHONE-V1.apk
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-RIFT-4.7.1-RC37-PHONE-V1
+          path: out/
+          retention-days: 14
+          compression-level: 0
