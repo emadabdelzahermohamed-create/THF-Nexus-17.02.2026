@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """V8 physical-phone evidence validator.
 
-Extends V7 by binding typed FPS/RAM/thermal observations to the same immutable
-objective ADB capture used for install/launch/runtime evidence. V8 prevents a
-performance JSON record from claiming arbitrary values that are unrelated to the
-hash-bound objective capture. It remains fail-closed and never promotes
-FINAL/PLAY_READY by itself.
+Extends V7 by binding typed FPS/RAM/thermal observations to immutable, hash-bound
+performance evidence and to the same objective ADB capture used for runtime proof.
+The performance evidence must contain canonical machine-readable metrics so the JSON
+summary cannot silently diverge from its capture artifact. V8 is fail-closed and never
+promotes FINAL/PLAY_READY by itself.
 """
 from __future__ import annotations
 
@@ -30,10 +30,42 @@ SHA = re.compile(r"^[0-9a-f]{64}$")
 APPROVED_FPS_METHODS = {"dumpsys-gfxinfo-framestats", "surfaceflinger-latency"}
 APPROVED_RAM_METHODS = {"dumpsys-meminfo-total-pss"}
 APPROVED_THERMAL_METHODS = {"dumpsys-thermalservice"}
+METRIC_KEYS = {
+    "THF_FPS_OBSERVED",
+    "THF_RAM_MB_OBSERVED",
+    "THF_THERMAL_STATUS_OBSERVED",
+    "THF_OBSERVATION_SECONDS",
+    "THF_OBJECTIVE_EVIDENCE_SHA256",
+    "THF_SESSION_ID",
+}
 
 
 def _close(a: object, b: object, tolerance: float = 0.02) -> bool:
     return isinstance(a, (int, float)) and isinstance(b, (int, float)) and abs(float(a) - float(b)) <= tolerance
+
+
+def _parse_metrics(path: Path) -> tuple[dict[str, str], list[str]]:
+    metrics: dict[str, str] = {}
+    errors: list[str] = []
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        return metrics, [f"performance_observation: canonical metrics evidence unreadable: {exc}"]
+    for raw in text.splitlines():
+        if "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        key = key.strip()
+        if key not in METRIC_KEYS:
+            continue
+        if key in metrics:
+            errors.append(f"performance_observation: duplicate canonical metric {key}")
+            continue
+        metrics[key] = value.strip()
+    missing = sorted(METRIC_KEYS - set(metrics))
+    for key in missing:
+        errors.append(f"performance_observation: canonical metric missing: {key}")
+    return metrics, errors
 
 
 def validate_bundle(registry: dict, registry_sha: str, evidence: dict, evidence_root: Path) -> list[str]:
@@ -82,9 +114,35 @@ def validate_bundle(registry: dict, registry_sha: str, evidence: dict, evidence_
     if provenance.get("thermal_source_snapshot_present") is not True or objective.get("thermal_snapshot_present") is not True:
         errors.append("performance_observation.provenance.thermal_source_snapshot_present: objective thermal snapshot required")
 
-    sid = evidence.get("session", {}).get("session_id") if isinstance(evidence.get("session"), dict) else None
+    session = evidence.get("session")
+    sid = session.get("session_id") if isinstance(session, dict) else None
     if provenance.get("session_id") != sid:
         errors.append("performance_observation.provenance.session_id: session_id mismatch")
+
+    performance_path = V4._safe_evidence_path(evidence_root, performance.get("evidence_ref"))
+    if performance_path is not None and performance_path.is_file():
+        metrics, metric_errors = _parse_metrics(performance_path)
+        errors.extend(metric_errors)
+        if not metric_errors:
+            try:
+                captured_fps = float(metrics["THF_FPS_OBSERVED"])
+                captured_ram = float(metrics["THF_RAM_MB_OBSERVED"])
+                captured_seconds = float(metrics["THF_OBSERVATION_SECONDS"])
+            except ValueError:
+                errors.append("performance_observation: canonical numeric metrics must be finite numbers")
+            else:
+                if not _close(performance.get("fps_observed"), captured_fps, 0.001):
+                    errors.append("performance_observation.fps_observed: JSON does not match hash-bound performance capture")
+                if not _close(performance.get("ram_mb_observed"), captured_ram, 0.001):
+                    errors.append("performance_observation.ram_mb_observed: JSON does not match hash-bound performance capture")
+                if not _close(performance.get("observation_seconds"), captured_seconds, 0.001):
+                    errors.append("performance_observation.observation_seconds: JSON does not match hash-bound performance capture")
+            if str(performance.get("thermal_status_observed")) != metrics["THF_THERMAL_STATUS_OBSERVED"]:
+                errors.append("performance_observation.thermal_status_observed: JSON does not match hash-bound performance capture")
+            if metrics["THF_OBJECTIVE_EVIDENCE_SHA256"] != objective_sha:
+                errors.append("performance_observation: performance capture is not bound to objective evidence SHA")
+            if metrics["THF_SESSION_ID"] != sid:
+                errors.append("performance_observation: performance capture session_id mismatch")
 
     return errors
 
@@ -107,6 +165,7 @@ def main() -> int:
     print("THF_GAME_PHYSICAL_DEVICE_EVIDENCE_V8=PASS")
     print(f"PRODUCT={evidence['product']}")
     print(f"EXACT_APK_SHA256={evidence['exact_candidate_sha256']}")
+    print("PERFORMANCE_VALUES_MATCH_HASH_BOUND_CAPTURE=TRUE")
     print("PERFORMANCE_VALUES_BOUND_TO_OBJECTIVE_CAPTURE=TRUE")
     print("INSTALLED_APK_BYTES_MATCH_CANDIDATE=TRUE")
     print("SINGLE_DEVICE_SESSION_BOUND=TRUE")
