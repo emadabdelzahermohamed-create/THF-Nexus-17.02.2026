@@ -26,10 +26,26 @@ insert='''  cat "$overlay_map"\n  python3 /tmp/nativeize_vault_signal_candidate.
 src=src.replace(anchor, insert)
 
 old='OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2"'
-new='OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2+THF_NATIVE_REAL_FUNCTION_V2+CANONICAL_SOURCE_V2+QA_DEBUG_SIGNING_POST_PACKAGE_V1+APK_DIAGNOSTICS_V1"'
+new='OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2+THF_NATIVE_REAL_FUNCTION_V2+CANONICAL_SOURCE_V2+QA_DEBUG_SIGNING_POST_PACKAGE_V1+APK_DIAGNOSTICS_V2"'
 if src.count(old) != 1:
     raise SystemExit('overlay id anchor drift')
 src=src.replace(old,new)
+
+pkg_anchor='  test "$found_pkg" = "$pkg"\n  test "$target" = "36"\n'
+if src.count(pkg_anchor) != 1:
+    raise SystemExit('package/target validation anchor drift')
+src=src.replace(pkg_anchor, '''  if [ "$found_pkg" != "$pkg" ]; then\n    echo "APK_PACKAGE_FAIL app=$app expected=$pkg actual=$found_pkg variant=$variant" >&2\n    return 70\n  fi\n  if [ "$target" != "36" ]; then\n    echo "APK_TARGET_FAIL app=$app expected=36 actual=$target variant=$variant" >&2\n    return 71\n  fi\n''')
+
+zip_anchor='  "$ZIPALIGN" -c -P 16 -v 4 "$final" >"$out/zipalign.txt"\n'
+if src.count(zip_anchor) != 1:
+    raise SystemExit('zipalign anchor drift')
+zip_new='''  if grep -q '^lib/.*\\.so$' "$out/apk-files.txt"; then\n    if ! "$ZIPALIGN" -c -P 16 -v 4 "$final" >"$out/zipalign.txt" 2>&1; then\n      echo "APK_ZIPALIGN_FAIL app=$app mode=4byte+16k-native" >&2\n      tail -n 80 "$out/zipalign.txt" >&2 || true\n      return 72\n    fi\n  else\n    if ! "$ZIPALIGN" -c -v 4 "$final" >"$out/zipalign.txt" 2>&1; then\n      echo "APK_ZIPALIGN_FAIL app=$app mode=4byte-java-only" >&2\n      tail -n 80 "$out/zipalign.txt" >&2 || true\n      return 72\n    fi\n  fi\n'''
+src=src.replace(zip_anchor, zip_new)
+
+meta_anchor='  test -n "$version_code"\n  test -n "$version_name"\n  test -n "$app_label"\n'
+if src.count(meta_anchor) != 1:
+    raise SystemExit('metadata validation anchor drift')
+src=src.replace(meta_anchor, '''  echo "APK_METADATA_RAW app=$app versionCode=$version_code versionName=$version_name label=$app_label icon=$app_icon launcher=$launcher"\n  test -n "$version_code"\n  test -n "$version_name"\n  test -n "$app_label"\n''')
 
 # aapt can leave the resolved application icon field empty for a vector while
 # the compiled drawable is present. Require the compiled resource and record
