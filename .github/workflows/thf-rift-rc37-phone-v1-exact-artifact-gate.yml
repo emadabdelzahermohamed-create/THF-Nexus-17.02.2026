@@ -1,0 +1,57 @@
+name: THF Rift RC37 Phone V1 Exact Artifact Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/scripts/validate_rift_rc37_phone_v1_artifact.py'
+      - '.github/workflows/thf-rift-rc37-phone-v1-exact-artifact-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: thf-rift-rc37-phone-v1-exact-artifact-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ARTIFACT_ID: '10359190457'
+      ARTIFACT_SHA256: '7f447d35e4cd6e06f64fd7efbebbd8ac4c6e6cf92d00af4842ffab18faba043d'
+      APK_SHA256: '8d023174dc30cb7899c21b66e6d7deaca8e16ddd0371f337f589a812c22a8f15'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Syntax gate
+        run: python3 -m py_compile ReleaseOps/scripts/validate_rift_rc37_phone_v1_artifact.py
+      - name: Download exact Actions artifact
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl --fail --location --retry 3 \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+            -o rift-artifact.zip
+          test "$(sha256sum rift-artifact.zip | awk '{print $1}')" = "$ARTIFACT_SHA256"
+          unzip -tq rift-artifact.zip
+      - name: Validate exact packaged game bytes
+        run: python3 ReleaseOps/scripts/validate_rift_rc37_phone_v1_artifact.py rift-artifact.zip | tee rift-exact-artifact-gate.txt
+      - name: Preserve non-promotional release truth
+        run: |
+          set -Eeuo pipefail
+          grep -q '^THF_RIFT_RC37_PHONE_V1_EXACT_ARTIFACT=PASS$' rift-exact-artifact-gate.txt
+          grep -q "^apk_sha256=${APK_SHA256}$" rift-exact-artifact-gate.txt
+          grep -q '^game_specific_payload=PASS$' rift-exact-artifact-gate.txt
+          grep -q '^mpfb_ual_payload=PASS$' rift-exact-artifact-gate.txt
+          grep -q '^combat_payload=PASS$' rift-exact-artifact-gate.txt
+          grep -q '^physical_device_status=PENDING$' rift-exact-artifact-gate.txt
+          grep -q '^final_or_play_ready=FALSE$' rift-exact-artifact-gate.txt
