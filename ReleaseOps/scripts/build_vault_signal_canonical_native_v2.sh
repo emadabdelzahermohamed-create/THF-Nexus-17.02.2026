@@ -26,10 +26,30 @@ insert='''  cat "$overlay_map"\n  python3 /tmp/nativeize_vault_signal_candidate.
 src=src.replace(anchor, insert)
 
 old='OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2"'
-new='OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2+THF_NATIVE_REAL_FUNCTION_V2+CANONICAL_SOURCE_V2+QA_DEBUG_SIGNING_POST_PACKAGE_V1"'
+new='OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2+THF_NATIVE_REAL_FUNCTION_V2+CANONICAL_SOURCE_V2+QA_DEBUG_SIGNING_POST_PACKAGE_V1+APK_DIAGNOSTICS_V1"'
 if src.count(old) != 1:
     raise SystemExit('overlay id anchor drift')
 src=src.replace(old,new)
+
+# aapt can leave the resolved application icon field empty for a vector while
+# the compiled drawable is present. Require the compiled resource and record
+# that exact resource rather than falsely failing a valid phone-QA package.
+icon_anchor='  test -n "$app_icon"\n  test -n "$launcher"\n  grep -Fq \'res/drawable/ic_thf_launcher.xml\' "$out/apk-files.txt"\n'
+if src.count(icon_anchor) != 1:
+    raise SystemExit('icon validation anchor drift')
+icon_new='''  test -n "$launcher"\n  grep -Fq 'res/drawable/ic_thf_launcher.xml' "$out/apk-files.txt"\n  if [ -z "$app_icon" ]; then\n    app_icon='res/drawable/ic_thf_launcher.xml'\n  fi\n  test -n "$app_icon"\n  echo "APK_METADATA app=$app package=$found_pkg targetSdk=$target versionCode=$version_code versionName=$version_name label=$app_label icon=$app_icon launcher=$launcher"\n'''
+src=src.replace(icon_anchor, icon_new)
+
+sig_anchor='  if [ -x "$APKSIGNER" ] && "$APKSIGNER" verify --verbose "$final" >"$out/apksigner.txt" 2>&1; then signed="TRUE"; fi\n  test "$signed" = TRUE\n'
+if src.count(sig_anchor) != 1:
+    raise SystemExit('signature validation anchor drift')
+sig_new='''  if [ -x "$APKSIGNER" ] && "$APKSIGNER" verify --verbose "$final" >"$out/apksigner.txt" 2>&1; then signed="TRUE"; fi\n  if [ "$signed" != TRUE ]; then\n    echo "APK_SIGNATURE_FAIL app=$app apksigner=$APKSIGNER" >&2\n    cat "$out/apksigner.txt" >&2 2>/dev/null || true\n    return 73\n  fi\n'''
+src=src.replace(sig_anchor, sig_new)
+
+label_anchor='  test "$app_label" = "$expected_label"\n'
+if src.count(label_anchor) != 1:
+    raise SystemExit('label validation anchor drift')
+src=src.replace(label_anchor, '''  if [ "$app_label" != "$expected_label" ]; then\n    echo "APK_LABEL_FAIL app=$app expected=$expected_label actual=$app_label" >&2\n    return 74\n  fi\n''')
 
 needle='build_overlay_map_sha256=$(sha256sum "$overlay_map" | awk \'{print $1}\')\n'
 if src.count(needle) != 1:
