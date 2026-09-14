@@ -4,7 +4,7 @@
   "truth_boundary": {"all_pending": true, "final_or_play_ready": false},
   "required_checks": ["install","launch","touch","responsive_layout","orientation","background_resume","offline_network","core_user_journey","crash_free","accessibility","data_saver","rtl","localization_20_language_readiness","notification_permission","notification_channel","notification_receive","notification_tap_deeplink"],
   "candidates": [
-    {"name":"core","package":"com.topherofit.thf.core","apk_sha256":"262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba","source_sha256":null,"status":"PENDING_PHYSICAL_PHONE"},
+    {"name":"core","package":"com.topherofit.thf.core","apk_sha256":"262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba","source_sha256":"6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a","status":"PENDING_PHYSICAL_PHONE"},
     {"name":"pulse","package":"com.topherofit.thf.pulse","apk_sha256":"e043b5555f793d4bd226b865c8a5a400068d05948f1104583f5e9f2e028607dc","source_sha256":"71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10","status":"PENDING_PHYSICAL_PHONE"},
     {"name":"forge","package":"com.topherofit.thf.forge","apk_sha256":"c93b26b2b59b0f09671ecf632bbc3304e27b52e7b0d07470ee284e5a565cd8b5","source_sha256":"0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51","status":"PENDING_PHYSICAL_PHONE"},
     {"name":"echo","package":"com.topherofit.thf.echo","apk_sha256":"ddc0c48ec0c149d2f6ab424f9b6576f64a0c7888f021771076ff32b3a9728d94","source_sha256":"87c6a532fc56870b9a4c1039ac1f44b43e1a2f4c5c4518caf0d6537c61704226","status":"PENDING_PHYSICAL_PHONE"},
