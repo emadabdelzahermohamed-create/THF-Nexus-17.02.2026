@@ -1,0 +1,135 @@
+name: THF Rift RC37 Gameplay Gap Audit V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-rift-gameplay-gap-audit-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  RIFT_ARCHIVE: /home/thf-builder/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip
+  RIFT_SHA256: 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Audit exact canonical Rift source without mutation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command="RIFT_ARCHIVE='$RIFT_ARCHIVE' RIFT_SHA256='$RIFT_SHA256' bash -s" > out/rift_gap_audit.txt <<'REMOTE'
+          set -Eeuo pipefail
+          test -f "$RIFT_ARCHIVE"
+          ACTUAL=$(sha256sum "$RIFT_ARCHIVE" | awk '{print $1}')
+          test "$ACTUAL" = "$RIFT_SHA256"
+          ROOT=$(mktemp -d "$HOME/rift-gap-audit.XXXXXX")
+          trap 'rm -rf "$ROOT"' EXIT
+          python3 - "$RIFT_ARCHIVE" "$ROOT" <<'PY'
+          import pathlib,shutil,sys,zipfile
+          src=pathlib.Path(sys.argv[1]); dst=pathlib.Path(sys.argv[2]).resolve()
+          with zipfile.ZipFile(src) as z:
+              for i in z.infolist():
+                  r=pathlib.PurePosixPath(i.filename)
+                  if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip path')
+                  t=(dst/pathlib.Path(*r.parts)).resolve()
+                  if t != dst and dst not in t.parents: raise SystemExit('zip escape')
+                  if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+                  t.parent.mkdir(parents=True,exist_ok=True)
+                  with z.open(i) as a, open(t,'wb') as b: shutil.copyfileobj(a,b)
+          PY
+          PG=$(find "$ROOT" -type f -name project.godot -print -quit)
+          test -n "$PG"
+          P=$(dirname "$PG")
+          echo "THF_RIFT_CANONICAL_SHA256=$ACTUAL"
+          echo "THF_RIFT_PROJECT_REL=${P#$ROOT/}"
+          echo "THF_RIFT_ARCHIVE_UNCHANGED=true"
+          echo "FINAL_OR_PLAY_READY=FALSE"
+          echo
+          echo '=== PHONE CONFIG ==='
+          grep -nE 'display/window|orientation|stretch|window_(width|height)_override|size/window_(width|height)_override' "$PG" || true
+          echo
+          echo '=== GDSCRIPT INVENTORY ==='
+          find "$P" -type f -name '*.gd' -printf '%P\n' | sort
+          echo
+          echo '=== GAMEPLAY/NETWORK MARKERS ==='
+          grep -RniE --include='*.gd' --include='*.tscn' 'attack|damage|hitbox|hurtbox|weapon|ammo|reload|move_and_slide|velocity|CharacterBody3D|Camera3D|TouchScreenButton|InputEventScreen|WebSocket|wss://|server|authoritative|offline|local.*training|training.*mode' "$P" | head -900 || true
+          echo
+          echo '=== CANDIDATE GAMEPLAY SOURCE CONTEXT ==='
+          python3 - "$P" <<'PY'
+          import pathlib,re,sys
+          root=pathlib.Path(sys.argv[1])
+          pats=re.compile(r'attack|damage|hitbox|hurtbox|weapon|reload|move_and_slide|WebSocket|offline|training|server|authoritative',re.I)
+          scored=[]
+          for f in root.rglob('*.gd'):
+              try: s=f.read_text(errors='replace')
+              except Exception: continue
+              n=len(pats.findall(s))
+              if n: scored.append((n,f,s))
+          for n,f,s in sorted(scored, reverse=True)[:12]:
+              print(f'--- FILE {f.relative_to(root)} markers={n} sha256=', end='')
+              import hashlib
+              print(hashlib.sha256(s.encode()).hexdigest())
+              lines=s.splitlines()
+              interesting=[i for i,l in enumerate(lines) if pats.search(l)]
+              windows=[]
+              for i in interesting[:30]: windows.extend(range(max(0,i-5),min(len(lines),i+9)))
+              for i in sorted(set(windows))[:320]: print(f'{i+1:05d}: {lines[i]}')
+          PY
+          REMOTE
+          cat out/rift_gap_audit.txt
+      - name: Publish immutable audit artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-RIFT-RC37-GAMEPLAY-GAP-AUDIT-V1
+          path: out/rift_gap_audit.txt
+          retention-days: 14
+      - name: Checkpoint report to ReleaseOps
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          {
+            echo '# THF Rift RC37 Gameplay Gap Audit V1'
+            echo
+            echo '- Source: exact canonical RC37 archive on prepared builder'
+            echo '- Canonical archive SHA-256: `3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914`'
+            echo '- Purpose: locate real movement/combat/network gating before any disposable gameplay patch.'
+            echo '- This report is evidence only; it does **not** assert FINAL/PLAY_READY or physical-device PASS.'
+            echo
+            echo '```text'
+            cat out/rift_gap_audit.txt
+            echo '```'
+          } > /tmp/report.md
+          python3 - <<'PY'
+          import json,os,subprocess
+          p='ReleaseOps/mobile/RIFT_RC37_GAMEPLAY_GAP_AUDIT_V1_LATEST.md'
+          body=open('/tmp/report.md').read()
+          repo=os.environ['GITHUB_REPOSITORY']
+          api=f'repos/{repo}/contents/{p}'
+          r=subprocess.run(['gh','api',api],capture_output=True,text=True)
+          args=['gh','api','--method','PUT',api,'-f','message=releaseops(games): checkpoint Rift RC37 gameplay gap audit','-f',f'content={__import__("base64").b64encode(body.encode()).decode()}']
+          if r.returncode==0:
+              sha=json.loads(r.stdout)['sha']; args += ['-f',f'sha={sha}']
+          subprocess.run(args,check=True)
+          PY
