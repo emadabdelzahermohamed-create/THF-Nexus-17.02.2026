@@ -26,7 +26,26 @@ jobs:
       - name: Validate authoritative factory state and exact-device authority
         run: |
           python ReleaseOps/validators/validate_apps_factory_state.py \
-            ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260913_2035_EET.json \
+            ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1115_EET.json \
             --physical-registry ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json
       - name: Run validator regression tests
         run: python -m pytest -q ReleaseOps/validators/test_validate_apps_factory_state.py
+      - name: Preserve network and physical truth boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1115_EET.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['shared_runtime']['backend_health_auth_proof'] is False
+          assert d['shared_runtime']['network_release_ready'] is False
+          assert d['shared_runtime']['health']=='DIAGNOSTIC_REACHABILITY_ONLY'
+          assert d['core']['runtime_backend_health']=='NOT_PROVEN_THF_BACKEND'
+          assert all(a['runtime_health']=='NOT_PROVEN_THF_BACKEND' for a in d['apps'])
+          assert all(a['runtime_endpoint_binding']=='PASS_CONFIG_BINDING_ONLY' for a in d['apps'])
+          assert d['truth_boundary']['final_or_play_ready'] is False
+          print('CONFIG_BINDING_ONLY=TRUE')
+          print('BACKEND_HEALTH_AUTH_PROOF=FALSE')
+          print('NETWORK_RELEASE_READY=FALSE')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
