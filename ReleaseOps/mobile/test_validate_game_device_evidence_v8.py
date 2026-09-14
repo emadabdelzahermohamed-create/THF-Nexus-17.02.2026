@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 from pathlib import Path
 import sys
@@ -22,6 +23,23 @@ T7SPEC.loader.exec_module(T7)
 V3 = MOD.V3
 
 
+def _rewrite_performance_capture(doc: dict, root: Path) -> None:
+    perf = doc['performance_observation']
+    objective = doc['objective']
+    text = "\n".join((
+        f"THF_FPS_OBSERVED={perf['fps_observed']}",
+        f"THF_RAM_MB_OBSERVED={perf['ram_mb_observed']}",
+        f"THF_THERMAL_STATUS_OBSERVED={perf['thermal_status_observed']}",
+        f"THF_OBSERVATION_SECONDS={perf['observation_seconds']}",
+        f"THF_OBJECTIVE_EVIDENCE_SHA256={objective['evidence_sha256']}",
+        f"THF_SESSION_ID={doc['session']['session_id']}",
+        "",
+    )).encode()
+    path = root / perf['evidence_ref']
+    path.write_bytes(text)
+    perf['evidence_sha256'] = hashlib.sha256(text).hexdigest()
+
+
 def evidence(product: str, registry_sha: str, root: Path):
     doc = T7.evidence(product, registry_sha, root)
     pss = doc['objective']['total_pss_kb']
@@ -37,6 +55,7 @@ def evidence(product: str, registry_sha: str, root: Path):
         'thermal_source_snapshot_present': True,
         'session_id': doc['session']['session_id'],
     }
+    _rewrite_performance_capture(doc, root)
     return doc
 
 
@@ -103,6 +122,40 @@ class DeviceEvidenceV8Tests(unittest.TestCase):
             root=Path(td); doc=evidence('rift',rsha,root)
             doc['performance_observation']['provenance']['session_id']='other-phone-session-20260914'
             self.assertTrue(any('provenance.session_id: session_id mismatch' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
+
+    def test_hash_bound_capture_fps_mismatch_fails(self):
+        reg=T7.T6.registry_doc(); rsha='f'*64
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); doc=evidence('spark',rsha,root)
+            doc['performance_observation']['fps_observed']=123.0
+            self.assertTrue(any('fps_observed: JSON does not match hash-bound performance capture' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
+
+    def test_hash_bound_capture_thermal_mismatch_fails(self):
+        reg=T7.T6.registry_doc(); rsha='f'*64
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); doc=evidence('rush',rsha,root)
+            doc['performance_observation']['thermal_status_observed']='critical'
+            self.assertTrue(any('thermal_status_observed: JSON does not match hash-bound performance capture' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
+
+    def test_capture_objective_sha_mismatch_fails(self):
+        reg=T7.T6.registry_doc(); rsha='f'*64
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); doc=evidence('learn_games',rsha,root)
+            path=root/doc['performance_observation']['evidence_ref']
+            data=path.read_text().replace(doc['objective']['evidence_sha256'], '0'*64).encode()
+            path.write_bytes(data)
+            doc['performance_observation']['evidence_sha256']=hashlib.sha256(data).hexdigest()
+            self.assertTrue(any('performance capture is not bound to objective evidence SHA' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
+
+    def test_duplicate_metric_fails(self):
+        reg=T7.T6.registry_doc(); rsha='f'*64
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); doc=evidence('fitness_games',rsha,root)
+            path=root/doc['performance_observation']['evidence_ref']
+            data=path.read_bytes()+b'THF_FPS_OBSERVED=55.0\n'
+            path.write_bytes(data)
+            doc['performance_observation']['evidence_sha256']=hashlib.sha256(data).hexdigest()
+            self.assertTrue(any('duplicate canonical metric THF_FPS_OBSERVED' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
 
 
 if __name__=='__main__': unittest.main()
