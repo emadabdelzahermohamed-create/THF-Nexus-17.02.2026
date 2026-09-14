@@ -8,6 +8,7 @@ GBIN="$CACHE/gradle-dist-${GVER}/gradle-${GVER}/bin/gradle"
 AAPT="$SDK/build-tools/36.0.0/aapt"
 APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
 ROOT="$HOME/thf-vault-signal-api36-candidates-v1"
+OVERLAY_ID="API_BASE_URL_JSON_ESCAPE_V1"
 mkdir -p "$ROOT"
 test -x "$GBIN"
 test -x "$AAPT"
@@ -43,19 +44,42 @@ build_one() {
   test "$actual_src_sha" = "$src_sha"
   unzip -q "$src" -d "$work"
 
-  local settings project
+  local settings project gradle_file gradle_before_sha gradle_after_sha
   settings="$(find "$work" -maxdepth 6 -type f \( -name settings.gradle -o -name settings.gradle.kts \) | head -n1)"
   test -n "$settings"
   project="$(dirname "$settings")"
-  echo "BUILD_APP=$app PROJECT=$project SOURCE_SHA=$actual_src_sha"
+  gradle_file="$project/app/build.gradle"
+  test -s "$gradle_file"
+  gradle_before_sha="$(sha256sum "$gradle_file" | awk '{print $1}')"
+
+  # The authoritative RC2 sources contain one malformed Groovy escaping expression
+  # for API_BASE_URL. Repair only that exact semantic line in the extracted build
+  # workspace. JsonOutput supplies a valid quoted Java String literal without
+  # changing runtime URL semantics. The source ZIP itself remains untouched.
+  python3 - "$gradle_file" <<'PY'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+lines = p.read_text(encoding="utf-8").splitlines(keepends=True)
+idx = [i for i, line in enumerate(lines) if "buildConfigField" in line and "API_BASE_URL" in line and "baseUrl.replace" in line]
+if len(idx) != 1:
+    raise SystemExit(f"overlay target count must be exactly 1, got {len(idx)}")
+i = idx[0]
+indent = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
+newline = "\n" if lines[i].endswith("\n") else ""
+lines[i] = indent + 'buildConfigField "String", "API_BASE_URL", groovy.json.JsonOutput.toJson(baseUrl)' + newline
+p.write_text("".join(lines), encoding="utf-8")
+PY
+  gradle_after_sha="$(sha256sum "$gradle_file" | awk '{print $1}')"
+  test "$gradle_before_sha" != "$gradle_after_sha"
+  grep -Fq 'buildConfigField "String", "API_BASE_URL", groovy.json.JsonOutput.toJson(baseUrl)' "$gradle_file"
+  echo "BUILD_APP=$app PROJECT=$project SOURCE_SHA=$actual_src_sha OVERLAY=$OVERLAY_ID BEFORE=$gradle_before_sha AFTER=$gradle_after_sha"
   cd "$project"
 
   export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$ROOT/$app/gradle-home"
   export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$SDK/cmdline-tools/latest/bin:$PATH"
   mkdir -p "$GRADLE_USER_HOME"
 
-  # The exact sources use Android Gradle Plugin 8.13.0. Permit repository resolution
-  # here; the resulting APK is still accepted only after exact package/API/SHA checks.
   "$GBIN" --no-daemon --stacktrace :app:assembleDebug >"$out/gradle-debug.log" 2>&1
   local apk
   apk="$(find "$project/app/build/outputs/apk" -type f -name '*.apk' | sort | head -n1)"
@@ -92,6 +116,10 @@ build_one() {
 THF_${app^^}_API36_EXACT_QA=BUILT
 source_path=$src
 source_sha256=$actual_src_sha
+build_overlay_id=$OVERLAY_ID
+build_gradle_sha256_before=$gradle_before_sha
+build_gradle_sha256_after=$gradle_after_sha
+source_zip_mutated=FALSE
 package=$found_pkg
 targetSdk=$target
 variant=$variant
