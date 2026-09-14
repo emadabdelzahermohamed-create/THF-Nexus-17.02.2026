@@ -105,7 +105,9 @@ jobs:
           gameplay_overlay_same_as_apk_candidate=TRUE
           aab_size_bytes=$SIZE
           aab_sha256=$AAB_SHA
-          play_upload_budget_150m=$([ "$SIZE" -lt 157286400 ] && echo PASS || echo FAIL)
+          aab_file_size_advisory_150m=$([ "$SIZE" -lt 157286400 ] && echo PASS || echo WARN)
+          play_size_acceptance=UNVERIFIED_REQUIRES_PLAY_OR_BUNDLETOOL
+          play_size_policy_note=RAW_AAB_SIZE_IS_NOT_DEVICE_COMPRESSED_DOWNLOAD_SIZE
           physical_device_status=PENDING
           final_or_play_ready=FALSE
           production_signing=false
@@ -121,6 +123,8 @@ jobs:
           grep -q '^THF_RIFT_RC37_PHONE_V1_AAB=BUILT$' out/EVIDENCE_AAB.txt
           grep -q '^content_pruned=FALSE$' out/EVIDENCE_AAB.txt
           grep -q '^gameplay_overlay_same_as_apk_candidate=TRUE$' out/EVIDENCE_AAB.txt
+          grep -q '^play_size_acceptance=UNVERIFIED_REQUIRES_PLAY_OR_BUNDLETOOL$' out/EVIDENCE_AAB.txt
+          grep -q '^play_size_policy_note=RAW_AAB_SIZE_IS_NOT_DEVICE_COMPRESSED_DOWNLOAD_SIZE$' out/EVIDENCE_AAB.txt
           grep -q '^physical_device_status=PENDING$' out/EVIDENCE_AAB.txt
           grep -q '^final_or_play_ready=FALSE$' out/EVIDENCE_AAB.txt
           test -s out/THF-RIFT-4.7.1-RC37-PHONE-V1.aab
