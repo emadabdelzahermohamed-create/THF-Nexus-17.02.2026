@@ -1,0 +1,35 @@
+name: THF Game Physical Device Evidence Tooling V13
+on:
+  push:
+    paths:
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v13.py'
+      - 'ReleaseOps/mobile/test_validate_game_device_evidence_v13.py'
+      - '.github/workflows/thf-game-physical-device-evidence-tooling-v13.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v13:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile V7-V13 validators and tests
+        run: |
+          for v in 7 8 9 10 11 12 13; do
+            python -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v${v}.py
+          done
+          python -m py_compile ReleaseOps/mobile/test_validate_game_device_evidence_v12.py
+          python -m py_compile ReleaseOps/mobile/test_validate_game_device_evidence_v13.py
+      - name: Preserve V12 regression chain
+        run: python ReleaseOps/mobile/test_validate_game_device_evidence_v12.py -v
+      - name: Run V13 raw ADB semantic regressions
+        run: python ReleaseOps/mobile/test_validate_game_device_evidence_v13.py -v
+      - name: Assert V13 remains non-promotional
+        run: |
+          grep -q 'FINAL_OR_PLAY_READY=FALSE' ReleaseOps/mobile/validate_game_device_evidence_v13.py
+          ! grep -q 'FINAL_OR_PLAY_READY=TRUE' ReleaseOps/mobile/validate_game_device_evidence_v13.py
+          grep -q 'VALIDATED network' ReleaseOps/mobile/validate_game_device_evidence_v13.py
+          grep -q 'uiautomator hierarchy' ReleaseOps/mobile/validate_game_device_evidence_v13.py
