@@ -1,0 +1,89 @@
+name: THF Rift RC37 Offline Training Context V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-rift-rc37-offline-training-context-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  RIFT_SHA256: 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+
+jobs:
+  context:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Extract uninspected control-flow blocks from exact source SHA
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command="RIFT_SHA256='$RIFT_SHA256' bash -s" > out/context.txt <<'REMOTE'
+          set -Eeuo pipefail
+          SRC="$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
+          test "$(sha256sum "$SRC" | awk '{print $1}')" = "$RIFT_SHA256"
+          ROOT=$(mktemp -d "$HOME/rift-context.XXXXXX"); trap 'rm -rf "$ROOT"' EXIT
+          python3 - "$SRC" "$ROOT" <<'PY'
+          import pathlib,shutil,sys,zipfile
+          src=pathlib.Path(sys.argv[1]); dst=pathlib.Path(sys.argv[2]).resolve()
+          with zipfile.ZipFile(src) as z:
+            for i in z.infolist():
+              r=pathlib.PurePosixPath(i.filename)
+              if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip member')
+              t=(dst/pathlib.Path(*r.parts)).resolve()
+              if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
+              if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+              t.parent.mkdir(parents=True,exist_ok=True)
+              with z.open(i) as a, open(t,'wb') as b: shutil.copyfileobj(a,b)
+          PY
+          F=$(find "$ROOT" -type f -path '*/native/arena/ArenaMain.gd' -print -quit); test -n "$F"
+          echo "ARENA_MAIN_SHA256=$(sha256sum "$F" | awk '{print $1}')"
+          python3 - "$F" <<'PY'
+          import re,sys,pathlib
+          p=pathlib.Path(sys.argv[1]); lines=p.read_text(errors='replace').splitlines()
+          wanted={'_start_training','_movement_tick','_act','_spawn_local_avatar','_poll_socket','_input','_unhandled_input','_add_touch_move_button','_add_combat_button','_on_touch_move','_touch_move'}
+          starts=[]
+          for i,l in enumerate(lines):
+              m=re.match(r'^func\s+([A-Za-z0-9_]+)\s*\(',l)
+              if m: starts.append((i,m.group(1)))
+          starts.append((len(lines),'__EOF__'))
+          printed=set()
+          for n,(i,name) in enumerate(starts[:-1]):
+              if name in wanted or any(k in name for k in ('touch','move','action','training','socket')):
+                  j=starts[n+1][0]
+                  print(f'===== FUNC {name} lines {i+1}-{j} =====')
+                  for k in range(i,j): print(f'{k+1:05d}: {lines[k]}')
+                  printed.add(name)
+          print('===== TOP STATE lines 1-180 =====')
+          for k in range(min(180,len(lines))): print(f'{k+1:05d}: {lines[k]}')
+          print('===== CALL SITES =====')
+          rx=re.compile(r'api\.request_json|socket\.send|target_position|session\[|session\.|session\s*=|local_actor|touch_move|move_vector|_act\(')
+          for k,l in enumerate(lines):
+              if rx.search(l): print(f'{k+1:05d}: {l}')
+          PY
+          REMOTE
+          cat out/context.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-RIFT-RC37-OFFLINE-TRAINING-CONTEXT-V1
+          path: out/context.txt
+          retention-days: 14
