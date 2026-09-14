@@ -50,7 +50,6 @@ class PassNotificationBridge:
         self.clock = clock
 
     def authorize(self, principal: SessionPrincipal) -> LiveSession:
-        # Preserve local structural/auth checks first; then re-check authoritative state.
         principal.require_authenticated()
         live = self.authority.resolve(principal.session_id)
         if live is None:
@@ -79,18 +78,25 @@ class PassNotificationBridge:
 
     def dispatch(self, *, principal: SessionPrincipal, request: DeliveryRequest) -> DeliveryResult:
         live = self.authorize(principal)
-        registration = self.http.registry.get(request.token_id, subject=live.subject)
+        registration = self.http.registry.get(
+            request.token_id, subject=live.subject, session_id=live.session_id
+        )
         if registration.package != live.package_id:
             raise PermissionError("notification registration does not match THF Pass session audience")
-        return self.dispatcher.dispatch(subject=live.subject, request=request)
+        return self.dispatcher.dispatch(
+            subject=live.subject, session_id=live.session_id, request=request
+        )
 
     def logout(self, *, principal: SessionPrincipal) -> ContractResponse:
-        """Revoke the Pass session first, then remove package-scoped provider registrations.
+        """Revoke Pass first, then only this session's provider registrations.
 
         Revoking Pass first is deliberately fail-secure: if token cleanup later fails, the
-        session still cannot authorize another mutation or dispatch.
+        session still cannot authorize another mutation or dispatch. Other live sessions
+        for the same subject/package remain isolated and are not signed out implicitly.
         """
         live = self.authorize(principal)
         self.authority.revoke_session(live.session_id)
-        count = self.http.registry.revoke_logout(subject=live.subject, package=live.package_id)
+        count = self.http.registry.revoke_logout(
+            subject=live.subject, session_id=live.session_id, package=live.package_id
+        )
         return ContractResponse(200, {"session_revoked": True, "notification_tokens_revoked": count})

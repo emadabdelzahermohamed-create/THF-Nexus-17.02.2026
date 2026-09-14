@@ -26,9 +26,9 @@ class NotificationDispatcher:
             if adapter.provider_name != provider:
                 raise ValueError("adapter map key must match provider_name")
 
-    def dispatch(self, *, subject: str, request: DeliveryRequest) -> DeliveryResult:
+    def dispatch(self, *, subject: str, session_id: str, request: DeliveryRequest) -> DeliveryResult:
         validate_delivery_request(request)
-        reg = self.registry.get(request.token_id, subject=subject)
+        reg = self.registry.get(request.token_id, subject=subject, session_id=session_id)
         if not reg.active:
             raise PermissionError("notification registration is inactive")
 
@@ -48,5 +48,5 @@ class NotificationDispatcher:
         validate_delivery_result(result)
 
         if result.permanent_token_failure:
-            self.registry.revoke(token_id=reg.token_id, subject=subject)
+            self.registry.revoke(token_id=reg.token_id, subject=subject, session_id=session_id)
         return result

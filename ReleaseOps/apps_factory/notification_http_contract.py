@@ -6,6 +6,7 @@ Security boundary:
 - this module accepts only an already-verified SessionPrincipal;
 - the Pass principal must still be live (not revoked and not expired);
 - the Pass principal is bound to one locked application package/audience;
+- notification registrations are bound to the exact Pass session;
 - provider tokens are accepted only in request bodies, never query strings;
 - package identities are constrained by NotificationTokenRegistry;
 - no provider delivery is implemented here, so PUSH_READY remains false.
@@ -76,6 +77,7 @@ class NotificationHttpContract:
         package = principal.require_package(self._required(body, "package"))
         reg = self.registry.register(
             subject=subject,
+            session_id=principal.session_id,
             package=package,
             provider=self._required(body, "provider"),
             raw_token=self._required(body, "provider_token"),
@@ -94,6 +96,7 @@ class NotificationHttpContract:
         package = principal.require_package(self._required(body, "package"))
         reg = self.registry.rotate(
             subject=subject,
+            session_id=principal.session_id,
             package=package,
             provider=self._required(body, "provider"),
             old_token_id=self._required(body, "old_token_id"),
@@ -109,14 +112,16 @@ class NotificationHttpContract:
         self._reject_query_credentials(query)
         subject = principal.require_authenticated()
         token_id = self._required(body, "token_id")
-        existing = self.registry.get(token_id, subject=subject)
+        existing = self.registry.get(token_id, subject=subject, session_id=principal.session_id)
         principal.require_package(existing.package)
-        self.registry.revoke(token_id=token_id, subject=subject)
+        self.registry.revoke(token_id=token_id, subject=subject, session_id=principal.session_id)
         return ContractResponse(204, {})
 
     def logout(self, *, principal: SessionPrincipal, body: Mapping[str, Any], query: Mapping[str, str] | None = None) -> ContractResponse:
         self._reject_query_credentials(query)
         subject = principal.require_authenticated()
         package = principal.require_package(self._required(body, "package"))
-        count = self.registry.revoke_logout(subject=subject, package=package)
+        count = self.registry.revoke_logout(
+            subject=subject, session_id=principal.session_id, package=package
+        )
         return ContractResponse(200, {"revoked": count})
