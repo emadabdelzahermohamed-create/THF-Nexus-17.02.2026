@@ -1,119 +1,43 @@
-name: THF Vault Signal Native Real-Function V1
+name: THF Vault Signal Native Real-Function V1 Superseded Guard
 
 on:
   push:
-    branches:
-      - main
-      - automation/apps-native-vault-signal-v1
+    branches: [main]
     paths:
       - .github/workflows/thf-vault-signal-native-real-function-v1.yml
-      - ReleaseOps/scripts/nativeize_vault_signal_candidate.py
-      - ReleaseOps/scripts/build_vault_signal_native_candidates_v1.sh
-      - ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write
-
-concurrency:
-  group: thf-vault-signal-native-real-function-v1-${{ github.ref }}
-  cancel-in-progress: false
-
-env:
-  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
-  GCP_ZONE: europe-west1-b
-  GCP_BUILDER: thf-wave-builder
-  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
-  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
-  NATIVE_ROOT: thf-vault-signal-native-candidates-v1
 
 jobs:
-  native-derived-candidates:
+  reject-stale-v1-build-authority:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           persist-credentials: false
-      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
-        with:
-          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
-          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Syntax and policy preflight
+      - name: Enforce superseded candidate policy
         run: |
           set -Eeuo pipefail
-          python3 -m py_compile ReleaseOps/scripts/nativeize_vault_signal_candidate.py
-          bash -n ReleaseOps/scripts/build_vault_signal_native_candidates_v1.sh
-          bash -n ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
-          grep -Fq 'AndroidKeyStore' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
-          grep -Fq 'HttpsURLConnection' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
-          grep -Fq 'getRestrictBackgroundStatus' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
-          grep -Fq 'com.topherofit.thf.pass' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
-          ! grep -Fq 'WebView' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
-          grep -Fq 'thf-vault-signal-native-candidates-v1' ReleaseOps/scripts/build_vault_signal_native_candidates_v1.sh
-      - name: Stage builders
-        run: |
-          set -Eeuo pipefail
-          gcloud compute scp ReleaseOps/scripts/build_vault_signal_api36_candidates.sh "$GCP_BUILDER:/tmp/build_vault_signal_api36_candidates.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          gcloud compute scp ReleaseOps/scripts/nativeize_vault_signal_candidate.py "$GCP_BUILDER:/tmp/nativeize_vault_signal_candidate.py" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          gcloud compute scp ReleaseOps/scripts/build_vault_signal_native_candidates_v1.sh "$GCP_BUILDER:/tmp/build_vault_signal_native_candidates_v1.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-      - name: Build exact-source derived native candidates
-        run: |
-          set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_vault_signal_native_candidates_v1.sh && /tmp/build_vault_signal_native_candidates_v1.sh'
-      - name: Retrieve and inspect exact APK payloads
-        run: |
-          set -Eeuo pipefail
-          mkdir -p out/vault out/signal
-          for app in vault signal; do
-            gcloud compute scp --recurse "$GCP_BUILDER:~/$NATIVE_ROOT/$app/out/*" "out/$app/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-            E="out/$app/EVIDENCE.txt"
-            grep -Fq 'native_overlay_id=THF_NATIVE_REAL_FUNCTION_V1' "$E"
-            grep -Fq 'source_zip_mutated=FALSE' "$E"
-            grep -Fq 'targetSdk=36' "$E"
-            grep -Fq 'under_100MiB=PASS' "$E"
-            grep -Fq 'physical_device_status=PENDING' "$E"
-            grep -Fq 'network_release_ready=FALSE' "$E"
-            grep -Fq 'final_or_play_ready=FALSE' "$E"
-            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' | head -n1)"
-            test -s "$APK"
-            unzip -t "$APK" >/dev/null
-            test "$(sha256sum "$APK" | awk '{print $1}')" = "$(sed -n 's/^apk_sha256=//p' "$E")"
-            TMP="$(mktemp -d)"
-            unzip -q "$APK" -d "$TMP"
-            test -s "$TMP/classes.dex"
-            S="$(mktemp)"
-            strings -n 4 "$TMP/classes.dex" > "$S"
-            ! grep -Fq 'Landroid/webkit/WebView;' "$S"
-            ! grep -Fq 'loadUrl' "$S"
-            grep -Fq 'AndroidKeyStore' "$S"
-            grep -Fq 'AES/GCM/NoPadding' "$S"
-            grep -Fq 'HttpsURLConnection' "$S"
-            grep -Fq 'getRestrictBackgroundStatus' "$S"
-            grep -Fq 'com.topherofit.thf.pass' "$S"
-            grep -Fq 'Remote state is never fabricated' "$S"
-            grep -Fq 'THF backend NOT PROVEN' "$S"
-            rm -rf "$TMP" "$S"
-          done
-          grep -Fq 'source_sha256=7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793' out/vault/EVIDENCE.txt
-          grep -Fq 'package=com.topherofit.thf.vault' out/vault/EVIDENCE.txt
-          grep -Fq 'source_sha256=51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0' out/signal/EVIDENCE.txt
-          grep -Fq 'package=com.topherofit.thf.signal' out/signal/EVIDENCE.txt
+          test -s .github/workflows/thf-vault-signal-canonical-native-v2.yml
+          test -s ReleaseOps/apps/THF_APPS_DURABLE_CANDIDATE_REGISTRY_V1.json
+          grep -Fq 'THF Vault Signal Canonical Native Source V2' .github/workflows/thf-vault-signal-canonical-native-v2.yml
+          python3 - <<'PY'
+          import json
+          p='ReleaseOps/apps/THF_APPS_DURABLE_CANDIDATE_REGISTRY_V1.json'
+          data=json.load(open(p,encoding='utf-8'))
+          for app in ('vault','signal'):
+              c=data['candidates'][app]
+              assert c['authority']=='CANONICAL_QA_CANDIDATE_NOT_FINAL'
+              assert c['target_sdk']==36
+              assert c['final_or_play_ready'] is False
+          print('PASS: V1 build lane is superseded; no stale APK rebuild is authorized')
+          PY
           {
-            echo 'NATIVE_WRAPPER_REPLACEMENT_PAYLOAD=PASS'
-            echo 'PHYSICAL_DEVICE_PASS=FALSE'
-            echo 'NETWORK_RELEASE_READY=FALSE'
+            echo 'V1_BUILD_AUTHORITY=SUPERSEDED_REJECTED'
+            echo 'CURRENT_BUILD_AUTHORITY=THF_VAULT_SIGNAL_CANONICAL_NATIVE_SOURCE_V2'
+            echo 'STALE_SOURCE_REBUILD=FALSE'
             echo 'FINAL_OR_PLAY_READY=FALSE'
-            echo "VAULT_APK_SHA256=$(sed -n 's/^apk_sha256=//p' out/vault/EVIDENCE.txt)"
-            echo "SIGNAL_APK_SHA256=$(sed -n 's/^apk_sha256=//p' out/signal/EVIDENCE.txt)"
           } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: THF-VAULT-SIGNAL-NATIVE-REAL-FUNCTION-V1-QA
-          path: out/
-          retention-days: 14
-          compression-level: 0
