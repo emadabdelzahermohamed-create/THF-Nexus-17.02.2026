@@ -1,12 +1,13 @@
 name: THF Rush Verified Motion V2
 
-# Activation checkpoint: workflow exists on main before this push so the push itself is testable.
+# Covers both the HTML/local-practice contract and the native Android SensorManager overlay.
 on:
   push:
     branches: [main]
     paths:
       - 'ReleaseOps/scripts/thf_spark_rush_verified_motion_overlay_v2.py'
       - 'ReleaseOps/scripts/test_spark_rush_verified_motion_overlay_v2.py'
+      - 'ReleaseOps/games_factory/strengthen_rush_native_motion_v2.py'
       - '.github/workflows/thf-rush-verified-motion-v2.yml'
   workflow_dispatch:
 
@@ -23,9 +24,10 @@ jobs:
         run: |
           python3 -m py_compile ReleaseOps/scripts/thf_spark_rush_verified_motion_overlay_v2.py
           python3 -m py_compile ReleaseOps/scripts/test_spark_rush_verified_motion_overlay_v2.py
+          python3 -m py_compile ReleaseOps/games_factory/strengthen_rush_native_motion_v2.py
       - name: Run synthetic clean-tree regression
         run: python3 ReleaseOps/scripts/test_spark_rush_verified_motion_overlay_v2.py
-      - name: Assert no manual Rush repetition authority
+      - name: Assert HTML verified-motion authority boundary
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -37,5 +39,36 @@ jobs:
           assert "document.getElementById('title').textContent='THF Motion Games'" in s
           assert "document.getElementById('title').textContent='THF Learn Games'" in s
           print('THF_RUSH_VERIFIED_MOTION_STATIC_GATE=PASS')
+          PY
+      - name: Assert native SensorManager, identity and reward boundary
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('ReleaseOps/games_factory/strengthen_rush_native_motion_v2.py').read_text()
+          required = [
+              "e.sensor != accel",
+              "e.values.length < 3",
+              "Float.isFinite(x)",
+              "e.timestamp <= lastSensorTimestampNs",
+              "trustedSensorEvents++",
+              "manual_activity_values_accepted=false",
+              "touch_repetition_increment=false",
+              "local_repetitions_reward_authorized=false",
+              "reward_bearing_health_evidence=BACKEND_REQUIRED",
+              "user_facing_name=THF Motion Games",
+              "canonical_package_id=com.topherofit.thf.rush",
+              "@drawable/thf_motion_games_icon",
+              "launcher_icon_sha256=",
+              "product_specific_icon=true",
+              "canonical_archive_mutated=false",
+              "final_status=NOT_FINAL",
+          ]
+          missing=[x for x in required if x not in s]
+          assert not missing, f'missing native verified-motion/identity contracts: {missing}'
+          assert "app.set(f'{{{ANDROID_NS}}}icon','@drawable/thf_motion_games_icon')" in s
+          assert "app.set(f'{{{ANDROID_NS}}}roundIcon','@drawable/thf_motion_games_icon')" in s
+          print('THF_RUSH_NATIVE_SENSOR_MANAGER_GATE=PASS')
+          print('THF_RUSH_PRODUCT_IDENTITY_GATE=PASS')
+          print('THF_RUSH_REWARD_AUTHORITY=BACKEND_REQUIRED')
           print('FINAL_OR_PLAY_READY=FALSE')
           PY
