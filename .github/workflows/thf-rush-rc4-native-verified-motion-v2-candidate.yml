@@ -1,0 +1,138 @@
+name: THF Rush RC4 Native Verified Motion V2 Candidate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-rush-rc4-native-verified-motion-v2-candidate.yml'
+      - 'ReleaseOps/games_factory/apply_spark_rush_real_game_overlay_v1.py'
+      - 'ReleaseOps/games_factory/strengthen_rush_native_motion_v2.py'
+      - 'ReleaseOps/scripts/thf_spark_rush_verified_motion_overlay_v2.py'
+      - 'ReleaseOps/validators/audit_game_like_real_function.py'
+      - 'ReleaseOps/validators/audit_game_apk_payload_v1.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  SOURCE_SHA: 766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c
+  DRIVE_ID: 1P4Z1r6l08rbCLuDsXX1YRjWo0seC8yQz
+  PACKAGE_ID: com.topherofit.thf.rush
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+        with:
+          gradle-version: '8.13'
+      - name: Exact RC4 clean extract and verified-motion overlays
+        id: overlay
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p src/extracted out
+          code=$(curl -sSLo src/rush.zip -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$DRIVE_ID?alt=media&supportsAllDrives=true")
+          test "$code" = 200
+          actual=$(sha256sum src/rush.zip | awk '{print $1}')
+          test "$actual" = "$SOURCE_SHA"
+          unzip -tq src/rush.zip >/dev/null
+          python3 - <<'PY'
+          import pathlib, shutil, zipfile
+          src=pathlib.Path('src/rush.zip'); dst=pathlib.Path('src/extracted').resolve()
+          with zipfile.ZipFile(src) as z:
+              for i in z.infolist():
+                  r=pathlib.PurePosixPath(i.filename)
+                  if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip path')
+                  t=(dst/pathlib.Path(*r.parts)).resolve()
+                  if t != dst and dst not in t.parents: raise SystemExit('zip escape')
+                  if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
+                  t.parent.mkdir(parents=True,exist_ok=True)
+                  with z.open(i) as a, open(t,'wb') as b: shutil.copyfileobj(a,b)
+          PY
+          root=$(find src/extracted -type f -path '*/android/app/build.gradle' -printf '%h\n' | sed 's#/android/app$##' | head -1)
+          test -n "$root"
+          python3 ReleaseOps/games_factory/apply_spark_rush_real_game_overlay_v1.py "$root" --app rush --manifest-out out/rush.real-game-overlay.sha256
+          python3 ReleaseOps/games_factory/strengthen_rush_native_motion_v2.py "$root" --evidence-out out/rush.native-verified-motion-v2.txt
+          python3 ReleaseOps/scripts/thf_spark_rush_verified_motion_overlay_v2.py "$root" --kind rush --evidence-out out/rush.web-verified-motion-v2.txt
+          python3 ReleaseOps/validators/audit_game_like_real_function.py "$root" --profile fitness --json-out out/rush.source-contract.json
+          grep -q '"source_contract": "PASS"' out/rush.source-contract.json
+          grep -q '^manual_activity_values_accepted=false$' out/rush.native-verified-motion-v2.txt
+          grep -q '^touch_repetition_increment=false$' out/rush.native-verified-motion-v2.txt
+          grep -q '^reward_bearing_health_evidence=BACKEND_REQUIRED$' out/rush.native-verified-motion-v2.txt
+          # Approved user-facing identity; package ID remains canonical.
+          manifest=$(find "$root/android/app/src/main" -maxdepth 1 -name AndroidManifest.xml -print -quit)
+          python3 - "$manifest" <<'PY'
+          import sys,xml.etree.ElementTree as ET
+          p=sys.argv[1]; ns='http://schemas.android.com/apk/res/android'; ET.register_namespace('android',ns)
+          t=ET.parse(p); a=t.getroot().find('application'); assert a is not None
+          a.set('{%s}label'%ns,'THF Motion Games')
+          t.write(p,encoding='utf-8',xml_declaration=True)
+          PY
+          find "$root" -type f -not -path '*/.gradle/*' -not -path '*/build/*' -print0 | sort -z | xargs -0 sha256sum > out/rush.candidate-tree.sha256
+          echo "root=$root" >> "$GITHUB_OUTPUT"
+      - name: API36 build QA sign package payload and installability gates
+        run: |
+          set -Eeuo pipefail
+          root='${{ steps.overlay.outputs.root }}'
+          printf 'sdk.dir=%s\n' "$ANDROID_HOME" > "$root/android/local.properties"
+          cd "$root/android"
+          gradle --no-daemon tasks --all > "$GITHUB_WORKSPACE/out/rush.gradle-tasks.txt"
+          ran=0
+          for task in testReleaseUnitTest testDebugUnitTest lintRelease lintDebug; do
+            if grep -Eq "(^|:)${task}[[:space:]-]" "$GITHUB_WORKSPACE/out/rush.gradle-tasks.txt"; then
+              gradle --no-daemon "app:$task" --stacktrace
+              ran=$((ran+1))
+            fi
+          done
+          test "$ran" -ge 2
+          gradle --no-daemon app:assembleRelease --stacktrace | tee "$GITHUB_WORKSPACE/out/rush.gradle-build.log"
+          raw=$(find . -type f -path '*/build/outputs/apk/release/*.apk' | head -1); test -n "$raw"
+          unzip -tq "$raw" >/dev/null
+          BT=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          test -x "$BT/aapt"; test -x "$BT/apksigner"; test -x "$BT/zipalign"
+          KS="$RUNNER_TEMP/rush-qa.keystore"
+          keytool -genkeypair -noprompt -keystore "$KS" -storepass android -alias androiddebugkey -keypass android -dname 'CN=THF Motion Games QA,O=THF QA,C=US' -keyalg RSA -keysize 2048 -validity 3650 >/dev/null 2>&1
+          "$BT/zipalign" -f -p 4 "$raw" "$GITHUB_WORKSPACE/out/rush-aligned.apk"
+          final="$GITHUB_WORKSPACE/out/THF-MOTION-GAMES-RC4-NATIVE-VERIFIED-MOTION-V2-QA.apk"
+          "$BT/apksigner" sign --ks "$KS" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$final" "$GITHUB_WORKSPACE/out/rush-aligned.apk"
+          "$BT/zipalign" -c -v 4 "$final" > "$GITHUB_WORKSPACE/out/rush.zipalign.txt"
+          "$BT/apksigner" verify --verbose --print-certs "$final" > "$GITHUB_WORKSPACE/out/rush.apksigner.txt"
+          "$BT/aapt" dump badging "$final" > "$GITHUB_WORKSPACE/out/rush.badging.txt"
+          grep -q "package: name='$PACKAGE_ID'" "$GITHUB_WORKSPACE/out/rush.badging.txt"
+          grep -q "targetSdkVersion:'36'" "$GITHUB_WORKSPACE/out/rush.badging.txt"
+          grep -q "application-label:'THF Motion Games'" "$GITHUB_WORKSPACE/out/rush.badging.txt"
+          ! grep -q application-debuggable "$GITHUB_WORKSPACE/out/rush.badging.txt"
+          sha=$(sha256sum "$final" | awk '{print $1}')
+          python3 "$GITHUB_WORKSPACE/ReleaseOps/validators/audit_game_apk_payload_v1.py" "$final" --profile fitness --expected-sha256 "$sha" --json-out "$GITHUB_WORKSPACE/out/rush.apk-payload.json"
+          grep -q '"payload_status": "PASS"' "$GITHUB_WORKSPACE/out/rush.apk-payload.json"
+          unzip -l "$final" > "$GITHUB_WORKSPACE/out/rush.apk-list.txt"
+          printf 'schema=thf-rush-rc4-native-verified-motion-v2-candidate\nsource_sha256=%s\napk_sha256=%s\npackage_id=%s\nuser_facing_name=THF Motion Games\ntarget_sdk=36\nqa_signature=PASS\nzipalign=PASS\napk_zip_integrity=PASS\npackaged_game_payload=PASS\nmanual_activity_values_accepted=false\ntouch_repetition_increment=false\nreward_bearing_health_evidence=BACKEND_REQUIRED\nproduction_signing=false\nphysical_device_status=PENDING\nfinal_or_play_ready=false\n' "$SOURCE_SHA" "$sha" "$PACKAGE_ID" > "$GITHUB_WORKSPACE/out/RUSH_CANDIDATE.txt"
+          cat "$GITHUB_WORKSPACE/out/RUSH_CANDIDATE.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-RUSH-RC4-NATIVE-VERIFIED-MOTION-V2-QA
+          path: out/
+          retention-days: 14
+          compression-level: 0
