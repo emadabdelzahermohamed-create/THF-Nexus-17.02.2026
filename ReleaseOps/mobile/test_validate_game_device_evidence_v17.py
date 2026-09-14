@@ -53,7 +53,9 @@ class V17(unittest.TestCase):
     def test_cross_reboot_capability_mix_fails(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td); d = evidence("terra", self.rsha, root)
-            mutate(d, root, "camera", "THF_ANDROID_BOOT_ID=" + BOOT_A, "THF_ANDROID_BOOT_ID=" + BOOT_B)
+            keys = list(d["process_provenance"])
+            self.assertGreaterEqual(len(keys), 2)
+            mutate(d, root, keys[-1], "THF_ANDROID_BOOT_ID=" + BOOT_A, "THF_ANDROID_BOOT_ID=" + BOOT_B)
             errors = M.validate_bundle(self.reg, self.rsha, d, root)
             self.assertTrue(any("multiple Android boot sessions" in x for x in errors))
 
