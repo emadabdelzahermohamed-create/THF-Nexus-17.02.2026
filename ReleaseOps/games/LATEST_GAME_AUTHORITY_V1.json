@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_utc": "2026-09-14T20:39:00Z",
+  "updated_utc": "2026-09-14T22:28:00Z",
   "final_or_play_ready": false,
   "games": {
     "terra": {
@@ -14,8 +14,7 @@
       "arm64_required": true,
       "physical_device_status": "PENDING",
       "superseded_apk_sha256": [
-        "8539af9a7d531f80b14c1b2e4366ac2dda666d042ae8520b4fa1ea299d2d2165",
-        "388f3c09"
+        "8539af9a7d531f80b14c1b2e4366ac2dda666d042ae8520b4fa1ea299d2d2165"
       ]
     },
     "rift": {
@@ -28,8 +27,7 @@
       "arm64_required": true,
       "physical_device_status": "PENDING",
       "superseded_apk_sha256": [
-        "3577175821a91d4d76da77d9fc982575704a85e20162e4b66afe37565f63b5fb",
-        "fe35328b"
+        "3577175821a91d4d76da77d9fc982575704a85e20162e4b66afe37565f63b5fb"
       ]
     },
     "spark": {
@@ -48,20 +46,20 @@
     "rush": {
       "user_facing_name": "THF Motion Games",
       "canonical_package_id": "com.topherofit.thf.rush",
-      "authoritative_version": "APPS RC4 + Native Verified-Motion V2",
+      "authoritative_version": "APPS RC4 + Native Verified-Motion V2 + product identity fix",
       "authoritative_source_sha256": "766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c",
-      "eligible_candidate_apk_sha256": "528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7",
-      "candidate_workflow_run_id": 34893899367,
-      "candidate_artifact_id": 10368186302,
-      "candidate_artifact_digest": "sha256:989137c623a8f137267dd7239d2d27b450512ddd9fabc6aa7656b3457ed22ac8",
+      "eligible_candidate_apk_sha256": null,
+      "candidate_status": "REBUILD_REQUIRED_AFTER_PRODUCT_ICON_FIX",
       "target_sdk": 36,
       "arm64_required": true,
       "physical_device_status": "PENDING",
       "verified_motion_required": true,
       "reward_bearing_health_evidence_required": true,
+      "product_specific_icon_required": true,
       "superseded_apk_sha256": [
         "3e9aabaebdf1b321430abb3286156aeeaf8cf0174f2abff593a3ee3dc50d0e3a",
-        "92663a7e2963b2b4d233808013bdb6c4bed279fc9cedb423b1bf74f1e1aae29a"
+        "92663a7e2963b2b4d233808013bdb6c4bed279fc9cedb423b1bf74f1e1aae29a",
+        "528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7"
       ]
     }
   }
