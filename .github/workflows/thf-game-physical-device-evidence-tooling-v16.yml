@@ -1,0 +1,36 @@
+name: THF Game Physical Device Evidence Tooling V16
+on:
+  push:
+    paths:
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v16.py'
+      - 'ReleaseOps/mobile/test_validate_game_device_evidence_v16.py'
+      - '.github/workflows/thf-game-physical-device-evidence-tooling-v16.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v16:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile V7-V16 validators and tests
+        run: |
+          for v in 7 8 9 10 11 12 13 14 15 16; do python -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v${v}.py; done
+          python -m py_compile ReleaseOps/mobile/test_validate_game_device_evidence_v14.py ReleaseOps/mobile/test_validate_game_device_evidence_v15.py ReleaseOps/mobile/test_validate_game_device_evidence_v16.py
+      - name: Preserve V15 regression chain
+        run: python ReleaseOps/mobile/test_validate_game_device_evidence_v15.py -v
+      - name: Run V16 exact provenance regressions
+        run: python ReleaseOps/mobile/test_validate_game_device_evidence_v16.py -v
+      - name: Assert V16 remains non-promotional and exact-bound
+        run: |
+          grep -q 'FINAL_OR_PLAY_READY=FALSE' ReleaseOps/mobile/validate_game_device_evidence_v16.py
+          ! grep -q 'FINAL_OR_PLAY_READY=TRUE' ReleaseOps/mobile/validate_game_device_evidence_v16.py
+          grep -q 'THF_DEVICE_FINGERPRINT_SHA256' ReleaseOps/mobile/validate_game_device_evidence_v16.py
+          grep -q 'THF_EXACT_APK_SHA256' ReleaseOps/mobile/validate_game_device_evidence_v16.py
+          grep -q 'THF_REGISTRY_SHA256' ReleaseOps/mobile/validate_game_device_evidence_v16.py
+          grep -q 'THF_OBSERVED_AT_UTC' ReleaseOps/mobile/validate_game_device_evidence_v16.py
+          grep -q 'THF_ACTIVITY_DUMPSYS_EXIT_CODE' ReleaseOps/mobile/validate_game_device_evidence_v16.py
+          grep -q 'THF_PIDOF_EXIT_CODE' ReleaseOps/mobile/validate_game_device_evidence_v16.py
