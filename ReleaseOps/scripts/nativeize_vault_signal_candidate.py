@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import shutil, sys
+import hashlib
+import json
+import shutil
+import sys
 
 if len(sys.argv) != 4:
     raise SystemExit("usage: nativeize_vault_signal_candidate.py <project> <app> <package>")
@@ -13,7 +16,9 @@ main = project / "app" / "src" / "main"
 if not main.is_dir():
     raise SystemExit(f"missing {main}")
 
-# Derived build overlay only. The authoritative source ZIP is never modified.
+# Derived native implementation overlay only. The upstream authoritative source ZIP
+# is never mutated. This V2 overlay emits deterministic source provenance so a
+# release gate can bind the exact generated Java/manifest bytes to an APK build.
 for child in (main / "java", main / "kotlin"):
     if child.exists():
         shutil.rmtree(child)
@@ -37,24 +42,24 @@ manifest = f'''<?xml version="1.0" encoding="utf-8"?>
     </application>
 </manifest>
 '''
-(main / "AndroidManifest.xml").write_text(manifest, encoding="utf-8")
+manifest_path = main / "AndroidManifest.xml"
+manifest_path.write_text(manifest, encoding="utf-8")
 
 java = r'''package __PKG__;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.KeyguardManager;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
+import android.security.keystore.StrongBoxUnavailableException;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -62,8 +67,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -78,7 +81,9 @@ import android.util.Base64;
 public final class MainActivity extends Activity {
     private static final String STORE = "thf_local_secure_store";
     private static final String KEY = "payload";
-    private static final String ALIAS = "thf.__APP__.local.v1";
+    private static final String ALIAS = "thf.__APP__.local.v2";
+    private static final String PASS_PACKAGE = "com.topherofit.thf.pass";
+    private static final String PASS_CONTRACT = "thfpass://handoff/v1";
     private TextView status;
     private EditText input;
 
@@ -98,6 +103,7 @@ public final class MainActivity extends Activity {
 
         status = text("Ready", 15);
         status.setContentDescription("Current status");
+        status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         root.addView(status);
 
         input = new EditText(this);
@@ -112,7 +118,7 @@ public final class MainActivity extends Activity {
         root.addView(button("Check THF backend health", v -> checkBackend()));
         root.addView(button("Network and Data Saver status", v -> networkStatus()));
         root.addView(button("Notification permission", v -> notificationPermission()));
-        root.addView(button("Open THF Pass", v -> openPass()));
+        root.addView(button("Continue with THF Pass", v -> openPass()));
         root.addView(button("Open app settings", v -> openSettings()));
         setContentView(scroll);
     }
@@ -121,17 +127,29 @@ public final class MainActivity extends Activity {
         TextView t = new TextView(this); t.setText(value); t.setTextSize(sp); t.setPadding(0, dp(8), 0, dp(8)); return t;
     }
     private Button button(String label, View.OnClickListener l) {
-        Button b = new Button(this); b.setText(label); b.setContentDescription(label); b.setMinHeight(dp(48)); b.setOnClickListener(l); return b;
+        Button b = new Button(this); b.setText(label); b.setContentDescription(label); b.setMinHeight(dp(56)); b.setOnClickListener(l); return b;
     }
     private int dp(int v) { return Math.round(v * getResources().getDisplayMetrics().density); }
     private void say(String s) { runOnUiThread(() -> status.setText(s)); }
 
+    private KeyGenParameterSpec keySpec(boolean strongBox) {
+        KeyGenParameterSpec.Builder b = new KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE);
+        if (android.os.Build.VERSION.SDK_INT >= 28 && strongBox) b.setIsStrongBoxBacked(true);
+        return b.build();
+    }
     private SecretKey key() throws Exception {
         KeyStore ks = KeyStore.getInstance("AndroidKeyStore"); ks.load(null);
         if (ks.containsAlias(ALIAS)) return ((KeyStore.SecretKeyEntry) ks.getEntry(ALIAS, null)).getSecretKey();
         KeyGenerator kg = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
-        kg.init(new KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build());
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            try { kg.init(keySpec(true)); return kg.generateKey(); }
+            catch (StrongBoxUnavailableException unavailable) {
+                kg = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+            }
+        }
+        kg.init(keySpec(false));
         return kg.generateKey();
     }
     private void saveLocal() {
@@ -205,14 +223,49 @@ public final class MainActivity extends Activity {
         if (requestCode == 5001) say(results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED ? "Notification permission granted." : "Notification permission not granted.");
     }
     private void openPass() {
-        Intent i = getPackageManager().getLaunchIntentForPackage("com.topherofit.thf.pass");
-        if (i == null) { say("THF Pass is not installed/resolvable on this device; no fake handoff performed."); return; }
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); say("Opened installed THF Pass.");
+        Uri handoff = Uri.parse(PASS_CONTRACT).buildUpon()
+                .appendQueryParameter("contract_version", "1")
+                .appendQueryParameter("source_package", getPackageName())
+                .appendQueryParameter("return_scheme", "thfapp")
+                .build();
+        Intent i = new Intent(Intent.ACTION_VIEW, handoff);
+        i.setPackage(PASS_PACKAGE);
+        if (i.resolveActivity(getPackageManager()) == null) {
+            say("THF Pass handoff contract is not installed/resolvable; no fake handoff performed.");
+            return;
+        }
+        startActivity(i);
+        say("THF Pass handoff contract invoked. Session/auth acceptance remains owned by THF Pass.");
     }
     private void openSettings() {
-        Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + getPackageName())); startActivity(i);
+        Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName())); startActivity(i);
     }
 }
 '''.replace("__PKG__", pkg).replace("__APP__", app).replace("__LABEL__", label).replace("__HINT__", hint)
-(java_dir / "MainActivity.java").write_text(java, encoding="utf-8")
-print(f"native_overlay=THF_NATIVE_REAL_FUNCTION_V1 app={app} package={pkg} manifest={main/'AndroidManifest.xml'} java={java_dir/'MainActivity.java'}")
+java_path = java_dir / "MainActivity.java"
+java_path.write_text(java, encoding="utf-8")
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+provenance = {
+    "schema": "THF_NATIVE_REAL_FUNCTION_SOURCE_PROVENANCE_V2",
+    "overlay_id": "THF_NATIVE_REAL_FUNCTION_V2",
+    "app": app,
+    "package": pkg,
+    "generated_manifest_sha256": sha256(manifest_path),
+    "generated_main_activity_sha256": sha256(java_path),
+    "remote_truth_policy": "FAIL_CLOSED_NO_FAKE_REMOTE_STATE",
+    "pass_handoff_contract": "thfpass://handoff/v1",
+    "production_authority": False,
+    "physical_device_pass": False,
+    "final_or_play_ready": False,
+}
+prov_path = project / "NATIVE_SOURCE_PROVENANCE_V2.json"
+prov_path.write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+print(
+    f"native_overlay=THF_NATIVE_REAL_FUNCTION_V2 app={app} package={pkg} "
+    f"manifest_sha256={provenance['generated_manifest_sha256']} "
+    f"java_sha256={provenance['generated_main_activity_sha256']} "
+    f"provenance={prov_path}"
+)
