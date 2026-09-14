@@ -41,6 +41,10 @@ jobs:
       - name: Stage isolated Pulse builder
         run: |
           set -Eeuo pipefail
+          # The exact Pulse source already builds with the cached Gradle binary.
+          # Do not run the Gradle wrapper task because it performs an unnecessary
+          # network distribution URL test on this prepared offline builder.
+          sed -i '/"$GBIN" --no-daemon wrapper --gradle-version "$GVER" --distribution-type bin/d' ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
           chmod +x ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
           gcloud compute scp ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh "$GCP_BUILDER:/tmp/build_pulse_mpfb_motion_phone.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
       - name: Build Pulse MPFB motion QA
