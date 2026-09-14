@@ -53,26 +53,38 @@ build_one() {
   gradle_before_sha="$(sha256sum "$gradle_file" | awk '{print $1}')"
 
   # The authoritative RC2 sources contain one malformed Groovy escaping expression
-  # for API_BASE_URL. Repair only that exact semantic line in the extracted build
-  # workspace. JsonOutput supplies a valid quoted Java String literal without
-  # changing runtime URL semantics. The source ZIP itself remains untouched.
+  # in the buildConfigField whose value is derived from baseUrl. Repair only that
+  # semantic line in the extracted workspace. JsonOutput produces a valid quoted
+  # Java String literal. The source ZIP itself remains untouched and its SHA stays
+  # the primary provenance anchor.
   python3 - "$gradle_file" <<'PY'
 from pathlib import Path
-import sys
+import re, sys
 p = Path(sys.argv[1])
 lines = p.read_text(encoding="utf-8").splitlines(keepends=True)
-idx = [i for i, line in enumerate(lines) if "buildConfigField" in line and "API_BASE_URL" in line and "baseUrl.replace" in line]
+idx = [i for i, line in enumerate(lines) if "buildConfigField" in line and "baseUrl.replace" in line]
 if len(idx) != 1:
+    print("=== build.gradle first 80 lines ===", file=sys.stderr)
+    for n, line in enumerate(lines[:80], 1):
+        print(f"{n:03d}: {line.rstrip()}", file=sys.stderr)
     raise SystemExit(f"overlay target count must be exactly 1, got {len(idx)}")
 i = idx[0]
-indent = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
-newline = "\n" if lines[i].endswith("\n") else ""
-lines[i] = indent + 'buildConfigField "String", "API_BASE_URL", groovy.json.JsonOutput.toJson(baseUrl)' + newline
+line = lines[i]
+# Preserve the field name from the exact source instead of assuming a particular
+# identifier (e.g. API_BASE_URL vs THF_API_BASE_URL).
+m = re.search(r"buildConfigField\s+['\"]String['\"]\s*,\s*['\"]([^'\"]+)['\"]", line)
+if not m:
+    raise SystemExit("unable to extract buildConfigField name")
+field = m.group(1)
+indent = line[:len(line) - len(line.lstrip())]
+newline = "\n" if line.endswith("\n") else ""
+lines[i] = indent + f'buildConfigField "String", "{field}", groovy.json.JsonOutput.toJson(baseUrl)' + newline
 p.write_text("".join(lines), encoding="utf-8")
+print(f"overlay_field={field}")
 PY
   gradle_after_sha="$(sha256sum "$gradle_file" | awk '{print $1}')"
   test "$gradle_before_sha" != "$gradle_after_sha"
-  grep -Fq 'buildConfigField "String", "API_BASE_URL", groovy.json.JsonOutput.toJson(baseUrl)' "$gradle_file"
+  grep -Fq 'groovy.json.JsonOutput.toJson(baseUrl)' "$gradle_file"
   echo "BUILD_APP=$app PROJECT=$project SOURCE_SHA=$actual_src_sha OVERLAY=$OVERLAY_ID BEFORE=$gradle_before_sha AFTER=$gradle_after_sha"
   cd "$project"
 
