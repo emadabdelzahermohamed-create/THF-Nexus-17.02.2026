@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Classify recent canonical THF mint-address activity without persisting signatures.
 
-Read-only by construction: this module performs only Solana RPC reads and emits
-metadata summaries. It cannot create, sign, serialize, submit, or broadcast a
-transaction and never writes signatures into evidence.
+Only token instructions whose parsed metadata explicitly binds them to the
+canonical THF mint are counted as canonical activity. Token instructions that
+cannot prove the mint are reported separately as unscoped instead of guessed.
 """
 from __future__ import annotations
 
@@ -12,11 +12,11 @@ import datetime as dt
 import json
 import pathlib
 from collections import Counter
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Tuple
 
 from tokenops_guard import MINT, choose_rpc, rpc, scan_for_secrets, sha256
 
-SCHEMA = "thf-tokenops-recent-activity-semantics/v1"
+SCHEMA = "thf-tokenops-recent-activity-semantics/v2"
 TOKEN_TYPES = {
     "mintTo", "mintToChecked", "burn", "burnChecked", "setAuthority",
     "transfer", "transferChecked", "initializeMint", "initializeMint2",
@@ -24,9 +24,24 @@ TOKEN_TYPES = {
 }
 
 
-def parsed_instruction_types(tx: Dict[str, Any]) -> List[str]:
-    """Return token instruction types found in outer + inner instructions."""
-    found: List[str] = []
+def instruction_scope(parsed: Dict[str, Any]) -> str:
+    """Return canonical/unscoped/not_token from parsed SPL-token metadata."""
+    kind = parsed.get("type")
+    if not isinstance(kind, str) or kind not in TOKEN_TYPES:
+        return "not_token"
+    info = parsed.get("info") or {}
+    if not isinstance(info, dict):
+        return "unscoped"
+    if info.get("mint") == MINT:
+        return "canonical"
+    if kind == "setAuthority" and info.get("account") == MINT:
+        return "canonical"
+    return "unscoped"
+
+
+def instruction_types(tx: Dict[str, Any]) -> Tuple[List[str], List[str]]:
+    canonical: List[str] = []
+    unscoped: List[str] = []
     result = tx.get("result") or tx
     transaction = result.get("transaction") or {}
     message = transaction.get("message") or {}
@@ -39,33 +54,43 @@ def parsed_instruction_types(tx: Dict[str, Any]) -> List[str]:
             parsed = ins.get("parsed") if isinstance(ins, dict) else None
             if not isinstance(parsed, dict):
                 continue
+            scope = instruction_scope(parsed)
             kind = parsed.get("type")
-            if isinstance(kind, str) and kind in TOKEN_TYPES:
-                found.append(kind)
-    return found
+            if scope == "canonical":
+                canonical.append(kind)
+            elif scope == "unscoped":
+                unscoped.append(kind)
+    return canonical, unscoped
 
 
 def summarize_transactions(transactions: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
     counts: Counter[str] = Counter()
+    unscoped_counts: Counter[str] = Counter()
     records: List[Dict[str, Any]] = []
     for tx in transactions:
         result = tx.get("result") or tx
-        kinds = sorted(parsed_instruction_types(tx))
+        kinds, unscoped = instruction_types(tx)
+        kinds = sorted(kinds)
+        unscoped = sorted(unscoped)
         counts.update(kinds)
+        unscoped_counts.update(unscoped)
         meta = result.get("meta") or {}
         records.append({
             "slot": result.get("slot"),
             "block_time": result.get("blockTime"),
-            "instruction_types": kinds,
+            "canonical_instruction_types": kinds,
+            "unscoped_token_instruction_types": unscoped,
             "transaction_failed": meta.get("err") is not None,
         })
     summary = {
         "transactions_analyzed": len(records),
-        "instruction_type_counts": dict(sorted(counts.items())),
+        "canonical_instruction_type_counts": dict(sorted(counts.items())),
+        "unscoped_token_instruction_type_counts": dict(sorted(unscoped_counts.items())),
         "mint_instruction_count": counts["mintTo"] + counts["mintToChecked"],
         "burn_instruction_count": counts["burn"] + counts["burnChecked"],
         "set_authority_instruction_count": counts["setAuthority"],
         "transfer_instruction_count": counts["transfer"] + counts["transferChecked"],
+        "unscoped_instruction_count": sum(unscoped_counts.values()),
         "records": records,
         "signatures_persisted": False,
     }
@@ -146,6 +171,7 @@ def main() -> int:
     print("RECENT_ACTIVITY_ANALYSIS_COMPLETE=" + str(result.get("analysis_complete")))
     print("RECENT_MINT_INSTRUCTION_COUNT=" + str(result.get("mint_instruction_count")))
     print("RECENT_BURN_INSTRUCTION_COUNT=" + str(result.get("burn_instruction_count")))
+    print("RECENT_UNSCOPED_TOKEN_INSTRUCTION_COUNT=" + str(result.get("unscoped_instruction_count")))
     return 0
 
 
