@@ -5,12 +5,12 @@ on:
     branches: [main]
     paths:
       - .github/workflows/thf-apps-authoritative-lineage-v3.yml
-      - ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1745_EET.json
+      - ReleaseOps/apps_factory/THF_APPS_LINEAGE_RECONCILIATION_20260914_1745_EET.json
   push:
     branches: [main]
     paths:
       - .github/workflows/thf-apps-authoritative-lineage-v3.yml
-      - ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1745_EET.json
+      - ReleaseOps/apps_factory/THF_APPS_LINEAGE_RECONCILIATION_20260914_1745_EET.json
   workflow_dispatch:
 
 permissions:
@@ -39,32 +39,21 @@ jobs:
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Validate reconciled release truth
-        shell: bash
+      - name: Validate reconciliation truth
         run: |
-          set -Eeuo pipefail
           python3 - <<'PY'
           import json, pathlib
-          p=pathlib.Path('ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1745_EET.json')
-          d=json.loads(p.read_text())
+          d=json.loads(pathlib.Path('ReleaseOps/apps_factory/THF_APPS_LINEAGE_RECONCILIATION_20260914_1745_EET.json').read_text())
           assert d['policy']=='MOBILE_REAL_FUNCTION_RELEASE_POLICY'
           assert len(d['apps'])==10
-          assert d['truth_boundary']['final_or_play_ready'] is False
-          assert d['truth_boundary']['physical_device_pass'] is False
-          assert d['truth_boundary']['network_release_ready'] is False
-          assert d['truth_boundary']['push_ready'] is False
-          names={x['name'] for x in d['apps']}
-          assert names=={'core','pulse','forge','echo','codex','spark','rush','vault','signal','command'}
-          for x in d['apps']:
-            assert x['target_sdk']==36
-            assert x['physical_phone_acceptance']=='PENDING'
-          for n in ('spark','rush'):
-            x=next(v for v in d['apps'] if v['name']==n)
-            assert x['source_sha256'] is None and x['lineage']=='NEEDS_SOURCE_AUTHORITY'
-          for n in ('vault','signal'):
-            x=next(v for v in d['apps'] if v['name']==n)
-            assert x['apk_sha256'] is None and x['lineage']=='NEEDS_APK_AUTHORITY'
-          print('RECONCILED_RELEASE_TRUTH=PASS')
+          tb=d['truth_boundary']
+          assert all(tb[k] is False for k in ('final_or_play_ready','physical_device_pass','network_release_ready','push_ready','production_signing_performed','public_rollout_performed','token_finance_touched','dedicated_native_game_streams_touched'))
+          by={x['name']:x for x in d['apps']}
+          assert set(by)=={'core','pulse','forge','echo','codex','spark','rush','vault','signal','command'}
+          assert by['spark']['source_sha256'] is None and by['rush']['source_sha256'] is None
+          assert by['vault']['apk_sha256'] is None and by['signal']['apk_sha256'] is None
+          assert all(x['target_sdk']==36 for x in d['apps'])
+          print('RECONCILIATION_TRUTH=PASS')
           print('FINAL_OR_PLAY_READY=FALSE')
           PY
       - name: Resolve package-bound lineage without mutating builder
@@ -72,115 +61,88 @@ jobs:
         run: |
           set -Eeuo pipefail
           cat > /tmp/lineage_v3.py <<'PY'
-          import hashlib, json, os, pathlib, re, shutil, subprocess, zipfile
+          import hashlib,json,os,pathlib,re,subprocess,zipfile
           home=pathlib.Path.home().resolve()
-          excluded=re.compile(r"(^|[/_.-])(terra|rift|arena|nexus[-_ ]?world|token|solana|finance)([/_.-]|$)",re.I)
-          apps={
-            "core":{"package":"com.topherofit.thf.core","source":"6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a","apk":"262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba"},
-            "pulse":{"package":"com.topherofit.thf.pulse","source":"71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10","apk":"66c04169a40b574f0f26b0a90b999f95a9702b1154a80dc43d2de236a47673a3"},
-            "forge":{"package":"com.topherofit.thf.forge","source":"0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51","apk":"e27b2dfa8d5bc382d2fa2439deafe98eaeba84ec30acd02a8c4f02dca8ec08ba"},
-            "echo":{"package":"com.topherofit.thf.echo","source":"40a197b60563e560cab93ba0a64c859d9b650da222fdaec933993977d63902ab","apk":"794f16dd2ccb7f5907690326522c018649b650268380f270fa2156ec508b308b"},
-            "codex":{"package":"com.topherofit.thf.codex","source":"3d60cc550732468c89fe120f552def53ac798646d065e94efa153f8979e15b1e","apk":"58c5491058d286b76e89e177df00db55b589d55a3e5e76921a6565f790da307f"},
-            "spark":{"package":"com.topherofit.thf.spark","source":None,"apk":"9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea"},
-            "rush":{"package":"com.topherofit.thf.rush","source":None,"apk":"3e9aabaebdf1b321430abb3286156aeeaf8cf0174f2abff593a3ee3dc50d0e3a"},
-            "vault":{"package":"com.topherofit.thf.vault","source":"7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793","apk":None},
-            "signal":{"package":"com.topherofit.thf.signal","source":"51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0","apk":None},
-            "command":{"package":"com.topherofit.thf.command","source":"f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408","apk":"b5886da7c053d2063d792c0b7d47316afa3b63ea0e951bfa60863c4aa526947f"}
-          }
-          def sha256(p):
+          excluded=re.compile(r'(^|[/_.-])(terra|rift|arena|nexus[-_ ]?world|token|solana|finance)([/_.-]|$)',re.I)
+          known={
+           'core':('com.topherofit.thf.core','6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a','262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba'),
+           'pulse':('com.topherofit.thf.pulse','71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10','66c04169a40b574f0f26b0a90b999f95a9702b1154a80dc43d2de236a47673a3'),
+           'forge':('com.topherofit.thf.forge','0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51','e27b2dfa8d5bc382d2fa2439deafe98eaeba84ec30acd02a8c4f02dca8ec08ba'),
+           'echo':('com.topherofit.thf.echo','40a197b60563e560cab93ba0a64c859d9b650da222fdaec933993977d63902ab','794f16dd2ccb7f5907690326522c018649b650268380f270fa2156ec508b308b'),
+           'codex':('com.topherofit.thf.codex','3d60cc550732468c89fe120f552def53ac798646d065e94efa153f8979e15b1e','58c5491058d286b76e89e177df00db55b589d55a3e5e76921a6565f790da307f'),
+           'command':('com.topherofit.thf.command','f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408','b5886da7c053d2063d792c0b7d47316afa3b63ea0e951bfa60863c4aa526947f')}
+          candidates={
+           'spark':('com.topherofit.thf.spark','58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43','9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea','source'),
+           'rush':('com.topherofit.thf.rush','766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c','3e9aabaebdf1b321430abb3286156aeeaf8cf0174f2abff593a3ee3dc50d0e3a','source'),
+           'vault':('com.topherofit.thf.vault','7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793','76e20915e4bc6dee23adf43fdfcca9705815cf990164ccb8649032118dd42ce0','apk'),
+           'signal':('com.topherofit.thf.signal','51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0','9d370142a251c2515fe19e7598a35213e8285fab4ed74f804d88ea6b5a21f05a','apk')}
+          target_hashes={v for row in known.values() for v in row[1:]}|{v for row in candidates.values() for v in row[1:3]}
+          def sha(p):
             h=hashlib.sha256()
             with p.open('rb') as f:
               for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
             return h.hexdigest()
-          def source_contains_package(p, package):
+          def package_in_zip(p,pkg):
             try:
               with zipfile.ZipFile(p) as z:
-                seen=0
-                for info in z.infolist():
+                for i,info in enumerate(z.infolist()):
+                  if i>6000: break
                   if info.is_dir() or info.file_size>2_000_000: continue
-                  low=info.filename.lower()
-                  if not low.endswith(('.gradle','.kts','.xml','.properties','.toml','.json','.kt','.java','.txt')): continue
-                  seen+=1
-                  if seen>5000: break
+                  if not info.filename.lower().endswith(('.gradle','.kts','.xml','.properties','.toml','.json','.kt','.java','.txt')): continue
                   try: data=z.read(info).decode('utf-8','ignore')
                   except Exception: continue
-                  if package in data: return True
-            except (zipfile.BadZipFile,OSError): pass
+                  if pkg in data:return True
+            except Exception: pass
             return False
-          def find_apk_tool():
-            for name in ('aapt2','aapt','apkanalyzer'):
-              p=shutil.which(name)
-              if p: return name,p
-            for root in (home/'Android'/'Sdk'/'build-tools',home/'android-sdk'/'build-tools',pathlib.Path('/opt/android-sdk/build-tools')):
-              if root.exists():
-                for v in sorted(root.iterdir(),reverse=True):
-                  for name in ('aapt2','aapt'):
-                    p=v/name
-                    if p.exists() and os.access(p,os.X_OK): return name,str(p)
-            return None,None
-          tool_name,tool=find_apk_tool()
-          def apk_identity(p):
-            if not tool: return {'package':None,'target_sdk':None,'tool':None,'error':'NO_APK_INSPECTOR'}
+          tools=[]
+          for root in [home/'Android'/'Sdk'/'build-tools',home/'android-sdk'/'build-tools',pathlib.Path('/opt/android-sdk/build-tools'),pathlib.Path('/usr/local/lib/android/sdk/build-tools')]:
+            if root.exists():
+              for p in root.glob('*/aapt2'): tools.append(p)
+              for p in root.glob('*/aapt'): tools.append(p)
+          tool=str(sorted(tools)[-1]) if tools else None
+          def apk_id(p):
+            if not tool:return None
             try:
-              if tool_name in ('aapt','aapt2'):
-                cp=subprocess.run([tool,'dump','badging',str(p)],capture_output=True,text=True,timeout=30,check=True)
-                text=cp.stdout+cp.stderr
-                pm=re.search("package: name='([^']+)'",text); tm=re.search("targetSdkVersion:'([^']+)'",text)
-              else:
-                cp=subprocess.run([tool,'manifest','print',str(p)],capture_output=True,text=True,timeout=30,check=True)
-                text=cp.stdout+cp.stderr
-                pm=re.search('package="([^"]+)"',text); tm=re.search('android:targetSdkVersion="([^"]+)"',text)
-              return {'package':pm.group(1) if pm else None,'target_sdk':int(tm.group(1)) if tm and tm.group(1).isdigit() else None,'tool':tool_name,'error':None}
-            except Exception as e: return {'package':None,'target_sdk':None,'tool':tool_name,'error':type(e).__name__}
-          name_rx={a:re.compile(rf"(^|[^a-z0-9]){re.escape(a)}([^a-z0-9]|$)",re.I) for a in apps}
-          inventory=[]
+              t=subprocess.run([tool,'dump','badging',str(p)],capture_output=True,text=True,timeout=30,check=True).stdout
+              m=re.search("package: name='([^']+)'",t); s=re.search("targetSdkVersion:'([^']+)'",t)
+              return (m.group(1) if m else None,int(s.group(1)) if s and s.group(1).isdigit() else None)
+            except Exception:return None
+          hits={h:[] for h in target_hashes}
           for root,dirs,names in os.walk(home):
             try: rel=pathlib.Path(root).resolve().relative_to(home)
             except Exception: continue
-            if len(rel.parts)>10: dirs[:]=[]; continue
+            if len(rel.parts)>10:dirs[:]=[];continue
             dirs[:]=[d for d in dirs if d not in {'.git','node_modules','.gradle','.venv','venv','Library','Temp','cache','caches'}]
-            if excluded.search(root): dirs[:]=[]; continue
+            if excluded.search(root):dirs[:]=[];continue
             for n in names:
               low=n.lower()
-              if not (low.endswith('.apk') or low.endswith('.zip')): continue
+              if not low.endswith(('.apk','.zip')):continue
               p=pathlib.Path(root)/n
-              if excluded.search(str(p)): continue
               try:
-                size=p.stat().st_size
-                if size<=0 or size>500_000_000: continue
-                matched=[a for a,rx in name_rx.items() if rx.search(str(p))]
-                if not matched: continue
-                digest=sha256(p)
-              except OSError: continue
-              row={'path':str(p),'name':n,'sha256':digest,'size':size,'apps':matched,'mtime':p.stat().st_mtime,'kind':'apk' if low.endswith('.apk') else 'zip'}
-              if row['kind']=='apk': row['identity']=apk_identity(p)
-              inventory.append(row)
-          rows=[]
-          for app,want in apps.items():
-            pkg=want['package']; related=[x for x in inventory if app in x['apps']]
-            sources=[x for x in related if x['kind']=='zip' and source_contains_package(pathlib.Path(x['path']),pkg)]
-            apks=[x for x in related if x['kind']=='apk' and x.get('identity',{}).get('package')==pkg and x.get('identity',{}).get('target_sdk')==36]
-            source_exact=[x for x in sources if want['source'] and x['sha256']==want['source']]
-            apk_exact=[x for x in apks if want['apk'] and x['sha256']==want['apk']]
-            proposed_source=sources[0] if want['source'] is None and len(sources)==1 else None
-            proposed_apk=apks[0] if want['apk'] is None and len(apks)==1 else None
-            if want['source'] and want['apk'] and source_exact and apk_exact: status='COMPLETE_EXACT_SHA_PACKAGE_BOUND'
-            elif want['source'] is None and apk_exact and proposed_source: status='PROPOSE_UNIQUE_SOURCE_AUTHORITY'
-            elif want['apk'] is None and source_exact and proposed_apk: status='PROPOSE_UNIQUE_APK_AUTHORITY'
-            elif (want['source'] is None and len(sources)>1) or (want['apk'] is None and len(apks)>1): status='AMBIGUOUS_FAIL_CLOSED'
-            else: status='UNRESOLVED_FAIL_CLOSED'
-            rows.append({'app':app,'package':pkg,'status':status,'expected':want,'source_exact_count':len(source_exact),'apk_exact_count':len(apk_exact),'package_bound_source_candidates':sorted(sources,key=lambda x:x['mtime'],reverse=True)[:8],'package_bound_api36_apk_candidates':sorted(apks,key=lambda x:x['mtime'],reverse=True)[:8],'proposed_source_sha256':proposed_source['sha256'] if proposed_source else None,'proposed_apk_sha256':proposed_apk['sha256'] if proposed_apk else None})
-          out={'schema':'thf-apps-authoritative-lineage-v3','mode':'READ_ONLY_PACKAGE_BOUND_DISCOVERY','excluded_streams':['dedicated-native-games','token-finance'],'apk_inspector':tool_name,'rows':rows,'release_truth':{'final_or_play_ready':False,'physical_phone_evidence_required':True,'network_release_ready':False,'production_signing_performed':False}}
-          print('THF_APPS_AUTHORITATIVE_LINEAGE_V3_BEGIN'); print(json.dumps(out,indent=2,sort_keys=True)); print('THF_APPS_AUTHORITATIVE_LINEAGE_V3_END')
-          print('FINAL_OR_PLAY_READY=FALSE'); print('PHYSICAL_PHONE_EVIDENCE_REQUIRED=TRUE'); print('NETWORK_RELEASE_READY=FALSE')
-          drift=[r['app'] for r in rows if r['expected']['source'] and r['expected']['apk'] and r['status']!='COMPLETE_EXACT_SHA_PACKAGE_BOUND']
-          if drift: raise SystemExit('EXACT_AUTHORITY_DRIFT='+','.join(drift))
+                if p.stat().st_size<=0 or p.stat().st_size>500_000_000:continue
+                d=sha(p)
+              except OSError:continue
+              if d in hits:hits[d].append(str(p))
+          rows=[]; drift=[]
+          for app,(pkg,src,apk) in known.items():
+            src_ok=bool(hits[src]); apk_ok=bool(hits[apk])
+            status='COMPLETE_EXACT_SHA_PRESENT' if src_ok and apk_ok else 'EXACT_AUTHORITY_DRIFT'
+            if status!='COMPLETE_EXACT_SHA_PRESENT':drift.append(app)
+            rows.append({'app':app,'status':status,'source_sha256':src,'source_paths':hits[src],'apk_sha256':apk,'apk_paths':hits[apk]})
+          for app,(pkg,src,apk,missing) in candidates.items():
+            src_paths=hits[src]; apk_paths=hits[apk]
+            src_bound=bool(src_paths) and any(package_in_zip(pathlib.Path(p),pkg) for p in src_paths)
+            apk_identity=[{'path':p,'identity':apk_id(pathlib.Path(p))} for p in apk_paths]
+            apk_bound=any(x['identity']==(pkg,36) for x in apk_identity)
+            if missing=='source':
+              status='PROPOSE_EXACT_SOURCE_AUTHORITY' if src_bound and apk_paths else ('SOURCE_CANDIDATE_NOT_PACKAGE_BOUND' if src_paths else 'SOURCE_CANDIDATE_NOT_FOUND')
+            else:
+              status='PROPOSE_EXACT_APK_AUTHORITY' if src_bound and apk_bound else ('APK_INSPECTOR_UNAVAILABLE_FAIL_CLOSED' if apk_paths and not tool else 'APK_CANDIDATE_NOT_BOUND_FAIL_CLOSED')
+            rows.append({'app':app,'status':status,'candidate_source_sha256':src,'source_paths':src_paths,'source_package_bound':src_bound,'candidate_apk_sha256':apk,'apk_paths':apk_paths,'apk_identity':apk_identity})
+          out={'schema':'thf-apps-authoritative-lineage-v3','mode':'READ_ONLY','apk_inspector':tool,'rows':rows,'release_truth':{'final_or_play_ready':False,'physical_device_pass':False,'network_release_ready':False,'push_ready':False}}
+          print('THF_APPS_AUTHORITATIVE_LINEAGE_V3_BEGIN');print(json.dumps(out,indent=2,sort_keys=True));print('THF_APPS_AUTHORITATIVE_LINEAGE_V3_END')
+          print('FINAL_OR_PLAY_READY=FALSE');print('PHYSICAL_DEVICE_PASS=FALSE');print('NETWORK_RELEASE_READY=FALSE');print('PUSH_READY=FALSE')
+          if drift:raise SystemExit('EXACT_AUTHORITY_DRIFT='+','.join(drift))
           PY
           PAYLOAD="$(base64 -w0 /tmp/lineage_v3.py)"
-          gcloud compute ssh "$GCP_BUILDER" \
-            --project "$GCP_PROJECT_ID" \
-            --zone "$GCP_ZONE" \
-            --tunnel-through-iap \
-            --ssh-key-expire-after=20m \
-            --quiet \
-            --command="printf '%s' '$PAYLOAD' | base64 -d | python3"
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command="printf '%s' '$PAYLOAD' | base64 -d | python3"
