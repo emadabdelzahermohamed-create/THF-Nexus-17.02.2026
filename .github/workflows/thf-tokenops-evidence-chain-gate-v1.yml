@@ -21,12 +21,13 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           persist-credentials: false
-      - name: Compile and test evidence chain
+      - name: Compile and test evidence and review-intent controls
         run: |
           set -euo pipefail
           python -m py_compile ReleaseOps/TokenOps/evidence_chain.py
+          python -m py_compile ReleaseOps/TokenOps/review_intent_manifest.py
           python -m pip install --disable-pip-version-check --no-input pytest
-          python -m pytest ReleaseOps/TokenOps/test_evidence_chain.py -q
+          python -m pytest ReleaseOps/TokenOps/test_evidence_chain.py ReleaseOps/TokenOps/test_review_intent_manifest.py -q
       - name: Produce fresh read-only Mainnet evidence
         run: |
           set -euo pipefail
@@ -53,6 +54,61 @@ jobs:
           assert p['wave_touched'] is False
           print('EVIDENCE_ROOT_SHA256=' + p['evidence_root_sha256'])
           print('AUDIT_AGE_SECONDS=' + str(p['audit_age_seconds']))
+          PY
+      - name: Build per-operation matrix and non-executable review intents
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from ReleaseOps.TokenOps.operation_readiness import build_operation_matrix
+
+          out=Path('out/tokenops-chain')
+          audit=json.loads((out/'token-audit.json').read_text())
+          readiness=json.loads((out/'financial-readiness.json').read_text())
+          treasury_policy=json.loads(Path('ReleaseOps/TokenOps/treasury_policy.json').read_text())
+          treasury_registry=json.loads(Path('ReleaseOps/TokenOps/treasury_registry.json').read_text())
+          matrix=build_operation_matrix(
+              readiness,
+              treasury_policy,
+              treasury_registry,
+              observed_slot=int(audit['slot']),
+              current_supply_raw=int(audit['supply_raw']),
+          )
+          assert matrix['execution_authorized'] is False
+          assert matrix['signed'] is False
+          assert matrix['submitted'] is False
+          assert matrix['broadcast'] is False
+          assert matrix['financial_effect'] is False
+          assert matrix['exact_signer_action_now'] == 'NONE'
+          (out/'operation-readiness.json').write_text(json.dumps(matrix,sort_keys=True,indent=2)+'\n')
+          print('OPERATION_MATRIX_STATUS='+matrix['status'])
+          print('TREASURY_ACCOUNT_COUNT='+str(matrix['treasury_reconciliation']['account_count']))
+          PY
+          for op in reward_epoch lock_reward vesting_settlement burn treasury_transfer; do
+            python ReleaseOps/TokenOps/review_intent_manifest.py \
+              --operation-matrix out/tokenops-chain/operation-readiness.json \
+              --evidence-chain out/tokenops-chain/evidence-chain.json \
+              --operation "$op" \
+              --out "out/tokenops-chain/review-intent-${op}.json"
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in sorted(Path('out/tokenops-chain').glob('review-intent-*.json')):
+              d=json.loads(p.read_text())
+              assert d['status']=='FAIL_CLOSED'
+              assert d['exact_signer_action']=='NONE'
+              assert d['execution_authorized'] is False
+              assert d['transaction_bytes_created'] is False
+              assert d['instruction_bytes_created'] is False
+              assert d['signed'] is False
+              assert d['submitted'] is False
+              assert d['broadcast'] is False
+              assert d['financial_effect'] is False
+              assert d['private_key_required'] is False
+              assert d['wave_touched'] is False
+              print(p.name.upper().replace('-','_').replace('.JSON','')+'_SHA256='+d['manifest_sha256'])
           PY
       - name: SHA-256 manifest and forbidden payload gate
         run: |
