@@ -1,0 +1,103 @@
+name: THF TokenOps Integration Contract Gate v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/TokenOps/integration_contracts.json'
+      - 'ReleaseOps/TokenOps/integration_contract_gate.py'
+      - 'ReleaseOps/TokenOps/test_integration_contract_gate.py'
+      - '.github/workflows/thf-tokenops-integration-contract-gate-v1.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/TokenOps/integration_contracts.json'
+      - 'ReleaseOps/TokenOps/integration_contract_gate.py'
+      - 'ReleaseOps/TokenOps/test_integration_contract_gate.py'
+      - '.github/workflows/thf-tokenops-integration-contract-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: thf-tokenops-integration-contract-gate-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  readonly-integration-contract-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+
+      - name: Compile integration gate
+        run: |
+          set -euo pipefail
+          python -m py_compile ReleaseOps/TokenOps/integration_contract_gate.py
+
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check --no-input pytest
+
+      - name: Run integration contract tests
+        run: python -m pytest ReleaseOps/TokenOps/test_integration_contract_gate.py -q
+
+      - name: Validate authoritative Vault Forge Core contracts
+        run: |
+          set -euo pipefail
+          rm -rf out/tokenops-integration
+          python ReleaseOps/TokenOps/integration_contract_gate.py --out out/tokenops-integration/integration-contract-gate.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('out/tokenops-integration/integration-contract-gate.json').read_text())
+          assert p['status'] == 'PASS_NON_BROADCAST'
+          assert p['service_count'] == 3
+          assert p['route_count'] == 7
+          assert p['execution_authorized'] is False
+          assert p['transaction_bytes_created'] is False
+          assert p['instruction_bytes_created'] is False
+          assert p['signed'] is False
+          assert p['submitted'] is False
+          assert p['broadcast'] is False
+          assert p['financial_effect'] is False
+          assert p['private_key_required'] is False
+          assert p['wave_touched'] is False
+          print('INTEGRATION_CONTRACT_GATE=' + p['status'])
+          print('INTEGRATION_CONTRACT_SHA256=' + p['contracts_sha256'])
+          print('INTEGRATION_GATE_SHA256=' + p['gate_sha256'])
+          PY
+
+      - name: Create immutable SHA-256 evidence
+        run: |
+          set -euo pipefail
+          cd out/tokenops-integration
+          sha256sum integration-contract-gate.json > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          {
+            echo '## THF TokenOps Vault / Forge / Core Integration Gate'
+            echo ''
+            echo "Source SHA: $GITHUB_SHA"
+            echo ''
+            echo 'Read-only/review-only contract validation. No signing, transaction bytes, instruction bytes, submission, broadcast, authority mutation, financial effect, private-key handling, or WAVE mutation.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce no executable or sensitive payload files
+        run: |
+          set -euo pipefail
+          if find out/tokenops-integration -type f \( -name '*.txn' -o -name '*.tx' -o -name '*.key' -o -name '*.keypair' -o -name '*.secret' \) | grep -q .; then
+            echo 'Forbidden executable/sensitive payload file detected' >&2
+            exit 2
+          fi
+          echo INTEGRATION_NON_BROADCAST_PAYLOAD_GATE=PASS
+
+      - name: Upload integration contract evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Integration-Contract-Gate-v1-${{ github.run_id }}
+          path: out/tokenops-integration/
+          if-no-files-found: error
+          retention-days: 30
