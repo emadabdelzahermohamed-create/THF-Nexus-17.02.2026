@@ -1,0 +1,47 @@
+name: THF Latest Assets Baseline Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-latest-assets-baseline-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Audit prepared builder only
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='set -Eeuo pipefail
+          echo "=== HOME ==="; echo "$HOME"
+          echo "=== LATEST SOURCE/RELEASE ARCHIVES ==="
+          find "$HOME" -maxdepth 6 -type f \( -iname "*Terra*" -o -iname "*Rift*" -o -iname "*Pulse*" -o -iname "*Stage16*" -o -iname "*Standalone*" \) -printf "%TY-%Tm-%Td %TH:%TM %s %p\n" 2>/dev/null | sort -r | head -220 || true
+          echo "=== HUMAN / MAKEHUMAN / ANIMATION ASSETS ==="
+          find "$HOME" -maxdepth 8 -type f \( -iname "*mpfb*" -o -iname "*makehuman*" -o -iname "*viseme*" -o -iname "*faceunit*" -o -iname "*skin*" -o -iname "*hair*" -o -iname "*eyebrow*" -o -iname "*eyelash*" -o -iname "*animation*library*" -o -iname "*ual*" -o -iname "*.glb" \) -printf "%TY-%Tm-%Td %TH:%TM %s %p\n" 2>/dev/null | sort -r | head -320 || true
+          echo "=== ASSET VAULT DIRS ==="
+          find "$HOME" -maxdepth 6 -type d -iname "*ASSET*VAULT*" -print 2>/dev/null | head -40 || true
+          echo "=== PHONE APK OUTPUTS ==="
+          find "$HOME" -maxdepth 7 -type f -iname "*.apk" -printf "%TY-%Tm-%Td %TH:%TM %s %p\n" 2>/dev/null | sort -r | head -120 || true
+          '
