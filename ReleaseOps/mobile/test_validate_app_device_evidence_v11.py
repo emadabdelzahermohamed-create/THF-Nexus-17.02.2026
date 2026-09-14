@@ -6,7 +6,7 @@ import hashlib
 import unittest
 
 from test_validate_app_device_evidence_v10 import AppDeviceEvidenceV10Tests
-from validate_app_device_evidence_v11 import FOREGROUND_CHECKS, PROCESS_METHOD, validate
+from validate_app_device_evidence_v11 import FOREGROUND_CHECKS, LIFECYCLE_CHECKS, PROCESS_METHOD, validate
 
 
 def digest(path):
@@ -28,10 +28,17 @@ class AppDeviceEvidenceV11Tests(AppDeviceEvidenceV10Tests):
             }
         self.evidence["process_provenance"] = provenance
 
-    def _semantic_sha(self, check):
-        return self.evidence["semantic_observations"][check]["evidence_sha256"]
+    def _bound_sha(self, check):
+        semantic = self.evidence.get("semantic_observations", {})
+        if check in semantic:
+            return semantic[check]["evidence_sha256"]
+        if check in LIFECYCLE_CHECKS:
+            return self.evidence["lifecycle_touch_orientation_observation"]["evidence_sha256"]
+        if check == "offline_network":
+            return self.evidence["offline_network_observation"]["evidence_sha256"]
+        raise KeyError(check)
 
-    def _write_process(self, check, path, *, pid="4242", resumed_pid=None, package=None, semantic_sha=None, method=None):
+    def _write_process(self, check, path, *, pid="4242", resumed_pid=None, package=None, bound_sha=None, method=None):
         values = {
             "THF_SESSION_ID": self.sid,
             "THF_PACKAGE": package or self.package,
@@ -45,7 +52,7 @@ class AppDeviceEvidenceV11Tests(AppDeviceEvidenceV10Tests):
             "THF_ACTIVITY_RESUMED": "TRUE",
             "THF_PROCESS_CAPTURE_METHOD": method or PROCESS_METHOD,
             "THF_PROCESS_ALIVE_AFTER": "TRUE",
-            "THF_SEMANTIC_EVIDENCE_SHA256": semantic_sha or self._semantic_sha(check),
+            "THF_BOUND_EVIDENCE_SHA256": bound_sha or self._bound_sha(check),
         }
         path.write_text("".join(f"{k}={v}\n" for k, v in values.items()), encoding="utf-8")
 
@@ -67,10 +74,24 @@ class AppDeviceEvidenceV11Tests(AppDeviceEvidenceV10Tests):
         self._refresh(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
-    def test_semantic_sha_substitution_blocks(self):
+    def test_bound_sha_substitution_blocks(self):
         item = copy.deepcopy(self.evidence)
         check = "core_user_journey"
-        self._write_process(check, self.proc_paths[check], semantic_sha="f" * 64)
+        self._write_process(check, self.proc_paths[check], bound_sha="f" * 64)
+        self._refresh(item, check)
+        self.assertTrue(validate(self.registry, item, self.root))
+
+    def test_lifecycle_bound_sha_substitution_blocks(self):
+        item = copy.deepcopy(self.evidence)
+        check = "orientation"
+        self._write_process(check, self.proc_paths[check], bound_sha="e" * 64)
+        self._refresh(item, check)
+        self.assertTrue(validate(self.registry, item, self.root))
+
+    def test_network_bound_sha_substitution_blocks(self):
+        item = copy.deepcopy(self.evidence)
+        check = "offline_network"
+        self._write_process(check, self.proc_paths[check], bound_sha="d" * 64)
         self._refresh(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
