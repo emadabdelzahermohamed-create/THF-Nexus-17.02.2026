@@ -1,0 +1,42 @@
+name: THF Apps Durable Candidate Registry V1
+
+on:
+  pull_request:
+    paths:
+      - ReleaseOps/apps/THF_APPS_DURABLE_CANDIDATE_REGISTRY_V1.json
+      - ReleaseOps/scripts/validate_apps_durable_candidate_registry_v1.py
+      - tests/test_apps_durable_candidate_registry_v1.py
+      - .github/workflows/thf-apps-durable-candidate-registry-v1.yml
+  push:
+    branches: [main]
+    paths:
+      - ReleaseOps/apps/THF_APPS_DURABLE_CANDIDATE_REGISTRY_V1.json
+      - ReleaseOps/scripts/validate_apps_durable_candidate_registry_v1.py
+      - tests/test_apps_durable_candidate_registry_v1.py
+      - .github/workflows/thf-apps-durable-candidate-registry-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Compile validator and regressions
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ReleaseOps/scripts/validate_apps_durable_candidate_registry_v1.py tests/test_apps_durable_candidate_registry_v1.py
+      - name: Validate exact durable registry
+        run: |
+          set -Eeuo pipefail
+          python3 ReleaseOps/scripts/validate_apps_durable_candidate_registry_v1.py
+      - name: Run fail-closed regressions
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest -v tests.test_apps_durable_candidate_registry_v1
+          echo 'THF_APPS_DURABLE_CANDIDATE_REGISTRY_V1=PASS' >> "$GITHUB_STEP_SUMMARY"
