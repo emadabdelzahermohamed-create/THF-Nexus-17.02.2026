@@ -1,0 +1,36 @@
+name: THF No Arbitrary Artifact Size Cap V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/**'
+      - 'ReleaseOps/**'
+  pull_request:
+    paths:
+      - '.github/**'
+      - 'ReleaseOps/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-size-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Enforce no arbitrary repository-defined artifact size cap
+        run: |
+          set -Eeuo pipefail
+          python3 ReleaseOps/scripts/validate_no_arbitrary_artifact_size_caps_v1.py | tee THF_SIZE_POLICY_EVIDENCE.txt
+          grep -q '^THF_ARBITRARY_SIZE_CAP_GATE=PASS$' THF_SIZE_POLICY_EVIDENCE.txt
+          grep -q '^THF_VALIDATED_CONTENT_PRUNING_FOR_SIZE=FORBIDDEN$' THF_SIZE_POLICY_EVIDENCE.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-NO-ARBITRARY-SIZE-CAP-EVIDENCE
+          path: THF_SIZE_POLICY_EVIDENCE.txt
+          retention-days: 30
