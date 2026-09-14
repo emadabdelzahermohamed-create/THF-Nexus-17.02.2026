@@ -1,0 +1,86 @@
+name: THF TokenOps Large Batch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-large-batch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: thf-tokenops-large-batch-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tokenops-readonly-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Static safety and unit tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest -v ReleaseOps/TokenOps/test_tokenops_guard.py
+          ! grep -RInE '(seed phrase|mnemonic|private[_ -]?key|secret[_ -]?key)[[:space:]]*[:=][[:space:]]*[^Nn][^Uu][^Ll][^Ll]' ReleaseOps/TokenOps --include='*.json' --include='*.py'
+
+      - name: Mainnet read-only audit and financial readiness
+        shell: bash
+        env:
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+        run: |
+          set -Eeuo pipefail
+          rm -rf out/tokenops
+          python3 ReleaseOps/TokenOps/tokenops_guard.py --out out/tokenops
+          python3 - <<'PY'
+          import json, os, pathlib
+          p=pathlib.Path('out/tokenops/run-context.json')
+          p.write_text(json.dumps({
+            'schema':'thf-tokenops-run-context/v1',
+            'repository':os.environ.get('GITHUB_REPOSITORY'),
+            'source_sha':os.environ.get('GITHUB_SHA'),
+            'workflow':os.environ.get('GITHUB_WORKFLOW'),
+            'run_id':os.environ.get('GITHUB_RUN_ID'),
+            'run_attempt':os.environ.get('GITHUB_RUN_ATTEMPT'),
+            'financial_effect':False,
+            'broadcast':False,
+            'wave_touched':False
+          },sort_keys=True,indent=2)+'\n')
+          PY
+          (cd out/tokenops && sha256sum *.json | sort > SHA256SUMS.txt)
+          cat out/tokenops/invariant-gate.json
+          cat out/tokenops/financial-readiness.json
+
+      - name: Assert no executable transaction material
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import json, pathlib
+          r=json.loads(pathlib.Path('out/tokenops/financial-readiness.json').read_text())
+          e=r['execution']
+          assert e['transaction_bytes_created'] is False
+          assert e['instructions_created'] is False
+          assert e['signed'] is False
+          assert e['submitted'] is False
+          assert e['broadcast'] is False
+          assert e['financial_effect'] is False
+          assert e['private_key_used'] is False
+          assert e['wave_touched'] is False
+          assert r['exact_remaining_signer_action']=='none_until_fail_closed_blockers_are_resolved'
+          PY
+
+      - name: Upload immutable read-only evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-ReadOnly-Evidence-${{ github.run_id }}
+          path: out/tokenops/
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 9
