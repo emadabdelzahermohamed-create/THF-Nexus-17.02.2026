@@ -1,122 +1,33 @@
-name: THF Vault Signal API36 QA + Real-Function Gate
+name: THF Vault Signal API36 QA Superseded Guard
 
 on:
   push:
     branches: [main]
     paths:
       - .github/workflows/thf-vault-signal-api36-candidates.yml
-      - ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
-      - ReleaseOps/apps_factory/THF_VAULT_SIGNAL_REAL_FUNCTION_AUDIT_*.json
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write
-
-concurrency:
-  group: thf-vault-signal-api36-candidates
-  cancel-in-progress: false
-
-env:
-  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
-  GCP_ZONE: europe-west1-b
-  GCP_BUILDER: thf-wave-builder
-  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
-  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
 
 jobs:
-  build-and-reject-wrapper-authority:
+  reject-superseded-wrapper-lane:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           persist-credentials: false
-      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
-        with:
-          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
-          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Stage exact-source builder
+      - name: Reject stale wrapper build authority
         run: |
           set -Eeuo pipefail
-          chmod +x ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
-          bash -n ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
-          gcloud compute scp ReleaseOps/scripts/build_vault_signal_api36_candidates.sh "$GCP_BUILDER:/tmp/build_vault_signal_api36_candidates.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-      - name: Build Vault and Signal from exact source authority
-        run: |
-          set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_vault_signal_api36_candidates.sh && /tmp/build_vault_signal_api36_candidates.sh'
-      - name: Retrieve and verify build provenance
-        run: |
-          set -Eeuo pipefail
-          mkdir -p out/vault out/signal
-          for app in vault signal; do
-            gcloud compute scp --recurse "$GCP_BUILDER:~/thf-vault-signal-api36-candidates-v1/$app/out/*" "out/$app/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-            grep -q '^targetSdk=36$' "out/$app/EVIDENCE.txt"
-            grep -q '^under_100MiB=PASS$' "out/$app/EVIDENCE.txt"
-            grep -q '^build_tool=gradle-8.13$' "out/$app/EVIDENCE.txt"
-            grep -q '^build_tool_distribution_sha256=dccb1612e69e36aa7f52082be0d820a27f90c1c7c58c7ab4e9df2eed1f3f7f65$' "out/$app/EVIDENCE.txt"
-            grep -q '^build_overlay_id=BUILD_CONFIG_URL_JSON_ESCAPE_V2$' "out/$app/EVIDENCE.txt"
-            grep -q '^build_overlay_repairs=2$' "out/$app/EVIDENCE.txt"
-            grep -q '^source_zip_mutated=FALSE$' "out/$app/EVIDENCE.txt"
-            grep -q '^physical_device_status=PENDING$' "out/$app/EVIDENCE.txt"
-            grep -q '^network_release_ready=FALSE$' "out/$app/EVIDENCE.txt"
-            grep -q '^final_or_play_ready=FALSE$' "out/$app/EVIDENCE.txt"
-            grep -q '^production_signing_performed=FALSE$' "out/$app/EVIDENCE.txt"
-            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' -print -quit)"
-            test -s "$APK"
-            unzip -t "$APK" >/dev/null
-            ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
-            RECORDED="$(sed -n 's/^apk_sha256=//p' "out/$app/EVIDENCE.txt")"
-            test "$ACTUAL" = "$RECORDED"
-          done
-          grep -q '^source_sha256=7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793$' out/vault/EVIDENCE.txt
-          grep -q '^package=com.topherofit.thf.vault$' out/vault/EVIDENCE.txt
-          grep -q '^source_sha256=51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0$' out/signal/EVIDENCE.txt
-          grep -q '^package=com.topherofit.thf.signal$' out/signal/EVIDENCE.txt
-      - name: Enforce Mobile Real-Function Release Policy
-        run: |
-          set -Eeuo pipefail
-          for app in vault signal; do
-            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' -print -quit)"
-            TMP="$(mktemp -d)"
-            unzip -q "$APK" -d "$TMP"
-            test -s "$TMP/classes.dex"
-            test -s "$TMP/AndroidManifest.xml"
-            test -s "$TMP/assets/offline.html"
-            ENTRY_COUNT="$(unzip -Z1 "$APK" | wc -l)"
-            DEX_BYTES="$(stat -c %s "$TMP/classes.dex")"
-            strings -n 4 "$TMP/classes.dex" > "$TMP/classes.dex.strings"
-            grep -Fq 'Landroid/webkit/WebView;' "$TMP/classes.dex.strings"
-            grep -Fq 'loadUrl' "$TMP/classes.dex.strings"
-            grep -Fq 'setJavaScriptEnabled' "$TMP/classes.dex.strings"
-            # This exact-source artifact is a WebView shell (currently seven APK
-            # entries and a ~17 KiB dex). Building it is useful QA evidence but
-            # must never become release authority under the real-function policy.
-            test "$ENTRY_COUNT" -eq 7
-            test "$DEX_BYTES" -lt 20000
-            echo "$app release_authority=REJECTED_WRAPPER_SHELL_ONLY entries=$ENTRY_COUNT dex_bytes=$DEX_BYTES" | tee -a "$GITHUB_STEP_SUMMARY"
-            rm -rf "$TMP"
-          done
-          AUDIT="$(ls -1 ReleaseOps/apps_factory/THF_VAULT_SIGNAL_REAL_FUNCTION_AUDIT_*.json | sort | tail -n1)"
-          python3 - "$AUDIT" <<'PY'
-          import json, sys
-          p=sys.argv[1]
-          d=json.load(open(p, encoding='utf-8'))
-          assert d['release_policy_decision']['vault_apk_authority']=='REJECTED'
-          assert d['release_policy_decision']['signal_apk_authority']=='REJECTED'
-          assert d['release_policy_decision']['promote_apk_sha_to_authoritative_candidate'] is False
-          assert d['release_policy_decision']['final_or_play_ready'] is False
-          assert d['unchanged_global_gates']['physical_device_pass'] is False
-          assert d['unchanged_global_gates']['network_release_ready'] is False
-          print('REAL_FUNCTION_NON_PROMOTION=PASS')
-          PY
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: THF-VAULT-SIGNAL-API36-QA-REJECTED-WRAPPER
-          path: out/
-          retention-days: 14
-          compression-level: 0
+          test -s .github/workflows/thf-vault-signal-canonical-native-v2.yml
+          test -s ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
+          grep -Fq 'THF Vault Signal Canonical Native Source V2' .github/workflows/thf-vault-signal-canonical-native-v2.yml
+          grep -Fq 'THF_NATIVE_REAL_FUNCTION_V2' ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
+          {
+            echo 'WRAPPER_LANE_BUILD_AUTHORITY=SUPERSEDED_REJECTED'
+            echo 'CURRENT_AUTHORITY=THF_VAULT_SIGNAL_CANONICAL_NATIVE_SOURCE_V2'
+            echo 'STALE_WRAPPER_REBUILD=FALSE'
+            echo 'FINAL_OR_PLAY_READY=FALSE'
+          } >> "$GITHUB_STEP_SUMMARY"
