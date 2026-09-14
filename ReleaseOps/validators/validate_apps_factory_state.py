@@ -73,11 +73,18 @@ def main():
         if tb.get(forbidden) is not False:
             fail(errors, f"unsafe truth boundary: {forbidden}")
 
+    # Runtime Network Evidence V2 proved that configured bindings and literal
+    # third-party HTTPS responses are diagnostic only. State must not relabel
+    # them as THF backend health/auth evidence.
     shared = d.get("shared_runtime", {})
-    if shared.get("health") != "PASS":
-        fail(errors, "shared staging health must be PASS for runtime-bound candidates")
-    if shared.get("endpoint_binding") != "PASS":
-        fail(errors, "shared runtime endpoint binding must be PASS")
+    if shared.get("health") != "DIAGNOSTIC_REACHABILITY_ONLY":
+        fail(errors, "shared runtime health must remain diagnostic-only until THF backend proof exists")
+    if shared.get("endpoint_binding") != "PASS_CONFIG_BINDING_ONLY":
+        fail(errors, "shared runtime endpoint binding must be configuration-only")
+    if shared.get("backend_health_auth_proof") is not False:
+        fail(errors, "shared runtime cannot claim backend health/auth proof")
+    if shared.get("network_release_ready") is not False:
+        fail(errors, "shared runtime cannot claim network release readiness")
     if shared.get("auth_flow") == "PASS" or shared.get("thf_pass_contract") == "PASS":
         fail(errors, "auth/THF Pass must not be promoted by package-binding evidence")
     if shared.get("physical_device") == "PASS":
@@ -100,6 +107,8 @@ def main():
         fail(errors, "Core targetSdk drift")
     if not HEX64.fullmatch(core.get("apk_sha256", "")):
         fail(errors, "Core exact APK SHA missing/invalid")
+    if core.get("runtime_backend_health") != "NOT_PROVEN_THF_BACKEND":
+        fail(errors, "Core runtime backend health cannot exceed current network evidence")
     if core.get("physical_phone_acceptance") == "PASS":
         fail(errors, "Core physical PASS must not be asserted by this non-device state file")
 
@@ -122,10 +131,10 @@ def main():
         previous_hashes.append(a.get("previous_unbound_qa_apk_sha256"))
         if a.get("apk_sha256") == a.get("previous_unbound_qa_apk_sha256"):
             fail(errors, f"{name}: runtime-bound candidate must not alias prior unbound QA SHA")
-        if a.get("runtime_endpoint_binding") != "PASS":
-            fail(errors, f"{name}: runtime endpoint binding not PASS")
-        if a.get("runtime_health") != "PASS_SHARED_STAGING":
-            fail(errors, f"{name}: runtime health truth missing")
+        if a.get("runtime_endpoint_binding") != "PASS_CONFIG_BINDING_ONLY":
+            fail(errors, f"{name}: runtime endpoint binding must remain configuration-only")
+        if a.get("runtime_health") != "NOT_PROVEN_THF_BACKEND":
+            fail(errors, f"{name}: runtime health cannot be promoted without THF backend health/auth proof")
         if a.get("auth_flow") == "PASS":
             fail(errors, f"{name}: auth flow cannot be promoted without live credential evidence")
         if a.get("source_policy") != "PASS":
@@ -161,12 +170,13 @@ def main():
         "physical_registry": str(ns.physical_registry) if ns.physical_registry else None,
         "validation": "FAIL" if errors else "PASS",
         "apps_exact_package_gate_pass": sum(a.get("exact_candidate_package_gate") == "PASS" for a in apps),
-        "apps_runtime_binding_pass": sum(a.get("runtime_endpoint_binding") == "PASS" for a in apps),
+        "apps_runtime_config_binding_pass": sum(a.get("runtime_endpoint_binding") == "PASS_CONFIG_BINDING_ONLY" for a in apps),
+        "apps_backend_health_auth_proven": sum(a.get("runtime_health") == "PASS_THF_BACKEND" for a in apps),
         "apps_physical_pending": sum(a.get("physical_phone_acceptance") == "PENDING" for a in apps),
         "physical_registry_authority_matches": registry_matches,
         "pytest_missing_apps": sorted(a.get("name") for a in apps if a.get("pytest") == "NO_TESTS"),
         "errors": errors,
-        "truth": "This validator checks evidence consistency only; it does not create auth or physical-device evidence."
+        "truth": "Configured endpoint binding and third-party reachability are not THF backend health/auth proof; this validator does not create auth or physical-device evidence."
     }
     print(json.dumps(report, indent=2))
     return 1 if errors else 0
