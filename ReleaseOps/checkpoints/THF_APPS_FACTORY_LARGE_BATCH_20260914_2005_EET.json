@@ -1,0 +1,66 @@
+{
+  "schema": "thf.apps.factory.large_batch.checkpoint.v3",
+  "created_at": "2026-09-14T20:05:00+03:00",
+  "scope": ["core","pulse","forge","echo","codex","spark","rush","vault-ux","signal","command","thf-pass","shared-identity-federation","cross-app-handoffs"],
+  "excluded": ["dedicated-native-game-streams","token-finance"],
+  "policy": "MOBILE_REAL_FUNCTION_RELEASE_POLICY",
+  "baseline_main": "eb9d85d80c196636b0b673da0a520a691835c648",
+  "same_sha_skip": {
+    "skipped_unchanged": ["core","pulse","forge","echo","codex","command","thf-pass"],
+    "note": "No newer authoritative source/APK SHA was established for these candidates during this batch; previously proven same-SHA work was not rerun."
+  },
+  "durable_candidate_promotion": {
+    "pull_request": 24,
+    "merge_commit": "ba32dde02bd7d2f6cfbb90dd271a55ae3482db15",
+    "workflow_run": 34872537769,
+    "workflow_result": "SUCCESS",
+    "registry": "ReleaseOps/apps/THF_APPS_DURABLE_CANDIDATE_REGISTRY_V1.json",
+    "validator": "ReleaseOps/scripts/validate_apps_durable_candidate_registry_v1.py",
+    "regression_suite": "tests/test_apps_durable_candidate_registry_v1.py",
+    "regression_cases": 12
+  },
+  "vault": {
+    "source_sha256": "052e2c55c6066c15eee63528218b8eab9711bec9de71335c67c7e1692a5b5432",
+    "apk_sha256": "7431987b0be9589f997d505cfe69c6d3e217deb7d2783c44f99e6f263693209e",
+    "package_id": "com.topherofit.thf.vault",
+    "target_sdk": 36,
+    "durable_source_library_file_id": "libfile_1159053bd27c81918a5c725e2587a1e1",
+    "durable_apk_library_file_id": "libfile_f9a70503795c81919ada4ec1a311dbf8",
+    "authority": "CANONICAL_QA_CANDIDATE_NOT_FINAL"
+  },
+  "signal": {
+    "source_sha256": "f78890c3bf036d80a568ec39baac4a665d6092b9bbc8c4f080f2651785c1a275",
+    "apk_sha256": "c7eb1044426423862687f93a875208a5ea8c5703d4978efb93eb4b54a1555d75",
+    "package_id": "com.topherofit.thf.signal",
+    "target_sdk": 36,
+    "durable_source_library_file_id": "libfile_f2d7f43e850481919b71026ba500bb52",
+    "durable_apk_library_file_id": "libfile_da9f909a93f08191a9569b058654f692",
+    "authority": "CANONICAL_QA_CANDIDATE_NOT_FINAL"
+  },
+  "fail_closed_unresolved": {
+    "spark": {"source_sha256": "58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43", "reason": "SOURCE_BYTES_NOT_PROVEN"},
+    "rush": {"source_sha256": "766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c", "reason": "SOURCE_BYTES_NOT_PROVEN"}
+  },
+  "release_truth": {
+    "stable_external_trusted_tls_thf_pass_backend": false,
+    "auth_session_federation_external_proof": false,
+    "provider_kms_boundary_proven": false,
+    "physical_device_pass": false,
+    "network_release_ready": false,
+    "push_ready": false,
+    "production_signing_performed": false,
+    "play_public_rollout_performed": false,
+    "final_or_play_ready": false
+  },
+  "remaining_external_or_device_gates": [
+    "Resolve exact Spark/Rush source bytes for their candidate SHAs before authority promotion.",
+    "Prove stable externally reachable trusted HTTPS/WSS THF Pass/backend health plus auth/session/federation.",
+    "Keep FCM/APNs provider credentials inside an approved KMS/secret boundary and prove provider path.",
+    "Collect exact-candidate physical Android phone evidence for install/launch/touch/layout/background-resume/offline-network/core journey/crash-free/accessibility/Data Saver/RTL/20-language and notification receive/tap/deeplink.",
+    "Perform production signing and Play Console/legal/public rollout only after the preceding gates pass."
+  ],
+  "rollback": {
+    "merge": "revert ba32dde02bd7d2f6cfbb90dd271a55ae3482db15",
+    "durable_library_artifacts": "retain for audit unless explicitly superseded by a new exact-SHA candidate"
+  }
+}
