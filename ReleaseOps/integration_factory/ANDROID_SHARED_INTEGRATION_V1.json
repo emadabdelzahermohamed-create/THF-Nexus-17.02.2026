@@ -1,0 +1,75 @@
+{
+  "schema": "thf.android.shared.integration.v1",
+  "generated_at": "2026-09-14T22:39:00+03:00",
+  "android": {
+    "target_sdk": 36,
+    "credential_manager": {
+      "flow": "CredentialManager + Sign in with Google + passkeys/passwords",
+      "server_validation_required": true,
+      "mobile_client_secret_allowed": false,
+      "external_required": [
+        "Google Auth Platform OAuth server client ID",
+        "verified OAuth brand/consent configuration before production"
+      ]
+    },
+    "health_connect": {
+      "role": "PRIMARY_ANDROID_HEALTH_BRIDGE",
+      "permission_policy": "request only feature-required read permissions after explicit user action",
+      "background_read_default": false,
+      "history_read_default": false,
+      "supported_semantic_metrics": [
+        "activity", "workout", "steps", "distance_m", "calories_kcal",
+        "heart_rate_bpm", "sleep", "weight_kg", "body_fat_pct"
+      ],
+      "provenance_required": true,
+      "dedup_required": true
+    },
+    "samsung_health_data_sdk": {
+      "role": "OPTIONAL_PROVIDER_ADAPTER",
+      "minimum_android_api": 29,
+      "minimum_samsung_health": "6.30.2",
+      "java_minimum": 17,
+      "sdk_release": "1.1.0",
+      "sdk_release_date": "2026-03-12",
+      "emulator_supported": false,
+      "partner_registration_for_production": true,
+      "registered_identity_binding": ["package_name", "release_signature_sha256"],
+      "external_required": [
+        "Samsung Health partner registration for production data access",
+        "Samsung Health Data SDK AAR supplied/approved under Samsung terms"
+      ]
+    }
+  },
+  "identity": {
+    "canonical_service": "THF Identity",
+    "legacy_internal_service": "THF Pass",
+    "methods": ["google", "passkey", "password_or_email_code", "guest_link_when_allowed"],
+    "session_rules": [
+      "server-authoritative identity subject",
+      "package-bound federation",
+      "logout revokes local session",
+      "account-deletion route remains user accessible",
+      "guest progress cannot merge without verified identity proof"
+    ]
+  },
+  "operator_access": {
+    "ordinary_user_visible": false,
+    "publisher_required_roles": ["owner", "admin", "publisher"],
+    "admin_required_roles": ["owner", "admin"],
+    "server_role_claim_required": true,
+    "hidden_ui_is_not_security": true
+  },
+  "health_truth": {
+    "provider_record_alone_authorizes_rewards": false,
+    "pose_event_alone_authorizes_rewards": false,
+    "manual_activity_entry_authorizes_verified_rewards": false,
+    "physical_device_health_connect_pass": false,
+    "physical_device_samsung_health_pass": false
+  },
+  "release_truth": {
+    "google_oauth_console_configured": false,
+    "samsung_partner_registration_verified": false,
+    "physical_device_pass": false,
+    "final_or_play_ready": false
+  }
+}
