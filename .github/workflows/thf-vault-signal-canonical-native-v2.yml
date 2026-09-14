@@ -12,6 +12,7 @@ on:
       - ReleaseOps/scripts/package_authoritative_android_source_v2.py
       - ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
       - ReleaseOps/scripts/patch_vault_signal_compiled_icon_gate_v1.sh
+      - ReleaseOps/scripts/patch_vault_signal_canonical_icon_anchor_v1.sh
   workflow_dispatch:
 
 permissions:
@@ -54,6 +55,7 @@ jobs:
           bash -n ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
           bash -n ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
           bash -n ReleaseOps/scripts/patch_vault_signal_compiled_icon_gate_v1.sh
+          bash -n ReleaseOps/scripts/patch_vault_signal_canonical_icon_anchor_v1.sh
           grep -Fq 'CANONICAL_SOURCE_V2' ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
           grep -Fq 'THF_NATIVE_REAL_FUNCTION_V2' ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
           grep -Fq 'TELEMETRY_ONLY_NO_ARBITRARY_CAP' ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
@@ -78,14 +80,15 @@ jobs:
             ReleaseOps/scripts/nativeize_vault_signal_candidate.py \
             ReleaseOps/scripts/package_authoritative_android_source_v2.py \
             ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh \
-            ReleaseOps/scripts/patch_vault_signal_compiled_icon_gate_v1.sh; do
+            ReleaseOps/scripts/patch_vault_signal_compiled_icon_gate_v1.sh \
+            ReleaseOps/scripts/patch_vault_signal_canonical_icon_anchor_v1.sh; do
             gcloud compute scp "$f" "$GCP_BUILDER:/tmp/$(basename "$f")" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
           done
 
       - name: Build canonical sources and API 36 APKs
         run: |
           set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_vault_signal_canonical_native_v2.sh /tmp/patch_vault_signal_compiled_icon_gate_v1.sh && /tmp/patch_vault_signal_compiled_icon_gate_v1.sh /tmp/build_vault_signal_api36_candidates.sh && /tmp/build_vault_signal_canonical_native_v2.sh'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_vault_signal_canonical_native_v2.sh /tmp/patch_vault_signal_compiled_icon_gate_v1.sh /tmp/patch_vault_signal_canonical_icon_anchor_v1.sh && /tmp/patch_vault_signal_compiled_icon_gate_v1.sh /tmp/build_vault_signal_api36_candidates.sh && /tmp/patch_vault_signal_canonical_icon_anchor_v1.sh /tmp/build_vault_signal_canonical_native_v2.sh && /tmp/build_vault_signal_canonical_native_v2.sh'
 
       - name: Retrieve exact evidence
         run: |
