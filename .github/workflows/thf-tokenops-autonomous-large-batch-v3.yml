@@ -38,6 +38,7 @@ jobs:
           python -m py_compile ReleaseOps/TokenOps/activity_planning.py
           python -m py_compile ReleaseOps/TokenOps/epoch_commitment.py
           python -m py_compile ReleaseOps/TokenOps/revenue_value_basis.py
+          python -m py_compile ReleaseOps/TokenOps/blocker_resolution.py
 
       - name: Install test runner
         run: python -m pip install --disable-pip-version-check --no-input pytest
@@ -74,6 +75,36 @@ jobs:
           print('INVARIANT_GATE=' + str(g['status']))
           print('FINANCIAL_READINESS=' + str(r['status']))
           print('READINESS_BLOCKERS=' + ','.join(r['blockers']))
+          PY
+
+      - name: Compile exact blocker-resolution and authorization packet
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from ReleaseOps.TokenOps.blocker_resolution import build_resolution_packet, summarize_required_authorizations
+
+          out = Path('out/tokenops-v3')
+          readiness = json.loads((out / 'financial-readiness.json').read_text())
+          packet = build_resolution_packet(readiness)
+          summary = summarize_required_authorizations(packet)
+          assert packet['execution']['execution_authorized'] is False
+          assert packet['execution']['transaction_bytes_created'] is False
+          assert packet['execution']['instruction_bytes_created'] is False
+          assert packet['execution']['signed'] is False
+          assert packet['execution']['submitted'] is False
+          assert packet['execution']['broadcast'] is False
+          assert packet['execution']['financial_effect'] is False
+          assert packet['execution']['private_key_required'] is False
+          assert packet['execution']['wave_touched'] is False
+          assert summary['signer_action_now'] == 'NONE'
+          (out / 'blocker-resolution.json').write_text(json.dumps(packet, sort_keys=True, indent=2) + '\n')
+          (out / 'authorization-summary.json').write_text(json.dumps(summary, sort_keys=True, indent=2) + '\n')
+          print('BLOCKER_RESOLUTION_STATUS=' + packet['status'])
+          print('BLOCKER_RESOLUTION_COUNT=' + str(packet['blocker_count']))
+          print('UNKNOWN_BLOCKER_COUNT=' + str(len(packet['unknown_blockers'])))
+          print('SIGNER_ACTION_NOW=' + summary['signer_action_now'])
           PY
 
       - name: Prove current financial policy remains fail-closed
