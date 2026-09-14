@@ -8,7 +8,7 @@ GBIN="$CACHE/gradle-dist-${GVER}/gradle-${GVER}/bin/gradle"
 AAPT="$SDK/build-tools/36.0.0/aapt"
 APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
 ROOT="$HOME/thf-vault-signal-api36-candidates-v1"
-OVERLAY_ID="API_BASE_URL_JSON_ESCAPE_V1"
+OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2"
 mkdir -p "$ROOT"
 test -x "$GBIN"
 test -x "$AAPT"
@@ -44,48 +44,57 @@ build_one() {
   test "$actual_src_sha" = "$src_sha"
   unzip -q "$src" -d "$work"
 
-  local settings project gradle_file gradle_before_sha gradle_after_sha
+  local settings project gradle_file gradle_before_sha gradle_after_sha overlay_map
   settings="$(find "$work" -maxdepth 6 -type f \( -name settings.gradle -o -name settings.gradle.kts \) | head -n1)"
   test -n "$settings"
   project="$(dirname "$settings")"
   gradle_file="$project/app/build.gradle"
+  overlay_map="$out/build-overlay-map.txt"
   test -s "$gradle_file"
   gradle_before_sha="$(sha256sum "$gradle_file" | awk '{print $1}')"
 
-  # The authoritative RC2 sources contain one malformed Groovy escaping expression
-  # in the buildConfigField whose value is derived from baseUrl. Repair only that
-  # semantic line in the extracted workspace. JsonOutput produces a valid quoted
-  # Java String literal. The source ZIP itself remains untouched and its SHA stays
-  # the primary provenance anchor.
-  python3 - "$gradle_file" <<'PY'
+  # Repair only malformed URL buildConfigField expressions generated with the
+  # repeated <variable>.replace('\\', ...) quoting pattern. Each repaired field
+  # preserves its original field name and source variable. The authoritative ZIP
+  # is never modified; before/after Gradle hashes and the repair map are evidence.
+  python3 - "$gradle_file" "$overlay_map" <<'PY'
 from pathlib import Path
 import re, sys
 p = Path(sys.argv[1])
+map_path = Path(sys.argv[2])
 lines = p.read_text(encoding="utf-8").splitlines(keepends=True)
-idx = [i for i, line in enumerate(lines) if "buildConfigField" in line and "baseUrl.replace" in line]
-if len(idx) != 1:
+repairs = []
+field_re = re.compile(r"buildConfigField\s+['\"]String['\"]\s*,\s*['\"]([^'\"]+)['\"]")
+var_re = re.compile(r"\+\s*([A-Za-z_][A-Za-z0-9_]*)\.replace\(")
+for i, line in enumerate(lines):
+    if "buildConfigField" not in line or ".replace(" not in line:
+        continue
+    fm = field_re.search(line)
+    vm = var_re.search(line)
+    if not fm or not vm:
+        continue
+    field, var = fm.group(1), vm.group(1)
+    indent = line[:len(line) - len(line.lstrip())]
+    newline = "\n" if line.endswith("\n") else ""
+    lines[i] = indent + f'buildConfigField "String", "{field}", groovy.json.JsonOutput.toJson({var})' + newline
+    repairs.append((i + 1, field, var))
+if not repairs:
     print("=== build.gradle first 80 lines ===", file=sys.stderr)
     for n, line in enumerate(lines[:80], 1):
         print(f"{n:03d}: {line.rstrip()}", file=sys.stderr)
-    raise SystemExit(f"overlay target count must be exactly 1, got {len(idx)}")
-i = idx[0]
-line = lines[i]
-# Preserve the field name from the exact source instead of assuming a particular
-# identifier (e.g. API_BASE_URL vs THF_API_BASE_URL).
-m = re.search(r"buildConfigField\s+['\"]String['\"]\s*,\s*['\"]([^'\"]+)['\"]", line)
-if not m:
-    raise SystemExit("unable to extract buildConfigField name")
-field = m.group(1)
-indent = line[:len(line) - len(line.lstrip())]
-newline = "\n" if line.endswith("\n") else ""
-lines[i] = indent + f'buildConfigField "String", "{field}", groovy.json.JsonOutput.toJson(baseUrl)' + newline
+    raise SystemExit("overlay repair count must be >= 1")
 p.write_text("".join(lines), encoding="utf-8")
-print(f"overlay_field={field}")
+map_path.write_text("".join(f"line={n} field={field} variable={var}\n" for n, field, var in repairs), encoding="utf-8")
+print(f"overlay_repairs={len(repairs)}")
+for n, field, var in repairs:
+    print(f"overlay_line={n} field={field} variable={var}")
 PY
   gradle_after_sha="$(sha256sum "$gradle_file" | awk '{print $1}')"
   test "$gradle_before_sha" != "$gradle_after_sha"
-  grep -Fq 'groovy.json.JsonOutput.toJson(baseUrl)' "$gradle_file"
+  test -s "$overlay_map"
+  ! grep -Eq "buildConfigField.*\.replace\(" "$gradle_file"
   echo "BUILD_APP=$app PROJECT=$project SOURCE_SHA=$actual_src_sha OVERLAY=$OVERLAY_ID BEFORE=$gradle_before_sha AFTER=$gradle_after_sha"
+  cat "$overlay_map"
   cd "$project"
 
   export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$ROOT/$app/gradle-home"
@@ -129,6 +138,8 @@ THF_${app^^}_API36_EXACT_QA=BUILT
 source_path=$src
 source_sha256=$actual_src_sha
 build_overlay_id=$OVERLAY_ID
+build_overlay_repairs=$(wc -l < "$overlay_map")
+build_overlay_map_sha256=$(sha256sum "$overlay_map" | awk '{print $1}')
 build_gradle_sha256_before=$gradle_before_sha
 build_gradle_sha256_after=$gradle_after_sha
 source_zip_mutated=FALSE
