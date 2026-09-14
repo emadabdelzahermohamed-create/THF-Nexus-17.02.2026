@@ -1,0 +1,51 @@
+name: THF Games Latest Authority V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-games-latest-authority-v1.yml'
+      - 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
+      - 'ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md'
+      - 'ReleaseOps/scripts/validate_latest_game_authority_v1.py'
+      - '.github/workflows/*terra*.yml'
+      - '.github/workflows/*rift*.yml'
+      - '.github/workflows/*spark*.yml'
+      - '.github/workflows/*rush*.yml'
+      - 'ReleaseOps/scripts/*terra*'
+      - 'ReleaseOps/scripts/*rift*'
+      - 'ReleaseOps/scripts/*spark*'
+      - 'ReleaseOps/scripts/*rush*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latest-authority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Reject stale RCs, wrappers and superseded APKs
+        run: |
+          set -Eeuo pipefail
+          python3 ReleaseOps/scripts/validate_latest_game_authority_v1.py | tee latest-game-authority.txt
+      - name: Preserve non-promotional authority evidence
+        run: |
+          set -Eeuo pipefail
+          grep -q '^LATEST_GAME_AUTHORITY=PASS$' latest-game-authority.txt
+          grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
+          grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
+          grep -q '^rush_version=APPS RC4 + Verified-Motion V2$' latest-game-authority.txt
+          grep -q '^rush_candidate_apk_sha256=NONE$' latest-game-authority.txt
+          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-GAMES-LATEST-AUTHORITY-V1
+          path: |
+            latest-game-authority.txt
+            ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json
+            ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md
+          retention-days: 14
