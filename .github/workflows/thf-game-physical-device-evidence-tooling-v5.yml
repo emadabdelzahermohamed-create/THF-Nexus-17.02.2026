@@ -1,0 +1,38 @@
+name: THF Game Physical Device Evidence Tooling V5
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-game-physical-device-evidence-tooling-v5.yml'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v5.py'
+      - 'ReleaseOps/mobile/test_validate_game_device_evidence_v5.py'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v4.py'
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v3.py'
+      - 'ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-v5-regression:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Compile validators
+        run: python3 -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v3.py ReleaseOps/mobile/validate_game_device_evidence_v4.py ReleaseOps/mobile/validate_game_device_evidence_v5.py
+      - name: Run V4 integrity regression
+        run: PYTHONPATH=ReleaseOps/mobile python3 -m unittest -v ReleaseOps/mobile/test_validate_game_device_evidence_v4.py
+      - name: Run V5 single-session regression
+        run: PYTHONPATH=ReleaseOps/mobile python3 -m unittest -v ReleaseOps/mobile/test_validate_game_device_evidence_v5.py
+      - name: Preserve release truth
+        run: |
+          set -Eeuo pipefail
+          grep -q '"final_or_play_ready": false' ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json
+          grep -q '"physical_device_status": "PENDING"' ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json
+          echo 'EVIDENCE_REFERENCE_FILES_REQUIRED=TRUE'
+          echo 'EVIDENCE_REFERENCE_SHA256_REQUIRED=TRUE'
+          echo 'SINGLE_DEVICE_SESSION_BINDING_REQUIRED=TRUE'
+          echo 'PHYSICAL_DEVICE_STATUS=PENDING'
+          echo 'FINAL_OR_PLAY_READY=FALSE'
