@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_utc": "2026-09-14T22:28:00Z",
+  "updated_utc": "2026-09-14T22:31:00Z",
   "final_or_play_ready": false,
   "games": {
     "terra": {
@@ -48,8 +48,11 @@
       "canonical_package_id": "com.topherofit.thf.rush",
       "authoritative_version": "APPS RC4 + Native Verified-Motion V2 + product identity fix",
       "authoritative_source_sha256": "766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c",
-      "eligible_candidate_apk_sha256": null,
-      "candidate_status": "REBUILD_REQUIRED_AFTER_PRODUCT_ICON_FIX",
+      "eligible_candidate_apk_sha256": "f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f",
+      "candidate_status": "PACKAGE_PASS_PHYSICAL_DEVICE_PENDING",
+      "candidate_run_id": 34904322777,
+      "candidate_artifact_id": 10371807756,
+      "candidate_artifact_digest": "sha256:c158383f5b2183be0d677c65748376d44fc2f75a989f136ddfd62a126ab4f0d2",
       "target_sdk": 36,
       "arm64_required": true,
       "physical_device_status": "PENDING",
