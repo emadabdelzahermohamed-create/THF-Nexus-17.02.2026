@@ -53,6 +53,7 @@ def patch_arena(p: pathlib.Path) -> dict:
 func _start_training() -> void:
     # Genuine local mode: no /api/session, no WebSocket, no online/ranked/economy mutation.
     local_training_mode = true
+    socket = WebSocketPeer.new()
     socket_connected = false
     session.clear()
     local_training_player = {"hp": 100, "stance": "stand", "weapon": {"ammo": 30, "magazine": 30}}
@@ -108,19 +109,24 @@ func _movement_tick() -> void:
         target_position.z = clampf(target_position.z + local_move.y * step_distance, -38.0, 38.0)
         return
 '''.strip('\n').splitlines()
-    # Append original body excluding signature so online authority path is preserved.
     lines=lines[:a]+local_branch+old[1:]+lines[b:]
 
-    # Let local actor/camera/rig continue updating with no online session and feed it local player state.
+    # Exact RC37 _process has no session guard. Only swap its presentation source
+    # to local state while in local training; the existing avatar/UAL/IK/camera loop continues.
     pa,pb=function_span(lines,'_process')
     proc='\n'.join(lines[pa:pb])
-    guard='    if session.is_empty():\n        return'
-    if guard not in proc: raise SystemExit('_process session guard drift')
-    proc=proc.replace(guard,'    if session.is_empty() and not local_training_mode:\n        return',1)
-    marker='    var player: Dictionary = session.get("player", {})'
+    marker='        var player: Dictionary = session.get("player", {})'
     if marker not in proc: raise SystemExit('_process player marker drift')
-    proc=proc.replace(marker,'    var player: Dictionary = local_training_player if local_training_mode else session.get("player", {})',1)
+    proc=proc.replace(marker,'        var player: Dictionary = local_training_player if local_training_mode else session.get("player", {})',1)
     lines=lines[:pa]+proc.splitlines()+lines[pb:]
+
+    # Camera cover state also reads the online session; local mode must use only local state.
+    ua,ub=function_span(lines,'_update_camera')
+    cam='\n'.join(lines[ua:ub])
+    camera_marker='    var player_state: Dictionary = session.get("player", {})'
+    if camera_marker not in cam: raise SystemExit('_update_camera player marker drift')
+    cam=cam.replace(camera_marker,'    var player_state: Dictionary = local_training_player if local_training_mode else session.get("player", {})',1)
+    lines=lines[:ua]+cam.splitlines()+lines[ub:]
 
     # Route only local-training controls to local state; online controls remain request-only/server-authoritative.
     ca,cb=function_span(lines,'_combat_action')
@@ -130,7 +136,6 @@ func _movement_tick() -> void:
     combat=combat.replace(sig,sig+'    if local_training_mode:\n        _local_training_combat_action(kind)\n        return\n',1)
     lines=lines[:ca]+combat.splitlines()+lines[cb:]
 
-    # Insert local-only target/combat helpers immediately before authoritative _act().
     aa,ab=function_span(lines,'_act')
     helpers=r'''
 func _spawn_local_training_target() -> void:
@@ -157,7 +162,7 @@ func _local_training_combat_action(kind: String) -> void:
             return
         local_training_ammo -= 1
         local_training_player["weapon"] = {"ammo": local_training_ammo, "magazine": 30}
-        last_action = "local_fire"
+        last_action = "fire"
         var hit := false
         if is_instance_valid(camera) and is_instance_valid(local_training_target):
             var to_target := local_training_target.global_position + Vector3.UP - camera.global_position
@@ -178,7 +183,7 @@ func _local_training_combat_action(kind: String) -> void:
     elif kind == "reload":
         local_training_ammo = 30
         local_training_player["weapon"] = {"ammo": local_training_ammo, "magazine": 30}
-        last_action = "local_reload"
+        last_action = "reload"
         ammo_label.text = "AMMO 30 · TARGET %d" % local_training_bot_hp
         status.text = "LOCAL TRAINING · RELOADED"
     elif kind == "aim":
@@ -195,7 +200,6 @@ func _local_training_combat_action(kind: String) -> void:
     lines=lines[:aa]+helpers+lines[aa:]
 
     out='\n'.join(lines)+'\n'
-    # Touch-safe minimums on phone candidate.
     out=out.replace('button.custom_minimum_size = Vector2(66.0, 54.0)','button.custom_minimum_size = Vector2(66.0, 62.0)',1)
     out=out.replace('func _add_combat_button(parent: Control, label: String, action_name: String, minimum_size := Vector2(76.0, 58.0)) -> void:',
                     'func _add_combat_button(parent: Control, label: String, action_name: String, minimum_size := Vector2(76.0, 62.0)) -> void:',1)
@@ -223,14 +227,15 @@ def main() -> int:
     result={'schema':'thf-rift-local-training-phone-v1','candidate_only':True,'canonical_archive_mutated':False,
             'arena':patch_arena(arena),'package':patch_package(root),'final_status':'NOT_FINAL','physical_device_status':'PENDING'}
     text=arena.read_text(encoding='utf-8')
-    required=['local_training_mode = true','session.clear()','_spawn_local_training_target()','func _local_training_combat_action','local_training_bot_hp = maxi(0, local_training_bot_hp - 25)','target_position.x = clampf','target_position.z = clampf']
+    required=['local_training_mode = true','socket = WebSocketPeer.new()','session.clear()','_spawn_local_training_target()','func _local_training_combat_action','local_training_bot_hp = maxi(0, local_training_bot_hp - 25)','target_position.x = clampf','target_position.z = clampf','local_training_player if local_training_mode else session.get("player", {})']
     for x in required:
         if x not in text: raise SystemExit(f'missing local-training marker: {x}')
-    # Fail closed: local start function must not call backend/session creation or realtime connect.
     lines=text.splitlines(); a0,b0=function_span(lines,'_start_training'); start='\n'.join(lines[a0:b0])
     for forbidden in ('api.request_json','_connect_realtime','socket.send','_sync_session'):
         if forbidden in start: raise SystemExit(f'local start leaked online path: {forbidden}')
-    # Preserve authoritative online action function.
+    la,lb=function_span(lines,'_local_training_combat_action'); local_combat='\n'.join(lines[la:lb])
+    for forbidden in ('api.request_json','socket.send','_act('):
+        if forbidden in local_combat: raise SystemExit(f'local combat leaked online path: {forbidden}')
     aa,bb=function_span(lines,'_act'); act='\n'.join(lines[aa:bb])
     for marker in ('socket.send_text','api.request_json','/api/session/'):
         if marker not in act: raise SystemExit(f'online authority marker lost: {marker}')
