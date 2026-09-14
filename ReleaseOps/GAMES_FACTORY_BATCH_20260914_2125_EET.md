@@ -15,10 +15,10 @@ Large-batch game engineering checkpoint for Terra/Nexus World, Rift/Nexus Arena,
 - ChatGPT Library was searched for the exact RC41 archive and both recorded part names. Validation/handoff/state evidence is present, but the actual RC41 source archive/parts are not available as materializable Library files. No substitute older source was promoted.
 - Therefore no fresh RC41 Godot 4.7.2 parser/import/headless or API36 AAB PASS is claimed in this checkpoint.
 
-## Global artifact-size policy
+## Global artifact-size policy — PASS
 User upload-era arbitrary size limits are retired globally across THF apps and games.
 
-Policy now enforced:
+Enforced policy:
 - artifact size is telemetry/optimization, not an internal release rejection criterion;
 - validated content must not be pruned solely to satisfy an arbitrary internal size cap;
 - lossless optimization and real external platform constraints remain allowed;
@@ -32,13 +32,18 @@ The diagnostic gate identified a real executable legacy offender:
 `ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh`.
 
 That Pulse build script was repaired at commit `bcc469c82b1db7d5961f1c0b1712a0dec1722907`:
-- removed the `104857600` hard rejection;
+- removed the retired `104857600` hard rejection;
 - removed `under_100MiB` as an acceptance requirement;
 - preserves `apk_size_bytes` as telemetry;
 - records `artifact_size_policy=TELEMETRY_ONLY_NO_ARBITRARY_CAP`;
 - records `validated_content_pruned_for_size=FALSE`.
 
-The policy workflow remains fail-closed and will identify any next executable legacy offender rather than suppressing the check.
+Verification:
+- Run `34880496727`: **SUCCESS**.
+- Evidence artifact `10362713186`: `THF-SIZE-POLICY-PASS`.
+- Evidence digest: `sha256:d8836765567151cfd78c581ef4f0208a6d032ab88904dd23086449d69a74059e`.
+- Workflow trigger surface was narrowed at commit `cc7a9a048136cb79d3aad0c7f02eac97b110fed2` to executable policy surfaces (`.github/**`, `ReleaseOps/scripts/**`) so ordinary historical/report updates do not cause redundant scans.
+- Verification run `34880577493` after that trigger-scope change also completed **SUCCESS**.
 
 ## Truth boundaries / safety
 - `FINAL_OR_PLAY_READY=FALSE`.
@@ -51,6 +56,6 @@ The policy workflow remains fail-closed and will identify any next executable le
 - WAVE_MAWJA was not modified.
 
 ## Next non-duplicate gates
-1. Continue global executable size-policy scan until PASS, repairing each genuine legacy hard cap without removing validated content.
-2. Stage exact Rift RC41 bytes when a trustworthy exact source artifact becomes available; then run fresh Godot 4.7.2 clean parser/import/headless plus API36 package/payload build gates.
+1. Stage exact Rift RC41 bytes when a trustworthy exact source artifact becomes available; then run fresh Godot 4.7.2 clean parser/import/headless plus API36 package/payload build gates.
+2. Keep the global no-arbitrary-size policy active on executable release surfaces; future regressions fail closed and identify the offending file.
 3. Keep all games `NOT_FINAL / PHYSICAL_DEVICE_PENDING` until exact-candidate physical-phone evidence is captured under the existing strict device-evidence chain.
