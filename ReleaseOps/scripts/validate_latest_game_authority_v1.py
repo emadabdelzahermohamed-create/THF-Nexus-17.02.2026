@@ -76,15 +76,20 @@ for key,g in games.items():
                 if bad in text:
                     die(f'{key}:superseded_hash_in_operational_file:{p.relative_to(ROOT)}')
 
-# RC37 historical audit workflows may remain for provenance. They fail only if they can
-# claim/promote a positive release state; explicit FALSE/PENDING historical evidence is safe.
+# RC37 historical audit workflows may remain for provenance. Uploading an immutable
+# audit artifact or checkpoint is evidence retention, not candidate promotion.
+# Fail only on an explicit positive release state or an actual promotion/deployment action.
 for p in (ROOT/'.github/workflows').glob('*rift*.yml'):
     text=p.read_text(encoding='utf-8')
     if 'RC37' not in text:
         continue
     positive = re.search(r'(FINAL_OR_PLAY_READY|PLAY_READY|FINAL_STATUS)\s*[=:]\s*(TRUE|PASS|READY)', text, re.I)
-    publish = re.search(r'\b(promote|publish|production[-_ ]?sign|play[-_ ]?upload)\b', text, re.I)
-    if positive or publish:
+    promotion_action = re.search(
+        r'\b(promote|promotion|production[-_ ]?sign(?:ing)?|play[-_ ]?(?:upload|publish)|store[-_ ]?publish|production[-_ ]?(?:deploy|cutover))\b',
+        text,
+        re.I,
+    )
+    if positive or promotion_action:
         die(f'rift:stale_rc37_promotion_workflow:{p.name}')
 
 print('LATEST_GAME_AUTHORITY=PASS')
