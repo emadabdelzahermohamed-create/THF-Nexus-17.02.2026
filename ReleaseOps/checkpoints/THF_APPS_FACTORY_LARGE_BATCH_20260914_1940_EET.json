@@ -1,0 +1,100 @@
+{
+  "schema": "thf.apps.factory.large_batch.checkpoint.v2",
+  "created_at": "2026-09-14T19:40:00+03:00",
+  "scope": ["core","pulse","forge","echo","codex","spark","rush","vault-ux","signal","command","thf-pass","shared-identity-federation","cross-app-handoffs"],
+  "excluded": ["dedicated-native-game-streams","token-finance"],
+  "policy": "MOBILE_REAL_FUNCTION_RELEASE_POLICY",
+  "same_sha_skip": {
+    "skipped_unchanged": ["core","pulse","forge","echo","codex","spark","rush","command","thf-pass"],
+    "reason": "No newer authoritative source/APK SHA was established for these streams in this batch; previously proven same-SHA work was not rerun merely to create activity."
+  },
+  "baseline": {
+    "lineage_v3_checkpoint": "1eb5b3105aa32ec0cb5a4dbbd1d5c70fa8cb720d",
+    "core": {"source":"6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a","apk":"262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba"},
+    "pulse": {"source":"71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10","apk":"66c04169a40b574f0f26b0a90b999f95a9702b1154a80dc43d2de236a47673a3"},
+    "forge": {"source":"0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51","apk":"e27b2dfa8d5bc382d2fa2439deafe98eaeba84ec30acd02a8c4f02dca8ec08ba"},
+    "echo": {"source":"40a197b60563e560cab93ba0a64c859d9b650da222fdaec933993977d63902ab","apk":"794f16dd2ccb7f5907690326522c018649b650268380f270fa2156ec508b308b"},
+    "codex": {"source":"3d60cc550732468c89fe120f552def53ac798646d065e94efa153f8979e15b1e","apk":"58c5491058d286b76e89e177df00db55b589d55a3e5e76921a6565f790da307f"},
+    "command": {"source":"f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408","apk":"b5886da7c053d2063d792c0b7d47316afa3b63ea0e951bfa60863c4aa526947f"},
+    "spark_unresolved_source_candidate": "58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43",
+    "rush_unresolved_source_candidate": "766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c"
+  },
+  "vault_signal_canonical_native_v2": {
+    "merge_commit": "b97cdec134c5c12e5a597882408af0b47b230f16",
+    "workflow_run": 34869083968,
+    "workflow_attempt_1": "FAIL_TRANSIENT_OS_LOGIN_PUBLICKEY_BEFORE_BUILD",
+    "workflow_attempt_2": "SUCCESS",
+    "artifact_id": 10358840193,
+    "artifact_digest_sha256": "6385525db6cd5d6bb7049b38ee53b79e95ccc2b488689617cd02e94848e33ccc",
+    "artifact_retention_days": 30,
+    "source_packager": "ReleaseOps/scripts/package_authoritative_android_source_v2.py",
+    "source_packager_properties": ["deterministic sorted paths","fixed ZIP timestamps","build output excluded","local.properties excluded","APK/AAB excluded","signing/key material excluded","symlinks rejected","manifest required","native MainActivity required"],
+    "vault": {
+      "prior_source_sha256": "7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793",
+      "canonical_native_source_sha256": "052e2c55c6066c15eee63528218b8eab9711bec9de71335c67c7e1692a5b5432",
+      "canonical_source_files": 33,
+      "package": "com.topherofit.thf.vault",
+      "target_sdk": 36,
+      "apk_sha256": "7431987b0be9589f997d505cfe69c6d3e217deb7d2783c44f99e6f263693209e",
+      "apk_size_bytes": 36341,
+      "clean_source_zip": "PASS",
+      "clean_apk_zip": "PASS",
+      "production_signature": false,
+      "physical_device_status": "PENDING"
+    },
+    "signal": {
+      "prior_source_sha256": "51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0",
+      "canonical_native_source_sha256": "f78890c3bf036d80a568ec39baac4a665d6092b9bbc8c4f080f2651785c1a275",
+      "canonical_source_files": 33,
+      "package": "com.topherofit.thf.signal",
+      "target_sdk": 36,
+      "apk_sha256": "c7eb1044426423862687f93a875208a5ea8c5703d4978efb93eb4b54a1555d75",
+      "apk_size_bytes": 36337,
+      "clean_source_zip": "PASS",
+      "clean_apk_zip": "PASS",
+      "production_signature": false,
+      "physical_device_status": "PENDING"
+    },
+    "payload_inspection": ["no WebView marker","no loadUrl marker","AndroidKeyStore present","AES/GCM/NoPadding present","HttpsURLConnection present","Data Saver API present","THF Pass package handoff present","remote state non-fabrication marker present","usesCleartextTraffic=false"],
+    "authority_decision": "CANONICAL_NATIVE_SOURCE_CANDIDATE_NOT_FINAL",
+    "authority_note": "The native implementation is now embodied in deterministic exact-SHA source artifacts rather than existing only as a semantic build overlay. Production FINAL authority remains prohibited until durable candidate promotion plus network, phone, signing and legal/store gates pass."
+  },
+  "source_packager_regression": {
+    "test_commit": "a987b5a93d4d35cc2544f6f5bb7d679af2a5a359",
+    "workflow_commit": "fd38dc64e48979709ae4abb82f4a6d4c5d1298a7",
+    "workflow_run": 34869868511,
+    "result": "SUCCESS",
+    "coverage": ["byte determinism","exclude build/local/signing material","reject symlink","require AndroidManifest","require native MainActivity"]
+  },
+  "infra_findings": {
+    "long_branch_wif_failure_run": 34868942667,
+    "finding": "Google WIF rejected the long branch-derived google.subject because it exceeded the 127-byte mapped-attribute limit; this run produced no accepted build evidence. Main-ref WIF authentication succeeded.",
+    "first_main_attempt": "OS Login/IAP SSH public-key propagation failed during scp before build; rerun succeeded without weakening authentication or bypassing WIF."
+  },
+  "release_truth": {
+    "backend_health_auth_proof": false,
+    "stable_external_trusted_tls_thf_pass_backend": false,
+    "auth_session_federation_external_proof": false,
+    "provider_kms_boundary_proven": false,
+    "physical_device_pass": false,
+    "network_release_ready": false,
+    "push_ready": false,
+    "production_signing_performed": false,
+    "play_public_rollout_performed": false,
+    "final_or_play_ready": false
+  },
+  "remaining_fail_closed": [
+    "Spark source bytes for candidate SHA 58a32690... remain unresolved in latest authoritative lineage.",
+    "Rush source bytes for candidate SHA 766936c2... remain unresolved in latest authoritative lineage.",
+    "Vault/Signal canonical source artifacts must be promoted to durable release storage/registry before production authority; the CI evidence artifact has finite retention.",
+    "Reachable trusted HTTPS/WSS THF backend must prove health plus auth/session/federation; third-party reachability is not accepted.",
+    "FCM/APNs provider credentials must remain inside approved KMS/secret boundary.",
+    "Exact-candidate physical Android phone evidence is still mandatory for install/launch/touch/layout/background-resume/offline-network/core journey/crash-free/accessibility/Data Saver/RTL/20-language checks.",
+    "Production signing, Play Console/legal acceptance and public rollout remain user/external gates."
+  ],
+  "rollback": {
+    "canonical_native_merge": "revert b97cdec134c5c12e5a597882408af0b47b230f16",
+    "packager_regression_commits": ["a987b5a93d4d35cc2544f6f5bb7d679af2a5a359","fd38dc64e48979709ae4abb82f4a6d4c5d1298a7"],
+    "do_not_restore_wrapper_only_vault_signal_as_release_candidates": true
+  }
+}
