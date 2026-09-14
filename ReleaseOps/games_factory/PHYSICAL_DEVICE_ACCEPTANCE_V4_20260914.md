@@ -2,7 +2,7 @@
 
 Status: REQUIRED / FAIL-CLOSED / NOT_FINAL
 
-V4 supersedes the acceptance-validation portion of V3 for the six exact candidates in `THF_GAME_DEVICE_CANDIDATES_V1.json`. Objective collection still uses `capture_android_device_evidence_v3.py`; V4 adds cryptographic binding of every manual evidence reference to a real file in the evidence bundle.
+V4 supersedes the acceptance-validation portion of V3 for the six exact candidates in `THF_GAME_DEVICE_CANDIDATES_V1.json`. Objective collection still uses `capture_android_device_evidence_v3.py`; V4 adds cryptographic binding of every manual evidence reference, including online/local authority truth, to a real file in the evidence bundle.
 
 ## Preconditions
 
@@ -47,7 +47,17 @@ sha256sum out/<product>/evidence/<product>/<capability>.mp4
 
 ## Required observations
 
-Common to all six: touch, orientation/layout/safe-area, offline->network transition, online/network transition, core user journey, gameplay interaction, observed FPS/RAM/thermal duration, crash-free operation, plus explicit `online_state_not_faked=true` and `local_mode_genuinely_local=true`.
+Common to all six: touch, orientation/layout/safe-area, offline->network transition, online/network transition, core user journey, gameplay interaction, observed FPS/RAM/thermal duration, and crash-free operation.
+
+The existing semantic booleans remain mandatory:
+- `online_state_not_faked=true`
+- `local_mode_genuinely_local=true`
+
+V4 additionally requires matching hash-bound records under `authority_observations`:
+- `online_authority_behavior`: concrete device-session proof that ranked/social/economy/world mutation is not fabricated locally and remains backend-authoritative when exercised.
+- `local_mode_truth`: concrete device-session proof that offline/local training or exploration remains genuinely local and does not claim remote success.
+
+These authority records use the same `pass`, `observed_at_utc`, `evidence_ref`, and `evidence_sha256` contract as all other manual evidence.
 
 Product-specific:
 - Terra: avatar/player load, movement+camera, world/NPC interaction.
@@ -68,7 +78,7 @@ python ReleaseOps/mobile/validate_game_device_evidence_v4.py \
   out/<product>
 ```
 
-V4 first applies all V3 semantic/device/exact-SHA requirements, then verifies every required `evidence_ref` exists inside the supplied evidence root, is non-empty, and hashes exactly to `evidence_sha256`.
+V4 first applies all V3 semantic/device/exact-SHA requirements, then verifies every required gameplay and authority `evidence_ref` exists inside the supplied evidence root, is non-empty, and hashes exactly to `evidence_sha256`.
 
 A V4 PASS is still **not** FINAL/PLAY_READY. It establishes a cryptographically bound physical-device evidence bundle for later explicit release review/promotion only.
 
