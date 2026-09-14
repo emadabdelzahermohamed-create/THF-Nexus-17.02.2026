@@ -3,9 +3,25 @@
 
 Run only after apply_spark_rush_real_game_overlay_v1.py on an extracted authoritative
 RC4 tree. Canonical archives are never modified. Repetitions remain local/non-rewarding.
+This overlay also applies the approved THF Motion Games launcher identity while
+preserving the canonical package ID.
 """
 from __future__ import annotations
 import argparse, hashlib, pathlib
+import xml.etree.ElementTree as ET
+
+ANDROID_NS='http://schemas.android.com/apk/res/android'
+ET.register_namespace('android',ANDROID_NS)
+
+MOTION_ICON='''<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#0B1824" android:pathData="M0,0h108v108h-108z"/>
+    <path android:fillColor="#2ED39A" android:pathData="M60,8L30,58H50L44,100L80,46H58Z"/>
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.92" android:pathData="M16,76H30L36,64L44,88L51,72H66"/>
+</vector>
+'''
 
 
 def sha256(p: pathlib.Path) -> str:
@@ -55,10 +71,24 @@ def main() -> int:
     ]
     for x in required:
         if x not in s: raise SystemExit('postcondition missing: '+x)
-    # Touch may reset but must never increment a repetition.
     touch=s[s.index('@Override public boolean onTouchEvent'):s.index('@Override public boolean performClick')]
     if 'reps++' in touch or 'reps +=' in touch:
         raise SystemExit('touch repetition authority detected')
+
+    manifest=root/'android/app/src/main/AndroidManifest.xml'
+    if not manifest.is_file(): raise SystemExit('AndroidManifest.xml missing for launcher identity')
+    tree=ET.parse(manifest); app=tree.getroot().find('application')
+    if app is None: raise SystemExit('application element missing for launcher identity')
+    app.set(f'{{{ANDROID_NS}}}label','THF Motion Games')
+    app.set(f'{{{ANDROID_NS}}}icon','@drawable/thf_motion_games_icon')
+    app.set(f'{{{ANDROID_NS}}}roundIcon','@drawable/thf_motion_games_icon')
+    tree.write(manifest,encoding='utf-8',xml_declaration=True)
+    drawable=root/'android/app/src/main/res/drawable'
+    drawable.mkdir(parents=True,exist_ok=True)
+    icon=drawable/'thf_motion_games_icon.xml'
+    icon.write_text(MOTION_ICON,encoding='utf-8')
+    if app.attrib.get(f'{{{ANDROID_NS}}}icon')!='@drawable/thf_motion_games_icon':
+        raise SystemExit('launcher icon manifest postcondition failed')
 
     ev=ns.evidence_out
     ev.parent.mkdir(parents=True,exist_ok=True)
@@ -75,6 +105,11 @@ def main() -> int:
         'touch_repetition_increment=false',
         'local_repetitions_reward_authorized=false',
         'reward_bearing_health_evidence=BACKEND_REQUIRED',
+        'user_facing_name=THF Motion Games',
+        'canonical_package_id=com.topherofit.thf.rush',
+        'launcher_icon=@drawable/thf_motion_games_icon',
+        f'launcher_icon_sha256={sha256(icon)}',
+        'product_specific_icon=true',
         'canonical_archive_mutated=false',
         'device_status=PENDING',
         'final_status=NOT_FINAL',
