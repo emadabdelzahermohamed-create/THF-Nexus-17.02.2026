@@ -6,9 +6,7 @@ import pytest
 
 P=Path(__file__).parents[1]/"notification_lifecycle.py"
 spec=importlib.util.spec_from_file_location("notification_lifecycle",P)
-m=importlib.util.module_from_spec(spec)
-sys.modules[spec.name]=m
-spec.loader.exec_module(m)
+m=importlib.util.module_from_spec(spec); sys.modules[spec.name]=m; spec.loader.exec_module(m)
 
 class Vault:
     def __init__(self): self.data={}; self.fail_put=False
@@ -21,79 +19,68 @@ class Vault:
 def reg():
     v=Vault(); r=m.NotificationTokenRegistry(sqlite3.connect(":memory:"),v); return r,v
 
-def test_register_stores_only_fingerprint_in_db_and_raw_token_in_vault():
-    r,v=reg(); raw="provider-token-123456"
-    x=r.register(subject="u1",package="com.topherofit.thf.pulse",provider="fcm",raw_token=raw)
-    assert x.active and len(x.fingerprint)==64 and x.generation==1
+def register(r, subject="u1", session_id="s1", package="com.topherofit.thf.pulse", token="provider-token-123456"):
+    return r.register(subject=subject,session_id=session_id,package=package,provider="fcm",raw_token=token)
+
+def test_register_is_session_bound_and_raw_token_stays_out_of_db():
+    r,v=reg(); raw="provider-token-123456"; x=register(r,token=raw)
+    assert x.active and x.session_id=="s1" and len(x.fingerprint)==64
     assert v.get(x.token_id)==raw
     dump=" ".join(str(z) for z in r.db.execute("select * from notification_tokens").fetchone())
     assert raw not in dump
 
-def test_register_db_failure_compensates_vault_secret():
-    r,v=reg()
-    r.db.execute("CREATE TRIGGER fail_insert BEFORE INSERT ON notification_tokens BEGIN SELECT RAISE(ABORT,'boom'); END")
-    with pytest.raises(sqlite3.IntegrityError):
-        r.register(subject="u1",package="com.topherofit.thf.pulse",provider="fcm",raw_token="provider-token-123456")
-    assert v.data == {}
-    assert r.db.execute("SELECT COUNT(*) FROM notification_tokens").fetchone()[0] == 0
+def test_same_user_package_provider_token_in_two_sessions_gets_distinct_registration():
+    r,v=reg(); raw="provider-token-123456"
+    a=register(r,session_id="s1",token=raw); b=register(r,session_id="s2",token=raw)
+    assert a.token_id != b.token_id
+    assert r.get(a.token_id,subject="u1",session_id="s1").active
+    assert r.get(b.token_id,subject="u1",session_id="s2").active
+    with pytest.raises(PermissionError): r.get(a.token_id,subject="u1",session_id="s2")
 
-def test_rejects_unknown_package_and_unauthenticated_subject():
-    r,_=reg()
-    with pytest.raises(PermissionError): r.register(subject="",package="com.topherofit.thf.pulse",provider="fcm",raw_token="abcdefgh1234")
-    with pytest.raises(PermissionError): r.register(subject="u",package="com.evil.fake",provider="fcm",raw_token="abcdefgh1234")
-
-def test_rotation_revokes_old_token_and_increments_generation():
+def test_rotation_is_session_scoped_and_failure_safe():
     r,v=reg(); p="com.topherofit.thf.echo"
-    old=r.register(subject="u1",package=p,provider="fcm",raw_token="old-token-123456")
-    new=r.rotate(subject="u1",package=p,provider="fcm",old_token_id=old.token_id,new_raw_token="new-token-123456")
-    assert not r.get(old.token_id,subject="u1").active
-    assert old.token_id not in v.data
-    assert new.active and new.generation==2 and new.token_id in v.data
-
-def test_rotation_vault_failure_preserves_old_registration_and_secret():
-    r,v=reg(); p="com.topherofit.thf.echo"
-    old=r.register(subject="u1",package=p,provider="fcm",raw_token="old-token-123456")
+    old=register(r,session_id="s1",package=p,token="old-token-123456")
+    with pytest.raises(PermissionError):
+        r.rotate(subject="u1",session_id="s2",package=p,provider="fcm",old_token_id=old.token_id,new_raw_token="new-token-123456")
     v.fail_put=True
-    with pytest.raises(RuntimeError, match="vault put failed"):
-        r.rotate(subject="u1",package=p,provider="fcm",old_token_id=old.token_id,new_raw_token="new-token-123456")
-    assert r.get(old.token_id,subject="u1").active is True
-    assert v.data == {old.token_id:"old-token-123456"}
+    with pytest.raises(RuntimeError):
+        r.rotate(subject="u1",session_id="s1",package=p,provider="fcm",old_token_id=old.token_id,new_raw_token="new-token-123456")
+    assert r.get(old.token_id,subject="u1",session_id="s1").active
+    assert v.data=={old.token_id:"old-token-123456"}
+    v.fail_put=False
+    new=r.rotate(subject="u1",session_id="s1",package=p,provider="fcm",old_token_id=old.token_id,new_raw_token="new-token-123456")
+    assert new.generation==2 and new.active
+    assert not r.get(old.token_id,subject="u1",session_id="s1").active
 
-def test_rotation_db_failure_rolls_back_old_state_and_compensates_new_secret():
-    r,v=reg(); p="com.topherofit.thf.echo"
-    old=r.register(subject="u1",package=p,provider="fcm",raw_token="old-token-123456")
-    r.db.execute(
-        f"CREATE TRIGGER fail_new BEFORE INSERT ON notification_tokens "
-        f"WHEN NEW.token_id <> '{old.token_id}' BEGIN SELECT RAISE(ABORT,'boom'); END"
-    )
-    with pytest.raises(sqlite3.IntegrityError):
-        r.rotate(subject="u1",package=p,provider="fcm",old_token_id=old.token_id,new_raw_token="new-token-123456")
-    assert r.get(old.token_id,subject="u1").active is True
-    assert v.data == {old.token_id:"old-token-123456"}
-    assert r.db.execute("SELECT COUNT(*) FROM notification_tokens WHERE active=1").fetchone()[0] == 1
+def test_logout_revokes_only_current_session_not_other_device_session():
+    r,v=reg(); p="com.topherofit.thf.pulse"
+    a=register(r,session_id="phone-a",package=p,token="token-phone-a-123")
+    b=register(r,session_id="phone-b",package=p,token="token-phone-b-123")
+    assert r.revoke_logout(subject="u1",session_id="phone-a",package=p)==1
+    assert not r.get(a.token_id,subject="u1",session_id="phone-a").active
+    assert r.get(b.token_id,subject="u1",session_id="phone-b").active
+    assert a.token_id not in v.data and b.token_id in v.data
 
-def test_rotation_rejects_same_provider_token_without_mutation():
-    r,v=reg(); p="com.topherofit.thf.echo"; raw="same-token-123456"
-    old=r.register(subject="u1",package=p,provider="fcm",raw_token=raw)
-    with pytest.raises(ValueError, match="must differ"):
-        r.rotate(subject="u1",package=p,provider="fcm",old_token_id=old.token_id,new_raw_token=raw)
-    assert r.get(old.token_id,subject="u1").active is True
-    assert v.data == {old.token_id:raw}
+def test_cross_subject_and_cross_session_revoke_fail_closed():
+    r,_=reg(); x=register(r)
+    with pytest.raises(PermissionError): r.revoke(token_id=x.token_id,subject="u2",session_id="s1")
+    with pytest.raises(PermissionError): r.revoke(token_id=x.token_id,subject="u1",session_id="s2")
 
-def test_cross_subject_access_is_fail_closed():
-    r,_=reg(); x=r.register(subject="u1",package="com.topherofit.thf.forge",provider="fcm",raw_token="provider-token-123456")
-    with pytest.raises(PermissionError): r.get(x.token_id,subject="u2")
-    with pytest.raises(PermissionError): r.revoke(token_id=x.token_id,subject="u2")
+def test_legacy_schema_migrates_rows_fail_closed():
+    db=sqlite3.connect(":memory:")
+    db.execute("CREATE TABLE notification_tokens(token_id TEXT PRIMARY KEY,subject TEXT NOT NULL,package TEXT NOT NULL,provider TEXT NOT NULL,fingerprint TEXT NOT NULL,generation INTEGER NOT NULL,active INTEGER NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL,UNIQUE(subject,package,provider,fingerprint))")
+    db.execute("INSERT INTO notification_tokens VALUES('legacy','u1','com.topherofit.thf.pulse','fcm','fp',1,1,1,1)")
+    v=Vault(); r=m.NotificationTokenRegistry(db,v)
+    row=db.execute("SELECT session_id FROM notification_tokens WHERE token_id='legacy'").fetchone()
+    assert row[0]==m.LEGACY_UNBOUND_SESSION
+    with pytest.raises(PermissionError): r.get("legacy",subject="u1",session_id="s1")
 
-def test_logout_revokes_only_subject_package_tokens():
-    r,v=reg(); pulse="com.topherofit.thf.pulse"; forge="com.topherofit.thf.forge"
-    a=r.register(subject="u1",package=pulse,provider="fcm",raw_token="token-pulse-12345")
-    b=r.register(subject="u1",package=forge,provider="fcm",raw_token="token-forge-12345")
-    c=r.register(subject="u2",package=pulse,provider="fcm",raw_token="token-other-12345")
-    assert r.revoke_logout(subject="u1",package=pulse)==1
-    assert not r.get(a.token_id,subject="u1").active
-    assert r.get(b.token_id,subject="u1").active
-    assert r.get(c.token_id,subject="u2").active
+def test_invalid_session_package_and_provider_fail_closed():
+    r,_=reg()
+    with pytest.raises(PermissionError): register(r,session_id="")
+    with pytest.raises(PermissionError): register(r,session_id=m.LEGACY_UNBOUND_SESSION)
+    with pytest.raises(PermissionError): register(r,package="com.evil.fake")
+    with pytest.raises(ValueError): r.register(subject="u1",session_id="s1",package="com.topherofit.thf.pulse",provider="bad",raw_token="abcdefgh1234")
 
 def test_provider_delivery_is_intentionally_not_implemented():
     assert not hasattr(m.NotificationTokenRegistry,"send")
