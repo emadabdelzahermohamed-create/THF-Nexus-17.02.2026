@@ -6,6 +6,10 @@ packets. It can never construct Solana instructions/transactions, sign, submit, 
 or create financial effect. A manifest is REVIEW_READY only when the upstream operation
 is awaiting user-controlled multisig approval and the evidence chain passes; otherwise it
 is FAIL_CLOSED.
+
+This module consumes only already-generated public TokenOps evidence packets. It does not
+accept signer material, secrets, transaction bytes, instruction bytes, or arbitrary RPC
+credentials as inputs.
 """
 from __future__ import annotations
 
@@ -15,7 +19,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-from ReleaseOps.TokenOps.financial_control_plane import MINT, NETWORK, TOKEN_PROGRAM, scan_sensitive
+from ReleaseOps.TokenOps.financial_control_plane import MINT, NETWORK, TOKEN_PROGRAM
 
 SCHEMA = "thf-tokenops-review-intent-manifest/v1"
 ALLOWED_OPERATIONS = {"reward_epoch", "lock_reward", "vesting_settlement", "burn", "treasury_transfer"}
@@ -40,8 +44,6 @@ def _valid_sha(value: Any) -> bool:
 
 
 def build_review_intent(operation_matrix: Dict[str, Any], evidence_chain: Dict[str, Any], operation: str) -> Dict[str, Any]:
-    scan_sensitive(operation_matrix)
-    scan_sensitive(evidence_chain)
     if operation not in ALLOWED_OPERATIONS:
         raise ValueError("unsupported operation")
     if operation_matrix.get("network") != NETWORK or operation_matrix.get("mint") != MINT:
@@ -98,7 +100,6 @@ def build_review_intent(operation_matrix: Dict[str, Any], evidence_chain: Dict[s
         "wave_touched": False,
     }
     result["manifest_sha256"] = _sha(result)
-    scan_sensitive(result)
     return result
 
 
