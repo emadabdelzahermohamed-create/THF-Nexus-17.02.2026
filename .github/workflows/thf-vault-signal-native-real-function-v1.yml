@@ -32,7 +32,7 @@ env:
   GCP_BUILDER: thf-wave-builder
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
-  NATIVE_ROOT: thf-vault-signal-native-candidates-v1
+  NATIVE_ROOT: thf-vault-signal-native-v2-${{ github.run_id }}
 
 jobs:
   native-derived-candidates:
@@ -66,7 +66,7 @@ jobs:
           grep -Fq 'resolveActivity(getPackageManager())' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           grep -Fq 'FAIL_CLOSED_NO_FAKE_REMOTE_STATE' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           ! grep -Fq 'WebView' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
-          grep -Fq 'thf-vault-signal-native-candidates-v1' ReleaseOps/scripts/build_vault_signal_native_candidates_v1.sh
+          grep -Fq 'THF_NATIVE_RUN_ROOT' ReleaseOps/scripts/build_vault_signal_native_candidates_v1.sh
           grep -Fq 'NATIVE_SOURCE_PROVENANCE_V2.json' ReleaseOps/scripts/build_vault_signal_native_candidates_v1.sh
       - name: Stage builders
         run: |
@@ -77,7 +77,7 @@ jobs:
       - name: Build exact-source derived native candidates
         run: |
           set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_vault_signal_native_candidates_v1.sh && /tmp/build_vault_signal_native_candidates_v1.sh'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="export THF_NATIVE_RUN_ROOT=\$HOME/$NATIVE_ROOT; chmod +x /tmp/build_vault_signal_native_candidates_v1.sh; /tmp/build_vault_signal_native_candidates_v1.sh"
       - name: Retrieve and inspect exact APK payloads
         run: |
           set -Eeuo pipefail
