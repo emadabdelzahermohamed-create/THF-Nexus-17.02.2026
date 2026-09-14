@@ -27,6 +27,8 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
 
       - name: Compile TokenOps control plane
         run: |
@@ -47,6 +49,31 @@ jobs:
           set -euo pipefail
           rm -rf out/tokenops-v3
           python ReleaseOps/TokenOps/tokenops_guard.py --out out/tokenops-v3
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('out/tokenops-v3/token-audit.json').read_text())
+          g=json.loads(Path('out/tokenops-v3/invariant-gate.json').read_text())
+          r=json.loads(Path('out/tokenops-v3/financial-readiness.json').read_text())
+          print('MAINNET_AUDIT_OBSERVED_AT_UTC=' + str(a['observed_at_utc']))
+          print('MAINNET_SLOT=' + str(a['slot']))
+          print('PROGRAM_ID=' + str(a['program_id']))
+          print('DECIMALS=' + str(a['decimals']))
+          print('SUPPLY_RAW=' + str(a['supply_raw']))
+          print('SUPPLY_UI=' + str(a['supply_ui']))
+          print('MINT_AUTHORITY=' + str(a['mint_authority']))
+          print('FREEZE_AUTHORITY=' + str(a['freeze_authority']))
+          print('RECENT_ACTIVITY_STATUS=' + str(a['recent_address_activity'].get('status')))
+          print('RECENT_ACTIVITY_COUNT=' + str(a['recent_address_activity'].get('count')))
+          print('HOLDER_CONCENTRATION_STATUS=' + str(a['holder_concentration'].get('status')))
+          if a['holder_concentration'].get('status') == 'ok':
+              print('TOP1_BPS=' + str(a['holder_concentration'].get('top1_bps')))
+              print('TOP5_BPS=' + str(a['holder_concentration'].get('top5_bps')))
+              print('TOP20_BPS=' + str(a['holder_concentration'].get('top20_bps')))
+          print('INVARIANT_GATE=' + str(g['status']))
+          print('FINANCIAL_READINESS=' + str(r['status']))
+          print('READINESS_BLOCKERS=' + ','.join(r['blockers']))
+          PY
 
       - name: Prove current financial policy remains fail-closed
         run: |
@@ -57,7 +84,6 @@ jobs:
           from ReleaseOps.TokenOps.epoch_commitment import build_epoch_commitment, build_double_entry_preview
 
           policy = json.loads(Path('ReleaseOps/TokenOps/policy.json').read_text())
-          treasury_policy = json.loads(Path('ReleaseOps/TokenOps/treasury_policy.json').read_text())
           treasury_validation = {
               'status': 'FAIL_CLOSED',
               'role_balances_raw': {},
@@ -88,7 +114,7 @@ jobs:
           (out / 'epoch-commitment-failclosed-proof.json').write_text(json.dumps(packet, sort_keys=True, indent=2) + '\n')
           (out / 'accounting-preview.json').write_text(json.dumps(accounting, sort_keys=True, indent=2) + '\n')
           print('CURRENT_POLICY_FAIL_CLOSED=PASS')
-          print('BINDING_BLOCKERS=' + ','.join(packet['blockers']))
+          print('EPOCH_PACKET_BLOCKERS=' + ','.join(packet['blockers']))
           PY
 
       - name: Create SHA-256 evidence manifest
@@ -117,3 +143,11 @@ jobs:
             exit 2
           fi
           echo NON_BROADCAST_PAYLOAD_GATE=PASS
+
+      - name: Upload immutable read-only evidence bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Autonomous-Large-Batch-v3-${{ github.run_id }}
+          path: out/tokenops-v3/
+          if-no-files-found: error
+          retention-days: 30
