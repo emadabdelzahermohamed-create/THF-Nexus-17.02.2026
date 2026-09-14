@@ -4,6 +4,7 @@
 Security boundary:
 - authentication is performed by THF Pass before this contract is called;
 - this module accepts only an already-verified SessionPrincipal;
+- the Pass principal must still be live (not revoked and not expired);
 - the Pass principal is bound to one locked application package/audience;
 - provider tokens are accepted only in request bodies, never query strings;
 - package identities are constrained by NotificationTokenRegistry;
@@ -12,6 +13,7 @@ Security boundary:
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 from typing import Any, Mapping
 
 from notification_lifecycle import NotificationTokenRegistry
@@ -23,10 +25,16 @@ class SessionPrincipal:
     session_id: str
     package_id: str
     authenticated: bool
+    session_expires_at: float | None = None
+    revoked: bool = False
 
     def require_authenticated(self) -> str:
         if not self.authenticated or not self.subject.strip() or not self.session_id.strip() or not self.package_id.strip():
             raise PermissionError("verified package-bound THF Pass session required")
+        if self.revoked:
+            raise PermissionError("revoked THF Pass session")
+        if self.session_expires_at is not None and time.time() >= self.session_expires_at:
+            raise PermissionError("expired THF Pass session")
         return self.subject
 
     def require_package(self, requested_package: str) -> str:
