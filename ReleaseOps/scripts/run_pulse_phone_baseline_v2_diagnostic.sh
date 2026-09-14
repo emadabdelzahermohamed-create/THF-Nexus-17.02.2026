@@ -9,12 +9,39 @@ BUILD_SCRIPT="/tmp/build_pulse_phone_baseline_v2.sh"
 mkdir -p "$OUT"
 : > "$RUN_LOG"
 
+# androidx.health.connect HealthPermission is Kotlin-first and its Java signature
+# expects KClass<? extends Record>. Keep the authoritative Pulse source immutable;
+# patch only this isolated generated QA2 builder before it emits MainActivity.java.
+python3 - "$BUILD_SCRIPT" <<'PY'
+from pathlib import Path
+import sys
+p=Path(sys.argv[1])
+s=p.read_text(encoding='utf-8')
+needle='import java.util.Set;'
+if 'import kotlin.jvm.JvmClassMappingKt;' not in s:
+    if needle not in s:
+        raise SystemExit('Pulse QA2 Java import anchor missing')
+    s=s.replace(needle, needle+'\nimport kotlin.jvm.JvmClassMappingKt;', 1)
+records=[
+'ExerciseSessionRecord','StepsRecord','DistanceRecord','TotalCaloriesBurnedRecord',
+'ActiveCaloriesBurnedRecord','HeartRateRecord','SleepSessionRecord','WeightRecord','BodyFatRecord'
+]
+for record in records:
+    old=f'HealthPermission.getReadPermission({record}.class)'
+    new=f'HealthPermission.getReadPermission(JvmClassMappingKt.getKotlinClass({record}.class))'
+    if old not in s and new not in s:
+        raise SystemExit(f'Pulse QA2 Health Connect anchor missing: {record}')
+    s=s.replace(old,new)
+p.write_text(s,encoding='utf-8')
+PY
+
 emit_diagnostics() {
   local rc="$1"
   mkdir -p "$OUT"
   {
     echo "THF_PULSE_PHONE_BASELINE_QA2_DIAGNOSTIC=1"
     echo "exit_code=$rc"
+    echo "health_connect_java_kclass_bridge=APPLIED"
     echo "utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo "host=$(hostname)"
     echo "java_version_begin"
@@ -52,6 +79,7 @@ fi
 {
   echo "THF_PULSE_PHONE_BASELINE_QA2_DIAGNOSTIC=0"
   echo "exit_code=0"
+  echo "health_connect_java_kclass_bridge=APPLIED"
   echo "utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$OUT/DIAGNOSTIC.txt"
 cp "$RUN_LOG" "$OUT/builder-run.log"
