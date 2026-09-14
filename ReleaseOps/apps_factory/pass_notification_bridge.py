@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Live THF Pass -> notification integration boundary.
 
-This module closes the stale-principal gap between a previously verified Pass principal
-and notification mutation/delivery. Every operation re-checks the session against a
-live SessionAuthority before touching registration state or provider dispatch.
+This module closes stale-principal and stale-background-delivery gaps. Interactive
+operations re-check the session through PassNotificationBridge, while every provider
+delivery is also protected inside NotificationDispatcher by PassSessionDeliveryGuard.
 
 It is provider-neutral and contains no FCM/APNs credentials. It therefore does not by
 itself establish PUSH_READY or FINAL/PLAY_READY.
@@ -33,6 +33,29 @@ class SessionAuthority(Protocol):
     def revoke_session(self, session_id: str) -> None: ...
 
 
+class PassSessionDeliveryGuard:
+    """Adapt SessionAuthority to NotificationDispatcher's mandatory delivery guard."""
+
+    def __init__(self, *, authority: SessionAuthority, clock=time.time):
+        self.authority = authority
+        self.clock = clock
+
+    def authorize_delivery(self, *, subject: str, session_id: str, package: str) -> None:
+        live = self.authority.resolve(session_id)
+        if live is None:
+            raise PermissionError("THF Pass session is unknown")
+        if live.revoked:
+            raise PermissionError("THF Pass session is revoked")
+        if self.clock() >= live.expires_at:
+            raise PermissionError("THF Pass session is expired")
+        if live.subject != subject:
+            raise PermissionError("THF Pass session subject mismatch")
+        if live.session_id != session_id:
+            raise PermissionError("THF Pass session identifier mismatch")
+        if live.package_id != package:
+            raise PermissionError("THF Pass session audience mismatch")
+
+
 class PassNotificationBridge:
     """Require a current Pass authority decision for every notification operation."""
 
@@ -60,6 +83,8 @@ class PassNotificationBridge:
             raise PermissionError("THF Pass session is expired")
         if live.subject != principal.subject:
             raise PermissionError("THF Pass session subject mismatch")
+        if live.session_id != principal.session_id:
+            raise PermissionError("THF Pass session identifier mismatch")
         if live.package_id != principal.package_id:
             raise PermissionError("THF Pass session audience mismatch")
         return live
@@ -91,8 +116,8 @@ class PassNotificationBridge:
         """Revoke Pass first, then only this session's provider registrations.
 
         Revoking Pass first is deliberately fail-secure: if token cleanup later fails, the
-        session still cannot authorize another mutation or dispatch. Other live sessions
-        for the same subject/package remain isolated and are not signed out implicitly.
+        mandatory dispatcher guard still rejects background delivery for the revoked
+        session. Other live sessions for the same subject/package remain isolated.
         """
         live = self.authorize(principal)
         self.authority.revoke_session(live.session_id)
