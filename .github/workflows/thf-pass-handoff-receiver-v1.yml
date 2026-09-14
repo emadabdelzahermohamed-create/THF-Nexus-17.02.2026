@@ -1,0 +1,66 @@
+name: THF Pass Handoff Receiver V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ReleaseOps/apps_factory/pass_handoff_receiver.py
+      - ReleaseOps/apps_factory/pass_notification_bridge.py
+      - ReleaseOps/apps_factory/notification_lifecycle.py
+      - ReleaseOps/apps_factory/notification_http_contract.py
+      - ReleaseOps/apps_factory/notification_provider_contract.py
+      - ReleaseOps/apps_factory/notification_dispatch.py
+      - ReleaseOps/apps_factory/tests/test_pass_handoff_receiver.py
+      - ReleaseOps/apps_factory/tests/test_pass_handoff_notification_integration.py
+      - .github/workflows/thf-pass-handoff-receiver-v1.yml
+  pull_request:
+    paths:
+      - ReleaseOps/apps_factory/pass_handoff_receiver.py
+      - ReleaseOps/apps_factory/pass_notification_bridge.py
+      - ReleaseOps/apps_factory/notification_lifecycle.py
+      - ReleaseOps/apps_factory/notification_http_contract.py
+      - ReleaseOps/apps_factory/notification_provider_contract.py
+      - ReleaseOps/apps_factory/notification_dispatch.py
+      - ReleaseOps/apps_factory/tests/test_pass_handoff_receiver.py
+      - ReleaseOps/apps_factory/tests/test_pass_handoff_notification_integration.py
+      - .github/workflows/thf-pass-handoff-receiver-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  handoff-federation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Compile handoff and notification integration
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile \
+            ReleaseOps/apps_factory/pass_handoff_receiver.py \
+            ReleaseOps/apps_factory/pass_notification_bridge.py \
+            ReleaseOps/apps_factory/notification_lifecycle.py \
+            ReleaseOps/apps_factory/notification_http_contract.py \
+            ReleaseOps/apps_factory/notification_provider_contract.py \
+            ReleaseOps/apps_factory/notification_dispatch.py \
+            ReleaseOps/apps_factory/tests/test_pass_handoff_receiver.py \
+            ReleaseOps/apps_factory/tests/test_pass_handoff_notification_integration.py
+      - name: Run handoff receiver fail-closed regressions
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest -v ReleaseOps.apps_factory.tests.test_pass_handoff_receiver
+      - name: Run cross-module federation integration
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest -v ReleaseOps.apps_factory.tests.test_pass_handoff_notification_integration
+          {
+            echo 'THF_PASS_HANDOFF_RECEIVER_V1=PASS'
+            echo 'NETWORK_RELEASE_READY=FALSE'
+            echo 'PHYSICAL_DEVICE_PASS=FALSE'
+            echo 'PUSH_READY=FALSE'
+            echo 'FINAL_OR_PLAY_READY=FALSE'
+          } >> "$GITHUB_STEP_SUMMARY"
