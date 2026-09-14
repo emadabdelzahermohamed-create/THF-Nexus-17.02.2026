@@ -22,11 +22,11 @@ src=src.replace(root_old, root_new)
 anchor='  cat "$overlay_map"\n  cd "$project"\n'
 if src.count(anchor) != 1:
     raise SystemExit('builder native/package insertion anchor drift')
-insert='''  cat "$overlay_map"\n  python3 /tmp/nativeize_vault_signal_candidate.py "$project" "$app" "$pkg" | tee "$out/native-overlay.txt"\n  test -s "$out/native-overlay.txt"\n  grep -q 'native_overlay=THF_NATIVE_REAL_FUNCTION_V1' "$out/native-overlay.txt"\n  canonical_source="$out/THF-${app^^}-CANONICAL-NATIVE-SOURCE-V2.zip"\n  python3 /tmp/package_authoritative_android_source_v2.py "$project" "$canonical_source" | tee "$out/source-package-evidence.txt"\n  test -s "$canonical_source"\n  test -s "$out/source-package-evidence.txt"\n  grep -q '^canonical_source_clean=PASS$' "$out/source-package-evidence.txt"\n  canonical_source_sha256="$(sha256sum "$canonical_source" | awk '{print $1}')"\n  test "$canonical_source_sha256" = "$(sed -n 's/^canonical_source_sha256=//p' "$out/source-package-evidence.txt")"\n  cd "$project"\n'''
+insert='''  cat "$overlay_map"\n  python3 /tmp/nativeize_vault_signal_candidate.py "$project" "$app" "$pkg" | tee "$out/native-overlay.txt"\n  test -s "$out/native-overlay.txt"\n  grep -q 'native_overlay=THF_NATIVE_REAL_FUNCTION_V2' "$out/native-overlay.txt"\n  canonical_source="$out/THF-${app^^}-CANONICAL-NATIVE-SOURCE-V2.zip"\n  python3 /tmp/package_authoritative_android_source_v2.py "$project" "$canonical_source" | tee "$out/source-package-evidence.txt"\n  test -s "$canonical_source"\n  test -s "$out/source-package-evidence.txt"\n  grep -q '^canonical_source_clean=PASS$' "$out/source-package-evidence.txt"\n  canonical_source_sha256="$(sha256sum "$canonical_source" | awk '{print $1}')"\n  test "$canonical_source_sha256" = "$(sed -n 's/^canonical_source_sha256=//p' "$out/source-package-evidence.txt")"\n  cd "$project"\n'''
 src=src.replace(anchor, insert)
 
 old='OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2"'
-new='OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2+THF_NATIVE_REAL_FUNCTION_V1+CANONICAL_SOURCE_V2"'
+new='OVERLAY_ID="BUILD_CONFIG_URL_JSON_ESCAPE_V2+THF_NATIVE_REAL_FUNCTION_V2+CANONICAL_SOURCE_V2"'
 if src.count(old) != 1:
     raise SystemExit('overlay id anchor drift')
 src=src.replace(old,new)
@@ -34,7 +34,7 @@ src=src.replace(old,new)
 needle='build_overlay_map_sha256=$(sha256sum "$overlay_map" | awk \'{print $1}\')\n'
 if src.count(needle) != 1:
     raise SystemExit('evidence anchor drift')
-src=src.replace(needle, needle + '''native_overlay_id=THF_NATIVE_REAL_FUNCTION_V1\nnative_overlay_evidence_sha256=$(sha256sum "$out/native-overlay.txt" | awk '{print $1}')\ncanonical_source_artifact=$(basename "$canonical_source")\ncanonical_source_sha256=$canonical_source_sha256\ncanonical_source_clean=PASS\ncanonical_source_authority=NEW_CANDIDATE_NOT_FINAL\n''')
+src=src.replace(needle, needle + '''native_overlay_id=THF_NATIVE_REAL_FUNCTION_V2\nnative_overlay_evidence_sha256=$(sha256sum "$out/native-overlay.txt" | awk '{print $1}')\ncanonical_source_artifact=$(basename "$canonical_source")\ncanonical_source_sha256=$canonical_source_sha256\ncanonical_source_clean=PASS\ncanonical_source_authority=NEW_CANDIDATE_NOT_FINAL\n''')
 Path(sys.argv[2]).write_text(src, encoding='utf-8')
 PY
 
