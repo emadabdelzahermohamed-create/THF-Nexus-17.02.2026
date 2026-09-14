@@ -55,10 +55,12 @@ def deterministic_capped_allocation(
     per_user_cap_raw: int,
     eligible: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
-    """Allocate a fixed budget deterministically without exceeding any cap.
+    """Allocate deterministically while preserving the cap and conservation.
 
-    Largest-remainder allocation is used after proportional floor allocation.
-    Tie-breaking is deterministic by subject_ref. No wallet address is required.
+    Proportional floor allocation is followed by at most one largest-remainder
+    residual pass. A large cap-induced residual is intentionally left
+    unallocated instead of being silently redistributed with changed economics.
+    That residual becomes a review blocker in the epoch commitment.
     """
     reject_sensitive(eligible)
     if budget_raw < 0 or per_user_cap_raw < 0:
@@ -79,38 +81,28 @@ def deterministic_capped_allocation(
             "conservation": True,
         }
 
-    # First pass: proportional floor, capped per subject.
     work = []
     for row in eligible:
         numerator = budget_raw * row["activity_units"]
         floor_share, remainder = divmod(numerator, total_units)
-        amount = min(floor_share, per_user_cap_raw)
         work.append({
             "subject_ref": row["subject_ref"],
-            "activity_units": row["activity_units"],
-            "amount_raw": amount,
+            "amount_raw": min(floor_share, per_user_cap_raw),
             "remainder": remainder,
         })
 
     allocated = sum(x["amount_raw"] for x in work)
     remaining = budget_raw - allocated
 
-    # Distribute residual one raw unit at a time in deterministic remainder order,
-    # skipping capped subjects. This is bounded by the number of subjects for the
-    # normal largest-remainder residual; cap-induced residual remains unallocated.
-    order = sorted(work, key=lambda x: (-x["remainder"], x["subject_ref"]))
-    progress = True
-    while remaining > 0 and progress:
-        progress = False
-        for row in order:
-            if remaining <= 0:
-                break
-            if row["amount_raw"] < per_user_cap_raw:
-                row["amount_raw"] += 1
-                remaining -= 1
-                progress = True
-        # If every uncapped row has received enough residual to meet the budget,
-        # loop terminates naturally. If all are capped, progress remains false.
+    # Normal proportional rounding residue is < number of subjects. We perform
+    # one deterministic largest-remainder pass only; cap-induced excess remains
+    # explicitly unallocated and therefore cannot mutate the approved formula.
+    for row in sorted(work, key=lambda x: (-x["remainder"], x["subject_ref"])):
+        if remaining <= 0:
+            break
+        if row["amount_raw"] < per_user_cap_raw:
+            row["amount_raw"] += 1
+            remaining -= 1
 
     allocations = [
         {"subject_ref": x["subject_ref"], "amount_raw": x["amount_raw"]}
@@ -133,11 +125,7 @@ def build_epoch_commitment(
     eligible: List[Dict[str, Any]],
     evidence_sha256: Iterable[str],
 ) -> Dict[str, Any]:
-    """Build a deterministic review packet for the approved 35% policy.
-
-    The result is deliberately non-executable: transaction/instruction bytes,
-    signatures, broadcast and financial effect are always absent/false.
-    """
+    """Build a deterministic review packet for the approved 35% policy."""
     reject_sensitive(policy)
     reject_sensitive(treasury_validation)
     reject_sensitive(eligible)
@@ -145,6 +133,7 @@ def build_epoch_commitment(
         raise ValueError("recognized_revenue_minor must be nonnegative")
     if not isinstance(epoch_id, str) or not epoch_id.strip():
         raise ValueError("epoch_id must be non-empty")
+    _unique_subjects(eligible)
 
     blockers = []
     if policy.get("network") != NETWORK or policy.get("mint") != MINT:
@@ -157,10 +146,22 @@ def build_epoch_commitment(
     for field in required:
         if controls.get(field) is None:
             blockers.append(f"{field}_not_approved")
+    if controls.get("delivery_model") not in (None, "claim", "push", "hybrid"):
+        blockers.append("unsupported_delivery_model")
     if treasury_validation.get("status") != "PASS":
         blockers.append("treasury_registry_not_verified")
+    if not eligible:
+        blockers.append("eligible_population_empty")
+    if eligible and sum(int(x.get("activity_units", -1)) for x in eligible if isinstance(x.get("activity_units"), int)) == 0:
+        blockers.append("eligible_activity_units_zero")
+    for row in eligible:
+        if not isinstance(row.get("activity_units"), int) or row["activity_units"] < 0:
+            blockers.append("invalid_activity_units")
+            break
 
     evidence = sorted(set(evidence_sha256))
+    if not evidence:
+        blockers.append("evidence_chain_empty")
     if any(not isinstance(x, str) or len(x) != 64 or any(c not in "0123456789abcdef" for c in x) for x in evidence):
         raise ValueError("invalid evidence sha256")
 
@@ -171,10 +172,13 @@ def build_epoch_commitment(
         per_user_cap = int(controls["per_user_cap_raw"])
         epoch_cap = int(controls["epoch_budget_cap_raw"])
         reserve_raw = int((treasury_validation.get("role_balances_raw") or {}).get("distribution_reserve", "0"))
-        effective_budget = min(approved_pool, epoch_cap, reserve_raw)
-        allocation = deterministic_capped_allocation(effective_budget, per_user_cap, eligible)
-        if allocation["unallocated_raw"]:
-            blockers.append("budget_not_fully_allocated_due_to_caps_or_zero_activity")
+        if per_user_cap < 0 or epoch_cap < 0 or reserve_raw < 0:
+            blockers.append("negative_financial_control")
+        else:
+            effective_budget = min(approved_pool, epoch_cap, reserve_raw)
+            allocation = deterministic_capped_allocation(effective_budget, per_user_cap, eligible)
+            if allocation["unallocated_raw"]:
+                blockers.append("budget_not_fully_allocated_due_to_caps_or_zero_activity")
 
     packet = {
         "schema": "thf-tokenops-epoch-commitment/v1",
