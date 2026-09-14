@@ -1,137 +1,39 @@
-name: THF Rift RC37 Phone V1 AAB Build
+name: THF Rift RC37 Superseded Guard
 
 on:
   push:
     branches: [main]
     paths:
-      - 'ReleaseOps/scripts/godot_candidate_tree_aab_v1.sh'
       - '.github/workflows/thf-rift-rc37-phone-v1-aab-build.yml'
+      - 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write
-
-concurrency:
-  group: thf-rift-rc37-phone-v1-aab-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
-  GCP_ZONE: europe-west1-b
-  GCP_BUILDER: thf-wave-builder
-  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
-  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
-  RIFT_SOURCE_SHA: 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
 
 jobs:
-  build:
+  superseded-guard:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           persist-credentials: false
-      - name: Syntax gate
+      - name: Refuse stale RC37 build or promotion
         run: |
           set -Eeuo pipefail
-          bash -n ReleaseOps/scripts/godot_candidate_tree_aab_v1.sh
-          python3 -m py_compile ReleaseOps/scripts/thf_rift_local_training_phone_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py
-      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
-        with:
-          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
-          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Stage disposable builder tools
-        run: |
-          set -Eeuo pipefail
-          gcloud compute scp ReleaseOps/scripts/thf_rift_local_training_phone_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py ReleaseOps/scripts/godot_candidate_tree_aab_v1.sh "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-      - name: Build exact-source Rift AAB candidate
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          mkdir -p out
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=45m --quiet --command="RIFT_SOURCE_SHA='$RIFT_SOURCE_SHA' bash -s" > out/remote-summary.txt <<'REMOTE'
-          set -Eeuo pipefail
-          BASE="$HOME"
-          SRC="$BASE/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
-          ROOT="$BASE/thf-rift-rc37-phone-v1-aab"
-          WORK="$ROOT/work"
-          EV="$ROOT/out"
-          RUNTIME="$BASE/thf-runtime-s1/runtime/THF_NEXUS_6_FINAL"
-          SDK="$BASE/thf-builder-rc16-build/android-sdk"
-          GODOT="$BASE/thf-tools/godot/4.7.2-stable/godot"
-          TEMPL="$BASE/.local/share/godot/export_templates/4.7.2.stable"
-          AAB="$EV/THF-RIFT-4.7.1-RC37-PHONE-V1.aab"
-          test -f "$SRC"
-          test "$(sha256sum "$SRC"|awk '{print $1}')" = "$RIFT_SOURCE_SHA"
-          rm -rf "$ROOT"; mkdir -p "$WORK" "$EV"
-          if zipinfo -1 "$SRC" | grep -Eq '(^/|(^|/)\.\.(/|$))'; then echo unsafe_zip >&2; exit 91; fi
-          unzip -q "$SRC" -d "$WORK"
-          python3 /tmp/thf_terra_rift_mobile_overlay_v1.py "$WORK" --kind rift --json-out "$EV/mobile.json" > "$EV/mobile.log"
-          python3 /tmp/thf_rift_local_training_phone_v1.py "$WORK" --json-out "$EV/local-training.json" > "$EV/local-training.log"
-          PUB=''; [ -f "$RUNTIME/runtime/public-url.txt" ] && PUB=$(cat "$RUNTIME/runtime/public-url.txt" 2>/dev/null || true)
-          if [[ "$PUB" == https://* ]]; then
-            python3 -c 'import json,sys,urllib.request;u=sys.argv[1];d=json.load(urllib.request.urlopen(u.rstrip("/")+"/health",timeout=8));assert d.get("ok") is True' "$PUB"
-            python3 /tmp/thf_game_network_endpoint_overlay_v1.py "$WORK" --https-url "$PUB" --wss-url "wss://${PUB#https://}" --evidence-out "$EV/network.txt" > "$EV/network.log"
-          else
-            echo missing_healthy_staging_endpoint >&2; exit 92
-          fi
-          PG=$(find "$WORK" -type f -name project.godot -print -quit); test -n "$PG"; P=$(dirname "$PG")
-          grep -q 'window/handheld/orientation=4' "$PG"
-          grep -q 'window/stretch/aspect="expand"' "$PG"
-          grep -q 'window/size/window_width_override=0' "$PG"
-          grep -q 'window/size/window_height_override=0' "$PG"
-          ARENA="$P/native/arena/ArenaMain.gd"; test -f "$ARENA"
-          grep -q 'local_training_mode = true' "$ARENA"
-          grep -q 'func _local_training_combat_action' "$ARENA"
-          PROJECT_ROOT="$P" EXPECTED_PACKAGE='com.topherofit.thf.rift.phoneqa' OUTPUT_AAB="$AAB" ANDROID_SDK_ROOT="$SDK" GODOT_BIN="$GODOT" TEMPLATE_ROOT="$TEMPL" bash /tmp/godot_candidate_tree_aab_v1.sh
-          test "$(sha256sum "$SRC"|awk '{print $1}')" = "$RIFT_SOURCE_SHA"
-          AAB_SHA=$(sha256sum "$AAB"|awk '{print $1}')
-          SIZE=$(stat -c %s "$AAB")
-          cat > "$EV/EVIDENCE_AAB.txt" <<EOF
-          THF_RIFT_RC37_PHONE_V1_AAB=BUILT
-          canonical_source_sha256=$RIFT_SOURCE_SHA
-          canonical_archive_unchanged=true
-          candidate_package=com.topherofit.thf.rift.phoneqa
-          target_sdk_expected=36
-          engine=Godot-4.7.2
-          sensor_landscape_setting=PASS
-          expandable_aspect=PASS
-          desktop_window_override=NONE
-          content_pruned=FALSE
-          gameplay_overlay_same_as_apk_candidate=TRUE
-          aab_size_bytes=$SIZE
-          aab_sha256=$AAB_SHA
-          aab_file_size_advisory_150m=$([ "$SIZE" -lt 157286400 ] && echo PASS || echo WARN)
-          play_size_acceptance=UNVERIFIED_REQUIRES_PLAY_OR_BUNDLETOOL
-          play_size_policy_note=RAW_AAB_SIZE_IS_NOT_DEVICE_COMPRESSED_DOWNLOAD_SIZE
-          physical_device_status=PENDING
-          final_or_play_ready=FALSE
-          production_signing=false
-          production_cutover=false
-          EOF
-          cat "$EV/EVIDENCE_AAB.txt"
-          REMOTE
-      - name: Retrieve AAB candidate and evidence
-        run: |
-          set -Eeuo pipefail
-          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-rift-rc37-phone-v1-aab/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          cat out/EVIDENCE_AAB.txt
-          grep -q '^THF_RIFT_RC37_PHONE_V1_AAB=BUILT$' out/EVIDENCE_AAB.txt
-          grep -q '^content_pruned=FALSE$' out/EVIDENCE_AAB.txt
-          grep -q '^gameplay_overlay_same_as_apk_candidate=TRUE$' out/EVIDENCE_AAB.txt
-          grep -q '^play_size_acceptance=UNVERIFIED_REQUIRES_PLAY_OR_BUNDLETOOL$' out/EVIDENCE_AAB.txt
-          grep -q '^play_size_policy_note=RAW_AAB_SIZE_IS_NOT_DEVICE_COMPRESSED_DOWNLOAD_SIZE$' out/EVIDENCE_AAB.txt
-          grep -q '^physical_device_status=PENDING$' out/EVIDENCE_AAB.txt
-          grep -q '^final_or_play_ready=FALSE$' out/EVIDENCE_AAB.txt
-          test -s out/THF-RIFT-4.7.1-RC37-PHONE-V1.aab
-          sha256sum out/THF-RIFT-4.7.1-RC37-PHONE-V1.aab
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: THF-RIFT-4.7.1-RC37-PHONE-V1-AAB
-          path: out/
-          retention-days: 14
-          compression-level: 0
+          python3 - <<'PY'
+          import json, pathlib
+          p=pathlib.Path('ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          r=d['games']['rift']
+          assert r['authoritative_version']=='4.7.5-rc41'
+          assert r['authoritative_source_sha256']=='29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d'
+          assert r['eligible_candidate_apk_sha256'] is None
+          assert r['physical_device_status']=='PENDING'
+          assert d['final_or_play_ready'] is False
+          print('RIFT_RC37_BUILD_LANE=RETIRED_SUPERSEDED')
+          print('RIFT_LATEST_AUTHORITY=4.7.5-rc41')
+          print('RIFT_RC41_CANDIDATE_APK=NONE')
+          print('PHYSICAL_DEVICE_STATUS=PENDING')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
