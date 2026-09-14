@@ -1,0 +1,61 @@
+name: THF Notification Session Scope Gate V1
+
+on:
+  pull_request:
+    paths:
+      - 'ReleaseOps/apps_factory/notification_lifecycle.py'
+      - 'ReleaseOps/apps_factory/notification_http_contract.py'
+      - 'ReleaseOps/apps_factory/notification_dispatch.py'
+      - 'ReleaseOps/apps_factory/pass_notification_bridge.py'
+      - 'ReleaseOps/apps_factory/notification_provider_contract.py'
+      - 'ReleaseOps/apps_factory/tests/test_notification_*.py'
+      - 'ReleaseOps/apps_factory/tests/test_pass_notification_bridge.py'
+      - '.github/workflows/thf-notification-session-scope-gate-v1.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'ReleaseOps/apps_factory/notification_lifecycle.py'
+      - 'ReleaseOps/apps_factory/notification_http_contract.py'
+      - 'ReleaseOps/apps_factory/notification_dispatch.py'
+      - 'ReleaseOps/apps_factory/pass_notification_bridge.py'
+      - 'ReleaseOps/apps_factory/notification_provider_contract.py'
+      - 'ReleaseOps/apps_factory/tests/test_notification_*.py'
+      - 'ReleaseOps/apps_factory/tests/test_pass_notification_bridge.py'
+      - '.github/workflows/thf-notification-session-scope-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notification-session-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile notification candidate
+        run: |
+          python -m py_compile \
+            ReleaseOps/apps_factory/notification_lifecycle.py \
+            ReleaseOps/apps_factory/notification_http_contract.py \
+            ReleaseOps/apps_factory/notification_provider_contract.py \
+            ReleaseOps/apps_factory/notification_dispatch.py \
+            ReleaseOps/apps_factory/pass_notification_bridge.py
+      - name: Run notification regressions
+        run: |
+          python -m pytest -q \
+            ReleaseOps/apps_factory/tests/test_notification_lifecycle.py \
+            ReleaseOps/apps_factory/tests/test_notification_http_contract.py \
+            ReleaseOps/apps_factory/tests/test_notification_provider_contract.py \
+            ReleaseOps/apps_factory/tests/test_notification_dispatch.py \
+            ReleaseOps/apps_factory/tests/test_pass_notification_bridge.py
+      - name: Preserve release truth
+        run: |
+          echo 'PUSH_READY=FALSE'
+          echo 'PHYSICAL_DEVICE_PASS=FALSE'
+          echo 'FINAL_OR_PLAY_READY=FALSE'
