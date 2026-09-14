@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SRC="$HOME/thf-terra-rift-staging-apk-v1/terra/work"
+ROOT="$HOME/thf-terra-rc34-compact-phone-v2"
+WORK="$ROOT/work"
+OUT="$ROOT/out"
+GODOT="$HOME/.local/bin/godot-4.7.2"
+APK_NAME="THF-TERRA-4.6.8-RC34-PHONE-V2.apk"
+
+rm -rf "$ROOT"
+mkdir -p "$ROOT" "$OUT"
+cp -a "$SRC" "$WORK"
+cd "$WORK"
+
+python3 - <<'PY'
+from pathlib import Path
+p=Path('export_presets.cfg')
+s=p.read_text(encoding='utf-8')
+s=s.replace('name="Android AAB Candidate"','name="Android Phone Visual RC34"',1)
+s=s.replace('export_filter="all_resources"','export_filter="scenes"',1)
+marker='export_filter="scenes"\n'
+files='export_files=PackedStringArray("res://native/scenes/world_main.tscn", "res://web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb", "res://web/static/assets/avatars/thf_humanoid_v6.glb")\n'
+if marker not in s:
+    raise SystemExit('export filter marker missing')
+s=s.replace(marker,marker+files,1)
+s=s.replace('version/code=42068','version/code=42070',1)
+s=s.replace('version/name="4.6.8-rc34"','version/name="4.6.8-rc34-phonev2"',1)
+s=s.replace('package/unique_name="com.topherofit.thf.terra"','package/unique_name="com.topherofit.thf.terra.phoneqa"',1)
+s=s.replace('gradle_build/compress_native_libraries=false','gradle_build/compress_native_libraries=true',1)
+p.write_text(s,encoding='utf-8')
+PY
+
+"$GODOT" --headless --path "$WORK" --import >"$OUT/import.log" 2>&1 || {
+  tail -220 "$OUT/import.log"
+  exit 1
+}
+"$GODOT" --headless --path "$WORK" --export-debug "Android Phone Visual RC34" "$OUT/$APK_NAME" >"$OUT/export.log" 2>&1 || {
+  tail -260 "$OUT/export.log"
+  exit 1
+}
+
+APK="$OUT/$APK_NAME"
+test -s "$APK"
+SIZE=$(stat -c %s "$APK")
+SHA=$(sha256sum "$APK" | awk '{print $1}')
+unzip -l "$APK" > "$OUT/apk_entries.txt"
+grep -q 'thf_mpfb_stage16a_ual12_animated' "$OUT/apk_entries.txt"
+grep -q 'world_main' "$OUT/apk_entries.txt"
+grep -q 'lib/arm64-v8a/libgodot_android.so' "$OUT/apk_entries.txt"
+UNDER=FAIL
+if [ "$SIZE" -lt 104857600 ]; then UNDER=PASS; fi
+
+cat > "$OUT/EVIDENCE.txt" <<EOF
+THF_TERRA_RC34_PHONE_V2=BUILT
+source=thf-terra-rift-staging-apk-v1/terra/work
+version=4.6.8-rc34-phonev2
+package=com.topherofit.thf.terra.phoneqa
+engine=Godot-4.7.2
+main_scene=res://native/scenes/world_main.tscn
+mpfb_runtime_asset=PASS
+avatar_model=thf_mpfb_stage16a_ual12_animated.glb
+avatar_claim_from_runtime=137_joints_195_clips
+architecture=arm64-v8a
+apk_size_bytes=$SIZE
+apk_sha256=$SHA
+under_100MiB=$UNDER
+backend_status=EPHEMERAL_ENDPOINT_NOT_ACCEPTED_AS_FINAL
+EOF
+cat "$OUT/EVIDENCE.txt"
+
+if [ "$SIZE" -ge 104857600 ]; then
+  echo "SIZE_GATE_OVER_100M"
+  exit 2
+fi
