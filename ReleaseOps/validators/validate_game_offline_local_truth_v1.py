@@ -6,8 +6,9 @@ practice overlays are in-memory/local and contain no online mutation transport,
 ranked/social/economy simulation, or persistent fake-authoritative state.
 """
 from __future__ import annotations
-import argparse, json, pathlib, re, sys
+import argparse, json, pathlib
 
+ANDROID_XML_NAMESPACE = "http://schemas.android.com/apk/res/android"
 FORBIDDEN_TRANSPORT = (
     "HttpURLConnection", "URLConnection", "OkHttp", "Retrofit", "WebSocket",
     "java.net.", "android.net.", "http://", "https://", "/api/",
@@ -21,10 +22,14 @@ FORBIDDEN_PERSISTENCE = (
 def audit(path: pathlib.Path, family: str) -> dict:
     text = path.read_text(encoding="utf-8")
     low = text.lower()
+    # The Android manifest XML namespace is metadata, not a runtime network target.
+    # Remove only this exact standards URI before transport scanning; every other
+    # http(s) token remains fail-closed.
+    transport_low = low.replace(ANDROID_XML_NAMESPACE.lower(), "android-xml-namespace")
     checks = {}
     checks["offline_authority_marker"] = "OFFLINE_AUTHORITY=LOCAL_ONLY_NO_RANKED_SOCIAL_ECONOMY_MUTATION" in text
     checks["readiness_promotion_disabled"] = "READINESS_PROMOTION=NO" in text
-    checks["no_network_transport_in_overlay_generator"] = not any(x.lower() in low for x in FORBIDDEN_TRANSPORT)
+    checks["no_network_transport_in_overlay_generator"] = not any(x.lower() in transport_low for x in FORBIDDEN_TRANSPORT)
     checks["no_persistent_fake_authority_state"] = not any(x.lower() in low for x in FORBIDDEN_PERSISTENCE)
     checks["local_game_view_present"] = "GameView" in text or "LocalGameView" in text
     checks["frame_loop_present"] = "Choreographer" in text and "postFrameCallback" in text
