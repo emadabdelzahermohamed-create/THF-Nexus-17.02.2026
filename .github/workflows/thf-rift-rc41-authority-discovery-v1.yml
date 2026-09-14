@@ -1,0 +1,78 @@
+name: THF Rift RC41 Authority Discovery V1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-rift-rc41-authority-discovery-v1.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: thf-rift-rc41-authority-discovery-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  RIFT_RC41_SHA: 29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Discover exact RC41 bytes on private builder
+        run: |
+          set -Eeuo pipefail
+          mkdir -p evidence
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command="EXPECTED='$RIFT_RC41_SHA' bash -s" > evidence/RIFT_RC41_DISCOVERY.txt <<'REMOTE'
+          set -Eeuo pipefail
+          EXPECTED_NAME='THF_Rift_v4.7.5_RC41_SERVER_PICKUP_REACHABILITY_CUMULATIVE_SOURCE.zip'
+          FOUND=''
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            s=$(sha256sum "$f" | awk '{print $1}')
+            if [ "$s" = "$EXPECTED" ]; then FOUND="$f"; break; fi
+          done < <(find "$HOME" -type f \( -name "$EXPECTED_NAME" -o -name '*RC41*Rift*.zip' -o -name '*Rift*RC41*.zip' \) -print 2>/dev/null)
+          echo 'checkpoint=RIFT-RC41-SERVER-PICKUP-REACHABILITY'
+          echo 'version=4.7.5-rc41'
+          echo "expected_sha256=$EXPECTED"
+          echo 'package_id=com.topherofit.thf.rift'
+          echo 'target_sdk=36'
+          if [ -n "$FOUND" ]; then
+            echo 'exact_rc41_builder_bytes=FOUND'
+            echo "builder_path=$FOUND"
+            echo 'next_gate=FRESH_GODOT_4_7_2_AND_API36_AAB'
+          else
+            echo 'exact_rc41_builder_bytes=MISSING'
+            echo 'next_gate=STAGE_EXACT_RC41_BYTES'
+          fi
+          echo 'production_signing=false'
+          echo 'physical_device_status=PENDING'
+          echo 'final_or_play_ready=FALSE'
+          REMOTE
+          cat evidence/RIFT_RC41_DISCOVERY.txt
+          grep -q '^expected_sha256=29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d$' evidence/RIFT_RC41_DISCOVERY.txt
+          grep -q '^final_or_play_ready=FALSE$' evidence/RIFT_RC41_DISCOVERY.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-RIFT-RC41-AUTHORITY-DISCOVERY
+          path: evidence/
+          retention-days: 14
