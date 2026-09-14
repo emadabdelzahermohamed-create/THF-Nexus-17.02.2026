@@ -23,14 +23,34 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           persist-credentials: false
-      - name: Enforce no arbitrary repository-defined artifact size cap
+      - name: Scan executable artifact-size policy
+        id: scan
+        shell: bash
         run: |
-          set -Eeuo pipefail
+          set -uo pipefail
+          set +e
           python3 ReleaseOps/scripts/validate_no_arbitrary_artifact_size_caps_v1.py | tee THF_SIZE_POLICY_EVIDENCE.txt
-          grep -q '^THF_ARBITRARY_SIZE_CAP_GATE=PASS$' THF_SIZE_POLICY_EVIDENCE.txt
-          grep -q '^THF_VALIDATED_CONTENT_PRUNING_FOR_SIZE=FORBIDDEN$' THF_SIZE_POLICY_EVIDENCE.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          offender=$(grep 'arbitrary executable artifact-size cap' THF_SIZE_POLICY_EVIDENCE.txt | head -1 | cut -d: -f1 || true)
+          if [ -n "$offender" ]; then
+            safe=$(printf '%s' "$offender" | tr '/: .' '____' | tr -cd 'A-Za-z0-9_-')
+            echo "artifact_name=THF-SIZE-POLICY-VIOLATION-${safe}" >> "$GITHUB_OUTPUT"
+          else
+            echo "artifact_name=THF-SIZE-POLICY-PASS" >> "$GITHUB_OUTPUT"
+          fi
+          echo "scan_rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
-          name: THF-NO-ARBITRARY-SIZE-CAP-EVIDENCE
+          name: ${{ steps.scan.outputs.artifact_name }}
           path: THF_SIZE_POLICY_EVIDENCE.txt
           retention-days: 30
+      - name: Enforce scan result
+        if: always()
+        run: |
+          set -Eeuo pipefail
+          test "${{ steps.scan.outputs.scan_rc }}" = "0"
+          grep -q '^THF_ARBITRARY_SIZE_CAP_GATE=PASS$' THF_SIZE_POLICY_EVIDENCE.txt
+          grep -q '^THF_VALIDATED_CONTENT_PRUNING_FOR_SIZE=FORBIDDEN$' THF_SIZE_POLICY_EVIDENCE.txt
