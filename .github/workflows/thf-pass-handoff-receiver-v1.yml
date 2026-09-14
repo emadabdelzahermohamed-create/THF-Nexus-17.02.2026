@@ -12,6 +12,7 @@ on:
       - ReleaseOps/apps_factory/notification_dispatch.py
       - ReleaseOps/apps_factory/tests/test_pass_handoff_receiver.py
       - ReleaseOps/apps_factory/tests/test_pass_handoff_notification_integration.py
+      - ReleaseOps/apps_factory/tests/test_private_app_rbac.py
       - .github/workflows/thf-pass-handoff-receiver-v1.yml
   pull_request:
     paths:
@@ -23,6 +24,7 @@ on:
       - ReleaseOps/apps_factory/notification_dispatch.py
       - ReleaseOps/apps_factory/tests/test_pass_handoff_receiver.py
       - ReleaseOps/apps_factory/tests/test_pass_handoff_notification_integration.py
+      - ReleaseOps/apps_factory/tests/test_private_app_rbac.py
       - .github/workflows/thf-pass-handoff-receiver-v1.yml
   workflow_dispatch:
 
@@ -48,17 +50,24 @@ jobs:
             ReleaseOps/apps_factory/notification_provider_contract.py \
             ReleaseOps/apps_factory/notification_dispatch.py \
             ReleaseOps/apps_factory/tests/test_pass_handoff_receiver.py \
-            ReleaseOps/apps_factory/tests/test_pass_handoff_notification_integration.py
+            ReleaseOps/apps_factory/tests/test_pass_handoff_notification_integration.py \
+            ReleaseOps/apps_factory/tests/test_private_app_rbac.py
       - name: Run handoff receiver fail-closed regressions
         run: |
           set -Eeuo pipefail
           python3 -m unittest -v ReleaseOps.apps_factory.tests.test_pass_handoff_receiver
+      - name: Run private Signal Command RBAC regressions
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest -v ReleaseOps.apps_factory.tests.test_private_app_rbac
       - name: Run cross-module federation integration
         run: |
           set -Eeuo pipefail
           python3 -m unittest -v ReleaseOps.apps_factory.tests.test_pass_handoff_notification_integration
           {
             echo 'THF_PASS_HANDOFF_RECEIVER_V1=PASS'
+            echo 'PRIVATE_SIGNAL_COMMAND_RBAC=PASS_CI_CANDIDATE'
+            echo 'PRIVATE_RBAC_DEPLOYED_BACKEND=NOT_PROVEN'
             echo 'NETWORK_RELEASE_READY=FALSE'
             echo 'PHYSICAL_DEVICE_PASS=FALSE'
             echo 'PUSH_READY=FALSE'
