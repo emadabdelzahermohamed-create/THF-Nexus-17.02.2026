@@ -1,0 +1,54 @@
+name: THF Core Phone UI1 Publish Direct
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/thf-core-phone-ui1-publish-direct.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          fetch-depth: 0
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Fetch already verified phone APK
+        run: |
+          mkdir -p ReleaseOps/phone-apks
+          gcloud compute scp "$GCP_BUILDER:~/thf-core-phone-ui1-local/out/THF-CORE-RC6-PHONE-UI1-LOCAL-QA.apk" ReleaseOps/phone-apks/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp "$GCP_BUILDER:~/thf-core-phone-ui1-local/out/EVIDENCE.txt" ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-EVIDENCE.txt --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          echo '465faa1a04a276c648ef851f758b79640eddff0c2b3bf382a7cf8021cc6aca71  ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-LOCAL-QA.apk' | sha256sum -c -
+          grep -q '^THF_CORE_PHONE_UI1=PASS$' ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-EVIDENCE.txt
+      - name: Commit direct-download QA candidate
+        run: |
+          git config user.name 'THF ReleaseOps Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-LOCAL-QA.apk ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-EVIDENCE.txt
+          if git diff --cached --quiet; then
+            echo 'PHONE_APK_ALREADY_PUBLISHED=PASS'
+            exit 0
+          fi
+          git commit -m 'test(core): publish RC6 Phone UI1 local QA APK'
+          git push origin HEAD:main
