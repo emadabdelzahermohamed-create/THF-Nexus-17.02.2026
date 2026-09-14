@@ -12,6 +12,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: thf-terra-rc34-compact-phone-build
+  cancel-in-progress: false
+
 env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
   GCP_ZONE: europe-west1-b
