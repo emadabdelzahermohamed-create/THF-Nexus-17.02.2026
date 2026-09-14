@@ -54,6 +54,10 @@ jobs:
           bash -n ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
           grep -Fq 'CANONICAL_SOURCE_V2' ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
           grep -Fq 'THF_NATIVE_REAL_FUNCTION_V2' ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
+          grep -Fq 'TELEMETRY_ONLY_NO_ARBITRARY_CAP' ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
+          ! grep -Fq 'test "$under" = PASS' ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
+          grep -Fq 'zipalign_4byte_and_16k_native_alignment=PASS' ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
+          grep -Fq 'installability_preflight=PASS_PACKAGE_PARSE_SIGNATURE_ZIPALIGN_ONLY' ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
           grep -Fq 'AndroidKeyStore' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           grep -Fq 'HttpsURLConnection' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           grep -Fq 'getRestrictBackgroundStatus' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
@@ -101,9 +105,21 @@ jobs:
             grep -Fq 'canonical_source_clean=PASS' "$E"
             grep -Fq 'canonical_source_authority=NEW_CANDIDATE_NOT_FINAL' "$E"
             grep -Fq 'targetSdk=36' "$E"
+            grep -Fq 'artifact_size_policy=TELEMETRY_ONLY_NO_ARBITRARY_CAP' "$E"
+            grep -Fq 'apk_signature_verifies=TRUE' "$E"
+            grep -Fq 'production_signing_performed=FALSE' "$E"
+            grep -Fq 'zipalign_4byte_and_16k_native_alignment=PASS' "$E"
+            grep -Fq 'apk_archive_integrity=PASS' "$E"
+            grep -Fq 'installability_preflight=PASS_PACKAGE_PARSE_SIGNATURE_ZIPALIGN_ONLY' "$E"
+            grep -Fq 'physical_install_status=PENDING_REAL_PHONE' "$E"
             grep -Fq 'physical_device_status=PENDING' "$E"
             grep -Fq 'network_release_ready=FALSE' "$E"
             grep -Fq 'final_or_play_ready=FALSE' "$E"
+            grep -Eq '^versionCode=[0-9]+$' "$E"
+            grep -Eq '^versionName=.+$' "$E"
+            grep -Eq '^launcher_activity=.+$' "$E"
+            grep -Eq '^application_icon=res/.+$' "$E"
+            grep -Eq '^abi_payload=(JAVA_ONLY_NO_NATIVE_LIBS|.*arm64-v8a.*)$' "$E"
             test "$(sha256sum "$SRC" | awk '{print $1}')" = "$(sed -n 's/^canonical_source_sha256=//p' "$E")"
             test "$(sha256sum "$SRC" | awk '{print $1}')" = "$(sed -n 's/^canonical_source_sha256=//p' "$S")"
             test "$(sha256sum "$APK" | awk '{print $1}')" = "$(sed -n 's/^apk_sha256=//p' "$E")"
@@ -125,6 +141,8 @@ jobs:
             grep -Fq 'HttpsURLConnection' "$MAIN"
             grep -Fq 'getRestrictBackgroundStatus' "$MAIN"
             grep -Fq 'com.topherofit.thf.pass' "$MAIN"
+            grep -Fq 'setMinHeight(dp(48))' "$MAIN"
+            grep -Fq 'ScrollView' "$MAIN"
             ! grep -Fq 'WebView' "$MAIN"
             ! grep -Fq 'loadUrl' "$MAIN"
             grep -Fq 'android:usesCleartextTraffic="false"' "$MAN"
@@ -134,9 +152,11 @@ jobs:
             grep -Fq 'android:screenOrientation="unspecified"' "$MAN"
             if [ "$app" = vault ]; then
               grep -Fq 'android:label="THF Wallet"' "$MAN"
+              grep -Fq 'application_label=THF Wallet' "$E"
               grep -Fq 'Remote state is never fabricated' "$MAIN"
             else
               grep -Fq 'android:label="THF Publisher"' "$MAN"
+              grep -Fq 'application_label=THF Publisher' "$E"
               grep -Fq 'com.topherofit.internal_operator_only' "$MAN"
               grep -Fq 'android:value="true"' "$MAN"
               grep -Fq 'INTERNAL_ONLY_LOCKED' "$MAIN"
@@ -149,7 +169,8 @@ jobs:
           grep -Fq 'package=com.topherofit.thf.signal' out/signal/EVIDENCE.txt
           {
             echo 'CANONICAL_NATIVE_SOURCE_V2=PASS'
-            echo 'PHONE_BASELINE_NAMING_ICON_ORIENTATION=PASS_SOURCE_PACKAGE'
+            echo 'APK_PHONE_BASELINE_PREFLIGHT=PASS_NOT_PHYSICAL_INSTALL'
+            echo 'PHONE_BASELINE_NAMING_ICON_ORIENTATION_TOUCH=PASS_SOURCE_AND_APK'
             echo 'PUBLISHER_INTERNAL_LOCK=PASS_FAIL_CLOSED_SOURCE_PACKAGE'
             echo "VAULT_SOURCE_SHA256=$(sed -n 's/^canonical_source_sha256=//p' out/vault/EVIDENCE.txt)"
             echo "SIGNAL_SOURCE_SHA256=$(sed -n 's/^canonical_source_sha256=//p' out/signal/EVIDENCE.txt)"
