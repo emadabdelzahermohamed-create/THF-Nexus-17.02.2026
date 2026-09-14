@@ -1,0 +1,98 @@
+name: THF Arena Action Contract Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-arena-action-contract-inventory-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only arena action contract inventory
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/arena-contract.raw <<'PY'
+          import ast,hashlib,json,pathlib,re
+          src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
+          assert src.is_dir()
+          def tree_sha(root):
+              h=hashlib.sha256()
+              for p in sorted(root.rglob('*.py')):
+                  rel=p.relative_to(root).as_posix()
+                  if 'wave' in rel.lower(): continue
+                  h.update(rel.encode()+b'\0'+p.read_bytes())
+              return h.hexdigest()
+          before=tree_sha(src); hits=[]
+          for p in sorted(src.rglob('*.py')):
+              rel=p.relative_to(src).as_posix()
+              if 'wave' in rel.lower(): continue
+              text=p.read_text(errors='replace')
+              try: tree=ast.parse(text)
+              except Exception: continue
+              lines=text.splitlines()
+              for node in ast.walk(tree):
+                  if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)) and node.name.lower() in {'action','start','start_match','apply_action','arena_action'}:
+                      cls=None
+                      for parent in ast.walk(tree):
+                          if isinstance(parent,ast.ClassDef) and node in list(ast.walk(parent)):
+                              cls=parent.name; break
+                      seg=ast.get_source_segment(text,node) or ''
+                      if re.search(r'(arena|match|session|score|action|combat|player)',seg,re.I) or re.search(r'(arena|match|combat)',rel,re.I):
+                          hits.append({'file':rel,'class':cls,'function':node.name,
+                                       'args':[a.arg for a in node.args.args],
+                                       'kwonly':[a.arg for a in node.args.kwonlyargs],
+                                       'source':seg[:5000]})
+              if '/api/arena/action' in text:
+                  for i,line in enumerate(lines,1):
+                      if '/api/arena/action' in line:
+                          lo=max(1,i-4); hi=min(len(lines),i+8)
+                          hits.append({'file':rel,'route_context_start':lo,'route_context':'\n'.join(f'{n}:{lines[n-1]}' for n in range(lo,hi+1))})
+          out={'schema':'thf-arena-action-contract-inventory-v1','runtime_source_sha256':before,'hits':hits,
+               'external_network_allowed':False,'production_credentials_used':False,'wave_files_read_or_changed':False,
+               'canonical_source_modified':False,'final_or_play_ready':False}
+          after=tree_sha(src); out['runtime_source_sha256_after']=after; out['canonical_source_modified']=(before!=after)
+          print('__THF_JSON_BEGIN__'); print(json.dumps(out,indent=2,sort_keys=True)); print('__THF_JSON_END__')
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/arena-contract.raw').read_text(errors='ignore')
+          a=raw.rfind('__THF_JSON_BEGIN__'); b=raw.rfind('__THF_JSON_END__'); assert a>=0 and b>a
+          x=json.loads(raw[a+len('__THF_JSON_BEGIN__'):b].strip())
+          pathlib.Path('out/arena-contract.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          assert x['canonical_source_modified'] is False and x['runtime_source_sha256']==x['runtime_source_sha256_after']
+          assert x['hits'], 'arena contract not found'
+          assert x['wave_files_read_or_changed'] is False and x['external_network_allowed'] is False
+          print('ARENA_CONTRACT_INVENTORY=PASS')
+          print('HIT_COUNT='+str(len(x['hits'])))
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-ARENA-ACTION-CONTRACT-INVENTORY-V1
+          path: out/
+          retention-days: 14
