@@ -11,8 +11,6 @@ def die(msg: str) -> None:
     raise SystemExit(2)
 
 def non_game_history(p: pathlib.Path) -> bool:
-    # Apps-lineage workflows are read-only historical discovery for the non-game factory.
-    # They may contain old Spark/Rush observations but cannot promote game candidates.
     return p.parent.name == 'workflows' and p.name.startswith('thf-apps-authoritative-lineage-v')
 
 r = json.loads(REG.read_text(encoding='utf-8'))
@@ -78,9 +76,15 @@ for key,g in games.items():
                 if bad in text:
                     die(f'{key}:superseded_hash_in_operational_file:{p.relative_to(ROOT)}')
 
+# RC37 historical audit workflows may remain for provenance. They fail only if they can
+# claim/promote a positive release state; explicit FALSE/PENDING historical evidence is safe.
 for p in (ROOT/'.github/workflows').glob('*rift*.yml'):
     text=p.read_text(encoding='utf-8')
-    if 'RC37' in text and ('FINAL' in text or 'PLAY_READY' in text or 'promot' in text.lower()):
+    if 'RC37' not in text:
+        continue
+    positive = re.search(r'(FINAL_OR_PLAY_READY|PLAY_READY|FINAL_STATUS)\s*[=:]\s*(TRUE|PASS|READY)', text, re.I)
+    publish = re.search(r'\b(promote|publish|production[-_ ]?sign|play[-_ ]?upload)\b', text, re.I)
+    if positive or publish:
         die(f'rift:stale_rc37_promotion_workflow:{p.name}')
 
 print('LATEST_GAME_AUTHORITY=PASS')
