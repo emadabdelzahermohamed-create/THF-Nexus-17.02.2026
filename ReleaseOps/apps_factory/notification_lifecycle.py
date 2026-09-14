@@ -55,6 +55,10 @@ def _fingerprint(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
+def _token_id(*, subject: str, package: str, provider: str, fingerprint: str) -> str:
+    return hashlib.sha256(f"{subject}\0{package}\0{provider}\0{fingerprint}".encode()).hexdigest()
+
+
 class NotificationTokenRegistry:
     def __init__(self, db: sqlite3.Connection, vault: SecureTokenVault):
         self.db = db
@@ -93,21 +97,29 @@ class NotificationTokenRegistry:
         self._validate_identity(subject, package, provider)
         fp = _fingerprint(raw_token)
         now = int(time.time())
-        token_id = hashlib.sha256(f"{subject}\0{package}\0{provider}\0{fp}".encode()).hexdigest()
+        token_id = _token_id(subject=subject, package=package, provider=provider, fingerprint=fp)
         row = self.db.execute(
             "SELECT generation, active FROM notification_tokens WHERE token_id=?", (token_id,)
         ).fetchone()
         generation = int(row[0]) if row else 1
+
+        # Put the secret first, then expose the registration in the DB. If the DB
+        # write fails, compensate by deleting the newly stored secret so a failed
+        # registration cannot leave an untracked provider credential in the vault.
         self.vault.put(token_id, raw_token)
-        self.db.execute(
-            """
-            INSERT INTO notification_tokens(token_id,subject,package,provider,fingerprint,generation,active,created_at,updated_at)
-            VALUES(?,?,?,?,?,?,1,?,?)
-            ON CONFLICT(token_id) DO UPDATE SET active=1, updated_at=excluded.updated_at
-            """,
-            (token_id, subject, package, provider, fp, generation, now, now),
-        )
-        self.db.commit()
+        try:
+            with self.db:
+                self.db.execute(
+                    """
+                    INSERT INTO notification_tokens(token_id,subject,package,provider,fingerprint,generation,active,created_at,updated_at)
+                    VALUES(?,?,?,?,?,?,1,?,?)
+                    ON CONFLICT(token_id) DO UPDATE SET active=1, updated_at=excluded.updated_at
+                    """,
+                    (token_id, subject, package, provider, fp, generation, now, now),
+                )
+        except Exception:
+            self.vault.delete(token_id)
+            raise
         return self.get(token_id, subject=subject)
 
     def rotate(
@@ -123,14 +135,47 @@ class NotificationTokenRegistry:
         old = self.get(old_token_id, subject=subject)
         if not old.active or old.package != package or old.provider != provider:
             raise PermissionError("rotation source is inactive or outside authenticated scope")
-        self.revoke(token_id=old_token_id, subject=subject)
-        new = self.register(subject=subject, package=package, provider=provider, raw_token=new_raw_token)
+
+        new_fp = _fingerprint(new_raw_token)
+        new_token_id = _token_id(subject=subject, package=package, provider=provider, fingerprint=new_fp)
+        if new_token_id == old_token_id:
+            raise ValueError("new provider token must differ from rotation source")
+
         next_generation = old.generation + 1
-        self.db.execute(
-            "UPDATE notification_tokens SET generation=? WHERE token_id=?", (next_generation, new.token_id)
-        )
-        self.db.commit()
-        return self.get(new.token_id, subject=subject)
+        now = int(time.time())
+
+        # Failure-safe ordering: custody of the replacement token must succeed
+        # before the old registration is touched. The DB state transition is one
+        # transaction, so any DB failure leaves the old token active and removes
+        # the uncommitted replacement secret from the vault.
+        self.vault.put(new_token_id, new_raw_token)
+        try:
+            with self.db:
+                self.db.execute(
+                    "UPDATE notification_tokens SET active=0, updated_at=? WHERE token_id=? AND subject=? AND active=1",
+                    (now, old_token_id, subject),
+                )
+                if self.db.execute("SELECT changes()").fetchone()[0] != 1:
+                    raise PermissionError("rotation source changed before commit")
+                self.db.execute(
+                    """
+                    INSERT INTO notification_tokens(token_id,subject,package,provider,fingerprint,generation,active,created_at,updated_at)
+                    VALUES(?,?,?,?,?,?,1,?,?)
+                    ON CONFLICT(token_id) DO UPDATE SET
+                      generation=excluded.generation,
+                      active=1,
+                      updated_at=excluded.updated_at
+                    """,
+                    (new_token_id, subject, package, provider, new_fp, next_generation, now, now),
+                )
+        except Exception:
+            self.vault.delete(new_token_id)
+            raise
+
+        # DB authorization state is already fail-closed: the old registration is
+        # inactive before its raw credential is removed from custody.
+        self.vault.delete(old_token_id)
+        return self.get(new_token_id, subject=subject)
 
     def revoke(self, *, token_id: str, subject: str) -> None:
         reg = self.get(token_id, subject=subject)
