@@ -31,7 +31,7 @@ JAVA_HOME_REAL="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"
 ISO="$(mktemp -d)"; trap 'rm -rf "$ISO"' EXIT
 mkdir -p "$ISO/.config/godot" "$ISO/.local/share/godot"
 ln -s "$(dirname "$TEMPLATE_ROOT")" "$ISO/.local/share/godot/export_templates"
-printf '%s\n' '[gd_resource format=3]' '' '[resource]' \
+printf '%s\n' '[gd_resource type="EditorSettings" format=3]' '' '[resource]' \
   "export/android/android_sdk_path = \"$ANDROID_SDK_ROOT\"" \
   "export/android/java_sdk_path = \"$JAVA_HOME_REAL\"" > "$ISO/.config/godot/editor_settings-4.7.tres"
 export HOME="$ISO" JAVA_HOME="$JAVA_HOME_REAL" ANDROID_HOME="$ANDROID_SDK_ROOT" ANDROID_SDK_ROOT
