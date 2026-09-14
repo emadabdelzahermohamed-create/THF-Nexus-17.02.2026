@@ -209,6 +209,9 @@ def readiness(policy: Dict[str, Any], treasury: Dict[str, Any], audit: Dict[str,
     if dc.get("epoch_budget_cap_raw") is None: blockers.append("epoch_budget_cap_not_approved")
     if dc.get("distribution_reserve_account") is None: blockers.append("distribution_reserve_not_approved")
     if dc.get("delivery_model") is None: blockers.append("distribution_delivery_model_not_approved")
+    if dc.get("revenue_value_basis_status") != "approved": blockers.append("revenue_value_basis_not_approved")
+    if dc.get("revenue_value_basis_status") == "approved" and not re.fullmatch(r"[0-9a-f]{64}", str(dc.get("revenue_value_basis_evidence_sha256") or "")):
+        blockers.append("revenue_value_basis_evidence_missing")
     if signer.get("production_policy_status") != "approved": blockers.append("production_signer_policy_not_approved")
     if vest.get("vesting_terms_status") != "approved": blockers.append("vesting_terms_not_approved")
     if vest.get("lock_terms_status") != "approved": blockers.append("lock_terms_not_approved")
@@ -234,6 +237,8 @@ def readiness(policy: Dict[str, Any], treasury: Dict[str, Any], audit: Dict[str,
             "actionable_budget_raw": None,
             "per_user_cap_raw": dc.get("per_user_cap_raw"),
             "epoch_budget_cap_raw": dc.get("epoch_budget_cap_raw"),
+            "revenue_value_basis_status": dc.get("revenue_value_basis_status"),
+            "revenue_value_basis_evidence_sha256": dc.get("revenue_value_basis_evidence_sha256"),
             "execution_authorized": False,
         },
         "burn": {
