@@ -1,0 +1,135 @@
+name: THF Apps Factory Authority Baseline V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-apps-factory-authority-baseline-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  authority-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only non-game apps authority inventory
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" \
+            --zone "$GCP_ZONE" \
+            --tunnel-through-iap \
+            --ssh-key-expire-after=20m \
+            --quiet \
+            --command='python3 - <<'"'"'PY'"'"'
+          import hashlib, json, os, pathlib, re, subprocess
+
+          home = pathlib.Path.home().resolve()
+          wanted = ["core", "pulse", "forge", "echo", "codex", "spark", "rush", "vault", "signal", "command", "pass"]
+          excluded = re.compile(r"(^|[/_.-])(terra|rift|arena|nexus[-_ ]?world|token|solana|finance)([/_.-]|$)", re.I)
+          app_rx = re.compile(r"(^|[^a-z0-9])(thf[-_ ]*)?(core|pulse|forge|echo|codex|spark|rush|vault|signal|command|pass)([^a-z0-9]|$)", re.I)
+          archive_ext = (".zip", ".tar", ".tgz", ".tar.gz", ".apk", ".aab")
+
+          def run(cmd, cwd=None):
+              p = subprocess.run(cmd, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+              return p.stdout.strip() if p.returncode == 0 else None
+
+          def sha256_file(path):
+              h = hashlib.sha256()
+              with open(path, "rb") as f:
+                  for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                      h.update(chunk)
+              return h.hexdigest()
+
+          def infer_app(text):
+              m = app_rx.search(text)
+              return m.group(3).lower() if m else None
+
+          dirs = []
+          files = []
+          seen_dirs = set()
+          seen_files = set()
+
+          for root, subdirs, names in os.walk(home):
+              rel_depth = len(pathlib.Path(root).relative_to(home).parts)
+              if rel_depth > 8:
+                  subdirs[:] = []
+                  continue
+              subdirs[:] = [d for d in subdirs if d not in {".git", "node_modules", ".gradle", "build", "dist", ".venv", "venv", "Library", "Temp"}]
+              root_s = str(pathlib.Path(root))
+              if excluded.search(root_s):
+                  subdirs[:] = []
+                  continue
+              app = infer_app(pathlib.Path(root).name)
+              if app and root_s not in seen_dirs:
+                  seen_dirs.add(root_s)
+                  p = pathlib.Path(root)
+                  git_head = run(["git", "rev-parse", "HEAD"], cwd=p) if (p / ".git").exists() else None
+                  markers = {}
+                  for marker in ["settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts", "gradlew", "package.json", "pyproject.toml", "requirements.txt", "AndroidManifest.xml"]:
+                      hit = next(iter(p.rglob(marker)), None)
+                      if hit:
+                          markers[marker] = str(hit.relative_to(p))
+                  dirs.append({"app": app, "path": root_s, "git_head": git_head, "markers": markers})
+              for name in names:
+                  low = name.lower()
+                  if not (low.endswith(archive_ext) or "manifest" in low or "release" in low or "state" in low):
+                      continue
+                  full = pathlib.Path(root) / name
+                  full_s = str(full)
+                  if excluded.search(full_s):
+                      continue
+                  app = infer_app(name) or infer_app(root_s)
+                  if not app or full_s in seen_files:
+                      continue
+                  seen_files.add(full_s)
+                  item = {"app": app, "path": full_s, "size": full.stat().st_size}
+                  if low.endswith(archive_ext):
+                      try:
+                          item["sha256"] = sha256_file(full)
+                      except OSError:
+                          item["sha256"] = None
+                  files.append(item)
+
+          result = {
+              "schema": "thf-apps-factory-authority-baseline-v1",
+              "mode": "READ_ONLY",
+              "scope": wanted,
+              "excluded_streams": ["dedicated-native-games", "token-finance"],
+              "home": str(home),
+              "directories": sorted(dirs, key=lambda x: (x["app"], x["path"]))[:300],
+              "artifacts": sorted(files, key=lambda x: (x["app"], x["path"]))[:500],
+          }
+          present = sorted({x["app"] for x in dirs + files})
+          result["present_apps"] = present
+          result["missing_apps"] = [x for x in wanted if x not in present]
+          print("THF_APPS_AUTHORITY_BASELINE_BEGIN")
+          print(json.dumps(result, indent=2, sort_keys=True))
+          print("THF_APPS_AUTHORITY_BASELINE_END")
+          if result["missing_apps"]:
+              print("AUTHORITY_BASELINE_INCOMPLETE=" + ",".join(result["missing_apps"]))
+          else:
+              print("AUTHORITY_BASELINE_COMPLETE=true")
+          PY'
