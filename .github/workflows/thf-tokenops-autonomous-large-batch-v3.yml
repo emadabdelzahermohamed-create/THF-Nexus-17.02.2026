@@ -39,6 +39,8 @@ jobs:
           python -m py_compile ReleaseOps/TokenOps/epoch_commitment.py
           python -m py_compile ReleaseOps/TokenOps/revenue_value_basis.py
           python -m py_compile ReleaseOps/TokenOps/blocker_resolution.py
+          python -m py_compile ReleaseOps/TokenOps/recent_activity_semantics.py
+          python -m py_compile ReleaseOps/TokenOps/source_provenance.py
 
       - name: Install test runner
         run: python -m pip install --disable-pip-version-check --no-input pytest
@@ -75,6 +77,45 @@ jobs:
           print('INVARIANT_GATE=' + str(g['status']))
           print('FINANCIAL_READINESS=' + str(r['status']))
           print('READINESS_BLOCKERS=' + ','.join(r['blockers']))
+          PY
+
+      - name: Classify recent mint-address activity without persisting signatures
+        run: |
+          set -euo pipefail
+          python ReleaseOps/TokenOps/recent_activity_semantics.py --out out/tokenops-v3/recent-activity-semantics.json --limit 10
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('out/tokenops-v3/recent-activity-semantics.json').read_text())
+          assert p['signatures_persisted'] is False
+          assert p['financial_effect'] is False
+          assert p['broadcast'] is False
+          assert p['wave_touched'] is False
+          print('SEMANTIC_STATUS=' + str(p['status']))
+          print('SEMANTIC_COMPLETE=' + str(p['analysis_complete']))
+          print('SEMANTIC_TX_ANALYZED=' + str(p['transactions_analyzed']))
+          print('SEMANTIC_MINT_COUNT=' + str(p['mint_instruction_count']))
+          print('SEMANTIC_BURN_COUNT=' + str(p['burn_instruction_count']))
+          print('SEMANTIC_AUTHORITY_COUNT=' + str(p['set_authority_instruction_count']))
+          print('SEMANTIC_TRANSFER_COUNT=' + str(p['transfer_instruction_count']))
+          PY
+
+      - name: Bind evidence to deterministic TokenOps source provenance
+        run: |
+          set -euo pipefail
+          python ReleaseOps/TokenOps/source_provenance.py --out out/tokenops-v3/source-provenance.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('out/tokenops-v3/source-provenance.json').read_text())
+          assert p['source_commit_sha']
+          assert p['wave_in_inventory'] is False
+          assert p['wave_touched'] is False
+          assert p['financial_effect'] is False
+          assert p['broadcast'] is False
+          print('SOURCE_COMMIT_SHA=' + str(p['source_commit_sha']))
+          print('TOKENOPS_SOURCE_ROOT_SHA256=' + str(p['tokenops_source_root_sha256']))
+          print('TOKENOPS_SOURCE_INVENTORY_COUNT=' + str(p['inventory_count']))
           PY
 
       - name: Compile exact blocker-resolution and authorization packet
@@ -164,7 +205,7 @@ jobs:
             cat SHA256SUMS.txt
             echo '```'
             echo ''
-            echo 'No signing, submission, broadcast, transfer, burn, authority change, treasury migration, settlement, DAO execution, private-key handling, or WAVE mutation is performed by this workflow.'
+            echo 'No signing, submission, broadcast, transfer, burn, authority change, treasury migration, settlement, DAO execution, private-key handling, signature persistence, or WAVE mutation is performed by this workflow.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Enforce no executable financial payload files
