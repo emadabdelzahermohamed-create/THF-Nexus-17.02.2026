@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import sha256
 import json
 import re
@@ -43,8 +43,17 @@ class ContractError(ValueError):
     pass
 
 
+def _roles(roles: Iterable[str]) -> set[str]:
+    return {str(r).strip().lower() for r in roles if str(r).strip()}
+
+
 def visible_products(roles: Iterable[str]) -> list[str]:
-    role_set = {str(r).strip().lower() for r in roles}
+    """Compatibility helper for already-authenticated role claims.
+
+    New callers should prefer visible_products_for_session so operator products can never
+    be exposed from an unauthenticated client-side role list.
+    """
+    role_set = _roles(roles)
     out: list[str] = []
     for key, meta in PRODUCTS.items():
         if meta["visibility"] == "public":
@@ -55,13 +64,41 @@ def visible_products(roles: Iterable[str]) -> list[str]:
     return out
 
 
+def visible_products_for_session(session: Mapping[str, Any]) -> list[str]:
+    state = str(session.get("state", "")).strip().lower()
+    role_set = _roles(session.get("roles", ()))
+    out = [key for key, meta in PRODUCTS.items() if meta["visibility"] == "public"]
+    if state != "authenticated":
+        return out
+    for key, meta in PRODUCTS.items():
+        if meta["visibility"] == "operator" and role_set.intersection(meta["required_roles"]):
+            out.append(key)
+    return out
+
+
 def assert_operator_route(product: str, roles: Iterable[str]) -> None:
     if product not in PRODUCTS:
         raise ContractError("unknown_product")
     meta = PRODUCTS[product]
     if meta["visibility"] != "operator":
         return
-    role_set = {str(r).strip().lower() for r in roles}
+    role_set = _roles(roles)
+    if not role_set.intersection(meta["required_roles"]):
+        raise ContractError("operator_role_required")
+
+
+def authorize_product_for_session(product: str, session: Mapping[str, Any]) -> None:
+    if product not in PRODUCTS:
+        raise ContractError("unknown_product")
+    meta = PRODUCTS[product]
+    if meta["visibility"] != "operator":
+        return
+    if str(session.get("state", "")).strip().lower() != "authenticated":
+        raise ContractError("operator_authenticated_session_required")
+    subject = str(session.get("subject", "")).strip()
+    if not subject:
+        raise ContractError("operator_identity_subject_required")
+    role_set = _roles(session.get("roles", ()))
     if not role_set.intersection(meta["required_roles"]):
         raise ContractError("operator_role_required")
 
@@ -110,6 +147,51 @@ def validate_google_id_token_claims(
     return {"provider": "google", "provider_subject": sub, "email": email}
 
 
+def validate_email_address(email: str) -> str:
+    email = email.strip().lower()
+    if len(email) > 254 or not re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}", email):
+        raise ContractError("email_invalid")
+    return email
+
+
+def email_code_contract(*, email: str, code_hash: str, expires_at: int, now: int | None = None, attempts_remaining: int = 5) -> dict[str, Any]:
+    now = int(time.time()) if now is None else int(now)
+    email = validate_email_address(email)
+    code_hash = code_hash.strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{64}", code_hash):
+        raise ContractError("email_code_hash_required")
+    if expires_at <= now or expires_at - now > 600:
+        raise ContractError("email_code_expiry_invalid")
+    if attempts_remaining < 1 or attempts_remaining > 10:
+        raise ContractError("email_code_attempts_invalid")
+    return {
+        "email": email,
+        "code_hash": code_hash,
+        "expires_at": int(expires_at),
+        "attempts_remaining": int(attempts_remaining),
+        "plaintext_code_persisted": False,
+        "single_use_required": True,
+        "rate_limit_required": True,
+    }
+
+
+def password_registration_policy(*, email: str, password_length: int, compromised_password_check_passed: bool) -> dict[str, Any]:
+    email = validate_email_address(email)
+    if password_length < 12 or password_length > 256:
+        raise ContractError("password_length_policy_failed")
+    if compromised_password_check_passed is not True:
+        raise ContractError("compromised_password_rejected")
+    return {
+        "email": email,
+        "minimum_length": 12,
+        "maximum_length": 256,
+        "allow_paste": True,
+        "arbitrary_composition_rules": False,
+        "server_password_hash_required": True,
+        "client_password_persistence_allowed": False,
+    }
+
+
 def validate_passkey_registration(options: Mapping[str, Any]) -> dict[str, Any]:
     rp_id = str(options.get("rp_id", "")).strip().lower()
     user_id = str(options.get("user_id", "")).strip()
@@ -126,6 +208,57 @@ def validate_passkey_registration(options: Mapping[str, Any]) -> dict[str, Any]:
     return {"rp_id": rp_id, "user_id": user_id, "challenge": challenge, "attestation": attestation}
 
 
+def validate_passkey_assertion(*, rp_id: str, credential_id: str, challenge_matched: bool, user_verified: bool, signature_verified: bool) -> dict[str, Any]:
+    rp_id = rp_id.strip().lower()
+    credential_id = credential_id.strip()
+    if not rp_id or "." not in rp_id:
+        raise ContractError("passkey_rp_id_invalid")
+    if not credential_id:
+        raise ContractError("passkey_credential_id_required")
+    if challenge_matched is not True:
+        raise ContractError("passkey_challenge_mismatch")
+    if user_verified is not True:
+        raise ContractError("passkey_user_verification_required")
+    if signature_verified is not True:
+        raise ContractError("passkey_signature_verification_required")
+    return {
+        "rp_id": rp_id,
+        "credential_id": credential_id,
+        "server_challenge_matched": True,
+        "user_verified": True,
+        "signature_verified": True,
+        "challenge_consume_required": True,
+    }
+
+
+@dataclass
+class OneTimeReplayLedger:
+    """Reference/test-only replay ledger.
+
+    Production must bind the same semantics to a durable, atomic server-side store.
+    """
+    consumed: dict[str, int] = field(default_factory=dict)
+    production_durable: bool = False
+
+    def consume(self, *, namespace: str, token: str, expires_at: int, now: int | None = None) -> None:
+        now = int(time.time()) if now is None else int(now)
+        namespace = namespace.strip().lower()
+        token = token.strip()
+        if namespace not in {"passkey", "email_code", "handoff", "motion"}:
+            raise ContractError("replay_namespace_invalid")
+        if len(token) < 16:
+            raise ContractError("replay_token_too_short")
+        if expires_at <= now:
+            raise ContractError("replay_token_expired")
+        stale = [k for k, exp in self.consumed.items() if exp <= now]
+        for key in stale:
+            self.consumed.pop(key, None)
+        key = sha256(f"{namespace}|{token}".encode()).hexdigest()
+        if key in self.consumed:
+            raise ContractError("replay_detected")
+        self.consumed[key] = int(expires_at)
+
+
 def session_contract(*, state: str, auth_method: str, subject: str = "", roles: Iterable[str] = ()) -> dict[str, Any]:
     state = state.strip().lower()
     auth_method = auth_method.strip().lower()
@@ -138,7 +271,7 @@ def session_contract(*, state: str, auth_method: str, subject: str = "", roles: 
         raise ContractError("authenticated_identity_required")
     if state == "guest" and auth_method != "guest":
         raise ContractError("guest_auth_method_required")
-    normalized_roles = sorted({str(x).strip().lower() for x in roles if str(x).strip()})
+    normalized_roles = sorted(_roles(roles))
     if any(r in OPERATOR_ROLES for r in normalized_roles) and state != "authenticated":
         raise ContractError("operator_session_must_be_authenticated")
     return {
@@ -148,6 +281,24 @@ def session_contract(*, state: str, auth_method: str, subject: str = "", roles: 
         "roles": normalized_roles,
         "persist_refresh_token_in_secure_storage_only": state == "authenticated",
         "logout_revokes_server_session": state == "authenticated",
+    }
+
+
+def account_deletion_contract(*, session: Mapping[str, Any], confirmation_nonce: str, reauthenticated_at: int, now: int | None = None) -> dict[str, Any]:
+    now = int(time.time()) if now is None else int(now)
+    if str(session.get("state", "")).lower() != "authenticated" or not str(session.get("subject", "")).strip():
+        raise ContractError("authenticated_session_required_for_deletion")
+    if len(confirmation_nonce.strip()) < 16:
+        raise ContractError("deletion_confirmation_nonce_required")
+    if reauthenticated_at > now or now - reauthenticated_at > 300:
+        raise ContractError("recent_reauthentication_required")
+    return {
+        "subject": str(session["subject"]).strip(),
+        "revoke_sessions": True,
+        "unlink_identity_providers": True,
+        "queue_owned_data_cleanup": True,
+        "preserve_required_legal_records_only": True,
+        "client_side_delete_is_authoritative": False,
     }
 
 
@@ -182,6 +333,8 @@ class HealthRecord:
     start_ms: int
     end_ms: int
     payload: Mapping[str, Any]
+    canonical_source_id: str = ""
+    origin_package: str = ""
 
     def validate(self) -> "HealthRecord":
         if self.provider not in HEALTH_PROVIDER_STATUS:
@@ -192,13 +345,26 @@ class HealthRecord:
             raise ContractError("health_source_record_id_required")
         if self.start_ms < 0 or self.end_ms < self.start_ms:
             raise ContractError("health_time_range_invalid")
+        if self.canonical_source_id and len(self.canonical_source_id.strip()) < 4:
+            raise ContractError("health_canonical_source_id_invalid")
         return self
 
     @property
     def dedup_key(self) -> str:
         self.validate()
-        raw = f"{self.provider}|{self.source_record_id}|{self.metric}|{self.start_ms}|{self.end_ms}".encode()
+        source = self.canonical_source_id.strip() or f"{self.provider}:{self.source_record_id}"
+        raw = f"{source}|{self.metric}|{self.start_ms}|{self.end_ms}".encode()
         return sha256(raw).hexdigest()
+
+    @property
+    def provenance(self) -> dict[str, str]:
+        self.validate()
+        return {
+            "provider": self.provider,
+            "source_record_id": self.source_record_id,
+            "canonical_source_id": self.canonical_source_id.strip(),
+            "origin_package": self.origin_package.strip(),
+        }
 
 
 def deduplicate_health_records(records: Iterable[HealthRecord]) -> list[HealthRecord]:
@@ -231,7 +397,24 @@ def health_permission_plan(metrics: Iterable[str], *, provider: str) -> dict[str
     }
 
 
-def motion_evidence_contract(*, source: str, repetitions: int, confidence: float, monotonic_ms: int, sensor_attested: bool) -> dict[str, Any]:
+def health_provider_capability(*, provider: str, installed: bool, permission_granted: bool, partner_authorized: bool = False) -> dict[str, Any]:
+    if provider not in HEALTH_PROVIDER_STATUS:
+        raise ContractError("unsupported_health_provider")
+    available = bool(installed and permission_granted)
+    if provider == "samsung_health_data_sdk":
+        available = bool(available and partner_authorized)
+    return {
+        "provider": provider,
+        "installed": bool(installed),
+        "permission_granted": bool(permission_granted),
+        "partner_authorized": bool(partner_authorized) if provider == "samsung_health_data_sdk" else None,
+        "available": available,
+        "absence_is_nonfatal": True,
+        "fallback_provider": "health_connect" if provider == "samsung_health_data_sdk" else None,
+    }
+
+
+def motion_evidence_contract(*, source: str, repetitions: int, confidence: float, monotonic_ms: int, sensor_attested: bool, evidence_nonce: str = "") -> dict[str, Any]:
     source = source.strip().lower()
     if source not in {"camera_pose", "wearable_sensor", "device_sensor", "combined"}:
         raise ContractError("motion_source_invalid")
@@ -239,14 +422,18 @@ def motion_evidence_contract(*, source: str, repetitions: int, confidence: float
         raise ContractError("motion_count_or_clock_invalid")
     if confidence < 0.0 or confidence > 1.0:
         raise ContractError("motion_confidence_invalid")
+    if evidence_nonce and len(evidence_nonce.strip()) < 16:
+        raise ContractError("motion_evidence_nonce_too_short")
     return {
         "source": source,
         "repetitions": int(repetitions),
         "confidence": float(confidence),
         "monotonic_ms": int(monotonic_ms),
         "sensor_attested": bool(sensor_attested),
+        "evidence_nonce": evidence_nonce.strip(),
         "client_reward_authority": False,
         "server_verification_required": True,
+        "replay_protection_required": True,
     }
 
 
@@ -280,7 +467,7 @@ def link_guest_to_identity(*, guest_id: str, identity_subject: str, proof_verifi
 
 def contract_snapshot() -> str:
     payload = {
-        "schema": "thf.shared.integration.v2",
+        "schema": "thf.shared.integration.v3",
         "products": {k: {kk: (sorted(vv) if isinstance(vv, set) else vv) for kk, vv in v.items()} for k, v in PRODUCTS.items()},
         "health_providers": HEALTH_PROVIDER_STATUS,
         "health_metrics": sorted(ALLOWED_HEALTH_METRICS),
@@ -290,6 +477,9 @@ def contract_snapshot() -> str:
             "google_oauth_console_configured": False,
             "google_server_signature_verifier_bound": False,
             "passkey_backend_challenge_store_bound": False,
+            "durable_replay_store_bound": False,
+            "email_auth_delivery_backend_bound": False,
+            "account_deletion_backend_bound": False,
             "health_connect_physical_device_verified": False,
             "samsung_partner_registration_verified": False,
             "cross_app_handoff_server_signer_bound": False,
