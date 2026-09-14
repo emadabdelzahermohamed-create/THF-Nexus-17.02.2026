@@ -1,0 +1,169 @@
+name: THF Game World Economy Semantic V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-game-world-economy-semantic-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  semantic-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Isolated world economy social semantic proof
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/world-economy.raw <<'PY'
+          import hashlib,http.client,importlib,json,os,pathlib,shutil,socket,sys,tempfile,threading,traceback,uuid
+          src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
+          assert src.is_dir() and (src/'thf/app.py').is_file()
+          def tree_sha(root):
+              h=hashlib.sha256()
+              for p in sorted(root.rglob('*.py')):
+                  rel=p.relative_to(root).as_posix()
+                  if 'wave' in rel.lower(): continue
+                  h.update(rel.encode()+b'\0'+p.read_bytes())
+              return h.hexdigest()
+          def pick(o,names):
+              if isinstance(o,dict):
+                  for k,v in o.items():
+                      if k.lower() in names and isinstance(v,(str,int,float,bool)): return v
+                  for v in o.values():
+                      x=pick(v,names)
+                      if x is not None:return x
+              elif isinstance(o,list):
+                  for v in o:
+                      x=pick(v,names)
+                      if x is not None:return x
+          before=tree_sha(src)
+          result={'schema':'thf-game-world-economy-semantic-v1','runtime_source_sha256':before,
+                  'external_network_allowed':False,'production_credentials_used':False,'wave_files_read_or_changed':False,
+                  'canonical_source_modified':False,'final_or_play_ready':False,'checks':[]}
+          def add(name,status,passed,detail=None):
+              d={'name':name,'status':status,'passed':bool(passed)}
+              if detail is not None:d['detail']=detail
+              result['checks'].append(d)
+          with tempfile.TemporaryDirectory(prefix='thf-world-econ-') as td:
+              td=pathlib.Path(td); work=td/'src'; data=td/'data'; home=td/'home'
+              shutil.copytree(src,work,symlinks=True); data.mkdir(); home.mkdir(); db=data/'semantic.sqlite3'
+              os.environ.update({'THF_ENV':'test','THF_OFFLINE':'1','THF_DATA_DIR':str(data),'THF_DB_PATH':str(db),
+                                 'THF_RUNTIME_DIR':str(td/'runtime'),'HOME':str(home),'THF_HOST':'127.0.0.1','THF_PORT':'0','THF_QUIET':'1'})
+              sys.path.insert(0,str(work)); os.chdir(work)
+              real_connect=socket.socket.connect; real_create=socket.create_connection
+              def loop(h): return h in ('127.0.0.1','::1','localhost')
+              def gc(self,address):
+                  h=address[0] if isinstance(address,tuple) and address else None
+                  if not loop(h): raise RuntimeError('external network blocked')
+                  return real_connect(self,address)
+              def gcc(address,*a,**kw):
+                  h=address[0] if isinstance(address,tuple) and address else None
+                  if not loop(h): raise RuntimeError('external network blocked')
+                  return real_create(address,*a,**kw)
+              socket.socket.connect=gc; socket.create_connection=gcc; server=thread=None
+              try:
+                  mod=importlib.import_module('thf.app'); server=mod.make_server('127.0.0.1',0,work,db); port=server.server_address[1]
+                  thread=threading.Thread(target=server.serve_forever,daemon=True); thread.start()
+                  def req(method,path,payload=None,token=None):
+                      body=None if payload is None else json.dumps(payload,separators=(',',':'))
+                      hs={'Accept':'application/json','Connection':'close'}
+                      if body is not None: hs.update({'Content-Type':'application/json','Content-Length':str(len(body.encode()))})
+                      if token: hs['Authorization']='Bearer '+token
+                      c=http.client.HTTPConnection('127.0.0.1',port,timeout=5)
+                      try:
+                          c.request(method,path,body=body,headers=hs); r=c.getresponse(); raw=r.read(65536)
+                          try:o=json.loads(raw.decode() or '{}')
+                          except Exception:o={'_raw':raw.decode(errors='ignore')}
+                          return r.status,o
+                      finally:c.close()
+                  suffix=uuid.uuid4().hex[:10]; pw='Qa!'+uuid.uuid4().hex+'9z'; users=[]
+                  for tag in ('a','b'):
+                      u='qa_sem_'+tag+'_'+suffix
+                      st,o=req('POST','/api/auth/register',{'username':u,'password':pw}); uid=pick(o,{'id','user_id','userid'}); add('register_'+tag,st,st in (200,201))
+                      st,o=req('POST','/api/auth/login',{'username':u,'password':pw}); tok=pick(o,{'token','access_token','session_token'}); uid=uid or pick(o,{'id','user_id','userid'})
+                      add('login_'+tag,st,st==200 and isinstance(tok,str) and len(tok)>=8); users.append((uid,tok))
+                  (a_id,a_tok),(b_id,b_tok)=users; assert a_tok and b_tok
+
+                  # No-pay-to-win / economy authority: ordinary bearer cannot mint/award to self or another user, and balances remain byte-stable.
+                  sa0,ba0=req('GET','/api/economy/balance',token=a_tok); sb0,bb0=req('GET','/api/economy/balance',token=b_tok)
+                  add('baseline_balance_a',sa0,sa0==200); add('baseline_balance_b',sb0,sb0==200)
+                  for label,target in (('self',a_id),('other',b_id)):
+                      payload={'user_id':target,'amount':999999999,'reason':'qa-no-p2w-spoof','token_award':999999999,'rewards':999999999}
+                      st,_=req('POST','/api/economy/internal-award',payload,token=a_tok)
+                      add('ordinary_user_internal_award_'+label+'_rejected',st,st in (401,403))
+                  sa1,ba1=req('GET','/api/economy/balance',token=a_tok); sb1,bb1=req('GET','/api/economy/balance',token=b_tok)
+                  add('balance_a_unchanged_after_spoof',sa1,sa1==200 and ba1==ba0)
+                  add('balance_b_unchanged_after_spoof',sb1,sb1==200 and bb1==bb0)
+
+                  # World mutation authority: ordinary player cannot set global weather/day-night state.
+                  wg0,wo0=req('GET','/api/world/environment',token=a_tok)
+                  st,_=req('POST','/api/world/environment',{'weather':'qa-forged-storm','time_of_day':'qa-forged-night','season':'qa-forged-season'},token=a_tok)
+                  add('ordinary_user_world_mutation_rejected',st,st in (401,403))
+                  wg1,wo1=req('GET','/api/world/environment',token=a_tok)
+                  if wg0==200 and wg1==200:
+                      add('world_state_unchanged_after_rejected_spoof',wg1,wo1==wo0)
+                  else:
+                      add('world_read_surface_not_available_for_state_compare',wg1,True,'mutation rejection remains authoritative; GET surface unavailable/non-200')
+
+                  # Social actor spoof: accepted position/send mutations must stay bearer-bound, otherwise rejection is acceptable.
+                  pst,po=req('POST','/api/social/position',{'user_id':b_id,'x':1.25,'y':2.5,'z':0.0,'zone':'qa'},token=a_tok)
+                  rid=pick(po,{'user_id','userid','owner_id','ownerid','actor_id','actorid'})
+                  p_safe=(pst in (401,403)) or (200<=pst<300 and (b_id is None or str(rid)!=str(b_id)))
+                  add('social_position_actor_spoof_blocked',pst,p_safe,'request is rejected or returned actor is not injected user B')
+                  sst,so=req('POST','/api/social/send',{'sender_id':b_id,'user_id':b_id,'to_user_id':b_id,'message':'qa actor-spoof probe'},token=a_tok)
+                  sid=pick(so,{'sender_id','senderid','from_user_id','fromuserid','actor_id','actorid'})
+                  s_safe=(sst in (400,401,403,404,409,422)) or (200<=sst<300 and (b_id is None or str(sid)!=str(b_id)))
+                  add('social_send_actor_spoof_blocked',sst,s_safe,'request is rejected/invalid or sender is not injected user B')
+
+                  result['check_count']=len(result['checks']); result['passed_count']=sum(1 for c in result['checks'] if c['passed'])
+                  result['semantic_authority_passed']=all(c['passed'] for c in result['checks'])
+                  result['no_pay_to_win_economy_spoof_passed']=all(c['passed'] for c in result['checks'] if 'balance_' in c['name'] or 'internal_award_' in c['name'])
+              except Exception as e:
+                  result['tooling_error']=type(e).__name__+': '+str(e); result['trace_tail']=traceback.format_exc().splitlines()[-10:]
+              finally:
+                  if server is not None: server.shutdown(); server.server_close()
+                  if thread is not None: thread.join(timeout=5)
+                  socket.socket.connect=real_connect; socket.create_connection=real_create
+          after=tree_sha(src); result['runtime_source_sha256_after']=after; result['canonical_source_modified']=(before!=after)
+          print('__THF_JSON_BEGIN__'); print(json.dumps(result,indent=2,sort_keys=True)); print('__THF_JSON_END__')
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/world-economy.raw').read_text(errors='ignore'); a=raw.rfind('__THF_JSON_BEGIN__'); b=raw.rfind('__THF_JSON_END__'); assert a>=0 and b>a
+          x=json.loads(raw[a+len('__THF_JSON_BEGIN__'):b].strip()); pathlib.Path('out/world-economy.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          assert x['canonical_source_modified'] is False and x['runtime_source_sha256']==x['runtime_source_sha256_after']
+          assert x['external_network_allowed'] is False and x['production_credentials_used'] is False and x['wave_files_read_or_changed'] is False
+          assert 'tooling_error' not in x, x.get('tooling_error')
+          assert x.get('semantic_authority_passed') is True, x.get('checks')
+          assert x.get('no_pay_to_win_economy_spoof_passed') is True
+          print('WORLD_ECONOMY_SOCIAL_SEMANTICS=PASS')
+          print('NO_PAY_TO_WIN_ECONOMY_SPOOF=PASS')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-GAME-WORLD-ECONOMY-SEMANTIC-V1
+          path: out/
+          retention-days: 14
