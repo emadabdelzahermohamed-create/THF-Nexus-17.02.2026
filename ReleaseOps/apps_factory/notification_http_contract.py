@@ -4,6 +4,7 @@
 Security boundary:
 - authentication is performed by THF Pass before this contract is called;
 - this module accepts only an already-verified SessionPrincipal;
+- the Pass principal is bound to one locked application package/audience;
 - provider tokens are accepted only in request bodies, never query strings;
 - package identities are constrained by NotificationTokenRegistry;
 - no provider delivery is implemented here, so PUSH_READY remains false.
@@ -20,12 +21,19 @@ from notification_lifecycle import NotificationTokenRegistry
 class SessionPrincipal:
     subject: str
     session_id: str
+    package_id: str
     authenticated: bool
 
     def require_authenticated(self) -> str:
-        if not self.authenticated or not self.subject.strip() or not self.session_id.strip():
-            raise PermissionError("verified THF Pass session required")
+        if not self.authenticated or not self.subject.strip() or not self.session_id.strip() or not self.package_id.strip():
+            raise PermissionError("verified package-bound THF Pass session required")
         return self.subject
+
+    def require_package(self, requested_package: str) -> str:
+        self.require_authenticated()
+        if requested_package != self.package_id:
+            raise PermissionError("requested package does not match THF Pass session audience")
+        return requested_package
 
 
 @dataclass(frozen=True)
@@ -57,9 +65,10 @@ class NotificationHttpContract:
     def register(self, *, principal: SessionPrincipal, body: Mapping[str, Any], query: Mapping[str, str] | None = None) -> ContractResponse:
         self._reject_query_credentials(query)
         subject = principal.require_authenticated()
+        package = principal.require_package(self._required(body, "package"))
         reg = self.registry.register(
             subject=subject,
-            package=self._required(body, "package"),
+            package=package,
             provider=self._required(body, "provider"),
             raw_token=self._required(body, "provider_token"),
         )
@@ -74,9 +83,10 @@ class NotificationHttpContract:
     def rotate(self, *, principal: SessionPrincipal, body: Mapping[str, Any], query: Mapping[str, str] | None = None) -> ContractResponse:
         self._reject_query_credentials(query)
         subject = principal.require_authenticated()
+        package = principal.require_package(self._required(body, "package"))
         reg = self.registry.rotate(
             subject=subject,
-            package=self._required(body, "package"),
+            package=package,
             provider=self._required(body, "provider"),
             old_token_id=self._required(body, "old_token_id"),
             new_raw_token=self._required(body, "provider_token"),
@@ -90,11 +100,15 @@ class NotificationHttpContract:
     def revoke(self, *, principal: SessionPrincipal, body: Mapping[str, Any], query: Mapping[str, str] | None = None) -> ContractResponse:
         self._reject_query_credentials(query)
         subject = principal.require_authenticated()
-        self.registry.revoke(token_id=self._required(body, "token_id"), subject=subject)
+        token_id = self._required(body, "token_id")
+        existing = self.registry.get(token_id, subject=subject)
+        principal.require_package(existing.package)
+        self.registry.revoke(token_id=token_id, subject=subject)
         return ContractResponse(204, {})
 
     def logout(self, *, principal: SessionPrincipal, body: Mapping[str, Any], query: Mapping[str, str] | None = None) -> ContractResponse:
         self._reject_query_credentials(query)
         subject = principal.require_authenticated()
-        count = self.registry.revoke_logout(subject=subject, package=self._required(body, "package"))
+        package = principal.require_package(self._required(body, "package"))
+        count = self.registry.revoke_logout(subject=subject, package=package)
         return ContractResponse(200, {"revoked": count})
