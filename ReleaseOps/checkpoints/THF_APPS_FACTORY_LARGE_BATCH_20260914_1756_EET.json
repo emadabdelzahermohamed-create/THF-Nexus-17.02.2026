@@ -1,0 +1,56 @@
+{
+  "schema": "thf.apps.factory.large_batch.checkpoint.v1",
+  "created_at": "2026-09-14T17:56:00+03:00",
+  "scope": ["core","pulse","forge","echo","codex","spark","rush","vault-ux","signal","command","thf-pass","shared-identity-federation","cross-app-handoffs"],
+  "excluded": ["dedicated-native-game-streams","token-finance"],
+  "policy": "MOBILE_REAL_FUNCTION_RELEASE_POLICY",
+  "same_sha_skip": true,
+  "implementation": {
+    "pull_request": 20,
+    "head_commit": "d8ddfa2c2a08a1d0e79e536fdff94faec0a3af48",
+    "merge_commit": "1449f201c0c2f4ef78a5151d18a63078ca578e63",
+    "lineage_v3_run": 34858537273,
+    "lineage_v3_result": "SUCCESS",
+    "auxiliary_authority_run": 34858537276,
+    "auxiliary_authority_result": "SUCCESS"
+  },
+  "authoritative_exact_sha_present": {
+    "core": {"source":"6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a","apk":"262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba"},
+    "pulse": {"source":"71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10","apk":"66c04169a40b574f0f26b0a90b999f95a9702b1154a80dc43d2de236a47673a3"},
+    "forge": {"source":"0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51","apk":"e27b2dfa8d5bc382d2fa2439deafe98eaeba84ec30acd02a8c4f02dca8ec08ba"},
+    "echo": {"source":"40a197b60563e560cab93ba0a64c859d9b650da222fdaec933993977d63902ab","apk":"794f16dd2ccb7f5907690326522c018649b650268380f270fa2156ec508b308b"},
+    "codex": {"source":"3d60cc550732468c89fe120f552def53ac798646d065e94efa153f8979e15b1e","apk":"58c5491058d286b76e89e177df00db55b589d55a3e5e76921a6565f790da307f"},
+    "command": {"source":"f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408","apk":"b5886da7c053d2063d792c0b7d47316afa3b63ea0e951bfa60863c4aa526947f"}
+  },
+  "fail_closed_unresolved_authority": {
+    "spark": {"missing":"source bytes for candidate SHA","candidate_source_sha256":"58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43","known_apk_sha256":"9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea","builder_result":"SOURCE_CANDIDATE_NOT_FOUND"},
+    "rush": {"missing":"source bytes for candidate SHA","candidate_source_sha256":"766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c","known_apk_sha256":"3e9aabaebdf1b321430abb3286156aeeaf8cf0174f2abff593a3ee3dc50d0e3a","builder_result":"SOURCE_CANDIDATE_NOT_FOUND"},
+    "vault": {"known_source_sha256":"7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793","candidate_apk_sha256":"76e20915e4bc6dee23adf43fdfcca9705815cf990164ccb8649032118dd42ce0","builder_result":"APK_CANDIDATE_NOT_BOUND_FAIL_CLOSED"},
+    "signal": {"known_source_sha256":"51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0","candidate_apk_sha256":"9d370142a251c2515fe19e7598a35213e8285fab4ed74f804d88ea6b5a21f05a","builder_result":"APK_CANDIDATE_NOT_BOUND_FAIL_CLOSED"}
+  },
+  "release_truth": {
+    "final_or_play_ready": false,
+    "physical_device_pass": false,
+    "network_release_ready": false,
+    "push_ready": false,
+    "stable_external_trusted_tls_thf_pass_backend": false,
+    "production_signing_performed": false,
+    "play_public_rollout_performed": false
+  },
+  "important_findings": [
+    "The prior physical-device registry is stale relative to the newer authoritative lineage for several applications; no new phone acceptance may be inferred from that older registry.",
+    "The builder currently exposes no APK inspector at the searched trusted paths, therefore new APK authority is not promoted without package/targetSdk inspection.",
+    "The V3 builder scan is read-only and does not mutate source, APKs, native game streams or token finance.",
+    "The reconciliation record is intentionally separate from the legacy factory-state schema so older validators are not fed nullable authority fields they cannot represent."
+  ],
+  "remaining_user_or_external_gates": [
+    "stable externally reachable trusted-TLS THF Pass/backend with health/auth/session/federation proof",
+    "FCM/APNs provider credentials inside an approved KMS/secret boundary",
+    "physical Android phone evidence tied to exact candidate SHA for install/launch/touch/layout/background-resume/offline-network/core journey/crash-free/accessibility/Data Saver/RTL/20-language readiness",
+    "production signing, Play Console/legal acceptance and public rollout"
+  ],
+  "rollback": {
+    "workflow": "revert merge commit 1449f201c0c2f4ef78a5151d18a63078ca578e63",
+    "authority_baseline": "THF Apps Authoritative Lineage V2 at merge 7be7faca9138662c921aafca3eb9a75872c2e6e0"
+  }
+}
