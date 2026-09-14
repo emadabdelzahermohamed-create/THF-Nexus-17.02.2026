@@ -1,0 +1,51 @@
+name: THF Cross-Stream Candidate Consistency V1
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
+      - 'ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json'
+      - 'ReleaseOps/validators/validate_cross_stream_candidate_consistency_v1.py'
+      - 'ReleaseOps/validators/test_validate_cross_stream_candidate_consistency_v1.py'
+      - '.github/workflows/thf-cross-stream-candidate-consistency-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run regression tests
+        run: python -m pytest -q ReleaseOps/validators/test_validate_cross_stream_candidate_consistency_v1.py
+      - name: Evaluate authoritative registries fail-closed
+        id: gate
+        shell: bash
+        run: |
+          set +e
+          python ReleaseOps/validators/validate_cross_stream_candidate_consistency_v1.py > cross-stream-candidate-consistency.json
+          rc=$?
+          set -e
+          cat cross-stream-candidate-consistency.json
+          echo "validator_rc=$rc" >> "$GITHUB_OUTPUT"
+          if [ "$rc" -eq 0 ]; then
+            echo 'PROMOTION_BLOCKED=NO' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$rc" -eq 2 ]; then
+            echo 'PROMOTION_BLOCKED=YES' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Reason: duplicate Android package identities map to different exact APK SHA values or another fail-closed registry invariant was violated.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "unexpected validator exit code: $rc" >&2
+            exit "$rc"
+          fi
+          echo 'FINAL_OR_PLAY_READY=FALSE' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload consistency evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-CROSS-STREAM-CANDIDATE-CONSISTENCY-V1
+          path: cross-stream-candidate-consistency.json
+          if-no-files-found: error
