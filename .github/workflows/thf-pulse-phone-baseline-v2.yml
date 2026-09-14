@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/thf-pulse-phone-baseline-v2.yml
       - ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh
+      - ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh
   workflow_dispatch:
 
 permissions:
@@ -41,17 +42,27 @@ jobs:
       - name: Stage isolated Pulse-only builder
         run: |
           set -Eeuo pipefail
-          chmod +x ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh
+          chmod +x ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh
           gcloud compute scp ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh "$GCP_BUILDER:/tmp/build_pulse_phone_baseline_v2.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-      - name: Build Pulse phone baseline
+          gcloud compute scp ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh "$GCP_BUILDER:/tmp/run_pulse_phone_baseline_v2_diagnostic.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Build Pulse phone baseline with diagnostics
+        id: remote_build
+        continue-on-error: true
         run: |
           set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_pulse_phone_baseline_v2.sh && /tmp/build_pulse_phone_baseline_v2.sh'
-      - name: Retrieve and fail-closed gate candidate
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_pulse_phone_baseline_v2.sh /tmp/run_pulse_phone_baseline_v2_diagnostic.sh && /tmp/run_pulse_phone_baseline_v2_diagnostic.sh'
+      - name: Retrieve Pulse candidate and diagnostics
+        if: always()
         run: |
           set -Eeuo pipefail
           rm -rf out && mkdir -p out
-          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-pulse-phone-baseline-v2/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-pulse-phone-baseline-v2/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          find out -maxdepth 2 -type f -printf '%p %s bytes\n' | sort
+          if test -s out/DIAGNOSTIC.txt; then cat out/DIAGNOSTIC.txt; fi
+      - name: Fail-closed gate candidate
+        if: steps.remote_build.outcome == 'success'
+        run: |
+          set -Eeuo pipefail
           E=out/EVIDENCE.txt
           grep -q '^THF_PULSE_PHONE_BASELINE_QA2=BUILT$' "$E"
           grep -q '^source_tree_sha256=6a180cf6599f8827e824431caf4566f520cc3796d9366c30abc197b4aeb6ba34$' "$E"
@@ -86,8 +97,15 @@ jobs:
           grep -q 'health-contracts.json' out/runtime-assets.sha256
           cat "$E"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
-          name: THF-PULSE-PHONE-BASELINE-QA2
+          name: THF-PULSE-PHONE-BASELINE-QA2-${{ github.run_id }}
           path: out/
+          if-no-files-found: warn
           retention-days: 14
           compression-level: 0
+      - name: Propagate remote build failure
+        if: steps.remote_build.outcome != 'success'
+        run: |
+          echo 'Remote Pulse QA2 build failed; diagnostics were preserved above and in the artifact.' >&2
+          exit 1
