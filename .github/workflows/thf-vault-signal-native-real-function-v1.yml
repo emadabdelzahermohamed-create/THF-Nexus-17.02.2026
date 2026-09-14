@@ -26,6 +26,7 @@ env:
   GCP_BUILDER: thf-wave-builder
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  NATIVE_ROOT: thf-vault-signal-native-candidates-v1
 
 jobs:
   native-derived-candidates:
@@ -53,6 +54,7 @@ jobs:
           grep -Fq 'getRestrictBackgroundStatus' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           grep -Fq 'com.topherofit.thf.pass' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
           ! grep -Fq 'WebView' ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+          grep -Fq 'thf-vault-signal-native-candidates-v1' ReleaseOps/scripts/build_vault_signal_native_candidates_v1.sh
       - name: Stage builders
         run: |
           set -Eeuo pipefail
@@ -68,7 +70,7 @@ jobs:
           set -Eeuo pipefail
           mkdir -p out/vault out/signal
           for app in vault signal; do
-            gcloud compute scp --recurse "$GCP_BUILDER:~/thf-vault-signal-api36-candidates-v1/$app/out/*" "out/$app/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+            gcloud compute scp --recurse "$GCP_BUILDER:~/$NATIVE_ROOT/$app/out/*" "out/$app/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
             E="out/$app/EVIDENCE.txt"
             grep -Fq 'native_overlay_id=THF_NATIVE_REAL_FUNCTION_V1' "$E"
             grep -Fq 'source_zip_mutated=FALSE' "$E"
@@ -101,10 +103,14 @@ jobs:
           grep -Fq 'package=com.topherofit.thf.vault' out/vault/EVIDENCE.txt
           grep -Fq 'source_sha256=51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0' out/signal/EVIDENCE.txt
           grep -Fq 'package=com.topherofit.thf.signal' out/signal/EVIDENCE.txt
-          echo 'NATIVE_WRAPPER_REPLACEMENT_PAYLOAD=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'PHYSICAL_DEVICE_PASS=FALSE' >> "$GITHUB_STEP_SUMMARY"
-          echo 'NETWORK_RELEASE_READY=FALSE' >> "$GITHUB_STEP_SUMMARY"
-          echo 'FINAL_OR_PLAY_READY=FALSE' >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo 'NATIVE_WRAPPER_REPLACEMENT_PAYLOAD=PASS'
+            echo 'PHYSICAL_DEVICE_PASS=FALSE'
+            echo 'NETWORK_RELEASE_READY=FALSE'
+            echo 'FINAL_OR_PLAY_READY=FALSE'
+            echo "VAULT_APK_SHA256=$(sed -n 's/^apk_sha256=//p' out/vault/EVIDENCE.txt)"
+            echo "SIGNAL_APK_SHA256=$(sed -n 's/^apk_sha256=//p' out/signal/EVIDENCE.txt)"
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: THF-VAULT-SIGNAL-NATIVE-REAL-FUNCTION-V1-QA

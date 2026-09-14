@@ -9,6 +9,13 @@ python3 - "$BASE" "$PATCHED" <<'PY'
 from pathlib import Path
 import sys
 src=Path(sys.argv[1]).read_text(encoding='utf-8')
+# Keep native QA fully isolated from the legacy wrapper audit workflow on the
+# shared builder. This avoids work-tree and Gradle-home races between gates.
+root_old='ROOT="$HOME/thf-vault-signal-api36-candidates-v1"'
+root_new='ROOT="$HOME/thf-vault-signal-native-candidates-v1"'
+if src.count(root_old) != 1:
+    raise SystemExit('builder root anchor drift')
+src=src.replace(root_old, root_new)
 anchor='  cat "$overlay_map"\n  cd "$project"\n'
 if src.count(anchor) != 1:
     raise SystemExit('builder anchor drift')
