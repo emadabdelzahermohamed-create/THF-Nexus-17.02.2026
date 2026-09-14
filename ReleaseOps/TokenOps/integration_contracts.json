@@ -1,0 +1,32 @@
+{
+  "schema": "thf-tokenops-integration-contracts/v1",
+  "services": {
+    "Vault": {
+      "contract_version": "1.0.0",
+      "network": "solana-mainnet-beta",
+      "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+      "may_sign": false,
+      "may_broadcast": false,
+      "accepts_private_key_material": false,
+      "allowed_outputs": ["balance_evidence", "ownership_evidence", "reserve_snapshot"]
+    },
+    "Forge": {
+      "contract_version": "1.0.0",
+      "network": "solana-mainnet-beta",
+      "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+      "may_sign": false,
+      "may_broadcast": false,
+      "accepts_private_key_material": false,
+      "allowed_outputs": ["allocation_preview", "vesting_preview", "burn_preview", "non_broadcast_intent"]
+    },
+    "Core": {
+      "contract_version": "1.0.0",
+      "network": "solana-mainnet-beta",
+      "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+      "may_sign": false,
+      "may_broadcast": false,
+      "accepts_private_key_material": false,
+      "allowed_outputs": ["activity_evidence", "eligibility_snapshot", "accounting_reference"]
+    }
+  }
+}
