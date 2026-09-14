@@ -66,7 +66,7 @@ jobs:
             grep -q '^network_release_ready=FALSE$' "out/$app/EVIDENCE.txt"
             grep -q '^final_or_play_ready=FALSE$' "out/$app/EVIDENCE.txt"
             grep -q '^production_signing_performed=FALSE$' "out/$app/EVIDENCE.txt"
-            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' | head -n1)"
+            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' -print -quit)"
             test -s "$APK"
             unzip -t "$APK" >/dev/null
             ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
@@ -81,7 +81,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           for app in vault signal; do
-            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' | head -n1)"
+            APK="$(find "out/$app" -maxdepth 1 -type f -name '*.apk' -print -quit)"
             TMP="$(mktemp -d)"
             unzip -q "$APK" -d "$TMP"
             test -s "$TMP/classes.dex"
@@ -89,9 +89,10 @@ jobs:
             test -s "$TMP/assets/offline.html"
             ENTRY_COUNT="$(unzip -Z1 "$APK" | wc -l)"
             DEX_BYTES="$(stat -c %s "$TMP/classes.dex")"
-            strings -n 4 "$TMP/classes.dex" | grep -Fq 'Landroid/webkit/WebView;'
-            strings -n 4 "$TMP/classes.dex" | grep -Fq 'loadUrl'
-            strings -n 4 "$TMP/classes.dex" | grep -Fq 'setJavaScriptEnabled'
+            strings -n 4 "$TMP/classes.dex" > "$TMP/classes.dex.strings"
+            grep -Fq 'Landroid/webkit/WebView;' "$TMP/classes.dex.strings"
+            grep -Fq 'loadUrl' "$TMP/classes.dex.strings"
+            grep -Fq 'setJavaScriptEnabled' "$TMP/classes.dex.strings"
             # This exact-source artifact is a WebView shell (currently seven APK
             # entries and a ~17 KiB dex). Building it is useful QA evidence but
             # must never become release authority under the real-function policy.
