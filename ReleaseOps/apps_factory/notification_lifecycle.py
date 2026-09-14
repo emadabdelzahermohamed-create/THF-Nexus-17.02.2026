@@ -10,6 +10,10 @@ implementation owns token custody. Registrations are bound to the authenticated 
 Pass subject + session + locked package so one device/session cannot mutate another.
 Legacy rows without a session binding are migrated fail-closed and cannot be used by
 an authenticated session.
+
+Vault deletion is durability-tracked. If a provider secret cannot be deleted after a
+registration is made inactive, only the opaque token_id is journaled for retry; raw
+provider credentials and fingerprints are never copied into the cleanup journal.
 """
 from __future__ import annotations
 
@@ -82,6 +86,15 @@ class NotificationTokenRegistry:
           UNIQUE(subject, session_id, package, provider, fingerprint)
         )
     """
+    _CREATE_CLEANUP_SQL = """
+        CREATE TABLE IF NOT EXISTS notification_token_cleanup (
+          token_id TEXT PRIMARY KEY,
+          queued_at INTEGER NOT NULL,
+          last_attempt_at INTEGER,
+          attempts INTEGER NOT NULL DEFAULT 0,
+          last_error TEXT
+        )
+    """
 
     def __init__(self, db: sqlite3.Connection, vault: SecureTokenVault):
         self.db = db
@@ -98,9 +111,6 @@ class NotificationTokenRegistry:
         else:
             columns = {row[1] for row in self.db.execute("PRAGMA table_info(notification_tokens)")}
             if "session_id" not in columns:
-                # SQLite cannot remove the legacy UNIQUE(subject,package,provider,fingerprint)
-                # constraint with ALTER TABLE. Rebuild the table atomically so parallel
-                # Pass sessions can own distinct registrations for the same provider token.
                 with self.db:
                     self.db.execute("ALTER TABLE notification_tokens RENAME TO notification_tokens_legacy")
                     self.db.execute(self._CREATE_TABLE_SQL)
@@ -117,6 +127,7 @@ class NotificationTokenRegistry:
                         (LEGACY_UNBOUND_SESSION,),
                     )
                     self.db.execute("DROP TABLE notification_tokens_legacy")
+        self.db.execute(self._CREATE_CLEANUP_SQL)
         self.db.execute(
             "CREATE INDEX IF NOT EXISTS idx_notification_tokens_subject_session "
             "ON notification_tokens(subject, session_id, package, active)"
@@ -134,6 +145,83 @@ class NotificationTokenRegistry:
         if provider not in ALLOWED_PROVIDERS:
             raise ValueError("unsupported provider")
 
+    def _queue_cleanup(self, token_id: str, error: Exception | str) -> None:
+        now = int(time.time())
+        message = str(error)
+        if len(message) > 240:
+            message = message[:240]
+        self.db.execute(
+            """
+            INSERT INTO notification_token_cleanup(token_id,queued_at,last_attempt_at,attempts,last_error)
+            VALUES(?,?,?,1,?)
+            ON CONFLICT(token_id) DO UPDATE SET
+              last_attempt_at=excluded.last_attempt_at,
+              attempts=notification_token_cleanup.attempts+1,
+              last_error=excluded.last_error
+            """,
+            (token_id, now, now, message),
+        )
+        self.db.commit()
+
+    def _delete_vault_or_queue(self, token_id: str) -> bool:
+        try:
+            self.vault.delete(token_id)
+        except Exception as exc:
+            self._queue_cleanup(token_id, exc)
+            return False
+        self.db.execute("DELETE FROM notification_token_cleanup WHERE token_id=?", (token_id,))
+        self.db.commit()
+        return True
+
+    def pending_vault_cleanup_count(self) -> int:
+        return int(self.db.execute("SELECT COUNT(*) FROM notification_token_cleanup").fetchone()[0])
+
+    def drain_vault_cleanup(self, *, limit: int = 100) -> tuple[int, int]:
+        """Retry deletion of orphaned inactive secrets without deleting active tokens."""
+        if not isinstance(limit, int) or limit < 1 or limit > 1000:
+            raise ValueError("cleanup limit must be between 1 and 1000")
+        token_ids = [
+            row[0]
+            for row in self.db.execute(
+                "SELECT token_id FROM notification_token_cleanup ORDER BY queued_at, token_id LIMIT ?",
+                (limit,),
+            ).fetchall()
+        ]
+        cleared = failed = 0
+        for token_id in token_ids:
+            self.db.execute("BEGIN IMMEDIATE")
+            try:
+                active = self.db.execute(
+                    "SELECT active FROM notification_tokens WHERE token_id=?", (token_id,)
+                ).fetchone()
+                if active is not None and bool(active[0]):
+                    self.db.execute("DELETE FROM notification_token_cleanup WHERE token_id=?", (token_id,))
+                    self.db.commit()
+                    cleared += 1
+                    continue
+                try:
+                    self.vault.delete(token_id)
+                except Exception as exc:
+                    now = int(time.time())
+                    self.db.execute(
+                        """
+                        UPDATE notification_token_cleanup
+                        SET last_attempt_at=?, attempts=attempts+1, last_error=?
+                        WHERE token_id=?
+                        """,
+                        (now, str(exc)[:240], token_id),
+                    )
+                    self.db.commit()
+                    failed += 1
+                    continue
+                self.db.execute("DELETE FROM notification_token_cleanup WHERE token_id=?", (token_id,))
+                self.db.commit()
+                cleared += 1
+            except Exception:
+                self.db.rollback()
+                raise
+        return cleared, failed
+
     def register(
         self, *, subject: str, session_id: str, package: str, provider: str, raw_token: str
     ) -> Registration:
@@ -147,20 +235,27 @@ class NotificationTokenRegistry:
             "SELECT generation, active FROM notification_tokens WHERE token_id=?", (token_id,)
         ).fetchone()
         generation = int(row[0]) if row else 1
-        self.vault.put(token_id, raw_token)
+
+        self.db.execute("BEGIN IMMEDIATE")
+        vault_written = False
         try:
-            with self.db:
-                self.db.execute(
-                    """
-                    INSERT INTO notification_tokens(
-                      token_id,subject,session_id,package,provider,fingerprint,generation,active,created_at,updated_at
-                    ) VALUES(?,?,?,?,?,?,?,1,?,?)
-                    ON CONFLICT(token_id) DO UPDATE SET active=1, updated_at=excluded.updated_at
-                    """,
-                    (token_id, subject, session_id, package, provider, fp, generation, now, now),
-                )
+            self.db.execute("DELETE FROM notification_token_cleanup WHERE token_id=?", (token_id,))
+            self.vault.put(token_id, raw_token)
+            vault_written = True
+            self.db.execute(
+                """
+                INSERT INTO notification_tokens(
+                  token_id,subject,session_id,package,provider,fingerprint,generation,active,created_at,updated_at
+                ) VALUES(?,?,?,?,?,?,?,1,?,?)
+                ON CONFLICT(token_id) DO UPDATE SET active=1, updated_at=excluded.updated_at
+                """,
+                (token_id, subject, session_id, package, provider, fp, generation, now, now),
+            )
+            self.db.commit()
         except Exception:
-            self.vault.delete(token_id)
+            self.db.rollback()
+            if vault_written:
+                self._delete_vault_or_queue(token_id)
             raise
         return self.get(token_id, subject=subject, session_id=session_id)
 
@@ -184,43 +279,63 @@ class NotificationTokenRegistry:
         )
         if new_token_id == old_token_id:
             raise ValueError("new provider token must differ from rotation source")
+        existing_new = self.db.execute(
+            "SELECT active FROM notification_tokens WHERE token_id=?", (new_token_id,)
+        ).fetchone()
+        if existing_new is not None and bool(existing_new[0]):
+            raise ValueError("rotation destination is already active")
+
         next_generation = old.generation + 1
         now = int(time.time())
-        self.vault.put(new_token_id, new_raw_token)
+        self.db.execute("BEGIN IMMEDIATE")
+        vault_written = False
         try:
-            with self.db:
-                self.db.execute(
-                    "UPDATE notification_tokens SET active=0, updated_at=? "
-                    "WHERE token_id=? AND subject=? AND session_id=? AND active=1",
-                    (now, old_token_id, subject, session_id),
-                )
-                if self.db.execute("SELECT changes()").fetchone()[0] != 1:
-                    raise PermissionError("rotation source changed before commit")
-                self.db.execute(
-                    """
-                    INSERT INTO notification_tokens(
-                      token_id,subject,session_id,package,provider,fingerprint,generation,active,created_at,updated_at
-                    ) VALUES(?,?,?,?,?,?,?,1,?,?)
-                    ON CONFLICT(token_id) DO UPDATE SET generation=excluded.generation, active=1, updated_at=excluded.updated_at
-                    """,
-                    (new_token_id, subject, session_id, package, provider, new_fp, next_generation, now, now),
-                )
+            self.db.execute("DELETE FROM notification_token_cleanup WHERE token_id=?", (new_token_id,))
+            self.vault.put(new_token_id, new_raw_token)
+            vault_written = True
+            self.db.execute(
+                "UPDATE notification_tokens SET active=0, updated_at=? "
+                "WHERE token_id=? AND subject=? AND session_id=? AND active=1",
+                (now, old_token_id, subject, session_id),
+            )
+            if self.db.execute("SELECT changes()").fetchone()[0] != 1:
+                raise PermissionError("rotation source changed before commit")
+            self.db.execute(
+                """
+                INSERT INTO notification_tokens(
+                  token_id,subject,session_id,package,provider,fingerprint,generation,active,created_at,updated_at
+                ) VALUES(?,?,?,?,?,?,?,1,?,?)
+                ON CONFLICT(token_id) DO UPDATE SET generation=excluded.generation, active=1, updated_at=excluded.updated_at
+                """,
+                (new_token_id, subject, session_id, package, provider, new_fp, next_generation, now, now),
+            )
+            self.db.commit()
         except Exception:
-            self.vault.delete(new_token_id)
+            self.db.rollback()
+            if vault_written:
+                self._delete_vault_or_queue(new_token_id)
             raise
-        self.vault.delete(old_token_id)
+
+        self._delete_vault_or_queue(old_token_id)
         return self.get(new_token_id, subject=subject, session_id=session_id)
 
     def revoke(self, *, token_id: str, subject: str, session_id: str) -> None:
         reg = self.get(token_id, subject=subject, session_id=session_id)
         if reg.active:
-            self.db.execute(
-                "UPDATE notification_tokens SET active=0, updated_at=? "
-                "WHERE token_id=? AND subject=? AND session_id=?",
-                (int(time.time()), token_id, subject, session_id),
-            )
-            self.db.commit()
-            self.vault.delete(token_id)
+            self.db.execute("BEGIN IMMEDIATE")
+            try:
+                self.db.execute(
+                    "UPDATE notification_tokens SET active=0, updated_at=? "
+                    "WHERE token_id=? AND subject=? AND session_id=? AND active=1",
+                    (int(time.time()), token_id, subject, session_id),
+                )
+                if self.db.execute("SELECT changes()").fetchone()[0] != 1:
+                    raise PermissionError("notification registration changed before revoke commit")
+                self.db.commit()
+            except Exception:
+                self.db.rollback()
+                raise
+            self._delete_vault_or_queue(token_id)
 
     def revoke_logout(self, *, subject: str, session_id: str, package: str) -> int:
         if package not in ALLOWED_PACKAGES:
