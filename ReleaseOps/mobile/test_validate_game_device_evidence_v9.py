@@ -27,8 +27,8 @@ def evidence(product: str, registry_sha: str, root: Path):
     doc = T8.evidence(product, registry_sha, root)
     package = doc['package']
     data = (
-        f"09-14 04:13:35.000 1234 1234 I THFGame: package={package} core_gameplay_started\n"
-        f"09-14 04:14:20.000 1234 1234 I THFGame: package={package} core_gameplay_completed\n"
+        f"09-14 04:13:10.000 1234 1234 I THFGame: package={package} core_gameplay_started\n"
+        f"09-14 04:13:50.000 1234 1234 I THFGame: package={package} core_gameplay_completed\n"
     ).encode()
     path = root / 'crash-logcat.txt'
     path.write_bytes(data)
@@ -36,8 +36,8 @@ def evidence(product: str, registry_sha: str, root: Path):
         'session_id': doc['session']['session_id'],
         'package': package,
         'method': 'adb-logcat-pid-filter',
-        'started_at_utc': '2026-09-14T04:13:35Z',
-        'ended_at_utc': '2026-09-14T04:14:20Z',
+        'started_at_utc': '2026-09-14T04:13:10Z',
+        'ended_at_utc': '2026-09-14T04:13:50Z',
         'crash_free': True,
         'process_alive_after_core_gameplay': True,
         'evidence_ref': 'crash-logcat.txt',
@@ -94,7 +94,7 @@ class DeviceEvidenceV9Tests(unittest.TestCase):
         reg=T8.T7.T6.registry_doc(); rsha='f'*64
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); doc=evidence('fitness_games',rsha,root)
-            p=root/'crash-logcat.txt'; data=b'09-14 04:14:00 I THFGame: unrelated process\n'; p.write_bytes(data)
+            p=root/'crash-logcat.txt'; data=b'09-14 04:13:30 I THFGame: unrelated process\n'; p.write_bytes(data)
             doc['crash_observation']['evidence_sha256']=hashlib.sha256(data).hexdigest()
             self.assertTrue(any('package identity absent' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
 
