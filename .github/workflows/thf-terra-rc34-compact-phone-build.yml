@@ -51,21 +51,24 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p out
-          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rc34-compact-phone-v2/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          grep -q '^THF_TERRA_RC34_PHONE_V2=BUILT$' out/EVIDENCE.txt
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rc34-compact-phone-v3/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          grep -q '^THF_TERRA_RC34_PHONE_V3=BUILT$' out/EVIDENCE.txt
           grep -q '^package_from_apk=PASS$' out/EVIDENCE.txt
           grep -q '^target_sdk=36$' out/EVIDENCE.txt
           grep -q '^target_sdk_from_apk=PASS$' out/EVIDENCE.txt
           grep -q '^android_api_36_installed=PASS$' out/EVIDENCE.txt
+          grep -q '^mpfb_runtime_asset=PASS$' out/EVIDENCE.txt
+          grep -q '^offline_visual_guest_mode=PASS$' out/EVIDENCE.txt
+          grep -q '^offline_visual_guest_auth_bypass=FALSE_AUTH_NOT_SIMULATED$' out/EVIDENCE.txt
           grep -q '^under_100MiB=PASS$' out/EVIDENCE.txt
           grep -q '^physical_device_status=PENDING$' out/EVIDENCE.txt
           grep -q '^final_or_play_ready=FALSE$' out/EVIDENCE.txt
           test -s out/apk_badging.txt
-          test -s out/THF-TERRA-4.6.8-RC34-PHONE-V2.apk
+          test -s out/THF-TERRA-4.6.8-RC34-PHONE-V3.apk
           cat out/EVIDENCE.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: THF-TERRA-4.6.8-RC34-PHONE-V2
+          name: THF-TERRA-4.6.8-RC34-PHONE-V3
           path: out/
           retention-days: 14
           compression-level: 0
