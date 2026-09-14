@@ -7,7 +7,7 @@ HERE = Path(__file__).resolve().parent
 S = importlib.util.spec_from_file_location('v16', HERE / 'validate_game_device_evidence_v16.py')
 M = importlib.util.module_from_spec(S); sys.modules[S.name] = M; S.loader.exec_module(M)
 T = importlib.util.spec_from_file_location('t15', HERE / 'test_validate_game_device_evidence_v15.py')
-T15 = importlib.util.module_from_spec(T); sys.modules[T.name] = T15; T.loader.exec_module(T)
+T15 = importlib.util.module_from_spec(T); sys.modules[T.name] = T15; T.loader.exec_module(T15)
 V3 = M.V3
 
 
