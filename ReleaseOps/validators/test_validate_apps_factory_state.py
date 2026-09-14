@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR = ROOT / "ReleaseOps/validators/validate_apps_factory_state.py"
-STATE = ROOT / "ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260913_2035_EET.json"
+STATE = ROOT / "ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1115_EET.json"
 REGISTRY = ROOT / "ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json"
 
 
@@ -32,7 +32,8 @@ def test_authoritative_state_passes(tmp_path):
     assert cp.returncode == 0, cp.stdout + cp.stderr
     assert report["validation"] == "PASS"
     assert report["apps_exact_package_gate_pass"] == 9
-    assert report["apps_runtime_binding_pass"] == 9
+    assert report["apps_runtime_config_binding_pass"] == 9
+    assert report["apps_backend_health_auth_proven"] == 0
     assert report["apps_physical_pending"] == 9
     assert report["pytest_missing_apps"] == ["rush", "spark"]
 
@@ -46,8 +47,7 @@ def test_authoritative_state_matches_physical_registry(tmp_path):
 
 def test_rejects_registry_apk_authority_drift(tmp_path):
     def mutate(r):
-        spark = next(c for c in r["candidates"] if c["name"] == "spark")
-        spark["apk_sha256"] = "0" * 64
+        next(c for c in r["candidates"] if c["name"] == "spark")["apk_sha256"] = "0" * 64
     cp, report = run_state(tmp_path, registry_mutate=mutate, bind_registry=True)
     assert cp.returncode != 0
     assert any("spark: factory/physical APK SHA authority drift" in e for e in report["errors"])
@@ -55,8 +55,7 @@ def test_rejects_registry_apk_authority_drift(tmp_path):
 
 def test_rejects_registry_source_authority_drift(tmp_path):
     def mutate(r):
-        rush = next(c for c in r["candidates"] if c["name"] == "rush")
-        rush["source_sha256"] = "1" * 64
+        next(c for c in r["candidates"] if c["name"] == "rush")["source_sha256"] = "1" * 64
     cp, report = run_state(tmp_path, registry_mutate=mutate, bind_registry=True)
     assert cp.returncode != 0
     assert any("rush: factory/physical source SHA authority drift" in e for e in report["errors"])
@@ -105,7 +104,37 @@ def test_rejects_unsafe_rollout_truth(tmp_path):
 def test_rejects_missing_runtime_binding(tmp_path):
     cp, report = run_state(tmp_path, lambda d: d["apps"][0].__setitem__("runtime_endpoint_binding", "PENDING"))
     assert cp.returncode != 0
-    assert any("runtime endpoint binding" in e for e in report["errors"])
+    assert any("configuration-only" in e for e in report["errors"])
+
+
+def test_rejects_old_pass_shared_staging_health(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["apps"][0].__setitem__("runtime_health", "PASS_SHARED_STAGING"))
+    assert cp.returncode != 0
+    assert any("runtime health cannot be promoted" in e for e in report["errors"])
+
+
+def test_rejects_shared_runtime_health_pass(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["shared_runtime"].__setitem__("health", "PASS"))
+    assert cp.returncode != 0
+    assert any("diagnostic-only" in e for e in report["errors"])
+
+
+def test_rejects_network_release_ready_promotion(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["shared_runtime"].__setitem__("network_release_ready", True))
+    assert cp.returncode != 0
+    assert any("network release readiness" in e for e in report["errors"])
+
+
+def test_rejects_backend_health_auth_promotion(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["shared_runtime"].__setitem__("backend_health_auth_proof", True))
+    assert cp.returncode != 0
+    assert any("backend health/auth proof" in e for e in report["errors"])
+
+
+def test_rejects_core_runtime_health_promotion(tmp_path):
+    cp, report = run_state(tmp_path, lambda d: d["core"].__setitem__("runtime_backend_health", "PASS_PREEXISTING_SAME_SHA"))
+    assert cp.returncode != 0
+    assert any("Core runtime backend health" in e for e in report["errors"])
 
 
 def test_rejects_false_auth_promotion(tmp_path):
