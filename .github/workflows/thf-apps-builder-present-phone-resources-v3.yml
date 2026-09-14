@@ -1,0 +1,165 @@
+name: THF Apps Builder-Present Phone Resources V3
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/thf_apps_phone_resources_v1.py
+      - tools/thf_echo_remove_placeholder_demo_v1.py
+      - tests/test_thf_apps_phone_resources_v1.py
+      - .github/workflows/thf-apps-builder-present-phone-resources-v3.yml
+  push:
+    branches: [main]
+    paths:
+      - tools/thf_apps_phone_resources_v1.py
+      - tools/thf_echo_remove_placeholder_demo_v1.py
+      - tests/test_thf_apps_phone_resources_v1.py
+      - .github/workflows/thf-apps-builder-present-phone-resources-v3.yml
+  workflow_dispatch:
+
+concurrency:
+  group: thf-apps-exclusive-builder
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  build-five:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with: {persist-credentials: false}
+      - name: Unit regressions
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest -v tests/test_thf_apps_phone_resources_v1.py
+          python3 -m compileall -q tools/thf_apps_phone_resources_v1.py tools/thf_echo_remove_placeholder_demo_v1.py
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Stage exact-candidate tools
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" \
+            tools/thf_apps_phone_resources_v1.py tools/thf_echo_remove_placeholder_demo_v1.py \
+            ReleaseOps/validators/validate_mobile_real_function_source.py \
+            "$GCP_BUILDER:/tmp/"
+      - name: Build every independent candidate before aggregate verdict
+        run: |
+          cat > /tmp/thf-five-v3.py <<'PY'
+          import hashlib,json,os,pathlib,shutil,subprocess,traceback,zipfile
+          H=pathlib.Path.home(); O=H/'thf-phone-resources-five-v3'; shutil.rmtree(O,ignore_errors=True)
+          for p in (O/'work',O/'out',O/'candidates'): p.mkdir(parents=True,exist_ok=True)
+          SDK=H/'thf-builder-rc16-build/android-sdk'; GBIN=H/'thf-builder-rc16-build/cache/gradle-dist-8.13/gradle-8.13/bin/gradle'; AAPT=SDK/'build-tools/36.0.0/aapt'
+          for p in (GBIN,AAPT):
+              if not p.exists(): raise SystemExit('PINNED_TOOL_MISSING='+str(p))
+          specs=[
+            ('core','THF Hub','com.topherofit.thf.core','6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a'),
+            ('forge','THF Market','com.topherofit.thf.forge','0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51'),
+            ('echo','THF Community','com.topherofit.thf.echo','40a197b60563e560cab93ba0a64c859d9b650da222fdaec933993977d63902ab'),
+            ('codex','THF Learn','com.topherofit.thf.codex','3d60cc550732468c89fe120f552def53ac798646d065e94efa153f8979e15b1e'),
+            ('command','THF Admin','com.topherofit.thf.command','f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408')]
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for b in iter(lambda:f.read(1048576),b''): h.update(b)
+              return h.hexdigest()
+          wanted={x[3] for x in specs}; hits={x:[] for x in wanted}; skip={'.git','node_modules','.gradle','.venv','venv','cache','caches','Library','Temp'}
+          for root,dirs,files in os.walk(H):
+              dirs[:]=[d for d in dirs if d not in skip]
+              lo=root.lower()
+              if any(x in lo for x in ('wave-mawja','/terra','/rift','/arena','tokenops','solana')): dirs[:]=[]; continue
+              for n in files:
+                  if not n.lower().endswith('.zip'): continue
+                  p=pathlib.Path(root)/n
+                  try: d=sha(p) if 0<p.stat().st_size<=500_000_000 else ''
+                  except OSError: continue
+                  if d in hits: hits[d].append(p)
+          rows=[]
+          for app,name,pkg,expected in specs:
+              row={'app':app,'name':name,'package':pkg,'input_source_sha256':expected,'status':'FAIL','physical_device_pass':False,'final_or_play_ready':False}
+              try:
+                  if not hits[expected]: raise RuntimeError('EXACT_SOURCE_MISSING')
+                  src=hits[expected][0]
+                  if sha(src)!=expected: raise RuntimeError('EXACT_SOURCE_SHA_DRIFT')
+                  dest=O/'work'/app; dest.mkdir(); zipfile.ZipFile(src).extractall(dest)
+                  builds=list(dest.rglob('android/app/build.gradle'))+list(dest.rglob('android/app/build.gradle.kts'))
+                  if not builds: raise RuntimeError('ANDROID_BUILD_FILE_MISSING')
+                  root=builds[0].parents[2]
+                  if app=='echo':
+                      subprocess.run(['python3','/tmp/thf_echo_remove_placeholder_demo_v1.py',str(root)],check=True)
+                      row['echo_placeholder_demo_removed']=True
+                  subprocess.run(['python3','/tmp/thf_apps_phone_resources_v1.py','--root',str(root),'--app',app,'--package',pkg,'--name',name,'--report',str(O/'out'/f'{app}.resources.json')],check=True)
+                  source_gate=O/'out'/f'{app}.source-gate.json'
+                  subprocess.run(['python3','/tmp/validate_mobile_real_function_source.py',str(root),'--package',pkg,'--json-out',str(source_gate)],check=True,stdout=subprocess.DEVNULL)
+                  gate=json.load(open(source_gate)); row['source_gate']=gate.get('source_gate')
+                  if row['source_gate']!='PASS': raise RuntimeError('SOURCE_GATE_FAIL')
+                  target=O/'candidates'/f'THF_{app.upper()}_PHONE_RESOURCES_V1_SOURCE.zip'; excluded={'.gradle','build','.git','node_modules','__pycache__','.pytest_cache'}
+                  fs=[p for p in root.rglob('*') if p.is_file() and p.name!='local.properties' and not any(x in excluded for x in p.relative_to(root).parts) and p.suffix.lower() not in {'.jks','.keystore','.p12','.pem','.key'}]
+                  with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+                      for p in sorted(fs,key=lambda x:x.relative_to(root).as_posix()):
+                          i=zipfile.ZipInfo(p.relative_to(root).as_posix(),(2020,1,1,0,0,0)); i.compress_type=zipfile.ZIP_DEFLATED; i.external_attr=0o100644<<16; z.writestr(i,p.read_bytes())
+                  if zipfile.ZipFile(target).testzip(): raise RuntimeError('SOURCE_ZIP_CORRUPT')
+                  row['candidate_source_sha256']=sha(target)
+                  (root/'android/local.properties').write_text('sdk.dir='+str(SDK)+'\n')
+                  env=os.environ.copy(); env.update({'ANDROID_HOME':str(SDK),'ANDROID_SDK_ROOT':str(SDK),'GRADLE_USER_HOME':str(O/'gradle-home'/app)})
+                  log=O/'out'/f'{app}.gradle.log'
+                  with log.open('w') as fh: r=subprocess.run([str(GBIN),'--no-daemon','clean','assembleRelease'],cwd=root/'android',env=env,stdout=fh,stderr=subprocess.STDOUT)
+                  if r.returncode: raise RuntimeError('GRADLE_BUILD_FAIL')
+                  apks=list((root/'android').rglob('build/outputs/apk/release/*.apk'))
+                  if not apks: raise RuntimeError('APK_MISSING')
+                  outapk=O/'candidates'/f'THF_{app.upper()}_PHONE_RESOURCES_V1_UNSIGNED.apk'; shutil.copy2(apks[0],outapk); row['apk_sha256']=sha(outapk)
+                  badge=subprocess.run([str(AAPT),'dump','badging',str(outapk)],capture_output=True,text=True,check=True).stdout
+                  if f"package: name='{pkg}'" not in badge: raise RuntimeError('PACKAGE_ID_FAIL')
+                  if "targetSdkVersion:'36'" not in badge: raise RuntimeError('TARGET_SDK_36_FAIL')
+                  row['package_api36']='PASS'; row['status']='PASS'
+              except Exception as e:
+                  row['failure']=str(e); (O/'out'/f'{app}.failure.txt').write_text(traceback.format_exc())
+              rows.append(row)
+          summary={'schema':'thf-apps-builder-present-phone-resources-v3','rows':rows,'scope':['core','forge','echo','codex','command'],'excluded':['pulse','games','wave','vault','signal'],'physical_device_pass':False,'final_or_play_ready':False}
+          json.dump(summary,open(O/'out/summary.json','w'),indent=2)
+          print(json.dumps(summary,indent=2))
+          failed=[x['app'] for x in rows if x['status']!='PASS']
+          if failed: raise SystemExit('INDEPENDENT_APP_FAILURES='+','.join(failed))
+          print('BUILDER_PRESENT_PHONE_RESOURCES_V3=PASS')
+          PY
+          gcloud compute scp --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" /tmp/thf-five-v3.py "$GCP_BUILDER:/tmp/thf-five-v3.py"
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --ssh-key-expire-after=55m --command='python3 /tmp/thf-five-v3.py'
+          remote_rc=$?
+          set -e
+          rm -rf out-five && mkdir out-five
+          gcloud compute scp --quiet --recurse --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" "$GCP_BUILDER:~/thf-phone-resources-five-v3/out" out-five/
+          gcloud compute scp --quiet --recurse --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" "$GCP_BUILDER:~/thf-phone-resources-five-v3/candidates" out-five/ || true
+          cat out-five/out/summary.json
+          exit "$remote_rc"
+      - name: Truth boundary
+        if: success()
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          d=json.load(open(next(pathlib.Path('out-five').rglob('summary.json'))))
+          assert len(d['rows'])==5 and all(x['status']=='PASS' for x in d['rows'])
+          assert d['physical_device_pass'] is False and d['final_or_play_ready'] is False
+          print('FIVE_APP_TRUTH_BOUNDARY=PASS')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-APPS-PHONE-RESOURCES-FIVE-V3
+          path: out-five/
+          retention-days: 14
+          compression-level: 0
