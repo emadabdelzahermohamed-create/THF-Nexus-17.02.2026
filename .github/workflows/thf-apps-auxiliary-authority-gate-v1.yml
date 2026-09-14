@@ -1,0 +1,60 @@
+name: THF Apps Auxiliary Artifact Authority Gate V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/apps_factory/THF_AUXILIARY_MOBILE_ARTIFACT_REGISTRY_V1.json'
+      - 'ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1115_EET.json'
+      - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
+      - 'ReleaseOps/apps_factory/THF_CORE_PHONE_UI1_LOCAL_QA_CHECKPOINT_20260914_1431_EET.md'
+      - 'ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-EVIDENCE.txt'
+      - 'ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-LOCAL-QA.apk'
+      - 'ReleaseOps/validators/validate_auxiliary_mobile_artifact_authority_v1.py'
+      - 'ReleaseOps/validators/test_validate_auxiliary_mobile_artifact_authority_v1.py'
+      - '.github/workflows/thf-apps-auxiliary-authority-gate-v1.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/apps_factory/THF_AUXILIARY_MOBILE_ARTIFACT_REGISTRY_V1.json'
+      - 'ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1115_EET.json'
+      - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
+      - 'ReleaseOps/apps_factory/THF_CORE_PHONE_UI1_LOCAL_QA_CHECKPOINT_20260914_1431_EET.md'
+      - 'ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-EVIDENCE.txt'
+      - 'ReleaseOps/phone-apks/THF-CORE-RC6-PHONE-UI1-LOCAL-QA.apk'
+      - 'ReleaseOps/validators/validate_auxiliary_mobile_artifact_authority_v1.py'
+      - 'ReleaseOps/validators/test_validate_auxiliary_mobile_artifact_authority_v1.py'
+      - '.github/workflows/thf-apps-auxiliary-authority-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authority-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile release authority guard
+        run: |
+          python -m py_compile ReleaseOps/validators/validate_auxiliary_mobile_artifact_authority_v1.py
+      - name: Validate auxiliary/mobile release authority isolation
+        run: |
+          python ReleaseOps/validators/validate_auxiliary_mobile_artifact_authority_v1.py \
+            ReleaseOps/apps_factory/THF_AUXILIARY_MOBILE_ARTIFACT_REGISTRY_V1.json \
+            ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1115_EET.json \
+            ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json \
+            --repo-root .
+      - name: Regression tests
+        run: |
+          python -m pip install --disable-pip-version-check pytest
+          pytest -q ReleaseOps/validators/test_validate_auxiliary_mobile_artifact_authority_v1.py \
+            ReleaseOps/validators/test_validate_apps_factory_state.py
+      - name: Revalidate production authority state
+        run: |
+          python ReleaseOps/validators/validate_apps_factory_state.py \
+            ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260914_1115_EET.json \
+            --physical-registry ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json
