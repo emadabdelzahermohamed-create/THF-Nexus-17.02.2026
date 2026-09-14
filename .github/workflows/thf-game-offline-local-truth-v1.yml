@@ -1,0 +1,46 @@
+name: THF Game Offline Local Truth V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-game-offline-local-truth-v1.yml'
+      - 'ReleaseOps/validators/validate_game_offline_local_truth_v1.py'
+      - 'ReleaseOps/validators/test_validate_game_offline_local_truth_v1.py'
+      - 'ReleaseOps/games_factory/apply_spark_rush_real_game_overlay_v1.py'
+      - 'ReleaseOps/games_factory/apply_learn_fitness_real_game_overlay_v1.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-truth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Compile and regression tests
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ReleaseOps/validators/validate_game_offline_local_truth_v1.py ReleaseOps/validators/test_validate_game_offline_local_truth_v1.py
+          python3 -m unittest ReleaseOps/validators/test_validate_game_offline_local_truth_v1.py -v
+      - name: Audit shipping local overlay generators
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          python3 ReleaseOps/validators/validate_game_offline_local_truth_v1.py ReleaseOps/games_factory/apply_spark_rush_real_game_overlay_v1.py --family spark_rush --json-out out/spark-rush-offline-truth.json
+          python3 ReleaseOps/validators/validate_game_offline_local_truth_v1.py ReleaseOps/games_factory/apply_learn_fitness_real_game_overlay_v1.py --family learn_fitness --json-out out/learn-fitness-offline-truth.json
+          python3 - <<'PY'
+          import json,pathlib
+          for p in sorted(pathlib.Path('out').glob('*.json')):
+              x=json.loads(p.read_text()); assert x['passed'] is True; assert x['final_or_play_ready'] is False
+              assert x['truth_boundary']=='STATIC_LOCAL_OVERLAY_CONTRACT_ONLY_NOT_DEVICE_OR_PLAY_READY'
+          print('OFFLINE_LOCAL_TRUTH_CONTRACT=PASS')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-GAME-OFFLINE-LOCAL-TRUTH-V1
+          path: out/
+          retention-days: 14
