@@ -1,0 +1,104 @@
+{
+  "schema": "thf.android.shared.integration.v4",
+  "generated_at": "2026-09-15T01:34:00+03:00",
+  "baseline": {
+    "contracts": "thf.shared.integration.v3",
+    "legacy_manifest": "ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V1.json",
+    "package_ids_preserved": true
+  },
+  "credential_manager_google": {
+    "android_credential_manager": true,
+    "sign_in_with_google": true,
+    "server_client_id_required": true,
+    "mobile_client_secret_allowed": false,
+    "nonce_minimum_chars": 32,
+    "nonce_server_verification_required": true,
+    "cryptographic_signature_verification_required": true,
+    "package_bound_request": true,
+    "production_oauth_console_bound": false
+  },
+  "session_lifecycle": {
+    "authenticated_subject_required": true,
+    "maximum_access_token_lifetime_seconds": 1800,
+    "refresh_rotation_required": true,
+    "refresh_reuse_detection_required": true,
+    "refresh_secure_storage_only": true,
+    "server_revocation_required": true,
+    "raw_refresh_token_logging_allowed": false,
+    "durable_refresh_store_bound": false
+  },
+  "operator_access": {
+    "ordinary_user_visible": false,
+    "server_authoritative_roles": true,
+    "authenticated_subject_required": true,
+    "maximum_role_claim_age_seconds": 300,
+    "client_role_override_allowed": false,
+    "role_issuer_bound": false
+  },
+  "cross_app_handoff": {
+    "maximum_lifetime_seconds": 300,
+    "single_use_required": true,
+    "server_signed_required": true,
+    "target_package_bound": true,
+    "target_package_in_signature_required": true,
+    "roles_carried": false,
+    "secrets_carried": false,
+    "server_signer_bound": false
+  },
+  "health_consent_and_sync": {
+    "primary_provider": "health_connect",
+    "optional_provider": "samsung_health_data_sdk",
+    "explicit_consent_receipt_required": true,
+    "revocation_fail_closed": true,
+    "consent_audit_redacts_subject_and_payload": true,
+    "maximum_sync_window_days": 31,
+    "opaque_cursor_supported": true,
+    "provenance_required": true,
+    "dedup_required": true,
+    "provider_absence_is_nonfatal": true,
+    "client_reward_authority": false,
+    "consent_store_bound": false,
+    "health_connect_physical_device_verified": false,
+    "samsung_partner_registration_verified": false
+  },
+  "motion_verification": {
+    "sources": ["camera_pose", "wearable_sensor", "device_sensor", "combined"],
+    "nonce_replay_protection_required": true,
+    "health_records_are_supporting_evidence_only": true,
+    "manual_reward_override_allowed": false,
+    "server_verdict_required": true
+  },
+  "branding": {
+    "package_ids_change_allowed": false,
+    "adaptive_icon_required": true,
+    "monochrome_icon_required": true,
+    "store_icon_source_required": true,
+    "operator_products_public_listing_allowed": false,
+    "display_names": {
+      "com.topherofit.thf.core": {"en": "THF Hub", "ar": "مركز THF"},
+      "com.topherofit.thf.pulse": {"en": "THF Fitness", "ar": "لياقة THF"},
+      "com.topherofit.thf.forge": {"en": "THF Market", "ar": "سوق THF"},
+      "com.topherofit.thf.echo": {"en": "THF Community", "ar": "مجتمع THF"},
+      "com.topherofit.thf.codex": {"en": "THF Learn", "ar": "تعلّم THF"},
+      "com.topherofit.thf.vault": {"en": "THF Wallet", "ar": "محفظة THF"},
+      "com.topherofit.thf.terra": {"en": "THF World", "ar": "عالم THF"},
+      "com.topherofit.thf.rift": {"en": "THF Arena", "ar": "ساحة THF"},
+      "com.topherofit.thf.spark": {"en": "THF Learn Games", "ar": "ألعاب تعلم THF"},
+      "com.topherofit.thf.rush": {"en": "THF Motion Games", "ar": "ألعاب حركة THF"},
+      "com.topherofit.thf.signal": {"en": "THF Publisher", "ar": "ناشر THF"},
+      "com.topherofit.thf.command": {"en": "THF Admin", "ar": "إدارة THF"}
+    }
+  },
+  "release_truth": {
+    "google_oauth_console_configured": false,
+    "google_server_signature_verifier_bound": false,
+    "durable_session_refresh_store_bound": false,
+    "operator_role_issuer_bound": false,
+    "health_consent_store_bound": false,
+    "cross_app_handoff_server_signer_bound": false,
+    "health_connect_physical_device_verified": false,
+    "samsung_partner_registration_verified": false,
+    "physical_device_pass": false,
+    "final_or_play_ready": false
+  }
+}
