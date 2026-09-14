@@ -79,8 +79,9 @@ class PassNotificationBridge:
 
     def dispatch(self, *, principal: SessionPrincipal, request: DeliveryRequest) -> DeliveryResult:
         live = self.authorize(principal)
-        if request.package != live.package_id:
-            raise PermissionError("delivery package does not match THF Pass session audience")
+        registration = self.http.registry.get(request.token_id, subject=live.subject)
+        if registration.package != live.package_id:
+            raise PermissionError("notification registration does not match THF Pass session audience")
         return self.dispatcher.dispatch(subject=live.subject, request=request)
 
     def logout(self, *, principal: SessionPrincipal) -> ContractResponse:
