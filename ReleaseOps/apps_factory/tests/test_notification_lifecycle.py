@@ -66,7 +66,7 @@ def test_cross_subject_and_cross_session_revoke_fail_closed():
     with pytest.raises(PermissionError): r.revoke(token_id=x.token_id,subject="u2",session_id="s1")
     with pytest.raises(PermissionError): r.revoke(token_id=x.token_id,subject="u1",session_id="s2")
 
-def test_legacy_schema_migrates_rows_fail_closed():
+def test_legacy_schema_rebuilds_rows_fail_closed_and_removes_old_unique_constraint():
     db=sqlite3.connect(":memory:")
     db.execute("CREATE TABLE notification_tokens(token_id TEXT PRIMARY KEY,subject TEXT NOT NULL,package TEXT NOT NULL,provider TEXT NOT NULL,fingerprint TEXT NOT NULL,generation INTEGER NOT NULL,active INTEGER NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL,UNIQUE(subject,package,provider,fingerprint))")
     db.execute("INSERT INTO notification_tokens VALUES('legacy','u1','com.topherofit.thf.pulse','fcm','fp',1,1,1,1)")
@@ -74,6 +74,12 @@ def test_legacy_schema_migrates_rows_fail_closed():
     row=db.execute("SELECT session_id FROM notification_tokens WHERE token_id='legacy'").fetchone()
     assert row[0]==m.LEGACY_UNBOUND_SESSION
     with pytest.raises(PermissionError): r.get("legacy",subject="u1",session_id="s1")
+    raw="same-provider-token-123456"
+    a=register(r,session_id="s1",token=raw); b=register(r,session_id="s2",token=raw)
+    assert a.token_id != b.token_id
+    assert r.get(a.token_id,subject="u1",session_id="s1").active
+    assert r.get(b.token_id,subject="u1",session_id="s2").active
+    assert db.execute("SELECT COUNT(*) FROM notification_tokens").fetchone()[0]==3
 
 def test_invalid_session_package_and_provider_fail_closed():
     r,_=reg()
