@@ -6,7 +6,6 @@ import hashlib
 import unittest
 
 from test_validate_app_device_evidence_v11 import AppDeviceEvidenceV11Tests, digest
-from validate_app_device_evidence_v11 import FOREGROUND_CHECKS
 from validate_app_device_evidence_v12 import BOOT_METHOD, validate
 
 
@@ -24,7 +23,7 @@ class AppDeviceEvidenceV12Tests(AppDeviceEvidenceV11Tests):
             "evidence_sha256": digest(self.boot_path),
             "boot_id_sha256": BOOT_SHA,
         }
-        for check in FOREGROUND_CHECKS:
+        for check in self.active_checks:
             path = self.proc_paths[check]
             text = path.read_text(encoding="utf-8")
             path.write_text(text + f"THF_BOOT_ID_SHA256={BOOT_SHA}\n", encoding="utf-8")
@@ -88,14 +87,14 @@ class AppDeviceEvidenceV12Tests(AppDeviceEvidenceV11Tests):
 
     def test_process_from_other_boot_blocks(self):
         item = copy.deepcopy(self.evidence)
-        check = "core_user_journey"
+        check = self._pick("core_user_journey")
         self._replace_process_boot(check, "e" * 64)
         item["process_provenance"][check]["evidence_sha256"] = digest(self.proc_paths[check])
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_duplicate_process_boot_marker_blocks(self):
         item = copy.deepcopy(self.evidence)
-        check = "touch"
+        check = self._pick("touch")
         path = self.proc_paths[check]
         path.write_text(path.read_text(encoding="utf-8") + f"THF_BOOT_ID_SHA256={BOOT_SHA}\n", encoding="utf-8")
         item["process_provenance"][check]["evidence_sha256"] = digest(path)
@@ -103,8 +102,9 @@ class AppDeviceEvidenceV12Tests(AppDeviceEvidenceV11Tests):
 
     def test_boot_file_aliasing_process_file_blocks(self):
         item = copy.deepcopy(self.evidence)
-        item["device_boot"]["evidence_ref"] = item["process_provenance"]["launch"]["evidence_ref"]
-        item["device_boot"]["evidence_sha256"] = item["process_provenance"]["launch"]["evidence_sha256"]
+        check = self._pick("launch")
+        item["device_boot"]["evidence_ref"] = item["process_provenance"][check]["evidence_ref"]
+        item["device_boot"]["evidence_sha256"] = item["process_provenance"][check]["evidence_sha256"]
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_noncanonical_boot_uuid_blocks(self):
