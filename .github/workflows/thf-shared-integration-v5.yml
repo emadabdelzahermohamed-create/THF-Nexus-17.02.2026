@@ -1,0 +1,65 @@
+name: THF Shared Integration V5
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ReleaseOps/integration_factory/shared_integration_runtime_v5.py
+      - ReleaseOps/integration_factory/test_shared_integration_runtime_v5.py
+      - ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V5.json
+      - .github/workflows/thf-shared-integration-v5.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Compile shared integration V5
+        run: |
+          python3 -m py_compile \
+            ReleaseOps/integration_factory/shared_integration_contracts.py \
+            ReleaseOps/integration_factory/shared_integration_runtime_v4.py \
+            ReleaseOps/integration_factory/shared_integration_runtime_v5.py \
+            ReleaseOps/integration_factory/test_shared_integration_runtime_v5.py
+      - name: Run shared integration V3 V4 V5 tests
+        run: |
+          cd ReleaseOps/integration_factory
+          python3 -m unittest -v \
+            test_shared_integration_contracts.py \
+            test_shared_integration_runtime_v4.py \
+            test_shared_integration_runtime_v5.py
+      - name: Validate V5 manifest truth
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V5.json').read_text())
+          assert d['schema']=='thf.android.shared.integration.v5'
+          assert d['baseline']['package_ids_preserved'] is True
+          assert d['baseline']['wave_touched'] is False
+          assert d['identity_linking']['verified_provider_credential_required'] is True
+          assert d['identity_linking']['silent_cross_account_merge_allowed'] is False
+          assert d['guest_upgrade']['client_economy_merge_allowed'] is False
+          assert d['guest_upgrade']['client_ranked_merge_allowed'] is False
+          assert d['health_provider_negotiation']['primary']=='health_connect'
+          assert d['health_provider_negotiation']['provider_absence_is_fatal'] is False
+          assert d['health_normalization']['provenance_required'] is True
+          assert d['health_normalization']['client_reward_authority'] is False
+          assert d['preferences']['supported_locale_count']==20
+          assert set(d['preferences']['rtl_locales'])=={'ar','fa','ur'}
+          assert d['operator_recovery']['single_channel_operator_recovery_allowed'] is False
+          truth=d['release_truth']
+          assert all(v is False for v in truth.values())
+          print('THF_SHARED_INTEGRATION_V5_MANIFEST=PASS')
+          print('IDENTITY_LINK_COLLISION_FAIL_CLOSED=PASS')
+          print('HEALTH_PROVIDER_ABSENCE_GRACEFUL=PASS')
+          print('HEALTH_DEDUP_PROVENANCE_BOUND=PASS')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
