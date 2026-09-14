@@ -1,6 +1,6 @@
 {
-  "schema": "thf.android.shared.integration.v1",
-  "generated_at": "2026-09-14T22:39:00+03:00",
+  "schema": "thf.android.shared.integration.v2",
+  "generated_at": "2026-09-14T23:39:00+03:00",
   "android": {
     "target_sdk": 36,
     "credential_manager": {
@@ -11,6 +11,13 @@
         "Google Auth Platform OAuth server client ID",
         "verified OAuth brand/consent configuration before production"
       ]
+    },
+    "passkeys": {
+      "rp_id_required": true,
+      "server_generated_challenge_required": true,
+      "minimum_challenge_chars": 32,
+      "server_challenge_store_bound": false,
+      "replay_protection_required": true
     },
     "health_connect": {
       "role": "PRIMARY_ANDROID_HEALTH_BRIDGE",
@@ -43,14 +50,32 @@
   "identity": {
     "canonical_service": "THF Identity",
     "legacy_internal_service": "THF Pass",
-    "methods": ["google", "passkey", "password_or_email_code", "guest_link_when_allowed"],
+    "methods": ["google", "passkey", "password", "email_code", "guest"],
+    "session_states": ["anonymous", "guest", "authenticated", "reauth_required", "revoked"],
     "session_rules": [
       "server-authoritative identity subject",
       "package-bound federation",
-      "logout revokes local session",
+      "authenticated refresh token only in secure storage",
+      "logout revokes server session",
       "account-deletion route remains user accessible",
-      "guest progress cannot merge without verified identity proof"
+      "guest progress cannot merge without verified identity proof",
+      "operator roles require authenticated session"
     ]
+  },
+  "cross_app_handoff": {
+    "max_lifetime_seconds": 300,
+    "server_signed_required": true,
+    "single_use_required": true,
+    "roles_carried": false,
+    "secrets_carried": false,
+    "server_signer_bound": false
+  },
+  "preferences": {
+    "locale_sync": true,
+    "rtl_languages": ["ar", "fa", "he", "ur"],
+    "data_saver_sync": true,
+    "reduce_motion_sync": true,
+    "high_contrast_sync": true
   },
   "operator_access": {
     "ordinary_user_visible": false,
@@ -58,6 +83,13 @@
     "admin_required_roles": ["owner", "admin"],
     "server_role_claim_required": true,
     "hidden_ui_is_not_security": true
+  },
+  "motion_evidence": {
+    "sources": ["camera_pose", "wearable_sensor", "device_sensor", "combined"],
+    "confidence_range": [0.0, 1.0],
+    "monotonic_clock_required": true,
+    "client_reward_authority": false,
+    "server_verification_required": true
   },
   "health_truth": {
     "provider_record_alone_authorizes_rewards": false,
@@ -68,6 +100,9 @@
   },
   "release_truth": {
     "google_oauth_console_configured": false,
+    "google_server_signature_verifier_bound": false,
+    "passkey_backend_challenge_store_bound": false,
+    "cross_app_handoff_server_signer_bound": false,
     "samsung_partner_registration_verified": false,
     "physical_device_pass": false,
     "final_or_play_ready": false
