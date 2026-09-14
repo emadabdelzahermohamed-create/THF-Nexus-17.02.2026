@@ -1,0 +1,32 @@
+name: THF Apps Phone Fundamentals Source V1
+
+on:
+  push:
+    branches: [main, apps-phone-fundamentals-v1]
+    paths:
+      - "ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V1_MANIFEST.json"
+      - "ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V1_CHECKPOINT.md"
+      - "tests/test_apps_phone_fundamentals_source_v1.py"
+      - ".github/workflows/thf-apps-phone-fundamentals-source-v1.yml"
+  pull_request:
+    paths:
+      - "ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V1_MANIFEST.json"
+      - "ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V1_CHECKPOINT.md"
+      - "tests/test_apps_phone_fundamentals_source_v1.py"
+      - ".github/workflows/thf-apps-phone-fundamentals-source-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-authority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile registry test
+        run: python -m py_compile tests/test_apps_phone_fundamentals_source_v1.py
+      - name: Verify lineage, package identity, phone-source truth and fail-closed release state
+        run: python tests/test_apps_phone_fundamentals_source_v1.py
