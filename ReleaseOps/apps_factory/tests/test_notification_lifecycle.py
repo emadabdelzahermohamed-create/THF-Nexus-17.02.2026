@@ -15,6 +15,7 @@ class Vault:
     def put(self,k,v):
         if self.fail_put: raise RuntimeError("vault put failed")
         self.data[k]=v
+    def get(self,k): return self.data[k]
     def delete(self,k): self.data.pop(k,None)
 
 def reg():
@@ -24,7 +25,7 @@ def test_register_stores_only_fingerprint_in_db_and_raw_token_in_vault():
     r,v=reg(); raw="provider-token-123456"
     x=r.register(subject="u1",package="com.topherofit.thf.pulse",provider="fcm",raw_token=raw)
     assert x.active and len(x.fingerprint)==64 and x.generation==1
-    assert v.data[x.token_id]==raw
+    assert v.get(x.token_id)==raw
     dump=" ".join(str(z) for z in r.db.execute("select * from notification_tokens").fetchone())
     assert raw not in dump
 
