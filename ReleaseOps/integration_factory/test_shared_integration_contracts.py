@@ -48,7 +48,7 @@ class SharedIntegrationContractsTest(unittest.TestCase):
         })
         self.assertEqual(cfg["redirect_scheme"], "thf")
 
-    def test_google_claims_fail_closed_and_accept_verified_identity(self):
+    def test_google_claims_require_prior_signature_verification(self):
         expected = "123456-abc.apps.googleusercontent.com"
         base = {
             "iss": "https://accounts.google.com",
@@ -58,14 +58,24 @@ class SharedIntegrationContractsTest(unittest.TestCase):
             "email": "User@Example.com",
             "email_verified": True,
         }
-        identity = validate_google_id_token_claims(base, expected_audience=expected, now=1_900_000_000)
+        with self.assertRaisesRegex(ContractError, "signature_verification_required"):
+            validate_google_id_token_claims(
+                base, expected_audience=expected, signature_verified=False, now=1_900_000_000
+            )
+        identity = validate_google_id_token_claims(
+            base, expected_audience=expected, signature_verified=True, now=1_900_000_000
+        )
         self.assertEqual(identity["email"], "user@example.com")
         bad = dict(base, aud="wrong.apps.googleusercontent.com")
         with self.assertRaisesRegex(ContractError, "audience"):
-            validate_google_id_token_claims(bad, expected_audience=expected, now=1_900_000_000)
+            validate_google_id_token_claims(
+                bad, expected_audience=expected, signature_verified=True, now=1_900_000_000
+            )
         bad = dict(base, email_verified=False)
         with self.assertRaisesRegex(ContractError, "not_verified"):
-            validate_google_id_token_claims(bad, expected_audience=expected, now=1_900_000_000)
+            validate_google_id_token_claims(
+                bad, expected_audience=expected, signature_verified=True, now=1_900_000_000
+            )
 
     def test_health_records_deduplicate_by_provenance(self):
         one = HealthRecord("health_connect", "hc-1", "steps", 100, 200, {"value": 123})
@@ -92,6 +102,7 @@ class SharedIntegrationContractsTest(unittest.TestCase):
     def test_snapshot_preserves_truth_boundaries(self):
         snap = json.loads(contract_snapshot())
         self.assertFalse(snap["truth"]["google_oauth_console_configured"])
+        self.assertFalse(snap["truth"]["google_server_signature_verifier_bound"])
         self.assertFalse(snap["truth"]["health_connect_physical_device_verified"])
         self.assertFalse(snap["truth"]["samsung_partner_registration_verified"])
         self.assertFalse(snap["truth"]["final_or_play_ready"])
