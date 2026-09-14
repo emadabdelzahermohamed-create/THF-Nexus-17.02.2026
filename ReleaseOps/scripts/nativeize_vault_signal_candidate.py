@@ -20,15 +20,45 @@ for child in (main / "java", main / "kotlin"):
 java_dir = main / "java" / Path(*pkg.split("."))
 java_dir.mkdir(parents=True, exist_ok=True)
 
-label = "THF Vault" if app == "vault" else "THF Signal"
-hint = "Private local vault note" if app == "vault" else "Local signal draft"
+# Approved user-facing naming plan. Legacy package IDs remain unchanged.
+label = "THF Wallet" if app == "vault" else "THF Publisher"
+hint = "Private local wallet note" if app == "vault" else "Internal publisher QA"
+internal_only = app == "signal"
+
+# Always emit an explicit launcher resource so phone QA does not depend on an
+# inherited/template icon. This is a neutral THF fallback vector, not a claim
+# that an external brand-art package has been imported.
+drawable = main / "res" / "drawable"
+drawable.mkdir(parents=True, exist_ok=True)
+(drawable / "ic_thf_launcher.xml").write_text('''<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#101820" android:pathData="M0,0h108v108h-108z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M22,24h64v14h-24v46h-16v-46h-24z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M72,48h14v36h-14z"/>
+</vector>
+''', encoding="utf-8")
+
 manifest = f'''<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <application android:allowBackup="false" android:label="{label}" android:supportsRtl="true" android:usesCleartextTraffic="false">
-        <activity android:name=".MainActivity" android:exported="true">
+    <application
+        android:allowBackup="false"
+        android:label="{label}"
+        android:icon="@drawable/ic_thf_launcher"
+        android:roundIcon="@drawable/ic_thf_launcher"
+        android:supportsRtl="true"
+        android:resizeableActivity="true"
+        android:usesCleartextTraffic="false">
+        <meta-data android:name="com.topherofit.internal_operator_only" android:value="{'true' if internal_only else 'false'}"/>
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="unspecified"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -43,10 +73,7 @@ java = r'''package __PKG__;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.KeyguardManager;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -62,8 +89,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +104,8 @@ public final class MainActivity extends Activity {
     private static final String STORE = "thf_local_secure_store";
     private static final String KEY = "payload";
     private static final String ALIAS = "thf.__APP__.local.v1";
+    private static final boolean INTERNAL_OPERATOR_ONLY = __INTERNAL_ONLY__;
+    private static final String OPERATOR_POLICY = "owner,admin,publisher";
     private TextView status;
     private EditText input;
 
@@ -94,12 +121,22 @@ public final class MainActivity extends Activity {
         TextView title = text("__LABEL__", 26);
         title.setContentDescription("__LABEL__ screen");
         root.addView(title);
-        root.addView(text("Native QA surface. Local actions are genuinely on-device. Remote state is never fabricated.", 15));
-
         status = text("Ready", 15);
         status.setContentDescription("Current status");
         root.addView(status);
 
+        if (INTERNAL_OPERATOR_ONLY) {
+            root.addView(text("Internal operator QA surface. Ordinary users must not receive this product in catalog/navigation.", 15));
+            root.addView(text("Publisher controls remain disabled until a server-verified owner/admin/publisher session is bound.", 15));
+            root.addView(button("Network and Data Saver status", v -> networkStatus()));
+            root.addView(button("Open THF Pass", v -> openPass()));
+            root.addView(button("Open app settings", v -> openSettings()));
+            say("INTERNAL_ONLY_LOCKED: no verified operator session; publisher authority unavailable.");
+            setContentView(scroll);
+            return;
+        }
+
+        root.addView(text("Native QA surface. Local actions are genuinely on-device. Remote state is never fabricated.", 15));
         input = new EditText(this);
         input.setHint("__HINT__");
         input.setContentDescription("__HINT__ input");
@@ -213,6 +250,6 @@ public final class MainActivity extends Activity {
         Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + getPackageName())); startActivity(i);
     }
 }
-'''.replace("__PKG__", pkg).replace("__APP__", app).replace("__LABEL__", label).replace("__HINT__", hint)
+'''.replace("__PKG__", pkg).replace("__APP__", app).replace("__LABEL__", label).replace("__HINT__", hint).replace("__INTERNAL_ONLY__", "true" if internal_only else "false")
 (java_dir / "MainActivity.java").write_text(java, encoding="utf-8")
-print(f"native_overlay=THF_NATIVE_REAL_FUNCTION_V1 app={app} package={pkg} manifest={main/'AndroidManifest.xml'} java={java_dir/'MainActivity.java'}")
+print(f"native_overlay=THF_NATIVE_REAL_FUNCTION_V2 app={app} package={pkg} label={label} internal_only={str(internal_only).lower()} manifest={main/'AndroidManifest.xml'} java={java_dir/'MainActivity.java'}")
