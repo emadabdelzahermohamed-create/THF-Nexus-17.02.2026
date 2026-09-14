@@ -70,17 +70,7 @@ jobs:
           import json
           from pathlib import Path
           p=json.loads(Path('out/tokenops-incident/incident-assessment.json').read_text())
-          assert p['execution_authorized'] is False
-          assert p['transaction_bytes_created'] is False
-          assert p['instruction_bytes_created'] is False
-          assert p['signed'] is False
-          assert p['submitted'] is False
-          assert p['broadcast'] is False
-          assert p['financial_effect'] is False
-          assert p['private_key_used'] is False
-          assert p['wave_touched'] is False
-          assert p['rollback']['onchain_rollback_allowed'] is False
-          assert p['mode'] in {'NORMAL_READ_ONLY','READ_ONLY_DEGRADED'}
+          assert p['mode'] in {'NORMAL_READ_ONLY','READ_ONLY_DEGRADED','FAIL_CLOSED_CRITICAL'}
           print('INCIDENT_MODE=' + p['mode'])
           print('INCIDENT_CRITICAL_COUNT=' + str(len(p['critical_reasons'])))
           print('INCIDENT_DEGRADED_COUNT=' + str(len(p['degraded_reasons'])))
@@ -114,3 +104,28 @@ jobs:
           path: out/tokenops-incident/
           if-no-files-found: error
           retention-days: 30
+
+      - name: Enforce fail-closed result after evidence preservation
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('out/tokenops-incident/incident-assessment.json').read_text())
+          assert p['execution_authorized'] is False
+          assert p['transaction_bytes_created'] is False
+          assert p['instruction_bytes_created'] is False
+          assert p['signed'] is False
+          assert p['submitted'] is False
+          assert p['broadcast'] is False
+          assert p['financial_effect'] is False
+          assert p['private_key_used'] is False
+          assert p['wave_touched'] is False
+          assert p['rollback']['onchain_rollback_allowed'] is False
+          mode=p['mode']
+          assert mode in {'NORMAL_READ_ONLY','READ_ONLY_DEGRADED','FAIL_CLOSED_CRITICAL'}
+          if mode == 'FAIL_CLOSED_CRITICAL':
+              reasons=', '.join(p.get('critical_reasons') or ['unspecified'])
+              raise SystemExit('FAIL_CLOSED_CRITICAL after evidence upload: ' + reasons)
+          print('FAIL_CLOSED_ENFORCEMENT=PASS')
+          PY
