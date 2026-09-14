@@ -1,0 +1,33 @@
+name: THF Game Physical Device Evidence Tooling V14
+on:
+  push:
+    paths:
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v14.py'
+      - 'ReleaseOps/mobile/test_validate_game_device_evidence_v14.py'
+      - '.github/workflows/thf-game-physical-device-evidence-tooling-v14.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v14:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile V7-V14 validators and tests
+        run: |
+          for v in 7 8 9 10 11 12 13 14; do python -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v${v}.py; done
+          python -m py_compile ReleaseOps/mobile/test_validate_game_device_evidence_v13.py ReleaseOps/mobile/test_validate_game_device_evidence_v14.py
+      - name: Preserve V13 regression chain
+        run: python ReleaseOps/mobile/test_validate_game_device_evidence_v13.py -v
+      - name: Run V14 gameplay semantic regressions
+        run: python ReleaseOps/mobile/test_validate_game_device_evidence_v14.py -v
+      - name: Assert V14 remains non-promotional
+        run: |
+          grep -q 'FINAL_OR_PLAY_READY=FALSE' ReleaseOps/mobile/validate_game_device_evidence_v14.py
+          ! grep -q 'FINAL_OR_PLAY_READY=TRUE' ReleaseOps/mobile/validate_game_device_evidence_v14.py
+          grep -q 'THF_COMBAT_STATE_CHANGED' ReleaseOps/mobile/validate_game_device_evidence_v14.py
+          grep -q 'THF_SENSOR_EVENTS_OBSERVED' ReleaseOps/mobile/validate_game_device_evidence_v14.py
+          grep -q 'THF_LEARNING_PROGRESS_AFTER' ReleaseOps/mobile/validate_game_device_evidence_v14.py
