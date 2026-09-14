@@ -37,6 +37,7 @@ jobs:
           python -m py_compile ReleaseOps/TokenOps/financial_control_plane.py
           python -m py_compile ReleaseOps/TokenOps/activity_planning.py
           python -m py_compile ReleaseOps/TokenOps/epoch_commitment.py
+          python -m py_compile ReleaseOps/TokenOps/revenue_value_basis.py
 
       - name: Install test runner
         run: python -m pip install --disable-pip-version-check --no-input pytest
