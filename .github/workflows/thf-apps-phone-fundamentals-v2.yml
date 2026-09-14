@@ -1,0 +1,54 @@
+name: THF Apps Phone Fundamentals V2
+on:
+  pull_request:
+    paths:
+      - 'ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V2_MANIFEST.json'
+      - 'ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_V2_20260915.md'
+      - '.github/workflows/thf-apps-phone-fundamentals-v2.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V2_MANIFEST.json'
+      - 'ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_V2_20260915.md'
+      - '.github/workflows/thf-apps-phone-fundamentals-v2.yml'
+permissions:
+  contents: read
+jobs:
+  authority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate V2 authority and fail-closed release truth
+        run: |
+          python - <<'PY'
+          import json,re,pathlib
+          p=pathlib.Path('ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V2_MANIFEST.json')
+          d=json.loads(p.read_text())
+          assert d['schema']=='thf-apps-phone-fundamentals-source-v2'
+          assert d['excluded']==['pulse','games','wave']
+          assert d['core']['same_sha_skip'] is True
+          expected={
+            'forge':('com.topherofit.thf.forge',36,21101,False),
+            'echo':('com.topherofit.thf.echo',36,21101,False),
+            'codex':('com.topherofit.thf.codex',36,21101,False),
+            'vault':('com.topherofit.thf.vault',36,12001,False),
+            'signal':('com.topherofit.thf.signal',36,12001,True),
+            'command':('com.topherofit.thf.command',36,12001,True),
+          }
+          for k,(pkg,sdk,vc,private) in expected.items():
+            x=d['source_candidates'][k]
+            assert x['package_id']==pkg and x['target_sdk']==sdk and x['version_code']==vc
+            assert re.fullmatch(r'[0-9a-f]{64}',x['sha256'])
+            assert x['android_build_status']=='NEEDS_EXACT_SOURCE_BUILD'
+            assert x['eligible_apk_sha256'] is None
+            if private:
+              assert x['private_internal'] is True and x['ordinary_launcher'] is False and x['signature_entry_boundary'] is True
+          assert set(d['source_candidates']['signal']['server_roles'])=={'publisher','admin','owner'}
+          assert set(d['source_candidates']['command']['server_roles'])=={'admin','owner'}
+          truth=d['release_truth']
+          assert truth=={'network_release_ready':False,'physical_device_pass':False,'production_signing':False,'final_or_play_ready':False}
+          checkpoint=pathlib.Path('ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_V2_20260915.md').read_text()
+          for flag in ('ANDROID_EXACT_BUILD=FALSE','PHYSICAL_DEVICE_PASS=FALSE','FINAL_OR_PLAY_READY=FALSE','PULSE_TOUCHED=FALSE','GAMES_TOUCHED=FALSE','WAVE_TOUCHED=FALSE'):
+            assert flag in checkpoint
+          print('THF Apps Phone Fundamentals V2 authority gate PASS')
+          PY
