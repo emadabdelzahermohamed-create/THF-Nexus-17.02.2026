@@ -27,10 +27,10 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          python3 -m unittest -v ReleaseOps/TokenOps/test_tokenops_guard.py
+          python3 -m unittest -v ReleaseOps/TokenOps/test_tokenops_guard.py ReleaseOps/TokenOps/test_activity_planning.py
           ! grep -RInE '(seed phrase|mnemonic|private[_ -]?key|secret[_ -]?key)[[:space:]]*[:=][[:space:]]*[^Nn][^Uu][^Ll][^Ll]' ReleaseOps/TokenOps --include='*.json' --include='*.py'
 
-      - name: Mainnet read-only audit and financial readiness
+      - name: Mainnet read-only audit, activity classification and planning evidence
         shell: bash
         env:
           SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
@@ -39,23 +39,33 @@ jobs:
           rm -rf out/tokenops
           python3 ReleaseOps/TokenOps/tokenops_guard.py --out out/tokenops
           python3 - <<'PY'
-          import json, os, pathlib
-          p=pathlib.Path('out/tokenops/run-context.json')
-          p.write_text(json.dumps({
-            'schema':'thf-tokenops-run-context/v1',
-            'repository':os.environ.get('GITHUB_REPOSITORY'),
-            'source_sha':os.environ.get('GITHUB_SHA'),
-            'workflow':os.environ.get('GITHUB_WORKFLOW'),
-            'run_id':os.environ.get('GITHUB_RUN_ID'),
-            'run_attempt':os.environ.get('GITHUB_RUN_ATTEMPT'),
-            'financial_effect':False,
-            'broadcast':False,
-            'wave_touched':False
-          },sort_keys=True,indent=2)+'\n')
+          import json, os, pathlib, sys
+          sys.path.insert(0,'ReleaseOps/TokenOps')
+          import activity_planning as A
+          import tokenops_guard as G
+          out=pathlib.Path('out/tokenops')
+          policy=json.loads(pathlib.Path('ReleaseOps/TokenOps/policy.json').read_text())
+          treasury=json.loads(pathlib.Path('ReleaseOps/TokenOps/treasury_policy.json').read_text())
+          activity=A.classify_recent_activity(limit=20)
+          (out/'recent-activity-classification.json').write_text(json.dumps(activity,sort_keys=True,indent=2)+'\n')
+          # Deterministic NON-BINDING scenario only. These caps are scenario inputs, not policy values.
+          sim=A.simulate_allocation(1_000_000, {'scenario_user_a':1,'scenario_user_b':2,'scenario_user_c':3}, 100_000, 350_000)
+          sim['scenario_only']=True
+          sim['authoritative_policy_values_used']=False
+          (out/'allocation-simulation-scenario.json').write_text(json.dumps(sim,sort_keys=True,indent=2)+'\n')
+          contracts=A.integration_contracts(policy,treasury)
+          (out/'vault-forge-core-contracts.json').write_text(json.dumps(contracts,sort_keys=True,indent=2)+'\n')
+          ctx={
+            'schema':'thf-tokenops-run-context/v1','repository':os.environ.get('GITHUB_REPOSITORY'),
+            'source_sha':os.environ.get('GITHUB_SHA'),'workflow':os.environ.get('GITHUB_WORKFLOW'),
+            'run_id':os.environ.get('GITHUB_RUN_ID'),'run_attempt':os.environ.get('GITHUB_RUN_ATTEMPT'),
+            'financial_effect':False,'broadcast':False,'wave_touched':False}
+          (out/'run-context.json').write_text(json.dumps(ctx,sort_keys=True,indent=2)+'\n')
           PY
           (cd out/tokenops && sha256sum *.json | sort > SHA256SUMS.txt)
           cat out/tokenops/invariant-gate.json
           cat out/tokenops/financial-readiness.json
+          cat out/tokenops/recent-activity-classification.json
 
       - name: Assert no executable transaction material
         shell: bash
@@ -74,6 +84,13 @@ jobs:
           assert e['private_key_used'] is False
           assert e['wave_touched'] is False
           assert r['exact_remaining_signer_action']=='none_until_fail_closed_blockers_are_resolved'
+          a=json.loads(pathlib.Path('out/tokenops/recent-activity-classification.json').read_text())
+          assert a['financial_effect'] is False and a['broadcast'] is False and a['wave_touched'] is False
+          c=json.loads(pathlib.Path('out/tokenops/vault-forge-core-contracts.json').read_text())
+          assert c['private_key_input_allowed'] is False and c['signature_input_allowed'] is False
+          assert c['transaction_bytes_allowed'] is False and c['broadcast_allowed'] is False
+          s=json.loads(pathlib.Path('out/tokenops/allocation-simulation-scenario.json').read_text())
+          assert s['scenario_only'] is True and s['binding'] is False and s['execution_authorized'] is False
           PY
 
       - name: Upload immutable read-only evidence
