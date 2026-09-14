@@ -46,6 +46,12 @@ jobs:
           sed -i '/"$GBIN" --no-daemon wrapper --gradle-version "$GVER" --distribution-type bin/d' ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
           sed -i '/chmod +x gradlew/d' ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
           sed -i 's#^\./gradlew --no-daemon --stacktrace clean :app:assembleDebug#"$GBIN" --no-daemon --stacktrace clean :app:assembleDebug#' ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
+          # The script changes cwd to android before final integrity capture. Resolve the
+          # staged MPFB against WORK, not the cwd-relative ASSETS variable.
+          sed -i 's#MPFB_SHA=$(sha256sum "$ASSETS/avatar.glb"#MPFB_SHA=$(sha256sum "$WORK/android/app/src/main/assets/pulse/avatar.glb"#' ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
+          grep -Fq '"$GBIN" --no-daemon --stacktrace clean :app:assembleDebug' ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
+          grep -Fq 'sha256sum "$WORK/android/app/src/main/assets/pulse/avatar.glb"' ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
+          ! grep -Fq './gradlew --no-daemon --stacktrace clean :app:assembleDebug' ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
           chmod +x ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh
           gcloud compute scp ReleaseOps/scripts/build_pulse_mpfb_motion_phone.sh "$GCP_BUILDER:/tmp/build_pulse_mpfb_motion_phone.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
       - name: Build Pulse MPFB motion QA
@@ -65,6 +71,12 @@ jobs:
           grep -q '^physical_device_status=PENDING$' out/EVIDENCE.txt
           grep -q '^final_or_play_ready=FALSE$' out/EVIDENCE.txt
           test -s out/THF-PULSE-MPFB-MOTION-PHONE-QA1.apk
+          APK_SHA_ACTUAL=$(sha256sum out/THF-PULSE-MPFB-MOTION-PHONE-QA1.apk | awk '{print $1}')
+          APK_SHA_RECORDED=$(sed -n 's/^apk_sha256=//p' out/EVIDENCE.txt)
+          MPFB_SHA_RECORDED=$(sed -n 's/^avatar_sha256=//p' out/EVIDENCE.txt)
+          [[ "$APK_SHA_RECORDED" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$MPFB_SHA_RECORDED" =~ ^[0-9a-f]{64}$ ]]
+          test "$APK_SHA_ACTUAL" = "$APK_SHA_RECORDED"
           cat out/EVIDENCE.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
