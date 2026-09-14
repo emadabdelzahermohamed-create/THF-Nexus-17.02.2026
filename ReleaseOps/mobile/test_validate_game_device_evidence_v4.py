@@ -28,20 +28,24 @@ def registry_doc():
     return {'schema':'thf-game-device-candidates-v1','candidates':rows}
 
 
+def _record(product: str, key: str, root: Path, namespace: str):
+    rel=f'evidence/{product}/{namespace}-{key}.bin'; p=root/rel; p.parent.mkdir(parents=True,exist_ok=True)
+    data=(product+':'+namespace+':'+key).encode(); p.write_bytes(data)
+    return {'pass':True,'observed_at_utc':'2026-09-14T03:00:00Z','evidence_ref':rel,'evidence_sha256':hashlib.sha256(data).hexdigest()}
+
+
 def evidence(product, registry_sha, root: Path):
     reg=registry_doc(); row=next(x for x in reg['candidates'] if x['app']==product)
-    manual={}
-    for key in V3.COMMON_MANUAL + V3.PRODUCT_MANUAL[product]:
-        rel=f'evidence/{product}/{key}.bin'; p=root/rel; p.parent.mkdir(parents=True,exist_ok=True)
-        data=(product+':'+key).encode(); p.write_bytes(data)
-        manual[key]={'pass':True,'observed_at_utc':'2026-09-14T03:00:00Z','evidence_ref':rel,'evidence_sha256':hashlib.sha256(data).hexdigest()}
+    manual={key:_record(product,key,root,'manual') for key in V3.COMMON_MANUAL + V3.PRODUCT_MANUAL[product]}
+    authority={key:_record(product,key,root,'authority') for key in MOD.AUTHORITY_OBSERVATIONS}
     return {
         'schema':V3.SCHEMA,'product':product,'registry_sha256':registry_sha,'package':row['package'],
         'exact_candidate_sha256':row['apk_sha256'],
         'device':{'physical_device':True,'emulator_detected':False,'fingerprint_sha256':'a'*64,'model':'Physical Phone','sdk':'36'},
         'objective':{'install_pass':True,'cold_launch_pass':True,'background_resume_pass':True,'crash_free_smoke_pass':True,'total_pss_kb':100000,'framestats_rows':60,'thermal_snapshot_present':True,'fatal_runtime_markers':[]},
         'performance_observation':{'fps_observed':55.0,'ram_mb_observed':300.0,'thermal_status_observed':'nominal','observation_seconds':60},
-        'manual_observations':manual,'online_state_not_faked':True,'local_mode_genuinely_local':True,'final_or_play_ready':False,
+        'manual_observations':manual,'authority_observations':authority,
+        'online_state_not_faked':True,'local_mode_genuinely_local':True,'final_or_play_ready':False,
     }
 
 
@@ -80,6 +84,20 @@ class DeviceEvidenceV4Tests(unittest.TestCase):
             root=Path(td); doc=evidence('spark',rsha,root)
             p=root/doc['manual_observations']['learning_progression']['evidence_ref']; p.write_bytes(b'')
             self.assertTrue(any('learning_progression: evidence file empty' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
+
+    def test_online_authority_requires_real_bound_evidence(self):
+        reg=registry_doc(); rsha='f'*64
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); doc=evidence('learn_games',rsha,root)
+            doc['authority_observations'].pop('online_authority_behavior')
+            self.assertTrue(any('online_authority_behavior: missing record' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
+
+    def test_local_truth_tamper_fails(self):
+        reg=registry_doc(); rsha='f'*64
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); doc=evidence('fitness_games',rsha,root)
+            rec=doc['authority_observations']['local_mode_truth']; (root/rec['evidence_ref']).write_bytes(b'tampered-after-capture')
+            self.assertTrue(any('local_mode_truth: evidence SHA mismatch' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
 
 
 if __name__=='__main__': unittest.main()
