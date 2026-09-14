@@ -1,0 +1,178 @@
+name: THF Core Stable Phone QA Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-core-stable-phone-qa-cloudrun.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_REGION: europe-west1
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CORE_SHA256: 6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a
+  SERVICE_NAME: thf-core-phone-qa
+
+jobs:
+  stable_phone_qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Fetch exact Core RC6 source from builder
+        run: |
+          set -Eeuo pipefail
+          mkdir -p work
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip" work/core.zip --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          echo "$CORE_SHA256  work/core.zip" | sha256sum -c -
+          unzip -q work/core.zip -d work/core
+
+      - name: Create Cloud Run container definition
+        run: |
+          set -Eeuo pipefail
+          cat > work/core/Dockerfile <<'EOF'
+          FROM python:3.12-slim
+          WORKDIR /app
+          COPY requirements.txt ./
+          RUN pip install --no-cache-dir -r requirements.txt
+          COPY . .
+          ENV PYTHONPATH=/app/src
+          ENV THF_HOST=0.0.0.0
+          ENV THF_PORT=8080
+          EXPOSE 8080
+          CMD ["python", "scripts/run.py"]
+          EOF
+          cat > work/core/.gcloudignore <<'EOF'
+          .git
+          android/.gradle
+          android/build
+          android/app/build
+          __pycache__
+          *.pyc
+          EOF
+
+      - name: Deploy stable HTTPS QA service
+        run: |
+          set -Eeuo pipefail
+          gcloud run deploy "$SERVICE_NAME" \
+            --source work/core \
+            --region "$GCP_REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --set-env-vars THF_HOST=0.0.0.0,THF_PORT=8080,PYTHONPATH=/app/src \
+            --quiet
+          URL=$(gcloud run services describe "$SERVICE_NAME" --region "$GCP_REGION" --format='value(status.url)')
+          test -n "$URL"
+          printf '%s\n' "$URL" | tee work/STABLE_URL.txt
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 15 "$URL/health" > work/health.json 2>/dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS --max-time 20 "$URL/health" > work/health.json
+          grep -q '"ok":true' work/health.json
+          curl -fsS --max-time 20 "$URL/" -o work/home.html
+          test -s work/home.html
+
+      - name: Build Android phone candidate against stable endpoint
+        run: |
+          set -Eeuo pipefail
+          URL=$(cat work/STABLE_URL.txt)
+          cat > "$RUNNER_TEMP/build-core-stable.sh" <<'REMOTE'
+          #!/usr/bin/env bash
+          set -Eeuo pipefail
+          URL="$1"
+          SRC="$HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
+          EXPECTED="6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a"
+          ROOT="$HOME/thf-core-stable-phone-qa"
+          APP="$ROOT/app"
+          OUT="$ROOT/out"
+          RC16="$HOME/thf-builder-rc16-build"
+          SDK="$RC16/android-sdk"
+          CACHE="$RC16/cache"
+          rm -rf "$ROOT"; mkdir -p "$APP" "$OUT"
+          echo "$EXPECTED  $SRC" | sha256sum -c -
+          unzip -q "$SRC" -d "$APP"
+          cd "$APP"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle')
+          s=p.read_text()
+          s=s.replace('versionCode 62200','versionCode 62202',1)
+          s=s.replace("versionName '6.2.2-rc6'","versionName '6.2.2-rc6-phoneqa2'",1)
+          p.write_text(s)
+          PY
+          export ANDROID_SDK_ROOT="$SDK" ANDROID_HOME="$SDK" GRADLE_USER_HOME="$ROOT/gradle-home"
+          export PATH="$SDK/platform-tools:$SDK/build-tools/36.0.0:$SDK/cmdline-tools/latest/bin:$PATH"
+          mkdir -p "$GRADLE_USER_HOME"
+          GVER=8.11.1
+          GBIN="$CACHE/gradle-dist-${GVER}/gradle-${GVER}/bin/gradle"
+          cd android
+          "$GBIN" --no-daemon wrapper --gradle-version "$GVER" --distribution-type bin >/dev/null
+          chmod +x gradlew
+          ./gradlew --no-daemon -PTHF_BASE_URL="$URL" -PTHF_PASS_URL="$URL" clean :app:assembleDebug >"$OUT/gradle.log" 2>&1
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          cp "$APK" "$OUT/THF-CORE-RC6-PHONE-QA2-STABLE.apk"
+          AAPT2="$SDK/build-tools/36.0.0/aapt2"
+          APKSIGNER="$SDK/build-tools/36.0.0/apksigner"
+          "$AAPT2" dump badging "$OUT/THF-CORE-RC6-PHONE-QA2-STABLE.apk" > "$OUT/badging.txt"
+          "$APKSIGNER" verify --verbose --print-certs "$OUT/THF-CORE-RC6-PHONE-QA2-STABLE.apk" > "$OUT/apksigner.txt"
+          grep -q "package: name='com.topherofit.thf.core.debug'" "$OUT/badging.txt"
+          grep -q "versionCode='62202'" "$OUT/badging.txt"
+          grep -q "targetSdkVersion:'36'" "$OUT/badging.txt"
+          BC=$(find app/build/generated -type f -name BuildConfig.java | head -1)
+          grep -Fq "$URL" "$BC"
+          found=0
+          for d in $(zipinfo -1 "$OUT/THF-CORE-RC6-PHONE-QA2-STABLE.apk" 'classes*.dex'); do
+            if unzip -p "$OUT/THF-CORE-RC6-PHONE-QA2-STABLE.apk" "$d" | strings | grep -Fq "$URL"; then found=1; break; fi
+          done
+          [ "$found" -eq 1 ]
+          SHA=$(sha256sum "$OUT/THF-CORE-RC6-PHONE-QA2-STABLE.apk" | awk '{print $1}')
+          cat > "$OUT/EVIDENCE.txt" <<EOF
+          THF_CORE_PHONE_QA2=PASS
+          endpoint=$URL
+          endpoint_type=gcp_cloud_run_stable_qa
+          source_sha256=$EXPECTED
+          package=com.topherofit.thf.core.debug
+          versionCode=62202
+          versionName=6.2.2-rc6-phoneqa2-debug
+          targetSdk=36
+          endpoint_in_buildconfig=PASS
+          endpoint_in_dex=PASS
+          apk_sha256=$SHA
+          production_signing=false
+          play_upload=false
+          EOF
+          cat "$OUT/EVIDENCE.txt"
+          REMOTE
+          chmod +x "$RUNNER_TEMP/build-core-stable.sh"
+          gcloud compute scp "$RUNNER_TEMP/build-core-stable.sh" "$GCP_BUILDER:/tmp/build-core-stable.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="bash /tmp/build-core-stable.sh '$URL'"
+          mkdir -p out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-core-stable-phone-qa/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cp work/STABLE_URL.txt out/STABLE_URL.txt
+          cp work/health.json out/health.json
+          grep -q '^THF_CORE_PHONE_QA2=PASS$' out/EVIDENCE.txt
+          test -s out/THF-CORE-RC6-PHONE-QA2-STABLE.apk
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-CORE-RC6-PHONE-QA2-STABLE
+          path: out/
+          retention-days: 14
+          compression-level: 0
