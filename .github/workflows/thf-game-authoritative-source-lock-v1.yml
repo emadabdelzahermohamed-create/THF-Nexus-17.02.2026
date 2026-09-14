@@ -66,7 +66,7 @@ jobs:
           check_zip learn_games "$HOME/thf-small-learn-games/source.zip"
           check_zip fitness_games "$HOME/thf-small-fitness-games/source.zip"
           REMOTE
-          grep -E '^(terra|rift|learn_games|fitness_games)\t' out/builder.raw > out/builder.tsv
+          awk -F '\t' '$1=="terra" || $1=="rift" || $1=="learn_games" || $1=="fitness_games"' out/builder.raw > out/builder.tsv
           test "$(wc -l < out/builder.tsv)" -eq 4
           cat out/builder.tsv
 
