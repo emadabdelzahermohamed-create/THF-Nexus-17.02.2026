@@ -1,0 +1,42 @@
+{
+  "schema": "thf-tokenops-policy/v1",
+  "network": "solana-mainnet-beta",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+  "decimals": 8,
+  "economics": {
+    "active_user_revenue_share_bps": 3500,
+    "approved_supply_floor_ui": "8000000000",
+    "approved_supply_ceiling_ui": "10000000000"
+  },
+  "distribution_controls": {
+    "anti_sybil_required": true,
+    "activity_evidence_required": true,
+    "anti_whale_cap_required": true,
+    "per_user_cap_raw": null,
+    "epoch_budget_cap_raw": null,
+    "distribution_reserve_account": null,
+    "delivery_model": null
+  },
+  "vesting_locking": {
+    "vesting_terms_status": "not_approved",
+    "lock_terms_status": "not_approved",
+    "lock_rewards_terms_status": "not_approved"
+  },
+  "signer_policy": {
+    "production_policy_status": "not_approved",
+    "user_controlled_signer_required": true,
+    "persistent_service_account_keys_forbidden": true,
+    "preferred_ci_identity": "wif_oidc_short_lived"
+  },
+  "execution_policy": {
+    "autonomous_signing": false,
+    "autonomous_broadcast": false,
+    "autonomous_transfer": false,
+    "autonomous_burn": false,
+    "autonomous_authority_change": false,
+    "autonomous_treasury_migration": false,
+    "autonomous_vesting_settlement": false,
+    "autonomous_dao_execution": false
+  }
+}
