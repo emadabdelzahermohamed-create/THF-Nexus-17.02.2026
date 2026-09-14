@@ -1,0 +1,114 @@
+{
+  "schema": "THF_VAULT_SIGNAL_REAL_FUNCTION_AUDIT_V1",
+  "generated_at": "2026-09-14T18:28:00+03:00",
+  "scope": ["vault_app_ux", "signal"],
+  "exclusions": ["dedicated_native_game_streams", "token_finance"],
+  "source_authority": {
+    "vault": {
+      "source_sha256": "7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793",
+      "package": "com.topherofit.thf.vault"
+    },
+    "signal": {
+      "source_sha256": "51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0",
+      "package": "com.topherofit.thf.signal"
+    }
+  },
+  "build_provenance": {
+    "workflow_run_id": 34861635359,
+    "workflow_head_sha": "d7eac0a848d2e5e5d311b7252393175b6b6402ad",
+    "workflow_conclusion": "SUCCESS",
+    "artifact_id": 10355690495,
+    "artifact_zip_sha256": "fa8fb02f9ad6cb42dc5d5b35a396b7a228cfd8876c118c2467d64bab9167fe97",
+    "build_tool": "gradle-8.13",
+    "build_tool_distribution_sha256": "dccb1612e69e36aa7f52082be0d820a27f90c1c7c58c7ab4e9df2eed1f3f7f65",
+    "build_overlay_id": "BUILD_CONFIG_URL_JSON_ESCAPE_V2",
+    "overlay_semantics": "Repairs only malformed URL buildConfigField Groovy quoting in extracted build workspace; authoritative source ZIP is not mutated.",
+    "source_zip_mutated": false
+  },
+  "build_results": {
+    "vault": {
+      "apk_sha256": "09552140e853ccd83b07a53d9e965248ad44a1917f04f2b7dda2684cb56a952c",
+      "apk_size_bytes": 37113,
+      "target_sdk": 36,
+      "variant": "release",
+      "signature_verifies": false,
+      "production_signing_performed": false,
+      "clean_zip_test": "PASS"
+    },
+    "signal": {
+      "apk_sha256": "acffad239598d861d4ca4350c0a94314e56a2c66f2841efeb435a068b6d2a78f",
+      "apk_size_bytes": 37129,
+      "target_sdk": 36,
+      "variant": "release",
+      "signature_verifies": false,
+      "production_signing_performed": false,
+      "clean_zip_test": "PASS"
+    }
+  },
+  "payload_inspection": {
+    "vault": {
+      "archive_entry_count": 7,
+      "classes_dex_bytes": 16932,
+      "contains_webview": true,
+      "contains_load_url": true,
+      "contains_javascript_enablement": true,
+      "contains_offline_html": true,
+      "offline_html_behavior": "Static Secure service unavailable page with topherofit://retry link",
+      "native_surface_observed": ["MainActivity", "settings dialogs", "network capability check", "WebViewClient"],
+      "real_function_release_classification": "REJECT_WRAPPER_SHELL_ONLY"
+    },
+    "signal": {
+      "archive_entry_count": 7,
+      "classes_dex_bytes": 16956,
+      "contains_webview": true,
+      "contains_load_url": true,
+      "contains_javascript_enablement": true,
+      "contains_offline_html": true,
+      "offline_html_behavior": "Static Secure service unavailable page with topherofit://retry link",
+      "native_surface_observed": ["MainActivity", "settings dialogs", "network capability check", "WebViewClient"],
+      "real_function_release_classification": "REJECT_WRAPPER_SHELL_ONLY"
+    }
+  },
+  "release_policy_decision": {
+    "vault_apk_authority": "REJECTED",
+    "signal_apk_authority": "REJECTED",
+    "reason": "Exact-source build succeeds, but inspected APK payloads are WebView-shell artifacts and do not prove end-to-end native/mobile real-function behavior. Wrapper-only PASS is forbidden.",
+    "keep_source_authority": true,
+    "promote_apk_sha_to_authoritative_candidate": false,
+    "physical_device_status": "NOT_ELIGIBLE_UNTIL_REAL_FUNCTION_REPLACEMENT",
+    "network_release_ready": false,
+    "final_or_play_ready": false,
+    "production_signing_allowed": false
+  },
+  "required_replacement_work": {
+    "vault": [
+      "Replace shell-only surface with real Vault UX flows wired to reachable authenticated THF backend and secure storage.",
+      "Implement truthful loading/error/offline behavior; offline must not fabricate economy/social/remote state.",
+      "Regression-protect every visible route/button and then rebuild API 36 package.",
+      "Only after payload inspection passes, collect exact-SHA physical-phone evidence."
+    ],
+    "signal": [
+      "Replace shell-only surface with real Signal UX flows wired to reachable authenticated THF backend and notification/deeplink behavior where applicable.",
+      "Implement truthful loading/error/offline behavior and Data Saver/accessibility/RTL readiness.",
+      "Regression-protect every visible route/button and then rebuild API 36 package.",
+      "Only after payload inspection passes, collect exact-SHA physical-phone evidence."
+    ]
+  },
+  "unchanged_global_gates": {
+    "backend_health_auth_proof": false,
+    "stable_external_trusted_tls_pass_staging": false,
+    "auth_session_federation_external_proof": false,
+    "provider_kms_boundary_proven": false,
+    "physical_device_pass": false,
+    "network_release_ready": false,
+    "push_ready": false,
+    "final_or_play_ready": false
+  },
+  "rollback": {
+    "do_not_use_as_release_candidates": [
+      "09552140e853ccd83b07a53d9e965248ad44a1917f04f2b7dda2684cb56a952c",
+      "acffad239598d861d4ca4350c0a94314e56a2c66f2841efeb435a068b6d2a78f"
+    ],
+    "previous_authoritative_lineage_file": "ReleaseOps/apps_factory/THF_APPS_LINEAGE_RECONCILIATION_20260914_1745_EET.json"
+  }
+}
