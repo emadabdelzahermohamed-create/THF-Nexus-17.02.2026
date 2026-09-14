@@ -1,0 +1,38 @@
+name: THF Core Inspect Web UI
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-core-inspect-web-ui.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Inspect UI entrypoints and API calls
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='set -Eeuo pipefail
+          SRC="$HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
+          T=$(mktemp -d); trap "rm -rf $T" EXIT; unzip -q "$SRC" -d "$T"
+          echo "=== INDEX ==="; sed -n "1,300p" "$T/clients/web/index.html"
+          echo "=== APP JS API/FETCH LINES ==="; grep -nE "fetch\(|/api/|location\.|href=|window\." "$T/clients/web/app.js" | head -260 || true
+          echo "=== APP JS HEAD ==="; sed -n "1,420p" "$T/clients/web/app.js"
+          echo "=== WEB OTHER FILES ==="; find "$T/clients/web" -maxdepth 2 -type f -printf "%P %s bytes\n" | sort
+          '
