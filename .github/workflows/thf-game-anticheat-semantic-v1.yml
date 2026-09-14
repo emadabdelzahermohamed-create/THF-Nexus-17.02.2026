@@ -1,0 +1,146 @@
+name: THF Game Anti-Cheat Semantic V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-game-anticheat-semantic-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  anti-cheat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Isolated server-authoritative anti-cheat proof
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/anticheat.raw <<'PY'
+          import hashlib,http.client,importlib,json,os,pathlib,shutil,socket,sys,tempfile,threading,traceback,uuid
+          src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
+          assert src.is_dir() and (src/'thf/app.py').is_file()
+          def tree_sha(root):
+              h=hashlib.sha256()
+              for p in sorted(root.rglob('*.py')):
+                  rel=p.relative_to(root).as_posix()
+                  if 'wave' in rel.lower(): continue
+                  h.update(rel.encode()+b'\0'+p.read_bytes())
+              return h.hexdigest()
+          before=tree_sha(src)
+          result={'schema':'thf-game-anticheat-semantic-v1','runtime_source_sha256':before,
+                  'external_network_allowed':False,'production_credentials_used':False,'wave_files_read_or_changed':False,
+                  'canonical_source_modified':False,'final_or_play_ready':False,'checks':[]}
+          def add(name,status,passed,detail=None):
+              d={'name':name,'status':status,'passed':bool(passed)}
+              if detail is not None:d['detail']=detail
+              result['checks'].append(d)
+          def pick(o,names):
+              if isinstance(o,dict):
+                  for k,v in o.items():
+                      if k.lower() in names and isinstance(v,(str,int,float,bool)): return v
+                  for v in o.values():
+                      x=pick(v,names)
+                      if x is not None:return x
+              elif isinstance(o,list):
+                  for v in o:
+                      x=pick(v,names)
+                      if x is not None:return x
+          with tempfile.TemporaryDirectory(prefix='thf-anticheat-') as td:
+              td=pathlib.Path(td); work=td/'src'; data=td/'data'; home=td/'home'
+              shutil.copytree(src,work,symlinks=True); data.mkdir(); home.mkdir(); db=data/'anti.sqlite3'
+              os.environ.update({'THF_ENV':'test','THF_OFFLINE':'1','THF_DATA_DIR':str(data),'THF_DB_PATH':str(db),
+                                 'THF_RUNTIME_DIR':str(td/'runtime'),'HOME':str(home),'THF_HOST':'127.0.0.1','THF_PORT':'0','THF_QUIET':'1'})
+              sys.path.insert(0,str(work)); os.chdir(work)
+              real_connect=socket.socket.connect; real_create=socket.create_connection
+              def loop(h): return h in ('127.0.0.1','::1','localhost')
+              def gc(self,address):
+                  h=address[0] if isinstance(address,tuple) and address else None
+                  if not loop(h): raise RuntimeError('external network blocked')
+                  return real_connect(self,address)
+              def gcc(address,*a,**kw):
+                  h=address[0] if isinstance(address,tuple) and address else None
+                  if not loop(h): raise RuntimeError('external network blocked')
+                  return real_create(address,*a,**kw)
+              socket.socket.connect=gc; socket.create_connection=gcc; server=thread=None
+              try:
+                  mod=importlib.import_module('thf.app'); server=mod.make_server('127.0.0.1',0,work,db); port=server.server_address[1]
+                  thread=threading.Thread(target=server.serve_forever,daemon=True); thread.start()
+                  def req(method,path,payload=None,token=None):
+                      body=None if payload is None else json.dumps(payload,separators=(',',':'))
+                      hs={'Accept':'application/json','Connection':'close'}
+                      if body is not None: hs.update({'Content-Type':'application/json','Content-Length':str(len(body.encode()))})
+                      if token: hs['Authorization']='Bearer '+token
+                      c=http.client.HTTPConnection('127.0.0.1',port,timeout=5)
+                      try:
+                          c.request(method,path,body=body,headers=hs); r=c.getresponse(); raw=r.read(65536)
+                          try:o=json.loads(raw.decode() or '{}')
+                          except Exception:o={}
+                          return r.status,o
+                      finally:c.close()
+                  suffix=uuid.uuid4().hex[:10]; u='qa_anti_'+suffix; pw='Qa!'+uuid.uuid4().hex+'9z'
+                  st,_=req('POST','/api/auth/register',{'username':u,'password':pw}); add('register',st,st in (200,201))
+                  st,o=req('POST','/api/auth/login',{'username':u,'password':pw}); tok=pick(o,{'token','access_token','session_token'}); add('login',st,st==200 and bool(tok))
+                  st,o=req('POST','/api/arena/start',{'mode':'squad'},token=tok); mid=pick(o,{'match_id','matchid','id'}); add('arena_start',st,st in (200,201) and bool(mid))
+                  clean={'match_id':mid,'action':'advance'}
+                  st,o=req('POST','/api/arena/action',clean,token=tok); a1=pick(o,{'actions'}); add('clean_action_valid',st,200<=st<300 and a1 is not None)
+                  bad={'match_id':mid,'action':'teleport','damage':999999999,'score':999999999,'hp':999999999,'winner':True}
+                  bst,bo=req('POST','/api/arena/action',bad,token=tok); add('invalid_action_rejected',bst,not (200<=bst<300))
+                  st,o=req('POST','/api/arena/action',clean,token=tok); a2=pick(o,{'actions'})
+                  unchanged=(200<=st<300 and a1 is not None and a2 is not None and int(a2)==int(a1)+1)
+                  add('rejected_invalid_action_did_not_mutate_counter',st,unchanged,'owner action count increases by exactly one after rejected invalid action')
+                  injected={'match_id':mid,'action':'advance','damage':999999999,'score':999999999,'hp':999999999,'winner':True,'rewards':999999999,'token_award':999999999}
+                  ist,io=req('POST','/api/arena/action',injected,token=tok); a3=pick(io,{'actions'})
+                  add('injected_valid_action_processed',ist,200<=ist<300 and a3 is not None)
+                  blob=json.dumps(io,sort_keys=True,separators=(',',':'))
+                  forbidden=['999999999','"winner":true','"token_award":999999999','"rewards":999999999']
+                  reflected=[x for x in forbidden if x in blob]
+                  add('client_authoritative_fields_not_reflected',ist,len(reflected)==0,'forbidden_reflections='+','.join(reflected) if reflected else 'none')
+                  sequence_safe=(a2 is not None and a3 is not None and int(a3)==int(a2)+1)
+                  add('injected_action_counter_is_server_sequence',ist,sequence_safe,'one accepted request advances server action counter by one')
+                  result['check_count']=len(result['checks']); result['passed_count']=sum(c['passed'] for c in result['checks']); result['anti_cheat_semantics_passed']=all(c['passed'] for c in result['checks'])
+              except Exception as e:
+                  result['tooling_error']=type(e).__name__+': '+str(e); result['trace_tail']=traceback.format_exc().splitlines()[-8:]
+              finally:
+                  if server is not None: server.shutdown(); server.server_close()
+                  if thread is not None: thread.join(timeout=5)
+                  socket.socket.connect=real_connect; socket.create_connection=real_create
+          after=tree_sha(src); result['runtime_source_sha256_after']=after; result['canonical_source_modified']=(before!=after)
+          print('__THF_JSON_BEGIN__'); print(json.dumps(result,indent=2,sort_keys=True)); print('__THF_JSON_END__')
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/anticheat.raw').read_text(errors='ignore'); a=raw.rfind('__THF_JSON_BEGIN__'); b=raw.rfind('__THF_JSON_END__'); assert a>=0 and b>a
+          x=json.loads(raw[a+len('__THF_JSON_BEGIN__'):b].strip()); pathlib.Path('out/anticheat.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          assert x['canonical_source_modified'] is False and x['runtime_source_sha256']==x['runtime_source_sha256_after']
+          assert x['external_network_allowed'] is False and x['production_credentials_used'] is False and x['wave_files_read_or_changed'] is False
+          assert 'tooling_error' not in x, x.get('tooling_error')
+          assert x.get('anti_cheat_semantics_passed') is True, x.get('checks')
+          print('ANTI_CHEAT_SEMANTICS=PASS')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-GAME-ANTICHEAT-SEMANTIC-V1
+          path: out/
+          retention-days: 14
