@@ -1,0 +1,119 @@
+name: THF TokenOps Autonomous Large Batch v3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-autonomous-large-batch-v3.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-autonomous-large-batch-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: thf-tokenops-autonomous-large-batch-v3-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  readonly-tokenops-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Compile TokenOps control plane
+        run: |
+          set -euo pipefail
+          python -m py_compile ReleaseOps/TokenOps/tokenops_guard.py
+          python -m py_compile ReleaseOps/TokenOps/financial_control_plane.py
+          python -m py_compile ReleaseOps/TokenOps/activity_planning.py
+          python -m py_compile ReleaseOps/TokenOps/epoch_commitment.py
+
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check --no-input pytest
+
+      - name: Run TokenOps regression suite
+        run: python -m pytest ReleaseOps/TokenOps -q
+
+      - name: Run fresh Solana Mainnet read-only invariant audit
+        run: |
+          set -euo pipefail
+          rm -rf out/tokenops-v3
+          python ReleaseOps/TokenOps/tokenops_guard.py --out out/tokenops-v3
+
+      - name: Prove current financial policy remains fail-closed
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from ReleaseOps.TokenOps.epoch_commitment import build_epoch_commitment, build_double_entry_preview
+
+          policy = json.loads(Path('ReleaseOps/TokenOps/policy.json').read_text())
+          treasury_policy = json.loads(Path('ReleaseOps/TokenOps/treasury_policy.json').read_text())
+          treasury_validation = {
+              'status': 'FAIL_CLOSED',
+              'role_balances_raw': {},
+              'source': 'authoritative treasury policy has no verified public treasury accounts yet',
+          }
+          packet = build_epoch_commitment(
+              policy,
+              treasury_validation,
+              'ci-current-policy-proof',
+              1_000_000,
+              [{'subject_ref': 'synthetic-ci-subject', 'activity_units': 1}],
+              ['0' * 64],
+          )
+          assert packet['status'] == 'FAIL_CLOSED'
+          assert packet['execution_authorized'] is False
+          assert packet['signed'] is False
+          assert packet['submitted'] is False
+          assert packet['broadcast'] is False
+          assert packet['financial_effect'] is False
+          assert packet['transaction_bytes_created'] is False
+          assert packet['instruction_bytes_created'] is False
+          accounting = build_double_entry_preview(packet)
+          assert accounting['balanced'] is True
+          assert accounting['posted'] is False
+          assert accounting['financial_effect'] is False
+          out = Path('out/tokenops-v3')
+          out.mkdir(parents=True, exist_ok=True)
+          (out / 'epoch-commitment-failclosed-proof.json').write_text(json.dumps(packet, sort_keys=True, indent=2) + '\n')
+          (out / 'accounting-preview.json').write_text(json.dumps(accounting, sort_keys=True, indent=2) + '\n')
+          print('CURRENT_POLICY_FAIL_CLOSED=PASS')
+          print('BINDING_BLOCKERS=' + ','.join(packet['blockers']))
+          PY
+
+      - name: Create SHA-256 evidence manifest
+        run: |
+          set -euo pipefail
+          cd out/tokenops-v3
+          sha256sum *.json | sort > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          {
+            echo '## THF TokenOps v3 read-only evidence'
+            echo ''
+            echo "Source SHA: $GITHUB_SHA"
+            echo ''
+            echo '```text'
+            cat SHA256SUMS.txt
+            echo '```'
+            echo ''
+            echo 'No signing, submission, broadcast, transfer, burn, authority change, treasury migration, settlement, DAO execution, private-key handling, or WAVE mutation is performed by this workflow.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce no executable financial payload files
+        run: |
+          set -euo pipefail
+          if find out/tokenops-v3 -type f \( -name '*.txn' -o -name '*.tx' -o -name '*.key' -o -name '*.keypair' -o -name '*.secret' \) | grep -q .; then
+            echo 'Forbidden executable/sensitive payload file detected' >&2
+            exit 2
+          fi
+          echo NON_BROADCAST_PAYLOAD_GATE=PASS
