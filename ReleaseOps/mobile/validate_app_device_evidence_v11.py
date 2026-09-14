@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """THF app physical-device evidence validator V11.
 
-V11 layers V10 and binds foreground-sensitive semantic observations to the
-actual resumed process for the exact authoritative app candidate. A separate,
-SHA-256-bound process-provenance capture is required per foreground-sensitive
-check. This prevents stale/background/wrapper/other-package evidence from
+V11 layers V10 and binds foreground-sensitive observations to the actual
+resumed process for the exact authoritative app candidate. Each process capture
+is SHA-256-bound to the canonical evidence object that owns that check:
+semantic observations, the lifecycle transcript, or the offline/network
+transcript. This prevents stale/background/wrapper/other-package evidence from
 satisfying physical-device acceptance.
 
 This is release-control tooling only and cannot promote FINAL/PLAY_READY.
@@ -21,6 +22,7 @@ from validate_app_device_evidence_v9 import _candidate, _safe_file
 
 PID_RE = re.compile(r"^[1-9]\d*$")
 PROCESS_METHOD = "ADB_DUMPSYS_ACTIVITY_PIDOF"
+LIFECYCLE_CHECKS = frozenset(("touch", "responsive_layout", "orientation", "background_resume"))
 FOREGROUND_CHECKS = (
     "launch",
     "touch",
@@ -58,16 +60,24 @@ def _one(kv: dict[str, list[str]], key: str) -> str | None:
     return values[0] if len(values) == 1 else None
 
 
+def _bound_evidence(evidence: dict[str, Any], check: str) -> dict[str, Any] | None:
+    semantic = evidence.get("semantic_observations")
+    if isinstance(semantic, dict) and isinstance(semantic.get(check), dict):
+        return semantic[check]
+    if check in LIFECYCLE_CHECKS:
+        row = evidence.get("lifecycle_touch_orientation_observation")
+        return row if isinstance(row, dict) else None
+    if check == "offline_network":
+        row = evidence.get("offline_network_observation")
+        return row if isinstance(row, dict) else None
+    return None
+
+
 def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> list[str]:
     errors = list(validate_v10(registry, evidence, root))
     row = _candidate(registry, evidence.get("product"))
     if row is None:
         errors.append("V11 requires exactly one authoritative candidate")
-        return errors
-
-    semantic = evidence.get("semantic_observations")
-    if not isinstance(semantic, dict):
-        errors.append("V11 semantic_observations required")
         return errors
 
     provenance = evidence.get("process_provenance")
@@ -88,12 +98,15 @@ def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> 
     seen_refs: set[str] = set()
     for check in FOREGROUND_CHECKS:
         prefix = f"V11 {check}: "
-        semantic_row = semantic.get(check)
-        semantic_sha = semantic_row.get("evidence_sha256") if isinstance(semantic_row, dict) else None
-        semantic_ref = semantic_row.get("evidence_ref") if isinstance(semantic_row, dict) else None
-        raw_ref = semantic_row.get("raw_evidence_ref") if isinstance(semantic_row, dict) else None
-        if not isinstance(semantic_sha, str) or len(semantic_sha) != 64:
-            errors.append(prefix + "semantic evidence SHA required")
+        bound = _bound_evidence(evidence, check)
+        if not isinstance(bound, dict):
+            errors.append(prefix + "canonical bound evidence required")
+            continue
+        bound_sha = bound.get("evidence_sha256")
+        bound_ref = bound.get("evidence_ref")
+        raw_ref = bound.get("raw_evidence_ref")
+        if not isinstance(bound_sha, str) or len(bound_sha) != 64:
+            errors.append(prefix + "bound evidence SHA required")
 
         item = provenance.get(check)
         if not isinstance(item, dict):
@@ -104,8 +117,8 @@ def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> 
             if ref in seen_refs:
                 errors.append(prefix + "process provenance file must be unique per check")
             seen_refs.add(ref)
-        if ref in (semantic_ref, raw_ref):
-            errors.append(prefix + "process provenance must be distinct from semantic/raw evidence")
+        if ref in (bound_ref, raw_ref):
+            errors.append(prefix + "process provenance must be distinct from bound/raw evidence")
 
         path = _safe_file(root, ref)
         if path is None:
@@ -128,7 +141,7 @@ def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> 
             "THF_FOREGROUND_PACKAGE": package,
             "THF_PROCESS_CAPTURE_METHOD": PROCESS_METHOD,
             "THF_PROCESS_ALIVE_AFTER": "TRUE",
-            "THF_SEMANTIC_EVIDENCE_SHA256": semantic_sha,
+            "THF_BOUND_EVIDENCE_SHA256": bound_sha,
             "THF_ACTIVITY_RESUMED": "TRUE",
         }
         for marker, wanted in expected.items():
@@ -147,4 +160,4 @@ def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> 
     return errors
 
 
-__all__ = ["FOREGROUND_CHECKS", "PROCESS_METHOD", "validate"]
+__all__ = ["FOREGROUND_CHECKS", "LIFECYCLE_CHECKS", "PROCESS_METHOD", "validate"]
