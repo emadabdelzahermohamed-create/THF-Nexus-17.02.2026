@@ -1,0 +1,116 @@
+name: THF TokenOps Incident Response Gate v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-incident-response-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: thf-tokenops-incident-response-gate-v1-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  readonly-incident-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+
+      - name: Compile and test incident control
+        run: |
+          set -euo pipefail
+          python -m py_compile ReleaseOps/TokenOps/incident_response.py
+          python -m pip install --disable-pip-version-check --no-input pytest
+          python -m pytest ReleaseOps/TokenOps/test_incident_response.py -q
+
+      - name: Build fresh read-only core evidence
+        run: |
+          set -euo pipefail
+          rm -rf out/tokenops-incident out/tokenops-v3
+          python ReleaseOps/TokenOps/tokenops_guard.py --out out/tokenops-v3
+          python ReleaseOps/TokenOps/source_provenance.py --out out/tokenops-v3/source-provenance.json
+          python ReleaseOps/TokenOps/evidence_chain.py --evidence-dir out/tokenops-v3 --out out/tokenops-v3/evidence-chain.json
+
+      - name: Extract optional holder observability
+        run: |
+          set -euo pipefail
+          mkdir -p out/tokenops-incident
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('out/tokenops-v3/token-audit.json').read_text())
+          h=dict(a.get('holder_concentration') or {'status':'UNAVAILABLE'})
+          Path('out/tokenops-incident/holder-concentration.json').write_text(
+              json.dumps(h, sort_keys=True, indent=2) + '\n'
+          )
+          PY
+
+      - name: Assess incident quarantine mode
+        run: |
+          set -euo pipefail
+          python ReleaseOps/TokenOps/incident_response.py \
+            --audit out/tokenops-v3/token-audit.json \
+            --invariant-gate out/tokenops-v3/invariant-gate.json \
+            --evidence-chain out/tokenops-v3/evidence-chain.json \
+            --source-provenance out/tokenops-v3/source-provenance.json \
+            --financial-readiness out/tokenops-v3/financial-readiness.json \
+            --holder-concentration out/tokenops-incident/holder-concentration.json \
+            --out out/tokenops-incident/incident-assessment.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('out/tokenops-incident/incident-assessment.json').read_text())
+          assert p['execution_authorized'] is False
+          assert p['transaction_bytes_created'] is False
+          assert p['instruction_bytes_created'] is False
+          assert p['signed'] is False
+          assert p['submitted'] is False
+          assert p['broadcast'] is False
+          assert p['financial_effect'] is False
+          assert p['private_key_used'] is False
+          assert p['wave_touched'] is False
+          assert p['rollback']['onchain_rollback_allowed'] is False
+          assert p['mode'] in {'NORMAL_READ_ONLY','READ_ONLY_DEGRADED'}
+          print('INCIDENT_MODE=' + p['mode'])
+          print('INCIDENT_CRITICAL_COUNT=' + str(len(p['critical_reasons'])))
+          print('INCIDENT_DEGRADED_COUNT=' + str(len(p['degraded_reasons'])))
+          print('INCIDENT_ASSESSMENT_SHA256=' + p['incident_assessment_sha256'])
+          PY
+
+      - name: Create SHA-256 evidence
+        run: |
+          set -euo pipefail
+          cp out/tokenops-v3/token-audit.json out/tokenops-incident/
+          cp out/tokenops-v3/invariant-gate.json out/tokenops-incident/
+          cp out/tokenops-v3/evidence-chain.json out/tokenops-incident/
+          cp out/tokenops-v3/source-provenance.json out/tokenops-incident/
+          cp out/tokenops-v3/financial-readiness.json out/tokenops-incident/
+          cd out/tokenops-incident
+          sha256sum *.json | sort > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Enforce non-executable evidence
+        run: |
+          set -euo pipefail
+          if find out/tokenops-incident -type f \( -name '*.txn' -o -name '*.tx' -o -name '*.key' -o -name '*.keypair' -o -name '*.secret' \) | grep -q .; then
+            echo 'Forbidden executable/sensitive payload file detected' >&2
+            exit 2
+          fi
+
+      - name: Upload immutable incident evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Incident-Response-v1-${{ github.run_id }}
+          path: out/tokenops-incident/
+          if-no-files-found: error
+          retention-days: 30

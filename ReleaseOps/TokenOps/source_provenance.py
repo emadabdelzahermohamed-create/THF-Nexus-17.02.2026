@@ -22,10 +22,12 @@ INVENTORY = (
     ".github/workflows/thf-tokenops-evidence-chain-gate-v1.yml",
     ".github/workflows/thf-tokenops-holder-concentration-probe-v1.yml",
     ".github/workflows/thf-tokenops-rpc-capability-gate-v1.yml",
+    ".github/workflows/thf-tokenops-incident-response-gate-v1.yml",
     "ReleaseOps/TokenOps/policy.json",
     "ReleaseOps/TokenOps/treasury_policy.json",
     "ReleaseOps/TokenOps/treasury_registry.json",
     "ReleaseOps/TokenOps/integration_contracts.json",
+    "ReleaseOps/TokenOps/INCIDENT_RUNBOOK.md",
     "ReleaseOps/TokenOps/tokenops_guard.py",
     "ReleaseOps/TokenOps/financial_control_plane.py",
     "ReleaseOps/TokenOps/activity_planning.py",
@@ -38,6 +40,7 @@ INVENTORY = (
     "ReleaseOps/TokenOps/rpc_capability_probe.py",
     "ReleaseOps/TokenOps/holder_concentration_probe.py",
     "ReleaseOps/TokenOps/evidence_chain.py",
+    "ReleaseOps/TokenOps/incident_response.py",
     "ReleaseOps/TokenOps/source_provenance.py",
 )
 
