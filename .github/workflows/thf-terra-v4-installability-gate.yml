@@ -1,0 +1,69 @@
+name: THF Terra V4 Installability Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-terra-v4-installability-gate.yml
+      - ReleaseOps/THF_RELEASE_LATEST_NO_REGRESSION_POLICY.md
+      - ReleaseOps/THF_TERRA_PHONE_V3_REJECTED_20260914.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Verify exact latest Terra V4 APK identity and signature
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='set -Eeuo pipefail
+          EXPECTED_SHA=e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec
+          EXPECTED_PACKAGE=com.topherofit.thf.terra.phoneqa
+          EXPECTED_TARGET=36
+          APK=$(find "$HOME" -type f -name "THF-TERRA-4.6.8-RC34-PHONE-V4.apk" -print -quit 2>/dev/null)
+          test -n "$APK"
+          ACTUAL_SHA=$(sha256sum "$APK" | awk "{print \\$1}")
+          test "$ACTUAL_SHA" = "$EXPECTED_SHA"
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"
+          BT=$(find "$SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          test -x "$BT/apksigner"
+          test -x "$BT/aapt2"
+          test -x "$BT/zipalign"
+          echo "APK=$APK"
+          echo "SHA256=$ACTUAL_SHA"
+          "$BT/zipalign" -c -v 4 "$APK" >/tmp/terra_v4_zipalign.txt
+          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/terra_v4_apksigner.txt
+          "$BT/aapt2" dump badging "$APK" | tee /tmp/terra_v4_badging.txt
+          grep -q "package: name='"$EXPECTED_PACKAGE"'" /tmp/terra_v4_badging.txt
+          grep -q "targetSdkVersion:'"$EXPECTED_TARGET"'" /tmp/terra_v4_badging.txt
+          unzip -l "$APK" | grep -q "lib/arm64-v8a/"
+          echo "TERRA_V4_ZIPALIGN=PASS"
+          echo "TERRA_V4_APKSIGNER=PASS"
+          echo "TERRA_V4_PACKAGE_ID=PASS"
+          echo "TERRA_V4_TARGET_SDK_36=PASS"
+          echo "TERRA_V4_ARM64=PASS"
+          echo "PHYSICAL_DEVICE_INSTALL=STILL_REQUIRED"
+          echo "FINAL_OR_PLAY_READY=FALSE"
+          '
