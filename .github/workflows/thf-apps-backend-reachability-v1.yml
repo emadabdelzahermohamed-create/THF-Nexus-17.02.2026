@@ -1,4 +1,4 @@
-name: THF Apps Backend Reachability V1
+name: THF Apps Runtime Network Evidence V2
 
 on:
   push:
@@ -7,14 +7,18 @@ on:
       - '.github/workflows/thf-apps-backend-reachability-v1.yml'
       - 'ReleaseOps/validators/audit_runtime_endpoints.py'
       - 'ReleaseOps/validators/validate_app_backend_reachability_lineage_v1.py'
+      - 'ReleaseOps/validators/evaluate_runtime_network_truth_v2.py'
       - 'ReleaseOps/tests/test_validate_app_backend_reachability_lineage_v1.py'
+      - 'ReleaseOps/tests/test_evaluate_runtime_network_truth_v2.py'
       - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
   pull_request:
     paths:
       - '.github/workflows/thf-apps-backend-reachability-v1.yml'
       - 'ReleaseOps/validators/audit_runtime_endpoints.py'
       - 'ReleaseOps/validators/validate_app_backend_reachability_lineage_v1.py'
+      - 'ReleaseOps/validators/evaluate_runtime_network_truth_v2.py'
       - 'ReleaseOps/tests/test_validate_app_backend_reachability_lineage_v1.py'
+      - 'ReleaseOps/tests/test_evaluate_runtime_network_truth_v2.py'
       - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
   workflow_dispatch:
 
@@ -27,7 +31,7 @@ env:
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
 
 jobs:
-  probe:
+  network_evidence:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -55,19 +59,22 @@ jobs:
           signal	RC4-BF1	377044263fa0fc366afe67c6b42ccf4f3e2d1bc75769350f2ee885983f820ddf	1za4Ibh8Lm5gt0DNe2oNLxmxYp0bb_gLh
           command	RC3	f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408	1eOdaj9IYsExCgzV0evwkW2hTpRie1Yke
           EOF
-          python -m py_compile ReleaseOps/validators/validate_app_backend_reachability_lineage_v1.py
-          python -m unittest ReleaseOps.tests.test_validate_app_backend_reachability_lineage_v1 -v
+          python -m py_compile \
+            ReleaseOps/validators/validate_app_backend_reachability_lineage_v1.py \
+            ReleaseOps/validators/evaluate_runtime_network_truth_v2.py
+          python -m unittest \
+            ReleaseOps.tests.test_validate_app_backend_reachability_lineage_v1 \
+            ReleaseOps.tests.test_evaluate_runtime_network_truth_v2 -v
           python ReleaseOps/validators/validate_app_backend_reachability_lineage_v1.py \
             src/matrix.tsv \
             ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json \
             --json-out out/lineage.json | tee out/lineage.log
-      - name: Probe HTTPS origins referenced by exact authoritative app sources
+      - name: Audit exact source runtime references
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         shell: bash
         run: |
           set -Eeuo pipefail
-          printf 'app\tcheckpoint\tsource_sha256\torigin\thttp_code\ttransport_result\n' > out/summary.tsv
           : > out/origins.tsv
           while IFS=$'\t' read -r app cp sha fid; do
             zip="src/$app.zip"; dir="src/$app"
@@ -92,11 +99,24 @@ jobs:
               seen.add(origin); print('\t'.join([app,cp,sha,origin]))
           PY
           done < src/matrix.tsv
+      - name: Enforce runtime network truth boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python ReleaseOps/validators/evaluate_runtime_network_truth_v2.py \
+            out \
+            ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json \
+            --json-out out/network-truth.json | tee out/network-truth.log
+      - name: Probe literal HTTPS runtime references for diagnostics only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          printf 'app\tcheckpoint\tsource_sha256\torigin\thttp_code\ttransport_result\n' > out/summary.tsv
           while IFS=$'\t' read -r app cp sha origin; do
             [ -n "${origin:-}" ] || continue
             http=$(curl --connect-timeout 8 --max-time 15 --retry 1 --retry-all-errors -sS -o /dev/null -w '%{http_code}' "$origin/" || true)
             case "$http" in
-              200|204|301|302|307|308|401|403|404|405) result=REACHABLE ;;
+              200|204|301|302|307|308|401|403|404|405) result=RESPONDED ;;
               000|'') result=UNREACHABLE ;;
               *) result=RESPONDED ;;
             esac
@@ -109,21 +129,26 @@ jobs:
           rows=Path('out/summary.tsv').read_text().splitlines()[1:]
           bad=[r for r in rows if r.endswith('\tUNREACHABLE')]
           lineage=json.loads(Path('out/lineage.json').read_text())
-          if lineage.get('status') != 'PASS' or lineage.get('final_or_play_ready') is not False:
-              raise SystemExit('lineage truth boundary failed closed')
+          truth=json.loads(Path('out/network-truth.json').read_text())
+          if lineage.get('status') != 'PASS': raise SystemExit('lineage gate failed')
+          if truth.get('backend_health_auth_proof') is not False: raise SystemExit('backend proof must remain false')
+          if truth.get('network_release_ready') is not False: raise SystemExit('network readiness must remain false')
           Path('out/truth-boundary.txt').write_text(
-            'BACKEND_REACHABILITY_AUDIT=NON_PROMOTIONAL\n'
+            'RUNTIME_NETWORK_EVIDENCE=NON_PROMOTIONAL\n'
             'EXACT_CURRENT_SOURCE_LINEAGE=PASS\n'
             'SUPERSEDED_SOURCE_REJECTED=TRUE\n'
-            'TLS_ORIGIN_RESPONSE_IS_NOT_AUTH_FLOW_PROOF=TRUE\n'
+            'LITERAL_RUNTIME_REFERENCE_PROBE_IS_DIAGNOSTIC_ONLY=TRUE\n'
+            'THIRD_PARTY_ORIGIN_RESPONSE_IS_BACKEND_PROOF=FALSE\n'
+            'BACKEND_HEALTH_AUTH_PROOF=FALSE\n'
+            'NETWORK_RELEASE_READY=FALSE\n'
             'PHYSICAL_DEVICE_PROOF_REQUIRED=TRUE\n'
             'FINAL_OR_PLAY_READY=FALSE\n'
-            f'UNREACHABLE_ORIGIN_COUNT={len(bad)}\n')
-          print(f'UNREACHABLE_ORIGIN_COUNT={len(bad)}')
+            f'UNREACHABLE_LITERAL_REFERENCE_COUNT={len(bad)}\n')
+          print(f'UNREACHABLE_LITERAL_REFERENCE_COUNT={len(bad)}')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: THF-APPS-BACKEND-REACHABILITY-V1
+          name: THF-APPS-RUNTIME-NETWORK-EVIDENCE-V2
           path: out/
           retention-days: 14
