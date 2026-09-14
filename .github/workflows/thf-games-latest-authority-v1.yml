@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/thf-games-latest-authority-v1.yml'
       - '.github/workflows/thf-apps-authoritative-lineage-v2.yml'
+      - '.github/workflows/thf-apps-authoritative-lineage-v3.yml'
+      - 'ReleaseOps/apps_factory/THF_APPS_LINEAGE_RECONCILIATION_20260914_1745_EET.json'
       - 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
       - 'ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md'
       - 'ReleaseOps/scripts/validate_latest_game_authority_v1.py'
