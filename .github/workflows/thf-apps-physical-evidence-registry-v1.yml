@@ -1,0 +1,52 @@
+name: THF Apps Physical Evidence Registry V1
+
+on:
+  push:
+    paths:
+      - 'ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260913_2035_EET.json'
+      - 'ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json'
+      - '.github/workflows/thf-apps-physical-evidence-registry-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate exact candidate binding and truthful pending state
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          state=json.loads(Path('ReleaseOps/apps_factory/THF_APPS_FACTORY_STATE_20260913_2035_EET.json').read_text())
+          reg=json.loads(Path('ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json').read_text())
+          assert reg['truth_boundary']['all_pending'] is True
+          assert reg['truth_boundary']['final_or_play_ready'] is False
+          rows={x['name']:x for x in reg['candidates']}
+          assert len(rows)==10 and set(rows)=={'core','pulse','forge','echo','codex','spark','rush','vault','signal','command'}
+          def sha(v): return isinstance(v,str) and re.fullmatch(r'[0-9a-f]{64}',v) is not None
+          core=rows['core']
+          assert core['package']==state['core']['package']
+          assert core['apk_sha256']==state['core']['apk_sha256'] and sha(core['apk_sha256'])
+          assert core['status']=='PENDING_PHYSICAL_PHONE'
+          for app in state['apps']:
+              r=rows[app['name']]
+              assert r['package']==app['package']
+              assert r['apk_sha256']==app['apk_sha256'] and sha(r['apk_sha256'])
+              assert r['source_sha256']==app['source_sha256'] and sha(r['source_sha256'])
+              assert r['status']=='PENDING_PHYSICAL_PHONE'
+          checks=set(reg['required_checks'])
+          required={'install','launch','touch','responsive_layout','orientation','background_resume','offline_network','core_user_journey','crash_free','accessibility','data_saver','rtl','localization_20_language_readiness','notification_permission','notification_channel','notification_receive','notification_tap_deeplink'}
+          assert required <= checks
+          print('PHYSICAL_EVIDENCE_REGISTRY=PASS')
+          print('BOUND_EXACT_APKS=10')
+          print('PHYSICAL_PHONE_ACCEPTANCE=PENDING')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
