@@ -35,6 +35,7 @@ INVENTORY = (
     "ReleaseOps/TokenOps/revenue_value_basis.py",
     "ReleaseOps/TokenOps/blocker_resolution.py",
     "ReleaseOps/TokenOps/operation_readiness.py",
+    "ReleaseOps/TokenOps/review_intent_manifest.py",
     "ReleaseOps/TokenOps/policy_change_control.py",
     "ReleaseOps/TokenOps/recent_activity_semantics.py",
     "ReleaseOps/TokenOps/rpc_capability_probe.py",
