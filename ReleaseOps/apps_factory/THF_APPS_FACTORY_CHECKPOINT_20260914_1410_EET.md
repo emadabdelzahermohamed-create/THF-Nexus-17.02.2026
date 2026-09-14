@@ -26,6 +26,7 @@ The lifecycle now:
 
 ## Evidence
 PR GitHub Actions run `34836471074`: SUCCESS.
+Post-merge GitHub Actions run `34836585470` on exact merge commit `d5aa07d8cf48980dbccab9f77283f7a992b4a9bc`: SUCCESS.
 - Python 3.12 compile: PASS.
 - Notification lifecycle/HTTP/provider/dispatch/Pass bridge regression suite: `42 passed`.
 - Release-truth step explicitly preserved:
@@ -46,4 +47,4 @@ Revert merge commit `d5aa07d8cf48980dbccab9f77283f7a992b4a9bc` to restore the pr
 ## Isolation
 No dedicated native game implementation, token-finance implementation, production signing, Play rollout, public deployment, or provider credential was modified in this batch.
 
-Body SHA-256 (content above this line): `4afa1abd2732936c82d79ac0869c1b083ca956292255be016fcefe352b577a05`
+Body SHA-256 (content above this line): `9eccc9c6fb6444b2cf753dbcaae058db1fb3199e9435206565946b63c7e95a1a`
