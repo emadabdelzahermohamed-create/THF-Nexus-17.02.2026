@@ -1,0 +1,46 @@
+name: THF Notification Lifecycle Candidate V1
+
+on:
+  push:
+    paths:
+      - 'ReleaseOps/apps_factory/notification_lifecycle.py'
+      - 'ReleaseOps/apps_factory/tests/test_notification_lifecycle.py'
+      - 'ReleaseOps/apps_factory/THF_NOTIFICATION_LIFECYCLE_CANDIDATE_20260914.json'
+      - '.github/workflows/thf-notification-lifecycle-candidate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile candidate
+        run: python -m py_compile ReleaseOps/apps_factory/notification_lifecycle.py
+      - name: Execute lifecycle regressions
+        run: python -m pytest -q ReleaseOps/apps_factory/tests/test_notification_lifecycle.py
+      - name: Enforce truthful boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('ReleaseOps/apps_factory/THF_NOTIFICATION_LIFECYCLE_CANDIDATE_20260914.json')
+          d=json.loads(p.read_text())
+          assert d['truth_boundary']['push_ready'] is False
+          assert d['truth_boundary']['provider_delivery_proven'] is False
+          assert d['truth_boundary']['physical_device_delivery_proven'] is False
+          assert d['truth_boundary']['final_or_play_ready'] is False
+          assert len(d['apps']) == 9
+          assert all(a['target_sdk']==36 for a in d['apps'])
+          print('NOTIFICATION_LIFECYCLE_CANDIDATE=PASS')
+          print('PUSH_READY=FALSE')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
