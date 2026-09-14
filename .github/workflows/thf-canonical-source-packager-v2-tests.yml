@@ -1,0 +1,31 @@
+name: THF Canonical Source Packager V2 Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ReleaseOps/scripts/package_authoritative_android_source_v2.py
+      - tests/test_authoritative_source_packager_v2.py
+      - .github/workflows/thf-canonical-source-packager-v2-tests.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Compile packager and regression suite
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ReleaseOps/scripts/package_authoritative_android_source_v2.py tests/test_authoritative_source_packager_v2.py
+      - name: Run fail-closed canonical source regressions
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest -v tests.test_authoritative_source_packager_v2
+          echo 'CANONICAL_SOURCE_PACKAGER_V2_REGRESSION=PASS' >> "$GITHUB_STEP_SUMMARY"
