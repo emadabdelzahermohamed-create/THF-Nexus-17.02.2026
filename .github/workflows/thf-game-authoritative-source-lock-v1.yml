@@ -52,7 +52,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p out/src
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' > out/builder.tsv <<'REMOTE'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' > out/builder.raw <<'REMOTE'
           set -Eeuo pipefail
           check_zip() {
             app="$1"; f="$2"
@@ -66,6 +66,8 @@ jobs:
           check_zip learn_games "$HOME/thf-small-learn-games/source.zip"
           check_zip fitness_games "$HOME/thf-small-fitness-games/source.zip"
           REMOTE
+          grep -E '^(terra|rift|learn_games|fitness_games)\t' out/builder.raw > out/builder.tsv
+          test "$(wc -l < out/builder.tsv)" -eq 4
           cat out/builder.tsv
 
       - name: Observe exact RC4 Drive sources read-only
@@ -95,11 +97,14 @@ jobs:
           set -Eeuo pipefail
           python3 - <<'PY'
           import json, pathlib
+          allowed={'terra','rift','spark','rush','learn_games','fitness_games'}
           rows=[]
           for p in ('out/builder.tsv','out/drive.tsv'):
               for line in pathlib.Path(p).read_text().splitlines():
-                  if not line.strip(): continue
-                  app,sha,exists,integrity,locator=line.split('\t',4)
+                  parts=line.split('\t',4)
+                  if len(parts)!=5 or parts[0] not in allowed:
+                      continue
+                  app,sha,exists,integrity,locator=parts
                   rows.append({
                       'app':app,
                       'source_sha256':sha,
@@ -107,6 +112,8 @@ jobs:
                       'zip_integrity':integrity=='true',
                       'locator_class':'drive_exact_id' if locator.startswith('drive-id:') else 'builder_authoritative_path',
                   })
+          if len(rows)!=6 or {r['app'] for r in rows}!=allowed:
+              raise SystemExit('authoritative observation must contain exactly six game sources')
           out={
               'schema':'thf-game-authoritative-source-observation-v1',
               'read_only':True,
