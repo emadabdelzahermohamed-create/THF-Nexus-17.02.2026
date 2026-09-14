@@ -1,0 +1,61 @@
+{
+  "schema": "thf.android.shared.integration.v5",
+  "baseline": {
+    "previous_schema": "thf.android.shared.integration.v4",
+    "package_ids_preserved": true,
+    "wave_touched": false,
+    "irreversible_actions_performed": false
+  },
+  "identity_linking": {
+    "verified_provider_credential_required": true,
+    "email_equality_is_link_authority": false,
+    "silent_cross_account_merge_allowed": false,
+    "server_atomic_link_required": true,
+    "audit_event_required": true
+  },
+  "guest_upgrade": {
+    "server_ownership_required": true,
+    "atomic_migration_required": true,
+    "guest_session_revocation_required": true,
+    "client_economy_merge_allowed": false,
+    "client_ranked_merge_allowed": false
+  },
+  "health_provider_negotiation": {
+    "primary": "health_connect",
+    "optional_adapter": "samsung_health_data_sdk",
+    "provider_absence_is_fatal": false,
+    "manual_claim_fallback_allowed": false,
+    "permission_prompt_only_when_installed": true
+  },
+  "health_normalization": {
+    "provenance_required": true,
+    "provider_source_bound_dedup": true,
+    "deterministic_dedup_key": true,
+    "raw_payload_logging_allowed": false,
+    "client_reward_authority": false
+  },
+  "preferences": {
+    "supported_locale_count": 20,
+    "rtl_locales": ["ar", "fa", "ur"],
+    "data_saver": true,
+    "reduce_motion": true,
+    "high_contrast": true,
+    "cross_app_sync": true,
+    "product_specific_visuals_preserved": true
+  },
+  "operator_recovery": {
+    "verified_recovery_email_required": true,
+    "single_channel_operator_recovery_allowed": false,
+    "rate_limit_required": true,
+    "audit_required": true
+  },
+  "release_truth": {
+    "google_oauth_console_configured": false,
+    "durable_identity_link_store_bound": false,
+    "durable_guest_migration_store_bound": false,
+    "health_connect_provider_runtime_bound": false,
+    "samsung_partner_registration_verified": false,
+    "physical_device_pass": false,
+    "final_or_play_ready": false
+  }
+}
