@@ -1,0 +1,33 @@
+name: THF Game Physical Device Evidence Tooling V10
+on:
+  push:
+    paths:
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v10.py'
+      - 'ReleaseOps/mobile/test_validate_game_device_evidence_v10.py'
+      - '.github/workflows/thf-game-physical-device-evidence-tooling-v10.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v10:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile V7-V10 validators and tests
+        run: |
+          python -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v7.py
+          python -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v8.py
+          python -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v9.py
+          python -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v10.py
+          python -m py_compile ReleaseOps/mobile/test_validate_game_device_evidence_v10.py
+      - name: Preserve V9 regression chain
+        run: python ReleaseOps/mobile/test_validate_game_device_evidence_v9.py -v
+      - name: Run V10 lifecycle touch orientation regressions
+        run: python ReleaseOps/mobile/test_validate_game_device_evidence_v10.py -v
+      - name: Assert validator remains non-promotional
+        run: |
+          grep -q 'FINAL_OR_PLAY_READY=FALSE' ReleaseOps/mobile/validate_game_device_evidence_v10.py
+          ! grep -q 'FINAL_OR_PLAY_READY=TRUE' ReleaseOps/mobile/validate_game_device_evidence_v10.py
