@@ -39,6 +39,7 @@ jobs:
           python -m py_compile ReleaseOps/TokenOps/epoch_commitment.py
           python -m py_compile ReleaseOps/TokenOps/revenue_value_basis.py
           python -m py_compile ReleaseOps/TokenOps/blocker_resolution.py
+          python -m py_compile ReleaseOps/TokenOps/operation_readiness.py
           python -m py_compile ReleaseOps/TokenOps/recent_activity_semantics.py
           python -m py_compile ReleaseOps/TokenOps/source_provenance.py
 
@@ -146,6 +147,48 @@ jobs:
           print('BLOCKER_RESOLUTION_COUNT=' + str(packet['blocker_count']))
           print('UNKNOWN_BLOCKER_COUNT=' + str(len(packet['unknown_blockers'])))
           print('SIGNER_ACTION_NOW=' + summary['signer_action_now'])
+          PY
+
+      - name: Compile per-operation treasury and multisig readiness matrix
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from ReleaseOps.TokenOps.operation_readiness import build_operation_matrix, summarize_matrix
+
+          out = Path('out/tokenops-v3')
+          audit = json.loads((out / 'token-audit.json').read_text())
+          readiness = json.loads((out / 'financial-readiness.json').read_text())
+          treasury_policy = json.loads(Path('ReleaseOps/TokenOps/treasury_policy.json').read_text())
+          treasury_registry = json.loads(Path('ReleaseOps/TokenOps/treasury_registry.json').read_text())
+          matrix = build_operation_matrix(
+              readiness,
+              treasury_policy,
+              treasury_registry,
+              observed_slot=int(audit['slot']),
+              current_supply_raw=int(audit['supply_raw']),
+          )
+          summary = summarize_matrix(matrix)
+          assert matrix['execution_authorized'] is False
+          assert matrix['signed'] is False
+          assert matrix['submitted'] is False
+          assert matrix['broadcast'] is False
+          assert matrix['financial_effect'] is False
+          assert matrix['private_key_required'] is False
+          assert matrix['wave_touched'] is False
+          assert matrix['exact_signer_action_now'] == 'NONE'
+          assert matrix['unmapped_global_blockers'] == []
+          (out / 'operation-readiness.json').write_text(json.dumps(matrix, sort_keys=True, indent=2) + '\n')
+          (out / 'operation-readiness-summary.json').write_text(json.dumps(summary, sort_keys=True, indent=2) + '\n')
+          print('OPERATION_MATRIX_STATUS=' + matrix['status'])
+          print('TREASURY_RECONCILIATION_STATUS=' + matrix['treasury_reconciliation']['status'])
+          print('TREASURY_ACCOUNT_COUNT=' + str(matrix['treasury_reconciliation']['account_count']))
+          print('OPERATION_UNMAPPED_BLOCKERS=' + str(len(matrix['unmapped_global_blockers'])))
+          for name, data in sorted(matrix['operations'].items()):
+              print('OPERATION_' + name.upper() + '=' + data['status'])
+              print('OPERATION_' + name.upper() + '_MIN_APPROVALS=' + str(data['minimum_approvals']))
+          print('EXACT_SIGNER_ACTION_NOW=' + matrix['exact_signer_action_now'])
           PY
 
       - name: Prove current financial policy remains fail-closed
