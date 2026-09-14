@@ -1,0 +1,112 @@
+name: THF Game Backend Auth Contract Inventory V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-game-backend-auth-contract-inventory-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only AST inventory of auth and authority contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/auth-contract-inventory.raw <<'PY'
+          import ast,hashlib,json,pathlib,re
+          src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
+          app=src/'thf/app.py'
+          assert app.is_file(), app
+          text=app.read_text(errors='replace')
+          tree=ast.parse(text)
+          def tree_sha(root):
+              h=hashlib.sha256()
+              for p in sorted(root.rglob('*.py')):
+                  rel=p.relative_to(root).as_posix()
+                  if 'wave' in rel.lower(): continue
+                  h.update(rel.encode()+b'\0'+p.read_bytes())
+              return h.hexdigest()
+          before=tree_sha(src)
+          interesting=[]
+          string_paths=set()
+          functions=[]
+          for node in ast.walk(tree):
+              if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)):
+                  n=node.name
+                  if re.search(r'(auth|login|register|session|token|user|role|owner|arena|economy|world|social|avatar|revoke|refresh|logout)',n,re.I):
+                      functions.append(n)
+              if isinstance(node,ast.Constant) and isinstance(node.value,str):
+                  s=node.value
+                  if s.startswith('/api/') and re.search(r'(auth|login|register|session|token|user|arena|economy|world|social|avatar|admin|role)',s,re.I):
+                      string_paths.add(s)
+          for ln,line in enumerate(text.splitlines(),1):
+              if re.search(r'(authorization|bearer|user_from_token|login|register|role|owner|internal-award|arena/action|arena/start|world/environment|social/position|social/send|avatar/generate)',line,re.I):
+                  # structural only: redact literals that look secret-ish and cap line length
+                  clean=re.sub(r'([A-Za-z0-9_\-]{24,})','<LONG_TOKEN_REDACTED>',line.strip())[:240]
+                  interesting.append({'line':ln,'shape':clean})
+          result={
+              'schema':'thf-game-backend-auth-contract-inventory-v1',
+              'runtime_source_sha256':before,
+              'app_sha256':hashlib.sha256(app.read_bytes()).hexdigest(),
+              'auth_related_functions':sorted(set(functions)),
+              'api_paths':sorted(string_paths),
+              'structural_context':interesting[:120],
+              'external_network_allowed':False,
+              'production_credentials_used':False,
+              'wave_files_read_or_changed':False,
+              'canonical_source_modified':False,
+              'final_or_play_ready':False,
+          }
+          after=tree_sha(src)
+          result['canonical_source_modified']=(before!=after)
+          result['runtime_source_sha256_after']=after
+          print('__THF_JSON_BEGIN__')
+          print(json.dumps(result,indent=2,sort_keys=True))
+          print('__THF_JSON_END__')
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/auth-contract-inventory.raw').read_text(errors='ignore')
+          a=raw.rfind('__THF_JSON_BEGIN__'); b=raw.rfind('__THF_JSON_END__')
+          assert a>=0 and b>a, 'bounded JSON missing'
+          x=json.loads(raw[a+len('__THF_JSON_BEGIN__'):b].strip())
+          pathlib.Path('out/auth-contract-inventory.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          assert x['canonical_source_modified'] is False
+          assert x['external_network_allowed'] is False
+          assert x['production_credentials_used'] is False
+          assert x['wave_files_read_or_changed'] is False
+          assert x['api_paths'], 'no relevant API paths discovered'
+          print('AUTH_CONTRACT_INVENTORY=PASS')
+          print('API_PATH_COUNT='+str(len(x['api_paths'])))
+          print('AUTH_FUNCTION_COUNT='+str(len(x['auth_related_functions'])))
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-GAME-BACKEND-AUTH-CONTRACT-INVENTORY-V1
+          path: out/
+          retention-days: 14
