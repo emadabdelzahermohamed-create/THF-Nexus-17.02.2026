@@ -1,6 +1,6 @@
 {
-  "schema": "thf.android.shared.integration.v2",
-  "generated_at": "2026-09-14T23:39:00+03:00",
+  "schema": "thf.android.shared.integration.v3",
+  "generated_at": "2026-09-15T00:55:00+03:00",
   "android": {
     "target_sdk": 36,
     "credential_manager": {
@@ -16,6 +16,9 @@
       "rp_id_required": true,
       "server_generated_challenge_required": true,
       "minimum_challenge_chars": 32,
+      "assertion_requires_challenge_match": true,
+      "assertion_requires_user_verification": true,
+      "assertion_requires_signature_verification": true,
       "server_challenge_store_bound": false,
       "replay_protection_required": true
     },
@@ -29,6 +32,8 @@
         "heart_rate_bpm", "sleep", "weight_kg", "body_fat_pct"
       ],
       "provenance_required": true,
+      "canonical_source_id_supported": true,
+      "cross_provider_dedup_supported": true,
       "dedup_required": true
     },
     "samsung_health_data_sdk": {
@@ -39,6 +44,8 @@
       "sdk_release": "1.1.0",
       "sdk_release_date": "2026-03-12",
       "emulator_supported": false,
+      "absence_is_nonfatal": true,
+      "fallback_provider": "health_connect",
       "partner_registration_for_production": true,
       "registered_identity_binding": ["package_name", "release_signature_sha256"],
       "external_required": [
@@ -60,7 +67,39 @@
       "account-deletion route remains user accessible",
       "guest progress cannot merge without verified identity proof",
       "operator roles require authenticated session"
-    ]
+    ],
+    "email_code": {
+      "plaintext_persistence_allowed": false,
+      "maximum_lifetime_seconds": 600,
+      "single_use_required": true,
+      "rate_limit_required": true,
+      "delivery_backend_bound": false
+    },
+    "password": {
+      "minimum_length": 12,
+      "maximum_length": 256,
+      "allow_paste": true,
+      "arbitrary_composition_rules": false,
+      "compromised_password_check_required": true,
+      "server_password_hash_required": true,
+      "client_password_persistence_allowed": false
+    },
+    "account_deletion": {
+      "authenticated_session_required": true,
+      "recent_reauthentication_seconds": 300,
+      "confirmation_nonce_required": true,
+      "revoke_sessions": true,
+      "unlink_identity_providers": true,
+      "owned_data_cleanup_required": true,
+      "client_is_authoritative": false,
+      "backend_bound": false
+    }
+  },
+  "replay_protection": {
+    "reference_in_memory_ledger_present": true,
+    "reference_ledger_production_durable": false,
+    "production_atomic_durable_store_required": true,
+    "namespaces": ["passkey", "email_code", "handoff", "motion"]
   },
   "cross_app_handoff": {
     "max_lifetime_seconds": 300,
@@ -81,6 +120,8 @@
     "ordinary_user_visible": false,
     "publisher_required_roles": ["owner", "admin", "publisher"],
     "admin_required_roles": ["owner", "admin"],
+    "authenticated_session_required": true,
+    "identity_subject_required": true,
     "server_role_claim_required": true,
     "hidden_ui_is_not_security": true
   },
@@ -88,6 +129,8 @@
     "sources": ["camera_pose", "wearable_sensor", "device_sensor", "combined"],
     "confidence_range": [0.0, 1.0],
     "monotonic_clock_required": true,
+    "evidence_nonce_supported": true,
+    "replay_protection_required": true,
     "client_reward_authority": false,
     "server_verification_required": true
   },
@@ -102,6 +145,9 @@
     "google_oauth_console_configured": false,
     "google_server_signature_verifier_bound": false,
     "passkey_backend_challenge_store_bound": false,
+    "durable_replay_store_bound": false,
+    "email_auth_delivery_backend_bound": false,
+    "account_deletion_backend_bound": false,
     "cross_app_handoff_server_signer_bound": false,
     "samsung_partner_registration_verified": false,
     "physical_device_pass": false,
