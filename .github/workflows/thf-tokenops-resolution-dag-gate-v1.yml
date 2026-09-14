@@ -1,0 +1,98 @@
+name: THF TokenOps Resolution DAG Gate v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-resolution-dag-gate-v1.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-resolution-dag-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolution-dag-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+
+      - name: Compile and test resolution DAG
+        run: |
+          set -euo pipefail
+          python -m py_compile ReleaseOps/TokenOps/resolution_dag.py
+          python -m pip install --disable-pip-version-check --no-input pytest
+          python -m pytest ReleaseOps/TokenOps/test_resolution_dag.py -q
+
+      - name: Generate fresh read-only readiness evidence
+        run: |
+          set -euo pipefail
+          rm -rf out/tokenops-resolution-dag
+          python ReleaseOps/TokenOps/tokenops_guard.py --out out/tokenops-resolution-dag
+
+      - name: Build deterministic blocker dependency plan
+        run: |
+          set -euo pipefail
+          PYTHONPATH=ReleaseOps/TokenOps python - <<'PY'
+          import json
+          from pathlib import Path
+          from resolution_dag import build_resolution_dag, summarize_resolution_dag
+
+          out = Path('out/tokenops-resolution-dag')
+          readiness = json.loads((out / 'financial-readiness.json').read_text())
+          dag = build_resolution_dag(readiness)
+          summary = summarize_resolution_dag(dag)
+          assert dag['execution_authorized'] is False
+          assert dag['transaction_bytes_created'] is False
+          assert dag['instruction_bytes_created'] is False
+          assert dag['signed'] is False
+          assert dag['submitted'] is False
+          assert dag['broadcast'] is False
+          assert dag['financial_effect'] is False
+          assert dag['wave_touched'] is False
+          assert dag['signer_action_now'] == 'NONE'
+          assert dag['unknown_blockers'] == []
+          (out / 'resolution-dag.json').write_text(json.dumps(dag, sort_keys=True, indent=2) + '\n')
+          (out / 'resolution-dag-summary.json').write_text(json.dumps(summary, sort_keys=True, indent=2) + '\n')
+          print('RESOLUTION_DAG_STATUS=' + dag['status'])
+          print('RESOLUTION_DAG_BLOCKERS=' + str(dag['blocker_count']))
+          print('RESOLUTION_DAG_PARALLEL_BATCHES=' + str(len(dag['parallel_batches'])))
+          print('RESOLUTION_DAG_IMMEDIATE=' + str(len(dag['immediately_actionable_resolution_work'])))
+          print('RESOLUTION_DAG_DEPENDENCY_BLOCKED=' + str(len(dag['dependency_blocked_resolution_work'])))
+          print('RESOLUTION_DAG_UNKNOWN=' + str(len(dag['unknown_blockers'])))
+          print('EXACT_SIGNER_ACTION_NOW=' + dag['signer_action_now'])
+          print('RESOLUTION_DAG_SHA256=' + dag['resolution_dag_sha256'])
+          PY
+
+      - name: Hash evidence
+        run: |
+          set -euo pipefail
+          cd out/tokenops-resolution-dag
+          sha256sum *.json | sort > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Enforce non-executable output
+        run: |
+          set -euo pipefail
+          if find out/tokenops-resolution-dag -type f \( -name '*.txn' -o -name '*.tx' -o -name '*.key' -o -name '*.keypair' -o -name '*.secret' \) | grep -q .; then
+            echo 'Forbidden executable/sensitive payload file detected' >&2
+            exit 2
+          fi
+          echo NON_EXECUTABLE_RESOLUTION_GATE=PASS
+
+      - name: Upload resolution evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Resolution-DAG-v1-${{ github.run_id }}
+          path: out/tokenops-resolution-dag/
+          if-no-files-found: error
+          retention-days: 30
