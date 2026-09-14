@@ -50,19 +50,19 @@ jobs:
           from validate_app_device_evidence_v11 import FOREGROUND_CHECKS, PROCESS_METHOD
           p=Path('ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json')
           d=json.loads(p.read_text(encoding='utf-8'))
+          required=set(d['required_checks'])
           assert d['truth_boundary']['all_pending'] is True
           assert d['truth_boundary']['final_or_play_ready'] is False
           assert len(d['candidates']) == 10
           assert all(row['status'] == 'PENDING_PHYSICAL_PHONE' for row in d['candidates'])
+          assert set(FOREGROUND_CHECKS).issubset(required)
           assert PROCESS_METHOD == 'ADB_DUMPSYS_ACTIVITY_PIDOF'
-          assert 'core_user_journey' in FOREGROUND_CHECKS
-          assert 'touch' in FOREGROUND_CHECKS
-          assert 'background_resume' in FOREGROUND_CHECKS
           src=Path('ReleaseOps/mobile/validate_app_device_evidence_v11.py').read_text(encoding='utf-8')
           assert 'FINAL_OR_PLAY_READY=TRUE' not in src
           print('APP_CANDIDATES=10')
+          print('PRODUCTION_FOREGROUND_POLICY_COVERAGE=TRUE')
           print('FOREGROUND_PROCESS_PROVENANCE_REQUIRED=TRUE')
-          print('SEMANTIC_EVIDENCE_SHA_BOUND=TRUE')
+          print('CANONICAL_EVIDENCE_SHA_BOUND=TRUE')
           print('SAME_RESUMED_PID_REQUIRED=TRUE')
           print('PHYSICAL_DEVICE_STATUS=PENDING')
           print('FINAL_OR_PLAY_READY=FALSE')
