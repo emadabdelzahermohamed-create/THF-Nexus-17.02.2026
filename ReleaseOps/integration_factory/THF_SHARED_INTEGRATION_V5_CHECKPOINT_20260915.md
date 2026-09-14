@@ -2,7 +2,7 @@
 
 ## Baseline and scope
 - Baseline: Shared Integration V4 runtime/contracts on `main`.
-- V5 head at checkpoint creation: `0dc8395c2f1444553c5297b938c15a757757c3a5`.
+- V5 implementation head: `0dc8395c2f1444553c5297b938c15a757757c3a5`.
 - Scope only shared THF integration contracts/runtime. WAVE untouched.
 - Package IDs remain unchanged; no production signing, store publishing, token/treasury mutation or irreversible action performed.
 
@@ -43,10 +43,12 @@
 - Admin/Publisher operator recovery cannot rely on a single email channel alone.
 - Server rate limiting and recovery audit events remain required.
 
-## Validation added
+## Validation
 - `ReleaseOps/integration_factory/test_shared_integration_runtime_v5.py`
 - `.github/workflows/thf-shared-integration-v5.yml`
-- V5 CI compiles V3/V4/V5 shared integration sources, runs cumulative V3/V4/V5 unit tests and validates fail-closed manifest truth.
+- GitHub Actions V5 run `34909604361`, job `104193925310`: **SUCCESS**.
+- Repository size-policy run `34909604423`, job `104193925376`: **SUCCESS**.
+- V5 CI compiled V3/V4/V5 shared integration sources, ran cumulative V3/V4/V5 unit tests, and validated fail-closed manifest truth.
 
 ## Truth boundary
 The following remain external/runtime gates and are intentionally FALSE until evidenced:
