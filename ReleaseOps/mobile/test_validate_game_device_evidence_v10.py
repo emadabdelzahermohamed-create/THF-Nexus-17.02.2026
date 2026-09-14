@@ -4,7 +4,7 @@ import hashlib, importlib.util, sys, tempfile, unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parent
 S=importlib.util.spec_from_file_location('v10',HERE/'validate_game_device_evidence_v10.py'); M=importlib.util.module_from_spec(S); sys.modules[S.name]=M; S.loader.exec_module(M)
-T=importlib.util.spec_from_file_location('t9',HERE/'test_validate_game_device_evidence_v9.py'); T9=importlib.util.module_from_spec(T); sys.modules[T.name]=T9; T.loader.exec_module(T)
+T=importlib.util.spec_from_file_location('t9',HERE/'test_validate_game_device_evidence_v9.py'); T9=importlib.util.module_from_spec(T); sys.modules[T.name]=T9; T.loader.exec_module(T9)
 V3=M.V3
 
 def evidence(product, rsha, root):
