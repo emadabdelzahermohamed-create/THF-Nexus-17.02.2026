@@ -1,0 +1,54 @@
+name: THF Pulse Source Forensics v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-pulse-source-forensics-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+      GCP_ZONE: europe-west1-b
+      GCP_BUILDER: thf-wave-builder
+      GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+      GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+      PULSE_SRC: /home/sa_115575029018678177962/thf-apps-rc3-exact-candidate-v2/work/pulse/THF_Pulse_APPS_RC2_SOURCE
+      PULSE_SOURCE_SHA: 6a180cf6599f8827e824431caf4566f520cc3796d9366c30abc197b4aeb6ba34
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Collect read-only Pulse source manifest
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="set -Eeuo pipefail; SRC='$PULSE_SRC'; EXPECT='$PULSE_SOURCE_SHA'; test -d \"\$SRC\"; cd \"\$SRC\"; RAW=\$(find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); CANON=\$(find . -type f ! -path '*/__pycache__/*' ! -path '*/.pytest_cache/*' ! -name '*.pyc' -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); printf 'expected=%s\nraw=%s\ncache_excluded=%s\n' \"\$EXPECT\" \"\$RAW\" \"\$CANON\" > /tmp/thf-pulse-source-summary.txt; find . -type f ! -path '*/__pycache__/*' ! -path '*/.pytest_cache/*' ! -name '*.pyc' -printf '%T@\t%s\t%p\n' | sort -nr > /tmp/thf-pulse-source-files.tsv; find . -type f ! -path '*/__pycache__/*' ! -path '*/.pytest_cache/*' ! -name '*.pyc' -print0 | sort -z | xargs -0 sha256sum > /tmp/thf-pulse-source-sha256.txt; find .. -maxdepth 3 \( -iname '*pulse*rc2*' -o -iname '*pulse*source*' \) -printf '%y\t%p\n' 2>/dev/null | sort > /tmp/thf-pulse-nearby-candidates.txt; true"
+          gcloud compute scp "$GCP_BUILDER:/tmp/thf-pulse-source-summary.txt" out/SUMMARY.txt --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp "$GCP_BUILDER:/tmp/thf-pulse-source-files.tsv" out/FILES.tsv --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp "$GCP_BUILDER:/tmp/thf-pulse-source-sha256.txt" out/SHA256SUMS.txt --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp "$GCP_BUILDER:/tmp/thf-pulse-nearby-candidates.txt" out/NEARBY.txt --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/SUMMARY.txt
+          head -80 out/FILES.tsv
+          cat out/NEARBY.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-PULSE-SOURCE-FORENSICS-${{ github.run_id }}
+          path: out/
+          retention-days: 14
+          compression-level: 0
