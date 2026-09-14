@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """V4 physical-phone evidence validator: V3 truth checks + real evidence files.
 
-V3 validates semantic fields. V4 additionally requires every manual observation to
-reference an existing, non-empty file inside an evidence bundle and binds that file
-with SHA-256. This prevents placeholder evidence_ref strings from satisfying release
-acceptance.
+V3 validates semantic fields. V4 additionally requires every manual observation and
+the online/local authority truth claims to reference existing, non-empty files inside
+an evidence bundle, each bound by SHA-256. Placeholder evidence strings cannot satisfy
+release acceptance.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import importlib.util
-import json
 from pathlib import Path
 import re
 import sys
@@ -23,6 +22,7 @@ assert SPEC and SPEC.loader
 sys.modules[SPEC.name] = V3
 SPEC.loader.exec_module(V3)
 SHA = re.compile(r"^[0-9a-f]{64}$")
+AUTHORITY_OBSERVATIONS = ("online_authority_behavior", "local_mode_truth")
 
 
 def _sha(path: Path) -> str:
@@ -46,6 +46,34 @@ def _safe_evidence_path(root: Path, ref: str) -> Path | None:
     return target
 
 
+def _verify_record(errors: list[str], namespace: str, key: str, row: object, evidence_root: Path) -> None:
+    prefix = f"{namespace}.{key}"
+    if not isinstance(row, dict):
+        errors.append(f"{prefix}: missing record")
+        return
+    if row.get("pass") is not True:
+        errors.append(f"{prefix}: pass must be true")
+    observed_at = row.get("observed_at_utc")
+    if not isinstance(observed_at, str) or "T" not in observed_at or not observed_at.endswith("Z"):
+        errors.append(f"{prefix}: observed_at_utc must be UTC ISO-like timestamp")
+    target = _safe_evidence_path(evidence_root, row.get("evidence_ref"))
+    if target is None:
+        errors.append(f"{prefix}: unsafe evidence_ref")
+        return
+    if not target.is_file():
+        errors.append(f"{prefix}: evidence file missing")
+        return
+    if target.stat().st_size <= 0:
+        errors.append(f"{prefix}: evidence file empty")
+        return
+    expected = str(row.get("evidence_sha256") or "").lower()
+    if not SHA.fullmatch(expected):
+        errors.append(f"{prefix}: evidence_sha256 required")
+        return
+    if _sha(target) != expected:
+        errors.append(f"{prefix}: evidence SHA mismatch")
+
+
 def validate_bundle(registry: dict, registry_sha: str, evidence: dict, evidence_root: Path) -> list[str]:
     errors = list(V3.validate(registry, registry_sha, evidence))
     product = evidence.get("product")
@@ -54,27 +82,11 @@ def validate_bundle(registry: dict, registry_sha: str, evidence: dict, evidence_
         required = V3.COMMON_MANUAL + V3.PRODUCT_MANUAL[product]
     observations = evidence.get("manual_observations") if isinstance(evidence.get("manual_observations"), dict) else {}
     for key in required:
-        row = observations.get(key)
-        if not isinstance(row, dict):
-            continue
-        ref = row.get("evidence_ref")
-        target = _safe_evidence_path(evidence_root, ref)
-        if target is None:
-            errors.append(f"manual_observations.{key}: unsafe evidence_ref")
-            continue
-        if not target.is_file():
-            errors.append(f"manual_observations.{key}: evidence file missing")
-            continue
-        if target.stat().st_size <= 0:
-            errors.append(f"manual_observations.{key}: evidence file empty")
-            continue
-        expected = str(row.get("evidence_sha256") or "").lower()
-        if not SHA.fullmatch(expected):
-            errors.append(f"manual_observations.{key}: evidence_sha256 required")
-            continue
-        actual = _sha(target)
-        if actual != expected:
-            errors.append(f"manual_observations.{key}: evidence SHA mismatch")
+        _verify_record(errors, "manual_observations", key, observations.get(key), evidence_root)
+
+    authority = evidence.get("authority_observations") if isinstance(evidence.get("authority_observations"), dict) else {}
+    for key in AUTHORITY_OBSERVATIONS:
+        _verify_record(errors, "authority_observations", key, authority.get(key), evidence_root)
     return errors
 
 
@@ -97,6 +109,7 @@ def main() -> int:
     print(f"PRODUCT={evidence['product']}")
     print(f"EXACT_APK_SHA256={evidence['exact_candidate_sha256']}")
     print("EVIDENCE_FILES_SHA256_BOUND=TRUE")
+    print("ONLINE_AND_LOCAL_AUTHORITY_EVIDENCE_BOUND=TRUE")
     print("FINAL_OR_PLAY_READY=FALSE")
     return 0
 
