@@ -1,0 +1,53 @@
+name: THF Pulse Phone Baseline Source Inspect v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-pulse-phone-baseline-source-inspect-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect exact authoritative Pulse source
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          SRC="$HOME/thf-apps-rc3-exact-candidate-v2/work/pulse/THF_Pulse_APPS_RC2_SOURCE"
+          test -d "$SRC"
+          cd "$SRC"
+          printf "SOURCE_TREE_SHA256="; find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}'
+          echo "=== BUILD.GRADLE ==="
+          sed -n '1,260p' android/app/build.gradle
+          echo "=== MAINACTIVITY.JAVA ==="
+          sed -n '1,420p' android/app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
+          echo "=== MANIFEST ==="
+          sed -n '1,260p' android/app/src/main/AndroidManifest.xml
+          echo "=== STATIC/CONFIG SIGNALS ==="
+          grep -RInE --exclude='*.min.js' 'THF_BASE_URL|THF_PASS_URL|topherofit://|oauth|google|session|Health Connect|health connect|Samsung|activity|steps|heart|sleep|body' . 2>/dev/null | head -600 || true
+          REMOTE
