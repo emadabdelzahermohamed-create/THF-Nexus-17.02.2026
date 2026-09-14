@@ -50,8 +50,11 @@ jobs:
           assert all(tb[k] is False for k in ('final_or_play_ready','physical_device_pass','network_release_ready','push_ready','production_signing_performed','public_rollout_performed','token_finance_touched','dedicated_native_game_streams_touched'))
           by={x['name']:x for x in d['apps']}
           assert set(by)=={'core','pulse','forge','echo','codex','spark','rush','vault','signal','command'}
-          assert by['spark']['source_sha256'] is None and by['rush']['source_sha256'] is None
-          assert by['vault']['apk_sha256'] is None and by['signal']['apk_sha256'] is None
+          assert by['pulse']['source_sha256']=='6a180cf6599f8827e824431caf4566f520cc3796d9366c30abc197b4aeb6ba34' and by['pulse']['apk_sha256'] is None
+          assert by['spark']['source_sha256']=='58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43'
+          assert by['rush']['source_sha256']=='766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c' and by['rush']['apk_sha256'] is None
+          assert by['vault']['apk_sha256']=='7431987b0be9589f997d505cfe69c6d3e217deb7d2783c44f99e6f263693209e'
+          assert by['signal']['apk_sha256']=='c7eb1044426423862687f93a875208a5ea8c5703d4978efb93eb4b54a1555d75'
           assert all(x['target_sdk']==36 for x in d['apps'])
           print('RECONCILIATION_TRUTH=PASS')
           print('FINAL_OR_PLAY_READY=FALSE')
@@ -66,17 +69,17 @@ jobs:
           excluded=re.compile(r'(^|[/_.-])(terra|rift|arena|nexus[-_ ]?world|token|solana|finance)([/_.-]|$)',re.I)
           known={
            'core':('com.topherofit.thf.core','6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a','262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba'),
-           'pulse':('com.topherofit.thf.pulse','71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10','66c04169a40b574f0f26b0a90b999f95a9702b1154a80dc43d2de236a47673a3'),
            'forge':('com.topherofit.thf.forge','0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51','e27b2dfa8d5bc382d2fa2439deafe98eaeba84ec30acd02a8c4f02dca8ec08ba'),
            'echo':('com.topherofit.thf.echo','40a197b60563e560cab93ba0a64c859d9b650da222fdaec933993977d63902ab','794f16dd2ccb7f5907690326522c018649b650268380f270fa2156ec508b308b'),
            'codex':('com.topherofit.thf.codex','3d60cc550732468c89fe120f552def53ac798646d065e94efa153f8979e15b1e','58c5491058d286b76e89e177df00db55b589d55a3e5e76921a6565f790da307f'),
+           'spark':('com.topherofit.thf.spark','58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43','9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea'),
+           'vault':('com.topherofit.thf.vault','052e2c55c6066c15eee63528218b8eab9711bec9de71335c67c7e1692a5b5432','7431987b0be9589f997d505cfe69c6d3e217deb7d2783c44f99e6f263693209e'),
+           'signal':('com.topherofit.thf.signal','f78890c3bf036d80a568ec39baac4a665d6092b9bbc8c4f080f2651785c1a275','c7eb1044426423862687f93a875208a5ea8c5703d4978efb93eb4b54a1555d75'),
            'command':('com.topherofit.thf.command','f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408','b5886da7c053d2063d792c0b7d47316afa3b63ea0e951bfa60863c4aa526947f')}
           candidates={
-           'spark':('com.topherofit.thf.spark','58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43','9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea','source'),
-           'rush':('com.topherofit.thf.rush','766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c','3e9aabaebdf1b321430abb3286156aeeaf8cf0174f2abff593a3ee3dc50d0e3a','source'),
-           'vault':('com.topherofit.thf.vault','7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793','76e20915e4bc6dee23adf43fdfcca9705815cf990164ccb8649032118dd42ce0','apk'),
-           'signal':('com.topherofit.thf.signal','51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0','9d370142a251c2515fe19e7598a35213e8285fab4ed74f804d88ea6b5a21f05a','apk')}
-          target_hashes={v for row in known.values() for v in row[1:]}|{v for row in candidates.values() for v in row[1:3]}
+           'pulse':('com.topherofit.thf.pulse','6a180cf6599f8827e824431caf4566f520cc3796d9366c30abc197b4aeb6ba34',None,'apk'),
+           'rush':('com.topherofit.thf.rush','766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c',None,'apk')}
+          target_hashes={v for row in known.values() for v in row[1:] if v}|{v for row in candidates.values() for v in row[1:3] if v}
           def sha(p):
             h=hashlib.sha256()
             with p.open('rb') as f:
@@ -130,14 +133,11 @@ jobs:
             if status!='COMPLETE_EXACT_SHA_PRESENT':drift.append(app)
             rows.append({'app':app,'status':status,'source_sha256':src,'source_paths':hits[src],'apk_sha256':apk,'apk_paths':hits[apk]})
           for app,(pkg,src,apk,missing) in candidates.items():
-            src_paths=hits[src]; apk_paths=hits[apk]
+            src_paths=hits.get(src,[]); apk_paths=hits.get(apk,[]) if apk else []
             src_bound=bool(src_paths) and any(package_in_zip(pathlib.Path(p),pkg) for p in src_paths)
             apk_identity=[{'path':p,'identity':apk_id(pathlib.Path(p))} for p in apk_paths]
             apk_bound=any(x['identity']==(pkg,36) for x in apk_identity)
-            if missing=='source':
-              status='PROPOSE_EXACT_SOURCE_AUTHORITY' if src_bound and apk_paths else ('SOURCE_CANDIDATE_NOT_PACKAGE_BOUND' if src_paths else 'SOURCE_CANDIDATE_NOT_FOUND')
-            else:
-              status='PROPOSE_EXACT_APK_AUTHORITY' if src_bound and apk_bound else ('APK_INSPECTOR_UNAVAILABLE_FAIL_CLOSED' if apk_paths and not tool else 'APK_CANDIDATE_NOT_BOUND_FAIL_CLOSED')
+            status='NEEDS_APK_AUTHORITY' if missing=='apk' and src_bound and not apk_bound else ('SOURCE_CANDIDATE_NOT_PACKAGE_BOUND' if not src_bound else 'PROPOSE_EXACT_APK_AUTHORITY')
             rows.append({'app':app,'status':status,'candidate_source_sha256':src,'source_paths':src_paths,'source_package_bound':src_bound,'candidate_apk_sha256':apk,'apk_paths':apk_paths,'apk_identity':apk_identity})
           out={'schema':'thf-apps-authoritative-lineage-v3','mode':'READ_ONLY','apk_inspector':tool,'rows':rows,'release_truth':{'final_or_play_ready':False,'physical_device_pass':False,'network_release_ready':False,'push_ready':False}}
           print('THF_APPS_AUTHORITATIVE_LINEAGE_V3_BEGIN');print(json.dumps(out,indent=2,sort_keys=True));print('THF_APPS_AUTHORITATIVE_LINEAGE_V3_END')
