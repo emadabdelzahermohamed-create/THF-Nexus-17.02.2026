@@ -9,10 +9,11 @@ python3 - "$BASE" "$PATCHED" <<'PY'
 from pathlib import Path
 import sys
 src=Path(sys.argv[1]).read_text(encoding='utf-8')
-# Keep native QA fully isolated from the legacy wrapper audit workflow on the
-# shared builder. This avoids work-tree and Gradle-home races between gates.
+# Build each CI run in a fresh, caller-selected root. A shared fixed root can race
+# with a previous Gradle process while rm -rf traverses gradle-home, which is not
+# release evidence and must never make build truth nondeterministic.
 root_old='ROOT="$HOME/thf-vault-signal-api36-candidates-v1"'
-root_new='ROOT="$HOME/thf-vault-signal-native-candidates-v1"'
+root_new='ROOT="${THF_NATIVE_RUN_ROOT:-$HOME/thf-vault-signal-native-candidates-v2}"'
 if src.count(root_old) != 1:
     raise SystemExit('builder root anchor drift')
 src=src.replace(root_old, root_new)
