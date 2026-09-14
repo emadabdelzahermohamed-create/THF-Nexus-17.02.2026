@@ -1,0 +1,67 @@
+{
+  "schema": "thf.apps.durable-candidate-registry.v1",
+  "created_at": "2026-09-14T20:01:00+03:00",
+  "policy": "MOBILE_REAL_FUNCTION_RELEASE_POLICY",
+  "source_evidence": {
+    "workflow_run": 34869083968,
+    "workflow_artifact_id": 10358840193,
+    "workflow_artifact_sha256": "6385525db6cd5d6bb7049b38ee53b79e95ccc2b488689617cd02e94848e33ccc",
+    "source_packager": "ReleaseOps/scripts/package_authoritative_android_source_v2.py",
+    "checkpoint": "4537c1bb43d13bc2fc36d80c3ba5127750de48f0"
+  },
+  "candidates": {
+    "vault": {
+      "version": "canonical-native-v2-qa",
+      "package_id": "com.topherofit.thf.vault",
+      "target_sdk": 36,
+      "source_sha256": "052e2c55c6066c15eee63528218b8eab9711bec9de71335c67c7e1692a5b5432",
+      "apk_sha256": "7431987b0be9589f997d505cfe69c6d3e217deb7d2783c44f99e6f263693209e",
+      "source_size_bytes": 22223,
+      "apk_size_bytes": 36341,
+      "durable_source": {"library_path": "/THF/ReleaseOps/Apps/2026-09-14/Vault/THF-VAULT-CANONICAL-NATIVE-SOURCE-V2.zip", "library_file_id": "libfile_1159053bd27c81918a5c725e2587a1e1"},
+      "durable_apk": {"library_path": "/THF/ReleaseOps/Apps/2026-09-14/Vault/THF-VAULT-API36-EXACT-QA.apk", "library_file_id": "libfile_f9a70503795c81919ada4ec1a311dbf8"},
+      "payload_gate": "PASS",
+      "clean_extract_integrity": "PASS",
+      "production_signature": false,
+      "physical_device_pass": false,
+      "network_release_ready": false,
+      "push_ready": false,
+      "final_or_play_ready": false,
+      "authority": "CANONICAL_QA_CANDIDATE_NOT_FINAL"
+    },
+    "signal": {
+      "version": "canonical-native-v2-qa",
+      "package_id": "com.topherofit.thf.signal",
+      "target_sdk": 36,
+      "source_sha256": "f78890c3bf036d80a568ec39baac4a665d6092b9bbc8c4f080f2651785c1a275",
+      "apk_sha256": "c7eb1044426423862687f93a875208a5ea8c5703d4978efb93eb4b54a1555d75",
+      "source_size_bytes": 22236,
+      "apk_size_bytes": 36337,
+      "durable_source": {"library_path": "/THF/ReleaseOps/Apps/2026-09-14/Signal/THF-SIGNAL-CANONICAL-NATIVE-SOURCE-V2.zip", "library_file_id": "libfile_f2d7f43e850481919b71026ba500bb52"},
+      "durable_apk": {"library_path": "/THF/ReleaseOps/Apps/2026-09-14/Signal/THF-SIGNAL-API36-EXACT-QA.apk", "library_file_id": "libfile_da9f909a93f08191a9569b058654f692"},
+      "payload_gate": "PASS",
+      "clean_extract_integrity": "PASS",
+      "production_signature": false,
+      "physical_device_pass": false,
+      "network_release_ready": false,
+      "push_ready": false,
+      "final_or_play_ready": false,
+      "authority": "CANONICAL_QA_CANDIDATE_NOT_FINAL"
+    }
+  },
+  "unresolved": {
+    "spark": {"source_sha256": "58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43", "reason": "SOURCE_BYTES_NOT_PROVEN"},
+    "rush": {"source_sha256": "766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c", "reason": "SOURCE_BYTES_NOT_PROVEN"}
+  },
+  "global_release_truth": {
+    "stable_external_trusted_tls_thf_pass_backend": false,
+    "auth_session_federation_external_proof": false,
+    "provider_kms_boundary_proven": false,
+    "physical_device_pass": false,
+    "network_release_ready": false,
+    "push_ready": false,
+    "production_signing_performed": false,
+    "play_public_rollout_performed": false,
+    "final_or_play_ready": false
+  }
+}
