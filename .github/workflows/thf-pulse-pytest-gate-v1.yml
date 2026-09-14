@@ -54,7 +54,31 @@ jobs:
             --tunnel-through-iap \
             --ssh-key-expire-after=30m \
             --quiet \
-            --command="set -Eeuo pipefail; SRC='$PULSE_SRC'; EXPECT='$PULSE_SOURCE_SHA'; test -d \"\$SRC\"; ACTUAL=\$(cd \"\$SRC\" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); test \"\$ACTUAL\" = \"\$EXPECT\"; printf 'source_tree_sha256=%s\nstage=bootstrap\n' \"\$ACTUAL\" > /tmp/thf-pulse-pytest-evidence.txt; V=/tmp/thf-pulse-pytest-\$RANDOM; python3 -m venv \"\$V\"; set +e; \"\$V/bin/python\" -m pip install --disable-pip-version-check pytest fastapi httpx python-multipart 2>&1 | tee /tmp/thf-pulse-pip.log; DEPRC=\${PIPESTATUS[0]}; set -e; printf 'dependency_install_exit_code=%s\n' \"\$DEPRC\" >> /tmp/thf-pulse-pytest-evidence.txt; test \"\$DEPRC\" -eq 0; cd \"\$SRC\"; set +e; \"\$V/bin/python\" -m pytest -q tests | tee /tmp/thf-pulse-pytest.log; RC=\${PIPESTATUS[0]}; set -e; printf 'stage=pytest\npytest_exit_code=%s\n' \"\$RC\" >> /tmp/thf-pulse-pytest-evidence.txt; exit \"\$RC\""
+            --command="set -Eeuo pipefail; \
+              SRC='$PULSE_SRC'; EXPECT='$PULSE_SOURCE_SHA'; \
+              rm -f /tmp/thf-pulse-pip.log /tmp/thf-pulse-pytest.log /tmp/thf-pulse-pytest-evidence.txt; \
+              test -d \"\$SRC\" || { printf 'stage=source_check\nsource_present=false\n' > /tmp/thf-pulse-pytest-evidence.txt; exit 40; }; \
+              RAW=\$(cd \"\$SRC\" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); \
+              ACTUAL=\$(cd \"\$SRC\" && find . -type f ! -path '*/__pycache__/*' ! -name '*.pyc' -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); \
+              CACHE_COUNT=\$(cd \"\$SRC\" && find . -type f \( -path '*/__pycache__/*' -o -name '*.pyc' \) | wc -l); \
+              printf 'stage=source_check\nsource_present=true\nsource_tree_sha256_expected=%s\nsource_tree_sha256_canonical=%s\nsource_tree_sha256_raw=%s\npython_cache_file_count=%s\n' \"\$EXPECT\" \"\$ACTUAL\" \"\$RAW\" \"\$CACHE_COUNT\" > /tmp/thf-pulse-pytest-evidence.txt; \
+              if test \"\$ACTUAL\" != \"\$EXPECT\"; then printf 'source_authoritative_gate=FAIL_DRIFT\n' >> /tmp/thf-pulse-pytest-evidence.txt; exit 42; fi; \
+              printf 'source_authoritative_gate=PASS\n' >> /tmp/thf-pulse-pytest-evidence.txt; \
+              SNAP=\$(mktemp -d /tmp/thf-pulse-pytest-snapshot.XXXXXX); \
+              cp -a \"\$SRC/.\" \"\$SNAP/\"; \
+              find \"\$SNAP\" -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true; \
+              find \"\$SNAP\" -type f -name '*.pyc' -delete; \
+              REQ=\"\$SNAP/requirements.txt\"; \
+              test -f \"\$REQ\" || { printf 'requirements_present=false\n' >> /tmp/thf-pulse-pytest-evidence.txt; exit 43; }; \
+              printf 'requirements_present=true\ntest_snapshot_isolated=true\n' >> /tmp/thf-pulse-pytest-evidence.txt; \
+              V=\$(mktemp -d /tmp/thf-pulse-pytest-venv.XXXXXX); rm -rf \"\$V\"; python3 -m venv \"\$V\"; \
+              set +e; \"\$V/bin/python\" -m pip install --disable-pip-version-check -r \"\$REQ\" pytest 2>&1 | tee /tmp/thf-pulse-pip.log; DEPRC=\${PIPESTATUS[0]}; set -e; \
+              printf 'dependency_install_exit_code=%s\n' \"\$DEPRC\" >> /tmp/thf-pulse-pytest-evidence.txt; test \"\$DEPRC\" -eq 0; \
+              cd \"\$SNAP\"; set +e; \"\$V/bin/python\" -m pytest -q tests 2>&1 | tee /tmp/thf-pulse-pytest.log; RC=\${PIPESTATUS[0]}; set -e; \
+              AFTER=\$(cd \"\$SRC\" && find . -type f ! -path '*/__pycache__/*' ! -name '*.pyc' -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); \
+              printf 'stage=pytest\npytest_exit_code=%s\nsource_tree_sha256_after=%s\nsource_immutable_during_test=%s\n' \"\$RC\" \"\$AFTER\" \"\$(test \"\$AFTER\" = \"\$EXPECT\" && echo true || echo false)\" >> /tmp/thf-pulse-pytest-evidence.txt; \
+              test \"\$AFTER\" = \"\$EXPECT\"; \
+              exit \"\$RC\""
 
       - name: Retrieve pytest evidence
         if: always()
