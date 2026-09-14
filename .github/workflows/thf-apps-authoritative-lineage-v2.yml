@@ -49,12 +49,12 @@ jobs:
           excluded=re.compile(r"(^|[/_.-])(terra|rift|arena|nexus[-_ ]?world|token|solana|finance)([/_.-]|$)",re.I)
           anchors={
             "core":{"source":"6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a","apk":"262e1ee0dc4436f60de1f871c1a9a8fb633058ef87d8d4ab46d282a6fb3236ba"},
-            "pulse":{"source":"71a16804e7c138535bb373263ae4374d8a5eef410ffe83b165472c684b6c8b10","apk":"66c04169a40b574f0f26b0a90b999f95a9702b1154a80dc43d2de236a47673a3"},
+            "pulse":{"source":"6a180cf6599f8827e824431caf4566f520cc3796d9366c30abc197b4aeb6ba34","apk":None},
             "forge":{"source":"0f7a416a9e14af9dbb3cdcb26bfb891e0c680d4a33a73d60601eda215e697e51","apk":"e27b2dfa8d5bc382d2fa2439deafe98eaeba84ec30acd02a8c4f02dca8ec08ba"},
             "echo":{"source":"40a197b60563e560cab93ba0a64c859d9b650da222fdaec933993977d63902ab","apk":"794f16dd2ccb7f5907690326522c018649b650268380f270fa2156ec508b308b"},
             "codex":{"source":"3d60cc550732468c89fe120f552def53ac798646d065e94efa153f8979e15b1e","apk":"58c5491058d286b76e89e177df00db55b589d55a3e5e76921a6565f790da307f"},
-            "spark":{"source":None,"apk":"9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea"},
-            "rush":{"source":None,"apk":"3e9aabaebdf1b321430abb3286156aeeaf8cf0174f2abff593a3ee3dc50d0e3a"},
+            "spark":{"source":"58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43","apk":"9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea"},
+            "rush":{"source":"766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c","apk":None},
             "vault":{"source":"7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793","apk":None},
             "signal":{"source":"51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0","apk":None},
             "command":{"source":"f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408","apk":"b5886da7c053d2063d792c0b7d47316afa3b63ea0e951bfa60863c4aa526947f"}
@@ -115,7 +115,7 @@ jobs:
             "rows":rows,"thf_pass_named_hits":sorted(pass_hits)[:100],
             "final_or_play_ready":False,"physical_phone_evidence_required":True,
             "network_release_ready":False,
-            "notes":["COMPLETE_EXACT_SHA is lineage discovery only; it does not replace physical-phone or reachable backend evidence.","Spark/Rush source authority and Vault/Signal APK authority remain fail-closed until uniquely bound."]
+            "notes":["COMPLETE_EXACT_SHA is lineage discovery only; it does not replace physical-phone or reachable backend evidence.","Pulse and Rush APK authority remain fail-closed until a candidate is rebuilt from the newest exact source; Vault/Signal APK authority remain fail-closed until uniquely bound."]
           }
           print("THF_APPS_AUTHORITATIVE_LINEAGE_V2_BEGIN")
           print(json.dumps(out,indent=2,sort_keys=True))
