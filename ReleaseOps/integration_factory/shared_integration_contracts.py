@@ -79,8 +79,17 @@ def validate_google_oauth_config(config: Mapping[str, Any]) -> dict[str, str]:
 
 
 def validate_google_id_token_claims(
-    claims: Mapping[str, Any], *, expected_audience: str, now: int | None = None
+    claims: Mapping[str, Any], *, expected_audience: str,
+    signature_verified: bool, now: int | None = None
 ) -> dict[str, str]:
+    """Validate claims only after a trusted JWT/JWK verifier proves the signature.
+
+    This intentionally refuses decoded-but-unverified JWT payloads. Production callers
+    must verify Google's signature/JWK chain first (for example with the provider's
+    supported server library), then pass signature_verified=True here.
+    """
+    if signature_verified is not True:
+        raise ContractError("google_signature_verification_required")
     now = int(time.time()) if now is None else int(now)
     issuer = str(claims.get("iss", ""))
     audience = claims.get("aud")
@@ -154,8 +163,6 @@ def health_permission_plan(metrics: Iterable[str], *, provider: str) -> dict[str
         raise ContractError("unsupported_health_metric:" + ",".join(unknown))
     if provider not in HEALTH_PROVIDER_STATUS:
         raise ContractError("unsupported_health_provider")
-    # Permission names remain adapter-owned because Health Connect and Samsung use
-    # different APIs. This shared plan intentionally carries semantic scopes only.
     return {
         "provider": provider,
         "metrics": requested,
@@ -187,6 +194,7 @@ def contract_snapshot() -> str:
         "health_metrics": sorted(ALLOWED_HEALTH_METRICS),
         "truth": {
             "google_oauth_console_configured": False,
+            "google_server_signature_verifier_bound": False,
             "health_connect_physical_device_verified": False,
             "samsung_partner_registration_verified": False,
             "physical_device_pass": False,
