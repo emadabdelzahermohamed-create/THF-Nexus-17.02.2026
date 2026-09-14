@@ -1,4 +1,4 @@
-name: THF Shared Integration V2
+name: THF Shared Integration V3
 
 on:
   push:
@@ -35,24 +35,43 @@ jobs:
           import json, pathlib
           p=pathlib.Path('ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V1.json')
           d=json.loads(p.read_text(encoding='utf-8'))
-          assert d['schema']=='thf.android.shared.integration.v2'
+          assert d['schema']=='thf.android.shared.integration.v3'
           assert d['android']['target_sdk']==36
           cm=d['android']['credential_manager']
           assert cm['server_validation_required'] is True
           assert cm['mobile_client_secret_allowed'] is False
           pk=d['android']['passkeys']
           assert pk['server_generated_challenge_required'] is True
+          assert pk['assertion_requires_challenge_match'] is True
+          assert pk['assertion_requires_user_verification'] is True
+          assert pk['assertion_requires_signature_verification'] is True
           assert pk['server_challenge_store_bound'] is False
           hc=d['android']['health_connect']
           assert hc['role']=='PRIMARY_ANDROID_HEALTH_BRIDGE'
           assert hc['background_read_default'] is False
           assert hc['history_read_default'] is False
+          assert hc['provenance_required'] is True
+          assert hc['cross_provider_dedup_supported'] is True
           sh=d['android']['samsung_health_data_sdk']
           assert sh['sdk_release']=='1.1.0'
           assert sh['emulator_supported'] is False
+          assert sh['absence_is_nonfatal'] is True
+          assert sh['fallback_provider']=='health_connect'
           ident=d['identity']
           assert 'authenticated' in ident['session_states']
           assert 'revoked' in ident['session_states']
+          assert ident['email_code']['plaintext_persistence_allowed'] is False
+          assert ident['email_code']['single_use_required'] is True
+          assert ident['password']['client_password_persistence_allowed'] is False
+          assert ident['password']['compromised_password_check_required'] is True
+          deletion=ident['account_deletion']
+          assert deletion['authenticated_session_required'] is True
+          assert deletion['recent_reauthentication_seconds']==300
+          assert deletion['client_is_authoritative'] is False
+          replay=d['replay_protection']
+          assert replay['reference_in_memory_ledger_present'] is True
+          assert replay['reference_ledger_production_durable'] is False
+          assert replay['production_atomic_durable_store_required'] is True
           hand=d['cross_app_handoff']
           assert hand['max_lifetime_seconds']==300
           assert hand['server_signed_required'] is True
@@ -61,17 +80,23 @@ jobs:
           motion=d['motion_evidence']
           assert motion['client_reward_authority'] is False
           assert motion['server_verification_required'] is True
+          assert motion['replay_protection_required'] is True
           op=d['operator_access']
           assert op['ordinary_user_visible'] is False
+          assert op['authenticated_session_required'] is True
+          assert op['identity_subject_required'] is True
           assert op['server_role_claim_required'] is True
           truth=d['release_truth']
           assert truth['google_oauth_console_configured'] is False
           assert truth['google_server_signature_verifier_bound'] is False
           assert truth['passkey_backend_challenge_store_bound'] is False
+          assert truth['durable_replay_store_bound'] is False
+          assert truth['email_auth_delivery_backend_bound'] is False
+          assert truth['account_deletion_backend_bound'] is False
           assert truth['cross_app_handoff_server_signer_bound'] is False
           assert truth['samsung_partner_registration_verified'] is False
           assert truth['physical_device_pass'] is False
           assert truth['final_or_play_ready'] is False
-          print('THF_SHARED_INTEGRATION_V2_MANIFEST=PASS')
+          print('THF_SHARED_INTEGRATION_V3_MANIFEST=PASS')
           print('FINAL_OR_PLAY_READY=FALSE')
           PY
