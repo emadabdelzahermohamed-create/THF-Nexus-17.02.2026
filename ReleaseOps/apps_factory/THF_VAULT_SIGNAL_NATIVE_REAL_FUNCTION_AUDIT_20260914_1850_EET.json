@@ -1,0 +1,118 @@
+{
+  "schema": "THF_VAULT_SIGNAL_NATIVE_REAL_FUNCTION_AUDIT_V1",
+  "generated_at": "2026-09-14T18:50:00+03:00",
+  "scope": ["vault_app_ux", "signal", "thf_pass_handoff", "shared_mobile_policy"],
+  "exclusions": ["dedicated_native_game_streams", "token_finance"],
+  "same_sha_skip": {
+    "unchanged_apps": ["core", "pulse", "forge", "echo", "codex", "spark", "rush", "command", "thf_pass"],
+    "reason": "No new authoritative source/APK SHA was established for those streams in this batch; existing same-SHA PASS evidence was not rerun merely to create activity."
+  },
+  "prior_truth": {
+    "checkpoint_commit": "6349d19523d6dc3c461d3ae2552c82be0ea5d092",
+    "vault_signal_prior_classification": "REJECT_WRAPPER_SHELL_ONLY",
+    "spark_rush_source_authority": "UNRESOLVED_IN_LATEST_LINEAGE_RECONCILIATION",
+    "vault_signal_apk_authority": "UNRESOLVED_IN_LATEST_LINEAGE_RECONCILIATION",
+    "release_truth": "NOT_FINAL_NO_GO"
+  },
+  "source_authority": {
+    "vault": {
+      "source_sha256": "7a2ba4236a0c42d2521fa2eb2c2d7108ceba0d2929ebdf68959a6eacbce4a793",
+      "package": "com.topherofit.thf.vault"
+    },
+    "signal": {
+      "source_sha256": "51d7ce44fed24f7490973bcc7e019a8430157c4d5bfa1541e7cb590b0b7957c0",
+      "package": "com.topherofit.thf.signal"
+    },
+    "source_zip_mutated": false
+  },
+  "engineering": {
+    "implementation_merge_commit": "7a02846c0124e2c9cd516b71362b24a0a943d366",
+    "provenance_isolation_commit": "a79449043b18da0aa84bd8ae1b84c7bfaaa9b785",
+    "native_overlay_id": "THF_NATIVE_REAL_FUNCTION_V1",
+    "build_overlay_id": "BUILD_CONFIG_URL_JSON_ESCAPE_V2+THF_NATIVE_REAL_FUNCTION_V1",
+    "native_functions": [
+      "programmatic native Android UI with no WebView/loadUrl runtime",
+      "Android Keystore AES-GCM encrypted local value storage",
+      "truthful local save/load/clear behavior with no fabricated remote/economy/social state",
+      "trusted-HTTPS-only backend health probe that reports NOT PROVEN when endpoint is unavailable/untrusted",
+      "validated-network, metered-network and Data Saver status",
+      "POST_NOTIFICATIONS runtime permission handling",
+      "resolvable installed-package handoff to com.topherofit.thf.pass with fail-closed unavailable state",
+      "RTL locale layout direction, content descriptions and 48dp minimum button targets",
+      "app settings route"
+    ],
+    "shared_builder_race_fix": "Native QA workspace and retrieval provenance are isolated from the legacy wrapper audit workspace."
+  },
+  "ci": {
+    "workflow": "THF Vault Signal Native Real-Function V1",
+    "run_id": 34863909709,
+    "head_sha": "a79449043b18da0aa84bd8ae1b84c7bfaaa9b785",
+    "conclusion": "SUCCESS",
+    "checks": [
+      "WIF authentication",
+      "gcloud setup and IAP staging",
+      "Python and shell syntax/policy preflight",
+      "exact-source derived API 36 build",
+      "clean APK unzip/integrity",
+      "exact APK SHA recomputation",
+      "no Landroid/webkit/WebView marker",
+      "no loadUrl marker",
+      "AndroidKeyStore and AES/GCM markers present",
+      "HttpsURLConnection marker present",
+      "Data Saver marker present",
+      "THF Pass package handoff marker present",
+      "truthful no-fabricated-remote-state marker present"
+    ],
+    "artifact_id": 10356304382,
+    "artifact_digest": "sha256:28558abbd2fc151c41704f5c1de0071d5f2051d97649c40cc1eb5ebc323a63a1"
+  },
+  "derived_qa_candidates": {
+    "vault": {
+      "apk_sha256": "7431987b0be9589f997d505cfe69c6d3e217deb7d2783c44f99e6f263693209e",
+      "apk_size_bytes": 36341,
+      "target_sdk": 36,
+      "variant": "release",
+      "package": "com.topherofit.thf.vault",
+      "clean_zip_test": "PASS",
+      "production_signature": false
+    },
+    "signal": {
+      "apk_sha256": "c7eb1044426423862687f93a875208a5ea8c5703d4978efb93eb4b54a1555d75",
+      "apk_size_bytes": 36337,
+      "target_sdk": 36,
+      "variant": "release",
+      "package": "com.topherofit.thf.signal",
+      "clean_zip_test": "PASS",
+      "production_signature": false
+    }
+  },
+  "release_policy_decision": {
+    "wrapper_only_defect_replaced_in_derived_qa": true,
+    "promote_derived_apk_to_authoritative_production_candidate": false,
+    "reason": "The native implementation is currently a semantic build overlay over the unchanged authoritative source ZIP. It is valid QA evidence and closes the wrapper-only payload defect, but production lineage must bind the native implementation into a new authoritative source/version/SHA before release-candidate authority is granted.",
+    "backend_health_auth_proof": false,
+    "stable_external_trusted_tls_pass_staging": false,
+    "auth_session_federation_external_proof": false,
+    "provider_kms_boundary_proven": false,
+    "physical_device_pass": false,
+    "network_release_ready": false,
+    "push_ready": false,
+    "production_signing_performed": false,
+    "final_or_play_ready": false
+  },
+  "required_next_gates": [
+    "Upstream the native Vault/Signal implementation into a new authoritative source artifact and bind exact source SHA/version.",
+    "Prove reachable trusted HTTPS/WSS THF backend health/auth/session/federation; health reachability alone is not auth proof.",
+    "Provide provider/KMS boundary for real push where applicable.",
+    "Collect exact-APK physical-phone install/launch/touch/layout/background-resume/offline-network/accessibility/Data Saver/RTL/core-journey/crash-free evidence.",
+    "Only after exact source+APK+phone+network evidence, perform production signing/Play/legal rollout gates."
+  ],
+  "rollback": {
+    "do_not_promote_old_wrapper_apks": [
+      "09552140e853ccd83b07a53d9e965248ad44a1917f04f2b7dda2684cb56a952c",
+      "acffad239598d861d4ca4350c0a94314e56a2c66f2841efeb435a068b6d2a78f"
+    ],
+    "native_qa_can_be_removed_without_source_mutation": true,
+    "release_truth_after_rollback": "NOT_FINAL_NO_GO"
+  }
+}
