@@ -4,7 +4,7 @@ import hashlib, importlib.util, sys, tempfile, unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parent
 S=importlib.util.spec_from_file_location('v14',HERE/'validate_game_device_evidence_v14.py'); M=importlib.util.module_from_spec(S); sys.modules[S.name]=M; S.loader.exec_module(M)
-T=importlib.util.spec_from_file_location('t13',HERE/'test_validate_game_device_evidence_v13.py'); T13=importlib.util.module_from_spec(T); sys.modules[T.name]=T13; T.loader.exec_module(T)
+T=importlib.util.spec_from_file_location('t13',HERE/'test_validate_game_device_evidence_v13.py'); T13=importlib.util.module_from_spec(T); sys.modules[T.name]=T13; T.loader.exec_module(T13)
 V3=M.V3
 
 def lines(product,key):
