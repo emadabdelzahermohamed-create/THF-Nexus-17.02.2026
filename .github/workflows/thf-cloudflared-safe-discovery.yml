@@ -1,0 +1,66 @@
+name: THF Cloudflared Safe Discovery
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-cloudflared-safe-discovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Safe tunnel discovery
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='python3 - <<"PY"
+          import os, glob, re
+          print("=== CLOUDFLARED PROCESSES SANITIZED ===")
+          for proc in glob.glob("/proc/[0-9]*"):
+              try:
+                  raw=open(proc+"/cmdline","rb").read().replace(b"\\0",b" ").decode("utf-8","replace")
+              except Exception: continue
+              if "cloudflared" not in raw: continue
+              raw=re.sub(r"(--token(?:=|\\s+))\\S+",r"\\1***",raw)
+              raw=re.sub(r"(TUNNEL_TOKEN=)\\S+",r"\\1***",raw)
+              print(os.path.basename(proc),raw)
+          print("=== CONFIG FILE NAMES ONLY ===")
+          for base in [os.path.expanduser("~/.cloudflared"),"/etc/cloudflared"]:
+              print(base, os.path.isdir(base))
+              if os.path.isdir(base):
+                  for p in sorted(glob.glob(base+"/*")):
+                      print(os.path.basename(p), os.path.getsize(p) if os.path.isfile(p) else "dir")
+          print("=== SAFE CONFIG METADATA ===")
+          for p in glob.glob(os.path.expanduser("~/.cloudflared/*"))+glob.glob("/etc/cloudflared/*"):
+              if not os.path.isfile(p) or not p.endswith((".yml",".yaml",".json")): continue
+              try: txt=open(p,encoding="utf-8",errors="ignore").read()
+              except Exception: continue
+              print("FILE",p)
+              for line in txt.splitlines():
+                  s=line.strip()
+                  if re.match(r"^(tunnel|hostname|service|url|ingress):",s,re.I): print(s)
+          PY
+          echo "=== SYSTEMD UNIT NAMES ==="; systemctl list-unit-files 2>/dev/null | grep -i cloudflared || true
+          echo "=== RECENT TRY/CLOUDFLARE URL FILES ==="; grep -RIl "trycloudflare.com" "$HOME"/thf-* 2>/dev/null | head -80 || true
+          '
