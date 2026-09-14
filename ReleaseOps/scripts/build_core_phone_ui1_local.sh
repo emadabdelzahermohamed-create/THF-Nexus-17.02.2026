@@ -106,11 +106,15 @@ grep -q "versionCode='62203'" "$OUT/badging.txt"
 grep -q "targetSdkVersion:'36'" "$OUT/badging.txt"
 grep -q 'CN=Android Debug' "$OUT/apksigner.txt"
 
+# Avoid SIGPIPE false failures under `set -o pipefail`: materialize inspection
+# output first, then run grep against regular files.
+zipinfo -1 "$APK" > "$OUT/apk_entries.txt"
 for f in index.html styles.css app.js core-i18n.js world3d.js; do
-  zipinfo -1 "$APK" | grep -qx "assets/web/$f"
+  grep -Fxq "assets/web/$f" "$OUT/apk_entries.txt"
 done
-unzip -p "$APK" assets/web/index.html | grep -q 'THF CORE'
-unzip -p "$APK" assets/web/index.html | grep -q 'href="styles.css"'
+unzip -p "$APK" assets/web/index.html > "$OUT/bundled_index.html"
+grep -q 'THF CORE' "$OUT/bundled_index.html"
+grep -q 'href="styles.css"' "$OUT/bundled_index.html"
 
 SHA=$(sha256sum "$APK" | awk '{print $1}')
 SIZE=$(stat -c %s "$APK")
