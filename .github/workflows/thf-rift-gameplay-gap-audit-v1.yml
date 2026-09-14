@@ -17,7 +17,6 @@ env:
   GCP_BUILDER: thf-wave-builder
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
-  RIFT_ARCHIVE: /home/thf-builder/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip
   RIFT_SHA256: 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
 
 jobs:
@@ -38,8 +37,9 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p out
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command="RIFT_ARCHIVE='$RIFT_ARCHIVE' RIFT_SHA256='$RIFT_SHA256' bash -s" > out/rift_gap_audit.txt <<'REMOTE'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command="RIFT_SHA256='$RIFT_SHA256' bash -s" > out/rift_gap_audit.txt <<'REMOTE'
           set -Eeuo pipefail
+          RIFT_ARCHIVE="$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
           test -f "$RIFT_ARCHIVE"
           ACTUAL=$(sha256sum "$RIFT_ARCHIVE" | awk '{print $1}')
           test "$ACTUAL" = "$RIFT_SHA256"
@@ -59,27 +59,21 @@ jobs:
                   with z.open(i) as a, open(t,'wb') as b: shutil.copyfileobj(a,b)
           PY
           PG=$(find "$ROOT" -type f -name project.godot -print -quit)
-          test -n "$PG"
-          P=$(dirname "$PG")
+          test -n "$PG"; P=$(dirname "$PG")
           echo "THF_RIFT_CANONICAL_SHA256=$ACTUAL"
           echo "THF_RIFT_PROJECT_REL=${P#$ROOT/}"
           echo "THF_RIFT_ARCHIVE_UNCHANGED=true"
           echo "FINAL_OR_PLAY_READY=FALSE"
-          echo
           echo '=== PHONE CONFIG ==='
           grep -nE 'display/window|orientation|stretch|window_(width|height)_override|size/window_(width|height)_override' "$PG" || true
-          echo
           echo '=== GDSCRIPT INVENTORY ==='
           find "$P" -type f -name '*.gd' -printf '%P\n' | sort
-          echo
           echo '=== GAMEPLAY/NETWORK MARKERS ==='
           grep -RniE --include='*.gd' --include='*.tscn' 'attack|damage|hitbox|hurtbox|weapon|ammo|reload|move_and_slide|velocity|CharacterBody3D|Camera3D|TouchScreenButton|InputEventScreen|WebSocket|wss://|server|authoritative|offline|local.*training|training.*mode' "$P" | head -900 || true
-          echo
           echo '=== CANDIDATE GAMEPLAY SOURCE CONTEXT ==='
           python3 - "$P" <<'PY'
-          import pathlib,re,sys
-          root=pathlib.Path(sys.argv[1])
-          pats=re.compile(r'attack|damage|hitbox|hurtbox|weapon|reload|move_and_slide|WebSocket|offline|training|server|authoritative',re.I)
+          import pathlib,re,sys,hashlib
+          root=pathlib.Path(sys.argv[1]); pats=re.compile(r'attack|damage|hitbox|hurtbox|weapon|reload|move_and_slide|WebSocket|offline|training|server|authoritative',re.I)
           scored=[]
           for f in root.rglob('*.gd'):
               try: s=f.read_text(errors='replace')
@@ -87,12 +81,8 @@ jobs:
               n=len(pats.findall(s))
               if n: scored.append((n,f,s))
           for n,f,s in sorted(scored, reverse=True)[:12]:
-              print(f'--- FILE {f.relative_to(root)} markers={n} sha256=', end='')
-              import hashlib
-              print(hashlib.sha256(s.encode()).hexdigest())
-              lines=s.splitlines()
-              interesting=[i for i,l in enumerate(lines) if pats.search(l)]
-              windows=[]
+              print(f'--- FILE {f.relative_to(root)} markers={n} sha256={hashlib.sha256(s.encode()).hexdigest()}')
+              lines=s.splitlines(); interesting=[i for i,l in enumerate(lines) if pats.search(l)]; windows=[]
               for i in interesting[:30]: windows.extend(range(max(0,i-5),min(len(lines),i+9)))
               for i in sorted(set(windows))[:320]: print(f'{i+1:05d}: {lines[i]}')
           PY
@@ -109,27 +99,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          {
-            echo '# THF Rift RC37 Gameplay Gap Audit V1'
-            echo
-            echo '- Source: exact canonical RC37 archive on prepared builder'
-            echo '- Canonical archive SHA-256: `3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914`'
-            echo '- Purpose: locate real movement/combat/network gating before any disposable gameplay patch.'
-            echo '- This report is evidence only; it does **not** assert FINAL/PLAY_READY or physical-device PASS.'
-            echo
-            echo '```text'
-            cat out/rift_gap_audit.txt
-            echo '```'
-          } > /tmp/report.md
-          python3 - <<'PY'
-          import json,os,subprocess
-          p='ReleaseOps/mobile/RIFT_RC37_GAMEPLAY_GAP_AUDIT_V1_LATEST.md'
-          body=open('/tmp/report.md').read()
-          repo=os.environ['GITHUB_REPOSITORY']
-          api=f'repos/{repo}/contents/{p}'
-          r=subprocess.run(['gh','api',api],capture_output=True,text=True)
-          args=['gh','api','--method','PUT',api,'-f','message=releaseops(games): checkpoint Rift RC37 gameplay gap audit','-f',f'content={__import__("base64").b64encode(body.encode()).decode()}']
-          if r.returncode==0:
-              sha=json.loads(r.stdout)['sha']; args += ['-f',f'sha={sha}']
-          subprocess.run(args,check=True)
-          PY
+          { echo '# THF Rift RC37 Gameplay Gap Audit V1'; echo; echo '- Exact canonical source SHA-256: `3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914`'; echo '- Audit only: no FINAL/PLAY_READY or device PASS.'; echo; echo '```text'; cat out/rift_gap_audit.txt; echo '```'; } > /tmp/report.md
+          B64=$(base64 -w0 /tmp/report.md)
+          API="repos/${GITHUB_REPOSITORY}/contents/ReleaseOps/mobile/RIFT_RC37_GAMEPLAY_GAP_AUDIT_V1_LATEST.md"
+          OLD=$(gh api "$API" --jq .sha 2>/dev/null || true)
+          if [ -n "$OLD" ]; then gh api --method PUT "$API" -f message='releaseops(games): checkpoint Rift RC37 gameplay gap audit' -f content="$B64" -f sha="$OLD" >/dev/null; else gh api --method PUT "$API" -f message='releaseops(games): checkpoint Rift RC37 gameplay gap audit' -f content="$B64" >/dev/null; fi
