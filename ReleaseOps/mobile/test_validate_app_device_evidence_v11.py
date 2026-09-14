@@ -73,7 +73,7 @@ class AppDeviceEvidenceV11Tests(AppDeviceEvidenceV10Tests):
         }
         path.write_text("".join(f"{k}={v}\n" for k, v in values.items()), encoding="utf-8")
 
-    def _refresh(self, item, check):
+    def _refresh_process(self, item, check):
         item["process_provenance"][check]["evidence_sha256"] = digest(self.proc_paths[check])
 
     def test_valid_v11_foreground_process_chain(self):
@@ -89,28 +89,28 @@ class AppDeviceEvidenceV11Tests(AppDeviceEvidenceV10Tests):
         item = copy.deepcopy(self.evidence)
         check = self._pick("touch")
         self._write_process(check, self.proc_paths[check], package=self.package + ".other")
-        self._refresh(item, check)
+        self._refresh_process(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_bound_sha_substitution_blocks(self):
         item = copy.deepcopy(self.evidence)
         check = self._pick("core_user_journey")
         self._write_process(check, self.proc_paths[check], bound_sha="f" * 64)
-        self._refresh(item, check)
+        self._refresh_process(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_resumed_pid_mismatch_blocks(self):
         item = copy.deepcopy(self.evidence)
         check = self._pick("background_resume")
         self._write_process(check, self.proc_paths[check], pid="4242", resumed_pid="4243")
-        self._refresh(item, check)
+        self._refresh_process(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_invalid_process_method_blocks(self):
         item = copy.deepcopy(self.evidence)
         check = self._pick("launch")
         self._write_process(check, self.proc_paths[check], method="MANUAL_NOTE")
-        self._refresh(item, check)
+        self._refresh_process(item, check)
         self.assertTrue(validate(self.registry, item, self.root))
 
     def test_duplicate_process_file_blocks(self):
