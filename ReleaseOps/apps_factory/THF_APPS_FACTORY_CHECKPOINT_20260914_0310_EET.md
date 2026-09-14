@@ -32,14 +32,14 @@ Regression suite: `ReleaseOps/apps_factory/tests/test_notification_lifecycle.py`
 
 CI: `.github/workflows/thf-notification-lifecycle-candidate-v1.yml` compiles the candidate, executes regressions and enforces `PUSH_READY=FALSE`/`FINAL_OR_PLAY_READY=FALSE` plus nine-app API36 binding.
 
-The first CI execution (`34791629282`) failed in the test loader before product assertions because Python 3.12 `dataclass` requires the dynamically loaded module to be present in `sys.modules`. This harness defect was diagnosed from job logs and fixed in commit `ca9b2bd6f3685fe4fe1c58d740599b17ffd1fd4c`; the corrected run `34791684762` was queued at checkpoint time. This is tracked as CI/tooling state, not a product PASS.
+The first CI execution (`34791629282`) failed in the test loader before product assertions because Python 3.12 `dataclass` requires the dynamically loaded module to be present in `sys.modules`. This harness defect was diagnosed from job logs and fixed in commit `ca9b2bd6f3685fe4fe1c58d740599b17ffd1fd4c`. Corrected run `34791684762` completed **SUCCESS**. The tooling failure was not misreported as a product failure or product PASS.
 
 ## Checkpoint commits
 - `4114f863529294bd8392cb882024d0c033330f15` — provider-neutral lifecycle candidate.
 - `56e250bd67964302e4baa20bcfa75bd187ba6ade` — lifecycle regression suite.
 - `42820041ae14218434ff6280b8bd961a414cb4fc` — CI gate.
 - `fc1abcc193938f809b3960a24f4b75c547a03cce` — exact-source/API36 lifecycle registry.
-- `ca9b2bd6f3685fe4fe1c58d740599b17ffd1fd4c` — Python 3.12 test-loader repair.
+- `ca9b2bd6f3685fe4fe1c58d740599b17ffd1fd4c` — Python 3.12 test-loader repair and green gate candidate.
 
 ## Remaining truthful blockers
 1. THF Pass has isolated HTTPS lifecycle/federation rehearsal evidence, but stable externally reachable non-public trusted-TLS staging remains unproven and must not be reported staging-live.
@@ -49,4 +49,4 @@ The first CI execution (`34791629282`) failed in the test loader before product 
 5. Production signing, AAB/Play Internal, legal/OAuth/2FA and irreversible rollout remain outside this checkpoint.
 
 ## Next executable block
-After the corrected lifecycle CI is green, wire a credential-free HTTP contract around the registry for authenticated Pass sessions in an isolated rehearsal, add provider-adapter interface conformance tests without sending real notifications, and extend device-evidence manifests to capture notification permission/channel/deeplink/background-resume truth for exact APK SHAs. Stable trusted external Pass staging remains dependent on an approved non-public runtime target and TLS boundary.
+Wire a credential-free HTTP contract around the registry for authenticated Pass sessions in an isolated rehearsal, add provider-adapter interface conformance tests without sending real notifications, and extend device-evidence manifests to capture notification permission/channel/deeplink/background-resume truth for exact APK SHAs. Stable trusted external Pass staging remains dependent on an approved non-public runtime target and TLS boundary.
