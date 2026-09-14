@@ -5,7 +5,6 @@ import json, pathlib, re, sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 REG = ROOT / 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
 MATRIX = ROOT / 'ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md'
-RUSH_V2_APK = '528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7'
 
 def die(msg: str) -> None:
     print(f'LATEST_GAME_AUTHORITY=FAIL {msg}', file=sys.stderr)
@@ -44,27 +43,26 @@ for key,(name,pkg,srcsha) in expected.items():
 
 if games['rift']['eligible_candidate_apk_sha256'] is not None:
     die('rift_candidate_must_remain_none_until_rc41_build')
-if games['rush']['eligible_candidate_apk_sha256'] != RUSH_V2_APK:
-    die('rush_candidate_not_native_verified_motion_v2')
-if games['rush'].get('authoritative_version') != 'APPS RC4 + Native Verified-Motion V2':
-    die('rush_version_not_native_verified_motion_v2')
-if games['rush'].get('candidate_workflow_run_id') != 34893899367:
-    die('rush_candidate_run_mismatch')
-if games['rush'].get('candidate_artifact_id') != 10368186302:
-    die('rush_candidate_artifact_mismatch')
-if games['rush'].get('candidate_artifact_digest') != 'sha256:989137c623a8f137267dd7239d2d27b450512ddd9fabc6aa7656b3457ed22ac8':
-    die('rush_candidate_artifact_digest_mismatch')
+if games['rush']['eligible_candidate_apk_sha256'] is not None:
+    die('rush_candidate_must_remain_none_until_product_icon_rebuild')
+if games['rush'].get('authoritative_version') != 'APPS RC4 + Native Verified-Motion V2 + product identity fix':
+    die('rush_version_not_product_identity_fixed')
+if games['rush'].get('candidate_status') != 'REBUILD_REQUIRED_AFTER_PRODUCT_ICON_FIX':
+    die('rush_candidate_status_not_rebuild_required')
 if games['rush'].get('verified_motion_required') is not True:
     die('rush_verified_motion_not_required')
 if games['rush'].get('reward_bearing_health_evidence_required') is not True:
     die('rush_reward_health_evidence_not_required')
+if games['rush'].get('product_specific_icon_required') is not True:
+    die('rush_product_icon_not_required')
 
 matrix=MATRIX.read_text(encoding='utf-8')
 for marker in [
  'RC41 `4.7.5-rc41`',
  '29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d',
  'Native Verified-Motion V2',
- RUSH_V2_APK,
+ 'REJECTED — iconless candidate',
+ 'NONE — rebuild required after product icon fix',
  'NONE — RC37 APK superseded',
  'FINAL/PLAY_READY'
 ]:
@@ -79,6 +77,7 @@ for key,g in games.items():
             if not base.exists(): continue
             for p in base.rglob('*'):
                 if non_game_history(p): continue
+                if p.resolve() == pathlib.Path(__file__).resolve(): continue
                 if not p.is_file() or p.suffix not in {'.yml','.yaml','.py','.sh','.json','.md'}: continue
                 try: text=p.read_text(encoding='utf-8')
                 except UnicodeDecodeError: continue
