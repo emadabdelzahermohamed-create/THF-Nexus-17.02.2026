@@ -16,7 +16,10 @@
     "per_user_cap_raw": null,
     "epoch_budget_cap_raw": null,
     "distribution_reserve_account": null,
-    "delivery_model": null
+    "delivery_model": null,
+    "revenue_value_basis_status": "not_approved",
+    "revenue_value_basis_evidence_sha256": null,
+    "note": "The approved 35% share is a revenue share. Conversion into THF raw units must remain fail-closed until the revenue denomination and an authoritative THF budget derivation/value basis are approved and evidenced."
   },
   "vesting_locking": {
     "vesting_terms_status": "not_approved",
