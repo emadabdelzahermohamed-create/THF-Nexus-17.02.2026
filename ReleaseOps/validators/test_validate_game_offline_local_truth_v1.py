@@ -14,6 +14,10 @@ class Tests(unittest.TestCase):
             return v.audit(p,family)
     def test_spark_rush_good(self): self.assertTrue(self.run_audit(GOOD,'spark_rush')['passed'])
     def test_learn_fitness_good(self): self.assertTrue(self.run_audit(GOOD,'learn_fitness')['passed'])
+    def test_android_xml_namespace_is_metadata_not_network(self):
+        self.assertTrue(self.run_audit(GOOD+'\nhttp://schemas.android.com/apk/res/android\n','spark_rush')['passed'])
+    def test_other_http_url_still_rejected(self):
+        r=self.run_audit(GOOD+'\nhttps://example.invalid/game-state\n','spark_rush');self.assertFalse(r['passed'])
     def test_network_transport_rejected(self):
         r=self.run_audit(GOOD+'\nHttpURLConnection\n','spark_rush');self.assertFalse(r['passed']);self.assertFalse(r['checks']['no_network_transport_in_overlay_generator'])
     def test_api_endpoint_rejected(self):
