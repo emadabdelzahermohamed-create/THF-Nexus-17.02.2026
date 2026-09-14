@@ -6,12 +6,36 @@ ROOT="$HOME/thf-terra-rc34-compact-phone-v2"
 WORK="$ROOT/work"
 OUT="$ROOT/out"
 GODOT="$HOME/.local/bin/godot-4.7.2"
+ANDROID_SDK="$HOME/thf-builder-rc16-build/android-sdk"
 APK_NAME="THF-TERRA-4.6.8-RC34-PHONE-V2.apk"
 
 rm -rf "$ROOT"
 mkdir -p "$ROOT" "$OUT"
 cp -a "$SRC" "$WORK"
 cd "$WORK"
+
+JAVA_BIN=$(readlink -f "$(command -v java)")
+JAVA_HOME_DETECTED=$(dirname "$(dirname "$JAVA_BIN")")
+test -x "$ANDROID_SDK/platform-tools/adb"
+test -d "$ANDROID_SDK/build-tools"
+test -x "$JAVA_HOME_DETECTED/bin/java"
+
+# Godot stores Android toolchain paths in per-user editor settings. Use an
+# isolated config root so this QA build cannot change the builder's shared UI
+# settings or interfere with other THF jobs.
+export XDG_CONFIG_HOME="$ROOT/config"
+mkdir -p "$XDG_CONFIG_HOME/godot"
+cat > "$XDG_CONFIG_HOME/godot/editor_settings-4.7.tres" <<EOF
+[gd_resource type="EditorSettings" format=3]
+
+[resource]
+export/android/android_sdk_path = "$ANDROID_SDK"
+export/android/java_sdk_path = "$JAVA_HOME_DETECTED"
+EOF
+export ANDROID_HOME="$ANDROID_SDK"
+export ANDROID_SDK_ROOT="$ANDROID_SDK"
+export JAVA_HOME="$JAVA_HOME_DETECTED"
+export PATH="$JAVA_HOME/bin:$ANDROID_SDK/platform-tools:$PATH"
 
 python3 - <<'PY'
 from pathlib import Path
