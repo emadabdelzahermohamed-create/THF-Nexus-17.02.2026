@@ -30,6 +30,8 @@ def evidence(product: str, registry_sha: str, root: Path):
         'installed_code_paths': ['/data/app/~~abc/base.apk'],
         'installed_apk_hash_method': 'adb-exec-out-cat',
         'package_dump_present': True,
+        'installed_apk_session_id': doc['session']['session_id'],
+        'installed_apk_observed_at_utc': '2026-09-14T04:13:30Z',
     })
     return doc
 
@@ -83,6 +85,20 @@ class DeviceEvidenceV7Tests(unittest.TestCase):
             root=Path(td); doc=evidence('fitness_games',rsha,root)
             doc['objective']['package_dump_present']=False
             self.assertTrue(any('package_dump_present' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
+
+    def test_installed_identity_cross_session_fails(self):
+        reg=T6.registry_doc(); rsha='f'*64
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); doc=evidence('terra',rsha,root)
+            doc['objective']['installed_apk_session_id']='other-phone-session-20260914'
+            self.assertTrue(any('installed_apk_session_id: session_id mismatch' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
+
+    def test_installed_identity_outside_session_fails(self):
+        reg=T6.registry_doc(); rsha='f'*64
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); doc=evidence('rift',rsha,root)
+            doc['objective']['installed_apk_observed_at_utc']='2026-09-14T05:00:00Z'
+            self.assertTrue(any('installed_apk_observed_at_utc: observation outside' in x for x in MOD.validate_bundle(reg,rsha,doc,root)))
 
 
 if __name__=='__main__': unittest.main()
