@@ -67,31 +67,56 @@ def _token_id(*, subject: str, session_id: str, package: str, provider: str, fin
 
 
 class NotificationTokenRegistry:
+    _CREATE_TABLE_SQL = """
+        CREATE TABLE notification_tokens (
+          token_id TEXT PRIMARY KEY,
+          subject TEXT NOT NULL,
+          session_id TEXT NOT NULL,
+          package TEXT NOT NULL,
+          provider TEXT NOT NULL,
+          fingerprint TEXT NOT NULL,
+          generation INTEGER NOT NULL,
+          active INTEGER NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          UNIQUE(subject, session_id, package, provider, fingerprint)
+        )
+    """
+
     def __init__(self, db: sqlite3.Connection, vault: SecureTokenVault):
         self.db = db
         self.vault = vault
-        self.db.execute(
-            """
-            CREATE TABLE IF NOT EXISTS notification_tokens (
-              token_id TEXT PRIMARY KEY,
-              subject TEXT NOT NULL,
-              session_id TEXT NOT NULL,
-              package TEXT NOT NULL,
-              provider TEXT NOT NULL,
-              fingerprint TEXT NOT NULL,
-              generation INTEGER NOT NULL,
-              active INTEGER NOT NULL,
-              created_at INTEGER NOT NULL,
-              updated_at INTEGER NOT NULL,
-              UNIQUE(subject, session_id, package, provider, fingerprint)
-            )
-            """
-        )
-        columns = {row[1] for row in self.db.execute("PRAGMA table_info(notification_tokens)")}
-        if "session_id" not in columns:
-            self.db.execute(
-                "ALTER TABLE notification_tokens ADD COLUMN session_id TEXT NOT NULL DEFAULT '__legacy_unbound__'"
-            )
+        self._ensure_schema()
+
+    def _ensure_schema(self) -> None:
+        exists = self.db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='notification_tokens'"
+        ).fetchone()
+        if not exists:
+            self.db.execute(self._CREATE_TABLE_SQL)
+            self.db.commit()
+        else:
+            columns = {row[1] for row in self.db.execute("PRAGMA table_info(notification_tokens)")}
+            if "session_id" not in columns:
+                # SQLite cannot remove the legacy UNIQUE(subject,package,provider,fingerprint)
+                # constraint with ALTER TABLE. Rebuild the table atomically so parallel
+                # Pass sessions can own distinct registrations for the same provider token.
+                with self.db:
+                    self.db.execute("ALTER TABLE notification_tokens RENAME TO notification_tokens_legacy")
+                    self.db.execute(self._CREATE_TABLE_SQL)
+                    self.db.execute(
+                        """
+                        INSERT INTO notification_tokens(
+                          token_id,subject,session_id,package,provider,fingerprint,
+                          generation,active,created_at,updated_at
+                        )
+                        SELECT token_id,subject,?,package,provider,fingerprint,
+                               generation,active,created_at,updated_at
+                        FROM notification_tokens_legacy
+                        """,
+                        (LEGACY_UNBOUND_SESSION,),
+                    )
+                    self.db.execute("DROP TABLE notification_tokens_legacy")
         self.db.execute(
             "CREATE INDEX IF NOT EXISTS idx_notification_tokens_subject_session "
             "ON notification_tokens(subject, session_id, package, active)"
