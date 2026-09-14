@@ -58,14 +58,15 @@ assert all(v is False for v in d["release_truth"].values())
 integration = json.loads(Path("ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V1.json").read_text(encoding="utf-8"))
 assert integration["schema"] == "thf.android.shared.integration.v3"
 assert integration["android"]["target_sdk"] == 36
-assert integration["android"]["account_deletion"]["authenticated_session_required"] is True
-assert integration["android"]["account_deletion"]["client_is_authoritative"] is False
-assert integration["android"]["account_deletion"]["backend_bound"] is False
-assert integration["private_apps"]["ordinary_user_visible"] is False
-assert integration["private_apps"]["server_role_claim_required"] is True
-assert integration["private_apps"]["hidden_ui_is_not_security"] is True
-assert integration["external_gates"]["account_deletion_backend_bound"] is False
-assert integration["external_gates"]["physical_device_pass"] is False
+assert integration["identity"]["account_deletion"]["authenticated_session_required"] is True
+assert integration["identity"]["account_deletion"]["client_is_authoritative"] is False
+assert integration["identity"]["account_deletion"]["backend_bound"] is False
+assert integration["operator_access"]["ordinary_user_visible"] is False
+assert integration["operator_access"]["server_role_claim_required"] is True
+assert integration["operator_access"]["hidden_ui_is_not_security"] is True
+assert integration["release_truth"]["account_deletion_backend_bound"] is False
+assert integration["release_truth"]["physical_device_pass"] is False
+assert integration["release_truth"]["final_or_play_ready"] is False
 
 print("THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V1=PASS")
 print("SHARED_INTEGRATION_V3=PASS")
