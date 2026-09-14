@@ -28,6 +28,7 @@ INVENTORY = (
     "ReleaseOps/TokenOps/epoch_commitment.py",
     "ReleaseOps/TokenOps/revenue_value_basis.py",
     "ReleaseOps/TokenOps/blocker_resolution.py",
+    "ReleaseOps/TokenOps/operation_readiness.py",
     "ReleaseOps/TokenOps/recent_activity_semantics.py",
     "ReleaseOps/TokenOps/source_provenance.py",
 )
