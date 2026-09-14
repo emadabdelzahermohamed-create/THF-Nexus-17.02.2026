@@ -10,6 +10,8 @@ from typing import Any, Iterable, Mapping
 GOOGLE_ISSUERS = {"accounts.google.com", "https://accounts.google.com"}
 PUBLIC_ROLES = {"user", "member", "guest"}
 OPERATOR_ROLES = {"owner", "admin", "publisher", "moderator"}
+SESSION_STATES = {"anonymous", "guest", "authenticated", "reauth_required", "revoked"}
+AUTH_METHODS = {"google", "passkey", "password", "email_code", "guest"}
 
 PRODUCTS: dict[str, dict[str, Any]] = {
     "hub": {"legacy": "core", "package": "com.topherofit.thf.core", "en": "THF Hub", "ar": "مركز THF", "visibility": "public"},
@@ -82,12 +84,6 @@ def validate_google_id_token_claims(
     claims: Mapping[str, Any], *, expected_audience: str,
     signature_verified: bool, now: int | None = None
 ) -> dict[str, str]:
-    """Validate claims only after a trusted JWT/JWK verifier proves the signature.
-
-    This intentionally refuses decoded-but-unverified JWT payloads. Production callers
-    must verify Google's signature/JWK chain first (for example with the provider's
-    supported server library), then pass signature_verified=True here.
-    """
     if signature_verified is not True:
         raise ContractError("google_signature_verification_required")
     now = int(time.time()) if now is None else int(now)
@@ -95,10 +91,7 @@ def validate_google_id_token_claims(
     audience = claims.get("aud")
     if issuer not in GOOGLE_ISSUERS:
         raise ContractError("google_issuer_invalid")
-    if isinstance(audience, list):
-        audience_ok = expected_audience in audience
-    else:
-        audience_ok = str(audience) == expected_audience
+    audience_ok = expected_audience in audience if isinstance(audience, list) else str(audience) == expected_audience
     if not audience_ok:
         raise ContractError("google_audience_invalid")
     try:
@@ -115,6 +108,70 @@ def validate_google_id_token_claims(
     if email and not verified:
         raise ContractError("google_email_not_verified")
     return {"provider": "google", "provider_subject": sub, "email": email}
+
+
+def validate_passkey_registration(options: Mapping[str, Any]) -> dict[str, Any]:
+    rp_id = str(options.get("rp_id", "")).strip().lower()
+    user_id = str(options.get("user_id", "")).strip()
+    challenge = str(options.get("challenge", "")).strip()
+    attestation = str(options.get("attestation", "none")).strip().lower()
+    if not rp_id or "." not in rp_id:
+        raise ContractError("passkey_rp_id_invalid")
+    if not user_id:
+        raise ContractError("passkey_user_id_required")
+    if len(challenge) < 32:
+        raise ContractError("passkey_challenge_too_short")
+    if attestation not in {"none", "indirect", "direct", "enterprise"}:
+        raise ContractError("passkey_attestation_invalid")
+    return {"rp_id": rp_id, "user_id": user_id, "challenge": challenge, "attestation": attestation}
+
+
+def session_contract(*, state: str, auth_method: str, subject: str = "", roles: Iterable[str] = ()) -> dict[str, Any]:
+    state = state.strip().lower()
+    auth_method = auth_method.strip().lower()
+    subject = subject.strip()
+    if state not in SESSION_STATES:
+        raise ContractError("session_state_invalid")
+    if auth_method not in AUTH_METHODS:
+        raise ContractError("auth_method_invalid")
+    if state == "authenticated" and (auth_method == "guest" or not subject):
+        raise ContractError("authenticated_identity_required")
+    if state == "guest" and auth_method != "guest":
+        raise ContractError("guest_auth_method_required")
+    normalized_roles = sorted({str(x).strip().lower() for x in roles if str(x).strip()})
+    if any(r in OPERATOR_ROLES for r in normalized_roles) and state != "authenticated":
+        raise ContractError("operator_session_must_be_authenticated")
+    return {
+        "state": state,
+        "auth_method": auth_method,
+        "subject": subject,
+        "roles": normalized_roles,
+        "persist_refresh_token_in_secure_storage_only": state == "authenticated",
+        "logout_revokes_server_session": state == "authenticated",
+    }
+
+
+def cross_app_handoff(*, source: str, target: str, subject: str, nonce: str, expires_at: int, now: int | None = None) -> dict[str, Any]:
+    now = int(time.time()) if now is None else int(now)
+    if source not in PRODUCTS or target not in PRODUCTS or source == target:
+        raise ContractError("handoff_product_invalid")
+    subject = subject.strip()
+    nonce = nonce.strip()
+    if not subject or len(nonce) < 16:
+        raise ContractError("handoff_subject_nonce_required")
+    if expires_at <= now or expires_at - now > 300:
+        raise ContractError("handoff_expiry_invalid")
+    return {
+        "source": source,
+        "target": target,
+        "subject": subject,
+        "nonce": nonce,
+        "expires_at": int(expires_at),
+        "server_signed_required": True,
+        "single_use_required": True,
+        "carry_roles": False,
+        "carry_secrets": False,
+    }
 
 
 @dataclass(frozen=True)
@@ -174,6 +231,41 @@ def health_permission_plan(metrics: Iterable[str], *, provider: str) -> dict[str
     }
 
 
+def motion_evidence_contract(*, source: str, repetitions: int, confidence: float, monotonic_ms: int, sensor_attested: bool) -> dict[str, Any]:
+    source = source.strip().lower()
+    if source not in {"camera_pose", "wearable_sensor", "device_sensor", "combined"}:
+        raise ContractError("motion_source_invalid")
+    if repetitions < 0 or monotonic_ms < 0:
+        raise ContractError("motion_count_or_clock_invalid")
+    if confidence < 0.0 or confidence > 1.0:
+        raise ContractError("motion_confidence_invalid")
+    return {
+        "source": source,
+        "repetitions": int(repetitions),
+        "confidence": float(confidence),
+        "monotonic_ms": int(monotonic_ms),
+        "sensor_attested": bool(sensor_attested),
+        "client_reward_authority": False,
+        "server_verification_required": True,
+    }
+
+
+def preference_contract(*, locale: str, data_saver: bool, reduce_motion: bool, high_contrast: bool) -> dict[str, Any]:
+    locale = locale.strip().replace("_", "-")
+    if not re.fullmatch(r"[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?", locale):
+        raise ContractError("locale_invalid")
+    language = locale.split("-", 1)[0].lower()
+    return {
+        "locale": locale,
+        "language": language,
+        "layout_direction": "rtl" if language in {"ar", "fa", "he", "ur"} else "ltr",
+        "data_saver": bool(data_saver),
+        "reduce_motion": bool(reduce_motion),
+        "high_contrast": bool(high_contrast),
+        "sync_scope": "user_preference",
+    }
+
+
 def link_guest_to_identity(*, guest_id: str, identity_subject: str, proof_verified: bool) -> dict[str, str]:
     guest_id = guest_id.strip()
     identity_subject = identity_subject.strip()
@@ -188,15 +280,19 @@ def link_guest_to_identity(*, guest_id: str, identity_subject: str, proof_verifi
 
 def contract_snapshot() -> str:
     payload = {
-        "schema": "thf.shared.integration.v1",
+        "schema": "thf.shared.integration.v2",
         "products": {k: {kk: (sorted(vv) if isinstance(vv, set) else vv) for kk, vv in v.items()} for k, v in PRODUCTS.items()},
         "health_providers": HEALTH_PROVIDER_STATUS,
         "health_metrics": sorted(ALLOWED_HEALTH_METRICS),
+        "auth_methods": sorted(AUTH_METHODS),
+        "session_states": sorted(SESSION_STATES),
         "truth": {
             "google_oauth_console_configured": False,
             "google_server_signature_verifier_bound": False,
+            "passkey_backend_challenge_store_bound": False,
             "health_connect_physical_device_verified": False,
             "samsung_partner_registration_verified": False,
+            "cross_app_handoff_server_signer_bound": False,
             "physical_device_pass": False,
             "final_or_play_ready": False,
         },
