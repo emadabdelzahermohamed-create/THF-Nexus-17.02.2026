@@ -35,6 +35,7 @@ class SecureTokenVault(Protocol):
     """Opaque token custody boundary. Production implementations must encrypt at rest."""
 
     def put(self, token_id: str, raw_token: str) -> None: ...
+    def get(self, token_id: str) -> str: ...
     def delete(self, token_id: str) -> None: ...
 
 
@@ -102,10 +103,6 @@ class NotificationTokenRegistry:
             "SELECT generation, active FROM notification_tokens WHERE token_id=?", (token_id,)
         ).fetchone()
         generation = int(row[0]) if row else 1
-
-        # Put the secret first, then expose the registration in the DB. If the DB
-        # write fails, compensate by deleting the newly stored secret so a failed
-        # registration cannot leave an untracked provider credential in the vault.
         self.vault.put(token_id, raw_token)
         try:
             with self.db:
@@ -135,19 +132,12 @@ class NotificationTokenRegistry:
         old = self.get(old_token_id, subject=subject)
         if not old.active or old.package != package or old.provider != provider:
             raise PermissionError("rotation source is inactive or outside authenticated scope")
-
         new_fp = _fingerprint(new_raw_token)
         new_token_id = _token_id(subject=subject, package=package, provider=provider, fingerprint=new_fp)
         if new_token_id == old_token_id:
             raise ValueError("new provider token must differ from rotation source")
-
         next_generation = old.generation + 1
         now = int(time.time())
-
-        # Failure-safe ordering: custody of the replacement token must succeed
-        # before the old registration is touched. The DB state transition is one
-        # transaction, so any DB failure leaves the old token active and removes
-        # the uncommitted replacement secret from the vault.
         self.vault.put(new_token_id, new_raw_token)
         try:
             with self.db:
@@ -161,19 +151,13 @@ class NotificationTokenRegistry:
                     """
                     INSERT INTO notification_tokens(token_id,subject,package,provider,fingerprint,generation,active,created_at,updated_at)
                     VALUES(?,?,?,?,?,?,1,?,?)
-                    ON CONFLICT(token_id) DO UPDATE SET
-                      generation=excluded.generation,
-                      active=1,
-                      updated_at=excluded.updated_at
+                    ON CONFLICT(token_id) DO UPDATE SET generation=excluded.generation, active=1, updated_at=excluded.updated_at
                     """,
                     (new_token_id, subject, package, provider, new_fp, next_generation, now, now),
                 )
         except Exception:
             self.vault.delete(new_token_id)
             raise
-
-        # DB authorization state is already fail-closed: the old registration is
-        # inactive before its raw credential is removed from custody.
         self.vault.delete(old_token_id)
         return self.get(new_token_id, subject=subject)
 
