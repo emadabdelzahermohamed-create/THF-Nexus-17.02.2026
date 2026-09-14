@@ -56,7 +56,7 @@ jobs:
           command	RC3	f7da9039041b8142d795e96934b95f00b83ac8fb5e3d6f5d9bfbff0aeb2eb408	1eOdaj9IYsExCgzV0evwkW2hTpRie1Yke
           EOF
           python -m py_compile ReleaseOps/validators/validate_app_backend_reachability_lineage_v1.py
-          python ReleaseOps/tests/test_validate_app_backend_reachability_lineage_v1.py -v
+          python -m unittest ReleaseOps.tests.test_validate_app_backend_reachability_lineage_v1 -v
           python ReleaseOps/validators/validate_app_backend_reachability_lineage_v1.py \
             src/matrix.tsv \
             ReleaseOps/apps_factory/THF_APPS_PHYSICAL_DEVICE_EVIDENCE_REGISTRY_V1.json \
