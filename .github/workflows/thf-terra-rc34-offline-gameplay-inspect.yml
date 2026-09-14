@@ -1,0 +1,50 @@
+name: THF Terra RC34 Offline Gameplay Inspect
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-terra-rc34-offline-gameplay-inspect.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect movement, network, Android and project settings
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='set -Eeuo pipefail
+          W="$HOME/thf-terra-rift-staging-apk-v1/terra/work"
+          F="$W/native/world/WorldMain.gd"
+          echo "=== MOVEMENT AND SOCKET SIGNALS ==="
+          grep -nE "func (_process|_physics_process|_mobile_hold|_send|_connect_world_socket|_handle|_travel)|socket|put_packet|send_text|target_position|mobile_held_direction|motion\\." "$F" | head -320 || true
+          echo "=== MOVEMENT CONTEXT ==="
+          sed -n "1340,1710p" "$F"
+          echo "=== EXPORT ORIENTATION ==="
+          grep -nE "screen/orientation|package/unique_name|version/name|target_sdk|architectures|resize|stretch|window" "$W/export_presets.cfg" | head -180 || true
+          echo "=== PROJECT DISPLAY ==="
+          grep -nE "display/window|orientation|viewport_width|viewport_height|stretch|size/" "$W/project.godot" | head -180 || true
+          '
