@@ -1,0 +1,43 @@
+name: THF Game Physical Device Evidence Tooling V17
+on:
+  push:
+    paths:
+      - 'ReleaseOps/mobile/validate_game_device_evidence_v17.py'
+      - 'ReleaseOps/mobile/test_validate_game_device_evidence_v17.py'
+      - 'ReleaseOps/mobile/capture_game_process_provenance_v17.py'
+      - 'ReleaseOps/mobile/test_capture_game_process_provenance_v17.py'
+      - '.github/workflows/thf-game-physical-device-evidence-tooling-v17.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v17:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile V7-V17 validators tests and capture helpers
+        run: |
+          for v in 7 8 9 10 11 12 13 14 15 16 17; do python -m py_compile ReleaseOps/mobile/validate_game_device_evidence_v${v}.py; done
+          python -m py_compile ReleaseOps/mobile/test_validate_game_device_evidence_v16.py ReleaseOps/mobile/test_validate_game_device_evidence_v17.py
+          python -m py_compile ReleaseOps/mobile/capture_game_process_provenance_v16.py ReleaseOps/mobile/capture_game_process_provenance_v17.py
+          python -m py_compile ReleaseOps/mobile/test_capture_game_process_provenance_v16.py ReleaseOps/mobile/test_capture_game_process_provenance_v17.py
+      - name: Preserve V16 regression chain
+        run: |
+          python ReleaseOps/mobile/test_validate_game_device_evidence_v16.py -v
+          python ReleaseOps/mobile/test_capture_game_process_provenance_v16.py -v
+      - name: Run V17 Android boot-session regressions
+        run: python ReleaseOps/mobile/test_validate_game_device_evidence_v17.py -v
+      - name: Run V17 physical process capture helper regressions
+        run: python ReleaseOps/mobile/test_capture_game_process_provenance_v17.py -v
+      - name: Assert V17 remains non-promotional and boot-bound
+        run: |
+          grep -q 'FINAL_OR_PLAY_READY=FALSE' ReleaseOps/mobile/validate_game_device_evidence_v17.py
+          ! grep -q 'FINAL_OR_PLAY_READY=TRUE' ReleaseOps/mobile/validate_game_device_evidence_v17.py
+          grep -q 'THF_ANDROID_BOOT_ID' ReleaseOps/mobile/validate_game_device_evidence_v17.py
+          grep -q 'ADB_CAT_PROC_BOOT_ID' ReleaseOps/mobile/validate_game_device_evidence_v17.py
+          grep -q 'cat /proc/sys/kernel/random/boot_id' ReleaseOps/mobile/validate_game_device_evidence_v17.py
+          grep -q 'multiple Android boot sessions' ReleaseOps/mobile/validate_game_device_evidence_v17.py
+          grep -q 'final_or_play_ready.*False' ReleaseOps/mobile/capture_game_process_provenance_v17.py
