@@ -77,8 +77,28 @@ class TokenOpsGuardTests(unittest.TestCase):
         self.assertEqual(r["status"], "FAIL_CLOSED")
         self.assertIn("per_user_cap_not_approved", r["blockers"])
         self.assertIn("treasury_accounts_and_evidence_missing", r["blockers"])
+        self.assertIn("revenue_value_basis_not_approved", r["blockers"])
+        self.assertEqual(r["distribution"]["revenue_value_basis_status"], "not_approved")
         self.assertFalse(r["execution"]["financial_effect"])
         self.assertFalse(r["execution"]["broadcast"])
+
+    def test_approved_value_basis_requires_evidence_hash(self):
+        p = copy.deepcopy(POLICY)
+        p["distribution_controls"]["revenue_value_basis_status"] = "approved"
+        p["distribution_controls"]["revenue_value_basis_evidence_sha256"] = None
+        r = M.readiness(p, TREASURY, AUDIT)
+        self.assertIn("revenue_value_basis_evidence_missing", r["blockers"])
+        self.assertNotIn("revenue_value_basis_not_approved", r["blockers"])
+
+    def test_approved_value_basis_with_hash_clears_only_value_basis_blockers(self):
+        p = copy.deepcopy(POLICY)
+        p["distribution_controls"]["revenue_value_basis_status"] = "approved"
+        p["distribution_controls"]["revenue_value_basis_evidence_sha256"] = "a" * 64
+        r = M.readiness(p, TREASURY, AUDIT)
+        self.assertNotIn("revenue_value_basis_not_approved", r["blockers"])
+        self.assertNotIn("revenue_value_basis_evidence_missing", r["blockers"])
+        self.assertEqual(r["status"], "FAIL_CLOSED")
+        self.assertFalse(r["distribution"]["execution_authorized"])
 
     def test_burn_headroom_is_exactly_2b_from_10b(self):
         r = M.readiness(POLICY, TREASURY, AUDIT)
