@@ -4,7 +4,8 @@
 This module is intentionally a server-side/control-plane contract, not proof of a
 reachable production backend. It consumes a verifier boundary that must perform real
 cryptographic verification outside this module, then enforces replay, issuer,
-audience, scope, route and session invariants before creating a federated session.
+audience, scope, route, private-app RBAC and session invariants before creating a
+federated session.
 
 It never creates offline economy/social/ranked truth and does not establish
 NETWORK_RELEASE_READY, PHYSICAL_DEVICE_PASS, PUSH_READY or FINAL/PLAY_READY.
@@ -15,7 +16,7 @@ from dataclasses import dataclass
 import secrets
 import sqlite3
 import time
-from typing import Mapping, Protocol, Sequence
+from typing import Mapping, Protocol
 from urllib.parse import urlparse
 
 
@@ -45,6 +46,16 @@ FORBIDDEN_OFFLINE_TRUTH_SCOPES = frozenset({
     "economy:write", "wallet:write", "social:write", "ranked:write", "tournament:write"
 })
 
+# Private/internal applications are not authorized by client-side visibility. The
+# deployed cryptographic verifier must return these role claims only after checking
+# server-authoritative identity/RBAC state. Admin implies publisher for Signal only;
+# Command always requires the explicit admin role.
+ALLOWED_ROLE_CLAIMS = frozenset({"user", "publisher", "admin"})
+PRIVATE_APP_REQUIRED_ROLES: Mapping[str, frozenset[str]] = {
+    "com.topherofit.thf.signal": frozenset({"publisher", "admin"}),
+    "com.topherofit.thf.command": frozenset({"admin"}),
+}
+
 
 @dataclass(frozen=True)
 class VerifiedHandoff:
@@ -60,6 +71,7 @@ class VerifiedHandoff:
     return_route: str
     online_authority: bool
     claims_version: int = CLAIMS_VERSION
+    roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -72,6 +84,7 @@ class FederatedSession:
     created_at: float
     expires_at: float
     revoked: bool = False
+    roles: tuple[str, ...] = ()
 
 
 class HandoffVerifier(Protocol):
@@ -111,34 +124,44 @@ class FederatedSessionStore:
             "CREATE TABLE IF NOT EXISTS federated_sessions ("
             "session_id TEXT PRIMARY KEY, subject TEXT NOT NULL, package_id TEXT NOT NULL, "
             "source_package TEXT NOT NULL, scopes TEXT NOT NULL, created_at REAL NOT NULL, "
-            "expires_at REAL NOT NULL, revoked INTEGER NOT NULL DEFAULT 0)"
+            "expires_at REAL NOT NULL, revoked INTEGER NOT NULL DEFAULT 0, "
+            "roles TEXT NOT NULL DEFAULT '')"
         )
+        # Safe forward migration for V1 databases. Existing sessions receive no role
+        # claims and therefore cannot enter private applications after this upgrade.
+        columns = {row[1] for row in self.db.execute("PRAGMA table_info(federated_sessions)")}
+        if "roles" not in columns:
+            self.db.execute("ALTER TABLE federated_sessions ADD COLUMN roles TEXT NOT NULL DEFAULT ''")
         self.db.commit()
 
     def create(self, handoff: VerifiedHandoff, *, now: float, ttl_seconds: int = 3600) -> FederatedSession:
         session_id = secrets.token_urlsafe(32)
         expires_at = now + ttl_seconds
         scopes = tuple(sorted(set(handoff.scopes)))
+        roles = tuple(sorted(set(handoff.roles)))
         self.db.execute(
-            "INSERT INTO federated_sessions(session_id,subject,package_id,source_package,scopes,created_at,expires_at,revoked) "
-            "VALUES(?,?,?,?,?,?,?,0)",
+            "INSERT INTO federated_sessions(session_id,subject,package_id,source_package,scopes,created_at,expires_at,revoked,roles) "
+            "VALUES(?,?,?,?,?,?,?,0,?)",
             (session_id, handoff.subject, handoff.target_package, handoff.source_package,
-             " ".join(scopes), now, expires_at),
+             " ".join(scopes), now, expires_at, " ".join(roles)),
         )
         self.db.commit()
         return FederatedSession(
             handoff.subject, session_id, handoff.target_package, handoff.source_package,
-            scopes, now, expires_at, False,
+            scopes, now, expires_at, False, roles,
         )
 
     def resolve(self, session_id: str) -> FederatedSession | None:
         row = self.db.execute(
-            "SELECT subject,session_id,package_id,source_package,scopes,created_at,expires_at,revoked "
+            "SELECT subject,session_id,package_id,source_package,scopes,created_at,expires_at,revoked,roles "
             "FROM federated_sessions WHERE session_id=?", (session_id,)
         ).fetchone()
         if row is None:
             return None
-        return FederatedSession(row[0], row[1], row[2], row[3], tuple(row[4].split()), row[5], row[6], bool(row[7]))
+        return FederatedSession(
+            row[0], row[1], row[2], row[3], tuple(row[4].split()), row[5], row[6], bool(row[7]),
+            tuple(row[8].split()) if row[8] else (),
+        )
 
     def revoke_session(self, session_id: str) -> None:
         self.db.execute("UPDATE federated_sessions SET revoked=1 WHERE session_id=?", (session_id,))
@@ -198,12 +221,29 @@ class PassHandoffReceiver:
         if not handoff.online_authority and requested.intersection(FORBIDDEN_OFFLINE_TRUTH_SCOPES):
             raise PermissionError("offline handoff cannot establish economy/social/ranked truth")
 
+        roles = set(handoff.roles)
+        if any(not role or role not in ALLOWED_ROLE_CLAIMS for role in roles):
+            raise PermissionError("THF Pass handoff contains unknown role claim")
+        private_roles = PRIVATE_APP_REQUIRED_ROLES.get(installed_package)
+        if private_roles is not None:
+            if not handoff.online_authority:
+                raise PermissionError("private THF application requires online RBAC authority")
+            if roles.isdisjoint(private_roles):
+                raise PermissionError("private THF application role denied")
+
         parsed = urlparse(handoff.return_route)
         expected_slug = PACKAGE_SLUGS[installed_package]
         if parsed.scheme != "thf" or parsed.netloc != expected_slug or not parsed.path.startswith("/"):
             raise PermissionError("THF Pass return route is not bound to target application")
 
-    def authorize_session(self, *, session_id: str, subject: str, package_id: str) -> FederatedSession:
+    def authorize_session(
+        self,
+        *,
+        session_id: str,
+        subject: str,
+        package_id: str,
+        required_role: str | None = None,
+    ) -> FederatedSession:
         session = self.sessions.resolve(session_id)
         now = float(self.clock())
         if session is None:
@@ -214,4 +254,15 @@ class PassHandoffReceiver:
             raise PermissionError("THF Pass federated session expired")
         if session.subject != subject or session.package_id != package_id:
             raise PermissionError("THF Pass federated session binding mismatch")
+        private_roles = PRIVATE_APP_REQUIRED_ROLES.get(package_id)
+        if private_roles is not None and set(session.roles).isdisjoint(private_roles):
+            raise PermissionError("private THF application session role denied")
+        if required_role is not None:
+            if required_role not in ALLOWED_ROLE_CLAIMS:
+                raise PermissionError("unknown required THF role")
+            effective_roles = set(session.roles)
+            if required_role == "publisher" and "admin" in effective_roles:
+                effective_roles.add("publisher")
+            if required_role not in effective_roles:
+                raise PermissionError("THF federated session role denied")
         return session
