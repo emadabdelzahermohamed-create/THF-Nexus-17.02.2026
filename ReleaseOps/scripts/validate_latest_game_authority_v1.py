@@ -5,6 +5,7 @@ import json, pathlib, re, sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 REG = ROOT / 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
 MATRIX = ROOT / 'ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md'
+RUSH_V2_APK = '528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7'
 
 def die(msg: str) -> None:
     print(f'LATEST_GAME_AUTHORITY=FAIL {msg}', file=sys.stderr)
@@ -43,8 +44,16 @@ for key,(name,pkg,srcsha) in expected.items():
 
 if games['rift']['eligible_candidate_apk_sha256'] is not None:
     die('rift_candidate_must_remain_none_until_rc41_build')
-if games['rush']['eligible_candidate_apk_sha256'] is not None:
-    die('rush_candidate_must_remain_none_until_verified_motion_v2_build')
+if games['rush']['eligible_candidate_apk_sha256'] != RUSH_V2_APK:
+    die('rush_candidate_not_native_verified_motion_v2')
+if games['rush'].get('authoritative_version') != 'APPS RC4 + Native Verified-Motion V2':
+    die('rush_version_not_native_verified_motion_v2')
+if games['rush'].get('candidate_workflow_run_id') != 34893899367:
+    die('rush_candidate_run_mismatch')
+if games['rush'].get('candidate_artifact_id') != 10368186302:
+    die('rush_candidate_artifact_mismatch')
+if games['rush'].get('candidate_artifact_digest') != 'sha256:989137c623a8f137267dd7239d2d27b450512ddd9fabc6aa7656b3457ed22ac8':
+    die('rush_candidate_artifact_digest_mismatch')
 if games['rush'].get('verified_motion_required') is not True:
     die('rush_verified_motion_not_required')
 if games['rush'].get('reward_bearing_health_evidence_required') is not True:
@@ -54,9 +63,9 @@ matrix=MATRIX.read_text(encoding='utf-8')
 for marker in [
  'RC41 `4.7.5-rc41`',
  '29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d',
- 'Verified-Motion V2',
+ 'Native Verified-Motion V2',
+ RUSH_V2_APK,
  'NONE — RC37 APK superseded',
- 'NONE — previous game APK superseded by Verified-Motion V2',
  'FINAL/PLAY_READY'
 ]:
     if marker not in matrix: die('matrix_missing:'+marker)
@@ -76,20 +85,18 @@ for key,g in games.items():
                 if bad in text:
                     die(f'{key}:superseded_hash_in_operational_file:{p.relative_to(ROOT)}')
 
-# RC37 historical audit workflows may remain for provenance. Uploading an immutable
-# audit artifact or checkpoint is evidence retention, not candidate promotion.
-# Fail only on an explicit positive release state or an actual promotion/deployment action.
+# Historical RC37 audit artifacts are allowed. Positive release operations are not.
 for p in (ROOT/'.github/workflows').glob('*rift*.yml'):
     text=p.read_text(encoding='utf-8')
     if 'RC37' not in text:
         continue
     positive = re.search(r'(FINAL_OR_PLAY_READY|PLAY_READY|FINAL_STATUS)\s*[=:]\s*(TRUE|PASS|READY)', text, re.I)
-    promotion_action = re.search(
+    release_op = re.search(
         r'\b(promote|promotion|production[-_ ]?sign(?:ing)?|play[-_ ]?(?:upload|publish)|store[-_ ]?publish|production[-_ ]?(?:deploy|cutover))\b',
         text,
         re.I,
     )
-    if positive or promotion_action:
+    if positive or release_op:
         die(f'rift:stale_rc37_promotion_workflow:{p.name}')
 
 print('LATEST_GAME_AUTHORITY=PASS')
