@@ -43,7 +43,7 @@ jobs:
           set -Eeuo pipefail
           chmod +x ReleaseOps/scripts/build_terra_rc34_compact_phone.sh
           gcloud compute scp ReleaseOps/scripts/build_terra_rc34_compact_phone.sh "$GCP_BUILDER:/tmp/build_terra_rc34_compact_phone.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-      - name: Build compact native RC34
+      - name: Build compact native RC34 V4
         run: |
           set -Eeuo pipefail
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_terra_rc34_compact_phone.sh && /tmp/build_terra_rc34_compact_phone.sh'
@@ -51,24 +51,42 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p out
-          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rc34-compact-phone-v3/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          grep -q '^THF_TERRA_RC34_PHONE_V3=BUILT$' out/EVIDENCE.txt
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rc34-compact-phone-v4/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          grep -q '^THF_TERRA_RC34_PHONE_V4=BUILT$' out/EVIDENCE.txt
+          grep -q '^version=4.6.8-rc34-phonev4$' out/EVIDENCE.txt
+          grep -q '^package=com.topherofit.thf.terra.phoneqa$' out/EVIDENCE.txt
           grep -q '^package_from_apk=PASS$' out/EVIDENCE.txt
           grep -q '^target_sdk=36$' out/EVIDENCE.txt
           grep -q '^target_sdk_from_apk=PASS$' out/EVIDENCE.txt
           grep -q '^android_api_36_installed=PASS$' out/EVIDENCE.txt
+          grep -q '^engine=Godot-4.7.2$' out/EVIDENCE.txt
           grep -q '^mpfb_runtime_asset=PASS$' out/EVIDENCE.txt
-          grep -q '^offline_visual_guest_mode=PASS$' out/EVIDENCE.txt
-          grep -q '^offline_visual_guest_auth_bypass=FALSE_AUTH_NOT_SIMULATED$' out/EVIDENCE.txt
+          grep -Eq '^avatar_asset_sha256=[0-9a-f]{64}$' out/EVIDENCE.txt
+          grep -Eq '^world_source_sha256=[0-9a-f]{64}$' out/EVIDENCE.txt
+          grep -q '^offline_explore_mode=PASS$' out/EVIDENCE.txt
+          grep -q '^offline_keyboard_movement=LOCAL_ONLY$' out/EVIDENCE.txt
+          grep -q '^offline_touch_movement=LOCAL_ONLY$' out/EVIDENCE.txt
+          grep -q '^offline_camera_touch=PASS$' out/EVIDENCE.txt
+          grep -q '^offline_online_state_faked=FALSE$' out/EVIDENCE.txt
+          grep -q '^offline_authoritative_mutations=DISABLED_NO_SESSION_NO_SOCKET$' out/EVIDENCE.txt
+          grep -q '^sensor_landscape_setting=PASS$' out/EVIDENCE.txt
+          grep -q '^expandable_aspect=PASS$' out/EVIDENCE.txt
+          grep -q '^desktop_window_override=NONE$' out/EVIDENCE.txt
+          grep -q '^touch_step_minimum=62x62$' out/EVIDENCE.txt
           grep -q '^under_100MiB=PASS$' out/EVIDENCE.txt
+          grep -q '^candidate_scope=QA_ONLY_NOT_PRODUCTION_PACKAGE$' out/EVIDENCE.txt
           grep -q '^physical_device_status=PENDING$' out/EVIDENCE.txt
           grep -q '^final_or_play_ready=FALSE$' out/EVIDENCE.txt
+          test -s out/import.log
+          test -s out/export.log
           test -s out/apk_badging.txt
-          test -s out/THF-TERRA-4.6.8-RC34-PHONE-V3.apk
+          test -s out/apk_entries.txt
+          test -s out/THF-TERRA-4.6.8-RC34-PHONE-V4.apk
+          sha256sum out/THF-TERRA-4.6.8-RC34-PHONE-V4.apk
           cat out/EVIDENCE.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: THF-TERRA-4.6.8-RC34-PHONE-V3
+          name: THF-TERRA-4.6.8-RC34-PHONE-V4
           path: out/
           retention-days: 14
           compression-level: 0
