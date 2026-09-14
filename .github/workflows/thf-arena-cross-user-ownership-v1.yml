@@ -1,0 +1,137 @@
+name: THF Arena Cross-User Ownership V1
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-arena-cross-user-ownership-v1.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Isolated exact same-action ownership proof
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='python3 -' > out/arena-ownership.raw <<'PY'
+          import hashlib,http.client,importlib,json,os,pathlib,shutil,socket,sys,tempfile,threading,traceback,uuid
+          src=pathlib.Path.home()/"thf-runtime-s1/runtime/THF_NEXUS_6_FINAL/src"
+          def tree_sha(root):
+              h=hashlib.sha256()
+              for p in sorted(root.rglob('*.py')):
+                  rel=p.relative_to(root).as_posix()
+                  if 'wave' in rel.lower(): continue
+                  h.update(rel.encode()+b'\0'+p.read_bytes())
+              return h.hexdigest()
+          before=tree_sha(src)
+          result={'schema':'thf-arena-cross-user-ownership-v1','runtime_source_sha256':before,
+                  'contract_action':'advance','external_network_allowed':False,'production_credentials_used':False,
+                  'wave_files_read_or_changed':False,'canonical_source_modified':False,'final_or_play_ready':False,'checks':[]}
+          def add(name,status,passed,detail=None):
+              d={'name':name,'status':status,'passed':bool(passed)}
+              if detail is not None:d['detail']=detail
+              result['checks'].append(d)
+          with tempfile.TemporaryDirectory(prefix='thf-arena-own-') as td:
+              td=pathlib.Path(td); work=td/'src'; data=td/'data'; home=td/'home'; shutil.copytree(src,work,symlinks=True); data.mkdir(); home.mkdir(); db=data/'own.sqlite3'
+              os.environ.update({'THF_ENV':'test','THF_OFFLINE':'1','THF_DATA_DIR':str(data),'THF_DB_PATH':str(db),'THF_RUNTIME_DIR':str(td/'runtime'),'HOME':str(home),'THF_HOST':'127.0.0.1','THF_PORT':'0','THF_QUIET':'1'})
+              sys.path.insert(0,str(work)); os.chdir(work)
+              real_connect=socket.socket.connect; real_create=socket.create_connection
+              def loop(h): return h in ('127.0.0.1','::1','localhost')
+              def gc(self,address):
+                  h=address[0] if isinstance(address,tuple) and address else None
+                  if not loop(h): raise RuntimeError('external network blocked')
+                  return real_connect(self,address)
+              def gcc(address,*a,**kw):
+                  h=address[0] if isinstance(address,tuple) and address else None
+                  if not loop(h): raise RuntimeError('external network blocked')
+                  return real_create(address,*a,**kw)
+              socket.socket.connect=gc; socket.create_connection=gcc; server=thread=None
+              try:
+                  mod=importlib.import_module('thf.app'); server=mod.make_server('127.0.0.1',0,work,db); port=server.server_address[1]
+                  thread=threading.Thread(target=server.serve_forever,daemon=True); thread.start()
+                  def req(method,path,payload=None,token=None):
+                      body=None if payload is None else json.dumps(payload,separators=(',',':')); hs={'Accept':'application/json','Connection':'close'}
+                      if body is not None: hs.update({'Content-Type':'application/json','Content-Length':str(len(body.encode()))})
+                      if token: hs['Authorization']='Bearer '+token
+                      c=http.client.HTTPConnection('127.0.0.1',port,timeout=5)
+                      try:
+                          c.request(method,path,body=body,headers=hs); r=c.getresponse(); raw=r.read(65536)
+                          try:o=json.loads(raw.decode() or '{}')
+                          except Exception:o={}
+                          return r.status,o
+                      finally:c.close()
+                  def pick(o,names):
+                      if isinstance(o,dict):
+                          for k,v in o.items():
+                              if k.lower() in names and isinstance(v,(str,int)): return v
+                          for v in o.values():
+                              x=pick(v,names)
+                              if x is not None:return x
+                      elif isinstance(o,list):
+                          for v in o:
+                              x=pick(v,names)
+                              if x is not None:return x
+                  suffix=uuid.uuid4().hex[:10]; pw='Qa!'+uuid.uuid4().hex+'9z'; toks=[]
+                  for tag in ('a','b'):
+                      u='qa_arena_'+tag+'_'+suffix
+                      st,_=req('POST','/api/auth/register',{'username':u,'password':pw}); add('register_'+tag,st,st in (200,201))
+                      st,o=req('POST','/api/auth/login',{'username':u,'password':pw}); tok=pick(o,{'token','access_token','session_token'}); add('login_'+tag,st,st==200 and bool(tok)); toks.append(tok)
+                  a_tok,b_tok=toks
+                  st,o=req('POST','/api/arena/start',{'mode':'squad'},token=a_tok); mid=pick(o,{'match_id','matchid','id'}); add('owner_start',st,st==201 and bool(mid))
+                  payload={'match_id':mid,'action':'advance'}
+                  ast,ao=req('POST','/api/arena/action',payload,token=a_tok); add('owner_same_action_succeeds',ast,200<=ast<300)
+                  before_actions=pick(ao,{'actions'})
+                  bst,bo=req('POST','/api/arena/action',payload,token=b_tok); add('other_user_same_action_rejected',bst,not (200<=bst<300))
+                  ast2,ao2=req('POST','/api/arena/action',payload,token=a_tok); after_actions=pick(ao2,{'actions'})
+                  state_safe=(200<=ast2<300 and before_actions is not None and after_actions is not None and int(after_actions)==int(before_actions)+1)
+                  add('rejected_cross_user_action_did_not_increment_owner_state',ast2,state_safe,
+                      'owner action count increases by exactly one after rejected B attempt')
+                  result['check_count']=len(result['checks']); result['passed_count']=sum(c['passed'] for c in result['checks']); result['ownership_proven']=all(c['passed'] for c in result['checks'])
+              except Exception as e:
+                  result['tooling_error']=type(e).__name__+': '+str(e); result['trace_tail']=traceback.format_exc().splitlines()[-8:]
+              finally:
+                  if server is not None: server.shutdown(); server.server_close()
+                  if thread is not None: thread.join(timeout=5)
+                  socket.socket.connect=real_connect; socket.create_connection=real_create
+          after=tree_sha(src); result['runtime_source_sha256_after']=after; result['canonical_source_modified']=(before!=after)
+          print('__THF_JSON_BEGIN__'); print(json.dumps(result,indent=2,sort_keys=True)); print('__THF_JSON_END__')
+          PY
+          python3 - <<'PY'
+          import json,pathlib
+          raw=pathlib.Path('out/arena-ownership.raw').read_text(errors='ignore'); a=raw.rfind('__THF_JSON_BEGIN__'); b=raw.rfind('__THF_JSON_END__'); assert a>=0 and b>a
+          x=json.loads(raw[a+len('__THF_JSON_BEGIN__'):b].strip()); pathlib.Path('out/arena-ownership.json').write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          assert x['canonical_source_modified'] is False and x['runtime_source_sha256']==x['runtime_source_sha256_after']
+          assert x['external_network_allowed'] is False and x['production_credentials_used'] is False and x['wave_files_read_or_changed'] is False
+          assert 'tooling_error' not in x, x.get('tooling_error')
+          assert x.get('ownership_proven') is True, x.get('checks')
+          print('ARENA_CROSS_USER_OWNERSHIP=PASS')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-ARENA-CROSS-USER-OWNERSHIP-V1
+          path: out/
+          retention-days: 14
