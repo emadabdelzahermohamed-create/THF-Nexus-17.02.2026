@@ -1,0 +1,55 @@
+name: THF TokenOps Large Batch v2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-large-batch-v2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests
+        run: |
+          cd ReleaseOps/TokenOps
+          python -m unittest -v test_tokenops_guard.py test_activity_planning.py test_financial_control_plane.py
+      - name: Validate static control-plane contracts
+        run: |
+          python - <<'PY'
+          import json, sys
+          sys.path.insert(0,'ReleaseOps/TokenOps')
+          from financial_control_plane import validate_treasury_registry, validate_integration_contracts
+          reg=json.load(open('ReleaseOps/TokenOps/treasury_registry.json'))
+          contracts=json.load(open('ReleaseOps/TokenOps/integration_contracts.json'))
+          rv=validate_treasury_registry(reg)
+          cv=validate_integration_contracts(contracts)
+          assert rv['status']=='FAIL_CLOSED', rv
+          assert cv['status']=='PASS', cv
+          json.dump(rv,open('/tmp/treasury-registry-validation.json','w'),sort_keys=True,indent=2)
+          json.dump(cv,open('/tmp/integration-contract-validation.json','w'),sort_keys=True,indent=2)
+          PY
+      - name: Mainnet read-only audit
+        env:
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+        run: |
+          python ReleaseOps/TokenOps/tokenops_guard.py --out /tmp/tokenops-evidence
+      - name: Evidence hashes
+        run: |
+          cp /tmp/treasury-registry-validation.json /tmp/tokenops-evidence/
+          cp /tmp/integration-contract-validation.json /tmp/tokenops-evidence/
+          (cd /tmp/tokenops-evidence && sha256sum * | sort > SHA256SUMS.txt)
+          printf 'SOURCE_SHA=%s\nFINANCIAL_EFFECT=FALSE\nSIGNING=FALSE\nBROADCAST=FALSE\nWAVE_TOUCHED=FALSE\n' "$GITHUB_SHA" > /tmp/tokenops-evidence/RUN_SAFETY.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: THF-TokenOps-Large-Batch-v2-${{ github.run_id }}
+          path: /tmp/tokenops-evidence
+          if-no-files-found: error
+          retention-days: 30
