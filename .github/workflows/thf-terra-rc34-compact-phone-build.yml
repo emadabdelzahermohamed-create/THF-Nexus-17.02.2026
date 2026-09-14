@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/thf-terra-rc34-compact-phone-build.yml
+      - ReleaseOps/scripts/build_terra_rc34_compact_phone.sh
   workflow_dispatch:
 
 permissions:
@@ -31,70 +32,27 @@ jobs:
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Build compact native RC34 on prepared builder
+      - name: Stage isolated Terra builder
         run: |
           set -Eeuo pipefail
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='set -Eeuo pipefail
-          SRC="$HOME/thf-terra-rift-staging-apk-v1/terra/work"
-          ROOT="$HOME/thf-terra-rc34-compact-phone-v1"
-          WORK="$ROOT/work"
-          OUT="$ROOT/out"
-          GODOT="$HOME/.local/bin/godot-4.7.2"
-          rm -rf "$ROOT"; mkdir -p "$ROOT" "$OUT"
-          cp -a "$SRC" "$WORK"
-          cd "$WORK"
-          python3 - <<"PY"
-          from pathlib import Path
-          p=Path("export_presets.cfg")
-          s=p.read_text(encoding="utf-8")
-          s=s.replace('name="Android AAB Candidate"','name="Android Phone Visual RC34"',1)
-          s=s.replace('export_filter="all_resources"','export_filter="scenes"',1)
-          marker='export_filter="scenes"\n'
-          files='export_files=PackedStringArray("res://native/scenes/world_main.tscn", "res://web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb", "res://web/static/assets/avatars/thf_humanoid_v6.glb")\n'
-          if marker not in s: raise SystemExit("export filter marker missing")
-          s=s.replace(marker,marker+files,1)
-          s=s.replace('version/code=42068','version/code=42069',1)
-          s=s.replace('version/name="4.6.8-rc34"','version/name="4.6.8-rc34-phonev1"',1)
-          s=s.replace('package/unique_name="com.topherofit.thf.terra"','package/unique_name="com.topherofit.thf.terra.phoneqa"',1)
-          s=s.replace('gradle_build/compress_native_libraries=false','gradle_build/compress_native_libraries=true',1)
-          p.write_text(s,encoding="utf-8")
-          PY
-          "$GODOT" --headless --path "$WORK" --import >/tmp/terra_rc34_import.log 2>&1 || { tail -200 /tmp/terra_rc34_import.log; exit 1; }
-          "$GODOT" --headless --path "$WORK" --export-debug "Android Phone Visual RC34" "$OUT/THF-TERRA-4.6.8-RC34-PHONE-V1.apk" >/tmp/terra_rc34_export.log 2>&1 || { tail -240 /tmp/terra_rc34_export.log; exit 1; }
-          APK="$OUT/THF-TERRA-4.6.8-RC34-PHONE-V1.apk"
-          test -s "$APK"
-          SIZE=$(stat -c %s "$APK"); SHA=$(sha256sum "$APK" | awk "{print \\$1}")
-          unzip -l "$APK" > "$OUT/apk_entries.txt"
-          grep -q "thf_mpfb_stage16a_ual12_animated" "$OUT/apk_entries.txt"
-          grep -q "world_main" "$OUT/apk_entries.txt"
-          UNDER=$([ "$SIZE" -lt 104857600 ] && echo PASS || echo FAIL)
-          printf "%s\n" \
-            "THF_TERRA_RC34_PHONE_V1=BUILT" \
-            "source=thf-terra-rift-staging-apk-v1/terra/work" \
-            "version=4.6.8-rc34-phonev1" \
-            "package=com.topherofit.thf.terra.phoneqa" \
-            "engine=Godot-4.7.2" \
-            "main_scene=res://native/scenes/world_main.tscn" \
-            "mpfb_runtime_asset=PASS" \
-            "avatar_model=thf_mpfb_stage16a_ual12_animated.glb" \
-            "architecture=arm64-v8a" \
-            "apk_size_bytes=$SIZE" \
-            "apk_sha256=$SHA" \
-            "under_100MiB=$UNDER" \
-            "network_note=existing_RC34_endpoint_is_ephemeral_and_not_accepted_as_final_identity_backend" > "$OUT/EVIDENCE.txt"
-          cat "$OUT/EVIDENCE.txt"
-          if [ "$SIZE" -ge 104857600 ]; then echo "SIZE_GATE_OVER_100M"; exit 2; fi
-          '
-      - name: Retrieve candidate
-        if: success()
+          chmod +x ReleaseOps/scripts/build_terra_rc34_compact_phone.sh
+          gcloud compute scp ReleaseOps/scripts/build_terra_rc34_compact_phone.sh "$GCP_BUILDER:/tmp/build_terra_rc34_compact_phone.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Build compact native RC34
         run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/build_terra_rc34_compact_phone.sh && /tmp/build_terra_rc34_compact_phone.sh'
+      - name: Retrieve verified candidate
+        run: |
+          set -Eeuo pipefail
           mkdir -p out
-          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rc34-compact-phone-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rc34-compact-phone-v2/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          grep -q '^THF_TERRA_RC34_PHONE_V2=BUILT$' out/EVIDENCE.txt
+          grep -q '^under_100MiB=PASS$' out/EVIDENCE.txt
+          test -s out/THF-TERRA-4.6.8-RC34-PHONE-V2.apk
           cat out/EVIDENCE.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: success()
         with:
-          name: THF-TERRA-4.6.8-RC34-PHONE-V1
+          name: THF-TERRA-4.6.8-RC34-PHONE-V2
           path: out/
           retention-days: 14
           compression-level: 0
