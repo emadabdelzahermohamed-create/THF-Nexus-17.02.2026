@@ -20,6 +20,15 @@ def fail(errors, msg):
     errors.append(msg)
 
 
+def is_hex64(value):
+    """Return False for missing/non-string evidence instead of throwing.
+
+    Release state may intentionally carry null while exact source/APK lineage is
+    unresolved. That is a validation failure, not a validator/runtime failure.
+    """
+    return isinstance(value, str) and HEX64.fullmatch(value) is not None
+
+
 def validate_registry_alignment(d, registry, errors):
     """Fail closed if release-state identity drifts from exact-device authority."""
     tb = registry.get("truth_boundary", {})
@@ -95,9 +104,9 @@ def main():
         fail(errors, "WAVE isolation must remain explicit")
     if not isinstance(shared.get("evidence_workflow_run"), int):
         fail(errors, "shared runtime evidence workflow run missing")
-    if not re.fullmatch(r"[0-9a-f]{40}", shared.get("evidence_commit", "")):
+    if not isinstance(shared.get("evidence_commit"), str) or not re.fullmatch(r"[0-9a-f]{40}", shared.get("evidence_commit")):
         fail(errors, "shared runtime evidence commit invalid")
-    if not HEX64.fullmatch(shared.get("artifact_digest", "")):
+    if not is_hex64(shared.get("artifact_digest")):
         fail(errors, "shared runtime artifact digest invalid")
 
     core = d.get("core", {})
@@ -105,7 +114,7 @@ def main():
         fail(errors, "Core package drift")
     if core.get("target_sdk") != 36:
         fail(errors, "Core targetSdk drift")
-    if not HEX64.fullmatch(core.get("apk_sha256", "")):
+    if not is_hex64(core.get("apk_sha256")):
         fail(errors, "Core exact APK SHA missing/invalid")
     if core.get("runtime_backend_health") != "NOT_PROVEN_THF_BACKEND":
         fail(errors, "Core runtime backend health cannot exceed current network evidence")
@@ -125,7 +134,7 @@ def main():
         if a.get("target_sdk") != 36:
             fail(errors, f"{name}: targetSdk must be 36")
         for field in ("source_sha256", "apk_sha256", "previous_unbound_qa_apk_sha256"):
-            if not HEX64.fullmatch(a.get(field, "")):
+            if not is_hex64(a.get(field)):
                 fail(errors, f"{name}: invalid {field}")
         apk_hashes.append(a.get("apk_sha256"))
         previous_hashes.append(a.get("previous_unbound_qa_apk_sha256"))
