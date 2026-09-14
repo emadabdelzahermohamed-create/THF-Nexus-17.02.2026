@@ -8,6 +8,8 @@ OUT="$ROOT/out"
 GODOT="$HOME/.local/bin/godot-4.7.2"
 ANDROID_SDK="$HOME/thf-builder-rc16-build/android-sdk"
 APK_NAME="THF-TERRA-4.6.8-RC34-PHONE-V2.apk"
+EXPECTED_PACKAGE="com.topherofit.thf.terra.phoneqa"
+EXPECTED_TARGET_SDK="36"
 
 rm -rf "$ROOT"
 mkdir -p "$ROOT" "$OUT"
@@ -18,7 +20,12 @@ JAVA_BIN=$(readlink -f "$(command -v java)")
 JAVA_HOME_DETECTED=$(dirname "$(dirname "$JAVA_BIN")")
 test -x "$ANDROID_SDK/platform-tools/adb"
 test -d "$ANDROID_SDK/build-tools"
+test -d "$ANDROID_SDK/platforms/android-$EXPECTED_TARGET_SDK"
 test -x "$JAVA_HOME_DETECTED/bin/java"
+
+BUILD_TOOLS_DIR=$(find "$ANDROID_SDK/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+AAPT="$BUILD_TOOLS_DIR/aapt"
+test -x "$AAPT"
 
 # Godot stores Android toolchain paths in per-user editor settings. Use an
 # isolated config root so this QA build cannot change the builder's shared UI
@@ -72,6 +79,11 @@ unzip -l "$APK" > "$OUT/apk_entries.txt"
 grep -q 'thf_mpfb_stage16a_ual12_animated' "$OUT/apk_entries.txt"
 grep -q 'world_main' "$OUT/apk_entries.txt"
 grep -q 'lib/arm64-v8a/libgodot_android.so' "$OUT/apk_entries.txt"
+
+"$AAPT" dump badging "$APK" > "$OUT/apk_badging.txt"
+grep -q "^package: name='$EXPECTED_PACKAGE'" "$OUT/apk_badging.txt"
+grep -q "^targetSdkVersion:'$EXPECTED_TARGET_SDK'$" "$OUT/apk_badging.txt"
+
 UNDER=FAIL
 if [ "$SIZE" -lt 104857600 ]; then UNDER=PASS; fi
 
@@ -79,7 +91,11 @@ cat > "$OUT/EVIDENCE.txt" <<EOF
 THF_TERRA_RC34_PHONE_V2=BUILT
 source=thf-terra-rift-staging-apk-v1/terra/work
 version=4.6.8-rc34-phonev2
-package=com.topherofit.thf.terra.phoneqa
+package=$EXPECTED_PACKAGE
+package_from_apk=PASS
+target_sdk=$EXPECTED_TARGET_SDK
+target_sdk_from_apk=PASS
+android_api_36_installed=PASS
 engine=Godot-4.7.2
 main_scene=res://native/scenes/world_main.tscn
 mpfb_runtime_asset=PASS
@@ -90,6 +106,8 @@ apk_size_bytes=$SIZE
 apk_sha256=$SHA
 under_100MiB=$UNDER
 backend_status=EPHEMERAL_ENDPOINT_NOT_ACCEPTED_AS_FINAL
+physical_device_status=PENDING
+final_or_play_ready=FALSE
 EOF
 cat "$OUT/EVIDENCE.txt"
 
