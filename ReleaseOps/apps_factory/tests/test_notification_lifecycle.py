@@ -73,6 +73,8 @@ def test_legacy_schema_rebuilds_rows_fail_closed_and_removes_old_unique_constrai
     v=Vault(); r=m.NotificationTokenRegistry(db,v)
     row=db.execute("SELECT session_id FROM notification_tokens WHERE token_id='legacy'").fetchone()
     assert row[0]==m.LEGACY_UNBOUND_SESSION
+    schema=" ".join(db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='notification_tokens'").fetchone()[0].split())
+    assert "UNIQUE(subject, session_id, package, provider, fingerprint)" in schema
     with pytest.raises(PermissionError): r.get("legacy",subject="u1",session_id="s1")
     raw="same-provider-token-123456"
     a=register(r,session_id="s1",token=raw); b=register(r,session_id="s2",token=raw)
