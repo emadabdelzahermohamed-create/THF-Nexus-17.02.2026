@@ -35,7 +35,7 @@ for record in records:
     s=s.replace(old,new)
 
 # JSONObject.put throws checked JSONException in Java. Route bridge serialization through
-# a local fail-safe helper so JavascriptInterface methods never leak checked exceptions.
+# a local fail-safe helper so JavascriptInterface/callback methods never leak it.
 bridge_anchor='  final class PulseBridge {'
 helper='''  private String safeJson(Object... kv){try{JSONObject o=new JSONObject();for(int i=0;i+1<kv.length;i+=2)o.put(String.valueOf(kv[i]),kv[i+1]);return o.toString();}catch(Exception ignored){return "{}";}}\n\n'''
 if 'private String safeJson(Object... kv)' not in s:
@@ -60,6 +60,17 @@ for old,new in repls.items():
     if old not in s and new not in s:
         raise SystemExit('Pulse QA2 JSON bridge anchor missing: '+old[:72])
     s=s.replace(old,new)
+
+# Fail closed if known unchecked serialization sites survive in the generated builder text.
+for forbidden in [
+    'String payload=new JSONObject().put("granted_count"',
+    'catch(Exception e){return new JSONObject().put("status","ERROR")',
+    'catch(Exception e){return new JSONObject().put("status","UNAVAILABLE")',
+    'return new JSONObject().put("status",duplicate?"DUPLICATE":"ACCEPTED")',
+    'return new JSONObject().put("status","INVALID").put("error"'
+]:
+    if forbidden in s:
+        raise SystemExit('Pulse QA2 unchecked JSONObject serialization remains: '+forbidden)
 p.write_text(s,encoding='utf-8')
 PY
 
@@ -70,7 +81,7 @@ emit_diagnostics() {
     echo "THF_PULSE_PHONE_BASELINE_QA2_DIAGNOSTIC=1"
     echo "exit_code=$rc"
     echo "health_connect_java_kclass_bridge=APPLIED"
-    echo "bridge_json_checked_exception_fix=APPLIED"
+    echo "bridge_json_checked_exception_fix=APPLIED_FAIL_CLOSED"
     echo "utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo "host=$(hostname)"
     echo "java_version_begin"
@@ -109,7 +120,7 @@ fi
   echo "THF_PULSE_PHONE_BASELINE_QA2_DIAGNOSTIC=0"
   echo "exit_code=0"
   echo "health_connect_java_kclass_bridge=APPLIED"
-  echo "bridge_json_checked_exception_fix=APPLIED"
+  echo "bridge_json_checked_exception_fix=APPLIED_FAIL_CLOSED"
   echo "utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$OUT/DIAGNOSTIC.txt"
 cp "$RUN_LOG" "$OUT/builder-run.log"
