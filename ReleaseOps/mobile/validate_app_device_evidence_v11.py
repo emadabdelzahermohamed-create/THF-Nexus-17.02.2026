@@ -8,6 +8,11 @@ semantic observations, the lifecycle transcript, or the offline/network
 transcript. This prevents stale/background/wrapper/other-package evidence from
 satisfying physical-device acceptance.
 
+Foreground checks are activated from the registry's required_checks. The
+production registry is separately asserted by CI to contain the complete V11
+foreground policy set. This allows reduced regression fixtures without weakening
+the authoritative release policy.
+
 This is release-control tooling only and cannot promote FINAL/PLAY_READY.
 """
 from __future__ import annotations
@@ -60,6 +65,14 @@ def _one(kv: dict[str, list[str]], key: str) -> str | None:
     return values[0] if len(values) == 1 else None
 
 
+def _active_foreground_checks(registry: dict[str, Any]) -> tuple[str, ...]:
+    required = registry.get("required_checks")
+    if not isinstance(required, list):
+        return tuple()
+    required_set = {x for x in required if isinstance(x, str)}
+    return tuple(check for check in FOREGROUND_CHECKS if check in required_set)
+
+
 def _bound_evidence(evidence: dict[str, Any], check: str) -> dict[str, Any] | None:
     semantic = evidence.get("semantic_observations")
     if isinstance(semantic, dict) and isinstance(semantic.get(check), dict):
@@ -80,12 +93,17 @@ def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> 
         errors.append("V11 requires exactly one authoritative candidate")
         return errors
 
+    active_checks = _active_foreground_checks(registry)
+    if not active_checks:
+        errors.append("V11 registry must activate at least one foreground-sensitive check")
+        return errors
+
     provenance = evidence.get("process_provenance")
     if not isinstance(provenance, dict):
         errors.append("V11 process_provenance required")
         return errors
-    if set(provenance) != set(FOREGROUND_CHECKS):
-        errors.append("V11 process_provenance must contain exactly foreground-sensitive checks")
+    if set(provenance) != set(active_checks):
+        errors.append("V11 process_provenance must contain exactly registry-required foreground checks")
 
     session = evidence.get("session") if isinstance(evidence.get("session"), dict) else {}
     device = evidence.get("device") if isinstance(evidence.get("device"), dict) else {}
@@ -96,7 +114,7 @@ def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> 
     fingerprint = device.get("fingerprint_sha256")
 
     seen_refs: set[str] = set()
-    for check in FOREGROUND_CHECKS:
+    for check in active_checks:
         prefix = f"V11 {check}: "
         bound = _bound_evidence(evidence, check)
         if not isinstance(bound, dict):
@@ -160,4 +178,10 @@ def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> 
     return errors
 
 
-__all__ = ["FOREGROUND_CHECKS", "LIFECYCLE_CHECKS", "PROCESS_METHOD", "validate"]
+__all__ = [
+    "FOREGROUND_CHECKS",
+    "LIFECYCLE_CHECKS",
+    "PROCESS_METHOD",
+    "_active_foreground_checks",
+    "validate",
+]
