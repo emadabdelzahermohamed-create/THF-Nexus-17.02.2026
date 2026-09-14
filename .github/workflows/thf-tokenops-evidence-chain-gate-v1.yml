@@ -1,0 +1,73 @@
+name: THF TokenOps Evidence Chain Gate v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-evidence-chain-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Compile and test evidence chain
+        run: |
+          set -euo pipefail
+          python -m py_compile ReleaseOps/TokenOps/evidence_chain.py
+          python -m pip install --disable-pip-version-check --no-input pytest
+          python -m pytest ReleaseOps/TokenOps/test_evidence_chain.py -q
+      - name: Produce fresh read-only Mainnet evidence
+        run: |
+          set -euo pipefail
+          rm -rf out/tokenops-chain
+          python ReleaseOps/TokenOps/tokenops_guard.py --out out/tokenops-chain
+          python ReleaseOps/TokenOps/source_provenance.py --out out/tokenops-chain/source-provenance.json
+      - name: Bind and validate immutable evidence chain
+        run: |
+          set -euo pipefail
+          python ReleaseOps/TokenOps/evidence_chain.py --evidence-dir out/tokenops-chain --out out/tokenops-chain/evidence-chain.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('out/tokenops-chain/evidence-chain.json').read_text())
+          assert p['status']=='PASS'
+          assert p['execution_authorized'] is False
+          assert p['transaction_bytes_created'] is False
+          assert p['instruction_bytes_created'] is False
+          assert p['signed'] is False
+          assert p['submitted'] is False
+          assert p['broadcast'] is False
+          assert p['financial_effect'] is False
+          assert p['private_key_used'] is False
+          assert p['wave_touched'] is False
+          print('EVIDENCE_ROOT_SHA256=' + p['evidence_root_sha256'])
+          print('AUDIT_AGE_SECONDS=' + str(p['audit_age_seconds']))
+          PY
+      - name: SHA-256 manifest and forbidden payload gate
+        run: |
+          set -euo pipefail
+          cd out/tokenops-chain
+          sha256sum *.json | sort > SHA256SUMS.txt
+          if find . -type f \( -name '*.txn' -o -name '*.tx' -o -name '*.key' -o -name '*.keypair' -o -name '*.secret' \) | grep -q .; then
+            echo 'Forbidden executable/sensitive payload detected' >&2
+            exit 2
+          fi
+          cat SHA256SUMS.txt
+      - name: Upload immutable evidence-chain bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Evidence-Chain-v1-${{ github.run_id }}
+          path: out/tokenops-chain/
+          if-no-files-found: error
+          retention-days: 30

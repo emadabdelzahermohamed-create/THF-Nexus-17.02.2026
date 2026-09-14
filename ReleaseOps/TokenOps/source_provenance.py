@@ -19,6 +19,7 @@ SCHEMA = "thf-tokenops-source-provenance/v1"
 INVENTORY = (
     ".github/workflows/thf-tokenops-autonomous-large-batch-v3.yml",
     ".github/workflows/thf-tokenops-policy-governance-gate-v1.yml",
+    ".github/workflows/thf-tokenops-evidence-chain-gate-v1.yml",
     "ReleaseOps/TokenOps/policy.json",
     "ReleaseOps/TokenOps/treasury_policy.json",
     "ReleaseOps/TokenOps/treasury_registry.json",
@@ -32,6 +33,7 @@ INVENTORY = (
     "ReleaseOps/TokenOps/operation_readiness.py",
     "ReleaseOps/TokenOps/policy_change_control.py",
     "ReleaseOps/TokenOps/recent_activity_semantics.py",
+    "ReleaseOps/TokenOps/evidence_chain.py",
     "ReleaseOps/TokenOps/source_provenance.py",
 )
 
