@@ -1,35 +1,117 @@
 {
-  "schema": "thf-tokenops-integration-contracts/v1.1",
+  "schema": "thf-tokenops-integration-contracts/v1.2",
+  "canonical_identity": {
+    "network": "solana-mainnet-beta",
+    "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+    "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "decimals": 8,
+    "amount_unit": "THF_RAW"
+  },
+  "envelope_requirements": {
+    "required_fields": [
+      "schema",
+      "contract_version",
+      "network",
+      "mint",
+      "token_program",
+      "decimals",
+      "amount_unit",
+      "evidence_sha256",
+      "source_observed_at_utc",
+      "source_slot",
+      "idempotency_key",
+      "expires_at_utc",
+      "financial_effect",
+      "signed",
+      "broadcast"
+    ],
+    "evidence_hash": "sha256",
+    "replay_protection": "idempotency_key",
+    "max_evidence_age_seconds": 900,
+    "reject_expired": true,
+    "reject_duplicate_idempotency_key": true
+  },
   "services": {
     "Vault": {
-      "contract_version": "1.1.0",
+      "contract_version": "1.2.0",
       "network": "solana-mainnet-beta",
       "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
       "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "decimals": 8,
+      "amount_unit": "THF_RAW",
+      "execution_model": "review_only_non_broadcast",
       "may_sign": false,
       "may_broadcast": false,
+      "may_change_authorities": false,
       "accepts_private_key_material": false,
-      "allowed_outputs": ["balance_evidence", "ownership_evidence", "reserve_snapshot"]
+      "allowed_inputs": [],
+      "allowed_outputs": [
+        "balance_evidence",
+        "ownership_evidence",
+        "reserve_snapshot"
+      ]
     },
     "Forge": {
-      "contract_version": "1.1.0",
+      "contract_version": "1.2.0",
       "network": "solana-mainnet-beta",
       "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
       "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "decimals": 8,
+      "amount_unit": "THF_RAW",
+      "execution_model": "review_only_non_broadcast",
       "may_sign": false,
       "may_broadcast": false,
+      "may_change_authorities": false,
       "accepts_private_key_material": false,
-      "allowed_outputs": ["allocation_preview", "vesting_preview", "burn_preview", "non_broadcast_intent"]
+      "allowed_inputs": [
+        "activity_evidence",
+        "eligibility_snapshot",
+        "accounting_reference",
+        "balance_evidence",
+        "ownership_evidence",
+        "reserve_snapshot"
+      ],
+      "allowed_outputs": [
+        "allocation_preview",
+        "vesting_preview",
+        "burn_preview",
+        "non_broadcast_intent"
+      ]
     },
     "Core": {
-      "contract_version": "1.1.0",
+      "contract_version": "1.2.0",
       "network": "solana-mainnet-beta",
       "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
       "token_program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "decimals": 8,
+      "amount_unit": "THF_RAW",
+      "execution_model": "review_only_non_broadcast",
       "may_sign": false,
       "may_broadcast": false,
+      "may_change_authorities": false,
       "accepts_private_key_material": false,
-      "allowed_outputs": ["activity_evidence", "eligibility_snapshot", "accounting_reference"]
+      "allowed_inputs": [
+        "allocation_preview"
+      ],
+      "allowed_outputs": [
+        "activity_evidence",
+        "eligibility_snapshot",
+        "accounting_reference"
+      ]
     }
+  },
+  "routes": [
+    {"from": "Vault", "to": "Forge", "message_type": "balance_evidence"},
+    {"from": "Vault", "to": "Forge", "message_type": "ownership_evidence"},
+    {"from": "Vault", "to": "Forge", "message_type": "reserve_snapshot"},
+    {"from": "Core", "to": "Forge", "message_type": "activity_evidence"},
+    {"from": "Core", "to": "Forge", "message_type": "eligibility_snapshot"},
+    {"from": "Core", "to": "Forge", "message_type": "accounting_reference"},
+    {"from": "Forge", "to": "Core", "message_type": "allocation_preview"}
+  ],
+  "governance": {
+    "contract_mutation": "user_controlled_multisig_review_required",
+    "automatic_activation": false,
+    "financial_effect": false
   }
 }
