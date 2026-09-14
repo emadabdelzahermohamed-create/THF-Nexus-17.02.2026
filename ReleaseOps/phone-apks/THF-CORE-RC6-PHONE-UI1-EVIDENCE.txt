@@ -1,0 +1,16 @@
+THF_CORE_PHONE_UI1=PASS
+purpose=physical_phone_design_compatibility_qa
+source_sha256=6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a
+package=com.topherofit.thf.core.debug
+versionCode=62203
+versionName=6.2.2-rc6-phoneui1-debug
+targetSdk=36
+bundled_real_core_ui=PASS
+bundled_i18n=PASS
+bundled_world3d=PASS
+temporary_external_endpoint_required=false
+backend_dependent_features=NOT_ACCEPTED_IN_THIS_CANDIDATE
+apk_sha256=465faa1a04a276c648ef851f758b79640eddff0c2b3bf382a7cf8021cc6aca71
+apk_size_bytes=95799
+production_signing=false
+play_upload=false
