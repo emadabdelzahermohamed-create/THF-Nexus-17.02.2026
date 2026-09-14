@@ -1,10 +1,12 @@
-name: THF Terra Rift Runtime Binding Audit V1
+name: THF Terra Runtime Binding Audit V2
 
 on:
   push:
     branches: [main]
     paths:
       - 'ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py'
+      - 'ReleaseOps/scripts/validate_latest_game_authority_v1.py'
+      - 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
       - '.github/workflows/thf-terra-rift-runtime-binding-audit-v1.yml'
   workflow_dispatch:
 
@@ -18,6 +20,11 @@ env:
   GCP_BUILDER: thf-wave-builder
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  TERRA_SHA: eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
+
+concurrency:
+  group: thf-terra-runtime-binding-audit-v2
+  cancel-in-progress: false
 
 jobs:
   audit:
@@ -25,8 +32,18 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Latest authority guard
+        run: |
+          set -Eeuo pipefail
+          python3 ReleaseOps/scripts/validate_latest_game_authority_v1.py > latest-authority.txt
+          grep -q '^terra_source_sha256=eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68$' latest-authority.txt
+          grep -q '^rift_version=4.7.5-rc41$' latest-authority.txt
+          grep -q '^rift_candidate_apk_sha256=NONE$' latest-authority.txt
+          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-authority.txt
       - name: Syntax gate
-        run: python3 -m py_compile ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py
+        run: python3 -m py_compile ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py ReleaseOps/scripts/validate_latest_game_authority_v1.py
       - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
@@ -35,54 +52,66 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
       - name: Stage binding auditor
-        run: gcloud compute scp ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-      - name: Audit exact canonical Terra Rift runtime bindings
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp ReleaseOps/scripts/thf_game_runtime_binding_audit_v1.py "$GCP_BUILDER:/tmp/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Audit exact canonical Terra runtime binding
         shell: bash
         run: |
           set -Eeuo pipefail
           mkdir -p out
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=25m --quiet --command='bash -s' > out/summary.txt <<'REMOTE'
           set -Eeuo pipefail
-          ROOT="$HOME/thf-terra-rift-runtime-binding-v1";rm -rf "$ROOT";mkdir -p "$ROOT/out"
-          safe_extract(){ python3 - "$1" "$2" <<'PY'
+          ROOT="$HOME/thf-terra-runtime-binding-v2"; rm -rf "$ROOT"; mkdir -p "$ROOT/out" "$ROOT/work"
+          SRC="$HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip"
+          EXPECTED="eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68"
+          test -f "$SRC"
+          test "$(sha256sum "$SRC"|awk '{print $1}')" = "$EXPECTED"
+          python3 - "$SRC" "$ROOT/work" <<'PY'
           import pathlib,shutil,sys,zipfile
-          src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve();dst.mkdir(parents=True,exist_ok=True)
+          src,dst=pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]).resolve(); dst.mkdir(parents=True,exist_ok=True)
           with zipfile.ZipFile(src) as z:
             for i in z.infolist():
               r=pathlib.PurePosixPath(i.filename)
-              if r.is_absolute() or '..' in r.parts:raise SystemExit('unsafe zip')
+              if r.is_absolute() or '..' in r.parts: raise SystemExit('unsafe zip')
               t=(dst/pathlib.Path(*r.parts)).resolve()
-              if t!=dst and dst not in t.parents:raise SystemExit('zip escape')
-              if i.is_dir():t.mkdir(parents=True,exist_ok=True);continue
+              if t!=dst and dst not in t.parents: raise SystemExit('zip escape')
+              if i.is_dir(): t.mkdir(parents=True,exist_ok=True); continue
               t.parent.mkdir(parents=True,exist_ok=True)
-              with z.open(i) as a,open(t,'wb') as b:shutil.copyfileobj(a,b)
+              with z.open(i) as a,open(t,'wb') as b: shutil.copyfileobj(a,b)
           PY
-          }
-          one(){ kind="$1";src="$2";expected="$3";w="$ROOT/$kind";test "$(sha256sum "$src"|awk '{print $1}')" = "$expected";safe_extract "$src" "$w";set +e;python3 /tmp/thf_game_runtime_binding_audit_v1.py "$w" --kind "$kind" --json-out "$ROOT/out/$kind.json" > "$ROOT/out/$kind.log";rc=$?;set -e;python3 - "$ROOT/out/$kind.json" <<'PY'
+          set +e
+          python3 /tmp/thf_game_runtime_binding_audit_v1.py "$ROOT/work" --kind terra --json-out "$ROOT/out/terra.json" > "$ROOT/out/terra.log"
+          rc=$?
+          set -e
+          python3 - "$ROOT/out/terra.json" <<'PY'
           import json,sys
-          x=json.load(open(sys.argv[1]));print('kind='+x['kind']);print('runtime_binding_status='+x['source_contract_status']);print('required_failures='+','.join(x['required_failures']));print('scene_files_scanned='+str(x['scene_files_scanned']));print('script_files_scanned='+str(x['script_files_scanned']));print('device_status='+x['device_status']);print('final_status='+x['final_status'])
+          x=json.load(open(sys.argv[1])); print('kind='+x['kind']); print('runtime_binding_status='+x['source_contract_status']); print('required_failures='+','.join(x['required_failures'])); print('scene_files_scanned='+str(x['scene_files_scanned'])); print('script_files_scanned='+str(x['script_files_scanned'])); print('device_status='+x['device_status']); print('final_status='+x['final_status'])
           PY
-          test "$(sha256sum "$src"|awk '{print $1}')" = "$expected";echo canonical_archive_unchanged=true;}
-          one terra "$HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip" eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68
-          one rift "$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip" 3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914
+          test "$(sha256sum "$SRC"|awk '{print $1}')" = "$EXPECTED"
+          echo canonical_archive_unchanged=true
+          echo rift_superseded_source_used=false
           echo wave_files_read_or_changed=false
           echo production_signing=false
-          echo readiness_promotion=false
+          echo release_readiness_advanced=false
           REMOTE
       - name: Retrieve evidence
         run: |
-          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-rift-runtime-binding-v1/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          set -Eeuo pipefail
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-terra-runtime-binding-v2/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
           cat out/summary.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: THF-TERRA-RIFT-RUNTIME-BINDING-AUDIT-V1
+          name: THF-TERRA-RUNTIME-BINDING-AUDIT-V2
           path: out/
           retention-days: 14
       - name: Safety gate
         run: |
-          test "$(grep -c '^canonical_archive_unchanged=true$' out/summary.txt)" -eq 2
+          set -Eeuo pipefail
+          grep -q '^canonical_archive_unchanged=true$' out/summary.txt
+          grep -q '^rift_superseded_source_used=false$' out/summary.txt
           grep -q '^wave_files_read_or_changed=false$' out/summary.txt
           grep -q '^production_signing=false$' out/summary.txt
-          grep -q '^readiness_promotion=false$' out/summary.txt
-          test "$(grep -c '^device_status=PENDING$' out/summary.txt)" -eq 2
+          grep -q '^release_readiness_advanced=false$' out/summary.txt
+          grep -q '^device_status=PENDING$' out/summary.txt
