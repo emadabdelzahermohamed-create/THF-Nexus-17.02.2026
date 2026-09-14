@@ -38,22 +38,21 @@ for key,(name,pkg,srcsha) in expected.items():
     if cand is not None and not sha64.fullmatch(cand): die(f'{key}:candidate_sha_format')
     if cand is not None and cand in g.get('superseded_apk_sha256',[]): die(f'{key}:candidate_is_superseded')
 
-# Current promotion truth is fail-closed. Historical references may remain as audit evidence,
-# but no superseded APK may be the registry's eligible candidate.
 if games['rift']['eligible_candidate_apk_sha256'] is not None:
     die('rift_candidate_must_remain_none_until_rc41_build')
-if games['rush']['eligible_candidate_apk_sha256'] is not None:
-    die('rush_candidate_must_remain_none_until_product_icon_rebuild')
-if games['rush'].get('authoritative_version') != 'APPS RC4 + Native Verified-Motion V2 + product identity fix':
+rush=games['rush']
+if rush.get('eligible_candidate_apk_sha256') != 'f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f':
+    die('rush_exact_candidate_sha')
+if rush.get('authoritative_version') != 'APPS RC4 + Native Verified-Motion V2 + product identity fix':
     die('rush_version_not_product_identity_fixed')
-if games['rush'].get('candidate_status') != 'REBUILD_REQUIRED_AFTER_PRODUCT_ICON_FIX':
-    die('rush_candidate_status_not_rebuild_required')
-if games['rush'].get('verified_motion_required') is not True:
-    die('rush_verified_motion_not_required')
-if games['rush'].get('reward_bearing_health_evidence_required') is not True:
-    die('rush_reward_health_evidence_not_required')
-if games['rush'].get('product_specific_icon_required') is not True:
-    die('rush_product_icon_not_required')
+if rush.get('candidate_status') != 'PACKAGE_PASS_PHYSICAL_DEVICE_PENDING':
+    die('rush_candidate_status')
+if rush.get('candidate_run_id') != 34904322777 or rush.get('candidate_artifact_id') != 10371807756:
+    die('rush_candidate_provenance')
+if rush.get('candidate_artifact_digest') != 'sha256:c158383f5b2183be0d677c65748376d44fc2f75a989f136ddfd62a126ab4f0d2':
+    die('rush_artifact_digest')
+for k in ('verified_motion_required','reward_bearing_health_evidence_required','product_specific_icon_required'):
+    if rush.get(k) is not True: die('rush_missing_'+k)
 
 matrix=MATRIX.read_text(encoding='utf-8')
 for marker in [
@@ -61,25 +60,18 @@ for marker in [
  '29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d',
  'Native Verified-Motion V2',
  'REJECTED — iconless candidate',
- 'NONE — rebuild required after product icon fix',
+ 'f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f',
  'NONE — RC37 APK superseded',
  'FINAL/PLAY_READY'
 ]:
     if marker not in matrix: die('matrix_missing:'+marker)
 
-# Historical RC37 audit artifacts are allowed. Positive release operations are not.
 for p in (ROOT/'.github/workflows').glob('*rift*.yml'):
     text=p.read_text(encoding='utf-8')
-    if 'RC37' not in text:
-        continue
+    if 'RC37' not in text: continue
     positive = re.search(r'(FINAL_OR_PLAY_READY|PLAY_READY|FINAL_STATUS)\s*[=:]\s*(TRUE|PASS|READY)', text, re.I)
-    release_op = re.search(
-        r'\b(promote|promotion|production[-_ ]?sign(?:ing)?|play[-_ ]?(?:upload|publish)|store[-_ ]?publish|production[-_ ]?(?:deploy|cutover))\b',
-        text,
-        re.I,
-    )
-    if positive or release_op:
-        die(f'rift:stale_rc37_promotion_workflow:{p.name}')
+    release_op = re.search(r'\b(promote|promotion|production[-_ ]?sign(?:ing)?|play[-_ ]?(?:upload|publish)|store[-_ ]?publish|production[-_ ]?(?:deploy|cutover))\b', text, re.I)
+    if positive or release_op: die(f'rift:stale_rc37_promotion_workflow:{p.name}')
 
 print('LATEST_GAME_AUTHORITY=PASS')
 for k in ('terra','rift','spark','rush'):
