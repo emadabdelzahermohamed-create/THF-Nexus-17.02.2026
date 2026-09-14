@@ -1,0 +1,67 @@
+name: THF Terra RC34 Phone V4 Cleanliness Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/thf-terra-rc34-phone-v4-cleanliness-gate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect exact V4 builder output and patched gameplay source
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=15m --quiet --command='set -Eeuo pipefail
+          ROOT="$HOME/thf-terra-rc34-compact-phone-v4"
+          W="$ROOT/work"
+          O="$ROOT/out"
+          F="$W/native/world/WorldMain.gd"
+          test -s "$O/THF-TERRA-4.6.8-RC34-PHONE-V4.apk"
+          test -s "$O/EVIDENCE.txt"
+          test -s "$O/import.log"
+          test -s "$O/export.log"
+          grep -q "^THF_TERRA_RC34_PHONE_V4=BUILT$" "$O/EVIDENCE.txt"
+          grep -q "^offline_explore_mode=PASS$" "$O/EVIDENCE.txt"
+          grep -q "^offline_online_state_faked=FALSE$" "$O/EVIDENCE.txt"
+          grep -q "^final_or_play_ready=FALSE$" "$O/EVIDENCE.txt"
+          ! grep -Eqi "SCRIPT ERROR|Parse Error|Failed to load script|Invalid call|Parser Error" "$O/import.log" "$O/export.log"
+          grep -q "func _apply_offline_step" "$F"
+          grep -q "if offline_explore_mode:" "$F"
+          grep -q "if not socket_connected and not offline_explore_mode:" "$F"
+          grep -q "if (not socket_connected and not offline_explore_mode) or mobile_held_direction.is_empty():" "$F"
+          grep -q "socket.send_text" "$F"
+          grep -q "target_position = next" "$F"
+          grep -q "window/handheld/orientation=4" "$W/project.godot"
+          grep -q "window/stretch/aspect=\"expand\"" "$W/project.godot"
+          grep -q "window/size/window_width_override=0" "$W/project.godot"
+          grep -q "window/size/window_height_override=0" "$W/project.godot"
+          echo THF_TERRA_V4_HEADLESS_CLEAN=PASS
+          echo THF_TERRA_V4_LOCAL_MOVEMENT_WIRED=PASS
+          echo THF_TERRA_V4_SERVER_AUTHORITY_PRESERVED=PASS
+          echo FINAL_OR_PLAY_READY=FALSE
+          '
