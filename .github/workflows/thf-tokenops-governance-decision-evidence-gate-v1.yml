@@ -1,0 +1,109 @@
+name: THF TokenOps Governance Decision Evidence Gate v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-governance-decision-evidence-gate-v1.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/TokenOps/**'
+      - '.github/workflows/thf-tokenops-governance-decision-evidence-gate-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  governance-decision-evidence-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+
+      - name: Compile and test decision evidence validator
+        run: |
+          set -euo pipefail
+          python -m py_compile ReleaseOps/TokenOps/governance_decision_validation.py
+          python -m pip install --disable-pip-version-check --no-input pytest
+          python -m pytest ReleaseOps/TokenOps/test_governance_decision_validation.py -q
+
+      - name: Generate fresh read-only readiness evidence
+        run: |
+          set -euo pipefail
+          rm -rf out/tokenops-governance-evidence
+          python ReleaseOps/TokenOps/tokenops_guard.py --out out/tokenops-governance-evidence
+
+      - name: Build immutable decision templates and current evidence review
+        run: |
+          set -euo pipefail
+          PYTHONPATH=ReleaseOps/TokenOps python - <<'PY'
+          import json
+          from pathlib import Path
+          from resolution_dag import build_resolution_dag
+          from governance_decision_packets import build_governance_decision_packets, validate_governance_decision_packets
+          from governance_decision_validation import build_decision_evidence_review, validate_decision_evidence_review
+
+          out = Path('out/tokenops-governance-evidence')
+          readiness = json.loads((out / 'financial-readiness.json').read_text())
+          dag = build_resolution_dag(readiness)
+          decisions = build_governance_decision_packets(dag)
+          assert validate_governance_decision_packets(decisions) == []
+
+          # No governance/economic values are invented by CI. Current authoritative
+          # inputs therefore remain empty until externally reviewed evidence exists.
+          review = build_decision_evidence_review(decisions, {})
+          assert validate_decision_evidence_review(review) == []
+          assert review['status'] in {'REVIEW_INPUTS_REQUIRED', 'NO_DECISION_PACKETS'}
+          assert review['execution_authorized'] is False
+          assert review['transaction_bytes_created'] is False
+          assert review['instruction_bytes_created'] is False
+          assert review['signed'] is False
+          assert review['submitted'] is False
+          assert review['broadcast'] is False
+          assert review['financial_effect'] is False
+          assert review['private_key_required'] is False
+          assert review['wave_touched'] is False
+          assert review['signer_action_now'] == 'NONE'
+
+          (out / 'resolution-dag.json').write_text(json.dumps(dag, sort_keys=True, indent=2) + '\n')
+          (out / 'governance-decision-packets.json').write_text(json.dumps(decisions, sort_keys=True, indent=2) + '\n')
+          (out / 'governance-decision-evidence-review.json').write_text(json.dumps(review, sort_keys=True, indent=2) + '\n')
+
+          print('GOVERNANCE_DECISION_EVIDENCE_STATUS=' + review['status'])
+          print('DECISION_PACKET_COUNT=' + str(review['packet_count']))
+          print('EVIDENCE_COMPLETE_COUNT=' + str(review['reviewable_evidence_complete_count']))
+          print('INPUTS_MISSING_COUNT=' + str(review['inputs_missing_count']))
+          print('INVALID_COUNT=' + str(review['invalid_count']))
+          print('EXACT_SIGNER_ACTION_NOW=' + review['signer_action_now'])
+          print('DECISION_EVIDENCE_REVIEW_SHA256=' + review['decision_evidence_review_sha256'])
+          PY
+
+      - name: Hash immutable review evidence
+        run: |
+          set -euo pipefail
+          cd out/tokenops-governance-evidence
+          sha256sum *.json | sort > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Enforce review-only output
+        run: |
+          set -euo pipefail
+          if find out/tokenops-governance-evidence -type f \( -name '*.txn' -o -name '*.tx' -o -name '*.key' -o -name '*.keypair' -o -name '*.secret' \) | grep -q .; then
+            echo 'Forbidden executable/sensitive payload file detected' >&2
+            exit 2
+          fi
+          echo GOVERNANCE_DECISION_EVIDENCE_GATE=PASS_REVIEW_ONLY
+
+      - name: Upload decision evidence review bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-TokenOps-Governance-Decision-Evidence-v1-${{ github.run_id }}
+          path: out/tokenops-governance-evidence/
+          if-no-files-found: error
+          retention-days: 30
