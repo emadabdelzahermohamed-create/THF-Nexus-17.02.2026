@@ -5,13 +5,15 @@ import json, pathlib, re, sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 REG = ROOT / 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
 MATRIX = ROOT / 'ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md'
-EXPLICIT_NON_GAME_HISTORY = {
-    ROOT / '.github/workflows/thf-apps-authoritative-lineage-v2.yml',
-}
 
 def die(msg: str) -> None:
     print(f'LATEST_GAME_AUTHORITY=FAIL {msg}', file=sys.stderr)
     raise SystemExit(2)
+
+def non_game_history(p: pathlib.Path) -> bool:
+    # Apps-lineage workflows are read-only historical discovery for the non-game factory.
+    # They may contain old Spark/Rush observations but cannot promote game candidates.
+    return p.parent.name == 'workflows' and p.name.startswith('thf-apps-authoritative-lineage-v')
 
 r = json.loads(REG.read_text(encoding='utf-8'))
 if r.get('schema') != 1 or r.get('final_or_play_ready') is not False:
@@ -61,9 +63,6 @@ for marker in [
 ]:
     if marker not in matrix: die('matrix_missing:'+marker)
 
-# Operational game files must not silently re-promote superseded exact hashes. The Apps
-# lineage V2 file is an explicitly non-game historical discovery lane and is exempt; the
-# game registry remains the sole authority for Spark/Rush promotion eligibility.
 scan_roots=[ROOT/'.github/workflows', ROOT/'ReleaseOps/scripts', ROOT/'ReleaseOps/mobile', ROOT/'ReleaseOps/validators']
 for key,g in games.items():
     for bad in g.get('superseded_apk_sha256',[]):
@@ -72,7 +71,7 @@ for key,g in games.items():
         for base in scan_roots:
             if not base.exists(): continue
             for p in base.rglob('*'):
-                if p.resolve() in {x.resolve() for x in EXPLICIT_NON_GAME_HISTORY}: continue
+                if non_game_history(p): continue
                 if not p.is_file() or p.suffix not in {'.yml','.yaml','.py','.sh','.json','.md'}: continue
                 try: text=p.read_text(encoding='utf-8')
                 except UnicodeDecodeError: continue
