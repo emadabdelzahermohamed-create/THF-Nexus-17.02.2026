@@ -1,0 +1,139 @@
+name: THF Game Authoritative Source Lock V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-game-authoritative-source-lock-v1.yml'
+      - 'ReleaseOps/validators/validate_game_authoritative_source_lock_v1.py'
+      - 'ReleaseOps/validators/test_validate_game_authoritative_source_lock_v1.py'
+      - 'ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  source-lock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Validator regression
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile ReleaseOps/validators/validate_game_authoritative_source_lock_v1.py
+          PYTHONPATH=ReleaseOps/validators python3 -m unittest -v ReleaseOps/validators/test_validate_game_authoritative_source_lock_v1.py
+
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Observe authoritative builder sources read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out/src
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=20m --quiet --command='bash -s' > out/builder.tsv <<'REMOTE'
+          set -Eeuo pipefail
+          check_zip() {
+            app="$1"; f="$2"
+            if [ ! -f "$f" ]; then printf '%s\tMISSING\tfalse\tfalse\t%s\n' "$app" "$f"; return; fi
+            sha=$(sha256sum "$f" | awk '{print $1}')
+            if unzip -tq "$f" >/dev/null 2>&1; then ok=true; else ok=false; fi
+            printf '%s\t%s\ttrue\t%s\t%s\n' "$app" "$sha" "$ok" "$f"
+          }
+          check_zip terra "$HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip"
+          check_zip rift "$HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip"
+          check_zip learn_games "$HOME/thf-small-learn-games/source.zip"
+          check_zip fitness_games "$HOME/thf-small-fitness-games/source.zip"
+          REMOTE
+          cat out/builder.tsv
+
+      - name: Observe exact RC4 Drive sources read-only
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cat > out/drive-matrix.tsv <<'EOF'
+          spark	1bwvy2huHjkpof3ZcH1QEJK23ep7SKKEm
+          rush	1P4Z1r6l08rbCLuDsXX1YRjWo0seC8yQz
+          EOF
+          : > out/drive.tsv
+          while IFS=$'\t' read -r app fid; do
+            f="out/src/$app.zip"
+            code=$(curl -sSLo "$f" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/$fid?alt=media&supportsAllDrives=true")
+            test "$code" = 200
+            sha=$(sha256sum "$f" | awk '{print $1}')
+            if unzip -tq "$f" >/dev/null 2>&1; then ok=true; else ok=false; fi
+            printf '%s\t%s\ttrue\t%s\tdrive-id:%s\n' "$app" "$sha" "$ok" "$fid" >> out/drive.tsv
+          done < out/drive-matrix.tsv
+          cat out/drive.tsv
+
+      - name: Build observation and enforce registry lock
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import json, pathlib
+          rows=[]
+          for p in ('out/builder.tsv','out/drive.tsv'):
+              for line in pathlib.Path(p).read_text().splitlines():
+                  if not line.strip(): continue
+                  app,sha,exists,integrity,locator=line.split('\t',4)
+                  rows.append({
+                      'app':app,
+                      'source_sha256':sha,
+                      'exists':exists=='true',
+                      'zip_integrity':integrity=='true',
+                      'locator_class':'drive_exact_id' if locator.startswith('drive-id:') else 'builder_authoritative_path',
+                  })
+          out={
+              'schema':'thf-game-authoritative-source-observation-v1',
+              'read_only':True,
+              'wave_untouched':True,
+              'canonical_archives_mutated':False,
+              'sources':sorted(rows,key=lambda x:x['app']),
+              'physical_device_evidence':'NOT_COLLECTED',
+              'final_or_play_ready':False,
+          }
+          pathlib.Path('out/authoritative-sources.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          PY
+          python3 ReleaseOps/validators/validate_game_authoritative_source_lock_v1.py \
+            ReleaseOps/games_factory/THF_GAME_DEVICE_CANDIDATES_V1.json \
+            out/authoritative-sources.json \
+            --json-out out/source-lock-result.json | tee out/source-lock.log
+          grep -q '"status": "PASS"' out/source-lock-result.json
+          grep -q '"final_or_play_ready": false' out/source-lock-result.json
+          printf 'AUTHORITATIVE_SOURCE_LOCK=PASS\nDEVICE_CANDIDATE_BYTES_REBUILT=NO\nPHYSICAL_DEVICE_STATUS=PENDING\nFINAL_OR_PLAY_READY=FALSE\nWAVE_UNTOUCHED=TRUE\nCANONICAL_MUTATION=NO\n' > out/TRUTH.txt
+          cat out/TRUTH.txt
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-GAME-AUTHORITATIVE-SOURCE-LOCK-V1
+          path: |
+            out/authoritative-sources.json
+            out/source-lock-result.json
+            out/source-lock.log
+            out/TRUTH.txt
+          retention-days: 14
