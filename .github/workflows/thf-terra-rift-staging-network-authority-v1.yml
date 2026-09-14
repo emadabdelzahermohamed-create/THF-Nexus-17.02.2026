@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'ReleaseOps/scripts/validate_latest_game_authority_v1.py'
       - 'ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py'
       - 'ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py'
       - 'ReleaseOps/scripts/thf_game_real_function_audit_v2.py'
@@ -36,8 +37,11 @@ jobs:
         run: |
           set -Eeuo pipefail
           python3 ReleaseOps/scripts/validate_latest_game_authority_v1.py > latest-authority.txt
+          grep -q '^terra_candidate_apk_sha256=e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec$' latest-authority.txt
           grep -q '^rift_version=4.7.5-rc41$' latest-authority.txt
           grep -q '^rift_candidate_apk_sha256=NONE$' latest-authority.txt
+          grep -q '^spark_candidate_apk_sha256=9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea$' latest-authority.txt
+          grep -q '^rush_candidate_apk_sha256=528f7d1151e52efe35c5e441dca3635afceb47cae82c0209b0c914a0e8965ed7$' latest-authority.txt
           grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-authority.txt
       - name: Syntax gate
         run: python3 -m py_compile ReleaseOps/scripts/thf_game_network_endpoint_overlay_v1.py ReleaseOps/scripts/thf_terra_rift_mobile_overlay_v1.py ReleaseOps/scripts/thf_game_real_function_audit_v2.py
