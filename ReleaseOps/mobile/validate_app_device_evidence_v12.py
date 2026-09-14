@@ -4,8 +4,8 @@
 V12 layers V11 and binds foreground-sensitive runtime evidence to one physical
 Android boot session. A separate SHA-256-bound ADB capture of
 /proc/sys/kernel/random/boot_id is required, its raw UUID is independently
-hashed by the validator, and every V11 foreground-process provenance record
-must carry that same boot-id hash.
+hashed by the validator, and every registry-active V11 foreground-process
+provenance record must carry that same boot-id hash.
 
 This closes cross-reboot/stale-process evidence replay without changing any app
 candidate bytes. This is release-control tooling only and cannot promote
@@ -19,7 +19,13 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from validate_app_device_evidence_v11 import FOREGROUND_CHECKS, _kv_multimap, _one, validate as validate_v11
+from validate_app_device_evidence_v11 import (
+    FOREGROUND_CHECKS,
+    _active_foreground_checks,
+    _kv_multimap,
+    _one,
+    validate as validate_v11,
+)
 from validate_app_device_evidence_v9 import _safe_file
 
 BOOT_METHOD = "ADB_CAT_PROC_SYS_KERNEL_RANDOM_BOOT_ID"
@@ -55,7 +61,7 @@ def _canonical_boot_uuid(raw: str) -> str | None:
     except (ValueError, AttributeError):
         return None
     canonical = str(parsed)
-    return canonical if raw.lower() == canonical else None
+    return canonical if raw == canonical else None
 
 
 def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> list[str]:
@@ -112,6 +118,10 @@ def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> 
         errors.append("V12 process_provenance required")
         return errors
 
+    active_checks = _active_foreground_checks(registry)
+    if set(provenance) != set(active_checks):
+        errors.append("V12 process_provenance must contain exactly registry-active foreground checks")
+
     process_refs = {
         item.get("evidence_ref")
         for item in provenance.values()
@@ -120,7 +130,7 @@ def validate(registry: dict[str, Any], evidence: dict[str, Any], root: Path) -> 
     if boot_ref in process_refs:
         errors.append("V12 boot provenance must be distinct from process provenance files")
 
-    for check in FOREGROUND_CHECKS:
+    for check in active_checks:
         prefix = f"V12 {check}: "
         item = provenance.get(check)
         path = _safe_file(root, item.get("evidence_ref") if isinstance(item, dict) else None)
