@@ -5,12 +5,17 @@ on:
     branches: [main]
     paths:
       - 'ReleaseOps/scripts/thf_rift_local_training_phone_v1.py'
+      - 'ReleaseOps/scripts/godot_candidate_tree_apk_v1.sh'
       - '.github/workflows/thf-rift-rc37-phone-v1-build.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
   id-token: write
+
+concurrency:
+  group: thf-rift-rc37-phone-v1-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
@@ -26,6 +31,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
       - name: Syntax gate
         run: |
           set -Eeuo pipefail
