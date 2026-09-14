@@ -7,6 +7,7 @@ on:
       - tools/thf_apps_phone_resources_v1.py
       - tools/thf_echo_remove_placeholder_demo_v1.py
       - tests/test_thf_apps_phone_resources_v1.py
+      - tests/test_thf_echo_remove_placeholder_demo_v1.py
       - .github/workflows/thf-apps-builder-present-phone-resources-v3.yml
   push:
     branches: [main]
@@ -14,6 +15,7 @@ on:
       - tools/thf_apps_phone_resources_v1.py
       - tools/thf_echo_remove_placeholder_demo_v1.py
       - tests/test_thf_apps_phone_resources_v1.py
+      - tests/test_thf_echo_remove_placeholder_demo_v1.py
       - .github/workflows/thf-apps-builder-present-phone-resources-v3.yml
   workflow_dispatch:
 
@@ -42,7 +44,7 @@ jobs:
       - name: Unit regressions
         run: |
           set -Eeuo pipefail
-          python3 -m unittest -v tests/test_thf_apps_phone_resources_v1.py
+          python3 -m unittest -v tests/test_thf_apps_phone_resources_v1.py tests/test_thf_echo_remove_placeholder_demo_v1.py
           python3 -m compileall -q tools/thf_apps_phone_resources_v1.py tools/thf_echo_remove_placeholder_demo_v1.py
       - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
