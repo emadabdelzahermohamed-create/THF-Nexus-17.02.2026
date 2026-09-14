@@ -19,7 +19,10 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-from ReleaseOps.TokenOps.financial_control_plane import MINT, NETWORK, TOKEN_PROGRAM
+try:
+    from ReleaseOps.TokenOps.financial_control_plane import MINT, NETWORK, TOKEN_PROGRAM
+except ModuleNotFoundError:  # Direct CLI execution from ReleaseOps/TokenOps/.
+    from financial_control_plane import MINT, NETWORK, TOKEN_PROGRAM
 
 SCHEMA = "thf-tokenops-review-intent-manifest/v1"
 ALLOWED_OPERATIONS = {"reward_epoch", "lock_reward", "vesting_settlement", "burn", "treasury_transfer"}
