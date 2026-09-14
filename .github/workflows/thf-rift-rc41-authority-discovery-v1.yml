@@ -50,7 +50,7 @@ jobs:
             [ -f "$f" ] || continue
             s=$(sha256sum "$f" | awk '{print $1}')
             if [ "$s" = "$EXPECTED" ]; then FOUND="$f"; break; fi
-          done < <(find "$HOME" -type f \( -name "$EXPECTED_NAME" -o -name '*RC41*Rift*.zip' -o -name '*Rift*RC41*.zip' \) -print 2>/dev/null)
+          done < <(find "$HOME" -maxdepth 5 -type f \( -name "$EXPECTED_NAME" -o -name '*RC41*Rift*.zip' -o -name '*Rift*RC41*.zip' \) -print 2>/dev/null)
           echo 'checkpoint=RIFT-RC41-SERVER-PICKUP-REACHABILITY'
           echo 'version=4.7.5-rc41'
           echo "expected_sha256=$EXPECTED"
