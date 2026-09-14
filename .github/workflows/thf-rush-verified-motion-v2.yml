@@ -1,5 +1,6 @@
 name: THF Rush Verified Motion V2
 
+# Activation checkpoint: workflow exists on main before this push so the push itself is testable.
 on:
   push:
     branches: [main]
