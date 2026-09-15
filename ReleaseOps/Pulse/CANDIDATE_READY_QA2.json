@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "product": "THF Fitness",
+  "lane": "Pulse/Fitness",
+  "candidate_status": "CANDIDATE_READY",
+  "promotion_owner": "THF Release Factory",
+  "immutable_candidate": true,
+  "source": {
+    "name": "THF_Pulse_APPS_RC2_SOURCE",
+    "tree_sha256": "6a180cf6599f8827e824431caf4566f520cc3796d9366c30abc197b4aeb6ba34",
+    "builder_checkpoint": "f7bc8c405f89c7f84499e96b7a96baedf4ad1ae6",
+    "authority_gate": "PASS"
+  },
+  "artifact": {
+    "workflow_run": 34897466299,
+    "artifact_id": 10369646393,
+    "artifact_name": "THF-PULSE-PHONE-BASELINE-QA2-34897466299",
+    "artifact_zip_sha256": "8d75b63aa467bb9f64aae6114e360a05f3c56a4578c48f6f872506cd21cbb003",
+    "apk": "THF-PULSE-PHONE-BASELINE-QA2.apk",
+    "apk_sha256": "ec4ad11409880081da7d74e3f389c7a57f9dd53fc7c107a9fa1198e98c61a793",
+    "apk_size_bytes": 24584680,
+    "package_id": "com.topherofit.thf.pulse.debug",
+    "version_name": "4.1.4-phonebaseline1-debug",
+    "version_code": 41401,
+    "target_sdk": 36
+  },
+  "automated_gates": {
+    "gradle_clean_assemble_debug": "PASS",
+    "apk_signature": "PASS",
+    "package_version_target_badging": "PASS",
+    "runtime_asset_presence": "PASS",
+    "clean_extract_runtime_asset_sha_equality": "PASS",
+    "python_compileall": "PASS",
+    "pytest": "GAP_BUILDER_MODULE_UNAVAILABLE_NOT_COUNTED_AS_PASS",
+    "source_authority": "PASS",
+    "non_pulse_code_modified": false,
+    "motion_semantics_reverified_from_immutable_apk": "PASS",
+    "avatar_skins": 1,
+    "avatar_max_joint_count": 137,
+    "avatar_animation_count": 195,
+    "avatar_ual_animation_count": 172,
+    "avatar_sha256": "4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f"
+  },
+  "implemented_core_journeys": [
+    "animated-human Motion Coach using local MPFB/UAL GLB; legacy text-only Workout Console not substituted",
+    "onboarding and local persistence",
+    "Arabic/English RTL/LTR",
+    "session/workout persistence",
+    "THF Identity/Google handoff boundary",
+    "offline local Motion Coach",
+    "Health Connect dependency, permission bridge and typed-record adapter boundary",
+    "Samsung Health adapter boundary",
+    "activity/workout/steps/distance/calories/heart-rate/sleep/body-composition contracts",
+    "SHA-256 provider provenance/deduplication",
+    "pose/motion verification hook fail-closed for rewards",
+    "accessibility and Data Saver preferences"
+  ],
+  "required_endpoints": {
+    "thf_base_url": "PENDING_AUTHORITATIVE_INJECTION",
+    "thf_pass_google_oauth": "PENDING_PROVIDER_CONFIGURATION"
+  },
+  "external_blockers": [
+    "Physical Android phone install/launch/touch/layout/background-resume/offline-online/workout crash-free evidence",
+    "Visible moving-human Motion Coach validation on physical phone",
+    "Health Connect permission and real record read on physical device",
+    "Authoritative THF_BASE_URL injection and live reachability",
+    "THF Pass/Google OAuth provider configuration",
+    "Samsung Health Data SDK binary/provider/device authorization for live read"
+  ],
+  "release_notes": "Hold this exact APK SHA stable for phone QA. DEV_HEAD movement or docs/tests-only changes must not supersede it. Fitness Factory does not promote APK_CANDIDATE or PHONE_TEST_TARGET; Release Factory owns promotion.",
+  "final_or_play_ready": false
+}
