@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "policy": "ReleaseOps/APK_FIRST_ORCHESTRATION.md",
+  "board": "ReleaseOps/APK_FIRST_TARGETS.json",
+  "owner": "THF Games Factory",
+  "handoff_to": "THF Release Factory",
+  "generated_utc": "2026-09-15T13:22:00Z",
+  "objective": "Preserve exact build-coherent candidates for phone-test handoff without DEV_HEAD/RC churn.",
+  "authority_proof": "ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json",
+  "games": {
+    "terra": {
+      "user_facing_name": "THF World",
+      "package_id": "com.topherofit.thf.terra",
+      "qa_package_id": "com.topherofit.thf.terra.phoneqa",
+      "version": "RC34 Phone V4",
+      "source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
+      "candidate_apk_sha256": "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
+      "target_sdk": 36,
+      "arm64_required": true,
+      "candidate_status": "CANDIDATE_READY_METADATA_RECONCILIATION_REQUIRED",
+      "release_factory_blocker": "Extract exact versionCode/versionName and packaged ABI evidence from frozen APK before promotion."
+    },
+    "rift": {
+      "user_facing_name": "THF Arena",
+      "package_id": "com.topherofit.thf.rift",
+      "version": "4.7.5-rc41",
+      "source_sha256": "29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d",
+      "candidate_apk_sha256": null,
+      "target_sdk": 36,
+      "arm64_required": true,
+      "candidate_status": "BLOCKED_BUILD_EXACT_RC41_ARCHIVE_BYTES",
+      "release_factory_blocker": "Exact RC41 canonical archive bytes must be staged; RC37 and older candidates remain superseded and forbidden as fallback."
+    },
+    "spark": {
+      "user_facing_name": "THF Learn Games",
+      "package_id": "com.topherofit.thf.spark",
+      "version": "APPS RC4 + real-game overlay",
+      "source_sha256": "58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43",
+      "candidate_apk_sha256": "9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea",
+      "target_sdk": 36,
+      "arm64_required": true,
+      "candidate_status": "CANDIDATE_READY_METADATA_RECONCILIATION_REQUIRED",
+      "release_factory_blocker": "Extract exact versionCode/versionName and packaged ABI evidence from frozen APK before promotion."
+    },
+    "rush": {
+      "user_facing_name": "THF Motion Games",
+      "package_id": "com.topherofit.thf.rush",
+      "version": "APPS RC4 + Native Verified-Motion V2 + product identity fix",
+      "source_sha256": "766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c",
+      "candidate_apk_sha256": "f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f",
+      "target_sdk": 36,
+      "arm64_required": true,
+      "candidate_status": "CANDIDATE_READY_PACKAGE_PASS_PHYSICAL_DEVICE_PENDING",
+      "workflow_run_id": 34904322777,
+      "artifact_id": 10371807756,
+      "artifact_digest": "sha256:c158383f5b2183be0d677c65748376d44fc2f75a989f136ddfd62a126ab4f0d2",
+      "verified_motion_required": true,
+      "manual_activity_values_accepted": false,
+      "touch_repetition_increment": false,
+      "reward_bearing_health_evidence": "BACKEND_REQUIRED",
+      "release_factory_blocker": "Extract exact versionCode/versionName and packaged ABI evidence from frozen APK before promotion; physical phone evidence remains pending."
+    }
+  },
+  "anti_churn": {
+    "phone_test_target_invalidated_due_to_dev_head": false,
+    "self_promoted_phone_test_target": false,
+    "docs_tests_only_version_bump": false,
+    "older_rift_rc_substituted": false,
+    "candidate_rebuild_without_source_change": false
+  },
+  "next_actions": [
+    "Release Factory: inspect frozen Terra/Spark/Rush APK bytes for exact versionCode/versionName/ABI and arbitrate APK_CANDIDATE/PHONE_TEST_TARGET promotion.",
+    "Games Factory: keep candidates frozen unless a build or critical regression defect is proven.",
+    "Rift: stage exact RC41 bytes, then run clean extract, Godot 4.7.2 parser/import/headless, API36 arm64 export, package/payload/combat gates.",
+    "Shared avatar/game runtime: continue only changes that do not invalidate frozen phone candidates; require explicit coherent CANDIDATE_READY checkpoint for future promotion.",
+    "No FINAL/PLAY_READY claim until physical-device install/launch/touch/orientation/resume/offline-network/core-gameplay/crash-free and performance evidence exists."
+  ]
+}
