@@ -1,0 +1,53 @@
+name: THF Pulse Authority Archive Probe V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-pulse-authority-archive-probe-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  EXPECTED_SOURCE_SHA: 6a180cf6599f8827e824431caf4566f520cc3796d9366c30abc197b4aeb6ba34
+  ARCHIVE: /home/sa_115575029018678177962/thf-apps-rc3-exact-candidate-v2/source/pulse.zip
+  SIDECAR: /home/sa_115575029018678177962/thf-apps-rc3-exact-candidate-v2/out/pulse.sha256
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Probe immutable Pulse archive authority
+        run: |
+          set -Eeuo pipefail
+          rm -rf out && mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="set -Eeuo pipefail; A='$ARCHIVE'; S='$SIDECAR'; E='$EXPECTED_SOURCE_SHA'; test -f \"\$A\"; A_SHA=\$(sha256sum \"\$A\"|awk '{print \$1}'); printf 'expected=%s\narchive_sha256=%s\n' \"\$E\" \"\$A_SHA\" > /tmp/pulse-authority-probe.txt; if test -f \"\$S\"; then printf 'sidecar=' >> /tmp/pulse-authority-probe.txt; tr '\n' ' ' < \"\$S\" >> /tmp/pulse-authority-probe.txt; printf '\n' >> /tmp/pulse-authority-probe.txt; else echo 'sidecar=ABSENT' >> /tmp/pulse-authority-probe.txt; fi; rm -rf /tmp/pulse-authority-extract; mkdir /tmp/pulse-authority-extract; unzip -q \"\$A\" -d /tmp/pulse-authority-extract; cd /tmp/pulse-authority-extract; ROOT=.; COUNT=\$(find . -mindepth 1 -maxdepth 1 -type d | wc -l); FILES=\$(find . -maxdepth 1 -type f | wc -l); if test \"\$COUNT\" = 1 && test \"\$FILES\" = 0; then ROOT=\$(find . -mindepth 1 -maxdepth 1 -type d | head -1); fi; cd \"\$ROOT\"; rm -rf android/.gradle android/app/build android/build .gradle; find . -type d \( -name __pycache__ -o -name .pytest_cache \) -prune -exec rm -rf {} +; find . -type f -name '*.pyc' -delete; TREE=\$(find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); echo \"archive_clean_tree_sha256=\$TREE\" >> /tmp/pulse-authority-probe.txt; if test \"\$A_SHA\" = \"\$E\"; then echo 'classification=ARCHIVE_BYTES_EXACT_AUTHORITY' >> /tmp/pulse-authority-probe.txt; elif test \"\$TREE\" = \"\$E\"; then echo 'classification=ARCHIVE_TREE_EXACT_AUTHORITY' >> /tmp/pulse-authority-probe.txt; else echo 'classification=ARCHIVE_NOT_EXACT_AUTHORITY' >> /tmp/pulse-authority-probe.txt; fi; echo 'build_attempted=false' >> /tmp/pulse-authority-probe.txt; cat /tmp/pulse-authority-probe.txt"
+          gcloud compute scp "$GCP_BUILDER:/tmp/pulse-authority-probe.txt" out/EVIDENCE.txt --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/EVIDENCE.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-PULSE-AUTHORITY-ARCHIVE-PROBE-${{ github.run_id }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
