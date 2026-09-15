@@ -1,0 +1,87 @@
+name: THF Apps V3 Exact Ingest Build
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-apps-v3-ingest-build.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: thf-apps-v3-exact-ingest-build
+  cancel-in-progress: true
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  ingest-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with: {persist-credentials: false}
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Prove Apps V3 authority
+        run: python ReleaseOps/validate_thf_apps_phone_authority_v3.py
+      - name: Fetch exact staged bytes and verify SHA before builder transfer
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p exact
+          cat > specs <<'EOF'
+          THF_Forge_PHONE_FUNDAMENTALS_SRC3.zip 1Fdx6knYWGLAQ7dYnDH5dGu-j8qF32A6E 75c3744af31f16273a174bdac53b9e812613e4d9ef8c2fa260521c7f7c40cbf8
+          THF_Echo_PHONE_FUNDAMENTALS_SRC3.zip 1YnRTB_CSUwd7q6myLKkG2Pi_3qJ_A3Vw 3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9
+          THF_Codex_PHONE_FUNDAMENTALS_SRC3.zip 1wHhUcCZKvUmxIFOkzSFwqc8QDslW2brn 44ff76cca12b6b13febc53e9e0b8748a01949eb07c40b020d76b82f45a094950
+          THF_Vault_PHONE_FUNDAMENTALS_SRC3.zip 1gqG6UVCA4CkpEJpF7fDO5kq2kF-o6cJ7 e33c7c7f1f6d7f913dfe6ca5d674aff2883f7a230c2a323724088c30c4497585
+          THF_Signal_PHONE_FUNDAMENTALS_SRC3.zip 10qPO33KG8lL7KWKmoRO2nxJDZSj4eSw4 3b6ba96076decd62e31a90c60d91a101806d6a6e9be329a58baa55ece82227ef
+          THF_Command_PHONE_FUNDAMENTALS_SRC3.zip 1JtABZ7SNGuJ5jKoYc2xlj5f2nSvdBs2y 314a89f33f62d754edc9cc369fcc35b019d6081c6be0dcfbffa0fe5801ce0ffc
+          EOF
+          while read -r name id want; do
+            curl -fL --retry 2 --connect-timeout 15 "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t" -o "exact/$name"
+            got=$(sha256sum "exact/$name" | awk '{print $1}')
+            test "$got" = "$want" || { echo "SHA_MISMATCH $name $got"; exit 20; }
+            unzip -tq "exact/$name" >/dev/null
+          done < specs
+      - name: Transfer exact verified inputs to isolated builder directory
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='rm -rf /tmp/thf_apps_v3_exact && mkdir -p /tmp/thf_apps_v3_exact/input /tmp/thf_apps_v3_exact/work /tmp/thf_apps_v3_exact/out'
+          gcloud compute scp exact/*.zip "$GCP_BUILDER:/tmp/thf_apps_v3_exact/input/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Builder SHA, clean extract, compile/package attempt
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT=/tmp/thf_apps_v3_exact
+          : > "$ROOT/out/report.txt"
+          for z in "$ROOT"/input/*.zip; do
+            n=$(basename "$z"); unzip -tq "$z"; d="$ROOT/work/${n%.zip}"; rm -rf "$d"; mkdir -p "$d"; unzip -q "$z" -d "$d"
+            printf '%s SHA=%s\n' "$n" "$(sha256sum "$z"|awk '{print $1}')" >> "$ROOT/out/report.txt"
+            p=$(find "$d" -type f -name gradlew -print -quit || true)
+            if [ -n "$p" ]; then
+              cd "$(dirname "$p")"; chmod +x ./gradlew; ./gradlew --no-daemon clean test assembleDebug
+              find . -type f \( -name '*.apk' -o -name '*.aab' \) -exec sha256sum {} \; >> "$ROOT/out/report.txt"
+            else
+              printf '%s BUILD_GATE=NO_GRADLEW\n' "$n" >> "$ROOT/out/report.txt"
+            fi
+          done
+          cat "$ROOT/out/report.txt"
+          REMOTE
+      - name: Retrieve builder evidence
+        if: always()
+        run: gcloud compute scp "$GCP_BUILDER:/tmp/thf_apps_v3_exact/out/report.txt" report.txt --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-apps-v3-exact-ingest-build-evidence
+          path: report.txt
+          if-no-files-found: ignore
+          retention-days: 30
