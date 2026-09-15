@@ -22,7 +22,13 @@
     "package_id": "com.topherofit.thf.pulse.debug",
     "version_name": "4.1.4-phonebaseline1-debug",
     "version_code": 41401,
-    "target_sdk": 36
+    "min_sdk": 26,
+    "target_sdk": 36,
+    "compile_sdk": 36,
+    "abi": "no_native_libraries_apk",
+    "build_system": "Android Gradle",
+    "gradle_version": "8.11.1",
+    "launchable_activity": "com.topherofit.thf.pulse.MainActivity"
   },
   "automated_gates": {
     "gradle_clean_assemble_debug": "PASS",
@@ -35,6 +41,9 @@
     "source_authority": "PASS",
     "non_pulse_code_modified": false,
     "motion_semantics_reverified_from_immutable_apk": "PASS",
+    "artifact_sha_reverified_2026_09_15": "PASS",
+    "apk_badging_reverified_2026_09_15": "PASS",
+    "apk_native_library_scan_2026_09_15": "PASS_NONE_PRESENT",
     "avatar_skins": 1,
     "avatar_max_joint_count": 137,
     "avatar_animation_count": 195,
@@ -67,6 +76,6 @@
     "THF Pass/Google OAuth provider configuration",
     "Samsung Health Data SDK binary/provider/device authorization for live read"
   ],
-  "release_notes": "Hold this exact APK SHA stable for phone QA. DEV_HEAD movement or docs/tests-only changes must not supersede it. Fitness Factory does not promote APK_CANDIDATE or PHONE_TEST_TARGET; Release Factory owns promotion.",
+  "release_notes": "Hold this exact APK SHA stable for phone QA. DEV_HEAD movement or docs/tests-only changes must not supersede it. Fitness Factory does not promote APK_CANDIDATE or PHONE_TEST_TARGET; Release Factory owns promotion. 2026-09-15 revalidation added required minSdk/compileSdk/build-system/ABI/launchable metadata without changing APK or app version.",
   "final_or_play_ready": false
 }
