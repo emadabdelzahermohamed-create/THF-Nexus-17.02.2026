@@ -1,0 +1,30 @@
+name: TokenOps Integration Contract Gate
+on:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/integration_contract.py'
+      - 'ReleaseOps/TokenOps/test_integration_contract.py'
+      - '.github/workflows/tokenops-integration-contract-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile ReleaseOps/TokenOps/integration_contract.py ReleaseOps/TokenOps/test_integration_contract.py
+      - name: Regression tests
+        working-directory: ReleaseOps/TokenOps
+        run: python -m unittest -v test_integration_contract.py
+      - name: Enforce read-only financial boundary
+        run: |
+          grep -q '"sign": False' ReleaseOps/TokenOps/integration_contract.py
+          grep -q '"broadcast": False' ReleaseOps/TokenOps/integration_contract.py
+          grep -q '"financial_execution": False' ReleaseOps/TokenOps/integration_contract.py
+          grep -q 'READ_ONLY_CONTRACT_READY' ReleaseOps/TokenOps/integration_contract.py
+          grep -q '"Vault", "Forge", "Core"' ReleaseOps/TokenOps/integration_contract.py
