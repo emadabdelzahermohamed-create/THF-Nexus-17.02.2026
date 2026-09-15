@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "policy": "ReleaseOps/APK_FIRST_ORCHESTRATION.md",
+  "board": "ReleaseOps/APK_FIRST_TARGETS.json",
+  "owner": "THF Games Factory",
+  "handoff_to": "THF Release Factory",
+  "generated_utc": "2026-09-15T18:26:58Z",
+  "objective": "Keep exact game candidates pinned while unrelated DEV_HEAD advances; preserve fail-closed Rift exact-source and Rush arm64 blockers without RC churn.",
+  "lineage": {
+    "previous_games_checkpoint_manifest": "ReleaseOps/games/APK_FIRST_GAMES_BATCH17_20260915.json",
+    "observed_repo_head_before_batch": "f5ee3974899eb23018c92478a8c8f98058570443",
+    "observed_head_change_scope": "ReleaseOps Apps Core RC6 canonicalization only; no authoritative game registry mutation.",
+    "phone_target_invalidated_due_to_dev_head": false
+  },
+  "authority": {
+    "terra": {"name":"THF World","package_id":"com.topherofit.thf.terra","version":"RC34 Phone V4","source_sha256":"eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68","candidate_apk_sha256":"e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec","target_sdk":36,"arm64_required":true,"status":"FROZEN_CANDIDATE_UNCHANGED"},
+    "rift": {"name":"THF Arena","package_id":"com.topherofit.thf.rift","version":"4.7.5-rc41","source_sha256":"29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d","candidate_apk_sha256":null,"target_sdk":36,"arm64_required":true,"status":"BLOCKED_BUILD_EXACT_RC41_ARCHIVE_BYTES_REQUIRED","older_rc_fallback_allowed":false},
+    "spark": {"name":"THF Learn Games","package_id":"com.topherofit.thf.spark","version":"APPS RC4 + real-game overlay","source_sha256":"58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43","candidate_apk_sha256":"9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea","target_sdk":36,"arm64_required":true,"status":"FROZEN_CANDIDATE_UNCHANGED"},
+    "rush": {"name":"THF Motion Games","package_id":"com.topherofit.thf.rush","version":"APPS RC4 + Native Verified-Motion V2 + product identity fix","source_sha256":"766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c","candidate_apk_sha256":"f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f","version_code":36200,"version_name":"3.6.2","target_sdk":36,"arm64_required":true,"status":"CANDIDATE_READY_ABI_POLICY_RECONCILIATION_REQUIRED"}
+  },
+  "rush_motion_authority": {"source":"Android SensorManager/SensorEvent","manual_activity_values_accepted":false,"touch_repetition_increment":false,"local_repetitions_reward_authorized":false,"reward_bearing_health_evidence":"BACKEND_REQUIRED","frozen_apk_native_lib_entries":0,"frozen_apk_arm64_v8a_native_payload_present":false,"promotion_allowed_as_arm64_candidate":false},
+  "release_factory_boundary": {"games_factory_self_promoted_phone_target":false,"board_game_states_observed":"NEEDS_CANONICALIZATION for terra/rift/spark/rush","required_next_actions":["Canonicalize Terra/Spark only after exact candidate metadata/ABI/signature/installability reconciliation.","For Rush, produce a coherent same-lineage APK with actual arm64-v8a payload or explicitly correct the ABI policy; never silently relabel the frozen APK.","For Rift, stage exact RC41 archive bytes before Godot 4.7.2 clean import/headless and API36 arm64 export; RC37 remains superseded."]},
+  "shared_runtime": {"avatar_assets":"Preserve validated MPFB/MakeHuman/UAL and uploaded real assets; no destructive asset churn.","physical_device_status":"PENDING"},
+  "anti_churn": {"version_bumped":false,"candidate_rebuilt_without_source_change":false,"phone_target_self_promoted":false,"superseded_apk_reintroduced":false},
+  "final_or_play_ready": false
+}
