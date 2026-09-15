@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "policy": "ReleaseOps/APK_FIRST_ORCHESTRATION.md",
+  "board": "ReleaseOps/APK_FIRST_TARGETS.json",
+  "owner": "THF Games Factory",
+  "handoff_to": "THF Release Factory",
+  "generated_utc": "2026-09-15T12:21:34Z",
+  "objective": "Freeze build-coherent game candidates and avoid RC churn while Release Factory owns PHONE_TEST_TARGET promotion.",
+  "authority": {
+    "terra": {"version":"RC34 Phone V4","source_sha256":"eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68","candidate_apk_sha256":"e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec","state":"CANDIDATE_READY_METADATA_RECONCILIATION_REQUIRED"},
+    "rift": {"version":"4.7.5-rc41","source_sha256":"29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d","candidate_apk_sha256":null,"state":"BLOCKED_BUILD_EXACT_RC41_ARCHIVE_BYTES"},
+    "spark": {"version":"APPS RC4 + real-game overlay","source_sha256":"58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43","candidate_apk_sha256":"9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea","state":"CANDIDATE_READY_METADATA_RECONCILIATION_REQUIRED"},
+    "rush": {"version":"APPS RC4 + Native Verified-Motion V2 + product identity fix","source_sha256":"766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c","candidate_apk_sha256":"f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f","state":"CANDIDATE_READY_METADATA_RECONCILIATION_REQUIRED"}
+  },
+  "rush_frozen_artifact": {
+    "workflow_run_id": 34904322777,
+    "workflow_head_sha": "a4a8e05f2b1f796b57e9d2a1fd692631b00f7cce",
+    "artifact_id": 10371807756,
+    "artifact_name": "THF-RUSH-RC4-NATIVE-VERIFIED-MOTION-V2-QA",
+    "artifact_digest": "sha256:c158383f5b2183be0d677c65748376d44fc2f75a989f136ddfd62a126ab4f0d2",
+    "artifact_expired": false,
+    "artifact_expires_at": "2026-09-28T22:30:59Z",
+    "package_id": "com.topherofit.thf.rush",
+    "user_facing_name": "THF Motion Games",
+    "target_sdk": 36,
+    "qa_signature": "PASS",
+    "zipalign": "PASS",
+    "apk_zip_integrity": "PASS",
+    "packaged_game_payload": "PASS",
+    "product_specific_launcher_icon": "PASS",
+    "manual_activity_values_accepted": false,
+    "touch_repetition_increment": false,
+    "reward_bearing_health_evidence": "BACKEND_REQUIRED",
+    "promotion_authority": "RELEASE_FACTORY_ONLY",
+    "physical_device_status": "PENDING",
+    "final_or_play_ready": false
+  },
+  "anti_churn": {
+    "phone_test_target_invalidated_due_to_dev_head": false,
+    "docs_tests_only_version_bump": false,
+    "older_rift_rc_substituted": false,
+    "candidate_rebuild_without_source_change": false
+  },
+  "next_release_factory_actions": [
+    "Extract exact versionCode and ABI evidence from frozen Terra/Spark/Rush APK candidates before promotion.",
+    "Promote/freeze PHONE_TEST_TARGET only from exact candidate bytes after package metadata reconciliation.",
+    "Stage exact Rift RC41 canonical archive bytes, then run clean extract -> Godot 4.7.2 parser/import/headless -> API36 arm64 export and package/payload/combat gates.",
+    "Keep physical phone evidence mandatory; no Games Factory self-promotion to PHONE_TEST_TARGET."
+  ]
+}
