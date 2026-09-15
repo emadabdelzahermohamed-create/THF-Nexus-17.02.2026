@@ -5,21 +5,21 @@
   "objective": "Reach real PHONE_TEST_TARGET APKs first, surface each immediately, then promote phone-passed builds toward Play Internal.",
   "promotion_rule": "Only Release Factory promotes CANDIDATE_READY to APK_CANDIDATE or PHONE_TEST_TARGET.",
   "products": {
-    "core": {"name": "THF Core", "package_id": "com.topherofit.thf.core", "stream": "Apps Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "pulse": {"name": "THF Fitness", "package_id": "com.topherofit.thf.pulse", "stream": "Fitness Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "forge": {"name": "THF Forge", "package_id": "com.topherofit.thf.forge", "stream": "Apps Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "echo": {"name": "THF Echo", "package_id": "com.topherofit.thf.echo", "stream": "Apps Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "codex": {"name": "THF Codex", "package_id": "com.topherofit.thf.codex", "stream": "Apps Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "terra": {"name": "THF Terra", "package_id": "com.topherofit.thf.terra", "stream": "Games Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "rift": {"name": "THF Rift", "package_id": "com.topherofit.thf.rift", "stream": "Games Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "spark": {"name": "THF Spark", "package_id": "com.topherofit.thf.spark", "stream": "Games Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "rush": {"name": "THF Rush", "package_id": "com.topherofit.thf.rush", "stream": "Games Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "vault": {"name": "THF Vault", "package_id": "com.topherofit.thf.vault", "stream": "Apps Factory", "distribution": "public", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "signal": {"name": "THF Signal", "package_id": "com.topherofit.thf.signal", "stream": "Apps Factory", "distribution": "internal_only", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null},
-    "command": {"name": "THF Command", "package_id": "com.topherofit.thf.command", "stream": "Apps Factory", "distribution": "internal_only", "state": "NEEDS_CANONICALIZATION", "phone_test_target_sha256": null}
+    "core": {"name":"THF Core","package_id":"com.topherofit.thf.core","stream":"Apps Factory","distribution":"public","state":"NEEDS_CANONICALIZATION","phone_test_target_sha256":null},
+    "pulse": {"name":"THF Fitness","package_id":"com.topherofit.thf.pulse","stream":"Fitness Factory","distribution":"public","state":"NEEDS_CANONICALIZATION","phone_test_target_sha256":null},
+    "forge": {"name":"THF Forge","package_id":"com.topherofit.thf.forge","stream":"Apps Factory","distribution":"public","state":"APK_CANDIDATE","candidate_source_sha256":"75c3744af31f16273a174bdac53b9e812613e4d9ef8c2fa260521c7f7c40cbf8","version_code":21102,"version_name":"2.1.1-phone3","target_sdk":36,"phone_test_target_sha256":null},
+    "echo": {"name":"THF Echo","package_id":"com.topherofit.thf.echo","stream":"Apps Factory","distribution":"public","state":"APK_CANDIDATE","candidate_source_sha256":"3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9","version_code":21102,"version_name":"2.1.1-phone3","target_sdk":36,"phone_test_target_sha256":null},
+    "codex": {"name":"THF Codex","package_id":"com.topherofit.thf.codex","stream":"Apps Factory","distribution":"public","state":"APK_CANDIDATE","candidate_source_sha256":"44ff76cca12b6b13febc53e9e0b8748a01949eb07c40b020d76b82f45a094950","version_code":21102,"version_name":"2.1.1-phone3","target_sdk":36,"phone_test_target_sha256":null},
+    "terra": {"name":"THF Terra","package_id":"com.topherofit.thf.terra","stream":"Games Factory","distribution":"public","state":"NEEDS_CANONICALIZATION","phone_test_target_sha256":null},
+    "rift": {"name":"THF Rift","package_id":"com.topherofit.thf.rift","stream":"Games Factory","distribution":"public","state":"NEEDS_CANONICALIZATION","phone_test_target_sha256":null},
+    "spark": {"name":"THF Spark","package_id":"com.topherofit.thf.spark","stream":"Games Factory","distribution":"public","state":"NEEDS_CANONICALIZATION","phone_test_target_sha256":null},
+    "rush": {"name":"THF Rush","package_id":"com.topherofit.thf.rush","stream":"Games Factory","distribution":"public","state":"NEEDS_CANONICALIZATION","phone_test_target_sha256":null},
+    "vault": {"name":"THF Vault","package_id":"com.topherofit.thf.vault","stream":"Apps Factory","distribution":"public","state":"APK_CANDIDATE","candidate_source_sha256":"e33c7c7f1f6d7f913dfe6ca5d674aff2883f7a230c2a323724088c30c4497585","version_code":12002,"version_name":"1.2.0-apps-rc4","target_sdk":36,"phone_test_target_sha256":null},
+    "signal": {"name":"THF Signal","package_id":"com.topherofit.thf.signal","stream":"Apps Factory","distribution":"internal_only","state":"APK_CANDIDATE","candidate_source_sha256":"3b6ba96076decd62e31a90c60d91a101806d6a6e9be329a58baa55ece82227ef","version_code":12002,"version_name":"1.2.0-apps-rc4","target_sdk":36,"phone_test_target_sha256":null,"release_boundary":"private_internal_no_launcher"},
+    "command": {"name":"THF Command","package_id":"com.topherofit.thf.command","stream":"Apps Factory","distribution":"internal_only","state":"APK_CANDIDATE","candidate_source_sha256":"314a89f33f62d754edc9cc369fcc35b019d6081c6be0dcfbffa0fe5801ce0ffc","version_code":12002,"version_name":"1.2.0-apps-rc4","target_sdk":36,"phone_test_target_sha256":null,"release_boundary":"private_internal_no_launcher"}
   },
   "non_apk_components": {
-    "pass": {"name": "THF Pass", "type": "backend_sdk", "owner": "Apps Factory"},
-    "tokenops": {"name": "THF TokenOps", "type": "solana_treasury_governance", "owner": "TokenOps Factory"}
+    "pass": {"name":"THF Pass","type":"backend_sdk","owner":"Apps Factory"},
+    "tokenops": {"name":"THF TokenOps","type":"solana_treasury_governance","owner":"TokenOps Factory"}
   }
 }
