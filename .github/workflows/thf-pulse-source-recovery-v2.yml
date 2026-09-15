@@ -1,0 +1,81 @@
+name: THF Pulse Source Recovery Forensics v2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-pulse-source-recovery-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: thf-pulse-source-recovery-v2
+  cancel-in-progress: true
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  PULSE_SRC: /home/sa_115575029018678177962/thf-apps-rc3-exact-candidate-v2/work/pulse/THF_Pulse_APPS_RC2_SOURCE
+  PULSE_SOURCE_SHA: 6a180cf6599f8827e824431caf4566f520cc3796d9366c30abc197b4aeb6ba34
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Collect immutable recovery evidence
+        run: |
+          set -Eeuo pipefail
+          rm -rf out && mkdir -p out
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="set -Eeuo pipefail; SRC='$PULSE_SRC'; EXPECT='$PULSE_SOURCE_SHA'; test -d \"\$SRC\"; rm -rf /tmp/thf-pulse-recovery-v2; cp -a \"\$SRC\" /tmp/thf-pulse-recovery-v2; cd /tmp/thf-pulse-recovery-v2; RAW=\$(find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); rm -rf android/.gradle android/app/build android/build .gradle; find . -type d \( -name __pycache__ -o -name .pytest_cache \) -prune -exec rm -rf {} +; find . -type f -name '*.pyc' -delete; CLEAN=\$(find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); LOCAL_SHA=ABSENT; test ! -f android/local.properties || LOCAL_SHA=\$(sha256sum android/local.properties | awk '{print \$1}'); rm -f android/local.properties; NOLOCAL=\$(find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); printf 'expected=%s\nraw=%s\nclean=%s\nclean_without_android_local_properties=%s\nandroid_local_properties_sha256=%s\n' \"\$EXPECT\" \"\$RAW\" \"\$CLEAN\" \"\$NOLOCAL\" \"\$LOCAL_SHA\" > /tmp/thf-pulse-recovery-summary.txt; find . -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/thf-pulse-recovery-clean.sha256; find . -type f -printf '%T@\t%s\t%p\n' | sort -nr > /tmp/thf-pulse-recovery-files.tsv; find \"\$(dirname \"\$SRC\")\" \"\$HOME\" -maxdepth 6 -type f \( -iname '*pulse*.zip' -o -iname '*pulse*.tar' -o -iname '*pulse*.tar.gz' -o -iname '*pulse*.tgz' -o -iname '*pulse*.sha256' -o -iname '*pulse*manifest*' \) -printf '%T@\t%s\t%p\n' 2>/dev/null | sort -nr | head -300 > /tmp/thf-pulse-recovery-archives.tsv || true; cat /tmp/thf-pulse-recovery-summary.txt"
+          gcloud compute scp "$GCP_BUILDER:/tmp/thf-pulse-recovery-summary.txt" out/SUMMARY.txt --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp "$GCP_BUILDER:/tmp/thf-pulse-recovery-clean.sha256" out/CLEAN_SOURCE_FILES.sha256 --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp "$GCP_BUILDER:/tmp/thf-pulse-recovery-files.tsv" out/FILES.tsv --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp "$GCP_BUILDER:/tmp/thf-pulse-recovery-archives.tsv" out/ARCHIVE_CANDIDATES.tsv --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          cat out/SUMMARY.txt
+          head -100 out/ARCHIVE_CANDIDATES.tsv || true
+      - name: Classify source authority without mutation
+        run: |
+          set -Eeuo pipefail
+          EXPECT=$(sed -n 's/^expected=//p' out/SUMMARY.txt)
+          CLEAN=$(sed -n 's/^clean=//p' out/SUMMARY.txt)
+          NOLOCAL=$(sed -n 's/^clean_without_android_local_properties=//p' out/SUMMARY.txt)
+          {
+            echo "expected=$EXPECT"
+            echo "clean=$CLEAN"
+            echo "clean_without_android_local_properties=$NOLOCAL"
+            if test "$CLEAN" = "$EXPECT"; then
+              echo 'classification=EXACT_AUTHORITATIVE'
+            elif test "$NOLOCAL" = "$EXPECT"; then
+              echo 'classification=ONLY_ANDROID_LOCAL_PROPERTIES_TRANSIENT'
+            else
+              echo 'classification=SOURCE_DRIFT_REQUIRES_FILE_LEVEL_RECOVERY'
+            fi
+            echo 'source_modified=false'
+            echo 'non_pulse_code_modified=false'
+            echo 'build_attempted=false'
+          } | tee out/CLASSIFICATION.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-PULSE-SOURCE-RECOVERY-V2-${{ github.run_id }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
