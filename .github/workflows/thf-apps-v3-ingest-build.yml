@@ -27,11 +27,12 @@ jobs:
         with:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
       - name: Prove Apps V3 authority
         run: python ReleaseOps/validate_thf_apps_phone_authority_v3.py
-      - name: Fetch exact staged bytes and verify SHA before builder transfer
+      - name: Fetch exact staged bytes with authenticated Drive API and verify SHA
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -44,11 +45,13 @@ jobs:
           THF_Signal_PHONE_FUNDAMENTALS_SRC3.zip 10qPO33KG8lL7KWKmoRO2nxJDZSj4eSw4 3b6ba96076decd62e31a90c60d91a101806d6a6e9be329a58baa55ece82227ef
           THF_Command_PHONE_FUNDAMENTALS_SRC3.zip 1JtABZ7SNGuJ5jKoYc2xlj5f2nSvdBs2y 314a89f33f62d754edc9cc369fcc35b019d6081c6be0dcfbffa0fe5801ce0ffc
           EOF
+          token=$(gcloud auth print-access-token)
           while read -r name id want; do
-            curl -fL --retry 2 --connect-timeout 15 "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t" -o "exact/$name"
+            curl -fsSL --retry 2 --connect-timeout 15 -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" -o "exact/$name"
             got=$(sha256sum "exact/$name" | awk '{print $1}')
             test "$got" = "$want" || { echo "SHA_MISMATCH $name $got"; exit 20; }
             unzip -tq "exact/$name" >/dev/null
+            echo "VERIFIED $name $got"
           done < specs
       - name: Transfer exact verified inputs to isolated builder directory
         run: |
@@ -66,12 +69,16 @@ jobs:
             n=$(basename "$z"); unzip -tq "$z"; d="$ROOT/work/${n%.zip}"; rm -rf "$d"; mkdir -p "$d"; unzip -q "$z" -d "$d"
             printf '%s SHA=%s\n' "$n" "$(sha256sum "$z"|awk '{print $1}')" >> "$ROOT/out/report.txt"
             p=$(find "$d" -type f -name gradlew -print -quit || true)
+            b=$(find "$d" -type f -name build.gradle -not -path '*/app/*' -print -quit || true)
             if [ -n "$p" ]; then
               cd "$(dirname "$p")"; chmod +x ./gradlew; ./gradlew --no-daemon clean test assembleDebug
-              find . -type f \( -name '*.apk' -o -name '*.aab' \) -exec sha256sum {} \; >> "$ROOT/out/report.txt"
+            elif [ -n "$b" ] && command -v gradle >/dev/null 2>&1; then
+              cd "$(dirname "$b")"; gradle --no-daemon clean test assembleDebug
             else
-              printf '%s BUILD_GATE=NO_GRADLEW\n' "$n" >> "$ROOT/out/report.txt"
+              printf '%s BUILD_GATE=NO_GRADLE_RUNTIME wrapper=%s build=%s\n' "$n" "${p:-none}" "${b:-none}" >> "$ROOT/out/report.txt"
+              continue
             fi
+            find . -type f \( -name '*.apk' -o -name '*.aab' \) -exec sha256sum {} \; >> "$ROOT/out/report.txt"
           done
           cat "$ROOT/out/report.txt"
           REMOTE
