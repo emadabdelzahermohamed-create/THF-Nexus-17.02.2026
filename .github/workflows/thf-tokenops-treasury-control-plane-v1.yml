@@ -1,0 +1,36 @@
+name: THF TokenOps Treasury Control Plane v1
+on:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/treasury_control_plane.py'
+      - 'ReleaseOps/TokenOps/test_treasury_control_plane.py'
+      - '.github/workflows/thf-tokenops-treasury-control-plane-v1.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/TokenOps/treasury_control_plane.py'
+      - 'ReleaseOps/TokenOps/test_treasury_control_plane.py'
+permissions:
+  contents: read
+jobs:
+  invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Compile
+        run: python -m py_compile ReleaseOps/TokenOps/treasury_control_plane.py ReleaseOps/TokenOps/test_treasury_control_plane.py
+      - name: Test
+        working-directory: ReleaseOps/TokenOps
+        run: python -m unittest -v test_treasury_control_plane.py
+      - name: Prove non-execution
+        working-directory: ReleaseOps/TokenOps
+        run: |
+          python - <<'PY'
+          from treasury_control_plane import *
+          p=plan_distribution(100000,[Recipient('u','w','1')])
+          assert p['active_user_share_bps']==3500 and not p['broadcast']
+          assert not burn_gap(10,8)['execute']
+          assert not validate_vesting(10,0,1,2,2)['settle']
+          print('TOKENOPS_TREASURY_EXECUTION=false')
+          PY
