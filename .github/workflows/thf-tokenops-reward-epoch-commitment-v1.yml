@@ -1,0 +1,33 @@
+name: THF TokenOps Reward Epoch Commitment V1
+on:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/reward_epoch_commitment.py'
+      - 'ReleaseOps/TokenOps/test_reward_epoch_commitment.py'
+      - 'ReleaseOps/TokenOps/reward_allocation_engine.py'
+      - '.github/workflows/thf-tokenops-reward-epoch-commitment-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile ReleaseOps/TokenOps/reward_allocation_engine.py ReleaseOps/TokenOps/reward_epoch_commitment.py
+      - name: Regression
+        working-directory: ReleaseOps/TokenOps
+        run: python -m unittest -v test_reward_allocation_engine.py test_reward_epoch_commitment.py
+      - name: Fail-closed financial assertions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('ReleaseOps/TokenOps/reward_epoch_commitment.py').read_text()
+          for x in ['active_user_bps\":3500','\"sign\":False','\"broadcast\":False','\"financial_execution\":False','COMMITTED_FOR_SIMULATION']:
+              assert x in p, x
+          print('TokenOps reward epoch commitment safety gate PASS')
+          PY
