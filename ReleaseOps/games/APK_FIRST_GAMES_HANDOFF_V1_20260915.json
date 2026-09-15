@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "policy": "ReleaseOps/APK_FIRST_ORCHESTRATION.md",
+  "board": "ReleaseOps/APK_FIRST_TARGETS.json",
+  "owner": "THF Games Factory",
+  "handoff_to": "THF Release Factory",
+  "generated_utc": "2026-09-15T11:26:44Z",
+  "promotion_authority": "RELEASE_FACTORY_ONLY",
+  "games": {
+    "terra": {
+      "name": "THF World",
+      "package_id": "com.topherofit.thf.terra",
+      "qa_package_id": "com.topherofit.thf.terra.phoneqa",
+      "version_name": "RC34 Phone V4",
+      "version_code": "NOT_CAPTURED_IN_CURRENT_RELEASEOPS_EVIDENCE",
+      "source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
+      "candidate_apk_sha256": "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
+      "target_sdk": 36,
+      "abi_requirement": "arm64-v8a",
+      "engine": "Godot 4.7.2",
+      "automated_evidence": ["Godot import/headless/export PASS", "real exported payload PASS", "sensor-landscape/expand contract PASS", "touch-safe local explore contract PASS", "online world/social/economy mutation backend-authoritative"],
+      "candidate_status": "CANDIDATE_READY_METADATA_RECONCILIATION_REQUIRED",
+      "release_factory_required": ["recover exact versionCode from candidate badging before promotion", "freeze exact APK SHA if promoted", "physical phone evidence remains mandatory"]
+    },
+    "rift": {
+      "name": "THF Arena",
+      "package_id": "com.topherofit.thf.rift",
+      "version_name": "4.7.5-rc41",
+      "version_code": "NOT_CAPTURED_IN_CURRENT_RELEASEOPS_EVIDENCE",
+      "source_sha256": "29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d",
+      "candidate_apk_sha256": null,
+      "target_sdk": 36,
+      "abi_requirement": "arm64-v8a",
+      "engine": "Godot 4.7.2 required",
+      "candidate_status": "BLOCKED_BUILD",
+      "blocker": "Exact RC41 canonical archive bytes are not staged to the builder; RC37 and older APKs are superseded and forbidden substitutes.",
+      "next_build_gate": "exact RC41 SHA -> safe clean extract -> Godot 4.7.2 parser/import/headless -> API36 arm64 export -> package/signature/installability/payload/combat gates"
+    },
+    "spark": {
+      "name": "THF Learn Games",
+      "package_id": "com.topherofit.thf.spark",
+      "version_name": "APPS RC4 + real-game overlay",
+      "version_code": "NOT_CAPTURED_IN_CURRENT_RELEASEOPS_EVIDENCE",
+      "source_sha256": "58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43",
+      "candidate_apk_sha256": "9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea",
+      "target_sdk": 36,
+      "abi_requirement": "arm64-v8a required by public game policy",
+      "engine": "native Android/game overlay lineage",
+      "automated_evidence": ["real-game overlay candidate preserved", "raw RC4 shell rejected", "offline/local gameplay must not fabricate online state"],
+      "candidate_status": "CANDIDATE_READY_METADATA_RECONCILIATION_REQUIRED",
+      "release_factory_required": ["recover exact versionCode/ABI evidence from candidate before promotion", "freeze exact APK SHA if promoted", "physical learning-gameplay/touch/lifecycle/performance evidence remains mandatory"]
+    },
+    "rush": {
+      "name": "THF Motion Games",
+      "package_id": "com.topherofit.thf.rush",
+      "version_name": "APPS RC4 + Native Verified-Motion V2 + product identity fix",
+      "version_code": "NOT_CAPTURED_IN_CURRENT_RELEASEOPS_EVIDENCE",
+      "source_sha256": "766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c",
+      "candidate_apk_sha256": "f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f",
+      "target_sdk": 36,
+      "engine": "Android Gradle 8.13 / Java 17 native game runtime",
+      "workflow_run_id": 34904322777,
+      "artifact_id": 10371807756,
+      "artifact_digest": "sha256:c158383f5b2183be0d677c65748376d44fc2f75a989f136ddfd62a126ab4f0d2",
+      "tests": ["safe exact-source extract PASS", "source real-function contract PASS", "release/debug lint PASS", "assembleRelease PASS", "zipalign PASS", "QA signature verify PASS", "APK ZIP integrity PASS", "real packaged game payload PASS", "product-specific launcher identity PASS"],
+      "motion_truth": {"source": "Android SensorManager/SensorEvent", "registered_sensor_identity_required": true, "finite_three_axis_required": true, "monotonic_hardware_timestamp_required": true, "manual_activity_values_accepted": false, "touch_repetition_increment": false, "local_repetitions_reward_authorized": false, "reward_bearing_health_evidence": "BACKEND_REQUIRED"},
+      "candidate_status": "CANDIDATE_READY_METADATA_RECONCILIATION_REQUIRED",
+      "release_factory_required": ["recover exact versionCode and ABI badging evidence before promotion", "freeze exact artifact if promoted", "physical sensor-motion/lifecycle/offline/crash/performance evidence remains mandatory"]
+    }
+  },
+  "global_truth": {"phone_test_target_promoted_by_games_factory": false, "final_or_play_ready": false, "physical_device_required": true, "production_signing": false}
+}
