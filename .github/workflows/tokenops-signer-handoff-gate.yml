@@ -1,0 +1,29 @@
+name: TokenOps Signer Handoff Gate
+on:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/signer_handoff_bundle.py'
+      - 'ReleaseOps/TokenOps/test_signer_handoff_bundle.py'
+      - '.github/workflows/tokenops-signer-handoff-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile ReleaseOps/TokenOps/signer_handoff_bundle.py ReleaseOps/TokenOps/test_signer_handoff_bundle.py
+      - name: Regression tests
+        working-directory: ReleaseOps/TokenOps
+        run: python -m unittest -v test_signer_handoff_bundle.py
+      - name: Financial non-execution assertions
+        run: |
+          grep -q '"sign":False' ReleaseOps/TokenOps/signer_handoff_bundle.py
+          grep -q '"broadcast":False' ReleaseOps/TokenOps/signer_handoff_bundle.py
+          grep -q '"financial_execution":False' ReleaseOps/TokenOps/signer_handoff_bundle.py
+          grep -q 'READY_FOR_USER_CONTROLLED_MULTISIG_REVIEW' ReleaseOps/TokenOps/signer_handoff_bundle.py
