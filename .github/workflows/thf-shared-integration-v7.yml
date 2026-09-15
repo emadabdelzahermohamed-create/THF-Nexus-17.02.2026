@@ -1,0 +1,52 @@
+name: THF Shared Integration V7
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ReleaseOps/integration_factory/shared_integration_runtime_v7.py
+      - ReleaseOps/integration_factory/test_shared_integration_runtime_v7.py
+      - ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V7.json
+      - .github/workflows/thf-shared-integration-v7.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Compile V4-V7 integration runtimes
+        run: |
+          python3 -m py_compile ReleaseOps/integration_factory/shared_integration_contracts.py ReleaseOps/integration_factory/shared_integration_runtime_v4.py ReleaseOps/integration_factory/shared_integration_runtime_v5.py ReleaseOps/integration_factory/shared_integration_runtime_v6.py ReleaseOps/integration_factory/shared_integration_runtime_v7.py ReleaseOps/integration_factory/test_shared_integration_runtime_v7.py
+      - name: Run V4-V7 regression tests
+        run: |
+          cd ReleaseOps/integration_factory
+          python3 -m unittest -v test_shared_integration_runtime_v4.py test_shared_integration_runtime_v5.py test_shared_integration_runtime_v6.py test_shared_integration_runtime_v7.py
+      - name: Validate V7 manifest truth
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V7.json').read_text())
+          assert d['schema']=='thf.android.shared.integration.v7'
+          assert d['baseline']['package_ids_preserved'] is True
+          assert d['baseline']['wave_touched'] is False
+          assert d['identity']['device_bound_sessions'] is True
+          assert d['identity']['client_roles_authoritative'] is False
+          assert d['health']['revocation_stops_sync'] is True
+          assert d['health']['health_connect_primary'] is True
+          assert d['health']['samsung_health_optional'] is True
+          assert d['health']['fabricated_data_allowed'] is False
+          assert d['operator_routes']['ordinary_user_visibility'] is False
+          assert d['operator_routes']['server_role_authoritative'] is True
+          assert d['release_truth']['physical_device_pass'] is False
+          assert d['release_truth']['final_or_play_ready'] is False
+          print('THF_SHARED_INTEGRATION_V7_MANIFEST=PASS')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
