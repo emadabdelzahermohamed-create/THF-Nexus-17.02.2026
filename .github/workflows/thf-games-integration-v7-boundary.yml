@@ -1,0 +1,26 @@
+name: THF Games Integration V7 Boundary
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
+      - 'ReleaseOps/games/game_integration_v7_gate.py'
+      - 'ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V7.json'
+      - 'ReleaseOps/integration_factory/shared_integration_runtime_v7.py'
+      - 'ReleaseOps/integration_factory/shared_integration_contracts.py'
+      - '.github/workflows/thf-games-integration-v7-boundary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  game-v7-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate game authority against V7 identity and health truth
+        run: python3 ReleaseOps/games/game_integration_v7_gate.py
+      - name: Syntax check V7 integration runtime
+        run: python3 -m py_compile ReleaseOps/integration_factory/shared_integration_runtime_v7.py ReleaseOps/integration_factory/shared_integration_contracts.py
