@@ -2,7 +2,11 @@ name: THF Apps Phone V3 Builder Discovery
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/thf-apps-phone-v3-builder-discovery.yml']
+    paths:
+      - '.github/workflows/thf-apps-phone-v3-builder-discovery.yml'
+      - 'ReleaseOps/THF_APPS_PHONE_FUNDAMENTALS_SOURCE_V3_MANIFEST.json'
+      - 'ReleaseOps/validate_thf_apps_phone_authority_v3.py'
+      - 'ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V7.json'
   workflow_dispatch:
 permissions:
   contents: read
