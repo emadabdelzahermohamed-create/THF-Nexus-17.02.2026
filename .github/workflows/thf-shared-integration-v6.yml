@@ -1,0 +1,50 @@
+name: THF Shared Integration V6
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ReleaseOps/integration_factory/shared_integration_runtime_v6.py
+      - ReleaseOps/integration_factory/test_shared_integration_runtime_v6.py
+      - ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V6.json
+      - .github/workflows/thf-shared-integration-v6.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Compile shared integration V6
+        run: |
+          python3 -m py_compile ReleaseOps/integration_factory/shared_integration_contracts.py ReleaseOps/integration_factory/shared_integration_runtime_v4.py ReleaseOps/integration_factory/shared_integration_runtime_v5.py ReleaseOps/integration_factory/shared_integration_runtime_v6.py ReleaseOps/integration_factory/test_shared_integration_runtime_v6.py
+      - name: Run V4 V5 V6 tests
+        run: |
+          cd ReleaseOps/integration_factory
+          python3 -m unittest -v test_shared_integration_runtime_v4.py test_shared_integration_runtime_v5.py test_shared_integration_runtime_v6.py
+      - name: Validate V6 manifest truth
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('ReleaseOps/integration_factory/ANDROID_SHARED_INTEGRATION_V6.json').read_text())
+          assert d['schema']=='thf.android.shared.integration.v6'
+          assert d['baseline']['package_ids_preserved'] is True
+          assert d['baseline']['wave_touched'] is False
+          assert d['health_permissions']['least_privilege'] is True
+          assert d['health_permissions']['background_read_default'] is False
+          assert d['health_permissions']['write_default'] is False
+          assert d['account_deletion']['client_delete_authority'] is False
+          assert d['operator_step_up']['ordinary_user_visibility'] is False
+          assert d['operator_step_up']['second_factor_required'] is True
+          assert d['preference_sync']['supported_locale_count']==20
+          assert all(v is False for v in d['release_truth'].values())
+          print('THF_SHARED_INTEGRATION_V6_MANIFEST=PASS')
+          print('FINAL_OR_PLAY_READY=FALSE')
+          PY
