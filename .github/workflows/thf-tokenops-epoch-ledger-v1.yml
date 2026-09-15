@@ -1,0 +1,37 @@
+name: THF TokenOps Epoch Ledger v1
+on:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/treasury_epoch_ledger.py'
+      - 'ReleaseOps/TokenOps/test_treasury_epoch_ledger.py'
+      - '.github/workflows/thf-tokenops-epoch-ledger-v1.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/TokenOps/treasury_epoch_ledger.py'
+      - 'ReleaseOps/TokenOps/test_treasury_epoch_ledger.py'
+permissions:
+  contents: read
+jobs:
+  invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Compile
+        run: python -m py_compile ReleaseOps/TokenOps/treasury_epoch_ledger.py ReleaseOps/TokenOps/test_treasury_epoch_ledger.py
+      - name: Test
+        working-directory: ReleaseOps/TokenOps
+        run: python -m unittest -v test_treasury_epoch_ledger.py
+      - name: Prove fail-closed settlement
+        working-directory: ReleaseOps/TokenOps
+        run: |
+          python - <<'PY'
+          from treasury_epoch_ledger import *
+          i=EpochInput('gate','a'*40,100000,'b'*64,'c'*64)
+          e=build_epoch(i,pool_atomic=35000,allocated_atomic=30000,unallocated_atomic=5000)
+          m=unsigned_settlement_manifest(e,[{'wallet':'w','amount_atomic':30000}],treasury_pubkey=None)
+          assert m['status']=='BLOCKED_TREASURY_PUBKEY'
+          assert not m['sign'] and not m['broadcast'] and not e['financial_execution']
+          print('TOKENOPS_FINANCIAL_EXECUTION=false')
+          PY
