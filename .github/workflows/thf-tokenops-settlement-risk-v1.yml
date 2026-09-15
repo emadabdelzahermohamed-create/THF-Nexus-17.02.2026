@@ -1,0 +1,32 @@
+name: THF TokenOps Settlement Risk V1
+on:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/settlement_risk_gate.py'
+      - 'ReleaseOps/TokenOps/test_settlement_risk_gate.py'
+      - '.github/workflows/thf-tokenops-settlement-risk-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile TokenOps risk gate
+        run: python -m py_compile ReleaseOps/TokenOps/settlement_risk_gate.py
+      - name: Run settlement risk regression
+        working-directory: ReleaseOps/TokenOps
+        run: python -m unittest -v test_settlement_risk_gate.py
+      - name: Static non-execution assertions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('ReleaseOps/TokenOps/settlement_risk_gate.py').read_text()
+          for required in ['ANTI_WHALE_RECIPIENT_CAP_EXCEEDED','REPLAYED_SETTLEMENT_MANIFEST','"sign":False','"broadcast":False','"financial_execution":False','requires_user_controlled_multisig']:
+              assert required in p, required
+          print('TokenOps settlement risk safety gate PASS')
+          PY
