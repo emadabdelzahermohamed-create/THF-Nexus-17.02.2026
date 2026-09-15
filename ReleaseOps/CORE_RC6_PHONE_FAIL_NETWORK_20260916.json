@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "product": "THF Core",
+  "surface_name": "THF Hub",
+  "package_id": "com.topherofit.thf.core",
+  "candidate_source_sha256": "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a",
+  "pinned_phone_test_target_sha256": "87d119badc52504bd2471eec53fcc0142ca2e2cbac3171ab825b871c4087199f",
+  "version_name": "6.2.2-rc6",
+  "version_code": 62200,
+  "target_sdk": 36,
+  "observed_on_physical_phone": true,
+  "observed_failure": {
+    "class": "NETWORK_ENDPOINT_DNS",
+    "android_webview_error": "net::ERR_NAME_NOT_RESOLVED",
+    "endpoint_family": "*.trycloudflare.com",
+    "user_visible_state": "connection interrupted / retry",
+    "impact": "required network-backed Core surface cannot bootstrap"
+  },
+  "candidate_disposition": "PHONE_FAIL",
+  "pinned_sha_history_rule": "retain exact target SHA as failed historical target; do not silently replace with DEV_HEAD",
+  "required_repair": [
+    "replace ephemeral Quick Tunnel authority with persistent HTTPS endpoint",
+    "inspect exact corrected APK and prove embedded endpoint equals tested endpoint",
+    "pass DNS, TLS, health and Core bootstrap checks immediately before handoff",
+    "repeat physical-phone install/launch/touch/layout/background-resume/offline-online/navigation/auth-error/crash-free smoke"
+  ],
+  "not_claimed": [
+    "PHONE_PASS",
+    "PLAY_CANDIDATE",
+    "PLAY_READY",
+    "FINAL",
+    "production signing"
+  ],
+  "policy": "ReleaseOps/NETWORK_ENDPOINT_RELEASE_POLICY_V1.md"
+}
