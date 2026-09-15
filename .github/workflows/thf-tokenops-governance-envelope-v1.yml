@@ -1,0 +1,32 @@
+name: THF TokenOps Governance Envelope V1
+on:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/governance_execution_envelope.py'
+      - 'ReleaseOps/TokenOps/test_governance_execution_envelope.py'
+      - '.github/workflows/thf-tokenops-governance-envelope-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile TokenOps control plane
+        run: python -m py_compile ReleaseOps/TokenOps/governance_execution_envelope.py ReleaseOps/TokenOps/treasury_epoch_ledger.py
+      - name: Run governance non-execution regression
+        working-directory: ReleaseOps/TokenOps
+        run: python -m unittest -v test_governance_execution_envelope.py
+      - name: Static financial safety assertions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('ReleaseOps/TokenOps/governance_execution_envelope.py').read_text()
+          for required in ['"sign":False','"broadcast":False','"financial_execution":False','READY_FOR_EXTERNAL_SIGNER_REVIEW','requires_user_controlled_multisig']:
+              assert required in p, required
+          print('TokenOps governance envelope safety gate PASS')
+          PY
