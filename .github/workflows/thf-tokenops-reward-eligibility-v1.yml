@@ -1,0 +1,32 @@
+name: THF TokenOps Reward Eligibility V1
+on:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/reward_eligibility_commitment.py'
+      - 'ReleaseOps/TokenOps/test_reward_eligibility_commitment.py'
+      - '.github/workflows/thf-tokenops-reward-eligibility-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile ReleaseOps/TokenOps/reward_eligibility_commitment.py
+      - name: Regression
+        working-directory: ReleaseOps/TokenOps
+        run: python -m unittest -v test_reward_eligibility_commitment.py
+      - name: Safety assertions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('ReleaseOps/TokenOps/reward_eligibility_commitment.py').read_text()
+          for x in ['fabricated_activity_allowed','"sign":False','"broadcast":False','"financial_execution":False','provenance']:
+              assert x in p, x
+          print('TokenOps reward eligibility safety gate PASS')
+          PY
