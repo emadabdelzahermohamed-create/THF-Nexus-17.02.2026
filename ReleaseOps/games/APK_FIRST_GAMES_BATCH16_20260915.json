@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "policy": "ReleaseOps/APK_FIRST_ORCHESTRATION.md",
+  "board": "ReleaseOps/APK_FIRST_TARGETS.json",
+  "owner": "THF Games Factory",
+  "handoff_to": "THF Release Factory",
+  "generated_utc": "2026-09-15T15:24:00Z",
+  "objective": "Preserve frozen phone-test candidates, prove no game-authority regression after unrelated DEV_HEAD advancement, and keep the exact Rush ABI mismatch fail-closed without RC churn.",
+  "lineage": {
+    "previous_games_checkpoint": "516a5677532bb915debdff5805c8553ed1cf15be",
+    "observed_repo_head_before_batch": "301616f93d46f52919d5702bfe67f9be0baf01ea",
+    "intervening_change_scope": "TokenOps governance execution-envelope commits only; authoritative game registry and frozen game APK SHAs remain unchanged.",
+    "phone_target_invalidated_due_to_dev_head": false
+  },
+  "authority": {
+    "terra": {"version":"RC34 Phone V4","source_sha256":"eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68","candidate_apk_sha256":"e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec","status":"FROZEN_CANDIDATE_UNCHANGED"},
+    "rift": {"version":"4.7.5-rc41","source_sha256":"29edaa0eb594a25d0960cb176765663f9bab3d91a60fd98016474ff5695cb95d","candidate_apk_sha256":null,"status":"BLOCKED_BUILD_EXACT_RC41_ARCHIVE_BYTES_REQUIRED","older_rc_fallback_allowed":false},
+    "spark": {"version":"APPS RC4 + real-game overlay","source_sha256":"58a32690ea69b6fd62a977145079e0ad6e75061724a786d5db9276b95ec48d43","candidate_apk_sha256":"9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea","status":"FROZEN_CANDIDATE_UNCHANGED"},
+    "rush": {"version":"APPS RC4 + Native Verified-Motion V2 + product identity fix","source_sha256":"766936c25700643bcf813d4e754b287f79810eebe859bd45388391bf57bf771c","candidate_apk_sha256":"f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f","status":"CANDIDATE_READY_ABI_POLICY_RECONCILIATION_REQUIRED"}
+  },
+  "rush_gate": {
+    "package_id":"com.topherofit.thf.rush",
+    "version_code":36200,
+    "version_name":"3.6.2",
+    "target_sdk":36,
+    "motion_source":"Android SensorManager/SensorEvent",
+    "manual_activity_values_accepted":false,
+    "touch_repetition_increment":false,
+    "local_repetitions_reward_authorized":false,
+    "reward_bearing_health_evidence":"BACKEND_REQUIRED",
+    "frozen_apk_native_lib_entries":0,
+    "frozen_apk_arm64_v8a_native_payload_present":false,
+    "authority_arm64_required":true,
+    "promotion_allowed_as_arm64_candidate":false,
+    "resolution":"Do not mutate or silently relabel the frozen APK. A new coherent candidate must be produced from the same authoritative source lineage with an actual arm64-v8a native payload, or Release Factory must explicitly correct the ABI requirement with documented rationale. Games Factory does not self-promote."
+  },
+  "shared_runtime": {
+    "avatar_mpbf_makehuman_ual":"preserve validated uploaded assets and runtime; no destructive asset churn in this batch",
+    "gameplay_regression":"No source-byte change to Terra/Spark/Rush candidates in this batch, so prior exact-byte gates remain applicable; no false rebuild PASS asserted.",
+    "physical_device_status":"PENDING"
+  },
+  "anti_churn": {"version_bumped":false,"candidate_rebuilt_without_source_change":false,"phone_target_self_promoted":false,"superseded_apk_reintroduced":false},
+  "final_or_play_ready": false
+}
