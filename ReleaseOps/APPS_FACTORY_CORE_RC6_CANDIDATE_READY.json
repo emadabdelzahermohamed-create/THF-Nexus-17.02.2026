@@ -1,0 +1,70 @@
+{
+  "schema": "thf-apps-candidate-ready-v1",
+  "product": "core",
+  "name": "THF Core",
+  "approved_surface_name": "THF Hub",
+  "package_id": "com.topherofit.thf.core",
+  "distribution": "public",
+  "owner": "Apps Factory",
+  "promotion_owner": "THF Release Factory",
+  "candidate_status": "CANDIDATE_READY",
+  "phone_test_target": false,
+  "source": {
+    "checkpoint": "CORE-RC6",
+    "archive": "THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip",
+    "sha256": "6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a",
+    "version_code": 62200,
+    "version_name": "6.2.2-rc6",
+    "compile_sdk": 36,
+    "target_sdk": 36
+  },
+  "validated_user_journeys": [
+    "unified personalized home",
+    "server-derived onboarding",
+    "next-best-action",
+    "ecosystem discovery",
+    "cross-domain achievements",
+    "offline/loading/error/retry UX",
+    "Data Saver",
+    "Reduce Motion",
+    "High Contrast and text zoom",
+    "20-locale web/navigation/native-shell localization",
+    "Arabic/Urdu RTL behavior",
+    "THF Pass one-time target-bound federation handoff/exchange"
+  ],
+  "tests": {
+    "full_core_pytest": "38/38 PASS",
+    "python_compileall": "PASS",
+    "javascript_syntax": "PASS",
+    "android_xml_static_parse": "PASS",
+    "android_20_locale_resource_gate": "PASS",
+    "android_package_sdk_version_assertions": "PASS",
+    "deterministic_zip_integrity": "PASS",
+    "exact_source_android_build_and_package_inspection": "PASS via GitHub Actions run 34651319006"
+  },
+  "integration_contracts": {
+    "home": "/api/core/home",
+    "pass_handoff": "POST /api/core/pass/handoff",
+    "pass_exchange": "POST /api/core/pass/exchange",
+    "pass_rules": "authenticated Core user; opaque one-time target-bound ticket; SHA-256 digest only; TTL 30..180s; wrong-target/reuse/self-target fail closed; exchange does not mint a Core login session"
+  },
+  "build_evidence": {
+    "debug_apk_sha256": "87d119badc52504bd2471eec53fcc0142ca2e2cbac3171ab825b871c4087199f",
+    "unsigned_release_aab_sha256": "e71625911d2c06eb0d084f6ed094fcd142f093fcfbb2bf2b13b59a4221760e6e",
+    "artifact_zip_sha256": "c5e98699c883b5ec8ad9f1ef72583fb5e280e1852f7f30e7fee9fda0a6732b9f",
+    "note": "Evidence is recorded for lineage/build coherence only. Release Factory owns APK_CANDIDATE/PHONE_TEST_TARGET promotion. A later MobileFix1 QA build from the same source SHA exists with injected live HTTPS endpoint, but is not adopted here as a PHONE_TEST_TARGET."
+  },
+  "known_blockers": [
+    "Release Factory must arbitrate/promote the canonical APK candidate; Apps Factory does not self-promote",
+    "production signing is not proven",
+    "physical-device acceptance for the canonical promoted target is not proven by this manifest",
+    "production OAuth/provider/durable identity-session runtime remains an external integration gate"
+  ],
+  "anti_churn": {
+    "new_version_created": false,
+    "source_modified": false,
+    "reason": "Canonicalization/checkpoint only; preserve exact RC6 source SHA and version metadata."
+  },
+  "scope_exclusions": ["pulse", "games", "wave"],
+  "final_or_play_ready": false
+}
