@@ -48,7 +48,7 @@ jobs:
           chmod +x ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh
           gcloud compute scp ReleaseOps/scripts/build_pulse_phone_baseline_v2.sh "$GCP_BUILDER:/tmp/build_pulse_phone_baseline_v2.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
           gcloud compute scp ReleaseOps/scripts/run_pulse_phone_baseline_v2_diagnostic.sh "$GCP_BUILDER:/tmp/run_pulse_phone_baseline_v2_diagnostic.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="set -Eeuo pipefail; rm -rf \"\$HOME/thf-pulse-phone-baseline-v2/out\"; rm -rf /tmp/thf-pulse-authoritative-clean; cp -a '$PULSE_SRC' /tmp/thf-pulse-authoritative-clean; rm -rf /tmp/thf-pulse-authoritative-clean/android/.gradle /tmp/thf-pulse-authoritative-clean/android/app/build /tmp/thf-pulse-authoritative-clean/android/build /tmp/thf-pulse-authoritative-clean/.gradle; find /tmp/thf-pulse-authoritative-clean -type d \( -name __pycache__ -o -name .pytest_cache \) -prune -exec rm -rf {} +; find /tmp/thf-pulse-authoritative-clean -type f -name '*.pyc' -delete; CLEAN_SHA=\$(cd /tmp/thf-pulse-authoritative-clean && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); printf 'clean_source_sha256=%s expected=%s\n' \"\$CLEAN_SHA\" '$PULSE_SOURCE_SHA'; test \"\$CLEAN_SHA\" = '$PULSE_SOURCE_SHA'; sed -i 's#SRC=\"\$HOME/thf-apps-rc3-exact-candidate-v2/work/pulse/THF_Pulse_APPS_RC2_SOURCE\"#SRC=\"/tmp/thf-pulse-authoritative-clean\"#' /tmp/build_pulse_phone_baseline_v2.sh; grep -Fqx 'SRC=\"/tmp/thf-pulse-authoritative-clean\"' /tmp/build_pulse_phone_baseline_v2.sh"
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command="set -Eeuo pipefail; OUT=\"\$HOME/thf-pulse-phone-baseline-v2/out\"; rm -rf \"\$OUT\" /tmp/thf-pulse-authoritative-clean; mkdir -p \"\$OUT\"; cp -a '$PULSE_SRC' /tmp/thf-pulse-authoritative-clean; rm -rf /tmp/thf-pulse-authoritative-clean/android/.gradle /tmp/thf-pulse-authoritative-clean/android/app/build /tmp/thf-pulse-authoritative-clean/android/build /tmp/thf-pulse-authoritative-clean/.gradle; find /tmp/thf-pulse-authoritative-clean -type d \( -name __pycache__ -o -name .pytest_cache \) -prune -exec rm -rf {} +; find /tmp/thf-pulse-authoritative-clean -type f -name '*.pyc' -delete; CLEAN_SHA=\$(cd /tmp/thf-pulse-authoritative-clean && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print \$1}'); { printf 'stage=SOURCE_AUTHORITY\nclean_source_sha256=%s\nexpected_source_sha256=%s\n' \"\$CLEAN_SHA\" '$PULSE_SOURCE_SHA'; if test \"\$CLEAN_SHA\" = '$PULSE_SOURCE_SHA'; then printf 'source_authoritative_gate=PASS\n'; else printf 'source_authoritative_gate=FAIL\n'; fi; } | tee \"\$OUT/STAGE_EVIDENCE.txt\"; if test \"\$CLEAN_SHA\" != '$PULSE_SOURCE_SHA'; then (cd /tmp/thf-pulse-authoritative-clean && find . -type f -print0 | sort -z | xargs -0 sha256sum) > \"\$OUT/CLEAN_SOURCE_FILES.sha256\"; exit 42; fi; sed -i 's#SRC=\"\$HOME/thf-apps-rc3-exact-candidate-v2/work/pulse/THF_Pulse_APPS_RC2_SOURCE\"#SRC=\"/tmp/thf-pulse-authoritative-clean\"#' /tmp/build_pulse_phone_baseline_v2.sh; grep -Fqx 'SRC=\"/tmp/thf-pulse-authoritative-clean\"' /tmp/build_pulse_phone_baseline_v2.sh"
       - name: Build Pulse phone baseline with diagnostics
         id: remote_build
         continue-on-error: true
@@ -62,6 +62,7 @@ jobs:
           rm -rf out && mkdir -p out
           gcloud compute scp --recurse "$GCP_BUILDER:~/thf-pulse-phone-baseline-v2/out/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
           find out -maxdepth 2 -type f -printf '%p %s bytes\n' | sort
+          if test -s out/STAGE_EVIDENCE.txt; then cat out/STAGE_EVIDENCE.txt; fi
           if test -s out/DIAGNOSTIC.txt; then cat out/DIAGNOSTIC.txt; fi
       - name: Fail-closed gate candidate and moving-human runtime
         if: steps.remote_build.outcome == 'success'
@@ -99,14 +100,11 @@ jobs:
           test "$APK_SHA_ACTUAL" = "$APK_SHA_RECORDED"
           grep -q 'avatar.glb' out/runtime-assets.sha256
           grep -q 'health-contracts.json' out/runtime-assets.sha256
-          python3 ReleaseOps/Pulse/verify_phone_candidate.py \
-            out/THF-PULSE-PHONE-BASELINE-QA2.apk \
-            --out out/MOTION_SEMANTIC_EVIDENCE.json
+          python3 ReleaseOps/Pulse/verify_phone_candidate.py out/THF-PULSE-PHONE-BASELINE-QA2.apk --out out/MOTION_SEMANTIC_EVIDENCE.json
           python3 - <<'PY'
           import json
           from pathlib import Path
-          p = Path('out/MOTION_SEMANTIC_EVIDENCE.json')
-          d = json.loads(p.read_text())
+          d = json.loads(Path('out/MOTION_SEMANTIC_EVIDENCE.json').read_text())
           assert d['package_semantic_gate'] == 'PASS_PHONE_VALIDATION_STILL_REQUIRED'
           assert d['physical_phone_visible_motion'] == 'PENDING_REQUIRED'
           assert d['legacy_text_workout_console_active'] is False
