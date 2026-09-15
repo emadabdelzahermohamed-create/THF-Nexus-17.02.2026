@@ -37,6 +37,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p exact
+          : > drive-access-evidence.txt
           cat > specs <<'EOF'
           THF_Forge_PHONE_FUNDAMENTALS_SRC3.zip 1Fdx6knYWGLAQ7dYnDH5dGu-j8qF32A6E 75c3744af31f16273a174bdac53b9e812613e4d9ef8c2fa260521c7f7c40cbf8
           THF_Echo_PHONE_FUNDAMENTALS_SRC3.zip 1YnRTB_CSUwd7q6myLKkG2Pi_3qJ_A3Vw 3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9
@@ -47,11 +48,29 @@ jobs:
           EOF
           token=$(gcloud auth print-access-token)
           while read -r name id want; do
-            curl -fsSL --retry 2 --connect-timeout 15 -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" -o "exact/$name"
+            meta_code=$(curl -sS -o "meta-${id}.json" -w '%{http_code}' -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/${id}?fields=id,name,size,md5Checksum,modifiedTime" || true)
+            printf '%s id=%s metadata_http=%s\n' "$name" "$id" "$meta_code" >> drive-access-evidence.txt
+            if [ "$meta_code" != 200 ]; then
+              python - "$name" "$id" "$meta_code" "meta-${id}.json" >> drive-access-evidence.txt <<'PY'
+import json,sys
+name,fid,code,path=sys.argv[1:]
+try:
+    d=json.load(open(path))
+    e=d.get('error',{})
+    print(f"ACCESS_BLOCK name={name} id={fid} http={code} reason={e.get('status','UNKNOWN')} message={e.get('message','')}")
+except Exception:
+    print(f"ACCESS_BLOCK name={name} id={fid} http={code} reason=UNPARSEABLE")
+PY
+              exit 21
+            fi
+            media_code=$(curl -sS -L --retry 2 --connect-timeout 15 -o "exact/$name" -w '%{http_code}' -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" || true)
+            printf '%s media_http=%s\n' "$name" "$media_code" >> drive-access-evidence.txt
+            test "$media_code" = 200 || { echo "MEDIA_ACCESS_BLOCK $name http=$media_code" >> drive-access-evidence.txt; exit 22; }
             got=$(sha256sum "exact/$name" | awk '{print $1}')
-            test "$got" = "$want" || { echo "SHA_MISMATCH $name $got"; exit 20; }
+            printf '%s expected_sha256=%s actual_sha256=%s\n' "$name" "$want" "$got" >> drive-access-evidence.txt
+            test "$got" = "$want" || { echo "SHA_MISMATCH $name $got" >> drive-access-evidence.txt; exit 20; }
             unzip -tq "exact/$name" >/dev/null
-            echo "VERIFIED $name $got"
+            echo "VERIFIED $name $got" | tee -a drive-access-evidence.txt
           done < specs
       - name: Transfer exact verified inputs to isolated builder directory
         run: |
@@ -89,6 +108,8 @@ jobs:
         if: always()
         with:
           name: thf-apps-v3-exact-ingest-build-evidence
-          path: report.txt
+          path: |
+            report.txt
+            drive-access-evidence.txt
           if-no-files-found: ignore
           retention-days: 30
