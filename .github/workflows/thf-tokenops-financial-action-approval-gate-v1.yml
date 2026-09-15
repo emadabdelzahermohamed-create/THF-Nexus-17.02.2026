@@ -1,0 +1,37 @@
+name: THF TokenOps Financial Action Approval Gate v1
+on:
+  push:
+    paths:
+      - 'ReleaseOps/TokenOps/financial_action_approval.py'
+      - 'ReleaseOps/TokenOps/test_financial_action_approval.py'
+      - '.github/workflows/thf-tokenops-financial-action-approval-gate-v1.yml'
+  pull_request:
+    paths:
+      - 'ReleaseOps/TokenOps/financial_action_approval.py'
+      - 'ReleaseOps/TokenOps/test_financial_action_approval.py'
+      - '.github/workflows/thf-tokenops-financial-action-approval-gate-v1.yml'
+permissions:
+  contents: read
+jobs:
+  approval-invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile ReleaseOps/TokenOps/financial_action_approval.py ReleaseOps/TokenOps/test_financial_action_approval.py
+      - name: Test fail-closed approval invariants
+        working-directory: ReleaseOps/TokenOps
+        run: python -m unittest -v test_financial_action_approval.py
+      - name: Prove burn cannot become autonomous
+        working-directory: ReleaseOps/TokenOps
+        run: |
+          python - <<'PY'
+          from financial_action_approval import evaluate
+          r=evaluate('burn', {'user_controlled_multisig_approval':'x'})
+          assert r['allowed_autonomously'] is False
+          assert r['status'] != 'READY_FOR_EXTERNAL_SIGNER_REVIEW'
+          print('TOKENOPS_BURN_AUTONOMOUS=false')
+          PY
