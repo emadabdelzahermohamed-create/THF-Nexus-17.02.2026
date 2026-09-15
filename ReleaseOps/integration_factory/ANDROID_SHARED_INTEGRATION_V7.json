@@ -1,0 +1,40 @@
+{
+  "schema": "thf.android.shared.integration.v7",
+  "baseline": {
+    "extends": "thf.android.shared.integration.v6",
+    "package_ids_preserved": true,
+    "wave_touched": false
+  },
+  "identity": {
+    "device_bound_sessions": true,
+    "proof_of_possession_required": true,
+    "client_roles_authoritative": false,
+    "max_access_token_ttl_seconds": 3600
+  },
+  "health": {
+    "explicit_consent_state_machine": true,
+    "revocation_stops_sync": true,
+    "health_connect_primary": true,
+    "samsung_health_optional": true,
+    "graceful_provider_absence": true,
+    "fabricated_data_allowed": false,
+    "manual_activity_verified_by_default": false
+  },
+  "operator_routes": {
+    "ordinary_user_visibility": false,
+    "server_role_authoritative": true,
+    "device_proof_required": true,
+    "step_up_max_age_seconds": 300
+  },
+  "external_activation": {
+    "google_oauth_production_verified": false,
+    "durable_session_store_verified": false,
+    "android_device_key_runtime_verified": false,
+    "health_connect_device_runtime_verified": false,
+    "samsung_partner_registration_verified": false
+  },
+  "release_truth": {
+    "physical_device_pass": false,
+    "final_or_play_ready": false
+  }
+}
