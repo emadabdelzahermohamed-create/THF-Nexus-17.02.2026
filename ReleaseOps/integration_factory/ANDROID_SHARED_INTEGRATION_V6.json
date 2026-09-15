@@ -1,0 +1,10 @@
+{
+  "schema": "thf.android.shared.integration.v6",
+  "baseline": {"package_ids_preserved": true, "wave_touched": false},
+  "health_permissions": {"least_privilege": true, "background_read_default": false, "write_default": false, "primary": "health_connect", "optional_adapter": "samsung_health_data_sdk"},
+  "health_export": {"portable": true, "raw_provider_payload_exported": false, "provenance_required": true},
+  "account_deletion": {"recent_reauth_required": true, "revoke_sessions": true, "revoke_handoffs": true, "delete_health_consents": true, "unlink_provider_credentials": true, "client_delete_authority": false},
+  "operator_step_up": {"products": ["admin", "publisher"], "passkey_user_verification_required": true, "second_factor_required": true, "fresh_role_claim_max_age_seconds": 300, "ordinary_user_visibility": false},
+  "preference_sync": {"supported_locale_count": 20, "rtl_locales": ["ar", "fa", "ur"], "identity_fields": false, "health_fields": false, "economy_fields": false},
+  "release_truth": {"google_oauth_console_configured": false, "durable_identity_store_bound": false, "health_connect_physical_device_verified": false, "samsung_partner_registration_verified": false, "physical_device_pass": false, "final_or_play_ready": false}
+}
