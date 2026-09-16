@@ -1,0 +1,42 @@
+name: WAVE RC15.3 GCP Deploy Readiness
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-3-20260917
+    paths:
+      - '.github/workflows/wave-rc15-3-gcp-deploy-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect WAVE-only deploy readiness without printing secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          REMOTE='set -u; echo HOST=$(hostname); if sudo -n true 2>/dev/null; then echo SUDO_NONINTERACTIVE=YES; else echo SUDO_NONINTERACTIVE=NO; fi; test -d "$HOME/workspace/wave-mawja-rc15-3" && echo STAGED_RC15_3=YES || echo STAGED_RC15_3=NO; test -f "$HOME/WAVE_MAWJA_RC15_3_PHONE_TEST.apk" && echo STAGED_APK=YES || echo STAGED_APK=NO; if sudo -n test -f /root/.config/wave/project.env 2>/dev/null; then echo ROOT_WAVE_ENV=YES; sudo -n bash -lc '\''set +u; source /root/.config/wave/project.env >/dev/null 2>&1 || true; [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && echo CLOUDFLARE_API_TOKEN=PRESENT || echo CLOUDFLARE_API_TOKEN=MISSING; [ -n "${CLOUDFLARE_D1_DATABASE_ID:-}" ] && echo CLOUDFLARE_D1_DATABASE_ID=PRESENT || echo CLOUDFLARE_D1_DATABASE_ID=MISSING; [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] && echo CLOUDFLARE_ACCOUNT_ID=PRESENT || echo CLOUDFLARE_ACCOUNT_ID=MISSING; [ -n "${WAVE_PUBLIC_URL:-}" ] && echo WAVE_PUBLIC_URL=PRESENT || echo WAVE_PUBLIC_URL=MISSING'\''; else echo ROOT_WAVE_ENV=NO; fi; if command -v node >/dev/null; then node -v; else echo NODE=MISSING; fi; if command -v npm >/dev/null; then npm -v; else echo NPM=MISSING; fi'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="$REMOTE"
