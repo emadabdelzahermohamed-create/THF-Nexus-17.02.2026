@@ -1,0 +1,34 @@
+name: WAVE Live Probe
+
+on:
+  push:
+    branches:
+      - releaseops/wave-recover-20260916
+    paths:
+      - '.github/workflows/wave-live-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Probe known WAVE hosts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for base in \
+            'https://wave-mawja.p-my.workers.dev' \
+            'https://mawja-stream.emad-abdelzaher-moha.chatgpt.site'
+          do
+            echo "=== $base ==="
+            for path in / /control /manifest.webmanifest /icon-192.png /api/control; do
+              code=$(curl -L --connect-timeout 15 --max-time 45 -sS -o /tmp/wave-probe-body -w '%{http_code}' "$base$path" || true)
+              bytes=$(wc -c </tmp/wave-probe-body 2>/dev/null || echo 0)
+              ctype=$(curl -L --connect-timeout 15 --max-time 45 -sSI "$base$path" 2>/dev/null | awk -F': ' 'tolower($1)=="content-type"{print $2}' | tail -1 | tr -d '\r' || true)
+              echo "$path HTTP=$code BYTES=$bytes CONTENT_TYPE=${ctype:-unknown}"
+            done
+          done
