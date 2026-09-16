@@ -1,0 +1,81 @@
+name: THF Hybrid Fast Batch Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/hybrid-fast-batch/**'
+      - '.github/workflows/thf-hybrid-fast-batch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.product }}
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        product: [pulse, spark, rush]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Decode source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work
+          case "${{ matrix.product }}" in
+            pulse)
+              base64 -d ReleaseOps/hybrid-fast-batch/pulse-android.zip.b64 > work/source.zip
+              ;;
+            spark)
+              cat ReleaseOps/hybrid-fast-batch/spark.part.* | base64 -d > work/source.zip
+              ;;
+            rush)
+              cat ReleaseOps/hybrid-fast-batch/rush.part.* | base64 -d > work/source.zip
+              ;;
+          esac
+          unzip -t work/source.zip
+          unzip -q work/source.zip -d work/src
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+      - name: Build debug APK and release AAB
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle -p work/src clean assembleDebug bundleRelease --stacktrace
+      - name: Verify build outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find work/src/app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"
+          AAB="$(find work/src/app/build/outputs/bundle/release -type f -name '*.aab' -print -quit)"
+          test -n "$APK"
+          test -n "$AAB"
+          unzip -t "$APK"
+          unzip -t "$AAB"
+          sha256sum "$APK" "$AAB" | tee work/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thf-${{ matrix.product }}-4.3.0-hybrid-android
+          path: |
+            work/src/app/build/outputs/apk/debug/*.apk
+            work/src/app/build/outputs/bundle/release/*.aab
+            work/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
