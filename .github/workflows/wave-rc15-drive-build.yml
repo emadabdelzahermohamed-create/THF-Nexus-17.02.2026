@@ -74,6 +74,26 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm ls @cloudflare/playwright --depth=0 || true
 
+      - name: Restore reviewed RC10 Wrangler compatibility script
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test ! -e scripts/fix-wrangler-generated-config.sh
+          cat > scripts/fix-wrangler-generated-config.sh <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          CONFIG="${1:-dist/server/wrangler.json}"
+          [ -f "$CONFIG" ] || exit 0
+          TMP="${CONFIG}.tmp"
+          jq 'del(.legacy_env) | (.d1_databases[]? |= (. + {migrations_dir:"../../drizzle"}))' "$CONFIG" > "$TMP"
+          jq empty "$TMP" >/dev/null
+          mv "$TMP" "$CONFIG"
+          echo "WRANGLER GENERATED CONFIG: COMPATIBILITY PATCHED"
+          SH
+          chmod 755 scripts/fix-wrangler-generated-config.sh
+          sha256sum scripts/fix-wrangler-generated-config.sh | tee WAVE_RC15_RESTORED_WRANGLER_FIX.sha256
+
       - name: WAVE source and web gates
         working-directory: wave-src
         shell: bash
@@ -82,6 +102,11 @@ jobs:
           npm run test:source
           npm run typecheck
           npm run build
+          CONFIG=dist/server/wrangler.json
+          test -s "$CONFIG"
+          jq empty "$CONFIG" >/dev/null
+          ! jq -e 'has("legacy_env")' "$CONFIG" >/dev/null
+          test "$(jq -r '.d1_databases[]? | select(.binding=="DB") | .migrations_dir // empty' "$CONFIG" | head -n1)" = "../../drizzle"
           node --import=./tests/register-cloudflare-loader.mjs --test tests/*.test.mjs
 
       - name: Setup Java 17
@@ -150,3 +175,5 @@ jobs:
             wave-src/WAVE_RC15_BUILD_EVIDENCE.txt
             wave-src/package-lock.json
             wave-src/WAVE_RC15_REPAIRED_LOCK.sha256
+            wave-src/scripts/fix-wrangler-generated-config.sh
+            wave-src/WAVE_RC15_RESTORED_WRANGLER_FIX.sha256
