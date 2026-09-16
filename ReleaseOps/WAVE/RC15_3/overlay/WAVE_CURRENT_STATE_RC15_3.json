@@ -1,0 +1,43 @@
+{
+  "product": "WAVE MAWJA",
+  "checkpoint": "RC15.3-FIRST-PARTY-AUTH-ABR-EVIDENCE",
+  "date": "2026-09-17",
+  "baseline": "RC15.1-WAVE-EXECUTION-READINESS",
+  "baseline_sha256": "a1d702b396df75e2738c4ed319dc2876432536c03d6eec08da498daf4cb3d30c",
+  "version": "1.0.0-rc.15.3+auth-abr-evidence",
+  "android_version_code": 15300,
+  "android_version_name": "1.0.0-rc15.3",
+  "changes": [
+    "android-twa/app/build.gradle",
+    "android/app/build.gradle",
+    "app/api/account/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/auth/register/route.ts",
+    "app/chatgpt-auth.ts",
+    "app/globals.css",
+    "app/login/page.tsx",
+    "components/media-player.tsx",
+    "drizzle/0011_wave_first_party_auth.sql",
+    "lib/wave-auth.ts",
+    "package.json",
+    "tests/abr_pipeline_test.py",
+    "tests/first_party_auth_test.py",
+    "tests/release_identity_test.py",
+    "RC15_3_CRITICAL_SHA256SUMS.txt",
+    "WAVE_RC15_3_EXECUTE_ONE_COMMAND.sh"
+  ],
+  "validation": {
+    "python_source_tests": "39/39 PASS",
+    "npm_ci_local_runtime": "TIMEOUT_NETWORK_UNAVAILABLE",
+    "typecheck_build": "PENDING_NETWORKED_BUILDER",
+    "android_apk": "PENDING_NETWORKED_BUILDER"
+  },
+  "truth": {
+    "first_party_auth_source": true,
+    "hls_quality_evidence_ui": true,
+    "data_saver_hls_cap": true,
+    "production_deployed": false,
+    "physical_phone_accepted": false
+  }
+}
