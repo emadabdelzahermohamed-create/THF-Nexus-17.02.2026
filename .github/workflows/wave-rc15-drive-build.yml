@@ -1,0 +1,142 @@
+name: WAVE RC15 Drive Build
+
+on:
+  push:
+    branches:
+      - releaseops/wave-recover-20260916
+    paths:
+      - '.github/workflows/wave-rc15-drive-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_SOURCE_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  build-wave-rc15:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        name: Authenticate Google WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Download private RC15 source from Drive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os, requests, google.auth
+          from google.auth.transport.requests import Request
+          fid=os.environ['DRIVE_FILE_ID']
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
+          creds.refresh(Request())
+          r=requests.get(f'https://www.googleapis.com/drive/v3/files/{fid}?alt=media',headers={'Authorization':f'Bearer {creds.token}'},timeout=120)
+          r.raise_for_status()
+          open('WAVE_MAWJA_RC15_SOURCE.zip','wb').write(r.content)
+          print('downloaded_bytes',len(r.content))
+          PY
+          echo "$EXPECTED_SOURCE_SHA256  WAVE_MAWJA_RC15_SOURCE.zip" | sha256sum -c -
+          unzip -q WAVE_MAWJA_RC15_SOURCE.zip -d wave-src
+          test -f wave-src/package.json
+          test -f wave-src/android/app/build.gradle
+          test -f wave-src/android-twa/app/build.gradle
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: wave-src/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: wave-src
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: WAVE source and web gates
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm run test:source
+          npm run typecheck
+          npm run build
+          node --import=./tests/register-cloudflare-loader.mjs --test tests/*.test.mjs
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK 36
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0'
+          echo "ANDROID_HOME=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+
+      - name: Setup Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build exact phone-test APK
+        working-directory: wave-src/android
+        shell: bash
+        env:
+          DEBUG_BASE_URL: https://wave-mawja.p-my.workers.dev
+        run: |
+          set -Eeuo pipefail
+          gradle --no-daemon clean :app:assembleDebug
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          sha256sum "$APK" | tee ../../WAVE_RC15_PHONE_TEST_APK.sha256
+          cp "$APK" ../../WAVE_MAWJA_RC15_PHONE_TEST.apk
+
+      - name: Inspect APK contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          APK=wave-src/WAVE_MAWJA_RC15_PHONE_TEST.apk
+          AAPT="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -type f -name aapt2 | sort -V | tail -1)"
+          "$AAPT" dump badging "$APK" | tee wave-src/WAVE_RC15_APK_BADGING.txt || true
+          grep -q "package: name='com.wave.mawja'" wave-src/WAVE_RC15_APK_BADGING.txt
+          grep -q "targetSdkVersion:'36'" wave-src/WAVE_RC15_APK_BADGING.txt
+          unzip -t "$APK" > wave-src/WAVE_RC15_APK_ZIP_TEST.txt
+
+      - name: Package evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          sha256sum WAVE_MAWJA_RC15_PHONE_TEST.apk > WAVE_RC15_PHONE_TEST_APK.sha256
+          printf 'source_sha256=%s\ncommit=%s\npackage=com.wave.mawja\ntarget_sdk=36\n' "$EXPECTED_SOURCE_SHA256" "$GITHUB_SHA" > WAVE_RC15_BUILD_EVIDENCE.txt
+
+      - name: Upload phone-test candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-RC15-PHONE-TEST-APK
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            wave-src/WAVE_MAWJA_RC15_PHONE_TEST.apk
+            wave-src/WAVE_RC15_PHONE_TEST_APK.sha256
+            wave-src/WAVE_RC15_APK_BADGING.txt
+            wave-src/WAVE_RC15_APK_ZIP_TEST.txt
+            wave-src/WAVE_RC15_BUILD_EVIDENCE.txt
