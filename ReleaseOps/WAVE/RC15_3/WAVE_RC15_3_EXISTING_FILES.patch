@@ -1,0 +1,300 @@
+diff --git a/android/app/build.gradle b/android/app/build.gradle
+index d10c403..ca4af7f 100644
+--- a/android/app/build.gradle
++++ b/android/app/build.gradle
+@@ -17,8 +17,8 @@ android {
+         applicationId 'com.wave.mawja'
+         minSdk 26
+         targetSdk 36
+-        versionCode 11
+-        versionName 'rc.11+universal-abr'
++        versionCode 15300
++        versionName '1.0.0-rc15.3'
+         buildConfigField 'String', 'START_PATH', "\"/\""
+     }
+     signingConfigs {
+diff --git a/android-twa/app/build.gradle b/android-twa/app/build.gradle
+index 5ae30c1..9bbfd7c 100644
+--- a/android-twa/app/build.gradle
++++ b/android-twa/app/build.gradle
+@@ -18,8 +18,8 @@ android {
+         applicationId providers.gradleProperty('waveApplicationId').get()
+         minSdk 23
+         targetSdk 36
+-        versionCode 11
+-        versionName '1.0.0-rc.11+universal-abr'
++        versionCode 15300
++        versionName '1.0.0-rc15.3'
+         buildConfigField 'String', 'WAVE_URL', '"' + waveUrl + '"'
+         resValue 'string', 'asset_statements', '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"web","site":"' + waveUrl + '"}}]'
+         manifestPlaceholders = [waveHost: waveHost]
+diff --git a/app/api/account/route.ts b/app/api/account/route.ts
+index 9841766..88e778b 100644
+--- a/app/api/account/route.ts
++++ b/app/api/account/route.ts
+@@ -89,5 +89,5 @@ export async function DELETE(request: Request) {
+     env.DB.prepare("UPDATE publishers SET owner_email = ? WHERE owner_email = ? AND status != 'active'").bind(anonymous, user.email),
+     env.DB.prepare("DELETE FROM user_accounts WHERE email = ?").bind(user.email),
+   ]);
+-  return Response.json({ ok: true, signOut: "/signout-with-chatgpt?return_to=%2F" });
++  return Response.json({ ok: true, signOut: "/api/auth/logout?return_to=%2F" });
+ }
+diff --git a/app/api/auth/logout/route.ts b/app/api/auth/logout/route.ts
+index 63145b4..a6f5402 100644
+--- a/app/api/auth/logout/route.ts
++++ b/app/api/auth/logout/route.ts
+@@ -1,3 +1,9 @@
+ import { cookies } from "next/headers";
+-import { ADMIN_SESSION_COOKIE } from "../../../../lib/admin-session";
+-export async function POST() { const store = await cookies(); store.delete(ADMIN_SESSION_COOKIE); return Response.json({ ok: true }); }
++import { WAVE_SESSION_COOKIE, clearSessionCookie, revokeWaveSession, safeReturnPath } from "../../../../lib/wave-auth";
++
++export async function GET(request: Request) {
++  const store = await cookies();
++  await revokeWaveSession(store.get(WAVE_SESSION_COOKIE)?.value).catch(() => undefined);
++  const target = safeReturnPath(new URL(request.url).searchParams.get("return_to"));
++  return new Response(null, { status: 303, headers: { location: target, "set-cookie": clearSessionCookie(), "cache-control": "no-store" } });
++}
+diff --git a/app/chatgpt-auth.ts b/app/chatgpt-auth.ts
+index 7ccbd3c..d3f2849 100644
+--- a/app/chatgpt-auth.ts
++++ b/app/chatgpt-auth.ts
+@@ -1,5 +1,6 @@
+ import { cookies, headers } from "next/headers";
+ import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "../lib/admin-session";
++import { WAVE_SESSION_COOKIE, safeReturnPath, waveUserFromToken } from "../lib/wave-auth";
+ import { redirect } from "next/navigation";
+ 
+ export type ChatGPTUser = {
+@@ -10,83 +11,48 @@ export type ChatGPTUser = {
+ 
+ const USER_EMAIL_HEADER = "oai-authenticated-user-email";
+ const USER_FULL_NAME_HEADER = "oai-authenticated-user-full-name";
+-const USER_FULL_NAME_ENCODING_HEADER =
+-  "oai-authenticated-user-full-name-encoding";
++const USER_FULL_NAME_ENCODING_HEADER = "oai-authenticated-user-full-name-encoding";
+ const PERCENT_ENCODED_UTF8 = "percent-encoded-utf-8";
+-const SIGN_IN_PATH = "/signin-with-chatgpt";
+-const SIGN_OUT_PATH = "/signout-with-chatgpt";
+-const CALLBACK_PATH = "/callback";
+ 
+ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
+   const requestHeaders = await headers();
+   const email = requestHeaders.get(USER_EMAIL_HEADER);
+-  if (!email) {
+-    const store = await cookies();
+-    const admin = await verifyAdminSession(store.get(ADMIN_SESSION_COOKIE)?.value);
+-    if (!admin) return null;
+-    return { displayName: admin.displayName, email: admin.email, fullName: admin.displayName };
+-  }
+-
+-  const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
+-  const fullName =
+-    encodedFullName &&
+-    requestHeaders.get(USER_FULL_NAME_ENCODING_HEADER) === PERCENT_ENCODED_UTF8
++  if (email) {
++    const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
++    const fullName = encodedFullName && requestHeaders.get(USER_FULL_NAME_ENCODING_HEADER) === PERCENT_ENCODED_UTF8
+       ? safeDecodeURIComponent(encodedFullName)
+       : null;
++    return { displayName: fullName ?? email, email, fullName };
++  }
+ 
+-  return {
+-    displayName: fullName ?? email,
+-    email,
+-    fullName,
+-  };
++  const store = await cookies();
++  const firstParty = store.get(WAVE_SESSION_COOKIE)?.value;
++  if (firstParty) {
++    const user = await waveUserFromToken(firstParty).catch(() => null);
++    if (user) return user;
++  }
++
++  const admin = await verifyAdminSession(store.get(ADMIN_SESSION_COOKIE)?.value);
++  if (!admin) return null;
++  return { displayName: admin.displayName, email: admin.email, fullName: admin.displayName };
+ }
+ 
+-export async function requireChatGPTUser(
+-  returnTo: string,
+-): Promise<ChatGPTUser> {
++export async function requireChatGPTUser(returnTo: string): Promise<ChatGPTUser> {
+   const user = await getChatGPTUser();
+   if (user) return user;
+-
+   redirect(chatGPTSignInPath(returnTo));
+ }
+ 
+ export function chatGPTSignInPath(returnTo: string): string {
+-  const safeReturnTo = safeRelativeReturnPath(returnTo);
+-  return `${SIGN_IN_PATH}?return_to=${encodeURIComponent(safeReturnTo)}`;
++  const safeReturnTo = safeReturnPath(returnTo);
++  return `/login?return_to=${encodeURIComponent(safeReturnTo)}`;
+ }
+ 
+ export function chatGPTSignOutPath(returnTo = "/"): string {
+-  const safeReturnTo = safeRelativeReturnPath(returnTo);
+-  return `${SIGN_OUT_PATH}?return_to=${encodeURIComponent(safeReturnTo)}`;
+-}
+-
+-function safeRelativeReturnPath(value: string): string {
+-  if (!value.startsWith("/") || value.startsWith("//")) return "/";
+-
+-  let url: URL;
+-  try {
+-    url = new URL(value, "https://app.local");
+-  } catch {
+-    return "/";
+-  }
+-  if (url.origin !== "https://app.local") return "/";
+-  if (isReservedAuthPath(url.pathname)) return "/";
+-
+-  return `${url.pathname}${url.search}${url.hash}`;
+-}
+-
+-function isReservedAuthPath(pathname: string): boolean {
+-  return (
+-    pathname === SIGN_IN_PATH ||
+-    pathname === SIGN_OUT_PATH ||
+-    pathname === CALLBACK_PATH
+-  );
++  const safeReturnTo = safeReturnPath(returnTo);
++  return `/api/auth/logout?return_to=${encodeURIComponent(safeReturnTo)}`;
+ }
+ 
+ function safeDecodeURIComponent(value: string): string | null {
+-  try {
+-    return decodeURIComponent(value);
+-  } catch {
+-    return null;
+-  }
++  try { return decodeURIComponent(value); } catch { return null; }
+ }
+diff --git a/app/globals.css b/app/globals.css
+index a61dcc4..55dd8b1 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -341,3 +341,7 @@ html[data-wave-age-band="child"] [data-min-age="13"],html[data-wave-age-band="ch
+ 
+ /* WAVE RC11 MULTI-INGEST */
+ .multi-ingest-stack{display:grid;gap:18px}.ingest-mode-banner{padding:20px;border:1px solid var(--line);border-radius:18px}.ingest-warning,.ingest-progress{padding:11px 13px;border:1px solid var(--line);border-radius:11px}.ingest-progress{position:sticky;top:8px;z-index:5;background:var(--background,#0b0c0f)}.ingest-option-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}.ingest-option-grid>span{display:flex;flex-direction:column;gap:4px;padding:11px;border:1px solid var(--line);border-radius:11px}.control-panel textarea[dir="ltr"]{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
++
++
++/* WAVE RC15.3 first-party auth + playback evidence */
++.auth-page{min-height:100vh;display:grid;place-items:center;padding:28px;background:radial-gradient(circle at 50% 20%,rgba(245,166,35,.09),transparent 30%),#090a0c}.auth-card{width:min(460px,100%);padding:30px;border:1px solid var(--line);border-radius:12px;background:#0e1013;box-shadow:0 30px 90px rgba(0,0,0,.35)}.auth-brand{display:inline-block;margin-bottom:18px;font-weight:900;font-size:20px}.auth-card h1{margin:9px 0 8px;font-size:34px}.auth-card>p{color:#888;line-height:1.8}.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:22px 0}.auth-tabs button{min-height:40px;border:1px solid var(--line);background:#111318;color:#888;cursor:pointer}.auth-tabs button.active{border-color:#8b6733;color:#f0c477;background:#17130e}.auth-card form{display:grid;gap:13px}.auth-card label{display:grid;gap:6px;color:#8c8d89;font-size:10px}.auth-card input{height:46px;padding:0 12px;border:1px solid var(--line);border-radius:4px;background:#090b0d;color:#fff;outline:none}.auth-card .primary-button{margin-top:5px;border:0}.auth-card>small{display:block;margin-top:18px;color:#5f625d;line-height:1.7}.auth-message{padding:10px 12px;border:1px solid #6a3b3b;background:#1b1012;color:#e2a09a!important;font-size:10px}.saver-evidence{display:inline-flex;align-items:center;min-height:30px;padding:0 9px;border:1px solid #315f45;border-radius:3px;color:#9bd4ad;font-size:8px;line-height:1.5}.saver-evidence.limited{border-color:#765f34;color:#d2b36f}.quality-hint{display:inline-flex;align-items:center;min-height:30px;color:#777;font-size:8px;line-height:1.5}.player-toolbar{flex-wrap:wrap}
+diff --git a/components/media-player.tsx b/components/media-player.tsx
+index 8749438..9a17276 100644
+--- a/components/media-player.tsx
++++ b/components/media-player.tsx
+@@ -73,6 +73,28 @@ export function MediaPlayer({ slug, title, hlsUrl, mp4Url, offlineDownloadUrl, s
+     pl: { level: "Poziom", fallback: "Odtwarzanie adaptacyjne nie powiodło się. Włączono wersję bezpośrednią.", ad: "Reklama", adTitle: "Oszczędzaj dane, nie chwile.", adText: "Inteligentny tryb wybiera najlżejszą wygodną jakość dla ekranu i sieci.", skipAfter: "Pomiń za", skip: "Pomiń reklamę", quality: "Jakość", auto: "Automatyczna", saver: "Oszczędzanie danych", enabled: "Włączone", optional: "Opcjonalne", adaptive: "Adaptacyjny HLS", original: "Oryginalny MP4", offline: "Zapisz offline", saving: "Zapisywanie", saved: "Zapisano", blocked: "Ten tytuł przekracza kategorię wiekową wybraną dla urządzenia." },
+     vi: { level: "Mức", fallback: "Phát thích ứng không thành công. Đang chuyển sang phiên bản trực tiếp.", ad: "Quảng cáo", adTitle: "Tiết kiệm dữ liệu, không bỏ lỡ khoảnh khắc.", adText: "Chế độ kết nối thông minh chọn chất lượng nhẹ và phù hợp nhất cho màn hình cùng mạng của bạn.", skipAfter: "Bỏ qua sau", skip: "Bỏ qua quảng cáo", quality: "Chất lượng", auto: "Tự động", saver: "Tiết kiệm dữ liệu", enabled: "Bật", optional: "Tùy chọn", adaptive: "HLS thích ứng", original: "MP4 gốc", offline: "Lưu ngoại tuyến", saving: "Đang lưu", saved: "Đã lưu", blocked: "Tựa phim này vượt quá hồ sơ độ tuổi được chọn cho thiết bị." },
+   });
++  const playbackCopy = localeCopy(locale, {
++    ar: {
++      noAdaptive: "هذا المصدر MP4 مباشر؛ لا توجد جودات متعددة حتى يمر عبر محرك التحويل HLS.",
++      loadingLevels: "جارٍ قراءة جودات HLS…",
++      oneLevel: "المصدر يعلن جودة HLS واحدة فقط.",
++      levelsAvailable: "جودات متاحة",
++      saverReal: "موفر فعلي: سقف لأقل جودة HLS + مخزن مؤقت 8 ثوانٍ + بدون Back Buffer.",
++      saverLimited: "موفر جزئي: المصدر MP4؛ تم تقليل التحميل المسبق فقط، ولا يمكن خفض bitrate أثناء التشغيل.",
++      saverOff: "موفر البيانات متوقف.",
++      current: "الحالي",
++    },
++    en: {
++      noAdaptive: "This source is direct MP4; multiple qualities appear after WAVE HLS transcoding.",
++      loadingLevels: "Reading HLS renditions…",
++      oneLevel: "The source exposes only one HLS rendition.",
++      levelsAvailable: "qualities available",
++      saverReal: "Real saver: lowest HLS cap + 8s buffer + no back buffer.",
++      saverLimited: "Limited saver: MP4 source; preload is reduced, but playback bitrate cannot be capped.",
++      saverOff: "Data saver is off.",
++      current: "Current",
++    },
++  });
+   const videoRef = useRef<HTMLVideoElement>(null);
+   const dubbingAudioRef = useRef<HTMLAudioElement>(null);
+   const hlsRef = useRef<Hls | null>(null);
+@@ -478,6 +500,19 @@ export function MediaPlayer({ slug, title, hlsUrl, mp4Url, offlineDownloadUrl, s
+       .catch(() => setOfflineStatus("error"));
+   }
+ 
++  const qualityHint = !adaptiveUrl
++    ? playbackCopy.noAdaptive
++    : levels.length === 0
++      ? playbackCopy.loadingLevels
++      : levels.length === 1
++        ? playbackCopy.oneLevel
++        : `${levels.length} ${playbackCopy.levelsAvailable}`;
++  const saverEvidence = !dataSaver
++    ? playbackCopy.saverOff
++    : adaptiveUrl && levels.length
++      ? `${playbackCopy.saverReal}${activeQuality ? ` ${playbackCopy.current}: ${activeQuality}` : ""}`
++      : playbackCopy.saverLimited;
++
+   function saveProgress() {
+     if (live) return;
+     const video = videoRef.current;
+@@ -530,11 +565,13 @@ export function MediaPlayer({ slug, title, hlsUrl, mp4Url, offlineDownloadUrl, s
+             <option value={-1}>{copy.auto}</option>
+             {levels.map((level) => <option key={level.index} value={level.index}>{level.label}</option>)}
+           </select>
++          <span className="quality-hint" role="status">{qualityHint}</span>
+         </div>
+         <button type="button" className={dataSaver ? "saver-toggle active" : "saver-toggle"} onClick={toggleDataSaver}>
+           <span className="signal-bars" aria-hidden="true"><i /><i /><i /></span>
+           <span><b>{copy.saver}</b><small>{dataSaver ? copy.enabled : copy.optional}</small></span>
+         </button>
++        <span className={`saver-evidence ${dataSaver && (!adaptiveUrl || !levels.length) ? "limited" : ""}`} role="status">{saverEvidence}</span>
+         {subtitleTracks.length > 0 && <div className="quality-control subtitle-control">
+           <label htmlFor={`subtitles-${slug}`}>{subtitleCopy.label}</label>
+           <select id={`subtitles-${slug}`} value={subtitleMode} onChange={(event) => selectSubtitleMode(event.target.value)}>
+diff --git a/package.json b/package.json
+index c0631ff..e3b61bb 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "wave-stream",
+-  "version": "1.0.0-rc.11+universal-abr",
++  "version": "1.0.0-rc.15.3+auth-abr-evidence",
+   "private": true,
+   "engines": {
+     "node": ">=22.13.0"
+diff --git a/tests/abr_pipeline_test.py b/tests/abr_pipeline_test.py
+index 78a998b..7b7e3f4 100644
+--- a/tests/abr_pipeline_test.py
++++ b/tests/abr_pipeline_test.py
+@@ -65,6 +65,10 @@ class AbrPipelineTests(unittest.TestCase):
+         self.assertIn("maxBufferLength", text)
+         self.assertIn("backBufferLength", text)
+         self.assertIn("preload", text)
++        self.assertIn("saverEvidence", text)
++        self.assertIn("qualityHint", text)
++        self.assertIn("موفر فعلي", text)
++        self.assertIn("موفر جزئي", text)
+ 
+     def test_browser_login_state_is_private_per_user_and_encrypted(self) -> None:
+         route = BROWSER_ROUTE.read_text(encoding="utf-8")
+diff --git a/tests/release_identity_test.py b/tests/release_identity_test.py
+index 47a9740..b489eb6 100644
+--- a/tests/release_identity_test.py
++++ b/tests/release_identity_test.py
+@@ -5,10 +5,11 @@ ROOT=Path(__file__).resolve().parents[1]
+ 
+ class CurrentReleaseTests(unittest.TestCase):
+     def test_version_identity(self):
+-        self.assertIn('"version": "1.0.0-rc.11+universal-abr"',(ROOT/'package.json').read_text())
+-        gradle=(ROOT/'android-twa/app/build.gradle').read_text()
+-        self.assertIn('versionCode 11',gradle)
+-        self.assertIn("versionName '1.0.0-rc.11+universal-abr'",gradle)
++        self.assertIn('"version": "1.0.0-rc.15.3+auth-abr-evidence"',(ROOT/'package.json').read_text())
++        for rel in ('android/app/build.gradle', 'android-twa/app/build.gradle'):
++            gradle=(ROOT/rel).read_text()
++            self.assertIn('versionCode 15300',gradle)
++            self.assertIn("versionName '1.0.0-rc15.3'",gradle)
+ 
+     def test_admin_standalone_auth(self):
+         auth=(ROOT/'lib/admin-session.ts').read_text()
