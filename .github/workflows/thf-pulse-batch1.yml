@@ -1,12 +1,11 @@
-name: THF Pulse Batch1 APK
+name: THF Pulse Hybrid Modern APK Shell
 
 on:
   push:
     branches:
-      - batch1/pulse-offline-final-20260916
+      - release/pulse-hybrid-modern-20260916
     paths:
-      - 'mobile/pulse-batch1/**'
-      - 'mobile/pulse-batch1-source.zip'
+      - 'mobile/pulse-hybrid-shell.zip'
       - '.github/workflows/thf-pulse-batch1.yml'
   workflow_dispatch:
 
@@ -14,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  build-pulse:
+  build-pulse-hybrid-shell:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -27,7 +26,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android 36 toolchain using runner SDK
+      - name: Install Android API 36 toolchain
         run: |
           set -euxo pipefail
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
@@ -35,40 +34,42 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
           test -x "$ANDROID_HOME/build-tools/36.0.0/aapt"
+          test -x "$ANDROID_HOME/build-tools/36.0.0/zipalign"
+          test -f "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
 
-      - name: Expand exact Pulse source
-        run: |
-          rm -rf mobile/pulse-batch1
-          mkdir -p mobile/pulse-batch1
-          unzip -q mobile/pulse-batch1-source.zip -d mobile/pulse-batch1
-
-      - name: Source safety gate
-        working-directory: mobile/pulse-batch1
+      - name: Expand exact hybrid shell source
         run: |
           set -euxo pipefail
-          test -f app/src/main/assets/pulse/index.html
+          rm -rf mobile/pulse-hybrid-shell
+          mkdir -p mobile/pulse-hybrid-shell
+          unzip -q mobile/pulse-hybrid-shell.zip -d mobile/pulse-hybrid-shell
+          cd mobile/pulse-hybrid-shell
+          sha256sum ../pulse-hybrid-shell.zip > SOURCE_SHA256.txt
+
+      - name: Hybrid/mobile safety gate
+        working-directory: mobile/pulse-hybrid-shell
+        run: |
+          set -euxo pipefail
           test -f app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
-          ! grep -RIE --exclude='MainActivity.java' 'trycloudflare\.com|ngrok|127\.0\.0\.1|localhost' .
-          ! grep -RIE --exclude='MainActivity.java' '\.local([/:]|$)' .
-          grep -q 'file:///android_asset/pulse/index.html' app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
-          grep -q 'OFFLINE READY' app/src/main/assets/pulse/index.html
+          test -f app/src/main/assets/pulse/runtime-config.json
+          grep -q 'hybrid_offline_online' app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
+          grep -q '/api/pulse/mobile/sync' app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
+          grep -q 'runtime-config.json' app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
           grep -q 'targetSdk 36' app/build.gradle
+          grep -q "versionName '4.3.0-hybrid-modern'" app/build.gradle
+          ! grep -RIE --exclude='MainActivity.java' 'trycloudflare\.com|ngrok|127\.0\.0\.1|localhost|YOUR-PRODUCTION-DOMAIN|example\.com|example\.org|thf_humanoid_v[1-6]' .
 
-      - name: Build exact debug APK and unsigned release AAB
-        working-directory: mobile/pulse-batch1
-        run: |
-          gradle --no-daemon --stacktrace :app:clean :app:assembleDebug :app:bundleRelease
-
-      - name: Inspect Android outputs
-        working-directory: mobile/pulse-batch1
+      - name: Build unsigned release APK and AAB
+        working-directory: mobile/pulse-hybrid-shell
         run: |
           set -euxo pipefail
-          APK=app/build/outputs/apk/debug/app-debug.apk
+          gradle --no-daemon --stacktrace :app:clean :app:assembleRelease :app:bundleRelease
+          APK=app/build/outputs/apk/release/app-release-unsigned.apk
           AAB=app/build/outputs/bundle/release/app-release.aab
           test -s "$APK"
           test -s "$AAB"
@@ -78,22 +79,30 @@ jobs:
           grep -q "package: name='com.topherofit.thf.pulse'" apk-badging.txt
           grep -q "targetSdkVersion:'36'" apk-badging.txt
           unzip -l "$APK" > apk-files.txt
-          grep -q 'assets/pulse/index.html' apk-files.txt
-          sha256sum "$APK" "$AAB" > SHA256SUMS.txt
-          cp "$APK" THF-Pulse-4.2.0-BATCH1-OFFLINE-TEST.apk
-          cp "$AAB" THF-Pulse-4.2.0-BATCH1-UNSIGNED.aab
+          grep -q 'assets/pulse/runtime-config.json' apk-files.txt
+          cp "$APK" THF-Pulse-4.3.0-HYBRID-SHELL-UNSIGNED.apk
+          cp "$AAB" THF-Pulse-4.3.0-HYBRID-SHELL-UNSIGNED.aab
+          cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" apksigner.jar
+          cp "$ANDROID_HOME/build-tools/36.0.0/zipalign" zipalign
+          cp "$ANDROID_HOME/build-tools/36.0.0/aapt" aapt
+          chmod +x zipalign aapt
+          sha256sum THF-Pulse-4.3.0-HYBRID-SHELL-UNSIGNED.apk THF-Pulse-4.3.0-HYBRID-SHELL-UNSIGNED.aab apksigner.jar zipalign aapt > SHA256SUMS.txt
 
-      - name: Upload candidate artifacts
+      - name: Upload exact build shell and Android signing tools
         uses: actions/upload-artifact@v4
         with:
-          name: THF-Pulse-4.2.0-BATCH1
+          name: THF-Pulse-4.3.0-HYBRID-SHELL
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
           path: |
-            mobile/pulse-batch1/THF-Pulse-4.2.0-BATCH1-OFFLINE-TEST.apk
-            mobile/pulse-batch1/THF-Pulse-4.2.0-BATCH1-UNSIGNED.aab
-            mobile/pulse-batch1/SHA256SUMS.txt
-            mobile/pulse-batch1/apk-badging.txt
-            mobile/pulse-batch1/apk-files.txt
-            mobile/pulse-batch1/apk-zip-test.txt
-            mobile/pulse-batch1/aab-zip-test.txt
+            mobile/pulse-hybrid-shell/THF-Pulse-4.3.0-HYBRID-SHELL-UNSIGNED.apk
+            mobile/pulse-hybrid-shell/THF-Pulse-4.3.0-HYBRID-SHELL-UNSIGNED.aab
+            mobile/pulse-hybrid-shell/apksigner.jar
+            mobile/pulse-hybrid-shell/zipalign
+            mobile/pulse-hybrid-shell/aapt
+            mobile/pulse-hybrid-shell/SOURCE_SHA256.txt
+            mobile/pulse-hybrid-shell/SHA256SUMS.txt
+            mobile/pulse-hybrid-shell/apk-badging.txt
+            mobile/pulse-hybrid-shell/apk-files.txt
+            mobile/pulse-hybrid-shell/apk-zip-test.txt
+            mobile/pulse-hybrid-shell/aab-zip-test.txt
