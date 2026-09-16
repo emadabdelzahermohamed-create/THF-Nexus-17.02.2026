@@ -1,0 +1,48 @@
+name: WAVE Existing VM Probe
+
+on:
+  push:
+    branches: [releaseops/wave-recover-20260916]
+    paths: [.github/workflows/wave-vm-probe.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: project-b5e10d7e-8ce8-4aa4-a15
+      - name: Probe existing builder through IAP
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh --quiet --tunnel-through-iap --zone europe-west1-b thf-wave-builder --command '
+            set -e
+            echo USER=$(id -un)
+            echo HOME=$HOME
+            uname -m
+            cat /etc/os-release | grep PRETTY_NAME
+            command -v java || true
+            java -version 2>&1 | head -n 3 || true
+            command -v gradle || true
+            gradle --version 2>/dev/null | head -n 8 || true
+            command -v ffmpeg || true
+            ffmpeg -version 2>/dev/null | head -n 2 || true
+            command -v docker || true
+            docker --version 2>/dev/null || true
+            command -v sdkmanager || true
+            printf "ANDROID_HOME=%s\n" "${ANDROID_HOME:-}"
+            printf "ANDROID_SDK_ROOT=%s\n" "${ANDROID_SDK_ROOT:-}"
+            df -h "$HOME" | tail -n 1
+            test -d /root/workspace/wave-mawja && echo CANONICAL_WAVE_PATH=1 || echo CANONICAL_WAVE_PATH=0
+          '
