@@ -1,0 +1,78 @@
+name: WAVE Workspace Recovery
+
+on:
+  push:
+    branches:
+      - releaseops/wave-recover-20260916
+    paths:
+      - '.github/workflows/wave-workspace-recover.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  recover-wave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        name: Authenticate with WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Install gcloud
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Locate WAVE workspace without mutating source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud config set project "$GCP_PROJECT_ID" --quiet
+          REMOTE='set -Eeuo pipefail; P=""; for root in /root /home /workspace /srv /opt; do [ -e "$root" ] || continue; C=$(find "$root" -maxdepth 6 -type d -name wave-mawja -print -quit 2>/dev/null || true); if [ -n "$C" ]; then P="$C"; break; fi; done; if [ -z "$P" ] && command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then P=$(sudo -n find /root /home /workspace /srv /opt -maxdepth 6 -type d -name wave-mawja -print -quit 2>/dev/null || true); fi; if [ -z "$P" ]; then echo WAVE_WORKSPACE_FOUND=FALSE; exit 24; fi; echo "WAVE_WORKSPACE_FOUND=TRUE"; echo "WAVE_WORKSPACE_PATH=$P"; test -f "$P/package.json" || test -f "$P/pnpm-lock.yaml" || test -f "$P/docker-compose.yml" || { echo WAVE_WORKSPACE_SHAPE=UNCONFIRMED; exit 25; }; echo WAVE_WORKSPACE_SHAPE=PASS; du -sh "$P" || true'
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="$REMOTE" 2>&1 | tee wave-locate.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "LOCATE_RC=$rc" >> wave-locate.log
+          if [ "$rc" -ne 0 ]; then exit "$rc"; fi
+
+      - name: Create source-preserving snapshot and pull it
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          REMOTE='set -Eeuo pipefail; P=""; for root in /root /home /workspace /srv /opt; do [ -e "$root" ] || continue; C=$(find "$root" -maxdepth 6 -type d -name wave-mawja -print -quit 2>/dev/null || true); if [ -n "$C" ]; then P="$C"; break; fi; done; if [ -z "$P" ] && command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then P=$(sudo -n find /root /home /workspace /srv /opt -maxdepth 6 -type d -name wave-mawja -print -quit 2>/dev/null || true); fi; test -n "$P"; SNAP="$HOME/WAVE_MAWJA_RECOVERY_20260916.tgz"; rm -f "$SNAP"; tar --exclude=node_modules --exclude=.next --exclude=dist --exclude=build --exclude=.gradle --exclude=.git -C "$(dirname "$P")" -czf "$SNAP" "$(basename "$P")"; sha256sum "$SNAP"; stat -c WAVE_SNAPSHOT_BYTES=%s "$SNAP"'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="$REMOTE" | tee wave-snapshot-remote.log
+          gcloud compute scp "$GCP_BUILDER:~/WAVE_MAWJA_RECOVERY_20260916.tgz" ./WAVE_MAWJA_RECOVERY_20260916.tgz --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          test -s WAVE_MAWJA_RECOVERY_20260916.tgz
+          tar -tzf WAVE_MAWJA_RECOVERY_20260916.tgz | head -100 > wave-snapshot-list.txt
+          sha256sum WAVE_MAWJA_RECOVERY_20260916.tgz > WAVE_MAWJA_RECOVERY_20260916.tgz.sha256
+
+      - name: Upload WAVE source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-MAWJA-RECOVERY-20260916
+          retention-days: 3
+          if-no-files-found: error
+          path: |
+            WAVE_MAWJA_RECOVERY_20260916.tgz
+            WAVE_MAWJA_RECOVERY_20260916.tgz.sha256
+            wave-locate.log
+            wave-snapshot-remote.log
+            wave-snapshot-list.txt
