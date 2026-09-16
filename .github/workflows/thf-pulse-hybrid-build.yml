@@ -1,0 +1,121 @@
+name: THF Pulse Hybrid Modern Android Build
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/thf-pulse-hybrid-build.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  TERRA_P0: 1unN6-iLtu_nypKIqo-m_m8ZaLbSsGlk3
+  TERRA_P1: 17ZvxPPh0JPInELSnm2ziaPIXuEnrZxo8
+  TERRA_P0_SHA: 4bfe9989563b8da1822e74b79531a2dd218131981277c05e01a712eabf0866c5
+  TERRA_P1_SHA: 4a00574c817f41a9492da20e19a023ebd39c7ba41f4573efea841c8a57b39cdc
+  TERRA_RC32_SHA: 389ca92b1b2675340f2bf7128f2cf6470bce0af5ea89602d33da2ae6c99b3695
+  AVATAR_SHA: 4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Pulse release branch
+        uses: actions/checkout@v4
+        with:
+          ref: release/pulse-hybrid-modern-20260916
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android API 36
+        run: |
+          set -euxo pipefail
+          S="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$S" --licenses >/dev/null || true
+          "$S" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Prepare exact hybrid source
+        run: |
+          set -euxo pipefail
+          rm -rf /tmp/pulse && mkdir -p /tmp/pulse
+          unzip -q mobile/pulse-batch1-source.zip -d /tmp/pulse
+          cp ReleaseOps/Pulse/apply_pulse_hybrid.py /tmp/pulse/
+          cd /tmp/pulse && python3 apply_pulse_hybrid.py
+      - name: Add canonical modern human asset
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/ta
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${TERRA_P0}?alt=media" -o /tmp/ta/p0
+          curl -fsSL -H "Authorization: Bearer ${ACCESS_TOKEN}" "https://www.googleapis.com/drive/v3/files/${TERRA_P1}?alt=media" -o /tmp/ta/p1
+          echo "${TERRA_P0_SHA}  /tmp/ta/p0" | sha256sum -c -
+          echo "${TERRA_P1_SHA}  /tmp/ta/p1" | sha256sum -c -
+          cat /tmp/ta/p0 /tmp/ta/p1 > /tmp/ta/terra.zip
+          echo "${TERRA_RC32_SHA}  /tmp/ta/terra.zip" | sha256sum -c -
+          unzip -p /tmp/ta/terra.zip web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb > /tmp/pulse/app/src/main/assets/pulse/avatar.glb
+          echo "${AVATAR_SHA}  /tmp/pulse/app/src/main/assets/pulse/avatar.glb" | sha256sum -c -
+      - name: Vendor offline 3D runtime
+        run: |
+          set -euxo pipefail
+          cd /tmp/pulse/app/src/main/assets/pulse
+          curl -fsSL https://unpkg.com/three@0.128.0/build/three.min.js -o three.min.js
+          curl -fsSL https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js -o GLTFLoader.js
+          test -s three.min.js; test -s GLTFLoader.js
+      - name: Safety and hybrid gates
+        run: |
+          set -euxo pipefail
+          cd /tmp/pulse
+          grep -q "versionName '4.3.0-hybrid-modern'" app/build.gradle
+          grep -q 'targetSdk 36' app/build.gradle
+          grep -q '/api/pulse/mobile/sync' app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
+          grep -q 'runtime-config.json' app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
+          ! grep -RIE 'trycloudflare\.com|ngrok|YOUR-PRODUCTION-DOMAIN|example\.com|example\.org|thf_humanoid_v[1-6]' app
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/assets/pulse/avatar.glb')
+          assert p.stat().st_size == 26296432
+          print('MODERN_AVATAR_ONLY=PASS')
+          PY
+      - name: Build test APK + release AAB
+        working-directory: /tmp/pulse
+        run: |
+          set -euxo pipefail
+          gradle --no-daemon :app:clean :app:assembleDebug :app:bundleRelease
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          AAB=app/build/outputs/bundle/release/app-release.aab
+          test -s "$APK"; test -s "$AAB"
+          unzip -t "$APK" > apk-zip-test.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" > apk-badging.txt
+          grep -q "package: name='com.topherofit.thf.pulse'" apk-badging.txt
+          grep -q "targetSdkVersion:'36'" apk-badging.txt
+          unzip -l "$APK" > apk-files.txt
+          grep -q 'assets/pulse/avatar.glb' apk-files.txt
+          cp "$APK" THF-Pulse-4.3.0-HYBRID-MODERN-TEST.apk
+          cp "$AAB" THF-Pulse-4.3.0-HYBRID-MODERN-UNSIGNED.aab
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs THF-Pulse-4.3.0-HYBRID-MODERN-TEST.apk > apksigner-verify.txt
+          sha256sum THF-Pulse-4.3.0-HYBRID-MODERN-TEST.apk THF-Pulse-4.3.0-HYBRID-MODERN-UNSIGNED.aab app/src/main/assets/pulse/avatar.glb > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THF-Pulse-4.3.0-HYBRID-MODERN
+          retention-days: 7
+          path: |
+            /tmp/pulse/THF-Pulse-4.3.0-HYBRID-MODERN-TEST.apk
+            /tmp/pulse/THF-Pulse-4.3.0-HYBRID-MODERN-UNSIGNED.aab
+            /tmp/pulse/SHA256SUMS.txt
+            /tmp/pulse/apk-badging.txt
+            /tmp/pulse/apk-files.txt
+            /tmp/pulse/apksigner-verify.txt
+            /tmp/pulse/apk-zip-test.txt
