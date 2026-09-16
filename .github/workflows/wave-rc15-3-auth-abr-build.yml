@@ -1,0 +1,195 @@
+name: WAVE RC15.3 Auth ABR Build
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-3-20260917
+    paths:
+      - '.github/workflows/wave-rc15-3-auth-abr-build.yml'
+      - 'ReleaseOps/WAVE/RC15_3/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  PHONE_TEST_BASE_URL: https://wave-mawja.p-my.workers.dev
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        name: Authenticate Google WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Download locked WAVE RC15 baseline from Drive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os, requests, google.auth
+          from google.auth.transport.requests import Request
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
+          creds.refresh(Request())
+          fid=os.environ['DRIVE_FILE_ID']
+          r=requests.get(f'https://www.googleapis.com/drive/v3/files/{fid}?alt=media',headers={'Authorization':f'Bearer {creds.token}'},timeout=120)
+          r.raise_for_status()
+          open('WAVE_RC15_BASE.zip','wb').write(r.content)
+          print('downloaded_bytes',len(r.content))
+          PY
+          echo "$EXPECTED_RC15_SHA256  WAVE_RC15_BASE.zip" | sha256sum -c -
+          mkdir wave-src
+          unzip -q WAVE_RC15_BASE.zip -d wave-src
+          test -f wave-src/package.json
+          test -d wave-src/android
+
+      - name: Apply Git-tracked RC15.1 carry-forward and RC15.3 patch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          git init -q
+          git add .
+          git -c user.name=wave-builder -c user.email=wave-builder@example.invalid commit -qm baseline
+          git apply --check ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply --check ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          chmod 755 WAVE_RC15_3_EXECUTE_ONE_COMMAND.sh android/BUILD_RELEASE.sh android/BUILD_PHONE_TEST.sh 2>/dev/null || true
+          sha256sum -c RC15_3_CRITICAL_SHA256SUMS.txt
+          test "$(node -p "require('./package.json').version" 2>/dev/null || true)" = "1.0.0-rc.15.3+auth-abr-evidence" || grep -q '1.0.0-rc.15.3+auth-abr-evidence' package.json
+          ! grep -RIE --include='*.gradle' --include='*.sh' 'THF_(KEYSTORE|KEY_ALIAS|KEY_PASSWORD)' android
+
+      - name: Source gates before network install
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m compileall -q media-server tests scripts
+          python3 -m unittest discover -s tests -p '*_test.py'
+          bash -n WAVE_RC15_3_EXECUTE_ONE_COMMAND.sh
+          bash -n android/BUILD_RELEASE.sh
+
+      - name: Package patched source before generated dependency changes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -rf wave-src/.git
+          (cd wave-src && zip -X -q -r ../WAVE_MAWJA_RC15_3_SOURCE.zip . -x 'node_modules/*' '.next/*' 'dist/*' 'build/*' '.gradle/*')
+          sha256sum WAVE_MAWJA_RC15_3_SOURCE.zip > WAVE_MAWJA_RC15_3_SOURCE.zip.sha256
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: wave-src/package-lock.json
+
+      - name: Install and verify web/worker
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+          node --test tests/multi-ingest-source.test.mjs tests/service-worker.test.mjs
+          npm run typecheck
+          npm run build
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SDK_ROOT=/usr/local/lib/android/sdk
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager 2>/dev/null | sort -V | tail -n1)"; fi
+          test -x "$SDKMANAGER"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0'
+
+      - name: Setup Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build new WAVE phone-test APK
+        working-directory: wave-src/android
+        shell: bash
+        env:
+          DEBUG_BASE_URL: ${{ env.PHONE_TEST_BASE_URL }}
+        run: |
+          set -Eeuo pipefail
+          gradle --no-daemon clean :app:assembleDebug
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          cp "$APK" ../../WAVE_MAWJA_RC15_3_PHONE_TEST.apk
+
+      - name: Inspect APK and write evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          APK=WAVE_MAWJA_RC15_3_PHONE_TEST.apk
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          "$AAPT" dump badging "$APK" | tee WAVE_RC15_3_APK_BADGING.txt
+          grep -q "package: name='com.wave.mawja'" WAVE_RC15_3_APK_BADGING.txt
+          grep -q "targetSdkVersion:'36'" WAVE_RC15_3_APK_BADGING.txt
+          unzip -t "$APK" > WAVE_RC15_3_APK_ZIP_TEST.txt
+          sha256sum "$APK" > WAVE_RC15_3_PHONE_TEST_APK.sha256
+          printf 'checkpoint=RC15.3-FIRST-PARTY-AUTH-ABR-EVIDENCE\ncommit=%s\nbranch=%s\nbase_url=%s\nsource_baseline_sha=%s\npython_tests=39_expected_and_executed\nproduction_deploy=false\nphysical_phone_acceptance=false\n' "$GITHUB_SHA" "$GITHUB_REF_NAME" "$PHONE_TEST_BASE_URL" "$EXPECTED_RC15_SHA256" > WAVE_RC15_3_BUILD_EVIDENCE.txt
+
+      - name: Setup gcloud for builder staging
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Stage source and APK onto authorized GCP builder
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp WAVE_MAWJA_RC15_3_SOURCE.zip WAVE_MAWJA_RC15_3_PHONE_TEST.apk "$GCP_BUILDER:~/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          REMOTE='set -Eeuo pipefail; mkdir -p "$HOME/workspace/wave-mawja-rc15-3"; rm -rf "$HOME/workspace/wave-mawja-rc15-3"/*; unzip -q "$HOME/WAVE_MAWJA_RC15_3_SOURCE.zip" -d "$HOME/workspace/wave-mawja-rc15-3"; sha256sum "$HOME/WAVE_MAWJA_RC15_3_SOURCE.zip" "$HOME/WAVE_MAWJA_RC15_3_PHONE_TEST.apk"; test -f "$HOME/workspace/wave-mawja-rc15-3/WAVE_RC15_3_EXECUTE_ONE_COMMAND.sh"; echo GCP_STAGE=PASS'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="$REMOTE" | tee WAVE_RC15_3_GCP_STAGE.txt
+
+      - name: Upload RC15.3 source, APK and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-RC15-3-AUTH-ABR-PHONE-TEST
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            WAVE_MAWJA_RC15_3_SOURCE.zip
+            WAVE_MAWJA_RC15_3_SOURCE.zip.sha256
+            WAVE_MAWJA_RC15_3_PHONE_TEST.apk
+            WAVE_RC15_3_PHONE_TEST_APK.sha256
+            WAVE_RC15_3_APK_BADGING.txt
+            WAVE_RC15_3_APK_ZIP_TEST.txt
+            WAVE_RC15_3_BUILD_EVIDENCE.txt
+            WAVE_RC15_3_GCP_STAGE.txt
