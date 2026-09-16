@@ -1,0 +1,52 @@
+name: WAVE RC15 Exact APK Signature Verify
+
+on:
+  push:
+    branches: [releaseops/wave-recover-20260916]
+    paths: [.github/workflows/wave-rc15-apk-signature-verify.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download exact existing APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: WAVE-RC15-PHONE-TEST-APK
+          path: candidate
+          run-id: 35144720666
+          github-token: ${{ github.token }}
+      - name: Prepare Android build tools
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SDK_ROOT=/usr/local/lib/android/sdk
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'build-tools;36.0.0'
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+      - name: Verify exact candidate cryptographically
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          APK=candidate/WAVE_MAWJA_RC15_PHONE_TEST.apk
+          EXPECTED=47d5450bc70b21cfdf2d9e491c478d4951fd3c9311527de337072a2e6683f666
+          echo "$EXPECTED  $APK" | sha256sum -c -
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee candidate/WAVE_RC15_APKSIGNER_VERIFY.txt
+          grep -q 'Verified using v2 scheme (APK Signature Scheme v2): true' candidate/WAVE_RC15_APKSIGNER_VERIFY.txt
+          sha256sum "$APK" > candidate/WAVE_RC15_VERIFIED_APK.sha256
+      - name: Upload verification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-RC15-EXACT-APK-SIGNATURE-EVIDENCE
+          retention-days: 7
+          path: |
+            candidate/WAVE_RC15_APKSIGNER_VERIFY.txt
+            candidate/WAVE_RC15_VERIFIED_APK.sha256
