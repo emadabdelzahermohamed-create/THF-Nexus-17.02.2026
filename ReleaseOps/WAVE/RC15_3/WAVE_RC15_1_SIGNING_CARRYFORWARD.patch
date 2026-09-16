@@ -1,0 +1,38 @@
+diff --git a/android/app/build.gradle b/android/app/build.gradle
+index 925b541..d10c403 100644
+--- a/android/app/build.gradle
++++ b/android/app/build.gradle
+@@ -3,10 +3,10 @@ plugins { id 'com.android.application' }
+ def releaseUrl = System.getenv('APP_BASE_URL') ?: (project.findProperty('APP_BASE_URL') ?: '')
+ def debugUrl = System.getenv('DEBUG_BASE_URL') ?: (project.findProperty('DEBUG_BASE_URL') ?: 'http://10.0.2.2:8000')
+ def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }
+-def ks = System.getenv('THF_KEYSTORE_PATH')
+-def ka = System.getenv('THF_KEY_ALIAS')
+-def ksp = System.getenv('THF_KEYSTORE_PASSWORD')
+-def kp = System.getenv('THF_KEY_PASSWORD')
++def ks = System.getenv('WAVE_KEYSTORE_PATH')
++def ka = System.getenv('WAVE_KEY_ALIAS')
++def ksp = System.getenv('WAVE_KEYSTORE_PASSWORD')
++def kp = System.getenv('WAVE_KEY_PASSWORD')
+ if (releaseRequested && !releaseUrl.toString().startsWith('https://')) throw new GradleException('APP_BASE_URL must be a production HTTPS URL')
+ if (releaseRequested && (!ks || !ka || !ksp || !kp)) throw new GradleException('Release signing env vars are required')
+ 
+diff --git a/android/BUILD_RELEASE.sh b/android/BUILD_RELEASE.sh
+index fe26212..006ba22 100755
+--- a/android/BUILD_RELEASE.sh
++++ b/android/BUILD_RELEASE.sh
+@@ -1,10 +1,10 @@
+ #!/usr/bin/env bash
+ set -Eeuo pipefail
+ : "${APP_BASE_URL:?Set APP_BASE_URL=https://your-production-host}"
+-: "${THF_KEYSTORE_PATH:?Set THF_KEYSTORE_PATH}"
+-: "${THF_KEY_ALIAS:?Set THF_KEY_ALIAS}"
+-: "${THF_KEYSTORE_PASSWORD:?Set THF_KEYSTORE_PASSWORD}"
+-: "${THF_KEY_PASSWORD:?Set THF_KEY_PASSWORD}"
++: "${WAVE_KEYSTORE_PATH:?Set WAVE_KEYSTORE_PATH}"
++: "${WAVE_KEY_ALIAS:?Set WAVE_KEY_ALIAS}"
++: "${WAVE_KEYSTORE_PASSWORD:?Set WAVE_KEYSTORE_PASSWORD}"
++: "${WAVE_KEY_PASSWORD:?Set WAVE_KEY_PASSWORD}"
+ [[ "$APP_BASE_URL" == https://* ]] || { echo 'APP_BASE_URL must use HTTPS'; exit 2; }
+ command -v gradle >/dev/null || { echo 'Gradle 8.13 + Android SDK 36 required'; exit 3; }
+ gradle clean bundleRelease
