@@ -115,21 +115,24 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android tooling
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android API 36
+      - name: Install Android SDK 36 directly
         shell: bash
         run: |
           set -Eeuo pipefail
-          SDKMANAGER="$(command -v sdkmanager || true)"
-          if [ -z "$SDKMANAGER" ]; then
-            SDKMANAGER="$(find "${ANDROID_SDK_ROOT:-$ANDROID_HOME}" -type f -name sdkmanager 2>/dev/null | head -n1)"
+          SDK_ROOT=/usr/local/lib/android/sdk
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager 2>/dev/null | sort -V | tail -n1)"
           fi
           test -x "$SDKMANAGER"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0'
-          echo "ANDROID_HOME=${ANDROID_SDK_ROOT:-$ANDROID_HOME}" >> "$GITHUB_ENV"
+          "$SDKMANAGER" 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0'
+          test -d "$SDK_ROOT/platforms/android-36"
+          test -x "$SDK_ROOT/build-tools/36.0.0/aapt"
 
       - name: Setup Gradle 8.13
         uses: gradle/actions/setup-gradle@v4
@@ -143,6 +146,7 @@ jobs:
           DEBUG_BASE_URL: ${{ env.PHONE_TEST_BASE_URL }}
         run: |
           set -Eeuo pipefail
+          gradle --version | sed -n '1,12p'
           gradle --no-daemon clean :app:assembleDebug
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
@@ -153,12 +157,13 @@ jobs:
         run: |
           set -Eeuo pipefail
           APK=wave-src/WAVE_MAWJA_RC15_PHONE_TEST.apk
-          AAPT="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -type f -name aapt | sort -V | tail -1)"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           test -x "$AAPT"
           "$AAPT" dump badging "$APK" | tee wave-src/WAVE_RC15_APK_BADGING.txt
           grep -q "package: name='com.wave.mawja'" wave-src/WAVE_RC15_APK_BADGING.txt
           grep -q "targetSdkVersion:'36'" wave-src/WAVE_RC15_APK_BADGING.txt
           unzip -t "$APK" > wave-src/WAVE_RC15_APK_ZIP_TEST.txt
+          keytool -printcert -jarfile "$APK" > wave-src/WAVE_RC15_APK_CERT.txt 2>&1 || true
 
       - name: Package evidence
         shell: bash
@@ -180,6 +185,7 @@ jobs:
             wave-src/WAVE_RC15_PHONE_TEST_APK.sha256
             wave-src/WAVE_RC15_APK_BADGING.txt
             wave-src/WAVE_RC15_APK_ZIP_TEST.txt
+            wave-src/WAVE_RC15_APK_CERT.txt
             wave-src/WAVE_RC15_BUILD_EVIDENCE.txt
             wave-src/package-lock.json
             wave-src/WAVE_RC15_REPAIRED_LOCK.sha256
