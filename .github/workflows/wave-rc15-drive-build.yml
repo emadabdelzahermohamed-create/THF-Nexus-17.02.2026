@@ -17,6 +17,7 @@ env:
   EXPECTED_SOURCE_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  PHONE_TEST_BASE_URL: https://mawja-stream.emad-abdelzaher-moha.chatgpt.site
 
 jobs:
   build-wave-rc15:
@@ -63,9 +64,15 @@ jobs:
           cache: npm
           cache-dependency-path: wave-src/package-lock.json
 
-      - name: Install web dependencies
+      - name: Repair lock then install web dependencies
         working-directory: wave-src
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cp package-lock.json package-lock.before-rc15-build.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm ls @cloudflare/playwright --depth=0 || true
 
       - name: WAVE source and web gates
         working-directory: wave-src
@@ -100,22 +107,22 @@ jobs:
         working-directory: wave-src/android
         shell: bash
         env:
-          DEBUG_BASE_URL: https://wave-mawja.p-my.workers.dev
+          DEBUG_BASE_URL: ${{ env.PHONE_TEST_BASE_URL }}
         run: |
           set -Eeuo pipefail
           gradle --no-daemon clean :app:assembleDebug
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
-          sha256sum "$APK" | tee ../../WAVE_RC15_PHONE_TEST_APK.sha256
-          cp "$APK" ../../WAVE_MAWJA_RC15_PHONE_TEST.apk
+          cp "$APK" ../WAVE_MAWJA_RC15_PHONE_TEST.apk
 
       - name: Inspect APK contract
         shell: bash
         run: |
           set -Eeuo pipefail
           APK=wave-src/WAVE_MAWJA_RC15_PHONE_TEST.apk
-          AAPT="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -type f -name aapt2 | sort -V | tail -1)"
-          "$AAPT" dump badging "$APK" | tee wave-src/WAVE_RC15_APK_BADGING.txt || true
+          AAPT="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -type f -name aapt | sort -V | tail -1)"
+          test -x "$AAPT"
+          "$AAPT" dump badging "$APK" | tee wave-src/WAVE_RC15_APK_BADGING.txt
           grep -q "package: name='com.wave.mawja'" wave-src/WAVE_RC15_APK_BADGING.txt
           grep -q "targetSdkVersion:'36'" wave-src/WAVE_RC15_APK_BADGING.txt
           unzip -t "$APK" > wave-src/WAVE_RC15_APK_ZIP_TEST.txt
@@ -126,7 +133,8 @@ jobs:
           set -Eeuo pipefail
           cd wave-src
           sha256sum WAVE_MAWJA_RC15_PHONE_TEST.apk > WAVE_RC15_PHONE_TEST_APK.sha256
-          printf 'source_sha256=%s\ncommit=%s\npackage=com.wave.mawja\ntarget_sdk=36\n' "$EXPECTED_SOURCE_SHA256" "$GITHUB_SHA" > WAVE_RC15_BUILD_EVIDENCE.txt
+          sha256sum package-lock.json > WAVE_RC15_REPAIRED_LOCK.sha256
+          printf 'source_sha256=%s\ncommit=%s\npackage=com.wave.mawja\ntarget_sdk=36\nphone_test_base_url=%s\n' "$EXPECTED_SOURCE_SHA256" "$GITHUB_SHA" "$PHONE_TEST_BASE_URL" > WAVE_RC15_BUILD_EVIDENCE.txt
 
       - name: Upload phone-test candidate
         uses: actions/upload-artifact@v4
@@ -140,3 +148,5 @@ jobs:
             wave-src/WAVE_RC15_APK_BADGING.txt
             wave-src/WAVE_RC15_APK_ZIP_TEST.txt
             wave-src/WAVE_RC15_BUILD_EVIDENCE.txt
+            wave-src/package-lock.json
+            wave-src/WAVE_RC15_REPAIRED_LOCK.sha256
