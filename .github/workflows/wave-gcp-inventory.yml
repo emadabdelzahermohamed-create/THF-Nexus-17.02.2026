@@ -1,0 +1,51 @@
+name: WAVE GCP Existing-Resource Inventory
+
+on:
+  push:
+    branches:
+      - releaseops/wave-recover-20260916
+    paths:
+      - .github/workflows/wave-gcp-inventory.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate existing GCP WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: project-b5e10d7e-8ce8-4aa4-a15
+
+      - name: Read-only WAVE builder inventory
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo '=== PROJECT ==='
+          gcloud projects describe project-b5e10d7e-8ce8-4aa4-a15 --format='value(projectId,lifecycleState)'
+          echo '=== TARGET BUILDER ==='
+          if gcloud compute instances describe thf-wave-builder --zone=europe-west1-b --format='value(name,status,machineType.basename(),zone.basename())' 2>/tmp/wave-builder.err; then
+            echo 'WAVE_BUILDER_FOUND=1'
+          else
+            echo 'WAVE_BUILDER_FOUND=0'
+            sed -n '1,8p' /tmp/wave-builder.err
+          fi
+          echo '=== ALL COMPUTE INSTANCES ==='
+          gcloud compute instances list --format='table(name,zone.basename(),status,machineType.basename())' || true
+          echo '=== CLOUD RUN SERVICES ==='
+          gcloud run services list --platform=managed --format='table(metadata.name,location,status.url)' || true
+          echo '=== STORAGE BUCKET METADATA ==='
+          gcloud storage buckets list --format='table(name,location,storage_class)' || true
+          echo '=== DONE ==='
