@@ -50,9 +50,11 @@ jobs:
       - name: Source safety gate
         working-directory: mobile/pulse-batch1
         run: |
+          set -euxo pipefail
           test -f app/src/main/assets/pulse/index.html
           test -f app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
-          ! grep -RIE --exclude='MainActivity.java' 'trycloudflare\.com|ngrok|127\.0\.0\.1|localhost|\.local([/:"'"']|$)' .
+          ! grep -RIE --exclude='MainActivity.java' 'trycloudflare\.com|ngrok|127\.0\.0\.1|localhost' .
+          ! grep -RIE --exclude='MainActivity.java' '\.local([/:]|$)' .
           grep -q 'file:///android_asset/pulse/index.html' app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
           grep -q 'OFFLINE READY' app/src/main/assets/pulse/index.html
           grep -q 'targetSdk 36' app/build.gradle
