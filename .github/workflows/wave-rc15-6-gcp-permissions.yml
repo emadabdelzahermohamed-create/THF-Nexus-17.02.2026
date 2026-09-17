@@ -1,0 +1,51 @@
+name: WAVE RC15.6 GCP Network Permissions
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-rc15-6-gcp-permissions.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_VM: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  permissions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Test instance/project network permissions without mutation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install -q google-auth requests
+          python3 - <<'PY'
+          import os, requests, google.auth
+          from google.auth.transport.requests import Request
+          cred,_=google.auth.default(scopes=['https://www.googleapis.com/auth/cloud-platform']);cred.refresh(Request())
+          h={'Authorization':'Bearer '+cred.token,'Content-Type':'application/json'}
+          p=os.environ['GCP_PROJECT_ID']; z=os.environ['GCP_ZONE']; vm=os.environ['GCP_VM']
+          checks=[
+            (f'https://compute.googleapis.com/compute/v1/projects/{p}/zones/{z}/instances/{vm}/testIamPermissions',[
+              'compute.instances.get','compute.instances.update','compute.instances.addAccessConfig','compute.instances.deleteAccessConfig','compute.instances.setTags']),
+            (f'https://compute.googleapis.com/compute/v1/projects/{p}/testIamPermissions',[
+              'compute.firewalls.create','compute.firewalls.get','compute.firewalls.list','compute.addresses.create','compute.addresses.get','compute.addresses.list'])
+          ]
+          for url,permissions in checks:
+            r=requests.post(url,headers=h,json={'permissions':permissions},timeout=30)
+            print('STATUS',r.status_code)
+            if r.ok: print('GRANTED',*sorted(r.json().get('permissions',[])),sep='\n')
+            else: print('ERROR',r.text[:800])
+          PY
