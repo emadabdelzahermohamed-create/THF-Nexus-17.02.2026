@@ -1,0 +1,93 @@
+name: WAVE RC15.7 Download Page Fix
+
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths: ['.github/workflows/wave-rc15-7-download-page-fix.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  WAVE_PUBLIC_URL: https://wave-mawja.p-my.workers.dev
+  APK_SHA256: 0403bc725b16301ceadc9934aa22ebb529ce82f115e10fdbf12b53810ad547c9
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+
+jobs:
+  deploy-page:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Reconstruct current WAVE source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os, requests, google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120)
+          r.raise_for_status(); open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src && unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q; git add .; git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          mkdir -p public/downloads
+          curl -fsSL "$WAVE_PUBLIC_URL/downloads/WAVE_MAWJA_ANDROID.apk" -o public/downloads/WAVE_MAWJA_ANDROID.apk
+          echo "$APK_SHA256  public/downloads/WAVE_MAWJA_ANDROID.apk" | sha256sum -c -
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: wave-src/package-lock.json
+      - name: Build and deploy corrected downloads page
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run typecheck
+          D=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database?per_page=100")
+          ID=$(echo "$D" | jq -r '.result[]|select(.name=="wave-mawja-prod")|.uuid' | head -1)
+          test -n "$ID"; export CLOUDFLARE_D1_DATABASE_ID="$ID"
+          npm run build
+          jq -e --arg id "$ID" 'any(.d1_databases[]?; .binding=="DB" and .database_id==$id)' dist/server/wrangler.json >/dev/null
+          npx wrangler@4.119.0 deploy --config dist/server/wrangler.json
+          npx wrangler@4.119.0 secret list --name wave-mawja | tee ../secrets.txt
+          grep -q MEDIA_API_URL ../secrets.txt
+          grep -q MEDIA_API_TOKEN ../secrets.txt
+      - name: Verify corrected page and APK
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl -fsSL "$WAVE_PUBLIC_URL/downloads" -o /tmp/downloads.html
+          grep -q "$APK_SHA256" /tmp/downloads.html
+          grep -q 'WAVE_MAWJA_ANDROID.apk' /tmp/downloads.html
+          curl -fsSL "$WAVE_PUBLIC_URL/downloads/WAVE_MAWJA_ANDROID.apk" -o /tmp/WAVE.apk
+          echo "$APK_SHA256  /tmp/WAVE.apk" | sha256sum -c -
+          echo DOWNLOAD_PAGE_APK=PASS
