@@ -1,0 +1,49 @@
+name: Terra Web Infra Inspect
+
+on:
+  push:
+    branches: ['t/**']
+    paths: ['.github/workflows/terra-web-infra-inspect.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read-only GCP and host inspection
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo '=== INSTANCE ==='
+          gcloud compute instances describe "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --format='yaml(name,status,machineType,disks.deviceName,disks.diskSizeGb,networkInterfaces.networkIP,networkInterfaces.accessConfigs.natIP,tags.items)'
+          echo '=== HOST CAPABILITIES (NO SECRET VALUES) ==='
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" \
+            --zone "$GCP_ZONE" \
+            --tunnel-through-iap \
+            --ssh-key-expire-after=10m \
+            --quiet \
+            --command='set -Eeuo pipefail; echo USER=$(id -un); echo HOME=$HOME; echo DISK; df -h /; echo MEMORY; free -h; echo TOOLS; for c in docker podman cloudflared caddy nginx python3; do if command -v "$c" >/dev/null 2>&1; then printf "%s=" "$c"; command -v "$c"; else echo "$c=MISSING"; fi; done; echo LISTENING_PORTS; if command -v ss >/dev/null 2>&1; then ss -lnt | sed -n "1,40p"; fi; echo TERRA_DIR; test -d "$HOME/thf-terra-rift-staging-apk-v1/terra/work" && echo PRESENT || echo MISSING; echo WAVE_DIR_READ_ONLY; test -d "$HOME/thf-wave*" && echo PRESENT || echo NOT_SEEN; echo DONE_READ_ONLY=TRUE'
