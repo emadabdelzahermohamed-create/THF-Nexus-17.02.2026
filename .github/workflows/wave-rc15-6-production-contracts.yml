@@ -1,0 +1,84 @@
+name: WAVE RC15.6 Production Contracts
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-rc15-6-production-contracts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_VM: thf-wave-builder
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Reconstruct and inspect exact production contracts
+        shell: bash
+        env:
+          HAS_CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+          HAS_CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+          HAS_CF_STREAM_TOKEN: ${{ secrets.CLOUDFLARE_STREAM_API_TOKEN != '' }}
+        run: |
+          set -Eeuo pipefail
+          echo "GITHUB_CF_API_TOKEN_PRESENT=$HAS_CF_API_TOKEN"
+          echo "GITHUB_CF_ACCOUNT_ID_PRESENT=$HAS_CF_ACCOUNT_ID"
+          echo "GITHUB_CF_STREAM_TOKEN_PRESENT=$HAS_CF_STREAM_TOKEN"
+          python3 -m pip install -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']);c.refresh(Request())
+          r=requests.get('https://www.googleapis.com/drive/v3/files/'+os.environ['DRIVE_FILE_ID']+'?alt=media',headers={'Authorization':'Bearer '+c.token},timeout=120);r.raise_for_status();open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir src && unzip -q base.zip -d src
+          cd src
+          git init -q && git add . && git -c user.name=x -c user.email=x@x.invalid commit -qm base
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          for f in media-server/docker-compose.yml media-server/Caddyfile media-server/mediamtx.yml wrangler.json wrangler.jsonc wrangler.toml scripts/deploy-cloudflare.sh operator-tools/configure-cloudflare-media.sh; do
+            [ -f "$f" ] || continue
+            echo "===== $f ====="
+            sed -n '1,420p' "$f"
+          done
+          echo '===== exact live request/API area ====='
+          sed -n '250,390p' media-server/api/main.py
+          sed -n '1330,1425p' media-server/api/main.py
+          echo '===== exact import request/API area ====='
+          sed -n '1010,1165p' media-server/api/main.py
+      - name: Inspect VPS package/auth availability without exposing secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '===== compose package candidates ====='
+          apt-cache policy docker-compose-v2 docker-compose-plugin 2>/dev/null || true
+          echo '===== wrangler/cloudflare auth footprints ====='
+          command -v node || true; command -v npm || true; command -v npx || true
+          find "$HOME" -maxdepth 4 -type f \( -name 'wrangler.toml' -o -name 'wrangler.json' -o -name 'wrangler.jsonc' -o -name '*.json' \) 2>/dev/null | grep -E '/\.wrangler/|/\.config/.+wrangler|wave-mawja' | head -n 120 || true
+          if [ -d "$HOME/.config/.wrangler" ] || [ -d "$HOME/.wrangler" ]; then echo 'WRANGLER_AUTH_FOOTPRINT_PRESENT=true'; else echo 'WRANGLER_AUTH_FOOTPRINT_PRESENT=false'; fi
+          echo '===== VM network ====='
+          hostname -I || true
+          curl -fsS --max-time 5 https://api.ipify.org || true; echo
+          REMOTE
