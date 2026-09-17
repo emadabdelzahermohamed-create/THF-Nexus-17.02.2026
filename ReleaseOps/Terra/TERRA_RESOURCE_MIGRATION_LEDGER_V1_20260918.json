@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "product": "THF World / Terra",
+  "created_utc": "2026-09-17T23:16:00Z",
+  "policy": {
+    "approved_human_pipeline_required": true,
+    "procedural_primitives": "fallback_only",
+    "remove_or_quarantine_only_after_replacement_proof": true,
+    "every_removal_requires_ledger_entry": true
+  },
+  "proven_replacements": [
+    {
+      "class": "avatar_runtime",
+      "asset": "web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb",
+      "sha256": "4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f",
+      "pipeline": "MPFB/MakeHuman + UAL",
+      "runtime_claim": {"joints":137,"clips":195},
+      "evidence": "ReleaseOps/mobile/GAMES_FACTORY_V18_CHECKPOINT_20260914.md and RC34 Phone V4 builder evidence",
+      "status": "PROVEN_FOR_RC34_PHONE_V4_QA"
+    }
+  ],
+  "required_replacements_not_yet_proven_in_accessible_git": [
+    "approved skeletal wardrobe",
+    "footwear",
+    "hair LOD",
+    "facial/viseme/identity improvements",
+    "Downtown City converted runtime environment",
+    "Ultimate Nature converted runtime environment",
+    "House Interior/Furniture converted runtime environment",
+    "Street/Public Transport converted runtime environment"
+  ],
+  "legacy_candidates": [],
+  "removals": [],
+  "quarantines": [],
+  "status": "NO_REMOVALS_PERFORMED_FAIL_CLOSED"
+}
