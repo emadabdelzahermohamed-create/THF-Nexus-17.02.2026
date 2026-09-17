@@ -1,0 +1,89 @@
+name: WAVE RC15.3 Live Auth E2E
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-3-20260917
+    paths:
+      - '.github/workflows/wave-rc15-3-live-auth-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WAVE_PUBLIC_URL: https://wave-mawja.p-my.workers.dev
+  D1_NAME: wave-mawja-prod
+
+jobs:
+  auth-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover existing WAVE D1
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          d1="$(curl -fsS -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database?per_page=100")"
+          db_id="$(echo "$d1" | jq -r '.result[] | select(.name == "wave-mawja-prod") | .uuid' | head -n1)"
+          [ -n "$db_id" ] && [ "$db_id" != null ]
+          echo "D1_ID=$db_id" >> "$GITHUB_ENV"
+
+      - name: Register and login a disposable production test user
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          email="rc15-e2e-${GITHUB_RUN_ID}@example.invalid"
+          password="WaveRC15-${GITHUB_RUN_ID}-Strong!"
+          echo "TEST_EMAIL=$email" >> "$GITHUB_ENV"
+
+          register_code="$(curl -sS -D /tmp/reg-headers -c /tmp/register.cookies -o /tmp/register.json -w '%{http_code}' -X POST "$WAVE_PUBLIC_URL/api/auth/register" -H "Origin: $WAVE_PUBLIC_URL" -H 'Content-Type: application/json' --data "{\"email\":\"$email\",\"displayName\":\"RC15 E2E\",\"password\":\"$password\",\"returnTo\":\"/\"}")"
+          [ "$register_code" = 200 ]
+          jq -e '.ok == true and .user.email != null and .redirectTo == "/"' /tmp/register.json >/dev/null
+          grep -qi '^set-cookie: wave_session=' /tmp/reg-headers
+
+          login_code="$(curl -sS -D /tmp/login-headers -c /tmp/login.cookies -o /tmp/login.json -w '%{http_code}' -X POST "$WAVE_PUBLIC_URL/api/auth/login" -H "Origin: $WAVE_PUBLIC_URL" -H 'Content-Type: application/json' --data "{\"email\":\"$email\",\"password\":\"$password\",\"returnTo\":\"/\"}")"
+          [ "$login_code" = 200 ]
+          jq -e '.ok == true and .user.email != null and .redirectTo == "/"' /tmp/login.json >/dev/null
+          grep -qi '^set-cookie: wave_session=' /tmp/login-headers
+
+          printf 'register_http=%s\nlogin_http=%s\nsession_cookie_register=present\nsession_cookie_login=present\n' "$register_code" "$login_code" > WAVE_RC15_3_LIVE_AUTH_E2E.txt
+          echo 'LIVE_AUTH_E2E=PASS'
+
+      - name: Cleanup disposable test user from D1
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ -n "${D1_ID:-}" ] || exit 0
+          [ -n "${TEST_EMAIL:-}" ] || exit 0
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          query_url="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${D1_ID}/query"
+          for sql in \
+            "DELETE FROM wave_sessions WHERE email = ?;" \
+            "DELETE FROM wave_credentials WHERE email = ?;" \
+            "DELETE FROM user_accounts WHERE email = ?;"
+          do
+            payload="$(jq -nc --arg sql "$sql" --arg email "$TEST_EMAIL" '{sql:$sql,params:[$email]}')"
+            result="$(curl -fsS -X POST "$query_url" -H "$auth" -H 'Content-Type: application/json' --data "$payload")"
+            echo "$result" | jq -e '.success == true and all(.result[]?; .success == true)' >/dev/null
+          done
+          verify_payload="$(jq -nc --arg email "$TEST_EMAIL" '{sql:"SELECT COUNT(*) AS n FROM user_accounts WHERE email = ?;",params:[$email]}')"
+          verify="$(curl -fsS -X POST "$query_url" -H "$auth" -H 'Content-Type: application/json' --data "$verify_payload")"
+          echo "$verify" | jq -e '.success == true and .result[0].results[0].n == 0' >/dev/null
+          echo 'LIVE_AUTH_E2E_CLEANUP=PASS'
+
+      - name: Upload auth E2E evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-RC15-3-LIVE-AUTH-E2E
+          retention-days: 14
+          if-no-files-found: warn
+          path: WAVE_RC15_3_LIVE_AUTH_E2E.txt
