@@ -9,6 +9,7 @@ on:
       - '.github/workflows/terra-social-modern-build.yml'
       - 'ReleaseOps/scripts/build_terra_rc34_compact_phone.sh'
       - 'ReleaseOps/scripts/verify_terra_modern_human_only.sh'
+      - 'ReleaseOps/scripts/patch_terra_modern_human_current_source.py'
       - 'ReleaseOps/Terra/TERRA_ACTIVE_ASSET_POLICY_V1_20260917.json'
       - 'ReleaseOps/Terra/TERRA_UNIFIED_BACKLOG_V1_20260917.json'
   workflow_dispatch:
@@ -66,6 +67,7 @@ jobs:
           gcloud compute scp \
             ReleaseOps/scripts/build_terra_rc34_compact_phone.sh \
             ReleaseOps/scripts/verify_terra_modern_human_only.sh \
+            ReleaseOps/scripts/patch_terra_modern_human_current_source.py \
             "$GCP_BUILDER:/tmp/terra-social-releaseops/" \
             --project "$GCP_PROJECT_ID" \
             --zone "$GCP_ZONE" \
@@ -82,7 +84,7 @@ jobs:
             --tunnel-through-iap \
             --ssh-key-expire-after=10m \
             --quiet \
-            --command='set -Eeuo pipefail; chmod +x /tmp/terra-social-releaseops/*.sh; THF_TERRA_SOURCE="$HOME/thf-terra-rift-staging-apk-v1/terra/work" THF_TERRA_BUILD_ROOT="$HOME/thf-terra-social-modern-build" bash /tmp/terra-social-releaseops/build_terra_rc34_compact_phone.sh'
+            --command='set -Eeuo pipefail; chmod +x /tmp/terra-social-releaseops/*.sh /tmp/terra-social-releaseops/*.py; THF_TERRA_SOURCE="$HOME/thf-terra-rift-staging-apk-v1/terra/work" THF_TERRA_BUILD_ROOT="$HOME/thf-terra-social-modern-build" bash /tmp/terra-social-releaseops/build_terra_rc34_compact_phone.sh'
 
       - name: Pull build evidence and APK
         shell: bash
