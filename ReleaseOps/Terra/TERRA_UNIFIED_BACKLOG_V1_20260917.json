@@ -1,52 +1,76 @@
 {
-  "schema_version": 1,
-  "project": "THF World / Terra social game",
-  "updated_utc": "2026-09-17T20:30:00Z",
+  "schema_version": 2,
+  "project": "THF World / Terra independent social game",
+  "updated_utc": "2026-09-17T20:52:00Z",
+  "working_branch": "t/s1",
+  "release_identity": {
+    "android_application_id": "com.topherofit.thf.terra",
+    "engine": "Godot 4.7.2",
+    "android_target_sdk": 36,
+    "canonical_human_avatar": "web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb",
+    "canonical_human_avatar_sha256": "4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f",
+    "service_model": "one account/backend/state shared by Android and web/PWA",
+    "wave_policy": "Terra is isolated from WAVE_MAWJA source/runtime/state; only the previously authorized WIF/OIDC mechanism may be reused."
+  },
   "execution_policy": {
-    "mode": "continuous_current-turn_plus_hourly_automation",
-    "rule": "Each run processes as many consecutive safe, unblocked tasks as possible; not one task per hour.",
-    "publish_rule": "Publish only after the corresponding real gate passes; otherwise record blocker and continue with next unblocked task."
+    "mode": "continuous_current-turn_plus_single_hourly_automation",
+    "rule": "Each run processes as many consecutive safe, unblocked tasks as possible; never intentionally limit a run to one task.",
+    "publish_rule": "Publish only after the corresponding real gate passes; otherwise record the exact blocker and continue with the next unblocked task.",
+    "authority_rule": "Never downgrade to Stage15/Stage16 or superseded runtime sources. Preserve historical evidence, but remove/exclude obsolete assets and fallbacks from active runtime/export paths.",
+    "legacy_avatar_rule": "thf_humanoid_v1..v6 are forbidden in active runtime/export output."
+  },
+  "evidence": {
+    "last_verified_android_build_run": 35272206923,
+    "last_verified_android_build_sha256": "dd3d292606326acf38941269ea7631f2b3d699912dea1868a8124f0de2b6d19a",
+    "last_verified_android_build_size_bytes": 195289185,
+    "artifact_transfer_retry_run": 35273171993,
+    "social_auth_source_gate_run": 35273142725
   },
   "tasks": [
     {
       "id": "P0-01",
       "priority": 0,
-      "title": "Converge release authority with modern-human cleanup",
-      "status": "IN_PROGRESS",
+      "title": "Converge current RC34 authority with modern-human cleanup",
+      "status": "PASS",
       "depends_on": [],
-      "acceptance": ["RC34 Phone V4 remains release authority", "2026-09-16 modern-human rules merged forward", "no release-line downgrade"]
+      "result": "Current builder RC34 source is patched forward on a disposable build copy; no release-line downgrade is used.",
+      "acceptance": ["current RC34 remains source authority", "2026-09-16 modern-human rules merged forward", "no release-line downgrade"]
     },
     {
       "id": "P0-02",
       "priority": 0,
       "title": "Fail-closed legacy avatar exclusion gate",
-      "status": "IN_PROGRESS",
+      "status": "PASS",
       "depends_on": ["P0-01"],
+      "result": "Canonical MPFB SHA is enforced; old thf_humanoid_v1..v6 files/references are removed from active runtime/build copy and rejected by the gate.",
       "acceptance": ["MPFB/MakeHuman canonical asset required", "thf_humanoid_v1..v6 absent from active runtime/export paths", "gate fails on regression"]
     },
     {
       "id": "P0-03",
       "priority": 0,
       "title": "Rebuild exact clean Terra candidate and source gates",
-      "status": "QUEUED",
+      "status": "IN_PROGRESS",
       "depends_on": ["P0-02"],
-      "acceptance": ["exact source provenance recorded", "static/security/unit/source checks pass", "artifact SHA-256 recorded"]
+      "result": "Clean candidate and evidence were produced in run 35272206923; artifact-transfer-only retry is running as 35273171993.",
+      "acceptance": ["exact source provenance recorded", "static/security/unit/source checks pass", "artifact SHA-256 recorded", "artifact copied to CI evidence store"]
     },
     {
       "id": "P0-04",
       "priority": 0,
       "title": "Godot 4.7.2 real clean import/parser/headless gate",
-      "status": "QUEUED",
+      "status": "PASS",
       "depends_on": ["P0-03"],
-      "acceptance": ["clean import pass", "parser/class cache pass", "30-frame headless pass"]
+      "result": "Real builder run passed the Godot import/headless stage before Android export.",
+      "acceptance": ["clean import pass", "parser/class cache pass", "bounded headless engine pass"]
     },
     {
       "id": "P0-05",
       "priority": 0,
       "title": "Android API 36 arm64 test APK/AAB cloud build",
-      "status": "QUEUED",
+      "status": "PASS_APK_ARTIFACT_SYNC_IN_PROGRESS",
       "depends_on": ["P0-04"],
-      "acceptance": ["applicationId com.topherofit.thf.terra", "targetSdk 36", "arm64 candidate verified", "APK/AAB hashes recorded"]
+      "result": "APK built with com.topherofit.thf.terra, targetSdk 36, arm64, modern MPFB only; SHA-256 dd3d292606326acf38941269ea7631f2b3d699912dea1868a8124f0de2b6d19a. CI artifact transfer retry is running.",
+      "acceptance": ["applicationId com.topherofit.thf.terra", "targetSdk 36", "arm64 candidate verified", "APK hash recorded", "CI artifact downloadable"]
     },
     {
       "id": "P0-06",
@@ -54,39 +78,45 @@
       "title": "Physical Android install, boot, input, GPU and performance evidence",
       "status": "BLOCKED_EXTERNAL",
       "depends_on": ["P0-05"],
-      "blocker": "No connected authorized device runner/ADB session is currently available.",
+      "blocker": "No connected authorized physical Android device/ADB runner is currently available to this execution path.",
       "acceptance": ["fresh install succeeds", "real scene boots", "avatar renders as approved human", "touch/camera/movement pass", "FPS/RAM/thermal evidence captured"]
     },
     {
       "id": "P0-07",
       "priority": 0,
-      "title": "Standalone production account/auth backend over HTTPS",
-      "status": "QUEUED",
+      "title": "Standalone Terra account/auth backend and account linking",
+      "status": "IN_PROGRESS",
       "depends_on": ["P0-03"],
-      "acceptance": ["own Terra user/account namespace", "passwordless/social-capable session model", "refresh/revoke/delete-account flows", "same identity works on web and Android"]
+      "result": "Provider-neutral social auth overlay has been implemented on the exact current source path with account-link tables, short-lived OAuth attempts, web and Godot native flows; source/Godot gate run 35273142725 is running.",
+      "acceptance": ["own Terra user/account namespace", "local username/password retained", "social-capable session model", "same identity usable on web and Android", "provider links do not fork user state"]
     },
     {
       "id": "P0-08",
       "priority": 0,
-      "title": "Google sign-in + optional Play Games identity link",
-      "status": "QUEUED",
+      "title": "Google sign-in plus optional Google Play Games identity link",
+      "status": "PARTIAL_BLOCKED_EXTERNAL",
       "depends_on": ["P0-07"],
-      "acceptance": ["web Google OIDC", "Android Google sign-in", "server-side token validation", "optional Play Games linkage does not create duplicate account"]
+      "result": "Google OIDC adapter is implemented. Live provider test needs OAuth client credentials. Play Games native identity linkage is deliberately separate and not falsely represented as Google OAuth.",
+      "blocker": "Need Terra Google OAuth client configuration/credentials for live Google sign-in; Play Games additionally needs Google Play Games Services Android configuration linked to the production signing identity.",
+      "acceptance": ["web Google OIDC", "Android Google sign-in", "server-side provider validation", "optional Play Games linkage does not create duplicate account"]
     },
     {
       "id": "P0-09",
       "priority": 0,
       "title": "Additional social-provider adapter layer",
-      "status": "QUEUED",
+      "status": "IMPLEMENTED_AWAITING_LIVE_PROVIDER_CREDENTIALS",
       "depends_on": ["P0-07"],
-      "acceptance": ["provider-neutral account-linking API", "at least two additional approved providers can be enabled without schema fork", "unlink/revoke supported"]
+      "result": "Discord and Facebook adapters share the same account-linking schema/API as Google.",
+      "blocker": "Live provider credentials/app registrations are not connected yet.",
+      "acceptance": ["provider-neutral account-linking API", "Google/Discord/Facebook adapters share one schema", "no secrets stored in source", "live callback tests after credentials are connected"]
     },
     {
       "id": "P1-10",
       "priority": 1,
       "title": "Unify website/PWA and Android on same service contract",
-      "status": "QUEUED",
+      "status": "IN_PROGRESS",
       "depends_on": ["P0-07"],
+      "result": "The auth overlay patches both web clients and native Godot client against the same backend routes and token/account namespace.",
       "acceptance": ["same backend/API/session/account state", "feature parity contract", "offline cache never forks authoritative account state"]
     },
     {
@@ -94,7 +124,7 @@
       "priority": 1,
       "title": "Web staging then production deployment and live smoke",
       "status": "QUEUED",
-      "depends_on": ["P1-10", "P0-03"],
+      "depends_on": ["P1-10", "P0-03", "P0-07"],
       "acceptance": ["HTTPS production endpoint", "login and core social world smoke pass", "deployment commit/hash recorded"]
     },
     {
@@ -103,7 +133,7 @@
       "title": "Production signing and Play App Signing gate",
       "status": "BLOCKED_EXTERNAL",
       "depends_on": ["P0-05"],
-      "blocker": "Production upload signing/Play App Signing evidence not connected to this execution path yet.",
+      "blocker": "Production upload signing/Play App Signing evidence is not connected to the Terra execution path yet.",
       "acceptance": ["signed release AAB", "certificate/app id verified", "no signing secret in source"]
     },
     {
@@ -117,16 +147,16 @@
     {
       "id": "P1-14",
       "priority": 1,
-      "title": "Play Internal/Closed track upload and real install test",
+      "title": "Play Internal/Closed track upload and store-delivered install test",
       "status": "BLOCKED_EXTERNAL",
       "depends_on": ["P1-13"],
-      "blocker": "Google Play Console publishing connection/action is not currently available in this chat.",
+      "blocker": "A Google Play Console publishing action/connection for Terra is not currently available in this execution path.",
       "acceptance": ["AAB uploaded", "track processing succeeds", "store-delivered install/update tested"]
     },
     {
       "id": "P1-15",
       "priority": 1,
-      "title": "Production release + live web/app parity verification",
+      "title": "Production release plus live web/app parity verification",
       "status": "QUEUED",
       "depends_on": ["P1-11", "P1-14", "P0-06"],
       "acceptance": ["public web verified", "Play production release verified", "same account/state across both surfaces", "release SHA/tag/evidence stored in Git"]
@@ -143,9 +173,9 @@
       "id": "P2-17",
       "priority": 2,
       "title": "Continuous avatar/world quality improvements without regressions",
-      "status": "QUEUED",
-      "depends_on": ["P0-06"],
-      "acceptance": ["visual improvements use approved human lineage", "mobile LOD/material/shadow budgets measured", "uploaded environment/animation assets remain preferred over obsolete placeholders"]
+      "status": "ONGOING",
+      "depends_on": ["P0-02"],
+      "acceptance": ["visual improvements use approved human lineage", "mobile LOD/material/shadow budgets measured", "uploaded environment/animation assets remain preferred over obsolete placeholders", "no visual downgrade in future builds"]
     }
   ]
 }
