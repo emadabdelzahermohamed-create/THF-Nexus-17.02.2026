@@ -1,0 +1,23 @@
+name: WAVE RC15.7 Kick V3
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths: ['.github/workflows/wave-rc15-7-kick-v3.yml']
+permissions:
+  actions: write
+  contents: read
+jobs:
+  dispatch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Dispatch RC15.7 live V3 at latest branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/wave-rc15-7-live-v3.yml/dispatches" \
+            -d '{"ref":"releaseops/wave-rc15-3-20260917"}'
+          echo DISPATCHED=PASS
