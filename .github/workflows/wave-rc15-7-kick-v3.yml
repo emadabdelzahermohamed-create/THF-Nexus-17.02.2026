@@ -21,3 +21,4 @@ jobs:
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/wave-rc15-7-live-v3.yml/dispatches" \
             -d '{"ref":"releaseops/wave-rc15-3-20260917"}'
           echo DISPATCHED=PASS
+          echo NLLB_ASSERTION_REV=2
