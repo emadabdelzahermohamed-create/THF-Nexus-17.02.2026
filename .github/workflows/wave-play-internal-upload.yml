@@ -1,0 +1,158 @@
+name: WAVE Play Internal Upload
+
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-play-internal-upload.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+  WAVE_HOST: wave-mawja.p-my.workers.dev
+
+jobs:
+  build-upload:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate Google WIF for GCP and Play
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/androidpublisher
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Ensure persistent WAVE upload key exists on builder
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='sudo bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          install -d -m 700 /srv/wave-play-signing
+          if [ ! -s /srv/wave-play-signing/wave-upload.jks ] || [ ! -s /srv/wave-play-signing/signing.env ]; then
+            store_pass="$(openssl rand -hex 24)"
+            key_pass="$(openssl rand -hex 24)"
+            keytool -genkeypair -v -keystore /srv/wave-play-signing/wave-upload.jks -storepass "$store_pass" -keypass "$key_pass" -alias wave-upload -keyalg RSA -keysize 4096 -validity 10000 -dname 'CN=WAVE MAWJA Upload, OU=Release, O=WAVE MAWJA, L=Cairo, C=EG' >/dev/null 2>&1
+            printf 'WAVE_ANDROID_KEY_ALIAS=wave-upload\nWAVE_ANDROID_STORE_PASSWORD=%s\nWAVE_ANDROID_KEY_PASSWORD=%s\n' "$store_pass" "$key_pass" > /srv/wave-play-signing/signing.env
+            chmod 600 /srv/wave-play-signing/wave-upload.jks /srv/wave-play-signing/signing.env
+          fi
+          test -s /srv/wave-play-signing/wave-upload.jks
+          test -s /srv/wave-play-signing/signing.env
+          REMOTE
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='sudo base64 -w0 /srv/wave-play-signing/wave-upload.jks' > /tmp/wave-upload.b64
+          base64 -d /tmp/wave-upload.b64 > /tmp/wave-upload.jks
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='sudo cat /srv/wave-play-signing/signing.env' > /tmp/wave-signing.env
+          chmod 600 /tmp/wave-upload.jks /tmp/wave-signing.env
+      - name: Reconstruct current WAVE source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120)
+          r.raise_for_status(); open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src && unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q; git add .; git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SDK_ROOT=/usr/local/lib/android/sdk
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n1)"; fi
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Build and verify production-signed upload AAB
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set -a; source /tmp/wave-signing.env; set +a
+          echo "::add-mask::$WAVE_ANDROID_STORE_PASSWORD"
+          echo "::add-mask::$WAVE_ANDROID_KEY_PASSWORD"
+          export WAVE_ANDROID_KEYSTORE=/tmp/wave-upload.jks
+          (cd wave-src/android-twa && gradle --no-daemon clean :app:bundleRelease)
+          AAB=wave-src/android-twa/app/build/outputs/bundle/release/app-release.aab
+          test -s "$AAB"
+          jarsigner -verify -verbose -certs "$AAB" | tee WAVE_PLAY_AAB_JARSIGNER.txt
+          grep -q 'jar verified' WAVE_PLAY_AAB_JARSIGNER.txt
+          sha256sum "$AAB" | tee WAVE_PLAY_INTERNAL_AAB.sha256
+          keytool -list -v -keystore /tmp/wave-upload.jks -storepass "$WAVE_ANDROID_STORE_PASSWORD" -alias "$WAVE_ANDROID_KEY_ALIAS" | grep -E 'Alias name:|SHA256:' | tee WAVE_UPLOAD_CERT.txt
+      - name: Upload signed AAB to Google Play Internal
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          AAB=wave-src/android-twa/app/build/outputs/bundle/release/app-release.aab
+          api="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
+          insert_code="$(curl -sS -o edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$api")"
+          echo "EDIT_INSERT_HTTP=$insert_code"; test "$insert_code" = 200
+          edit_id="$(python3 -c 'import json; print(json.load(open("edit.json"))["id"])')"
+          upload_url="https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/$WAVE_PACKAGE/edits/$edit_id/bundles?uploadType=media"
+          upload_code="$(curl -sS -o bundle.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/octet-stream' --data-binary @"$AAB" "$upload_url")"
+          echo "BUNDLE_UPLOAD_HTTP=$upload_code"
+          if [ "$upload_code" != 200 ]; then cat bundle.json; exit 1; fi
+          version_code="$(python3 -c 'import json; print(json.load(open("bundle.json"))["versionCode"])')"
+          printf '{"releases":[{"name":"WAVE MAWJA Internal RC15.3","versionCodes":["%s"],"status":"completed","releaseNotes":[{"language":"ar","text":"نسخة اختبار داخلية لـ WAVE MAWJA."},{"language":"en-US","text":"WAVE MAWJA internal test release."}]}]}' "$version_code" > track.json
+          track_code="$(curl -sS -o track-response.json -w '%{http_code}' -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @track.json "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits/$edit_id/tracks/internal")"
+          echo "TRACK_UPDATE_HTTP=$track_code"
+          if [ "$track_code" != 200 ]; then cat track-response.json; exit 1; fi
+          commit_code="$(curl -sS -o commit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits/$edit_id:commit")"
+          echo "EDIT_COMMIT_HTTP=$commit_code"
+          if [ "$commit_code" != 200 ]; then cat commit.json; exit 1; fi
+          printf 'package=%s\ntrack=internal\nversionCode=%s\nstatus=completed\n' "$WAVE_PACKAGE" "$version_code" | tee WAVE_PLAY_INTERNAL_RESULT.txt
+          echo 'PLAY_INTERNAL_UPLOAD=PASS'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-PLAY-INTERNAL-EVIDENCE
+          retention-days: 30
+          path: |
+            WAVE_PLAY_INTERNAL_AAB.sha256
+            WAVE_PLAY_AAB_JARSIGNER.txt
+            WAVE_UPLOAD_CERT.txt
+            WAVE_PLAY_INTERNAL_RESULT.txt
+            bundle.json
+            track-response.json
+            commit.json
