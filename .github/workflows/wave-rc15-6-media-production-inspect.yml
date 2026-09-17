@@ -1,0 +1,86 @@
+name: WAVE RC15.6 Media Production Inspect
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-rc15-6-media-production-inspect.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_VM: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Reconstruct RC15.5 and inspect source deployment surface
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get('https://www.googleapis.com/drive/v3/files/'+os.environ['DRIVE_FILE_ID']+'?alt=media',headers={'Authorization':'Bearer '+c.token},timeout=120);r.raise_for_status();open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir src && unzip -q base.zip -d src
+          cd src
+          git init -q && git add . && git -c user.name=x -c user.email=x@x.invalid commit -qm base
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          echo '=== media-server files ==='
+          find media-server -maxdepth 2 -type f | sort
+          for f in media-server/docker-compose.yml media-server/docker-compose.yaml media-server/compose.yml media-server/compose.yaml media-server/.env.example media-server/.env.universal.example wrangler.toml wrangler.json wrangler.jsonc package.json; do
+            if [ -f "$f" ]; then
+              echo "=== $f ==="
+              if [[ "$f" == *env* ]]; then sed -E 's/(=.*)$/=***REDACTED_VALUE***/' "$f"; else sed -n '1,260p' "$f"; fi
+            fi
+          done
+          echo '=== MEDIA_API references ==='
+          grep -RIn --exclude-dir=node_modules --exclude='*.map' -E 'MEDIA_API_URL|MEDIA_API_TOKEN|PUBLIC_MEDIA_BASE_URL|LIVE_' app lib components media-server scripts 2>/dev/null | head -n 300 || true
+      - name: Inspect VPS production state read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '=== identity ==='
+          whoami; hostname; uname -a
+          echo '=== resources ==='
+          free -h || true; df -h / /var/lib/docker 2>/dev/null || df -h /
+          echo '=== docker ==='
+          sudo -n docker version --format '{{.Server.Version}}' || true
+          sudo -n docker compose version || true
+          sudo -n docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}' || true
+          echo '=== listening ports ==='
+          sudo -n ss -lntup | sed -n '1,220p' || true
+          echo '=== workspace candidates ==='
+          find "$HOME/workspace" -maxdepth 3 -type f \( -name 'docker-compose*.yml' -o -name 'docker-compose*.yaml' -o -name 'compose.yml' -o -name 'compose.yaml' -o -name 'wrangler.toml' -o -name 'wrangler.json*' \) -print 2>/dev/null | sort | head -n 200 || true
+          echo '=== WAVE directories ==='
+          find "$HOME/workspace" -maxdepth 2 -type d -iname '*wave*' -print 2>/dev/null | sort | head -n 100 || true
+          echo '=== env key names only ==='
+          while IFS= read -r f; do echo "--- $f"; sed -n -E 's/^([A-Za-z_][A-Za-z0-9_]*)=.*/\1=***REDACTED***/p' "$f" | sort -u; done < <(find "$HOME/workspace" -maxdepth 3 -type f -name '.env*' 2>/dev/null | sort | head -n 80)
+          REMOTE
