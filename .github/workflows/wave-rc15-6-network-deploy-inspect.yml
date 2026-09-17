@@ -51,14 +51,18 @@ jobs:
           cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
-          for f in media-server/docker-compose.production.yml media-server/Caddyfile.production media-server/scripts/init-production-env.sh media-server/scripts/deploy-vps.sh media-server/scripts/preflight-vps.sh media-server/scripts/preflight-encoder.sh media-server/mediamtx/mediamtx.yml; do
-            echo "===== $f ====="
-            sed -n '1,360p' "$f"
+          for f in media-server/docker-compose.production.yml media-server/Caddyfile.production media-server/scripts/init-production-env.sh media-server/scripts/deploy-vps.sh media-server/scripts/preflight-vps.sh media-server/scripts/preflight-encoder.sh; do
+            if [ -f "$f" ]; then
+              echo "===== $f ====="
+              sed -n '1,360p' "$f"
+            fi
           done
+          echo '===== live server/config candidates ====='
+          find media-server -maxdepth 3 -type f \( -iname '*mediamtx*' -o -iname '*live*' -o -iname '*.yml' -o -iname '*.yaml' \) -print | sort | head -n 240 || true
           echo '===== live/api endpoint anchors ====='
-          grep -n -E '@app\.(post|get|put|delete).*live|live_channels|stream_key|ingest|media_import|master\.m3u8' media-server/api/main.py | head -n 240 || true
+          grep -n -E '@app\.(post|get|put|delete).*live|live_channels|stream_key|ingest|media_import|master\.m3u8' media-server/api/main.py | head -n 300 || true
           echo '===== site deployment refs ====='
-          grep -RIn --exclude-dir=node_modules --exclude='*.map' -E 'wrangler|CLOUDFLARE|workers.dev|pages.dev|MEDIA_API_URL|MEDIA_API_TOKEN' .github app scripts package.json 2>/dev/null | head -n 500 || true
+          grep -RIn --exclude-dir=node_modules --exclude='*.map' -E 'wrangler|CLOUDFLARE|workers.dev|pages.dev|MEDIA_API_URL|MEDIA_API_TOKEN' .github app scripts package.json 2>/dev/null | head -n 600 || true
       - name: Inspect Cloudflare tunnel routing and local WAVE services safely
         shell: bash
         run: |
