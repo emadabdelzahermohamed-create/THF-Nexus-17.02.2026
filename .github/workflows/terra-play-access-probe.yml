@@ -41,19 +41,5 @@ jobs:
           URL="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME/monetization/subscriptions?pageSize=1"
           CODE="$(curl -sS -o response.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$URL")"
           echo "ANDROID_PUBLISHER_HTTP=$CODE"
-          python3 - <<'PY'
-import json
-from pathlib import Path
-p=Path('response.json')
-try:d=json.loads(p.read_text())
-except Exception:d={}
-if isinstance(d,dict) and 'error' in d:
-    e=d['error'] if isinstance(d['error'],dict) else {}
-    print('ANDROID_PUBLISHER_ERROR_CODE='+str(e.get('code','')))
-    print('ANDROID_PUBLISHER_ERROR_STATUS='+str(e.get('status','')))
-    msg=str(e.get('message','')).replace('\n',' ')[:400]
-    print('ANDROID_PUBLISHER_ERROR_MESSAGE='+msg)
-else:
-    print('ANDROID_PUBLISHER_READ_ACCESS=PASS')
-PY
+          python3 -c 'import json; from pathlib import Path; p=Path("response.json"); d=json.loads(p.read_text()) if p.exists() else {}; e=d.get("error",{}) if isinstance(d,dict) else {}; print("ANDROID_PUBLISHER_ERROR_CODE="+str(e.get("code",""))) if e else print("ANDROID_PUBLISHER_READ_ACCESS=PASS"); print("ANDROID_PUBLISHER_ERROR_STATUS="+str(e.get("status",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_MESSAGE="+str(e.get("message","")).replace("\n"," ")[:400]) if e else None'
           if [ "$CODE" = 401 ]; then exit 41; fi
