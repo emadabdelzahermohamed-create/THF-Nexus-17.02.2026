@@ -1,0 +1,62 @@
+name: WAVE Google Play Access Check
+
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-play-access-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Authenticate as Play service account
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Verify Android Publisher read access
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$ACCESS_TOKEN"
+          code="$(curl -sS -o response.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/reviews?maxResults=1")"
+          echo "PLAY_HTTP=$code"
+          if [ "$code" = 200 ]; then
+            echo "PLAY_API_ACCESS=PASS"
+            exit 0
+          fi
+          python3 - <<'PY'
+          import json
+          try:
+              data=json.load(open('response.json',encoding='utf-8'))
+              err=data.get('error',{}) if isinstance(data,dict) else {}
+              print('PLAY_ERROR_STATUS='+str(err.get('status','unknown')))
+              print('PLAY_ERROR_MESSAGE='+str(err.get('message','unknown')).replace('\n',' ')[:500])
+          except Exception:
+              print('PLAY_ERROR_RESPONSE_UNPARSEABLE')
+          PY
+          if [ "$code" = 401 ] || [ "$code" = 403 ]; then
+            echo "PLAY_API_ACCESS=DENIED"
+          elif [ "$code" = 404 ]; then
+            echo "PLAY_PACKAGE_NOT_FOUND_OR_NOT_CREATED=YES"
+          else
+            echo "PLAY_API_ACCESS=UNRESOLVED"
+          fi
+          exit 1
