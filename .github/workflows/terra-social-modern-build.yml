@@ -1,4 +1,4 @@
-name: Terra Social Modern Human Build
+name: Terra Social RC35 Integrated Build
 
 on:
   push:
@@ -7,10 +7,14 @@ on:
       - 'releaseops/**'
     paths:
       - '.github/workflows/terra-social-modern-build.yml'
-      - 'ReleaseOps/scripts/build_terra_rc34_compact_phone.sh'
+      - 'ReleaseOps/scripts/build_terra_rc35_social_phone.sh'
       - 'ReleaseOps/scripts/verify_terra_modern_human_only.sh'
       - 'ReleaseOps/scripts/verify_terra_uploaded_asset_lineage.sh'
       - 'ReleaseOps/scripts/patch_terra_modern_human_current_source.py'
+      - 'ReleaseOps/scripts/patch_terra_social_auth_v1.py'
+      - 'ReleaseOps/scripts/patch_terra_account_deletion_v1.py'
+      - 'ReleaseOps/Terra/social_auth_v1/**'
+      - 'ReleaseOps/Terra/account_deletion_v1/**'
   workflow_dispatch:
 
 permissions:
@@ -27,7 +31,7 @@ env:
 jobs:
   build-terra:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
     steps:
       - name: Checkout exact branch
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
@@ -61,24 +65,40 @@ jobs:
             --tunnel-through-iap \
             --ssh-key-expire-after=10m \
             --quiet \
-            --command="set -Eeuo pipefail; test -d \"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\"; rm -rf '$REMOTE_OPS' '$REMOTE_BUILD'; mkdir -p '$REMOTE_OPS'; echo TERRA_SOURCE_PRESENT=PASS; echo WAVE_UNTOUCHED=TRUE"
+            --command="set -Eeuo pipefail; test -d \"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\"; rm -rf '$REMOTE_OPS' '$REMOTE_BUILD'; mkdir -p '$REMOTE_OPS/overlay/app' '$REMOTE_OPS/delete-overlay/web/templates'; echo TERRA_SOURCE_PRESENT=PASS; echo WAVE_UNTOUCHED=TRUE"
 
-      - name: Copy only Terra release scripts to builder
+      - name: Copy Terra RC35 integration only
         shell: bash
         run: |
           set -Eeuo pipefail
           gcloud compute scp \
-            ReleaseOps/scripts/build_terra_rc34_compact_phone.sh \
+            ReleaseOps/scripts/build_terra_rc35_social_phone.sh \
             ReleaseOps/scripts/verify_terra_modern_human_only.sh \
             ReleaseOps/scripts/verify_terra_uploaded_asset_lineage.sh \
             ReleaseOps/scripts/patch_terra_modern_human_current_source.py \
+            ReleaseOps/scripts/patch_terra_social_auth_v1.py \
+            ReleaseOps/scripts/patch_terra_account_deletion_v1.py \
             "$GCP_BUILDER:$REMOTE_OPS/" \
             --project "$GCP_PROJECT_ID" \
             --zone "$GCP_ZONE" \
             --tunnel-through-iap \
             --quiet
+          gcloud compute scp \
+            ReleaseOps/Terra/social_auth_v1/app/auth_social.py \
+            "$GCP_BUILDER:$REMOTE_OPS/overlay/app/auth_social.py" \
+            --project "$GCP_PROJECT_ID" \
+            --zone "$GCP_ZONE" \
+            --tunnel-through-iap \
+            --quiet
+          gcloud compute scp \
+            ReleaseOps/Terra/account_deletion_v1/web/templates/account_delete.html \
+            "$GCP_BUILDER:$REMOTE_OPS/delete-overlay/web/templates/account_delete.html" \
+            --project "$GCP_PROJECT_ID" \
+            --zone "$GCP_ZONE" \
+            --tunnel-through-iap \
+            --quiet
 
-      - name: Execute real Godot 4.7.2 and Android API 36 gates
+      - name: Execute RC35 exact-source Godot and Android gates
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -88,7 +108,7 @@ jobs:
             --tunnel-through-iap \
             --ssh-key-expire-after=10m \
             --quiet \
-            --command="set -Eeuo pipefail; chmod +x '$REMOTE_OPS'/*.sh '$REMOTE_OPS'/*.py; THF_TERRA_SOURCE=\"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\" THF_TERRA_BUILD_ROOT='$REMOTE_BUILD' bash '$REMOTE_OPS/build_terra_rc34_compact_phone.sh'"
+            --command="set -Eeuo pipefail; chmod +x '$REMOTE_OPS'/*.sh '$REMOTE_OPS'/*.py; THF_TERRA_SOURCE=\"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\" THF_TERRA_BUILD_ROOT='$REMOTE_BUILD' THF_TERRA_SOCIAL_AUTH_OVERLAY='$REMOTE_OPS/overlay' THF_TERRA_ACCOUNT_DELETE_OVERLAY='$REMOTE_OPS/delete-overlay' bash '$REMOTE_OPS/build_terra_rc35_social_phone.sh'"
 
       - name: Pull build evidence and APK
         shell: bash
@@ -103,16 +123,18 @@ jobs:
             --tunnel-through-iap \
             --quiet
           test -s terra-artifacts/out/EVIDENCE.json
-          test -s terra-artifacts/out/THF-TERRA-4.6.8-RC34-MODERN-HUMAN-TEST.apk
+          test -s terra-artifacts/out/THF-TERRA-4.6.9-RC35-SOCIAL-MODERN-HUMAN-TEST.apk
           grep -q '"status": "PASS_BUILD_AND_ENGINE_GATES"' terra-artifacts/out/EVIDENCE.json
           grep -q '"uploaded_visual16a_lineage_gate": "PASS"' terra-artifacts/out/EVIDENCE.json
+          grep -q '"standalone_local_auth": "PATCHED_AND_STATIC_GATED"' terra-artifacts/out/EVIDENCE.json
+          grep -q '"account_deletion_api_and_external_web_resource": "PATCHED_AND_STATIC_GATED"' terra-artifacts/out/EVIDENCE.json
           echo WAVE_UNTOUCHED=TRUE
           cat terra-artifacts/out/EVIDENCE.json
 
-      - name: Upload Terra build artifact
+      - name: Upload Terra RC35 build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: THF-Terra-RC34-Modern-Human-Test-${{ github.run_id }}
+          name: THF-Terra-RC35-Social-Modern-Human-Test-${{ github.run_id }}
           retention-days: 14
           path: terra-artifacts/out/
           if-no-files-found: error
