@@ -1,7 +1,8 @@
 import { env } from "cloudflare:workers";
 
 export const WAVE_SESSION_COOKIE = "wave_session";
-const DEFAULT_ITERATIONS = 210_000;
+// Cloudflare Workers Web Crypto currently caps PBKDF2 iterations at 100,000.
+const DEFAULT_ITERATIONS = 100_000;
 const SESSION_DAYS = 30;
 
 function normalizeEmail(value: string) {
