@@ -29,7 +29,9 @@ for p in project.godot export_presets.cfg native web android ReleaseOps/scripts;
   [[ -e "$ROOT/$p" ]] && scan_paths+=("$ROOT/$p")
 done
 if ((${#scan_paths[@]})); then
-  legacy_ref_hits="$(grep -RIE --exclude-dir=.git --exclude='TERRA_ACTIVE_ASSET_POLICY_V1_20260917.json' \
+  legacy_ref_hits="$(grep -RIE --exclude-dir=.git \
+    --exclude='TERRA_ACTIVE_ASSET_POLICY_V1_20260917.json' \
+    --exclude='verify_terra_modern_human_only.sh' \
     'thf_humanoid_v[1-6]' "${scan_paths[@]}" 2>/dev/null || true)"
   if [[ -n "$legacy_ref_hits" ]]; then
     printf '%s\n' "$legacy_ref_hits" >&2
