@@ -40,6 +40,38 @@ jobs:
           test -n "$ACCESS_TOKEN"
           URL="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME/monetization/subscriptions?pageSize=1"
           CODE="$(curl -sS -o response.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$URL")"
+          BYTES="$(wc -c < response.json | tr -d ' ')"
           echo "ANDROID_PUBLISHER_HTTP=$CODE"
-          python3 -c 'import json; from pathlib import Path; p=Path("response.json"); d=json.loads(p.read_text()) if p.exists() else {}; e=d.get("error",{}) if isinstance(d,dict) else {}; print("ANDROID_PUBLISHER_ERROR_CODE="+str(e.get("code",""))) if e else print("ANDROID_PUBLISHER_READ_ACCESS=PASS"); print("ANDROID_PUBLISHER_ERROR_STATUS="+str(e.get("status",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_MESSAGE="+str(e.get("message","")).replace("\n"," ")[:400]) if e else None'
-          if [ "$CODE" = 401 ]; then exit 41; fi
+          echo "ANDROID_PUBLISHER_RESPONSE_BYTES=$BYTES"
+          if [ "$BYTES" -gt 0 ]; then
+            python3 -c 'import json; from pathlib import Path; p=Path("response.json"); raw=p.read_text(errors="replace");
+try:
+ d=json.loads(raw)
+except Exception:
+ d={}
+e=d.get("error",{}) if isinstance(d,dict) else {}; print("ANDROID_PUBLISHER_ERROR_CODE="+str(e.get("code",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_STATUS="+str(e.get("status",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_MESSAGE="+str(e.get("message","")).replace("\n"," ")[:400]) if e else None'
+          fi
+          case "$CODE" in
+            200)
+              echo "ANDROID_PUBLISHER_PACKAGE_READ_ACCESS=PASS"
+              ;;
+            401)
+              echo "ANDROID_PUBLISHER_AUTH=FAIL"
+              exit 41
+              ;;
+            403)
+              echo "ANDROID_PUBLISHER_PACKAGE_READ_ACCESS=DENIED"
+              echo "ANDROID_PUBLISHER_ACTION=Grant the WIF service account Play Console access to this app/package."
+              ;;
+            404)
+              echo "ANDROID_PUBLISHER_PACKAGE_VISIBILITY=NOT_FOUND_OR_NOT_VISIBLE"
+              echo "ANDROID_PUBLISHER_ACTION=Create/confirm the Play Console app with this package, then grant the WIF service account app access."
+              ;;
+            5*)
+              echo "ANDROID_PUBLISHER_SERVICE=ERROR"
+              exit 50
+              ;;
+            *)
+              echo "ANDROID_PUBLISHER_CLASSIFICATION=UNEXPECTED_HTTP_$CODE"
+              ;;
+          esac
