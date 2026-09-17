@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "product": "THF World / Terra",
+  "updated_utc": "2026-09-17T22:20:00Z",
+  "authority": {
+    "path": "ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json",
+    "authoritative_version": "RC34 Phone V4",
+    "authoritative_source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
+    "eligible_candidate_apk_sha256": "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
+    "package_id": "com.topherofit.thf.terra",
+    "target_sdk": 36,
+    "physical_device_status": "PENDING",
+    "final_or_play_ready": false
+  },
+  "hard_rules": {
+    "standalone_product": true,
+    "same_service_web_pwa_android": true,
+    "wave_secrets_reuse_forbidden": true,
+    "legacy_stage15_or_old_stage16_regression_forbidden": true,
+    "procedural_primitives": "fallback_only",
+    "legacy_resource_removal_requires_proven_replacement_and_migration_ledger": true,
+    "phone_qa_claim_requires_physical_evidence": true,
+    "live_or_play_claim_requires_real_evidence": true
+  },
+  "tasks": [
+    {"id":"P0-01","priority":0,"status":"IN_PROGRESS","title":"Exact-source recovery and convergence","acceptance":["Recover/identify artifact whose SHA-256 equals authoritative_source_sha256","Prove RC34 Phone V4 lineage","Exclude Stage15/old Stage16 and superseded APK inputs"]},
+    {"id":"P0-02","priority":0,"status":"TODO","title":"Approved resource convergence and migration ledger","acceptance":["Inventory approved MPFB/MakeHuman and converted runtime environments","Map conflicting legacy resources","Do not remove until replacement proof exists","Record removals in migration ledger"]},
+    {"id":"P1-01","priority":1,"status":"TODO","title":"Godot 4.7.2/API36/build/package gates","acceptance":["Godot 4.7.2 source gate","targetSdk 36","arm64","installable candidate hash verified"]},
+    {"id":"P1-02","priority":1,"status":"BLOCKED_USER_DEVICE","title":"Physical-phone QA","acceptance":["Install on physical phone","launch/navigation/world smoke evidence","no false PASS claims"]},
+    {"id":"P2-01","priority":2,"status":"TODO","title":"Standalone identity and account boundary","acceptance":["Terra-specific login/account UX","isolated package/database/OAuth/signing","account deletion flow"]},
+    {"id":"P2-02","priority":2,"status":"TODO","title":"OAuth provider architecture","acceptance":["Google Sign-In","optional Play Games linking","Apple/Facebook/Microsoft/Discord adapters","all secrets externalized"]},
+    {"id":"P2-03","priority":2,"status":"TODO","title":"Privacy and security gates","acceptance":["privacy policy mapping","secure token/session storage","abuse/security review"]},
+    {"id":"P3-01","priority":3,"status":"TODO","title":"Shared production backend for Android/Web/PWA","acceptance":["one account namespace","one persistent world/backend","environment isolation from WAVE"]},
+    {"id":"P3-02","priority":3,"status":"TODO","title":"Web/PWA build and gated deployment","acceptance":["web gates pass","PWA installability","deploy only after evidence"]},
+    {"id":"P4-01","priority":4,"status":"TODO","title":"Multiplayer/social/world persistence","acceptance":["presence/chat/world state persistence","reconnect behavior","moderation/abuse controls"]},
+    {"id":"P5-01","priority":5,"status":"TODO","title":"Human avatar baseline","acceptance":["MPFB/MakeHuman approved human pipeline","137-joint/195-clip baseline or better","approved skeletal wardrobe/footwear/hair LOD"]},
+    {"id":"P5-02","priority":5,"status":"TODO","title":"Avatar fidelity and animation improvements","acceptance":["facial/viseme/identity improvements","IK/foot placement","mobile animation budgets"]},
+    {"id":"P5-03","priority":5,"status":"TODO","title":"Approved world visual environments","acceptance":["Downtown City","Ultimate Nature","House Interior/Furniture","Street/Public Transport","PBR lighting/weather/day-night","mobile performance gates"]},
+    {"id":"P6-01","priority":6,"status":"TODO","title":"Production signing and Digital Asset Links","acceptance":["production signing isolated","assetlinks.json verified against production certificate"]},
+    {"id":"P6-02","priority":6,"status":"TODO","title":"Play listing/compliance evidence","acceptance":["App content","Data Safety","App Access","content rating","ads declaration","privacy/account deletion"]},
+    {"id":"P6-03","priority":6,"status":"TODO","title":"Internal testing then production","acceptance":["Internal upload only after signing/API/listing gates","production only after evidence and required owner approvals"]}
+  ],
+  "next_action": "P0-01: locate and prove exact authoritative RC34 Phone V4 source before modifying runtime code."
+}
