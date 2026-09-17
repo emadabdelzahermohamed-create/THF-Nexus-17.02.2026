@@ -1,0 +1,102 @@
+name: WAVE RC15.5 VPS Capture Smoke
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-rc15-5-vps-capture-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_VM: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Reconstruct RC15.5 media server
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get('https://www.googleapis.com/drive/v3/files/'+os.environ['DRIVE_FILE_ID']+'?alt=media',headers={'Authorization':'Bearer '+c.token},timeout=120);r.raise_for_status();open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir src && unzip -q base.zip -d src
+          cd src
+          git init -q && git add . && git -c user.name=x -c user.email=x@x.invalid commit -qm base
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          tar -C . -czf ../wave-media-rc155.tgz media-server
+      - name: Copy isolated smoke bundle to VPS
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute scp wave-media-rc155.tgz "$GCP_VM:/tmp/wave-media-rc155.tgz" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Capture public HTML5 video and create adaptive HLS on VPS
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          ROOT="$HOME/workspace/wave-mawja-rc15-5-smoke"
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT" "$ROOT/test"
+          tar -xzf /tmp/wave-media-rc155.tgz -C "$ROOT"
+          cd "$ROOT/media-server"
+          docker build -q -f Dockerfile.worker -t wave-rc155-worker .
+          docker run --rm \
+            -v "$ROOT/test:/test" \
+            -e DATABASE_URL=postgresql://wave:wave@127.0.0.1:5432/wave \
+            -e REDIS_URL=redis://127.0.0.1:6379/0 \
+            -e S3_ENDPOINT=http://127.0.0.1:9000 \
+            -e S3_INTERNAL_ENDPOINT=http://127.0.0.1:9000 \
+            -e S3_ACCESS_KEY=smoke -e S3_SECRET_KEY=smoke \
+            -e S3_BUCKET=smoke -e S3_SOURCE_BUCKET=smoke \
+            -e PUBLIC_MEDIA_BASE_URL=http://127.0.0.1/media \
+            --entrypoint python wave-rc155-worker - <<'PY'
+          from pathlib import Path
+          from worker import capture_page
+          from abr import transcode_vod, probe_video
+          page = "https://www.w3schools.com/html/tryit.asp?filename=tryhtml5_video"
+          out = Path("/test/captured.bin")
+          digest = capture_page(page, out, {"www.w3schools.com"})
+          info = probe_video(out)
+          hls = Path("/test/hls")
+          renditions = transcode_vod(out, hls, False)
+          master = hls / "master.m3u8"
+          assert out.stat().st_size > 0
+          assert master.exists() and master.stat().st_size > 20
+          assert len(renditions) >= 2
+          print("CAPTURE_OK", out.stat().st_size, digest)
+          print("SOURCE", info)
+          print("RENDITIONS", [int(r[0]) for r in renditions])
+          print("MASTER", master.read_text(encoding="utf-8")[:1200].replace("\n", " | "))
+          PY
+          echo "=== smoke files ==="
+          find "$ROOT/test" -maxdepth 3 -type f -printf "%P %s bytes\n" | sort | head -n 100
+          REMOTE
