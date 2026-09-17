@@ -1,0 +1,93 @@
+name: WAVE RC15.6 Network Deploy Inspect
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-rc15-6-network-deploy-inspect.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_VM: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Reconstruct and print deployment contracts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get('https://www.googleapis.com/drive/v3/files/'+os.environ['DRIVE_FILE_ID']+'?alt=media',headers={'Authorization':'Bearer '+c.token},timeout=120);r.raise_for_status();open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir src && unzip -q base.zip -d src
+          cd src
+          git init -q && git add . && git -c user.name=x -c user.email=x@x.invalid commit -qm base
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          for f in media-server/docker-compose.production.yml media-server/Caddyfile.production media-server/scripts/init-production-env.sh media-server/scripts/deploy-vps.sh media-server/scripts/preflight-vps.sh media-server/scripts/preflight-encoder.sh media-server/mediamtx/mediamtx.yml; do
+            echo "===== $f ====="
+            sed -n '1,360p' "$f"
+          done
+          echo '===== live/api endpoint anchors ====='
+          grep -n -E '@app\.(post|get|put|delete).*live|live_channels|stream_key|ingest|media_import|master\.m3u8' media-server/api/main.py | head -n 240 || true
+          echo '===== site deployment refs ====='
+          grep -RIn --exclude-dir=node_modules --exclude='*.map' -E 'wrangler|CLOUDFLARE|workers.dev|pages.dev|MEDIA_API_URL|MEDIA_API_TOKEN' .github app scripts package.json 2>/dev/null | head -n 500 || true
+      - name: Inspect Cloudflare tunnel routing and local WAVE services safely
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          echo '===== cloudflared processes ====='
+          ps -eo pid,user,args | grep '[c]loudflared' | sed -E 's/(--token[= ]+)[^ ]+/\1***REDACTED***/g' || true
+          echo '===== cloudflared units ====='
+          sudo -n systemctl list-units --type=service --all | grep -i cloudflared || true
+          for unit in $(sudo -n systemctl list-unit-files --type=service 2>/dev/null | awk 'tolower($1) ~ /cloudflared/ {print $1}'); do
+            echo "--- UNIT $unit ---"
+            sudo -n systemctl cat "$unit" 2>/dev/null | sed -E 's/(--token[= ]+)[^ ]+/\1***REDACTED***/g; s#(credentials-file: ).*#\1***REDACTED_PATH***#' || true
+          done
+          echo '===== cloudflared config files ====='
+          for root in /etc/cloudflared "$HOME/.cloudflared" /root/.cloudflared; do
+            [ -d "$root" ] || continue
+            find "$root" -maxdepth 2 -type f \( -name '*.yml' -o -name '*.yaml' -o -name 'config*' \) -print 2>/dev/null | while read -r f; do
+              echo "--- $f ---"
+              sudo -n sed -n '1,240p' "$f" 2>/dev/null | sed -E 's#(credentials-file: ).*#\1***REDACTED_PATH***#; s/(token: ).*/\1***REDACTED***/; s/(--token[= ]+)[^ ]+/\1***REDACTED***/g'
+            done
+          done
+          echo '===== localhost service probes ====='
+          for port in 18080 18181 8080 8081 9000 8889 1935; do
+            echo "--- port $port ---"
+            curl -fsS --max-time 3 -D - "http://127.0.0.1:$port/" -o /tmp/probe.$$ 2>/dev/null && head -c 800 /tmp/probe.$$ || true
+            echo
+          done
+          rm -f /tmp/probe.$$
+          echo '===== persistent WAVE files ====='
+          find "$HOME/workspace" -maxdepth 3 -type f \( -iname '*cloudflare*' -o -iname '*tunnel*' -o -name '.env' -o -name '.env.production' \) -print 2>/dev/null | sort | head -n 180
+          REMOTE
