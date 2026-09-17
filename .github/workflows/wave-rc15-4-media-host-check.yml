@@ -1,0 +1,41 @@
+name: WAVE RC15.4 Media Host Check
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-3-20260917
+    paths:
+      - '.github/workflows/wave-rc15-4-media-host-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_VM: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect candidate media host read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute instances describe "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --format='yaml(name,status,machineType,disks.deviceName,disks.diskSizeGb,networkInterfaces.networkIP,networkInterfaces.accessConfigs.natIP,scheduling.preemptible,scheduling.provisioningModel)'
+          gcloud compute ssh "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -e; echo OS=$(uname -sr); echo CPU=$(nproc); free -h; df -h /; command -v docker || true; docker --version 2>/dev/null || true; command -v ffmpeg || true; ffmpeg -version 2>/dev/null | head -n1 || true; command -v cloudflared || true; cloudflared --version 2>/dev/null || true; nvidia-smi 2>/dev/null | head -n3 || true'
