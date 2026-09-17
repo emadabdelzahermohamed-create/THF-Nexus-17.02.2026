@@ -17,4 +17,15 @@ if "/downloads/WAVE_MAWJA_ANDROID.apk" not in text:
     text = text[:anchor_end] + block + text[anchor_end:]
     page.write_text(text, encoding="utf-8")
 
+# Arabic dubbing artifacts must be delivered by the public media edge just like subtitles.
+for rel in ("media-server/Caddyfile", "media-server/Caddyfile.production"):
+    target = ROOT / rel
+    if not target.exists():
+        continue
+    cfg = target.read_text(encoding="utf-8")
+    if "@public_media path" in cfg and "/dubbing/*" not in cfg:
+        cfg = cfg.replace("/subtitles/*", "/subtitles/* /dubbing/*", 1)
+        target.write_text(cfg, encoding="utf-8")
+
 print("RC15_7_APK_DOWNLOAD_PAGE=PASS")
+print("RC15_7_DUBBING_PUBLIC_ROUTE=PASS")
