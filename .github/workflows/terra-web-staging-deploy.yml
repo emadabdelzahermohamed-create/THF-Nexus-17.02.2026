@@ -1,0 +1,142 @@
+name: Terra Web Staging Deploy
+
+on:
+  push:
+    branches: ['t/**']
+    paths: ['.github/workflows/terra-web-staging-deploy.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  TERRA_PORT: '18082'
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Stage Terra-only deployment overlays
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          REMOTE_OPS="/tmp/terra-web-ops-${GITHUB_RUN_ID}"
+          echo "REMOTE_OPS=$REMOTE_OPS" >> "$GITHUB_ENV"
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap \
+            --ssh-key-expire-after=10m --quiet \
+            --command="rm -rf '$REMOTE_OPS'; mkdir -p '$REMOTE_OPS/overlay/app' '$REMOTE_OPS/delete-overlay/web/templates'"
+          gcloud compute scp \
+            ReleaseOps/scripts/patch_terra_modern_human_current_source.py \
+            ReleaseOps/scripts/patch_terra_social_auth_v1.py \
+            ReleaseOps/scripts/patch_terra_account_deletion_v1.py \
+            "$GCP_BUILDER:$REMOTE_OPS/" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp ReleaseOps/Terra/social_auth_v1/app/auth_social.py \
+            "$GCP_BUILDER:$REMOTE_OPS/overlay/app/auth_social.py" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp ReleaseOps/Terra/account_deletion_v1/web/templates/account_delete.html \
+            "$GCP_BUILDER:$REMOTE_OPS/delete-overlay/web/templates/account_delete.html" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
+      - name: Deploy isolated persistent Terra staging service
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap \
+            --ssh-key-expire-after=10m --quiet \
+            --command="set -Eeuo pipefail
+              SRC=\"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\"
+              APP=\"\$HOME/thf-terra-social-staging\"
+              OPS='$REMOTE_OPS'
+              PORT='$TERRA_PORT'
+              test -d \"\$SRC\"
+              mkdir -p \"\$APP\" \"\$APP/data\" \"\$APP/logs\"
+              if command -v rsync >/dev/null 2>&1; then
+                rsync -a --delete --exclude '.venv/' --exclude '.godot/' --exclude 'data/thf_fantasy_city.db' --exclude 'data/terra-social-staging.db' --exclude 'android/build/build/' --exclude 'android/build/src/main/assets/' \"\$SRC/\" \"\$APP/\"
+              else
+                find \"\$APP\" -mindepth 1 -maxdepth 1 ! -name data ! -name logs ! -name .env.runtime ! -name .venv -exec rm -rf {} +
+                cp -a \"\$SRC/.\" \"\$APP/\"
+                rm -rf \"\$APP/.godot\" \"\$APP/android/build/build\" \"\$APP/android/build/src/main/assets\"
+              fi
+              cd \"\$APP\"
+              python3 \"\$OPS/patch_terra_modern_human_current_source.py\" > logs/modern-human-patch.log
+              THF_TERRA_SOCIAL_AUTH_OVERLAY=\"\$OPS/overlay\" python3 \"\$OPS/patch_terra_social_auth_v1.py\" > logs/social-auth-patch.log
+              THF_TERRA_ACCOUNT_DELETE_OVERLAY=\"\$OPS/delete-overlay\" python3 \"\$OPS/patch_terra_account_deletion_v1.py\" > logs/account-delete-patch.log
+              python3 -m compileall -q app
+              if [ ! -x .venv/bin/python ]; then python3 -m venv .venv; fi
+              .venv/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+              if [ ! -f .env.runtime ]; then
+                umask 077
+                TOKEN=\$(openssl rand -hex 48)
+                ADMIN=\$(openssl rand -hex 48)
+                printf 'THF_HOST=127.0.0.1\nTHF_PORT=%s\nTHF_DATABASE_PATH=data/terra-social-staging.db\nTHF_TOKEN_SECRET=%s\nTHF_ADMIN_KEY=%s\nTHF_PAYMENTS_ENABLED=false\nTHF_PAYMENT_MODE=mock\nAI_PROVIDER=disabled\n' \"\$PORT\" \"\$TOKEN\" \"\$ADMIN\" > .env.runtime
+                chmod 600 .env.runtime
+              fi
+              if [ -f terra-web.pid ]; then kill \$(cat terra-web.pid) >/dev/null 2>&1 || true; fi
+              set -a; . ./.env.runtime; set +a
+              nohup .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port \"\$PORT\" --proxy-headers --forwarded-allow-ips=127.0.0.1 > logs/uvicorn.log 2>&1 < /dev/null & echo \$! > terra-web.pid
+              for i in \$(seq 1 30); do curl -fsS \"http://127.0.0.1:\$PORT/api/health\" >/dev/null && break; sleep 1; done
+              curl -fsS \"http://127.0.0.1:\$PORT/api/health\" >/dev/null
+              if [ -f terra-tunnel.pid ]; then kill \$(cat terra-tunnel.pid) >/dev/null 2>&1 || true; fi
+              : > logs/cloudflared.log
+              nohup cloudflared tunnel --no-autoupdate --url \"http://127.0.0.1:\$PORT\" > logs/cloudflared.log 2>&1 < /dev/null & echo \$! > terra-tunnel.pid
+              URL=''
+              for i in \$(seq 1 40); do URL=\$(grep -Eo 'https://[-a-z0-9]+\\.trycloudflare\\.com' logs/cloudflared.log | tail -1 || true); [ -n \"\$URL\" ] && break; sleep 1; done
+              test -n \"\$URL\"
+              printf '%s\n' \"\$URL\" > STAGING_URL.txt
+              echo TERRA_STAGING_LOCAL=PASS
+              echo TERRA_STAGING_URL=\"\$URL\"
+              echo WAVE_UNTOUCHED=TRUE"
+
+      - name: Read staging URL and run external smoke
+        id: smoke
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          URL="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='cat "$HOME/thf-terra-social-staging/STAGING_URL.txt"')"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "TERRA_STAGING_URL=$URL"
+          for i in $(seq 1 30); do curl -fsS "$URL/api/health" >/dev/null && break; sleep 2; done
+          curl -fsS "$URL/api/health" | tee health.json
+          curl -fsS "$URL/" >/dev/null
+          curl -fsS "$URL/account-delete" >/dev/null
+          curl -fsS "$URL/api/auth/providers" | tee providers.json
+          USER="gate$(date +%s)"
+          PASS="T3rra-Stage-$(openssl rand -hex 8)"
+          REGISTER="$(curl -fsS -X POST "$URL/api/auth/register" -H 'Content-Type: application/json' --data "{\"username\":\"$USER\",\"password\":\"$PASS\"}")"
+          TOKEN="$(printf '%s' "$REGISTER" | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')"
+          curl -fsS "$URL/api/me" -H "Authorization: Bearer $TOKEN" | tee me.json
+          curl -fsS -X DELETE "$URL/api/account/delete" -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" --data "{\"confirm\":\"DELETE $USER\"}" | tee delete.json
+          grep -q '"account_deleted":true' <(tr -d ' ' < delete.json)
+          echo TERRA_PUBLIC_STAGING_SMOKE=PASS
+
+      - name: Cleanup deployment transfer directory only
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command="rm -rf '$REMOTE_OPS'" >/dev/null 2>&1
+          exit 0
