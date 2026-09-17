@@ -1,0 +1,55 @@
+name: WAVE RC15.4 Media Network Preflight
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-3-20260917
+    paths:
+      - '.github/workflows/wave-rc15-4-media-network-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_VM: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect GCP network and existing WAVE services read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo -n 'EXTERNAL_IP='; gcloud compute instances describe "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --format='value(networkInterfaces[0].accessConfigs[0].natIP)'
+          echo -n 'INTERNAL_IP='; gcloud compute instances describe "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --format='value(networkInterfaces[0].networkIP)'
+          echo -n 'TAGS='; gcloud compute instances describe "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --format='value(tags.items)'
+          gcloud compute ssh "$GCP_VM" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -e; echo ===containers===; docker ps --format "{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}" 2>/dev/null || true; echo ===dirs===; find /opt /srv "$HOME" -maxdepth 2 -type d \( -iname "*wave*" -o -iname "*media*" \) 2>/dev/null | head -n 80; echo ===listeners===; ss -lnt 2>/dev/null | awk "NR==1 || /:80 |:443 |:8000 |:8080 |:1935 |:8890 |:8888 /"'
+      - name: Check Cloudflare Tunnel API permission read-only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          code="$(curl -sS -o /tmp/tunnels.json -w '%{http_code}' -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel?is_deleted=false&per_page=1")"
+          success="$(jq -r '.success // false' /tmp/tunnels.json 2>/dev/null || echo false)"
+          errors="$(jq -c '[.errors[]? | {code,message}]' /tmp/tunnels.json 2>/dev/null || echo '[]')"
+          echo "TUNNEL_API http=$code success=$success errors=$errors"
