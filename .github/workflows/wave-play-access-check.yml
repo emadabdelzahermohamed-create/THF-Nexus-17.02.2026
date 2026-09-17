@@ -12,6 +12,7 @@ permissions:
   id-token: write
 
 env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
   WAVE_PACKAGE: com.wave.mawja
@@ -27,7 +28,21 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/androidpublisher
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Ensure Android Publisher API is enabled
+        shell: bash
+        run: |
+          set +e
+          gcloud services enable androidpublisher.googleapis.com --project "$GCP_PROJECT_ID"
+          rc=$?
+          if [ "$rc" -eq 0 ]; then echo "ANDROID_PUBLISHER_API_ENABLE=PASS"; else echo "ANDROID_PUBLISHER_API_ENABLE=NO_PERMISSION_OR_FAILED"; fi
+          exit 0
 
       - name: Verify Android Publisher read access
         shell: bash
