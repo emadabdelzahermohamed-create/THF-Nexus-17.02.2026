@@ -8,7 +8,10 @@ on:
       - '.github/workflows/terra-social-auth-source-gate.yml'
       - 'ReleaseOps/scripts/patch_terra_social_auth_v1.py'
       - 'ReleaseOps/scripts/test_terra_social_auth_v1.py'
+      - 'ReleaseOps/scripts/patch_terra_account_deletion_v1.py'
+      - 'ReleaseOps/scripts/test_terra_account_deletion_v1.py'
       - 'ReleaseOps/Terra/social_auth_v1/**'
+      - 'ReleaseOps/Terra/account_deletion_v1/**'
   workflow_dispatch:
 
 permissions:
@@ -41,7 +44,7 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Stage only Terra auth overlays
+      - name: Stage only Terra auth and account overlays
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -57,10 +60,12 @@ jobs:
             --tunnel-through-iap \
             --ssh-key-expire-after=10m \
             --quiet \
-            --command="rm -rf '$REMOTE_OPS' '$REMOTE_TEST' '$REMOTE_VENV'; mkdir -p '$REMOTE_OPS/overlay/app'"
+            --command="rm -rf '$REMOTE_OPS' '$REMOTE_TEST' '$REMOTE_VENV'; mkdir -p '$REMOTE_OPS/overlay/app' '$REMOTE_OPS/delete-overlay/web/templates'"
           gcloud compute scp \
             ReleaseOps/scripts/patch_terra_social_auth_v1.py \
             ReleaseOps/scripts/test_terra_social_auth_v1.py \
+            ReleaseOps/scripts/patch_terra_account_deletion_v1.py \
+            ReleaseOps/scripts/test_terra_account_deletion_v1.py \
             ReleaseOps/scripts/patch_terra_modern_human_current_source.py \
             ReleaseOps/scripts/verify_terra_modern_human_only.sh \
             "$GCP_BUILDER:$REMOTE_OPS/" \
@@ -71,6 +76,13 @@ jobs:
           gcloud compute scp \
             ReleaseOps/Terra/social_auth_v1/app/auth_social.py \
             "$GCP_BUILDER:$REMOTE_OPS/overlay/app/auth_social.py" \
+            --project "$GCP_PROJECT_ID" \
+            --zone "$GCP_ZONE" \
+            --tunnel-through-iap \
+            --quiet
+          gcloud compute scp \
+            ReleaseOps/Terra/account_deletion_v1/web/templates/account_delete.html \
+            "$GCP_BUILDER:$REMOTE_OPS/delete-overlay/web/templates/account_delete.html" \
             --project "$GCP_PROJECT_ID" \
             --zone "$GCP_ZONE" \
             --tunnel-through-iap \
@@ -86,7 +98,7 @@ jobs:
             --tunnel-through-iap \
             --ssh-key-expire-after=10m \
             --quiet \
-            --command="set -Eeuo pipefail; SRC=\"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\"; TEST='$REMOTE_TEST'; OPS='$REMOTE_OPS'; VENV='$REMOTE_VENV'; cp -a \"\$SRC\" \"\$TEST\"; cd \"\$TEST\"; python3 \"\$OPS/patch_terra_modern_human_current_source.py\" > \"\$TEST/terra-modern-patch.log\"; THF_TERRA_SOCIAL_AUTH_OVERLAY=\"\$OPS/overlay\" python3 \"\$OPS/patch_terra_social_auth_v1.py\" > \"\$TEST/terra-social-auth-patch.log\"; THF_TERRA_CANONICAL_AVATAR_SHA256=4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f bash \"\$OPS/verify_terra_modern_human_only.sh\" \"\$TEST\"; python3 -m compileall -q app; if command -v node >/dev/null 2>&1; then node --check web/static/game2d.js; node --check web/static/game3d.js; fi; python3 -m venv \"\$VENV\"; \"\$VENV/bin/python\" -m pip install --disable-pip-version-check -q -r requirements.txt; rm -f data/social-auth-gate.db; PYTHONPATH=\"\$TEST\" THF_DATABASE_PATH=data/social-auth-gate.db THF_TOKEN_SECRET=gate-only-secret \"\$VENV/bin/python\" \"\$OPS/test_terra_social_auth_v1.py\"; grep -q 'func _social_auth_pressed(provider: String)' native/world/WorldMain.gd; grep -q 'socialProviders' web/templates/index.html; GODOT=\"\$HOME/.local/bin/godot-4.7.2\"; test -x \"\$GODOT\"; \"\$GODOT\" --headless --path \"\$TEST\" --import > \"\$TEST/terra-social-auth-godot-import.log\" 2>&1; rc=0; timeout 40s \"\$GODOT\" --headless --path \"\$TEST\" --editor --quit-after 15 > \"\$TEST/terra-social-auth-godot-headless.log\" 2>&1 || rc=\$?; if [ \"\$rc\" -ne 0 ] && [ \"\$rc\" -ne 124 ]; then cat \"\$TEST/terra-social-auth-godot-headless.log\"; exit \"\$rc\"; fi; echo TERRA_SOCIAL_AUTH_SOURCE_GATE=PASS; echo WAVE_UNTOUCHED=TRUE"
+            --command="set -Eeuo pipefail; SRC=\"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\"; TEST='$REMOTE_TEST'; OPS='$REMOTE_OPS'; VENV='$REMOTE_VENV'; cp -a \"\$SRC\" \"\$TEST\"; cd \"\$TEST\"; python3 \"\$OPS/patch_terra_modern_human_current_source.py\" > \"\$TEST/terra-modern-patch.log\"; THF_TERRA_SOCIAL_AUTH_OVERLAY=\"\$OPS/overlay\" python3 \"\$OPS/patch_terra_social_auth_v1.py\" > \"\$TEST/terra-social-auth-patch.log\"; THF_TERRA_ACCOUNT_DELETE_OVERLAY=\"\$OPS/delete-overlay\" python3 \"\$OPS/patch_terra_account_deletion_v1.py\" > \"\$TEST/terra-account-delete-patch.log\"; THF_TERRA_CANONICAL_AVATAR_SHA256=4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f bash \"\$OPS/verify_terra_modern_human_only.sh\" \"\$TEST\"; python3 -m compileall -q app; if command -v node >/dev/null 2>&1; then node --check web/static/game2d.js; node --check web/static/game3d.js; fi; python3 -m venv \"\$VENV\"; \"\$VENV/bin/python\" -m pip install --disable-pip-version-check -q -r requirements.txt; rm -f data/social-auth-gate.db; PYTHONPATH=\"\$TEST\" THF_DATABASE_PATH=data/social-auth-gate.db THF_TOKEN_SECRET=gate-only-secret \"\$VENV/bin/python\" \"\$OPS/test_terra_social_auth_v1.py\"; PYTHONPATH=\"\$TEST\" THF_DATABASE_PATH=data/social-auth-gate.db THF_TOKEN_SECRET=gate-only-secret \"\$VENV/bin/python\" \"\$OPS/test_terra_account_deletion_v1.py\"; grep -q 'func _social_auth_pressed(provider: String)' native/world/WorldMain.gd; grep -q 'func _open_account_delete_page()' native/world/WorldMain.gd; grep -q 'socialProviders' web/templates/index.html; grep -q 'Delete account / حذف الحساب' web/static/game3d.js; GODOT=\"\$HOME/.local/bin/godot-4.7.2\"; test -x \"\$GODOT\"; \"\$GODOT\" --headless --path \"\$TEST\" --import > \"\$TEST/terra-social-auth-godot-import.log\" 2>&1; rc=0; timeout 40s \"\$GODOT\" --headless --path \"\$TEST\" --editor --quit-after 15 > \"\$TEST/terra-social-auth-godot-headless.log\" 2>&1 || rc=\$?; if [ \"\$rc\" -ne 0 ] && [ \"\$rc\" -ne 124 ]; then cat \"\$TEST/terra-social-auth-godot-headless.log\"; exit \"\$rc\"; fi; echo TERRA_SOCIAL_AUTH_AND_ACCOUNT_DELETE_SOURCE_GATE=PASS; echo WAVE_UNTOUCHED=TRUE"
 
       - name: Cleanup isolated auth gate directories
         if: always()
