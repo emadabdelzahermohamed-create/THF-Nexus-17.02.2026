@@ -1,0 +1,218 @@
+name: WAVE RC15.3 Cloudflare Deploy
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-3-20260917
+    paths:
+      - '.github/workflows/wave-rc15-3-cloudflare-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CLOUDFLARE_WORKER_NAME: wave-mawja
+  CLOUDFLARE_D1_DATABASE_NAME: wave-mawja-prod
+  WAVE_PUBLIC_URL: https://wave-mawja.p-my.workers.dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate Google WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Download locked WAVE baseline
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os, requests, google.auth
+          from google.auth.transport.requests import Request
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
+          creds.refresh(Request())
+          fid=os.environ['DRIVE_FILE_ID']
+          r=requests.get(f'https://www.googleapis.com/drive/v3/files/{fid}?alt=media',headers={'Authorization':f'Bearer {creds.token}'},timeout=120)
+          r.raise_for_status()
+          open('WAVE_RC15_BASE.zip','wb').write(r.content)
+          print('BASELINE_DOWNLOAD=PASS bytes='+str(len(r.content)))
+          PY
+          echo "$EXPECTED_RC15_SHA256  WAVE_RC15_BASE.zip" | sha256sum -c -
+          mkdir wave-src
+          unzip -q WAVE_RC15_BASE.zip -d wave-src
+          test -f wave-src/package.json
+          test -d wave-src/android
+
+      - name: Apply RC15.1 carry-forward and RC15.3 patch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          git init -q
+          git add .
+          git -c user.name=wave-builder -c user.email=wave-builder@example.invalid commit -qm baseline
+          git apply --check ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply --check ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          sha256sum -c RC15_3_CRITICAL_SHA256SUMS.txt
+          echo 'PATCH_SET=PASS'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: wave-src/package-lock.json
+
+      - name: Discover and bind existing WAVE D1
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ -n "${CLOUDFLARE_API_TOKEN:-}" ] || { echo 'CLOUDFLARE_API_TOKEN=MISSING'; exit 10; }
+          [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || { echo 'CLOUDFLARE_ACCOUNT_ID=MISSING'; exit 11; }
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          token_json="$(curl -fsS -H "$auth" https://api.cloudflare.com/client/v4/user/tokens/verify)"
+          echo "$token_json" | jq -e '.success == true and .result.status == "active"' >/dev/null
+          d1="$(curl -fsS -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database?per_page=100")"
+          echo "$d1" | jq -e '.success == true' >/dev/null
+          db_id="$(echo "$d1" | jq -r '.result[] | select(.name == "wave-mawja-prod") | .uuid' | head -n1)"
+          [ -n "$db_id" ] && [ "$db_id" != null ]
+          echo "CLOUDFLARE_D1_DATABASE_ID=$db_id" >> "$GITHUB_ENV"
+          echo 'CLOUDFLARE_AUTH_AND_D1=PASS'
+
+      - name: Install, test, typecheck and build exact RC15.3
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+          python3 -m compileall -q media-server tests scripts
+          python3 -m unittest discover -s tests -p '*_test.py'
+          node --test tests/multi-ingest-source.test.mjs tests/service-worker.test.mjs
+          npm run typecheck
+          npm run build
+          test -f dist/server/wrangler.json
+          jq -e --arg id "$CLOUDFLARE_D1_DATABASE_ID" '
+            .name == "wave-mawja"
+            and any(.d1_databases[]?; .binding == "DB" and .database_name == "wave-mawja-prod" and .database_id == $id)
+            and .browser.binding == "BROWSER"
+          ' dist/server/wrangler.json >/dev/null
+          echo 'RELEASE_GATES_AND_BUILD=PASS'
+
+      - name: Confirm only RC15.3 auth migration is pending
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npx wrangler@4.119.0 d1 migrations list "$CLOUDFLARE_D1_DATABASE_NAME" --remote --config dist/server/wrangler.json | tee ../WAVE_RC15_3_MIGRATIONS_BEFORE.txt
+          grep -q '0011_wave_first_party_auth.sql' ../WAVE_RC15_3_MIGRATIONS_BEFORE.txt
+          ! grep -Eq '000[0-9]_.*\.sql|0010_wave_browser_ingest\.sql' ../WAVE_RC15_3_MIGRATIONS_BEFORE.txt
+          echo 'MIGRATION_SCOPE=0011_ONLY'
+
+      - name: Export D1 backup before migration
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npx wrangler@4.119.0 d1 export "$CLOUDFLARE_D1_DATABASE_NAME" --remote --config dist/server/wrangler.json --output ../WAVE_D1_BEFORE_RC15_3.sql --y
+          test -s ../WAVE_D1_BEFORE_RC15_3.sql
+          sha256sum ../WAVE_D1_BEFORE_RC15_3.sql > ../WAVE_D1_BEFORE_RC15_3.sql.sha256
+          echo 'D1_EXPORT_BACKUP=PASS'
+
+      - name: Setup gcloud for private backup staging
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Stage D1 backup privately on authorized GCP builder
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          remote_dir="wave-backups/RC15_3/${GITHUB_RUN_ID}"
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="mkdir -p \"$HOME/$remote_dir\""
+          gcloud compute scp WAVE_D1_BEFORE_RC15_3.sql WAVE_D1_BEFORE_RC15_3.sql.sha256 "$GCP_BUILDER:~/$remote_dir/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          echo "PRIVATE_BACKUP_STAGE=PASS path=~/$remote_dir/"
+
+      - name: Apply RC15.3 D1 migration
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npx wrangler@4.119.0 d1 migrations apply "$CLOUDFLARE_D1_DATABASE_NAME" --remote --config dist/server/wrangler.json | tee ../WAVE_RC15_3_MIGRATION_APPLY.txt
+          npx wrangler@4.119.0 d1 execute "$CLOUDFLARE_D1_DATABASE_NAME" --remote --config dist/server/wrangler.json --command "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('wave_credentials','wave_sessions') ORDER BY name;" | tee ../WAVE_RC15_3_AUTH_TABLES_AFTER.txt
+          grep -q 'wave_credentials' ../WAVE_RC15_3_AUTH_TABLES_AFTER.txt
+          grep -q 'wave_sessions' ../WAVE_RC15_3_AUTH_TABLES_AFTER.txt
+          npx wrangler@4.119.0 d1 migrations list "$CLOUDFLARE_D1_DATABASE_NAME" --remote --config dist/server/wrangler.json | tee ../WAVE_RC15_3_MIGRATIONS_AFTER.txt
+          ! grep -q '0011_wave_first_party_auth.sql' ../WAVE_RC15_3_MIGRATIONS_AFTER.txt
+          echo 'D1_MIGRATION_0011=PASS'
+
+      - name: Deploy only WAVE worker
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npx wrangler@4.119.0 deploy --config dist/server/wrangler.json | tee ../WAVE_RC15_3_CLOUDFLARE_DEPLOY.txt
+          echo 'WORKER_DEPLOY=PASS'
+
+      - name: Post-deploy WAVE smoke tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for attempt in $(seq 1 12); do
+            code="$(curl -L -sS -o /tmp/wave-root.html -w '%{http_code}' "$WAVE_PUBLIC_URL/" || true)"
+            [ "$code" = 200 ] && break
+            sleep 3
+          done
+          [ "$code" = 200 ]
+          login_code="$(curl -L -sS -o /tmp/wave-login.html -w '%{http_code}' "$WAVE_PUBLIC_URL/login")"
+          [ "$login_code" = 200 ]
+          grep -q 'wave_' /tmp/wave-login.html || grep -q 'WAVE' /tmp/wave-login.html
+
+          register_code="$(curl -sS -o /tmp/wave-register.json -w '%{http_code}' -X POST "$WAVE_PUBLIC_URL/api/auth/register" -H "Origin: $WAVE_PUBLIC_URL" -H 'Content-Type: application/json' --data '{"email":"bad","displayName":"","password":"x","returnTo":"/"}')"
+          [ "$register_code" = 400 ]
+
+          login_api_code="$(curl -sS -o /tmp/wave-login-api.json -w '%{http_code}' -X POST "$WAVE_PUBLIC_URL/api/auth/login" -H "Origin: $WAVE_PUBLIC_URL" -H 'Content-Type: application/json' --data '{"email":"rc15-smoke-does-not-exist@example.invalid","password":"not-a-real-password","returnTo":"/"}')"
+          [ "$login_api_code" = 401 ]
+
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          workers="$(curl -fsS -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts")"
+          echo "$workers" | jq -r '.result[]?.id' | grep -Fxq 'wave-mawja'
+          printf 'root_http=%s\nlogin_http=%s\nregister_invalid_http=%s\nlogin_invalid_http=%s\nurl=%s\n' "$code" "$login_code" "$register_code" "$login_api_code" "$WAVE_PUBLIC_URL" > WAVE_RC15_3_LIVE_SMOKE.txt
+          echo 'LIVE_SMOKE=PASS'
+
+      - name: Upload non-sensitive deployment evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-RC15-3-CLOUDFLARE-DEPLOY-EVIDENCE
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            WAVE_RC15_3_MIGRATIONS_BEFORE.txt
+            WAVE_RC15_3_MIGRATION_APPLY.txt
+            WAVE_RC15_3_AUTH_TABLES_AFTER.txt
+            WAVE_RC15_3_MIGRATIONS_AFTER.txt
+            WAVE_RC15_3_CLOUDFLARE_DEPLOY.txt
+            WAVE_RC15_3_LIVE_SMOKE.txt
