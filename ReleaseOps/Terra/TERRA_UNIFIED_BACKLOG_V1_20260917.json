@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "project": "THF World / Terra social game",
+  "updated_utc": "2026-09-17T20:30:00Z",
+  "execution_policy": {
+    "mode": "continuous_current-turn_plus_hourly_automation",
+    "rule": "Each run processes as many consecutive safe, unblocked tasks as possible; not one task per hour.",
+    "publish_rule": "Publish only after the corresponding real gate passes; otherwise record blocker and continue with next unblocked task."
+  },
+  "tasks": [
+    {
+      "id": "P0-01",
+      "priority": 0,
+      "title": "Converge release authority with modern-human cleanup",
+      "status": "IN_PROGRESS",
+      "depends_on": [],
+      "acceptance": ["RC34 Phone V4 remains release authority", "2026-09-16 modern-human rules merged forward", "no release-line downgrade"]
+    },
+    {
+      "id": "P0-02",
+      "priority": 0,
+      "title": "Fail-closed legacy avatar exclusion gate",
+      "status": "IN_PROGRESS",
+      "depends_on": ["P0-01"],
+      "acceptance": ["MPFB/MakeHuman canonical asset required", "thf_humanoid_v1..v6 absent from active runtime/export paths", "gate fails on regression"]
+    },
+    {
+      "id": "P0-03",
+      "priority": 0,
+      "title": "Rebuild exact clean Terra candidate and source gates",
+      "status": "QUEUED",
+      "depends_on": ["P0-02"],
+      "acceptance": ["exact source provenance recorded", "static/security/unit/source checks pass", "artifact SHA-256 recorded"]
+    },
+    {
+      "id": "P0-04",
+      "priority": 0,
+      "title": "Godot 4.7.2 real clean import/parser/headless gate",
+      "status": "QUEUED",
+      "depends_on": ["P0-03"],
+      "acceptance": ["clean import pass", "parser/class cache pass", "30-frame headless pass"]
+    },
+    {
+      "id": "P0-05",
+      "priority": 0,
+      "title": "Android API 36 arm64 test APK/AAB cloud build",
+      "status": "QUEUED",
+      "depends_on": ["P0-04"],
+      "acceptance": ["applicationId com.topherofit.thf.terra", "targetSdk 36", "arm64 candidate verified", "APK/AAB hashes recorded"]
+    },
+    {
+      "id": "P0-06",
+      "priority": 0,
+      "title": "Physical Android install, boot, input, GPU and performance evidence",
+      "status": "BLOCKED_EXTERNAL",
+      "depends_on": ["P0-05"],
+      "blocker": "No connected authorized device runner/ADB session is currently available.",
+      "acceptance": ["fresh install succeeds", "real scene boots", "avatar renders as approved human", "touch/camera/movement pass", "FPS/RAM/thermal evidence captured"]
+    },
+    {
+      "id": "P0-07",
+      "priority": 0,
+      "title": "Standalone production account/auth backend over HTTPS",
+      "status": "QUEUED",
+      "depends_on": ["P0-03"],
+      "acceptance": ["own Terra user/account namespace", "passwordless/social-capable session model", "refresh/revoke/delete-account flows", "same identity works on web and Android"]
+    },
+    {
+      "id": "P0-08",
+      "priority": 0,
+      "title": "Google sign-in + optional Play Games identity link",
+      "status": "QUEUED",
+      "depends_on": ["P0-07"],
+      "acceptance": ["web Google OIDC", "Android Google sign-in", "server-side token validation", "optional Play Games linkage does not create duplicate account"]
+    },
+    {
+      "id": "P0-09",
+      "priority": 0,
+      "title": "Additional social-provider adapter layer",
+      "status": "QUEUED",
+      "depends_on": ["P0-07"],
+      "acceptance": ["provider-neutral account-linking API", "at least two additional approved providers can be enabled without schema fork", "unlink/revoke supported"]
+    },
+    {
+      "id": "P1-10",
+      "priority": 1,
+      "title": "Unify website/PWA and Android on same service contract",
+      "status": "QUEUED",
+      "depends_on": ["P0-07"],
+      "acceptance": ["same backend/API/session/account state", "feature parity contract", "offline cache never forks authoritative account state"]
+    },
+    {
+      "id": "P1-11",
+      "priority": 1,
+      "title": "Web staging then production deployment and live smoke",
+      "status": "QUEUED",
+      "depends_on": ["P1-10", "P0-03"],
+      "acceptance": ["HTTPS production endpoint", "login and core social world smoke pass", "deployment commit/hash recorded"]
+    },
+    {
+      "id": "P1-12",
+      "priority": 1,
+      "title": "Production signing and Play App Signing gate",
+      "status": "BLOCKED_EXTERNAL",
+      "depends_on": ["P0-05"],
+      "blocker": "Production upload signing/Play App Signing evidence not connected to this execution path yet.",
+      "acceptance": ["signed release AAB", "certificate/app id verified", "no signing secret in source"]
+    },
+    {
+      "id": "P1-13",
+      "priority": 1,
+      "title": "Google Play policy/listing/account declarations",
+      "status": "QUEUED",
+      "depends_on": ["P1-12", "P0-07"],
+      "acceptance": ["Privacy Policy", "Data Safety", "Content Rating", "App Access", "account deletion in-app and external", "social/data disclosures"]
+    },
+    {
+      "id": "P1-14",
+      "priority": 1,
+      "title": "Play Internal/Closed track upload and real install test",
+      "status": "BLOCKED_EXTERNAL",
+      "depends_on": ["P1-13"],
+      "blocker": "Google Play Console publishing connection/action is not currently available in this chat.",
+      "acceptance": ["AAB uploaded", "track processing succeeds", "store-delivered install/update tested"]
+    },
+    {
+      "id": "P1-15",
+      "priority": 1,
+      "title": "Production release + live web/app parity verification",
+      "status": "QUEUED",
+      "depends_on": ["P1-11", "P1-14", "P0-06"],
+      "acceptance": ["public web verified", "Play production release verified", "same account/state across both surfaces", "release SHA/tag/evidence stored in Git"]
+    },
+    {
+      "id": "P1-16",
+      "priority": 1,
+      "title": "Observability, crash and release-health gates",
+      "status": "QUEUED",
+      "depends_on": ["P1-11", "P1-14"],
+      "acceptance": ["server error monitoring", "Android crash/ANR monitoring", "release rollback trigger documented"]
+    },
+    {
+      "id": "P2-17",
+      "priority": 2,
+      "title": "Continuous avatar/world quality improvements without regressions",
+      "status": "QUEUED",
+      "depends_on": ["P0-06"],
+      "acceptance": ["visual improvements use approved human lineage", "mobile LOD/material/shadow budgets measured", "uploaded environment/animation assets remain preferred over obsolete placeholders"]
+    }
+  ]
+}
