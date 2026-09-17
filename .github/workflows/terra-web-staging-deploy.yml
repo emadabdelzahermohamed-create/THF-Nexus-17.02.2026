@@ -75,12 +75,25 @@ jobs:
               test -d \"\$SRC\"
               mkdir -p \"\$APP\" \"\$APP/data\" \"\$APP/logs\"
               if command -v rsync >/dev/null 2>&1; then
-                rsync -a --delete --exclude '.venv/' --exclude '.godot/' --exclude 'data/thf_fantasy_city.db' --exclude 'data/terra-social-staging.db' --exclude 'android/build/build/' --exclude 'android/build/src/main/assets/' \"\$SRC/\" \"\$APP/\"
+                rsync -a --delete \
+                  --exclude '.venv/' \
+                  --exclude '.godot/' \
+                  --exclude '.env.runtime' \
+                  --exclude 'logs/' \
+                  --exclude 'terra-web.pid' \
+                  --exclude 'terra-tunnel.pid' \
+                  --exclude 'STAGING_URL.txt' \
+                  --exclude 'data/thf_fantasy_city.db' \
+                  --exclude 'data/terra-social-staging.db' \
+                  --exclude 'android/build/build/' \
+                  --exclude 'android/build/src/main/assets/' \
+                  \"\$SRC/\" \"\$APP/\"
               else
-                find \"\$APP\" -mindepth 1 -maxdepth 1 ! -name data ! -name logs ! -name .env.runtime ! -name .venv -exec rm -rf {} +
+                find \"\$APP\" -mindepth 1 -maxdepth 1 ! -name data ! -name logs ! -name .env.runtime ! -name .venv ! -name terra-web.pid ! -name terra-tunnel.pid ! -name STAGING_URL.txt -exec rm -rf {} +
                 cp -a \"\$SRC/.\" \"\$APP/\"
                 rm -rf \"\$APP/.godot\" \"\$APP/android/build/build\" \"\$APP/android/build/src/main/assets\"
               fi
+              mkdir -p \"\$APP/data\" \"\$APP/logs\"
               cd \"\$APP\"
               python3 \"\$OPS/patch_terra_modern_human_current_source.py\" > logs/modern-human-patch.log
               THF_TERRA_SOCIAL_AUTH_OVERLAY=\"\$OPS/overlay\" python3 \"\$OPS/patch_terra_social_auth_v1.py\" > logs/social-auth-patch.log
