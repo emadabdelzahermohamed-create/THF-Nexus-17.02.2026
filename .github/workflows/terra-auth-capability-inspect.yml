@@ -1,0 +1,46 @@
+name: Terra Auth Capability Inspect
+
+on:
+  push:
+    branches: ['t/**']
+    paths: ['.github/workflows/terra-auth-capability-inspect.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: List authorization capabilities without secret values
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo '=== ACTIVE IDENTITY ==='
+          gcloud auth list --filter=status:ACTIVE --format='value(account)'
+          echo '=== SERVICE ACCOUNTS ==='
+          gcloud iam service-accounts list --project "$GCP_PROJECT_ID" --format='value(email,displayName)' || true
+          echo '=== SECRET NAMES ONLY ==='
+          gcloud secrets list --project "$GCP_PROJECT_ID" --format='value(name)' 2>/dev/null | sed -n '1,200p' || echo SECRET_LIST_NOT_AUTHORIZED
+          echo '=== ENABLED APIS RELEVANT TO RELEASE ==='
+          gcloud services list --enabled --project "$GCP_PROJECT_ID" --format='value(config.name)' | grep -E 'androidpublisher|playgames|iamcredentials|secretmanager|compute|run|artifactregistry|cloudbuild' || true
+          echo 'NO_SECRET_VALUES_READ=TRUE'
