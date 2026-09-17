@@ -1,0 +1,59 @@
+name: Terra Play Access Probe
+
+on:
+  push:
+    branches: ['t/**']
+    paths: ['.github/workflows/terra-play-access-probe.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  PACKAGE_NAME: com.topherofit.thf.terra
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+      - name: Read-only Android Publisher permission probe
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$ACCESS_TOKEN"
+          URL="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME/monetization/subscriptions?pageSize=1"
+          CODE="$(curl -sS -o response.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$URL")"
+          echo "ANDROID_PUBLISHER_HTTP=$CODE"
+          python3 - <<'PY'
+import json
+from pathlib import Path
+p=Path('response.json')
+try:d=json.loads(p.read_text())
+except Exception:d={}
+if isinstance(d,dict) and 'error' in d:
+    e=d['error'] if isinstance(d['error'],dict) else {}
+    print('ANDROID_PUBLISHER_ERROR_CODE='+str(e.get('code','')))
+    print('ANDROID_PUBLISHER_ERROR_STATUS='+str(e.get('status','')))
+    msg=str(e.get('message','')).replace('\n',' ')[:400]
+    print('ANDROID_PUBLISHER_ERROR_MESSAGE='+msg)
+else:
+    print('ANDROID_PUBLISHER_READ_ACCESS=PASS')
+PY
+          if [ "$CODE" = 401 ]; then exit 41; fi
