@@ -1,0 +1,44 @@
+name: WAVE RC15.4 Media Runtime Check
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-3-20260917
+    paths:
+      - '.github/workflows/wave-rc15-4-media-runtime-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WAVE_PUBLIC_URL: https://wave-mawja.p-my.workers.dev
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Inspect WAVE Worker binding names only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          curl -fsS -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/wave-mawja/settings" > /tmp/settings.json
+          jq -e '.success == true' /tmp/settings.json >/dev/null
+          jq -r '.result.bindings[]? | [.name,.type] | @tsv' /tmp/settings.json | sort -u | tee /tmp/bindings.tsv
+          for name in MEDIA_API_URL MEDIA_API_TOKEN CLOUDFLARE_STREAM_TOKEN CLOUDFLARE_STREAM_API_TOKEN CLOUDFLARE_ACCOUNT_ID DB BROWSER; do
+            if awk -F '\t' -v n="$name" '$1==n{found=1} END{exit !found}' /tmp/bindings.tsv; then echo "$name=PRESENT"; else echo "$name=MISSING"; fi
+          done
+
+      - name: Public playback route probes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for path in / /live /login; do
+            code="$(curl -L -sS -o /dev/null -w '%{http_code}' "$WAVE_PUBLIC_URL$path")"
+            echo "$path=$code"
+          done
