@@ -1,0 +1,47 @@
+name: WAVE Google Play Write Check
+
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-play-write-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Authenticate as Play service account
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Verify Play write access without changing release state
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          base="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
+          code="$(curl -sS -o edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
+          echo "EDIT_INSERT_HTTP=$code"
+          test "$code" = 200
+          edit_id="$(python3 -c 'import json; print(json.load(open("edit.json"))["id"])')"
+          test -n "$edit_id"
+          del="$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id")"
+          echo "EDIT_DELETE_HTTP=$del"
+          test "$del" = 204
+          echo "PLAY_API_WRITE_ACCESS=PASS"
