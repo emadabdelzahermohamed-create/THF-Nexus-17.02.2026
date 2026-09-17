@@ -68,8 +68,9 @@ jobs:
           mkdir -p "$ROOT" "$ROOT/test"
           tar -xzf /tmp/wave-media-rc155.tgz -C "$ROOT"
           cd "$ROOT/media-server"
-          sudo docker build -q -f Dockerfile.worker -t wave-rc155-worker .
-          sudo docker run --rm \
+          command -v docker >/dev/null
+          sudo -n docker build -q -f Dockerfile.worker -t wave-rc155-worker .
+          sudo -n docker run --rm -i \
             -v "$ROOT/test:/test" \
             -e DATABASE_URL=postgresql://wave:wave@127.0.0.1:5432/wave \
             -e REDIS_URL=redis://127.0.0.1:6379/0 \
@@ -92,11 +93,18 @@ jobs:
           assert out.stat().st_size > 0
           assert master.exists() and master.stat().st_size > 20
           assert len(renditions) >= 2
-          print("CAPTURE_OK", out.stat().st_size, digest)
-          print("SOURCE", info)
-          print("RENDITIONS", [int(r[0]) for r in renditions])
-          print("MASTER", master.read_text(encoding="utf-8")[:1200].replace("\n", " | "))
+          text = master.read_text(encoding="utf-8")
+          assert text.count("#EXT-X-STREAM-INF") >= 2, text
+          print("CAPTURE_OK", out.stat().st_size, digest, flush=True)
+          print("SOURCE", info, flush=True)
+          print("RENDITIONS", [int(r[0]) for r in renditions], flush=True)
+          print("MASTER", text[:1200].replace("\n", " | "), flush=True)
           PY
+          test -s "$ROOT/test/captured.bin"
+          test -s "$ROOT/test/hls/master.m3u8"
+          test "$(grep -c '#EXT-X-STREAM-INF' "$ROOT/test/hls/master.m3u8")" -ge 2
+          echo "=== master.m3u8 ==="
+          cat "$ROOT/test/hls/master.m3u8"
           echo "=== smoke files ==="
           find "$ROOT/test" -maxdepth 3 -type f -printf "%P %s bytes\n" | sort | head -n 100
           REMOTE
