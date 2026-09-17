@@ -3,6 +3,7 @@ name: Terra Social Modern Human Build
 on:
   push:
     branches:
+      - 't/**'
       - 'releaseops/**'
     paths:
       - '.github/workflows/terra-social-modern-build.yml'
