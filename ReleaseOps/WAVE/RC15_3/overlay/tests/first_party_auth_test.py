@@ -13,7 +13,8 @@ class FirstPartyAuthSourceTest(unittest.TestCase):
     def test_credentials_are_derived_and_sessions_are_http_only(self):
         lib = (ROOT / "lib" / "wave-auth.ts").read_text(encoding="utf-8")
         self.assertIn('PBKDF2', lib)
-        self.assertIn('210_000', lib)
+        self.assertIn('100_000', lib)
+        self.assertNotIn('210_000', lib)
         self.assertIn('HttpOnly; Secure; SameSite=Lax', lib)
         migration = (ROOT / "drizzle" / "0011_wave_first_party_auth.sql").read_text(encoding="utf-8")
         self.assertIn('wave_credentials', migration)
