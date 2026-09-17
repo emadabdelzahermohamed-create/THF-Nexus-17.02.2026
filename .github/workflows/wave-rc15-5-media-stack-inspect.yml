@@ -1,0 +1,59 @@
+name: WAVE RC15.5 Media Stack Inspect
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-3-20260917
+    paths:
+      - '.github/workflows/wave-rc15-5-media-stack-inspect.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Reconstruct
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os, requests, google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120); r.raise_for_status(); open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir src && unzip -q base.zip -d src
+          cd src; git init -q; git add .; git -c user.name=x -c user.email=x@x.invalid commit -qm base
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+      - name: Print exact integration surfaces
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd src
+          echo '===== api main models/imports ====='; sed -n '40,220p' media-server/api/main.py; sed -n '300,370p' media-server/api/main.py; sed -n '1030,1120p' media-server/api/main.py; sed -n '1600,1665p' media-server/api/main.py
+          echo '===== docker compose 1-220 ====='; sed -n '1,240p' media-server/docker-compose.yml
+          echo '===== production compose ====='; sed -n '1,240p' media-server/docker-compose.production.yml
+          echo '===== env example ====='; sed -n '1,220p' media-server/.env.example
+          echo '===== Dockerfiles ====='; for f in media-server/Dockerfile.api media-server/Dockerfile.worker media-server/Dockerfile.ai media-server/Dockerfile.dubbing; do echo ---$f; cat "$f"; done
