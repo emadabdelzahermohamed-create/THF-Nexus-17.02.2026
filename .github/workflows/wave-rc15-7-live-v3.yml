@@ -1,0 +1,205 @@
+name: WAVE RC15.7 Live Site + Media + APK v3
+
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-rc15-7-live-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PUBLIC_URL: https://wave-mawja.p-my.workers.dev
+  PHONE_TEST_BASE_URL: https://wave-mawja.p-my.workers.dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate Google WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Download locked WAVE baseline
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os, requests, google.auth
+          from google.auth.transport.requests import Request
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
+          creds.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {creds.token}'},timeout=120)
+          r.raise_for_status(); open('WAVE_RC15_BASE.zip','wb').write(r.content)
+          print('BASELINE_DOWNLOAD=PASS bytes='+str(len(r.content)))
+          PY
+          echo "$EXPECTED_RC15_SHA256  WAVE_RC15_BASE.zip" | sha256sum -c -
+          mkdir wave-src && unzip -q WAVE_RC15_BASE.zip -d wave-src
+          test -f wave-src/package.json && test -d wave-src/android
+
+      - name: Apply RC15.3 + RC15.5 + RC15.7 and reconcile tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          git init -q; git add .; git -c user.name=wave-builder -c user.email=wave-builder@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          sed -i 's#google/madlad400-3b-mt#facebook/nllb-200-distilled-600M#g' tests/source_connector_test.py
+          python3 -m compileall -q media-server tests scripts
+          python3 -m unittest discover -s tests -p '*_test.py'
+          echo 'SOURCE_GATE=PASS'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: wave-src/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: wave-src
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+          node --test tests/multi-ingest-source.test.mjs tests/service-worker.test.mjs
+          npm run typecheck
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SDK_ROOT=/usr/local/lib/android/sdk
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n1)"; fi
+          test -x "$SDKMANAGER"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build APK and stage it into website
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          (cd android && DEBUG_BASE_URL="$PHONE_TEST_BASE_URL" gradle --no-daemon clean :app:assembleDebug)
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          mkdir -p public/downloads
+          cp "$APK" public/downloads/WAVE_MAWJA_ANDROID.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | tee ../WAVE_RC15_7_APK_BADGING.txt
+          grep -q "package: name='com.wave.mawja'" ../WAVE_RC15_7_APK_BADGING.txt
+          grep -q "targetSdkVersion:'36'" ../WAVE_RC15_7_APK_BADGING.txt
+          sha256sum "$APK" | tee ../WAVE_RC15_7_APK.sha256
+          echo "APK_SHA256=$(sha256sum "$APK" | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo 'APK_BUILD=PASS'
+
+      - name: Discover WAVE D1
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]
+          d1="$(curl -fsS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database?per_page=100")"
+          db_id="$(echo "$d1" | jq -r '.result[] | select(.name == "wave-mawja-prod") | .uuid' | head -n1)"
+          [ -n "$db_id" ] && [ "$db_id" != null ]
+          echo "CLOUDFLARE_D1_DATABASE_ID=$db_id" >> "$GITHUB_ENV"
+          echo 'D1_DISCOVERY=PASS'
+
+      - name: Build website
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm run build
+          test -f dist/server/wrangler.json
+          jq -e --arg id "$CLOUDFLARE_D1_DATABASE_ID" 'any(.d1_databases[]?; .binding == "DB" and .database_id == $id)' dist/server/wrangler.json >/dev/null
+          find dist -type f -name 'WAVE_MAWJA_ANDROID.apk' -print | tee ../WAVE_RC15_7_APK_DIST.txt
+          grep -q 'WAVE_MAWJA_ANDROID.apk' ../WAVE_RC15_7_APK_DIST.txt
+          echo 'WEB_BUILD=PASS'
+
+      - name: Deploy live website
+        working-directory: wave-src
+        run: npx wrangler@4.119.0 deploy --config dist/server/wrangler.json
+
+      - name: Bind live VPS Media API
+        working-directory: wave-src
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          MEDIA_URL="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='cat /srv/wave-mawja-media/PUBLIC_MEDIA_URL.txt')"
+          MEDIA_TOKEN="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='sudo sed -n "s/^ADMIN_API_KEY=//p" /srv/wave-mawja-media/.env | head -n1')"
+          [ -n "$MEDIA_URL" ] && [ -n "$MEDIA_TOKEN" ]
+          echo "::add-mask::$MEDIA_TOKEN"
+          curl -fsS "$MEDIA_URL/ready" >/dev/null
+          printf '%s' "$MEDIA_URL" | npx wrangler@4.119.0 secret put MEDIA_API_URL --config dist/server/wrangler.json
+          printf '%s' "$MEDIA_TOKEN" | npx wrangler@4.119.0 secret put MEDIA_API_TOKEN --config dist/server/wrangler.json
+          npx wrangler@4.119.0 secret list --config dist/server/wrangler.json > ../WAVE_RC15_7_SECRETS.txt
+          grep -q MEDIA_API_URL ../WAVE_RC15_7_SECRETS.txt
+          grep -q MEDIA_API_TOKEN ../WAVE_RC15_7_SECRETS.txt
+          printf 'media_url=%s\n' "$MEDIA_URL" > ../WAVE_RC15_7_MEDIA_BINDING.txt
+          echo 'MEDIA_BINDING=PASS'
+
+      - name: Live smoke including APK
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for n in $(seq 1 20); do
+            code="$(curl -L -sS -o /tmp/downloads.html -w '%{http_code}' "$WAVE_PUBLIC_URL/downloads" || true)"
+            [ "$code" = 200 ] && grep -q 'WAVE_MAWJA_ANDROID.apk' /tmp/downloads.html && break
+            sleep 3
+          done
+          [ "$code" = 200 ] && grep -q 'WAVE_MAWJA_ANDROID.apk' /tmp/downloads.html
+          curl -fsS "$WAVE_PUBLIC_URL/downloads/WAVE_MAWJA_ANDROID.apk" -o /tmp/WAVE_MAWJA_ANDROID.apk
+          echo "$APK_SHA256  /tmp/WAVE_MAWJA_ANDROID.apk" | sha256sum -c -
+          printf 'site=%s\ndownloads_http=%s\napk_sha256=%s\n' "$WAVE_PUBLIC_URL" "$code" "$APK_SHA256" > WAVE_RC15_7_PUBLIC_SMOKE.txt
+          echo 'PUBLIC_SITE_MEDIA_APK=PASS'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-RC15-7-LIVE-EVIDENCE-V3
+          retention-days: 14
+          path: |
+            WAVE_RC15_7_APK_BADGING.txt
+            WAVE_RC15_7_APK.sha256
+            WAVE_RC15_7_APK_DIST.txt
+            WAVE_RC15_7_MEDIA_BINDING.txt
+            WAVE_RC15_7_SECRETS.txt
+            WAVE_RC15_7_PUBLIC_SMOKE.txt
