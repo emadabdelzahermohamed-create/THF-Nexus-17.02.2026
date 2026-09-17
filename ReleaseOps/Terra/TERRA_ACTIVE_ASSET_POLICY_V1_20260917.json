@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "project": "THF World / Terra social game",
+  "application_id": "com.topherofit.thf.terra",
+  "authority_date": "2026-09-17",
+  "active_release_authority": {
+    "release_line": "RC34 Phone V4",
+    "engine": "Godot 4.7.2",
+    "target_sdk": 36,
+    "note": "Preserve current RC34 release authority while merging forward the 2026-09-16 modern-human cleanup/overlay. Never downgrade release lineage merely to obtain the modern avatar policy."
+  },
+  "avatar_policy": {
+    "required_lineage": "MPFB/MakeHuman modern human",
+    "required_asset_relpath": "web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb",
+    "known_baseline_sha256": "4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f",
+    "structural_baseline": {
+      "joints": 137,
+      "animation_clips": 195
+    },
+    "approved_extensions": [
+      "Stage16F identity/skin/body/face",
+      "Stage16G skeletal wardrobe/hair/footwear"
+    ],
+    "forbidden_patterns": [
+      "thf_humanoid_v1",
+      "thf_humanoid_v2",
+      "thf_humanoid_v3",
+      "thf_humanoid_v4",
+      "thf_humanoid_v5",
+      "thf_humanoid_v6"
+    ],
+    "optimization_rule": "Use LOD/update-rate/shadow/material budgets; never fall back to a deprecated humanoid."
+  },
+  "world_policy": {
+    "required_visual_lineage": "visual16a + current PBR and approved later improvements",
+    "no_visual_regression": true
+  },
+  "source_isolation": {
+    "wave_project_files_may_be_copied": false,
+    "wave_runtime_or_secrets_may_be_reused": false,
+    "existing_wif_oidc_authorization_mechanism_may_be_reused": true
+  },
+  "release_truth": {
+    "do_not_claim_without_evidence": [
+      "physical Android install/boot",
+      "GPU/device visual QA",
+      "production-signed AAB",
+      "Google Play upload/approval/publication",
+      "production web deployment"
+    ]
+  }
+}
