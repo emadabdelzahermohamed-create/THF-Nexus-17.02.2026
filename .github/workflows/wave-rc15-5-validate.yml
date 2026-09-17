@@ -42,6 +42,7 @@ jobs:
           git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
           cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
       - name: Python syntax and patch assertions
         shell: bash
         run: |
@@ -50,6 +51,7 @@ jobs:
           python3 -m py_compile media-server/api/main.py media-server/worker/worker.py media-server/ai-worker/ai_worker.py media-server/dubbing-worker/dubbing_worker.py media-server/live-worker/live_worker.py
           grep -q 'yt-dlp\[default\]==2026.8.19' media-server/worker/requirements.txt
           grep -q 'AI_TARGET_LANGUAGES=ar' media-server/.env.example
+          grep -q 'facebook/nllb-200-distilled-600M' media-server/ai-worker/ai_worker.py
           grep -q 'json.dumps(\["subtitles", "dubbing"\])' media-server/worker/worker.py
           grep -q 'source_language != "ar"' media-server/ai-worker/ai_worker.py
           grep -q '@app.post("/v1/captures"' media-server/api/main.py
