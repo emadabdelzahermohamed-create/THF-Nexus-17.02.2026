@@ -1,0 +1,56 @@
+name: Terra Social Source Inspect
+
+on:
+  push:
+    branches:
+      - 't/**'
+    paths:
+      - '.github/workflows/terra-social-source-inspect.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Package current Terra text source only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='set -Eeuo pipefail; SRC="$HOME/thf-terra-rift-staging-apk-v1/terra/work"; test -d "$SRC"; rm -rf /tmp/terra-source-inspect /tmp/terra-source-inspect.tgz; mkdir -p /tmp/terra-source-inspect; cd "$SRC"; find . -type f \( -name "*.gd" -o -name "*.py" -o -name "*.js" -o -name "*.json" -o -name "*.cfg" -o -name "*.toml" -o -name "*.yml" -o -name "*.yaml" -o -name "*.html" -o -name "*.css" -o -name "*.md" -o -name "*.txt" \) -size -2M -print0 | tar --null -T - -czf /tmp/terra-source-inspect.tgz; sha256sum /tmp/terra-source-inspect.tgz > /tmp/terra-source-inspect.sha256; find . -type f \( -iname "*auth*" -o -iname "*session*" -o -iname "*login*" -o -name "WorldMain.gd" -o -name "project.godot" -o -name "export_presets.cfg" \) -print | sort > /tmp/terra-source-key-files.txt; echo WAVE_UNTOUCHED=TRUE'
+      - name: Pull inspection package
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p terra-source-inspect
+          gcloud compute scp "$GCP_BUILDER:/tmp/terra-source-inspect.tgz" "$GCP_BUILDER:/tmp/terra-source-inspect.sha256" "$GCP_BUILDER:/tmp/terra-source-key-files.txt" terra-source-inspect/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          (cd terra-source-inspect && sha256sum -c terra-source-inspect.sha256)
+          cat terra-source-inspect/terra-source-key-files.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Terra-current-text-source-inspect
+          retention-days: 7
+          path: terra-source-inspect/
+          if-no-files-found: error
