@@ -92,7 +92,7 @@ jobs:
           set -Eeuo pipefail
           mkdir -p terra-artifacts
           gcloud compute scp --recurse \
-            "$GCP_BUILDER:$HOME/thf-terra-social-modern-build/out" \
+            "$GCP_BUILDER:~/thf-terra-social-modern-build/out" \
             terra-artifacts/ \
             --project "$GCP_PROJECT_ID" \
             --zone "$GCP_ZONE" \
