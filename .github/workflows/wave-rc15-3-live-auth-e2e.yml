@@ -38,22 +38,36 @@ jobs:
       - name: Register and login a disposable production test user
         shell: bash
         run: |
-          set -Eeuo pipefail
+          set -u
           email="rc15-e2e-${GITHUB_RUN_ID}@example.invalid"
           password="WaveRC15-${GITHUB_RUN_ID}-Strong!"
           echo "TEST_EMAIL=$email" >> "$GITHUB_ENV"
 
           register_code="$(curl -sS -D /tmp/reg-headers -c /tmp/register.cookies -o /tmp/register.json -w '%{http_code}' -X POST "$WAVE_PUBLIC_URL/api/auth/register" -H "Origin: $WAVE_PUBLIC_URL" -H 'Content-Type: application/json' --data "{\"email\":\"$email\",\"displayName\":\"RC15 E2E\",\"password\":\"$password\",\"returnTo\":\"/\"}")"
-          [ "$register_code" = 200 ]
-          jq -e '.ok == true and .user.email != null and .redirectTo == "/"' /tmp/register.json >/dev/null
-          grep -qi '^set-cookie: wave_session=' /tmp/reg-headers
+          echo "REGISTER_HTTP=$register_code"
+          echo -n 'REGISTER_BODY='; jq -c 'if type=="object" then del(.token,.password,.session) else . end' /tmp/register.json 2>/dev/null || echo NON_JSON
+          register_cookie=no
+          grep -q 'wave_session' /tmp/register.cookies 2>/dev/null && register_cookie=yes
+          echo "REGISTER_SESSION_COOKIE=$register_cookie"
 
-          login_code="$(curl -sS -D /tmp/login-headers -c /tmp/login.cookies -o /tmp/login.json -w '%{http_code}' -X POST "$WAVE_PUBLIC_URL/api/auth/login" -H "Origin: $WAVE_PUBLIC_URL" -H 'Content-Type: application/json' --data "{\"email\":\"$email\",\"password\":\"$password\",\"returnTo\":\"/\"}")"
-          [ "$login_code" = 200 ]
-          jq -e '.ok == true and .user.email != null and .redirectTo == "/"' /tmp/login.json >/dev/null
-          grep -qi '^set-cookie: wave_session=' /tmp/login-headers
+          login_code=skipped
+          login_cookie=no
+          if [ "$register_code" = 200 ] && jq -e '.ok == true and .user.email != null and .redirectTo == "/"' /tmp/register.json >/dev/null 2>&1 && [ "$register_cookie" = yes ]; then
+            login_code="$(curl -sS -D /tmp/login-headers -c /tmp/login.cookies -o /tmp/login.json -w '%{http_code}' -X POST "$WAVE_PUBLIC_URL/api/auth/login" -H "Origin: $WAVE_PUBLIC_URL" -H 'Content-Type: application/json' --data "{\"email\":\"$email\",\"password\":\"$password\",\"returnTo\":\"/\"}")"
+            echo "LOGIN_HTTP=$login_code"
+            echo -n 'LOGIN_BODY='; jq -c 'if type=="object" then del(.token,.password,.session) else . end' /tmp/login.json 2>/dev/null || echo NON_JSON
+            grep -q 'wave_session' /tmp/login.cookies 2>/dev/null && login_cookie=yes
+            echo "LOGIN_SESSION_COOKIE=$login_cookie"
+          fi
 
-          printf 'register_http=%s\nlogin_http=%s\nsession_cookie_register=present\nsession_cookie_login=present\n' "$register_code" "$login_code" > WAVE_RC15_3_LIVE_AUTH_E2E.txt
+          printf 'register_http=%s\nregister_session_cookie=%s\nlogin_http=%s\nlogin_session_cookie=%s\n' "$register_code" "$register_cookie" "$login_code" "$login_cookie" > WAVE_RC15_3_LIVE_AUTH_E2E.txt
+
+          [ "$register_code" = 200 ] || exit 21
+          jq -e '.ok == true and .user.email != null and .redirectTo == "/"' /tmp/register.json >/dev/null || exit 22
+          [ "$register_cookie" = yes ] || exit 23
+          [ "$login_code" = 200 ] || exit 24
+          jq -e '.ok == true and .user.email != null and .redirectTo == "/"' /tmp/login.json >/dev/null || exit 25
+          [ "$login_cookie" = yes ] || exit 26
           echo 'LIVE_AUTH_E2E=PASS'
 
       - name: Cleanup disposable test user from D1
