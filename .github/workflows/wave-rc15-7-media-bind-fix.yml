@@ -1,0 +1,91 @@
+name: WAVE RC15.7 Media Bind Fix
+
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths: ['.github/workflows/wave-rc15-7-media-bind-fix.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PUBLIC_URL: https://wave-mawja.p-my.workers.dev
+  WAVE_WORKER_NAME: wave-mawja
+  APK_SHA256: 0403bc725b16301ceadc9934aa22ebb529ce82f115e10fdbf12b53810ad547c9
+
+jobs:
+  bind-and-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Authenticate Google WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Read live Media backend coordinates without leaking secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          MEDIA_RAW="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='printf "WAVE_MEDIA_URL="; cat /srv/wave-mawja-media/PUBLIC_MEDIA_URL.txt' 2>/dev/null)"
+          MEDIA_URL="$(printf '%s\n' "$MEDIA_RAW" | grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' | tail -n1)"
+          TOKEN_RAW="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='printf "WAVE_TOKEN="; sudo awk -F= '\''$1=="ADMIN_API_KEY"{print substr($0,index($0,"=")+1); exit}'\'' /srv/wave-mawja-media/.env' 2>/dev/null)"
+          MEDIA_TOKEN="$(printf '%s\n' "$TOKEN_RAW" | sed -n 's/^WAVE_TOKEN=//p' | tail -n1)"
+          test -n "$MEDIA_URL"
+          test -n "$MEDIA_TOKEN"
+          echo "::add-mask::$MEDIA_TOKEN"
+          curl -fsS "$MEDIA_URL/ready" >/dev/null
+          echo "MEDIA_API_URL=$MEDIA_URL" >> "$GITHUB_ENV"
+          printf '%s' "$MEDIA_TOKEN" > "$RUNNER_TEMP/wave-media-token"
+          chmod 600 "$RUNNER_TEMP/wave-media-token"
+          echo "MEDIA_DISCOVERY=PASS"
+
+      - name: Bind Media API to live WAVE Worker
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "$MEDIA_API_URL" | npx wrangler@4.119.0 secret put MEDIA_API_URL --name "$WAVE_WORKER_NAME"
+          cat "$RUNNER_TEMP/wave-media-token" | npx wrangler@4.119.0 secret put MEDIA_API_TOKEN --name "$WAVE_WORKER_NAME"
+          npx wrangler@4.119.0 secret list --name "$WAVE_WORKER_NAME" | tee /tmp/wave-secrets.json
+          grep -q 'MEDIA_API_URL' /tmp/wave-secrets.json
+          grep -q 'MEDIA_API_TOKEN' /tmp/wave-secrets.json
+          echo "MEDIA_BINDING=PASS"
+
+      - name: Live site and APK smoke
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl -fsSL "$WAVE_PUBLIC_URL/downloads" -o /tmp/downloads.html
+          grep -q 'WAVE_MAWJA_ANDROID.apk' /tmp/downloads.html
+          curl -fsSL "$WAVE_PUBLIC_URL/downloads/WAVE_MAWJA_ANDROID.apk" -o /tmp/WAVE_MAWJA_ANDROID.apk
+          echo "$APK_SHA256  /tmp/WAVE_MAWJA_ANDROID.apk" | sha256sum -c -
+          curl -fsS "$MEDIA_API_URL/ready" >/dev/null
+          printf 'site=%s\nmedia=%s\napk_sha256=%s\n' "$WAVE_PUBLIC_URL" "$MEDIA_API_URL" "$APK_SHA256" | tee WAVE_RC15_7_BIND_SMOKE.txt
+          echo "PUBLIC_SITE_MEDIA_APK=PASS"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-RC15-7-MEDIA-BIND-SMOKE
+          retention-days: 14
+          path: WAVE_RC15_7_BIND_SMOKE.txt
