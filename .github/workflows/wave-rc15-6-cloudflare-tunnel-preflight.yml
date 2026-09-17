@@ -1,0 +1,43 @@
+name: WAVE RC15.6 Cloudflare Tunnel Preflight
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-rc15-6-cloudflare-tunnel-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect zones and named tunnels with existing Cloudflare token
+        shell: bash
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error
+          token=os.environ['CF_API_TOKEN']; account=os.environ['CF_ACCOUNT_ID']
+          def get(path):
+              req=urllib.request.Request('https://api.cloudflare.com/client/v4'+path,headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as r: return json.load(r)
+              except urllib.error.HTTPError as e:
+                  raw=e.read().decode('utf-8','replace')[:1000]
+                  return {'success':False,'http_status':e.code,'error_preview':raw}
+          zones=get(f'/zones?account.id={account}&per_page=100')
+          print('ZONES_ACCESS',zones.get('success'),zones.get('http_status',''))
+          for z in zones.get('result',[]) or []:
+              print('ZONE',z.get('name',''),z.get('id',''),z.get('status',''))
+          tunnels=get(f'/accounts/{account}/cfd_tunnel?is_deleted=false&per_page=100')
+          print('TUNNELS_ACCESS',tunnels.get('success'),tunnels.get('http_status',''))
+          for t in tunnels.get('result',[]) or []:
+              print('TUNNEL',t.get('name',''),t.get('id',''),t.get('status',''))
+          token_verify=get('/user/tokens/verify')
+          print('TOKEN_VERIFY',token_verify.get('success'),(token_verify.get('result') or {}).get('status',''))
+          PY
