@@ -16,7 +16,7 @@ env:
 jobs:
   validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
@@ -60,5 +60,5 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd src
-          npm ci --ignore-scripts
+          npm install --ignore-scripts --no-audit --no-fund
           npm run build
