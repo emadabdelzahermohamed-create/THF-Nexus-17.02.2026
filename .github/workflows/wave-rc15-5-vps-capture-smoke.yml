@@ -68,8 +68,8 @@ jobs:
           mkdir -p "$ROOT" "$ROOT/test"
           tar -xzf /tmp/wave-media-rc155.tgz -C "$ROOT"
           cd "$ROOT/media-server"
-          docker build -q -f Dockerfile.worker -t wave-rc155-worker .
-          docker run --rm \
+          sudo docker build -q -f Dockerfile.worker -t wave-rc155-worker .
+          sudo docker run --rm \
             -v "$ROOT/test:/test" \
             -e DATABASE_URL=postgresql://wave:wave@127.0.0.1:5432/wave \
             -e REDIS_URL=redis://127.0.0.1:6379/0 \
