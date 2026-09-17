@@ -152,7 +152,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           remote_dir="wave-backups/RC15_3/${GITHUB_RUN_ID}"
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="mkdir -p \"$HOME/$remote_dir\""
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command="mkdir -p \"\$HOME/$remote_dir\""
           gcloud compute scp WAVE_D1_BEFORE_RC15_3.sql WAVE_D1_BEFORE_RC15_3.sql.sha256 "$GCP_BUILDER:~/$remote_dir/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
           echo "PRIVATE_BACKUP_STAGE=PASS path=~/$remote_dir/"
 
