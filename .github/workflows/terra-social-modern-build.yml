@@ -9,9 +9,8 @@ on:
       - '.github/workflows/terra-social-modern-build.yml'
       - 'ReleaseOps/scripts/build_terra_rc34_compact_phone.sh'
       - 'ReleaseOps/scripts/verify_terra_modern_human_only.sh'
+      - 'ReleaseOps/scripts/verify_terra_uploaded_asset_lineage.sh'
       - 'ReleaseOps/scripts/patch_terra_modern_human_current_source.py'
-      - 'ReleaseOps/Terra/TERRA_ACTIVE_ASSET_POLICY_V1_20260917.json'
-      - 'ReleaseOps/Terra/TERRA_UNIFIED_BACKLOG_V1_20260917.json'
   workflow_dispatch:
 
 permissions:
@@ -51,6 +50,10 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          REMOTE_OPS="/tmp/terra-social-ops-${GITHUB_RUN_ID}"
+          REMOTE_BUILD="/tmp/terra-social-build-${GITHUB_RUN_ID}"
+          echo "REMOTE_OPS=$REMOTE_OPS" >> "$GITHUB_ENV"
+          echo "REMOTE_BUILD=$REMOTE_BUILD" >> "$GITHUB_ENV"
           gcloud config set project "$GCP_PROJECT_ID" --quiet
           gcloud compute ssh "$GCP_BUILDER" \
             --project "$GCP_PROJECT_ID" \
@@ -58,7 +61,7 @@ jobs:
             --tunnel-through-iap \
             --ssh-key-expire-after=10m \
             --quiet \
-            --command='set -Eeuo pipefail; test -d "$HOME/thf-terra-rift-staging-apk-v1/terra/work"; rm -rf /tmp/terra-social-releaseops; mkdir -p /tmp/terra-social-releaseops; echo TERRA_SOURCE_PRESENT=PASS; echo WAVE_UNTOUCHED=TRUE'
+            --command="set -Eeuo pipefail; test -d \"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\"; rm -rf '$REMOTE_OPS' '$REMOTE_BUILD'; mkdir -p '$REMOTE_OPS'; echo TERRA_SOURCE_PRESENT=PASS; echo WAVE_UNTOUCHED=TRUE"
 
       - name: Copy only Terra release scripts to builder
         shell: bash
@@ -67,8 +70,9 @@ jobs:
           gcloud compute scp \
             ReleaseOps/scripts/build_terra_rc34_compact_phone.sh \
             ReleaseOps/scripts/verify_terra_modern_human_only.sh \
+            ReleaseOps/scripts/verify_terra_uploaded_asset_lineage.sh \
             ReleaseOps/scripts/patch_terra_modern_human_current_source.py \
-            "$GCP_BUILDER:/tmp/terra-social-releaseops/" \
+            "$GCP_BUILDER:$REMOTE_OPS/" \
             --project "$GCP_PROJECT_ID" \
             --zone "$GCP_ZONE" \
             --tunnel-through-iap \
@@ -84,7 +88,7 @@ jobs:
             --tunnel-through-iap \
             --ssh-key-expire-after=10m \
             --quiet \
-            --command='set -Eeuo pipefail; chmod +x /tmp/terra-social-releaseops/*.sh /tmp/terra-social-releaseops/*.py; THF_TERRA_SOURCE="$HOME/thf-terra-rift-staging-apk-v1/terra/work" THF_TERRA_BUILD_ROOT="$HOME/thf-terra-social-modern-build" bash /tmp/terra-social-releaseops/build_terra_rc34_compact_phone.sh'
+            --command="set -Eeuo pipefail; chmod +x '$REMOTE_OPS'/*.sh '$REMOTE_OPS'/*.py; THF_TERRA_SOURCE=\"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\" THF_TERRA_BUILD_ROOT='$REMOTE_BUILD' bash '$REMOTE_OPS/build_terra_rc34_compact_phone.sh'"
 
       - name: Pull build evidence and APK
         shell: bash
@@ -92,7 +96,7 @@ jobs:
           set -Eeuo pipefail
           mkdir -p terra-artifacts
           gcloud compute scp --recurse \
-            "$GCP_BUILDER:~/thf-terra-social-modern-build/out" \
+            "$GCP_BUILDER:$REMOTE_BUILD/out" \
             terra-artifacts/ \
             --project "$GCP_PROJECT_ID" \
             --zone "$GCP_ZONE" \
@@ -101,13 +105,27 @@ jobs:
           test -s terra-artifacts/out/EVIDENCE.json
           test -s terra-artifacts/out/THF-TERRA-4.6.8-RC34-MODERN-HUMAN-TEST.apk
           grep -q '"status": "PASS_BUILD_AND_ENGINE_GATES"' terra-artifacts/out/EVIDENCE.json
+          grep -q '"uploaded_visual16a_lineage_gate": "PASS"' terra-artifacts/out/EVIDENCE.json
           echo WAVE_UNTOUCHED=TRUE
           cat terra-artifacts/out/EVIDENCE.json
 
       - name: Upload Terra build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: THF-Terra-RC34-Modern-Human-Test
+          name: THF-Terra-RC34-Modern-Human-Test-${{ github.run_id }}
           retention-days: 14
           path: terra-artifacts/out/
           if-no-files-found: error
+
+      - name: Cleanup isolated remote run directory
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" \
+            --zone "$GCP_ZONE" \
+            --tunnel-through-iap \
+            --quiet \
+            --command="rm -rf '$REMOTE_OPS' '$REMOTE_BUILD'" >/dev/null 2>&1
+          exit 0
