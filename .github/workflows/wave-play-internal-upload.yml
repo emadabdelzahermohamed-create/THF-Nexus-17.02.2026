@@ -51,9 +51,13 @@ jobs:
           install -d -m 700 /srv/wave-play-signing
           if [ ! -s /srv/wave-play-signing/wave-upload.jks ] || [ ! -s /srv/wave-play-signing/signing.env ]; then
             store_pass="$(openssl rand -hex 24)"
-            key_pass="$(openssl rand -hex 24)"
-            keytool -genkeypair -v -keystore /srv/wave-play-signing/wave-upload.jks -storepass "$store_pass" -keypass "$key_pass" -alias wave-upload -keyalg RSA -keysize 4096 -validity 10000 -dname 'CN=WAVE MAWJA Upload, OU=Release, O=WAVE MAWJA, L=Cairo, C=EG' >/dev/null 2>&1
-            printf 'WAVE_ANDROID_KEY_ALIAS=wave-upload\nWAVE_ANDROID_STORE_PASSWORD=%s\nWAVE_ANDROID_KEY_PASSWORD=%s\n' "$store_pass" "$key_pass" > /srv/wave-play-signing/signing.env
+            keytool -genkeypair -v -keystore /srv/wave-play-signing/wave-upload.jks -storepass "$store_pass" -keypass "$store_pass" -alias wave-upload -keyalg RSA -keysize 4096 -validity 10000 -dname 'CN=WAVE MAWJA Upload, OU=Release, O=WAVE MAWJA, L=Cairo, C=EG' >/dev/null 2>&1
+            printf 'WAVE_ANDROID_KEY_ALIAS=wave-upload\nWAVE_ANDROID_STORE_PASSWORD=%s\nWAVE_ANDROID_KEY_PASSWORD=%s\n' "$store_pass" "$store_pass" > /srv/wave-play-signing/signing.env
+            chmod 600 /srv/wave-play-signing/wave-upload.jks /srv/wave-play-signing/signing.env
+          else
+            store_pass="$(sed -n 's/^WAVE_ANDROID_STORE_PASSWORD=//p' /srv/wave-play-signing/signing.env | head -n1)"
+            test -n "$store_pass"
+            printf 'WAVE_ANDROID_KEY_ALIAS=wave-upload\nWAVE_ANDROID_STORE_PASSWORD=%s\nWAVE_ANDROID_KEY_PASSWORD=%s\n' "$store_pass" "$store_pass" > /srv/wave-play-signing/signing.env
             chmod 600 /srv/wave-play-signing/wave-upload.jks /srv/wave-play-signing/signing.env
           fi
           test -s /srv/wave-play-signing/wave-upload.jks
