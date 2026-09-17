@@ -1,0 +1,75 @@
+name: WAVE RC15.6 Production Preflight
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - '.github/workflows/wave-rc15-6-prod-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_VM: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Inspect GCP network and IP mutability
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo '=== INSTANCE ==='
+          gcloud compute instances describe "$GCP_VM" --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID" \
+            --format='yaml(name,zone.basename(),networkInterfaces[0].network.basename(),networkInterfaces[0].accessConfigs[0].natIP,tags.items)'
+          IP="$(gcloud compute instances describe "$GCP_VM" --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID" --format='value(networkInterfaces[0].accessConfigs[0].natIP)')"
+          echo "PUBLIC_IP=$IP"
+          echo '=== RESERVED ADDRESSES ==='
+          gcloud compute addresses list --project "$GCP_PROJECT_ID" --filter="address=$IP" --format='table(name,address,addressType,status,region.basename())' || true
+          echo '=== FIREWALL ==='
+          gcloud compute firewall-rules list --project "$GCP_PROJECT_ID" --filter='direction=INGRESS AND disabled=false' --format='table(name,network.basename(),sourceRanges.list():label=SOURCE,targetTags.list():label=TAGS,allowed[].map().firewall_rule().list():label=ALLOW)' | sed -n '1,180p'
+          echo '=== IAM WRITE PROBES (no mutation) ==='
+          gcloud projects get-iam-policy "$GCP_PROJECT_ID" --flatten='bindings[].members' --filter="bindings.members:serviceAccount:${GCP_SERVICE_ACCOUNT}" --format='value(bindings.role)' | sort || true
+      - name: Inspect Cloudflare Worker/D1 inventory using existing repo secrets
+        shell: bash
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$CF_API_TOKEN" && test -n "$CF_ACCOUNT_ID"
+          python3 - <<'PY'
+          import json, os, urllib.request
+          token=os.environ['CF_API_TOKEN']; account=os.environ['CF_ACCOUNT_ID']
+          def get(path):
+              req=urllib.request.Request('https://api.cloudflare.com/client/v4'+path,headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
+              with urllib.request.urlopen(req,timeout=30) as r: return json.load(r)
+          workers=get(f'/accounts/{account}/workers/scripts')
+          print('WORKERS_OK=',workers.get('success'))
+          for item in workers.get('result',[]):
+              name=item.get('id') or item.get('script_name') or item.get('name')
+              if name: print('WORKER',name)
+          try:
+              sub=get(f'/accounts/{account}/workers/subdomain')
+              print('WORKERS_SUBDOMAIN', (sub.get('result') or {}).get('subdomain',''))
+          except Exception as e: print('WORKERS_SUBDOMAIN_ERROR',type(e).__name__)
+          try:
+              d1=get(f'/accounts/{account}/d1/database?per_page=100')
+              print('D1_OK=',d1.get('success'))
+              for db in d1.get('result',[]): print('D1',db.get('name',''),db.get('uuid',''))
+          except Exception as e: print('D1_ERROR',type(e).__name__)
+          PY
