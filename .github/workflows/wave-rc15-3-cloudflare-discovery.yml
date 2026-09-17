@@ -45,7 +45,6 @@ jobs:
           fi
           if [ -n "$db_id" ] && [ "$db_id" != null ]; then
             echo 'WAVE_D1=FOUND'
-            echo "db_id=$db_id" >> "$GITHUB_OUTPUT"
           else
             echo 'WAVE_D1=NOT_FOUND'
           fi
@@ -53,7 +52,13 @@ jobs:
           workers="$(curl -fsS -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts" || true)"
           if echo "$workers" | jq -e '.success == true' >/dev/null 2>&1; then
             echo 'WORKERS_LIST=PASS'
-            echo "$workers" | jq -r '.result[]?.id' | grep -E '^wave-mawja$' >/dev/null && echo 'WAVE_WORKER=FOUND' || echo 'WAVE_WORKER=NOT_FOUND'
+            echo "$workers" | jq -r '.result[]?.id' | grep -Ei 'wave|mawja|stream' | sed 's/^/WAVE_WORKER_CANDIDATE=/' || true
+            echo "$workers" | jq -r '.result[]?.id' | grep -E '^wave-mawja$' >/dev/null && echo 'WAVE_WORKER_EXACT=FOUND' || echo 'WAVE_WORKER_EXACT=NOT_FOUND'
           else
             echo 'WORKERS_LIST=UNAVAILABLE'
+          fi
+
+          subdomain="$(curl -fsS -H "$auth" "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/subdomain" || true)"
+          if echo "$subdomain" | jq -e '.success == true' >/dev/null 2>&1; then
+            echo "WORKERS_SUBDOMAIN=$(echo "$subdomain" | jq -r '.result.subdomain // ""')"
           fi
