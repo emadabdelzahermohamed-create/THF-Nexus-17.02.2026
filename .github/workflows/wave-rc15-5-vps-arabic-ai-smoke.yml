@@ -75,11 +75,11 @@ jobs:
           espeak-ng -v en-us -s 135 -w "$ROOT/test/english.wav" 'Hello. This is a real test of automatic translation and Arabic dubbing for Wave Mawja.'
           ffmpeg -hide_banner -loglevel error -y -f lavfi -i color=c=black:s=640x360:d=8 -i "$ROOT/test/english.wav" -shortest -c:v libx264 -pix_fmt yuv420p -c:a aac "$ROOT/test/english.mp4"
 
-          docker build -q -f Dockerfile.ai -t wave-rc155-ai .
-          docker volume create wave-rc155-ai-model-cache >/dev/null
+          sudo docker build -q -f Dockerfile.ai -t wave-rc155-ai .
+          sudo docker volume create wave-rc155-ai-model-cache >/dev/null
           COMMON='-e DATABASE_URL=postgresql://wave:wave@127.0.0.1:5432/wave -e REDIS_URL=redis://127.0.0.1:6379/0 -e S3_ENDPOINT=http://127.0.0.1:9000 -e S3_INTERNAL_ENDPOINT=http://127.0.0.1:9000 -e S3_ACCESS_KEY=smoke -e S3_SECRET_KEY=smoke -e S3_BUCKET=smoke -e S3_SOURCE_BUCKET=smoke -e PUBLIC_MEDIA_BASE_URL=http://127.0.0.1/media'
           # shellcheck disable=SC2086
-          docker run --rm $COMMON \
+          sudo docker run --rm $COMMON \
             -e WHISPER_MODEL=tiny -e AI_DEVICE=cpu -e AI_COMPUTE_TYPE=int8 \
             -e TRANSLATION_MODEL=facebook/nllb-200-distilled-600M -e TRANSLATION_BEAMS=2 \
             -v "$ROOT/test:/test" -v wave-rc155-ai-model-cache:/root/.cache/huggingface \
@@ -101,11 +101,11 @@ jobs:
           Path('/test/translation-result.json').write_text(json.dumps({'detected':language,'confidence':confidence,'source':texts,'arabic':ar,'spanish_to_arabic':es,'elapsed_seconds':round(time.time()-start,2)},ensure_ascii=False,indent=2),encoding='utf-8')
           print('TRANSLATION_OK', json.dumps({'detected':language,'confidence':confidence,'source':texts,'arabic':ar,'spanish_to_arabic':es},ensure_ascii=False))
           PY
-          echo "AI_MODEL_CACHE_BYTES=$(docker run --rm -v wave-rc155-ai-model-cache:/cache alpine sh -c 'du -sb /cache | cut -f1')"
+          echo "AI_MODEL_CACHE_BYTES=$(sudo docker run --rm -v wave-rc155-ai-model-cache:/cache alpine sh -c 'du -sb /cache | cut -f1')"
 
           # A second translator load uses the persistent cache rather than downloading models again.
           # shellcheck disable=SC2086
-          docker run --rm $COMMON \
+          sudo docker run --rm $COMMON \
             -e WHISPER_MODEL=tiny -e AI_DEVICE=cpu -e AI_COMPUTE_TYPE=int8 \
             -e TRANSLATION_MODEL=facebook/nllb-200-distilled-600M -e TRANSLATION_BEAMS=1 \
             -v wave-rc155-ai-model-cache:/root/.cache/huggingface \
@@ -117,10 +117,10 @@ jobs:
           print('CACHE_REUSE_TRANSLATION_OK',round(time.time()-t,2),out)
           PY
 
-          docker build -q -f Dockerfile.dubbing -t wave-rc155-dubbing .
-          docker volume create wave-rc155-dubbing-model-cache >/dev/null
+          sudo docker build -q -f Dockerfile.dubbing -t wave-rc155-dubbing .
+          sudo docker volume create wave-rc155-dubbing-model-cache >/dev/null
           # shellcheck disable=SC2086
-          docker run --rm $COMMON \
+          sudo docker run --rm $COMMON \
             -e AI_DEVICE=cpu \
             -v "$ROOT/test:/test" -v wave-rc155-dubbing-model-cache:/root/.cache/huggingface \
             --entrypoint python wave-rc155-dubbing - <<'PY'
@@ -138,7 +138,7 @@ jobs:
           print('DUBBING_OK',profile_id,final.stat().st_size)
           PY
           ffprobe -v error -show_entries format=duration,size -of json "$ROOT/test/arabic-dub.m4a"
-          echo "DUB_MODEL_CACHE_BYTES=$(docker run --rm -v wave-rc155-dubbing-model-cache:/cache alpine sh -c 'du -sb /cache | cut -f1')"
+          echo "DUB_MODEL_CACHE_BYTES=$(sudo docker run --rm -v wave-rc155-dubbing-model-cache:/cache alpine sh -c 'du -sb /cache | cut -f1')"
           echo '=== translation result ==='
           cat "$ROOT/test/translation-result.json"
           REMOTE
