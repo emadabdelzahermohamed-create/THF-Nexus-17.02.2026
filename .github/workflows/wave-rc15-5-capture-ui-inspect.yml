@@ -1,0 +1,55 @@
+name: WAVE RC15.5 Capture UI Inspect
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths: ['.github/workflows/wave-rc15-5-capture-ui-inspect.yml']
+permissions: {contents: read, id-token: write}
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']);c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120);r.raise_for_status();open('b.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  b.zip" | sha256sum -c -
+          mkdir src; unzip -q b.zip -d src; cd src; git init -q; git add .; git -c user.name=x -c user.email=x@x.invalid commit -qm b
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 - <<'PY'
+          from pathlib import Path
+          needles=('resolve-vps-page','auto-import-url','capture-results','browser-ingest','stream-import-url')
+          for p in Path('.').rglob('*'):
+              if not p.is_file() or p.suffix not in {'.ts','.tsx','.js','.jsx'}: continue
+              try: lines=p.read_text(encoding='utf-8').splitlines()
+              except Exception: continue
+              hits=[i for i,l in enumerate(lines) if any(n in l for n in needles)]
+              if not hits: continue
+              print(f'===== {p} =====')
+              shown=set()
+              for i in hits:
+                  a=max(0,i-20); b=min(len(lines),i+35)
+                  key=(a,b)
+                  if key in shown: continue
+                  shown.add(key)
+                  for n in range(a,b): print(f'{n+1:04d}: {lines[n]}')
+                  print('---')
+          PY
