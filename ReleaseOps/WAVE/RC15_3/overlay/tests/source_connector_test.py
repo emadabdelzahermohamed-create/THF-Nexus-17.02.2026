@@ -40,36 +40,21 @@ def manifest() -> dict[str, object]:
         },
         "allowed_media_hosts": ["cdn.partner.example"],
         "items": [
-            {
-                "external_id": "film:42", "kind": "movie", "slug": "licensed-film-42",
-                "source_url": "https://cdn.partner.example/film.mp4", "title": {"ar": "الفيلم"},
-                "downloads_allowed": True, "ads_allowed": True,
-            },
-            {
-                "external_id": "show:42:s01e01", "kind": "episode", "slug": "licensed-show-42-s01e01",
-                "source_url": "https://cdn.partner.example/s01e01.mp4", "title": {"en": "Episode one"},
-                "series": {"slug": "licensed-show-42", "title": {"en": "Licensed Show"}},
-                "season_number": 1, "episode_number": 1, "downloads_allowed": False, "ads_allowed": True,
-            },
+            {"external_id": "film:42", "kind": "movie", "slug": "licensed-film-42", "source_url": "https://cdn.partner.example/film.mp4", "title": {"ar": "الفيلم"}, "downloads_allowed": True, "ads_allowed": True},
+            {"external_id": "show:42:s01e01", "kind": "episode", "slug": "licensed-show-42-s01e01", "source_url": "https://cdn.partner.example/s01e01.mp4", "title": {"en": "Episode one"}, "series": {"slug": "licensed-show-42", "title": {"en": "Licensed Show"}}, "season_number": 1, "episode_number": 1, "downloads_allowed": False, "ads_allowed": True},
         ],
     }
 
 
 class SourceConnectorTests(unittest.TestCase):
     def test_all_21_product_languages_are_normalized_and_translatable(self) -> None:
-        expected = (
-            "ar", "en", "zh", "hi", "ko", "ja", "tr", "es", "fr", "pt", "de",
-            "it", "ru", "id", "th", "fa", "ur", "bn", "ms", "pl", "vi",
-        )
+        expected = ("ar", "en", "zh", "hi", "ko", "ja", "tr", "es", "fr", "pt", "de", "it", "ru", "id", "th", "fa", "ur", "bn", "ms", "pl", "vi")
         self.assertEqual(LOCALES, expected)
         result = normalize_manifest_document(manifest(), "CONTRACT-42", "partner.example")
         self.assertEqual(tuple(result["items"][0]["title"]), expected)
         worker_path = Path(__file__).resolve().parents[1] / "media-server" / "ai-worker" / "ai_worker.py"
         tree = ast.parse(worker_path.read_text(encoding="utf-8"))
-        language_node = next(
-            node.value for node in tree.body
-            if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "LANGUAGES" for target in node.targets)
-        )
+        language_node = next(node.value for node in tree.body if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "LANGUAGES" for target in node.targets))
         languages = ast.literal_eval(language_node)
         self.assertEqual(tuple(languages), expected)
         self.assertEqual(len(languages), 21)
@@ -78,7 +63,7 @@ class SourceConnectorTests(unittest.TestCase):
         self.assertIn("NLLB_CODES = {", worker_source)
         self.assertIn("tokenizer.src_lang = NLLB_CODES[source_language]", worker_source)
         self.assertIn("forced_bos_token_id=int(forced_bos)", worker_source)
-        self.assertNotIn("google/madlad400-3b-mt", worker_source)
+        self.assertNotIn("madlad400", worker_source)
 
     def test_normalizes_authorized_movie_and_episode(self) -> None:
         result = normalize_manifest_document(manifest(), "CONTRACT-42", "partner.example")
