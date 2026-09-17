@@ -6,6 +6,7 @@ on:
       - releaseops/wave-rc15-3-20260917
     paths:
       - '.github/workflows/wave-rc15-3-cloudflare-deploy.yml'
+      - 'ReleaseOps/WAVE/RC15_3/**'
   workflow_dispatch:
 
 permissions:
@@ -122,17 +123,23 @@ jobs:
           ' dist/server/wrangler.json >/dev/null
           echo 'RELEASE_GATES_AND_BUILD=PASS'
 
-      - name: Confirm only RC15.3 auth migration is pending
+      - name: Confirm RC15.3 migration state is safe
         working-directory: wave-src
         shell: bash
         run: |
           set -Eeuo pipefail
           npx wrangler@4.119.0 d1 migrations list "$CLOUDFLARE_D1_DATABASE_NAME" --remote --config dist/server/wrangler.json | tee ../WAVE_RC15_3_MIGRATIONS_BEFORE.txt
-          grep -q '0011_wave_first_party_auth.sql' ../WAVE_RC15_3_MIGRATIONS_BEFORE.txt
-          ! grep -Eq '000[0-9]_.*\.sql|0010_wave_browser_ingest\.sql' ../WAVE_RC15_3_MIGRATIONS_BEFORE.txt
-          echo 'MIGRATION_SCOPE=0011_ONLY'
+          if grep -q '0011_wave_first_party_auth.sql' ../WAVE_RC15_3_MIGRATIONS_BEFORE.txt; then
+            ! grep -Eq '000[0-9]_.*\.sql|0010_wave_browser_ingest\.sql' ../WAVE_RC15_3_MIGRATIONS_BEFORE.txt
+            echo 'MIGRATION_SCOPE=0011_ONLY'
+          elif grep -q 'No migrations to apply' ../WAVE_RC15_3_MIGRATIONS_BEFORE.txt; then
+            echo 'MIGRATION_SCOPE=ALREADY_APPLIED'
+          else
+            echo 'Unexpected migration state' >&2
+            exit 31
+          fi
 
-      - name: Export D1 backup before migration
+      - name: Export D1 backup before deploy
         working-directory: wave-src
         shell: bash
         run: |
@@ -156,7 +163,7 @@ jobs:
           gcloud compute scp WAVE_D1_BEFORE_RC15_3.sql WAVE_D1_BEFORE_RC15_3.sql.sha256 "$GCP_BUILDER:~/$remote_dir/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
           echo "PRIVATE_BACKUP_STAGE=PASS path=~/$remote_dir/"
 
-      - name: Apply RC15.3 D1 migration
+      - name: Apply RC15.3 D1 migrations idempotently
         working-directory: wave-src
         shell: bash
         run: |
@@ -166,8 +173,8 @@ jobs:
           grep -q 'wave_credentials' ../WAVE_RC15_3_AUTH_TABLES_AFTER.txt
           grep -q 'wave_sessions' ../WAVE_RC15_3_AUTH_TABLES_AFTER.txt
           npx wrangler@4.119.0 d1 migrations list "$CLOUDFLARE_D1_DATABASE_NAME" --remote --config dist/server/wrangler.json | tee ../WAVE_RC15_3_MIGRATIONS_AFTER.txt
-          ! grep -q '0011_wave_first_party_auth.sql' ../WAVE_RC15_3_MIGRATIONS_AFTER.txt
-          echo 'D1_MIGRATION_0011=PASS'
+          grep -q 'No migrations to apply' ../WAVE_RC15_3_MIGRATIONS_AFTER.txt
+          echo 'D1_MIGRATION_STATE=PASS'
 
       - name: Deploy only WAVE worker
         working-directory: wave-src
