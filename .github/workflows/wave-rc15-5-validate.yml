@@ -1,0 +1,64 @@
+name: WAVE RC15.5 Validate
+on:
+  push:
+    branches: [releaseops/wave-rc15-3-20260917]
+    paths:
+      - 'ReleaseOps/WAVE/RC15_5/**'
+      - '.github/workflows/wave-rc15-5-validate.yml'
+permissions:
+  contents: read
+  id-token: write
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Reconstruct and patch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']);c.refresh(Request())
+          r=requests.get('https://www.googleapis.com/drive/v3/files/'+os.environ['DRIVE_FILE_ID']+'?alt=media',headers={'Authorization':'Bearer '+c.token},timeout=120);r.raise_for_status();open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir src && unzip -q base.zip -d src
+          cd src
+          git init -q && git add . && git -c user.name=x -c user.email=x@x.invalid commit -qm base
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+      - name: Python syntax and patch assertions
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd src
+          python3 -m py_compile media-server/api/main.py media-server/worker/worker.py media-server/ai-worker/ai_worker.py media-server/dubbing-worker/dubbing_worker.py media-server/live-worker/live_worker.py
+          grep -q 'yt-dlp\[default\]==2026.8.19' media-server/worker/requirements.txt
+          grep -q 'AI_TARGET_LANGUAGES=ar' media-server/.env.example
+          grep -q 'json.dumps(\["subtitles", "dubbing"\])' media-server/worker/worker.py
+          grep -q 'source_language != "ar"' media-server/ai-worker/ai_worker.py
+          grep -q '@app.post("/v1/captures"' media-server/api/main.py
+          grep -q 'action === "capture-vps-page"' app/api/control/route.ts
+          grep -q 'جلب الفيديو وحفظه عبر VPS' components/browser-ingest-panel.tsx
+      - name: TypeScript build check
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd src
+          npm ci --ignore-scripts
+          npm run build
