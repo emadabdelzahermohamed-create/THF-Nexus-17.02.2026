@@ -54,14 +54,20 @@ jobs:
           git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
           cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
 
-      - name: Print current VOD and live transcoding source
+      - name: Print current VOD live and ingest integration source
         shell: bash
         run: |
           set -Eeuo pipefail
           cd wave-src
           echo '===== media-server/worker/abr.py ====='
           sed -n '1,260p' media-server/worker/abr.py
+          echo '===== media-server/worker/worker.py 220-325 ====='
+          sed -n '220,325p' media-server/worker/worker.py
           echo '===== media-server/live-worker/live_worker.py ====='
-          sed -n '1,320p' media-server/live-worker/live_worker.py
-          echo '===== FFmpeg/HLS references ====='
-          grep -RInE 'ffmpeg|hls|m3u8|transcod|rendition|variant|bitrate|rtmp|srt' media-server app scripts 2>/dev/null | head -n 500 || true
+          sed -n '1,340p' media-server/live-worker/live_worker.py
+          echo '===== app/api/control/route.ts 1060-1225 ====='
+          sed -n '1060,1225p' app/api/control/route.ts
+          echo '===== media-server/api/main.py 1260-1425 ====='
+          sed -n '1260,1425p' media-server/api/main.py
+          echo '===== browser ingest route ====='
+          sed -n '1,220p' app/api/browser-ingest/route.ts
