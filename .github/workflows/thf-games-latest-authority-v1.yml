@@ -41,7 +41,60 @@ jobs:
         run: |
           set -Eeuo pipefail
           grep -q '^LATEST_GAME_AUTHORITY=PASS$' latest-game-authority.txt
-          grep -q '^terra_version=RC34 Phone V4$' latest-game-authority.txt
+          grep -q '^terra_version=RC34 baseline / RuinsCiv identity migration
+          grep -q '^terra_candidate_apk_sha256=NONE
+          grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
+          grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
+          grep -q '^spark_version=APPS RC4 + real-game overlay$' latest-game-authority.txt
+          grep -q '^spark_candidate_apk_sha256=9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea$' latest-game-authority.txt
+          grep -q '^rush_version=APPS RC4 + Native Verified-Motion V2 + product identity fix$' latest-game-authority.txt
+          grep -q '^rush_candidate_apk_sha256=f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f$' latest-game-authority.txt
+          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-GAMES-LATEST-AUTHORITY-V1
+          path: |
+            latest-game-authority.txt
+            ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json
+            ReleaseOps/games/RUSH_RC4_NATIVE_V2_CANDIDATE_20260915.json
+            ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md
+          retention-days: 14
+ latest-game-authority.txt
+          grep -q '^terra_candidate_apk_sha256=e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec$' latest-game-authority.txt
+          grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
+          grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
+          grep -q '^spark_version=APPS RC4 + real-game overlay$' latest-game-authority.txt
+          grep -q '^spark_candidate_apk_sha256=9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea$' latest-game-authority.txt
+          grep -q '^rush_version=APPS RC4 + Native Verified-Motion V2 + product identity fix$' latest-game-authority.txt
+          grep -q '^rush_candidate_apk_sha256=f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f$' latest-game-authority.txt
+          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-GAMES-LATEST-AUTHORITY-V1
+          path: |
+            latest-game-authority.txt
+            ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json
+            ReleaseOps/games/RUSH_RC4_NATIVE_V2_CANDIDATE_20260915.json
+            ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md
+          retention-days: 14
+ latest-game-authority.txt
+          grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
+          grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
+          grep -q '^spark_version=APPS RC4 + real-game overlay$' latest-game-authority.txt
+          grep -q '^spark_candidate_apk_sha256=9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea$' latest-game-authority.txt
+          grep -q '^rush_version=APPS RC4 + Native Verified-Motion V2 + product identity fix$' latest-game-authority.txt
+          grep -q '^rush_candidate_apk_sha256=f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f$' latest-game-authority.txt
+          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-GAMES-LATEST-AUTHORITY-V1
+          path: |
+            latest-game-authority.txt
+            ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json
+            ReleaseOps/games/RUSH_RC4_NATIVE_V2_CANDIDATE_20260915.json
+            ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md
+          retention-days: 14
+ latest-game-authority.txt
           grep -q '^terra_candidate_apk_sha256=e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec$' latest-game-authority.txt
           grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
           grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
