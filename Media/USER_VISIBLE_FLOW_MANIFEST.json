@@ -1,0 +1,18 @@
+{
+  "version": "3.0.0-standalone-rc1",
+  "app": "Media",
+  "capabilities": [
+    {"name": "feed/media", "visible": true},
+    {"name": "standalone account/login", "visible": true},
+    {"name": "profiles", "visible": true},
+    {"name": "follow", "visible": true},
+    {"name": "direct chat", "visible": true},
+    {"name": "WebRTC call foundation", "visible": true},
+    {"name": "block/mute/report", "visible": true},
+    {"name": "privacy/data saver", "visible": true}
+  ],
+  "identity_authority": "server-side Media session",
+  "thf_pass_handoff": false,
+  "empty_loading_error_states": "fail-closed",
+  "data_saver_privacy": "no cross-app identity database dependency"
+}
