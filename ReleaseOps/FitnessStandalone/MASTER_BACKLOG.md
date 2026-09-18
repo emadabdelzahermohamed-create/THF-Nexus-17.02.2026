@@ -27,7 +27,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [ ] Preserve optional THF ecosystem identity bridge without making Fitness dependent on it.
 
 ## P2 — Production backend + web parity
-- [ ] Stable HTTPS API endpoint; no temporary tunnels in production config. Fail-closed contract recorded in `PRODUCTION_HOSTING_GATE.md`.
+- [x] Stable HTTPS API endpoint established at `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`; no temporary tunnel. Fail-closed contract recorded in `PRODUCTION_HOSTING_GATE.md`.
 - [ ] Fitness mobile sync endpoint and durable queue reconciliation verified against production.
 - [ ] Publish responsive Web/PWA using the same API and account data as Android.
 - [ ] Offline subset remains usable; ranked/economy-sensitive outcomes remain server-authoritative.
@@ -62,7 +62,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [ ] Verify install from Play Internal and post-upload runtime.
 
 ## P7 — Web production
-- [ ] Deploy production web service.
+- [x] Deploy production web service to AppDeploy HTTPS endpoint; deployment status `ready` with no frontend/backend runtime errors.
 - [ ] Verify auth, workouts, avatar, sync, offline/online behavior and account deletion.
 - [ ] Verify mobile-web parity against Android account data.
 - [ ] Post-deploy smoke and rollback checkpoint.
@@ -83,12 +83,12 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Evidence artifact: `thf-fitness-v5-rc2-main-auth-gate`, artifact id `10533239127`, digest `sha256:c7f2a83497acc6e15b279e969ab927b01f8bef8398f766d1a31d7147407da281`.
 - Debug APK SHA-256: `cfc5abb2b73cccdab338b3ec73205aad3bc6fb80557bf0f41a7a384e667e97d2`.
 - Unsigned release AAB SHA-256: `ce8e8772665e4bc94f4c334a650079d93175ebf9b8ead053a62e0ee49988410a` — DO NOT publish this unsigned AAB.
-- Production blockers reported by the successful gate: `base_url_configured=no`, `pass_url_configured=no`; production signing remains unconfigured.
+- Previous base URL blocker is resolved: Web/backend deployed at `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`. Main Android gate commit `cd38292439eef0567776186d12e9b6d99825cca7` now injects this HTTPS URL as `THF_FITNESS_BASE_URL`. `THF_PASS_URL` and production signing remain unconfigured.
 - Infrastructure re-probe 2026-09-18: connected DigitalOcean account still has zero droplets. Repository searches found no authoritative committed `THF_FITNESS_BASE_URL` or Fitness Cloud Run deployment contract. Creating new paid infrastructure remains owner-gated.
 - Hosting acceptance/rollback requirements are checkpointed in `PRODUCTION_HOSTING_GATE.md` (`294a9bf221ece68dfb05c8e1c581bf327ba558e4`).
 - Play pre/post-upload requirements are checkpointed in `PLAY_RELEASE_GATE.md` (`074d83480284667a5fda8c4a877080564e7e3e4a`).
 - P8 dependency/network/auth/Play-Integrity evidence requirements are checkpointed in `SECURITY_RELEASE_GATE.md` (`59cc26ce87a2c30631fac17db0005d6fea7dd6df`).
-- Next priority: establish stable HTTPS backend/Web hosting using already-authorized infrastructure if available, then configure production OAuth, production signing, physical-device QA and Play Internal. While hosting is owner-blocked, continue independent dependency/network-security and release-hardening evidence without weakening any gate.
+- Next priority: observe the Android rebuild against the live HTTPS backend, then configure production OAuth/signing, physical-device QA and Play Internal. Do not mark Android/Web cross-device sync PASS until the rebuilt Android artifact is exercised against the same production account/data.
 
 ## Execution policy
 Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
