@@ -1,6 +1,12 @@
 name: WAVE Cloudflare Auth Gate
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-cloudflare-auth-gate.yml'
+      - 'ReleaseOps/WAVE/**'
 permissions:
   contents: read
 jobs:
