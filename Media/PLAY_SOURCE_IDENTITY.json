@@ -1,0 +1,12 @@
+{
+  "applicationId": "com.topherofit.media",
+  "namespace": "com.topherofit.media",
+  "targetSdk": 36,
+  "minSdk": 26,
+  "versionCode": 30001,
+  "versionName": "3.0.0-standalone-rc1",
+  "identity": "Media Identity",
+  "release_endpoint_property": "MEDIA_BASE_URL",
+  "google_web_client_property": "MEDIA_GOOGLE_WEB_CLIENT_ID",
+  "note": "Production Play AAB still requires upload signing credentials and Play Console authorization."
+}
