@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_utc": "2026-09-18T03:10:00Z",
+  "updated_utc": "2026-09-18T04:12:00Z",
   "product": "RuinsCiv",
   "identity": {
     "public_name": "RuinsCiv",
@@ -12,25 +12,18 @@
     "source_generation": "RC34 gameplay/avatar/world lineage or later approved improvement",
     "historical_authority_source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
     "historical_rc34_phone_v4_apk_sha256": "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
+    "historical_rc34_build_commit": "798b6391b5545d949bd72ac2ce70a3ed13bd119b",
+    "historical_rc34_actions_run": 34861284297,
+    "historical_rc34_artifact_id": 10355450211,
+    "historical_rc34_artifact_digest": "sha256:8b30603c2bb3f7d5f166d03d298eb7807350c900d5104061d9a9361a1cbdcd02",
+    "builder_source_path_from_rc34_script": "~/thf-terra-rift-staging-apk-v1/terra/work",
     "engine": "Godot 4.7.2",
     "target_sdk": 36,
     "arm64_required": true,
     "physical_device_status": "PENDING"
   },
-  "superseded_public_identities": [
-    "THF World",
-    "Terra",
-    "com.topherofit.thf.terra",
-    "com.topherofit.thf.terra.phoneqa"
-  ],
-  "forbidden_new_output_surfaces": [
-    "APK/AAB package identity",
-    "Play listing",
-    "OAuth app registration",
-    "production web branding",
-    "Digital Asset Links",
-    "release metadata"
-  ],
+  "superseded_public_identities": ["THF World", "Terra", "com.topherofit.thf.terra", "com.topherofit.thf.terra.phoneqa"],
+  "forbidden_new_output_surfaces": ["APK/AAB package identity", "Play listing", "OAuth app registration", "production web branding", "Digital Asset Links", "release metadata"],
   "isolation": {
     "wave_secrets_reuse": false,
     "separate_runtime": true,
@@ -45,5 +38,14 @@
     "resource_removal": "PROVE_APPROVED_REPLACEMENT_THEN_RECORD_REMOVAL",
     "source_downgrade": "FORBIDDEN"
   },
-  "status": "IDENTITY_POLICY_ESTABLISHED_SOURCE_REBUILD_PENDING"
+  "evidence_findings": [
+    {
+      "id": "RC34-V4-LEGACY-EXPORT-001",
+      "status": "MUST_NOT_PROPAGATE",
+      "finding": "Historical RC34 Phone V4 build script explicitly added res://web/static/assets/avatars/thf_humanoid_v6.glb to export_files alongside the approved MPFB asset.",
+      "consequence": "Historical APK remains provenance evidence only; it is not eligible to become a new RuinsCiv APK/AAB. The recovered RuinsCiv source/export must remove the v6 active-export reference only after proving the approved MPFB replacement is present."
+    }
+  ],
+  "release_gate": "ReleaseOps/RuinsCiv/ruinsciv_release_identity_gate.py",
+  "status": "IDENTITY_POLICY_ESTABLISHED_RC34_PROVENANCE_NARROWED_LEGACY_V6_EXPORT_FOUND_SOURCE_RECOVERY_PENDING"
 }
