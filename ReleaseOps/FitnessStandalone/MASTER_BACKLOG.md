@@ -13,6 +13,14 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Web and Android must share the same production backend, account identity and synchronized user data.
 
 
+
+## P0 — Final product scope / no-regression contract
+- [ ] Treat `ReleaseOps/FitnessStandalone/FINAL_PRODUCT_SCOPE_20260918.md` as binding product scope for the next production candidate.
+- [ ] No final release may regress to the simplified RC2 UX if agreed Fitness surfaces are absent.
+- [ ] User-visible professional UX required across sports/training, 3D Motion Coach, health/wearables, trainers/gyms, nutrition, supplement safety, habit change, competitions, reports and settings.
+- [ ] Scientific/safety source policy and license/provenance checks required for imported/open-source content.
+- [ ] Backend-only capability does not satisfy completion.
+
 ### P0 — User-visible parity gate
 - [ ] No backend-only release claims: every material Fitness capability must have a usable UI surface and UI acceptance evidence.
 - [ ] Render canonical Stage16A 3D asset in a visible user flow; text metadata alone is not sufficient.
