@@ -1,0 +1,91 @@
+name: THF Fitness Canonical Avatar Asset Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-fitness-publish-avatar-asset.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  ASSET_BRANCH: fitness-assets
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  SOURCE_DRIVE_FILE_ID: 1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-
+  SOURCE_SHA256: 2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74
+  AVATAR_SHA256: 4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f
+  ASSET_PATH: public-assets/fitness/stage16a/thf_mpfb_stage16a_ual12_animated.glb
+
+jobs:
+  publish-canonical-avatar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout asset branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.ASSET_BRANCH }}
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Authenticate source Drive
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: true
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+
+      - name: Extract exact canonical Stage16A asset
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 4 \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://www.googleapis.com/drive/v3/files/$SOURCE_DRIVE_FILE_ID?alt=media" \
+            -o /tmp/fitness-source.zip
+          echo "$SOURCE_SHA256  /tmp/fitness-source.zip" | sha256sum -c -
+          mkdir -p "$(dirname "$ASSET_PATH")"
+          unzip -p /tmp/fitness-source.zip static/assets/avatar/thf_mpfb_stage16a_ual12_animated.glb > "$ASSET_PATH"
+          echo "$AVATAR_SHA256  $ASSET_PATH" | sha256sum -c -
+          printf '%s  %s\n' "$AVATAR_SHA256" "$ASSET_PATH" > public-assets/fitness/stage16a/SHA256SUMS.txt
+
+      - name: Commit asset only when changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "thf-release-bot"
+          git config user.email "thf-release-bot@users.noreply.github.com"
+          git add "$ASSET_PATH" public-assets/fitness/stage16a/SHA256SUMS.txt
+          if git diff --cached --quiet; then
+            echo "asset_changed=no"
+          else
+            git commit -m "assets(fitness): publish canonical Stage16A 137j 195clip GLB"
+            git push origin "HEAD:$ASSET_BRANCH"
+            echo "asset_changed=yes"
+          fi
+
+      - name: Verify public raw URL metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          RAW="https://raw.githubusercontent.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/$ASSET_BRANCH/$ASSET_PATH"
+          for i in 1 2 3 4 5; do
+            code="$(curl -L -sS -o /tmp/public.glb -w '%{http_code}' "$RAW" || true)"
+            if [[ "$code" == "200" ]]; then
+              echo "$AVATAR_SHA256  /tmp/public.glb" | sha256sum -c -
+              curl -L -sSI "$RAW" > /tmp/headers.txt
+              cat /tmp/headers.txt
+              exit 0
+            fi
+            sleep 3
+          done
+          exit 1
