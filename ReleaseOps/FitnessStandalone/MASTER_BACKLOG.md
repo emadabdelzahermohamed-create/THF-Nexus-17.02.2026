@@ -58,12 +58,12 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [ ] Create/configure standalone Fitness Play app if not already present.
 - [ ] Internal Testing upload only after Android gates pass. Fail-closed checklist recorded in `PLAY_RELEASE_GATE.md`; unsigned RC2 is explicitly non-publishable.
 - [ ] Data Safety, Health Apps declaration, App Access, content rating, target audience.
-- [ ] Privacy policy + account deletion URL.
+- [x] Privacy policy + account deletion URL published on the production HTTPS host.
 - [ ] Verify install from Play Internal and post-upload runtime.
 
 ## P7 — Web production
 - [x] Deploy production web service to AppDeploy HTTPS endpoint; deployment status `ready` with no frontend/backend runtime errors.
-- [ ] Verify auth, workouts, avatar, sync, offline/online behavior and account deletion.
+- [ ] Verify auth, workouts, avatar, sync and offline/online behavior end-to-end. Account deletion endpoint/UI and public deletion instructions are deployed; full production regression remains open.
 - [ ] Verify mobile-web parity against Android account data.
 - [ ] Post-deploy smoke and rollback checkpoint.
 
@@ -88,6 +88,8 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Hosting acceptance/rollback requirements are checkpointed in `PRODUCTION_HOSTING_GATE.md` (`294a9bf221ece68dfb05c8e1c581bf327ba558e4`).
 - Play pre/post-upload requirements are checkpointed in `PLAY_RELEASE_GATE.md` (`074d83480284667a5fda8c4a877080564e7e3e4a`).
 - P8 dependency/network/auth/Play-Integrity evidence requirements are checkpointed in `SECURITY_RELEASE_GATE.md` (`59cc26ce87a2c30631fac17db0005d6fea7dd6df`).
+- Production legal URLs: Privacy `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/privacy.html`; Account deletion `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/account-deletion.html`; Terms `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/terms.html`. Account deletion is authenticated and removes account-scoped goal/workout records in bounded requests before sign-out.
+- Android signing source inspection: canonical RC2 `release` build has no production `signingConfig`. Fail-closed patch script `ReleaseOps/FitnessStandalone/apply_android_signing.py` and contract `ANDROID_SIGNING_CONTRACT.md` were added and locally text-tested PASS. Production upload key material remains external-only.
 - Next priority: observe the Android rebuild against the live HTTPS backend, then configure production OAuth/signing, physical-device QA and Play Internal. Do not mark Android/Web cross-device sync PASS until the rebuilt Android artifact is exercised against the same production account/data.
 
 ## Execution policy
