@@ -44,12 +44,7 @@ jobs:
           echo "ANDROID_PUBLISHER_HTTP=$CODE"
           echo "ANDROID_PUBLISHER_RESPONSE_BYTES=$BYTES"
           if [ "$BYTES" -gt 0 ]; then
-            python3 -c 'import json; from pathlib import Path; p=Path("response.json"); raw=p.read_text(errors="replace");
-try:
- d=json.loads(raw)
-except Exception:
- d={}
-e=d.get("error",{}) if isinstance(d,dict) else {}; print("ANDROID_PUBLISHER_ERROR_CODE="+str(e.get("code",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_STATUS="+str(e.get("status",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_MESSAGE="+str(e.get("message","")).replace("\n"," ")[:400]) if e else None'
+            python3 -c 'import json,pathlib; raw=pathlib.Path("response.json").read_text(errors="replace"); d=json.loads(raw) if raw.strip() else {}; e=d.get("error",{}) if isinstance(d,dict) else {}; print("ANDROID_PUBLISHER_ERROR_CODE="+str(e.get("code",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_STATUS="+str(e.get("status",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_MESSAGE="+str(e.get("message","")).replace("\\n"," ")[:400]) if e else None'
           fi
           case "$CODE" in
             200)
