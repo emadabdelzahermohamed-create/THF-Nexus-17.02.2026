@@ -122,7 +122,7 @@ jobs:
               : > logs/cloudflared.log
               nohup cloudflared tunnel --no-autoupdate --url \"http://127.0.0.1:\$PORT\" > logs/cloudflared.log 2>&1 < /dev/null & echo \$! > terra-tunnel.pid
               URL=''
-              for i in \$(seq 1 40); do URL=\$(grep -Eo 'https://[-a-z0-9]+\\.trycloudflare\\.com' logs/cloudflared.log | tail -1 || true); [ -n \"\$URL\" ] && break; sleep 1; done
+              for i in \$(seq 1 40); do URL=\$(grep -aEo 'https://[-a-z0-9]+\\.trycloudflare\\.com' logs/cloudflared.log | tail -1 || true); [ -n \"\$URL\" ] && break; sleep 1; done
               test -n \"\$URL\"
               printf '%s\n' \"\$URL\" > STAGING_URL.txt
               echo RUINSCIV_STAGING_LOCAL=PASS
