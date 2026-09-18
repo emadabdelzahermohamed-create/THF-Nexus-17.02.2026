@@ -14,8 +14,8 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 
 ## P0 — Source authority + CI
 - [x] Freeze exact source provenance for standalone Fitness branch (RC2 Drive ID + SHA pinned).
-- [x] Add branch-native CI that fails closed on missing/wrong source or avatar.
-- [ ] Produce test APK + unsigned/release-ready AAB evidence with SHA-256.
+- [x] Add CI that fails closed on missing/wrong source or avatar; privileged WIF gate runs from short `main` ref and checks out this canonical Fitness branch.
+- [x] Produce test APK + unsigned release AAB evidence with SHA-256.
 - [x] Store build manifest and reproducible source hash.
 
 ## P1 — Independent identity / login
@@ -75,12 +75,17 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Git checkpoints created for completed development gates.
 - [ ] After every publish: re-verify live Web and Play Internal artifact before advancing.
 
-## Current verified checkpoint — V5 RC2
-- Source SHA-256: `2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74`
+## Current verified checkpoint — V5 RC2 / P0 PASS
+- Source SHA-256: `2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74`.
 - Local tests: 20/20 PASS.
 - Canonical avatar SHA-256: `4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f` (137 joints / 195 clips).
-- Previous CI blockers fixed: obsolete Android setup package; explicit current sdkmanager discovery.
-- Next gate: obtain successful RC2 Android CI artifacts, then deploy a stable HTTPS backend before production OAuth/device/Play gates.
+- Successful CI: `THF Fitness V5 Main Auth Gate`, run `35311644865`, commit `ffa24940dd8e1b8d560194232e521b55058bdd40`.
+- Evidence artifact: `thf-fitness-v5-rc2-main-auth-gate`, artifact id `10533239127`, digest `sha256:c7f2a83497acc6e15b279e969ab927b01f8bef8398f766d1a31d7147407da281`.
+- Debug APK SHA-256: `cfc5abb2b73cccdab338b3ec73205aad3bc6fb80557bf0f41a7a384e667e97d2`.
+- Unsigned release AAB SHA-256: `ce8e8772665e4bc94f4c334a650079d93175ebf9b8ead053a62e0ee49988410a` — DO NOT publish this unsigned AAB.
+- Production blockers reported by the successful gate: `base_url_configured=no`, `pass_url_configured=no`; production signing remains unconfigured.
+- Infrastructure probe 2026-09-18: connected DigitalOcean account currently has zero droplets, so no existing Fitness host can be safely reused there without provisioning new paid infrastructure.
+- Next priority: establish stable HTTPS backend/Web hosting using already-authorized infrastructure if available, then configure production OAuth, production signing, physical-device QA and Play Internal.
 
 ## Execution policy
-Work top-to-bottom. Within each automation run, complete as many safe, independent tasks as possible rather than only one task. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
+Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
