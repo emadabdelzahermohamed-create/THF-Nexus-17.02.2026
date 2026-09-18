@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "updated_utc": "2026-09-18T03:10:00Z",
+  "product": "RuinsCiv",
+  "identity": {
+    "public_name": "RuinsCiv",
+    "android_production_package": "com.topherofit.ruins.civ",
+    "android_qa_package": "com.topherofit.ruins.civ.phoneqa",
+    "oauth_secret_prefix": "RUINSCIV_"
+  },
+  "lineage": {
+    "source_generation": "RC34 gameplay/avatar/world lineage or later approved improvement",
+    "historical_authority_source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
+    "historical_rc34_phone_v4_apk_sha256": "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
+    "engine": "Godot 4.7.2",
+    "target_sdk": 36,
+    "arm64_required": true,
+    "physical_device_status": "PENDING"
+  },
+  "superseded_public_identities": [
+    "THF World",
+    "Terra",
+    "com.topherofit.thf.terra",
+    "com.topherofit.thf.terra.phoneqa"
+  ],
+  "forbidden_new_output_surfaces": [
+    "APK/AAB package identity",
+    "Play listing",
+    "OAuth app registration",
+    "production web branding",
+    "Digital Asset Links",
+    "release metadata"
+  ],
+  "isolation": {
+    "wave_secrets_reuse": false,
+    "separate_runtime": true,
+    "separate_database": true,
+    "separate_oauth_clients": true,
+    "separate_signing": true,
+    "separate_play_listing": true
+  },
+  "migration_policy": {
+    "legacy_thf_humanoid_v1_v6_active_export": "FORBIDDEN",
+    "old_placeholder_geometry_active_export": "FORBIDDEN_EXCEPT_EXPLICIT_PROCEDURAL_FALLBACK",
+    "resource_removal": "PROVE_APPROVED_REPLACEMENT_THEN_RECORD_REMOVAL",
+    "source_downgrade": "FORBIDDEN"
+  },
+  "status": "IDENTITY_POLICY_ESTABLISHED_SOURCE_REBUILD_PENDING"
+}
