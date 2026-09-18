@@ -1,4 +1,4 @@
-name: Terra Auth Capability Inspect
+name: RuinsCiv Auth Capability Inspect
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
           echo '=== SERVICE ACCOUNTS ==='
           gcloud iam service-accounts list --project "$GCP_PROJECT_ID" --format='value(email,displayName)' || true
           echo '=== SECRET NAMES ONLY ==='
-          gcloud secrets list --project "$GCP_PROJECT_ID" --format='value(name)' 2>/dev/null | sed -n '1,200p' || echo SECRET_LIST_NOT_AUTHORIZED
+          gcloud secrets list --project "$GCP_PROJECT_ID" --format='value(name)' 2>/dev/null | grep -Ei 'ruinsciv|sign|keystore|upload|play' | grep -Evi 'wave|mawja' | sed -n '1,100p' || echo RELEVANT_SECRET_LIST_EMPTY_OR_NOT_AUTHORIZED
           echo '=== ENABLED APIS RELEVANT TO RELEASE ==='
           gcloud services list --enabled --project "$GCP_PROJECT_ID" --format='value(config.name)' | grep -E 'androidpublisher|playgames|iamcredentials|secretmanager|compute|run|artifactregistry|cloudbuild' || true
           echo 'NO_SECRET_VALUES_READ=TRUE'
