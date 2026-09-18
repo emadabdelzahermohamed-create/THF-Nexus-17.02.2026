@@ -1,21 +1,30 @@
 {
   "schema": 1,
-  "updated_utc": "2026-09-14T22:31:00Z",
+  "updated_utc": "2026-09-18T01:10:00Z",
   "final_or_play_ready": false,
   "games": {
     "terra": {
-      "user_facing_name": "THF World",
-      "canonical_package_id": "com.topherofit.thf.terra",
-      "qa_package_id": "com.topherofit.thf.terra.phoneqa",
-      "authoritative_version": "RC34 Phone V4",
+      "user_facing_name": "RuinsCiv",
+      "canonical_package_id": "com.topherofit.ruins.civ",
+      "qa_package_id": "com.topherofit.ruins.civ.phoneqa",
+      "authoritative_version": "RC34 baseline / RuinsCiv identity migration",
       "authoritative_source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
-      "eligible_candidate_apk_sha256": "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
+      "eligible_candidate_apk_sha256": null,
       "target_sdk": 36,
       "arm64_required": true,
       "physical_device_status": "PENDING",
       "superseded_apk_sha256": [
+        "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
         "8539af9a7d531f80b14c1b2e4366ac2dda666d042ae8520b4fa1ea299d2d2165"
-      ]
+      ],
+      "candidate_status": "REBUILD_REQUIRED_FOR_FINAL_PACKAGE_ID",
+      "identity_migration": {
+        "final_name": "RuinsCiv",
+        "final_package_id": "com.topherofit.ruins.civ",
+        "approved_utc": "2026-09-18T01:06:00Z",
+        "legacy_name": "THF World / Terra",
+        "legacy_package_id": "com.topherofit.thf.terra"
+      }
     },
     "rift": {
       "user_facing_name": "THF Arena",
