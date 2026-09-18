@@ -69,8 +69,8 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 
 ## P8 — Security/release closure
 - [x] Initial secret-like assignment scan + production user-scope/auth regression.
-- [ ] Dependency review and network-security release audit.
-- [ ] Play Integrity backend exchange for trusted activity/reward paths.
+- [ ] Dependency review and network-security release audit. Fail-closed evidence contract recorded in `SECURITY_RELEASE_GATE.md` (`59cc26ce87a2c30631fac17db0005d6fea7dd6df`).
+- [ ] Play Integrity backend exchange for trusted activity/reward paths; client-only checks do not satisfy release closure.
 - [ ] Final release manifest, SHA-256, changelog and rollback instructions.
 - [x] Git checkpoints created for completed development gates.
 - [ ] After every publish: re-verify live Web and Play Internal artifact before advancing.
@@ -85,9 +85,10 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Unsigned release AAB SHA-256: `ce8e8772665e4bc94f4c334a650079d93175ebf9b8ead053a62e0ee49988410a` — DO NOT publish this unsigned AAB.
 - Production blockers reported by the successful gate: `base_url_configured=no`, `pass_url_configured=no`; production signing remains unconfigured.
 - Infrastructure re-probe 2026-09-18: connected DigitalOcean account still has zero droplets. Repository searches found no authoritative committed `THF_FITNESS_BASE_URL` or Fitness Cloud Run deployment contract. Creating new paid infrastructure remains owner-gated.
-- Hosting acceptance/rollback requirements are now checkpointed in `PRODUCTION_HOSTING_GATE.md` (`294a9bf221ece68dfb05c8e1c581bf327ba558e4`).
-- Play pre/post-upload requirements are now checkpointed in `PLAY_RELEASE_GATE.md` (`074d83480284667a5fda8c4a877080564e7e3e4a`).
-- Next priority: establish stable HTTPS backend/Web hosting using already-authorized infrastructure if available, then configure production OAuth, production signing, physical-device QA and Play Internal. Independent security/release hardening may continue while hosting is blocked.
+- Hosting acceptance/rollback requirements are checkpointed in `PRODUCTION_HOSTING_GATE.md` (`294a9bf221ece68dfb05c8e1c581bf327ba558e4`).
+- Play pre/post-upload requirements are checkpointed in `PLAY_RELEASE_GATE.md` (`074d83480284667a5fda8c4a877080564e7e3e4a`).
+- P8 dependency/network/auth/Play-Integrity evidence requirements are checkpointed in `SECURITY_RELEASE_GATE.md` (`59cc26ce87a2c30631fac17db0005d6fea7dd6df`).
+- Next priority: establish stable HTTPS backend/Web hosting using already-authorized infrastructure if available, then configure production OAuth, production signing, physical-device QA and Play Internal. While hosting is owner-blocked, continue independent dependency/network-security and release-hardening evidence without weakening any gate.
 
 ## Execution policy
 Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
