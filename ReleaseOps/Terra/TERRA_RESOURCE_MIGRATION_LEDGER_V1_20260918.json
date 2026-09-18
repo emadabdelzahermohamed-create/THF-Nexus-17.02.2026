@@ -2,6 +2,7 @@
   "schema": 1,
   "product": "THF World / Terra",
   "created_utc": "2026-09-17T23:16:00Z",
+  "updated_utc": "2026-09-18T00:17:00Z",
   "policy": {
     "approved_human_pipeline_required": true,
     "procedural_primitives": "fallback_only",
@@ -15,13 +16,19 @@
       "sha256": "4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f",
       "pipeline": "MPFB/MakeHuman + UAL",
       "runtime_claim": {"joints":137,"clips":195},
-      "evidence": "ReleaseOps/mobile/GAMES_FACTORY_V18_CHECKPOINT_20260914.md and RC34 Phone V4 builder evidence",
+      "evidence": ["RC34 Phone V4 EVIDENCE.txt", "RC34 APK entries contain the imported MPFB scene plus casual-suit diffuse/normal and shoes diffuse/normal runtime textures"],
       "status": "PROVEN_FOR_RC34_PHONE_V4_QA"
+    },
+    {
+      "class": "avatar_skeletal_clothing_and_footwear_presence",
+      "evidence": ["RC34 APK entries include thf_mpfb_stage16a_ual12_animated_male_casualsuit01_diffuse/normal", "RC34 APK entries include thf_mpfb_stage16a_ual12_animated_shoes01_diffuse/normal"],
+      "scope": "Presence in the exact RC34 Phone V4 candidate is proven; skeletal deformation quality/coverage and wardrobe breadth remain unproven and must not be overstated.",
+      "status": "PRESENCE_PROVEN_QUALITY_PENDING"
     }
   ],
-  "required_replacements_not_yet_proven_in_accessible_git": [
-    "approved skeletal wardrobe",
-    "footwear",
+  "required_replacements_not_yet_proven_in_accessible_git_or_rc34_candidate": [
+    "approved skeletal wardrobe breadth and deformation QA",
+    "footwear deformation/coverage QA beyond proven shoes textures",
     "hair LOD",
     "facial/viseme/identity improvements",
     "Downtown City converted runtime environment",
