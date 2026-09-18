@@ -43,8 +43,10 @@ jobs:
           BYTES="$(wc -c < response.json | tr -d ' ')"
           echo "ANDROID_PUBLISHER_HTTP=$CODE"
           echo "ANDROID_PUBLISHER_RESPONSE_BYTES=$BYTES"
-          if [ "$BYTES" -gt 0 ]; then
-            python3 -c 'import json,pathlib; raw=pathlib.Path("response.json").read_text(errors="replace"); d=json.loads(raw) if raw.strip() else {}; e=d.get("error",{}) if isinstance(d,dict) else {}; print("ANDROID_PUBLISHER_ERROR_CODE="+str(e.get("code",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_STATUS="+str(e.get("status",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_MESSAGE="+str(e.get("message","")).replace("\\n"," ")[:400]) if e else None'
+          if [ "$BYTES" -gt 0 ] && head -c 1 response.json | grep -q '{'; then
+            python3 -c 'import json,pathlib; d=json.loads(pathlib.Path("response.json").read_text()); e=d.get("error",{}) if isinstance(d,dict) else {}; print("ANDROID_PUBLISHER_ERROR_CODE="+str(e.get("code",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_STATUS="+str(e.get("status",""))) if e else None; print("ANDROID_PUBLISHER_ERROR_MESSAGE="+str(e.get("message","")).replace("\\n"," ")[:400]) if e else None'
+          else
+            echo "ANDROID_PUBLISHER_RESPONSE_JSON=FALSE_OR_EMPTY"
           fi
           case "$CODE" in
             200)
