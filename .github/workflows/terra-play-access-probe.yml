@@ -1,4 +1,4 @@
-name: Terra Play Access Probe
+name: RuinsCiv Play Access Probe
 
 on:
   push:
@@ -14,7 +14,7 @@ env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
-  PACKAGE_NAME: com.topherofit.thf.terra
+  PACKAGE_NAME: com.topherofit.ruins.civ
 
 jobs:
   probe:
