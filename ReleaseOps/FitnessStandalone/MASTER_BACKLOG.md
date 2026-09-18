@@ -96,5 +96,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 
 - Signing inventory evidence: GitHub Actions run `35356106595` PASSed as a read-only probe; artifact `10552265497` reports `secret_manager_list=BLOCKED` due IAM permission denial and explicitly confirms no secret values were read. Connected Google Drive metadata searches for THF/Fitness/Pulse upload key/keystore returned no candidates.
 
+- Google Play state probe run `35357059466` PASS: application record exists, 4 standard tracks are readable, and all have zero releases. Evidence: `PLAY_RELEASE_STATE_20260918.md`, artifact `10552081828`. No Play edit was committed.
+
 ## Execution policy
 Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
