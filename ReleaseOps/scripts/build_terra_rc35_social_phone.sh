@@ -150,6 +150,10 @@ PY
 "$GODOT" --headless --path "$WORK" --import >"$OUT/godot-import.log" 2>&1 || {
   tail -220 "$OUT/godot-import.log" >&2; fail "godot_clean_import_failed" 30;
 }
+if grep -Eiq 'SCRIPT ERROR|Parse Error|Failed to load script' "$OUT/godot-import.log"; then
+  tail -260 "$OUT/godot-import.log" >&2
+  fail "godot_import_contains_script_error" 301
+fi
 
 set +e
 timeout 45s "$GODOT" --headless --path "$WORK" --editor --quit-after 30 >"$OUT/godot-headless-30.log" 2>&1
@@ -158,10 +162,18 @@ set -e
 if [[ "$headless_rc" -ne 0 && "$headless_rc" -ne 124 ]]; then
   tail -220 "$OUT/godot-headless-30.log" >&2; fail "godot_headless_failed_rc_$headless_rc" 31
 fi
+if grep -Eiq 'SCRIPT ERROR|Parse Error|Failed to load script' "$OUT/godot-headless-30.log"; then
+  tail -260 "$OUT/godot-headless-30.log" >&2
+  fail "godot_headless_contains_script_error" 311
+fi
 
 "$GODOT" --headless --path "$WORK" --export-debug "$PRESET" "$OUT/$APK_NAME" >"$OUT/godot-android-export.log" 2>&1 || {
   tail -260 "$OUT/godot-android-export.log" >&2; fail "android_debug_export_failed" 32;
 }
+if grep -Eiq 'SCRIPT ERROR|Parse Error|Failed to load script' "$OUT/godot-android-export.log"; then
+  tail -300 "$OUT/godot-android-export.log" >&2
+  fail "android_export_contains_script_error" 321
+fi
 
 APK="$OUT/$APK_NAME"
 [[ -s "$APK" ]] || fail "apk_missing_after_export" 33
