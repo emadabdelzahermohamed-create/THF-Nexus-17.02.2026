@@ -1,0 +1,16 @@
+{
+  "status": "MEDIA_STANDALONE_RC1",
+  "id": "media",
+  "name": "Media",
+  "package_id": "com.topherofit.media",
+  "version": "3.0.0-standalone-rc1",
+  "version_code": 30001,
+  "kind": "standalone_media_app",
+  "target_sdk": 36,
+  "min_sdk": 26,
+  "role": "media + profiles + social + chat/calls",
+  "identity": "Media Identity",
+  "thf_pass_runtime_dependency": false,
+  "signed_aab": "NOT_BUILT",
+  "play_console_acceptance": "NOT_CLAIMED"
+}
