@@ -1,3 +1,4 @@
+# Activation checkpoint: read-only RC34 source recovery; no source mutation.
 name: RuinsCiv RC34 Source Recovery V1
 
 on:
