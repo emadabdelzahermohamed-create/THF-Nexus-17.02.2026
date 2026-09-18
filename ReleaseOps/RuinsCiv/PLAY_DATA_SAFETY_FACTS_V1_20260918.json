@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "project": "RuinsCiv",
+  "package_id": "com.topherofit.ruins.civ",
+  "date_utc": "2026-09-18",
+  "status": "TECHNICAL_PREFILL_NOT_SUBMITTED",
+  "target_sdk": 36,
+  "product_type": "game",
+  "category_candidate": "Simulation",
+  "pricing_candidate": "free",
+  "account_creation": true,
+  "account_deletion": {
+    "in_app_required": true,
+    "external_https_resource_required": true,
+    "technical_patch_present": true,
+    "production_public_url_verified": false
+  },
+  "identity": {
+    "local_account": true,
+    "oauth_adapters": ["google", "discord", "facebook"],
+    "play_games_native_link": "PENDING"
+  },
+  "data_safety_reaudit_required_on_exact_signed_aab": true,
+  "do_not_inherit_legacy_thf_disclosures": true,
+  "current_candidate_data_families": [
+    "account_identifiers",
+    "authentication_session_security",
+    "profile_avatar_preferences",
+    "friends_social_graph",
+    "messages_when_enabled",
+    "user_generated_media_when_selected",
+    "app_interactions_progression_inventory_economy",
+    "virtual_world_coordinates",
+    "oauth_provider_identifiers_when_enabled"
+  ],
+  "not_to_declare_without_fresh_runtime_evidence": [
+    "gps_location",
+    "camera",
+    "microphone",
+    "advertising_id",
+    "health_fitness",
+    "payments",
+    "third_party_sharing"
+  ],
+  "play_console_package_visibility": "HTTP_404_NOT_FOUND_OR_NOT_VISIBLE",
+  "play_api_wif_auth": "PASS",
+  "physical_device_qa": "PENDING",
+  "production_signed_aab": "PENDING"
+}
