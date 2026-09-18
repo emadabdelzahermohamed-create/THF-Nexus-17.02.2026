@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Delete THF Terra account</title>
+  <title>Delete RuinsCiv account</title>
   <style>
     body{font-family:system-ui,sans-serif;max-width:680px;margin:0 auto;padding:32px 18px;background:#0b1020;color:#eef2ff}
     .card{background:#151c32;border:1px solid #334155;border-radius:18px;padding:22px;margin:16px 0}
@@ -13,8 +13,8 @@
   </style>
 </head>
 <body>
-  <h1>Delete THF Terra account / حذف حساب THF Terra</h1>
-  <p class="muted">This page deletes your Terra account and associated game data. If limited records must be retained for security, fraud prevention, or legal obligations, that retention must be described in the Privacy Policy.</p>
+  <h1>Delete RuinsCiv account / حذف حساب RuinsCiv</h1>
+  <p class="muted">This page deletes your RuinsCiv account and associated game data. If limited records must be retained for security, fraud prevention, or legal obligations, that retention must be described in the Privacy Policy.</p>
 
   <section id="loginCard" class="card">
     <h2>Sign in / تسجيل الدخول</h2>
@@ -35,14 +35,14 @@
   </section>
 
 <script>
-let token=localStorage.getItem('thf_token')||'';let me=null;
+let token=localStorage.getItem('ruinsciv_token')||'';let me=null;
 const $=s=>document.querySelector(s);
 async function api(path,opts={}){const h={'Content-Type':'application/json',...(opts.headers||{})};if(token)h.Authorization='Bearer '+token;const r=await fetch(path,{...opts,headers:h});const t=await r.text();let d={};try{d=t?JSON.parse(t):{}}catch{d={detail:t}}if(!r.ok)throw new Error(d.detail||('HTTP '+r.status));return d}
-async function refresh(){if(!token)return;try{me=await api('/api/me');$('#who').textContent=me.username;$('#phrase').textContent='DELETE '+me.username;$('#loginCard').classList.add('hidden');$('#deleteCard').classList.remove('hidden')}catch{token='';localStorage.removeItem('thf_token')}}
-$('#login').onclick=async()=>{try{const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({username:$('#username').value,password:$('#password').value})});token=d.token;localStorage.setItem('thf_token',token);await refresh()}catch(e){$('#loginStatus').textContent=e.message}}
+async function refresh(){if(!token)return;try{me=await api('/api/me');$('#who').textContent=me.username;$('#phrase').textContent='DELETE '+me.username;$('#loginCard').classList.add('hidden');$('#deleteCard').classList.remove('hidden')}catch{token='';localStorage.removeItem('ruinsciv_token')}}
+$('#login').onclick=async()=>{try{const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({username:$('#username').value,password:$('#password').value})});token=d.token;localStorage.setItem('ruinsciv_token',token);await refresh()}catch(e){$('#loginStatus').textContent=e.message}}
 async function loadProviders(){try{const d=await api('/api/auth/providers');for(const p of d.providers||[]){const b=document.createElement('button');b.className='provider';b.textContent='Continue with '+p.label;b.onclick=()=>oauth(p.id);$('#providers').appendChild(b)}}catch(e){console.warn(e)}}
-async function oauth(provider){try{const d=await api('/api/auth/oauth/start',{method:'POST',body:JSON.stringify({provider,client:'web'})});const w=window.open(d.authorization_url,'terra_delete_oauth','popup,width=520,height=720');for(let i=0;i<180;i++){await new Promise(r=>setTimeout(r,1000));let s;try{s=await api('/api/auth/oauth/status/'+encodeURIComponent(d.attempt_id))}catch(e){if(String(e.message).includes('HTTP 202'))continue;throw e}if(s.status==='pending')continue;if(s.token){token=s.token;localStorage.setItem('thf_token',token);try{w?.close()}catch{};await refresh();return}}throw new Error('oauth_timeout')}catch(e){$('#loginStatus').textContent=e.message}}
-$('#delete').onclick=async()=>{if(!me)return;const expected='DELETE '+me.username;if($('#confirm').value!==expected){$('#deleteStatus').textContent='Confirmation does not match / التأكيد غير مطابق';return}if(!confirm('This permanently deletes your Terra account and associated data. Continue?'))return;try{await api('/api/account/delete',{method:'DELETE',body:JSON.stringify({confirm:expected})});localStorage.removeItem('thf_token');token='';me=null;$('#deleteStatus').textContent='Account deleted / تم حذف الحساب';$('#delete').disabled=true;$('#confirm').disabled=true}catch(e){$('#deleteStatus').textContent=e.message}}
+async function oauth(provider){try{const d=await api('/api/auth/oauth/start',{method:'POST',body:JSON.stringify({provider,client:'web'})});const w=window.open(d.authorization_url,'ruinsciv_delete_oauth','popup,width=520,height=720');for(let i=0;i<180;i++){await new Promise(r=>setTimeout(r,1000));let s;try{s=await api('/api/auth/oauth/status/'+encodeURIComponent(d.attempt_id))}catch(e){if(String(e.message).includes('HTTP 202'))continue;throw e}if(s.status==='pending')continue;if(s.token){token=s.token;localStorage.setItem('ruinsciv_token',token);try{w?.close()}catch{};await refresh();return}}throw new Error('oauth_timeout')}catch(e){$('#loginStatus').textContent=e.message}}
+$('#delete').onclick=async()=>{if(!me)return;const expected='DELETE '+me.username;if($('#confirm').value!==expected){$('#deleteStatus').textContent='Confirmation does not match / التأكيد غير مطابق';return}if(!confirm('This permanently deletes your RuinsCiv account and associated data. Continue?'))return;try{await api('/api/account/delete',{method:'DELETE',body:JSON.stringify({confirm:expected})});localStorage.removeItem('ruinsciv_token');token='';me=null;$('#deleteStatus').textContent='Account deleted / تم حذف الحساب';$('#delete').disabled=true;$('#confirm').disabled=true}catch(e){$('#deleteStatus').textContent=e.message}}
 loadProviders();refresh();
 </script>
 </body>
