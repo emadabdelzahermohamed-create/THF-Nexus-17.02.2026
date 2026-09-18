@@ -21,10 +21,10 @@ if set(games) != required:
 
 expected = {
  'terra': {
-   'name':'THF World', 'package':'com.topherofit.thf.terra',
-   'version':'RC34 Phone V4',
+   'name':'RuinsCiv', 'package':'com.topherofit.ruins.civ',
+   'version':'RC34 baseline / RuinsCiv identity migration',
    'source':'eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68',
-   'candidate':'e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec',
+   'candidate':None,
  },
  'rift': {
    'name':'THF Arena', 'package':'com.topherofit.thf.rift',
@@ -68,7 +68,7 @@ for key,e in expected.items():
         if cand in seen_candidates: die(f'{key}:candidate_sha_reused_cross_product')
         seen_candidates.add(cand)
 
-if games['terra'].get('qa_package_id') != 'com.topherofit.thf.terra.phoneqa':
+if games['terra'].get('qa_package_id') != 'com.topherofit.ruins.civ.phoneqa':
     die('terra:qa_package')
 if games['rift']['eligible_candidate_apk_sha256'] is not None:
     die('rift_candidate_must_remain_none_until_rc41_build')
