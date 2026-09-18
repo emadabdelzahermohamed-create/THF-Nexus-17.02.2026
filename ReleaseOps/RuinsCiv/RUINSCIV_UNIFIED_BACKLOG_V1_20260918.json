@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_utc": "2026-09-18T06:11:00Z",
+  "updated_utc": "2026-09-18T08:11:00Z",
   "product": "RuinsCiv",
   "canonical_identity_ledger": "ReleaseOps/RuinsCiv/RUINSCIV_IDENTITY_MIGRATION_V1_20260918.json",
   "final_or_play_ready": false,
@@ -11,7 +11,9 @@
     "source_lineage": "RC34 gameplay/avatar/world source lineage or later approved improvement",
     "historical_source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
     "historical_candidate_apk_sha256": "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
-    "engine": "Godot 4.7.2", "target_sdk": 36, "abi": "arm64-v8a"
+    "engine": "Godot 4.7.2",
+    "target_sdk": 36,
+    "abi": "arm64-v8a"
   },
   "provenance": {
     "rc34_v4_build_commit": "798b6391b5545d949bd72ac2ce70a3ed13bd119b",
@@ -24,23 +26,37 @@
     "proven_project_sha256": "ce3b4e4e2c08febcdb3d25591ee3163319af828d9c91e4691d3c2c47d02ff182",
     "proven_avatar_sha256": "4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f",
     "builder_recovery_helper": "ReleaseOps/RuinsCiv/recover_ruinsciv_rc34_source_from_builder.sh",
+    "recovery_workflow": ".github/workflows/ruinsciv-rc34-source-recovery-v1.yml",
+    "recovery_workflow_commit": "da5520e1cf2522de8ab12b74e47aafb5549fbfbf",
+    "recovery_helper_provenance_upgrade_commit": "5e5931de3c3bc599c7b40e01d42e838c2819a7f9",
+    "recovery_execution": "STAGED_NOT_YET_OBSERVED",
+    "recovery_execution_note": "Read-only WIF/IAP workflow is committed. No matching workflow run was observed after connector-originated commits; do not claim builder recovery until a real run/artifact exists.",
     "historical_script_forbidden_v6_export_reference": true
   },
   "required_avatar_visual_baseline": {
-    "mpfb_makehuman": true, "joints_min": 137, "clips_min": 195,
-    "skeletal_wardrobe": true, "footwear": true, "hair_lod": true,
-    "face_viseme_identity": true, "ik_foot_placement": true, "pbr": true,
+    "mpfb_makehuman": true,
+    "joints_min": 137,
+    "clips_min": 195,
+    "skeletal_wardrobe": true,
+    "footwear": true,
+    "hair_lod": true,
+    "face_viseme_identity": true,
+    "ik_foot_placement": true,
+    "pbr": true,
     "lighting_weather_day_night": true,
     "converted_environment_assets": ["city", "nature", "interior", "street", "transport", "ruins"]
   },
   "gates": {
     "identity_export_gate": "ReleaseOps/RuinsCiv/ruinsciv_release_identity_gate.py",
     "historical_rc34_apk_releasable_as_ruinsciv": false,
-    "reason": "Historical package identity is superseded and RC34 V4 export explicitly included forbidden thf_humanoid_v6.glb."
+    "reason": "Historical package identity is superseded and RC34 V4 export explicitly included forbidden thf_humanoid_v6.glb.",
+    "recovery_content_manifest_required": true,
+    "recovery_forbidden_legacy_inventory_required": true,
+    "recovery_environment_inventory_required": true
   },
   "tasks": [
-    {"id":"P0-01","priority":0,"status":"IN_PROGRESS_RECOVERY_HELPER_COMMITTED","task":"Recover/converge exact latest RC34-or-better source bytes and prove no source downgrade. Builder path and three key RC34 file hashes are independently recovered from successful build logs; read-only fail-closed archive helper is committed."},
-    {"id":"P0-02","priority":0,"status":"IN_PROGRESS_FORBIDDEN_V6_PROVEN","task":"Inventory active export and prove forbidden historical identities, thf_humanoid_v1..v6, and placeholder geometry are excluded. Quarantine/remove only after approved replacement proof and ledger entry."},
+    {"id":"P0-01","priority":0,"status":"IN_PROGRESS_RECOVERY_WORKFLOW_STAGED","task":"Recover/converge exact latest RC34-or-better source bytes and prove no source downgrade. Builder path and three key RC34 file hashes are proven; read-only WIF/IAP recovery workflow is committed and helper now emits deterministic full content manifest plus inventories. Execution evidence is still required."},
+    {"id":"P0-02","priority":0,"status":"IN_PROGRESS_FORBIDDEN_V6_PROVEN","task":"Inventory active export and prove forbidden historical identities, thf_humanoid_v1..v6, and placeholder geometry are excluded. Recovery helper now inventories legacy humanoids and converted environment matches without mutation. Quarantine/remove only after approved replacement proof and ledger entry."},
     {"id":"P1-01","priority":1,"status":"BLOCKED_BY_P0_SOURCE_RECOVERY","task":"Rebuild Godot 4.7.2 API36 arm64 QA candidate as com.topherofit.ruins.civ.phoneqa; validate manifest/package/payload/avatar/assets and record SHA-256."},
     {"id":"P1-02","priority":1,"status":"PENDING_USER_DEVICE_EVIDENCE","task":"Physical phone install/boot/touch/camera/movement/GPU/FPS/RAM/thermal QA."},
     {"id":"P2-01","priority":2,"status":"PENDING","task":"Standalone RuinsCiv local account plus Google Sign-In, optional Play Games linking, provider adapters, account deletion/privacy/security; externalize RUINSCIV_* secrets and forbid WAVE secret reuse."},
@@ -49,5 +65,5 @@
     {"id":"P5-01","priority":5,"status":"PENDING","task":"Continuous approved avatar/animation/environment/PBR/mobile-performance improvements without baseline regression."},
     {"id":"P6-01","priority":6,"status":"PENDING","task":"Production package com.topherofit.ruins.civ, isolated signing/Play App Signing, Digital Asset Links, Play listing/Data Safety/App Access/content rating/privacy/account deletion/ads; Internal/Closed then production only after evidence and Google processing."}
   ],
-  "next_safe_action": "Execute the committed read-only recovery helper on the proven builder via existing WIF/IAP, retrieve its archive/evidence, verify source lineage, then migrate only the active identity/export references and run the fail-closed RuinsCiv gate before rebuilding."
+  "next_safe_action": "Obtain a real run of the committed read-only recovery workflow (or equivalent authorized WIF/IAP execution), retrieve its source archive/content manifest/inventories, verify RC34 lineage, then migrate only active identity/export references and run the fail-closed RuinsCiv gate before rebuilding."
 }
