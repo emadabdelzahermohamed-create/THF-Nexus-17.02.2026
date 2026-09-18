@@ -30,21 +30,21 @@ class Provider:
 
 PROVIDERS: dict[str, Provider] = {
     "google": Provider(
-        "google", "Google", "THF_GOOGLE_CLIENT_ID", "THF_GOOGLE_CLIENT_SECRET",
+        "google", "Google", "RUINSCIV_GOOGLE_CLIENT_ID", "RUINSCIV_GOOGLE_CLIENT_SECRET",
         "https://accounts.google.com/o/oauth2/v2/auth",
         "https://oauth2.googleapis.com/token",
         "https://openidconnect.googleapis.com/v1/userinfo",
         ("openid", "email", "profile"), True,
     ),
     "discord": Provider(
-        "discord", "Discord", "THF_DISCORD_CLIENT_ID", "THF_DISCORD_CLIENT_SECRET",
+        "discord", "Discord", "RUINSCIV_DISCORD_CLIENT_ID", "RUINSCIV_DISCORD_CLIENT_SECRET",
         "https://discord.com/oauth2/authorize",
         "https://discord.com/api/oauth2/token",
         "https://discord.com/api/users/@me",
         ("identify", "email"), True,
     ),
     "facebook": Provider(
-        "facebook", "Facebook", "THF_FACEBOOK_CLIENT_ID", "THF_FACEBOOK_CLIENT_SECRET",
+        "facebook", "Facebook", "RUINSCIV_FACEBOOK_CLIENT_ID", "RUINSCIV_FACEBOOK_CLIENT_SECRET",
         "https://www.facebook.com/dialog/oauth",
         "https://graph.facebook.com/oauth/access_token",
         "https://graph.facebook.com/me?fields=id,name,email",
@@ -101,7 +101,7 @@ def authorization_url(provider: str, *, state: str, redirect_uri: str, verifier:
 
 def _json_request(url: str, *, data: dict | None = None, headers: dict | None = None) -> dict:
     payload = None
-    req_headers = {"Accept": "application/json", "User-Agent": "THF-Terra/1.0"}
+    req_headers = {"Accept": "application/json", "User-Agent": "RuinsCiv/1.0"}
     if headers:
         req_headers.update(headers)
     if data is not None:
