@@ -58,6 +58,9 @@ THF_TERRA_SOCIAL_AUTH_OVERLAY="$SOCIAL_OVERLAY" python3 "$PATCH_SOCIAL" | tee "$
 cp TERRA_SOCIAL_AUTH_V1_PATCH_RESULT.json "$OUT/"
 THF_TERRA_ACCOUNT_DELETE_OVERLAY="$DELETE_OVERLAY" python3 "$PATCH_DELETE" | tee "$OUT/03-account-delete-patch.log"
 cp TERRA_ACCOUNT_DELETION_V1_PATCH_RESULT.json "$OUT/"
+# Re-apply final identity after feature overlays so no legacy package/branding can be reintroduced.
+python3 "$PATCH_IDENTITY" | tee "$OUT/03b-ruinsciv-identity-post-overlays.log"
+cp RUINSCIV_IDENTITY_PATCH_RESULT.json "$OUT/RUINSCIV_IDENTITY_PATCH_RESULT_POST_OVERLAYS.json"
 
 THF_TERRA_CANONICAL_AVATAR="$CANONICAL_AVATAR" \
 THF_TERRA_CANONICAL_AVATAR_SHA256="$CANONICAL_AVATAR_SHA256" \
@@ -67,8 +70,10 @@ THF_TERRA_CANONICAL_AVATAR_SHA256="$CANONICAL_AVATAR_SHA256" \
 # Static source gates for the exact source that will be exported.
 python3 -m compileall -q app
 grep -q '/api/auth/oauth/start' app/main.py || fail "social_auth_route_missing" 21
-! grep -RIl --exclude-dir=.godot --exclude-dir=build 'com.topherofit.thf.terra' project.godot export_presets.cfg native web config android app 2>/dev/null | grep -q . || fail "legacy_package_reference_active" 211
-! grep -RIl --exclude-dir=.godot --exclude-dir=build -E 'THF Terra|THF World' project.godot export_presets.cfg native web config android app 2>/dev/null | grep -q . || fail "legacy_public_brand_active" 212
+LEGACY_PACKAGE_HITS="$(grep -RIl --exclude-dir=.godot --exclude-dir=build 'com.topherofit.thf.terra' project.godot export_presets.cfg native web config android app 2>/dev/null || true)"
+[[ -z "$LEGACY_PACKAGE_HITS" ]] || { printf '%s\n' "$LEGACY_PACKAGE_HITS" | tee "$OUT/legacy-package-hits.txt"; fail "legacy_package_reference_active" 211; }
+LEGACY_BRAND_HITS="$(grep -RIl --exclude-dir=.godot --exclude-dir=build -E 'THF Terra|THF World' project.godot export_presets.cfg native web config android app 2>/dev/null || true)"
+[[ -z "$LEGACY_BRAND_HITS" ]] || { printf '%s\n' "$LEGACY_BRAND_HITS" | tee "$OUT/legacy-brand-hits.txt"; fail "legacy_public_brand_active" 212; }
 grep -q '/api/account/delete' app/main.py || fail "account_delete_api_missing" 22
 grep -q '/account-delete' app/main.py || fail "account_delete_web_route_missing" 23
 grep -q 'func _social_auth_pressed(provider: String)' native/world/WorldMain.gd || fail "native_social_auth_missing" 24
