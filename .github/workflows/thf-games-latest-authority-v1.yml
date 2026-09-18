@@ -2,25 +2,15 @@ name: THF Games Latest Authority V1
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 't/**'
     paths:
       - '.github/workflows/thf-games-latest-authority-v1.yml'
-      - '.github/workflows/thf-apps-authoritative-lineage-v2.yml'
-      - '.github/workflows/thf-apps-authoritative-lineage-v3.yml'
-      - 'ReleaseOps/apps_factory/THF_APPS_LINEAGE_RECONCILIATION_20260914_1745_EET.json'
       - 'ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json'
       - 'ReleaseOps/games/RUSH_RC4_NATIVE_V2_CANDIDATE_20260915.json'
       - 'ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md'
       - 'ReleaseOps/scripts/validate_latest_game_authority_v1.py'
-      - '.github/workflows/*terra*.yml'
-      - '.github/workflows/*rift*.yml'
-      - '.github/workflows/*spark*.yml'
-      - '.github/workflows/*rush*.yml'
-      - 'ReleaseOps/scripts/*terra*'
-      - 'ReleaseOps/scripts/*rift*'
-      - 'ReleaseOps/scripts/*spark*'
-      - 'ReleaseOps/scripts/*rush*'
-      - 'ReleaseOps/games_factory/*rush*'
   workflow_dispatch:
 
 permissions:
@@ -33,76 +23,29 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           persist-credentials: false
-      - name: Reject stale RCs, wrappers and superseded APKs
+
+      - name: Validate exact game authority
+        shell: bash
         run: |
           set -Eeuo pipefail
           python3 ReleaseOps/scripts/validate_latest_game_authority_v1.py | tee latest-game-authority.txt
+
       - name: Preserve non-promotional exact authority evidence
+        shell: bash
         run: |
           set -Eeuo pipefail
-          grep -q '^LATEST_GAME_AUTHORITY=PASS$' latest-game-authority.txt
-          grep -q '^terra_version=RC34 baseline / RuinsCiv identity migration
-          grep -q '^terra_candidate_apk_sha256=NONE
-          grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
-          grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
-          grep -q '^spark_version=APPS RC4 + real-game overlay$' latest-game-authority.txt
-          grep -q '^spark_candidate_apk_sha256=9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea$' latest-game-authority.txt
-          grep -q '^rush_version=APPS RC4 + Native Verified-Motion V2 + product identity fix$' latest-game-authority.txt
-          grep -q '^rush_candidate_apk_sha256=f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f$' latest-game-authority.txt
-          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: THF-GAMES-LATEST-AUTHORITY-V1
-          path: |
-            latest-game-authority.txt
-            ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json
-            ReleaseOps/games/RUSH_RC4_NATIVE_V2_CANDIDATE_20260915.json
-            ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md
-          retention-days: 14
- latest-game-authority.txt
-          grep -q '^terra_candidate_apk_sha256=e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec$' latest-game-authority.txt
-          grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
-          grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
-          grep -q '^spark_version=APPS RC4 + real-game overlay$' latest-game-authority.txt
-          grep -q '^spark_candidate_apk_sha256=9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea$' latest-game-authority.txt
-          grep -q '^rush_version=APPS RC4 + Native Verified-Motion V2 + product identity fix$' latest-game-authority.txt
-          grep -q '^rush_candidate_apk_sha256=f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f$' latest-game-authority.txt
-          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: THF-GAMES-LATEST-AUTHORITY-V1
-          path: |
-            latest-game-authority.txt
-            ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json
-            ReleaseOps/games/RUSH_RC4_NATIVE_V2_CANDIDATE_20260915.json
-            ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md
-          retention-days: 14
- latest-game-authority.txt
-          grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
-          grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
-          grep -q '^spark_version=APPS RC4 + real-game overlay$' latest-game-authority.txt
-          grep -q '^spark_candidate_apk_sha256=9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea$' latest-game-authority.txt
-          grep -q '^rush_version=APPS RC4 + Native Verified-Motion V2 + product identity fix$' latest-game-authority.txt
-          grep -q '^rush_candidate_apk_sha256=f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f$' latest-game-authority.txt
-          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: THF-GAMES-LATEST-AUTHORITY-V1
-          path: |
-            latest-game-authority.txt
-            ReleaseOps/games/LATEST_GAME_AUTHORITY_V1.json
-            ReleaseOps/games/RUSH_RC4_NATIVE_V2_CANDIDATE_20260915.json
-            ReleaseOps/ANDROID_QA_MATRIX_V1_20260913.md
-          retention-days: 14
- latest-game-authority.txt
-          grep -q '^terra_candidate_apk_sha256=e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec$' latest-game-authority.txt
-          grep -q '^rift_version=4.7.5-rc41$' latest-game-authority.txt
-          grep -q '^rift_candidate_apk_sha256=NONE$' latest-game-authority.txt
-          grep -q '^spark_version=APPS RC4 + real-game overlay$' latest-game-authority.txt
-          grep -q '^spark_candidate_apk_sha256=9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea$' latest-game-authority.txt
-          grep -q '^rush_version=APPS RC4 + Native Verified-Motion V2 + product identity fix$' latest-game-authority.txt
-          grep -q '^rush_candidate_apk_sha256=f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f$' latest-game-authority.txt
-          grep -q '^FINAL_OR_PLAY_READY=FALSE$' latest-game-authority.txt
+          grep -Fqx 'LATEST_GAME_AUTHORITY=PASS' latest-game-authority.txt
+          grep -Fqx 'terra_version=RC34 baseline / RuinsCiv identity migration' latest-game-authority.txt
+          grep -Fqx 'terra_source_sha256=eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68' latest-game-authority.txt
+          grep -Fqx 'terra_candidate_apk_sha256=NONE' latest-game-authority.txt
+          grep -Fqx 'rift_version=4.7.5-rc41' latest-game-authority.txt
+          grep -Fqx 'rift_candidate_apk_sha256=NONE' latest-game-authority.txt
+          grep -Fqx 'spark_version=APPS RC4 + real-game overlay' latest-game-authority.txt
+          grep -Fqx 'spark_candidate_apk_sha256=9fffc4d97e64faf1d92ec6900968902570e2739d6751d752377ebde2589165ea' latest-game-authority.txt
+          grep -Fqx 'rush_version=APPS RC4 + Native Verified-Motion V2 + product identity fix' latest-game-authority.txt
+          grep -Fqx 'rush_candidate_apk_sha256=f81ecebd5017500ac6dd980d58ee2eca717f210f2ede18747b3a971a1779072f' latest-game-authority.txt
+          grep -Fqx 'FINAL_OR_PLAY_READY=FALSE' latest-game-authority.txt
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: THF-GAMES-LATEST-AUTHORITY-V1
