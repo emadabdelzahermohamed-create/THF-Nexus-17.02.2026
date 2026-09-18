@@ -36,12 +36,26 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Authenticate to Google Cloud for read-only source retrieval
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: true
+
       - name: Download exact V5 RC2 source from Drive
         shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check gdown
-          gdown "$SOURCE_DRIVE_FILE_ID" -O fitness-source.zip
+          test -n "$ACCESS_TOKEN"
+          curl --fail --location --retry 4 --retry-all-errors \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://www.googleapis.com/drive/v3/files/${SOURCE_DRIVE_FILE_ID}?alt=media&supportsAllDrives=true" \
+            -o fitness-source.zip
           echo "$SOURCE_SHA256  fitness-source.zip" | sha256sum -c -
           mkdir -p build/fitness
           unzip -q fitness-source.zip -d build/fitness
