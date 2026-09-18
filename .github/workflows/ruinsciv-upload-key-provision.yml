@@ -1,0 +1,82 @@
+name: RuinsCiv Upload Key Provision
+
+on:
+  push:
+    branches: ['t/**']
+    paths: ['.github/workflows/ruinsciv-upload-key-provision.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  KS_SECRET: ruinsciv-android-upload-keystore-b64
+  STOREPASS_SECRET: ruinsciv-android-upload-storepass
+  KEYPASS_SECRET: ruinsciv-android-upload-keypass
+  KEY_ALIAS: ruinsciv-upload
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Provision or verify isolated RuinsCiv upload key
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          TMP="$(mktemp -d)"
+          trap 'rm -rf "$TMP"' EXIT
+
+          exists() {
+            gcloud secrets describe "$1" --project "$GCP_PROJECT_ID" >/dev/null 2>&1
+          }
+          ensure_secret() {
+            if ! exists "$1"; then
+              gcloud secrets create "$1" --project "$GCP_PROJECT_ID" --replication-policy=automatic >/dev/null
+            fi
+          }
+
+          for s in "$KS_SECRET" "$STOREPASS_SECRET" "$KEYPASS_SECRET"; do ensure_secret "$s"; done
+
+          if ! gcloud secrets versions list "$KS_SECRET" --project "$GCP_PROJECT_ID" --filter='state=ENABLED' --format='value(name)' | grep -q .; then
+            STORE_PASS="$(openssl rand -hex 32)"
+            KEY_PASS="$(openssl rand -hex 32)"
+            keytool -genkeypair -noprompt               -alias "$KEY_ALIAS"               -keyalg RSA -keysize 4096 -validity 10000               -storetype JKS               -keystore "$TMP/ruinsciv-upload.jks"               -storepass "$STORE_PASS" -keypass "$KEY_PASS"               -dname 'CN=RuinsCiv Upload Key, OU=Release, O=RuinsCiv'
+
+            base64 -w0 "$TMP/ruinsciv-upload.jks" | gcloud secrets versions add "$KS_SECRET" --project "$GCP_PROJECT_ID" --data-file=- >/dev/null
+            printf '%s' "$STORE_PASS" | gcloud secrets versions add "$STOREPASS_SECRET" --project "$GCP_PROJECT_ID" --data-file=- >/dev/null
+            printf '%s' "$KEY_PASS" | gcloud secrets versions add "$KEYPASS_SECRET" --project "$GCP_PROJECT_ID" --data-file=- >/dev/null
+            echo "RUINSCIV_UPLOAD_KEY_PROVISIONED=TRUE"
+          else
+            gcloud secrets versions access latest --secret "$KS_SECRET" --project "$GCP_PROJECT_ID" | base64 -d > "$TMP/ruinsciv-upload.jks"
+            STORE_PASS="$(gcloud secrets versions access latest --secret "$STOREPASS_SECRET" --project "$GCP_PROJECT_ID")"
+            KEY_PASS="$(gcloud secrets versions access latest --secret "$KEYPASS_SECRET" --project "$GCP_PROJECT_ID")"
+            echo "RUINSCIV_UPLOAD_KEY_PROVISIONED=EXISTING_REUSED"
+          fi
+
+          keytool -exportcert -rfc -alias "$KEY_ALIAS"             -keystore "$TMP/ruinsciv-upload.jks"             -storepass "$STORE_PASS" -keypass "$KEY_PASS"             -file "$TMP/ruinsciv-upload-cert.pem" >/dev/null
+
+          CERT_SHA256="$(openssl x509 -in "$TMP/ruinsciv-upload-cert.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr 'A-F' 'a-f')"
+          CERT_SHA1="$(openssl x509 -in "$TMP/ruinsciv-upload-cert.pem" -noout -fingerprint -sha1 | cut -d= -f2 | tr -d ':' | tr 'A-F' 'a-f')"
+          echo "RUINSCIV_UPLOAD_CERT_SHA256=$CERT_SHA256"
+          echo "RUINSCIV_UPLOAD_CERT_SHA1=$CERT_SHA1"
+          echo "RUINSCIV_SIGNING_SECRET_VALUES_LOGGED=FALSE"
+          echo "RUINSCIV_PACKAGE=com.topherofit.ruins.civ"
