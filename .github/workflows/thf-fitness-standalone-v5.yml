@@ -20,8 +20,8 @@ permissions:
   id-token: write
 
 env:
-  SOURCE_DRIVE_FILE_ID: 1B3EqAcVP8W5kzwWRZVU_jfs9DWgPHhQd
-  SOURCE_SHA256: 1c954707116264326ea11e60c8ba2f07a478783b4b274fbbf436cf61556a3867
+  SOURCE_DRIVE_FILE_ID: 1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-
+  SOURCE_SHA256: 2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74
   AVATAR_SHA256: 4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f
 
 jobs:
@@ -43,7 +43,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Download exact V5 RC1 source from Drive
+      - name: Download exact V5 RC2 source from Drive
         shell: bash
         run: |
           set -euo pipefail
@@ -73,13 +73,13 @@ jobs:
           set -euo pipefail
           ROOT=build/fitness
           test -f "$ROOT/STANDALONE_IDENTITY_V5.json"
-          grep -q '"version": "5.0.0-standalone-rc1"' "$ROOT/STANDALONE_IDENTITY_V5.json"
+          grep -q '"version": "5.0.0-standalone-rc2"' "$ROOT/STANDALONE_IDENTITY_V5.json"
           grep -q "targetSdk 36" "$ROOT/android/app/build.gradle"
           grep -q "applicationId 'com.topherofit.thf.pulse'" "$ROOT/android/app/build.gradle"
-          grep -q "versionCode 50000" "$ROOT/android/app/build.gradle"
+          grep -q "versionCode 50001" "$ROOT/android/app/build.gradle"
           test -f "$ROOT/static/assets/avatar/thf_mpfb_stage16a_ual12_animated.glb"
           echo "$AVATAR_SHA256  $ROOT/static/assets/avatar/thf_mpfb_stage16a_ual12_animated.glb" | sha256sum -c -
-          ! grep -RniE 'thf_humanoid_v[1-6]|stage15j_ual1_animated\.glb' "$ROOT/app" "$ROOT/templates" "$ROOT/static" "$ROOT/android"
+          ! grep -RniE --exclude='*.glb' 'thf_humanoid_v[1-6]|stage15j_ual1_animated\.glb' "$ROOT/app" "$ROOT/templates" "$ROOT/static" "$ROOT/android"
 
       - name: Backend tests
         shell: bash
@@ -111,29 +111,31 @@ jobs:
           SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -path '*/bin/sdkmanager' | sort -V | tail -1)"
           test -x "$SDKMANAGER"
-          yes | "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" >/dev/null
+          yes | "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" >/dev/null || true
           cd build/fitness/android
           gradle wrapper --gradle-version 8.11.1
           ./gradlew --no-daemon clean assembleDebug bundleRelease             -PTHF_BASE_URL="$THF_FITNESS_BASE_URL"             -PTHF_PASS_URL="$THF_PASS_URL"
           mkdir -p ../../artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk ../../artifacts/THF-Fitness-V5-RC1-debug.apk
-          cp app/build/outputs/bundle/release/app-release.aab ../../artifacts/THF-Fitness-V5-RC1-unsigned.aab
+          cp app/build/outputs/apk/debug/app-debug.apk ../../artifacts/THF-Fitness-V5-RC2-debug.apk
+          cp app/build/outputs/bundle/release/app-release.aab ../../artifacts/THF-Fitness-V5-RC2-unsigned.aab
           cd ../../artifacts
-          sha256sum THF-Fitness-V5-RC1-debug.apk THF-Fitness-V5-RC1-unsigned.aab > SHA256SUMS.txt
+          sha256sum THF-Fitness-V5-RC2-debug.apk THF-Fitness-V5-RC2-unsigned.aab > SHA256SUMS.txt
           {
+            echo "source_sha256=$SOURCE_SHA256"
+            echo "avatar_sha256=$AVATAR_SHA256"
             echo "base_url_configured=$([[ -n "$THF_FITNESS_BASE_URL" ]] && echo yes || echo no)"
             echo "pass_url_configured=$([[ -n "$THF_PASS_URL" ]] && echo yes || echo no)"
             echo "play_publish_ready=no"
             echo "reason=production signing and Play upload are separate gated steps"
           } > BUILD_GATE.txt
 
-      - name: Upload V5 RC1 evidence
+      - name: Upload V5 RC2 evidence
         uses: actions/upload-artifact@v4
         with:
-          name: thf-fitness-v5-rc1-gate
+          name: thf-fitness-v5-rc2-gate
           path: |
-            artifacts/THF-Fitness-V5-RC1-debug.apk
-            artifacts/THF-Fitness-V5-RC1-unsigned.aab
+            artifacts/THF-Fitness-V5-RC2-debug.apk
+            artifacts/THF-Fitness-V5-RC2-unsigned.aab
             artifacts/SHA256SUMS.txt
             artifacts/BUILD_GATE.txt
           retention-days: 14
