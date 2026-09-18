@@ -169,7 +169,7 @@ jobs:
           ./gradlew --no-daemon clean bundleRelease -PTHF_BASE_URL="$THF_FITNESS_BASE_URL" -PTHF_PASS_URL=""
           AAB="app/build/outputs/bundle/release/app-release.aab"
           test -s "$AAB"
-          jarsigner -verify -strict "$AAB"
+          # Android upload certificates are self-signed by design; strict PKIX chain validation is not the Play signing gate.\n          jarsigner -verify "$AAB"\n          jarsigner -verify -verbose -certs "$AAB" > "$GITHUB_WORKSPACE/artifacts/jarsigner-verify.txt"
 
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
           cp "$AAB" "$GITHUB_WORKSPACE/artifacts/THF-Fitness-V5-RC2-signed.aab"
@@ -207,5 +207,5 @@ jobs:
             artifacts/THF-Fitness-V5-RC2-signed.aab
             artifacts/SHA256SUMS.txt
             artifacts/upload_certificate.pem
-            artifacts/SIGNING_EVIDENCE.txt
+            artifacts/SIGNING_EVIDENCE.txt\n            artifacts/jarsigner-verify.txt
           retention-days: 14
