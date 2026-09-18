@@ -1,0 +1,78 @@
+name: THF Fitness Play Release State Probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-fitness-play-state-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PACKAGE_NAME: com.topherofit.thf.pulse
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  play-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Authenticate Android Publisher read probe
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: true
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Inspect tracks in disposable edit
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          API="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME"
+          EDIT_JSON="$(curl --fail --silent --show-error -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" "$API/edits" -d '{}')"
+          EDIT_ID="$(python -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<<"$EDIT_JSON")"
+          test -n "$EDIT_ID"
+          cleanup() {
+            curl --silent --show-error -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$API/edits/$EDIT_ID" >/dev/null || true
+          }
+          trap cleanup EXIT
+
+          curl --fail --silent --show-error -H "Authorization: Bearer $ACCESS_TOKEN" "$API/edits/$EDIT_ID/tracks" > evidence/tracks.json
+          python - <<'PY' > evidence/PLAY_STATE.txt
+          import json
+          data=json.load(open("evidence/tracks.json", encoding="utf-8"))
+          tracks=data.get("tracks", [])
+          releases=[]
+          for track in tracks:
+              for rel in track.get("releases", []) or []:
+                  releases.append({
+                      "track": track.get("track"),
+                      "status": rel.get("status"),
+                      "versionCodes": rel.get("versionCodes", []),
+                      "name": rel.get("name")
+                  })
+          print("package=com.topherofit.thf.pulse")
+          print(f"track_count={len(tracks)}")
+          print(f"release_count={len(releases)}")
+          for r in releases:
+              print("release="+json.dumps(r, ensure_ascii=False, separators=(",",":")))
+          print("probe_mode=disposable_edit_deleted_on_exit")
+          PY
+
+      - name: Upload Play state evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thf-fitness-play-state-probe
+          path: evidence/
+          retention-days: 7
