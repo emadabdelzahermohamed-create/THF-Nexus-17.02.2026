@@ -1,0 +1,54 @@
+name: RuinsCiv Native Endpoint Inspect
+
+on:
+  push:
+    branches: ['t/**']
+    paths: ['.github/workflows/ruinsciv-native-endpoint-inspect.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Read endpoint/API client symbols only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap \
+            --ssh-key-expire-after=10m --quiet \
+            --command="set -Eeuo pipefail
+              SRC=\$HOME/thf-terra-rift-staging-apk-v1/terra/work
+              test -d \$SRC
+              echo '=== WORLD ENDPOINT SYMBOLS ==='
+              grep -nE '(^|[^A-Za-z_])(endpoint|api_base|base_url|server_url)([^A-Za-z_]|$)|api\.configure' \$SRC/native/world/WorldMain.gd | sed -n '1,160p' || true
+              echo '=== API CLIENT FILES ==='
+              grep -RIl --include='*.gd' -E 'class_name.*Api|func configure\(' \$SRC/native | sed -n '1,30p'
+              echo '=== API CLIENT SYMBOLS ==='
+              for f in \$(grep -RIl --include='*.gd' -E 'func configure\(' \$SRC/native | head -10); do echo ---\$f; grep -nE 'func configure|base_url|endpoint|server_url|var .*url' \$f | sed -n '1,160p'; done
+              echo RUINSCIV_NATIVE_ENDPOINT_INSPECT=PASS"
