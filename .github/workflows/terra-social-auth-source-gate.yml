@@ -1,4 +1,4 @@
-name: Terra Social Auth Source Gate
+name: RuinsCiv Social Auth Source Gate
 
 on:
   push:
@@ -14,6 +14,10 @@ on:
       - 'ReleaseOps/Terra/social_auth_v1/**'
       - 'ReleaseOps/Terra/account_deletion_v1/**'
   workflow_dispatch:
+
+concurrency:
+  group: ruinsciv-gcp-builder-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
