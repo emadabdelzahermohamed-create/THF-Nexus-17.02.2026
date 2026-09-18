@@ -1,4 +1,4 @@
-name: Terra Social RC35 Integrated Build
+name: RuinsCiv RC35 Integrated Build
 
 on:
   push:
@@ -29,7 +29,7 @@ env:
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
 
 jobs:
-  build-terra:
+  build-ruinsciv:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
@@ -50,7 +50,7 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Prepare isolated Terra execution directory
+      - name: Prepare isolated RuinsCiv execution directory
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -67,7 +67,7 @@ jobs:
             --quiet \
             --command="set -Eeuo pipefail; test -d \"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\"; rm -rf '$REMOTE_OPS' '$REMOTE_BUILD'; mkdir -p '$REMOTE_OPS/overlay/app' '$REMOTE_OPS/delete-overlay/web/templates'; echo TERRA_SOURCE_PRESENT=PASS; echo WAVE_UNTOUCHED=TRUE"
 
-      - name: Copy Terra RC35 integration only
+      - name: Copy RuinsCiv RC35 integration only
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -98,7 +98,7 @@ jobs:
             --tunnel-through-iap \
             --quiet
 
-      - name: Execute RC35 exact-source Godot and Android gates
+      - name: Execute RuinsCiv RC35 exact-source Godot and Android gates
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -123,7 +123,7 @@ jobs:
             --tunnel-through-iap \
             --quiet
           test -s terra-artifacts/out/EVIDENCE.json
-          test -s terra-artifacts/out/THF-TERRA-4.6.9-RC35-SOCIAL-MODERN-HUMAN-TEST.apk
+          test -s terra-artifacts/out/RuinsCiv-4.7.0-RC35-SOCIAL-MODERN-HUMAN-TEST.apk
           grep -q '"status": "PASS_BUILD_AND_ENGINE_GATES"' terra-artifacts/out/EVIDENCE.json
           grep -q '"uploaded_visual16a_lineage_gate": "PASS"' terra-artifacts/out/EVIDENCE.json
           grep -q '"standalone_local_auth": "PATCHED_AND_STATIC_GATED"' terra-artifacts/out/EVIDENCE.json
@@ -131,10 +131,10 @@ jobs:
           echo WAVE_UNTOUCHED=TRUE
           cat terra-artifacts/out/EVIDENCE.json
 
-      - name: Upload Terra RC35 build artifact
+      - name: Upload RuinsCiv RC35 build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: THF-Terra-RC35-Social-Modern-Human-Test-${{ github.run_id }}
+          name: RuinsCiv-RC35-Social-Modern-Human-Test-${{ github.run_id }}
           retention-days: 14
           path: terra-artifacts/out/
           if-no-files-found: error
