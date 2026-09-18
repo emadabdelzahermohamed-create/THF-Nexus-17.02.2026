@@ -1,0 +1,211 @@
+name: THF Fitness Signed AAB Builder
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-fitness-signed-aab.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  FITNESS_BRANCH: release/fitness-standalone-v1-20260918
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  SOURCE_DRIVE_FILE_ID: 1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-
+  SOURCE_SHA256: 2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74
+  AVATAR_SHA256: 4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f
+  UPLOAD_KEY_DRIVE_FILE_ID: 1YPfBAsNh0GfOA65y7PI0QFtc5HPSYZce
+  UPLOAD_CREDENTIALS_DRIVE_FILE_ID: 1zGtc6sKMignhpYLRlqUaSELsSLYrHH-m
+  THF_FITNESS_BASE_URL: https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/
+  UPLOAD_ALIAS: thf-fitness-upload
+
+jobs:
+  signed-aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Fitness release operations
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FITNESS_BRANCH }}
+          persist-credentials: false
+
+      - name: Authenticate to Google Drive
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: true
+          access_token_scopes: https://www.googleapis.com/auth/drive
+
+      - name: Load or create private Play upload key
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          KEYFILE="$RUNNER_TEMP/thf-fitness-upload.jks"
+          CREDFILE="$RUNNER_TEMP/thf-fitness-upload-credentials.json"
+
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://www.googleapis.com/drive/v3/files/$UPLOAD_KEY_DRIVE_FILE_ID?alt=media" \
+            -o "$RUNNER_TEMP/key-existing.bin"
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://www.googleapis.com/drive/v3/files/$UPLOAD_CREDENTIALS_DRIVE_FILE_ID?alt=media" \
+            -o "$RUNNER_TEMP/credentials-existing.bin"
+
+          MANAGED="$(python - <<'PY'
+          import json
+          p = r"${{ runner.temp }}/credentials-existing.bin"
+          try:
+              d=json.load(open(p, encoding="utf-8"))
+              print("yes" if d.get("managedBy")=="thf-fitness-signing-v1" else "no")
+          except Exception:
+              print("no")
+          PY
+          )"
+
+          if [[ "$MANAGED" == "yes" ]]; then
+            cp "$RUNNER_TEMP/key-existing.bin" "$KEYFILE"
+            cp "$RUNNER_TEMP/credentials-existing.bin" "$CREDFILE"
+          else
+            PASS="$(openssl rand -hex 32)"
+            echo "::add-mask::$PASS"
+            keytool -genkeypair -v \
+              -keystore "$KEYFILE" \
+              -storetype JKS \
+              -storepass "$PASS" \
+              -keypass "$PASS" \
+              -alias "$UPLOAD_ALIAS" \
+              -keyalg RSA -keysize 4096 -validity 10000 \
+              -dname "CN=THF Fitness Upload, OU=Release, O=Top Hero Fit, C=EG"
+
+            PASS="$PASS" ALIAS="$UPLOAD_ALIAS" OUT="$CREDFILE" python - <<'PY'
+          import json, os
+          with open(os.environ["OUT"], "w", encoding="utf-8") as f:
+              json.dump({
+                  "managedBy":"thf-fitness-signing-v1",
+                  "alias":os.environ["ALIAS"],
+                  "storePassword":os.environ["PASS"],
+                  "keyPassword":os.environ["PASS"]
+              }, f)
+          PY
+            chmod 600 "$KEYFILE" "$CREDFILE"
+
+            curl --fail --silent --show-error -X PATCH \
+              -H "Authorization: Bearer $ACCESS_TOKEN" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary "@$KEYFILE" \
+              "https://www.googleapis.com/upload/drive/v3/files/$UPLOAD_KEY_DRIVE_FILE_ID?uploadType=media"
+
+            curl --fail --silent --show-error -X PATCH \
+              -H "Authorization: Bearer $ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data-binary "@$CREDFILE" \
+              "https://www.googleapis.com/upload/drive/v3/files/$UPLOAD_CREDENTIALS_DRIVE_FILE_ID?uploadType=media"
+          fi
+
+          PASS="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["storePassword"])' "$CREDFILE")"
+          KEY_PASS="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["keyPassword"])' "$CREDFILE")"
+          ALIAS="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["alias"])' "$CREDFILE")"
+          echo "::add-mask::$PASS"
+          echo "::add-mask::$KEY_PASS"
+          {
+            echo "THF_UPLOAD_KEYSTORE=$KEYFILE"
+            echo "THF_UPLOAD_STORE_PASSWORD=$PASS"
+            echo "THF_UPLOAD_KEY_PASSWORD=$KEY_PASS"
+            echo "THF_UPLOAD_KEY_ALIAS=$ALIAS"
+          } >> "$GITHUB_ENV"
+
+          keytool -list -keystore "$KEYFILE" -storepass "$PASS" -alias "$ALIAS" >/dev/null
+
+      - name: Download exact RC2 source
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 4 \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://www.googleapis.com/drive/v3/files/$SOURCE_DRIVE_FILE_ID?alt=media" \
+            -o fitness-source.zip
+          echo "$SOURCE_SHA256  fitness-source.zip" | sha256sum -c -
+          mkdir -p build/fitness
+          unzip -q fitness-source.zip -d build/fitness
+          echo "$AVATAR_SHA256  build/fitness/static/assets/avatar/thf_mpfb_stage16a_ual12_animated.glb" | sha256sum -c -
+          python ReleaseOps/FitnessStandalone/apply_android_signing.py build/fitness/android/app/build.gradle
+          grep -q "signingConfig signingConfigs.release" build/fitness/android/app/build.gradle
+          grep -q "applicationId 'com.topherofit.thf.pulse'" build/fitness/android/app/build.gradle
+          grep -q "targetSdk 36" build/fitness/android/app/build.gradle
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Build and verify signed release AAB
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -path '*/bin/sdkmanager' | sort -V | tail -1)"
+          yes | "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" >/dev/null || true
+          cd build/fitness/android
+          gradle wrapper --gradle-version 8.11.1
+          ./gradlew --no-daemon clean bundleRelease -PTHF_BASE_URL="$THF_FITNESS_BASE_URL" -PTHF_PASS_URL=""
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB"
+          jarsigner -verify -strict "$AAB"
+
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          cp "$AAB" "$GITHUB_WORKSPACE/artifacts/THF-Fitness-V5-RC2-signed.aab"
+          cd "$GITHUB_WORKSPACE/artifacts"
+          sha256sum THF-Fitness-V5-RC2-signed.aab > SHA256SUMS.txt
+
+          keytool -exportcert -rfc \
+            -keystore "$THF_UPLOAD_KEYSTORE" \
+            -storepass "$THF_UPLOAD_STORE_PASSWORD" \
+            -alias "$THF_UPLOAD_KEY_ALIAS" \
+            -file upload_certificate.pem >/dev/null
+
+          FINGERPRINT="$(keytool -list -v -keystore "$THF_UPLOAD_KEYSTORE" -storepass "$THF_UPLOAD_STORE_PASSWORD" -alias "$THF_UPLOAD_KEY_ALIAS" | sed -n 's/^[[:space:]]*SHA256: //p' | head -1)"
+          cat > SIGNING_EVIDENCE.txt <<EOF
+          package=com.topherofit.thf.pulse
+          target_sdk=36
+          version_code=50001
+          version_name=5.0.0-standalone-rc2
+          base_url=$THF_FITNESS_BASE_URL
+          source_sha256=$SOURCE_SHA256
+          avatar_sha256=$AVATAR_SHA256
+          signed_aab_sha256=$(cut -d' ' -f1 SHA256SUMS.txt)
+          upload_certificate_sha256=$FINGERPRINT
+          upload_key_drive_backup_id=$UPLOAD_KEY_DRIVE_FILE_ID
+          upload_credentials_drive_backup_id=$UPLOAD_CREDENTIALS_DRIVE_FILE_ID
+          jarsigner_verify=PASS
+          play_upload=NOT_YET
+          EOF
+
+      - name: Upload signed AAB evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: thf-fitness-v5-rc2-signed-aab
+          path: |
+            artifacts/THF-Fitness-V5-RC2-signed.aab
+            artifacts/SHA256SUMS.txt
+            artifacts/upload_certificate.pem
+            artifacts/SIGNING_EVIDENCE.txt
+          retention-days: 14
