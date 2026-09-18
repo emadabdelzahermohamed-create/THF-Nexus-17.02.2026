@@ -15,7 +15,7 @@ OLD_PACKAGE = "com.topherofit.thf.terra"
 NEW_PACKAGE = "com.topherofit.ruins.civ"
 OLD_PUBLIC_NAMES = ("THF Terra", "THF World")
 NEW_PUBLIC_NAME = "RuinsCiv"
-TEXT_SUFFIXES = {".gd", ".py", ".js", ".json", ".cfg", ".toml", ".yml", ".yaml", ".html", ".css", ".txt", ".tscn", ".tres", ".gradle", ".properties", ".xml", ".java", ".kt"}
+TEXT_SUFFIXES = {".gd", ".py", ".js", ".json", ".cfg", ".toml", ".yml", ".yaml", ".html", ".css", ".txt", ".tscn", ".tres", ".gradle", ".properties", ".xml", ".java", ".kt", ".md"}
 
 ACTIVE_ROOTS = [
     "project.godot", "export_presets.cfg", "native", "web", "config", "android", "app",
