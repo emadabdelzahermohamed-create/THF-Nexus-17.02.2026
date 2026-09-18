@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "project": "RuinsCiv independent social game",
-  "updated_utc": "2026-09-18T01:13:00Z",
+  "updated_utc": "2026-09-18T01:20:00Z",
   "working_branch": "t/s1",
   "release_identity": {
     "android_application_id": "com.topherofit.ruins.civ",
@@ -38,6 +38,14 @@
       "package_id": "com.topherofit.ruins.civ",
       "android_publisher_http": 404,
       "classification": "PACKAGE_NOT_FOUND_OR_NOT_VISIBLE"
+    },
+    "signing_secret_provision": {
+      "run_id": 35294828693,
+      "wif_auth": "PASS",
+      "secretmanager_create": "DENIED",
+      "iam_self_bootstrap": "DENIED_GET_IAM_POLICY",
+      "no_secret_material_exposed": true,
+      "status": "BLOCKED_BY_GCP_IAM"
     }
   },
   "tasks": [
@@ -220,11 +228,11 @@
       "id": "P1-12",
       "priority": 1,
       "title": "Production signing and Play App Signing gate",
-      "status": "IN_PROGRESS",
+      "status": "BLOCKED_GCP_IAM",
       "depends_on": [
         "P0-05"
       ],
-      "blocker": "Use the newly authorized release path to establish RuinsCiv production signing/Play App Signing evidence for com.topherofit.ruins.civ.",
+      "blocker": "The authorized WIF service account can build and call Android Publisher, but it lacks secretmanager.secrets.create and project get/set IAM policy. Secure RuinsCiv upload-key provisioning therefore cannot be completed with this principal yet; no key material was written to Git or logs.",
       "acceptance": [
         "signed release AAB",
         "certificate/app id verified",
