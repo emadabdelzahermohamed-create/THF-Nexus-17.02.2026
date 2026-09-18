@@ -208,8 +208,8 @@ async def social_auth_callback(request:Request):
         link_social_account(uid,provider,str(identity["subject"]),str(identity.get("email","")),bool(identity.get("email_verified",False)),str(identity.get("display_name","")))
         complete_social_auth_attempt(str(attempt["attempt_id"]),uid)
     except (OAuthProviderError,ValueError) as e:
-        fail_social_auth_attempt(str(attempt["attempt_id"]),str(e));return HTMLResponse("<h2>Sign-in failed</h2><p>You can close this window and return to Terra.</p>",status_code=400)
-    return HTMLResponse("<!doctype html><meta charset='utf-8'><title>Terra sign-in</title><body style='font-family:sans-serif;text-align:center;padding:3rem'><h2>✓ Terra sign-in complete</h2><p>يمكنك إغلاق هذه النافذة والعودة إلى اللعبة.</p><script>setTimeout(()=>window.close(),900)</script></body>")
+        fail_social_auth_attempt(str(attempt["attempt_id"]),str(e));return HTMLResponse("<h2>Sign-in failed</h2><p>You can close this window and return to RuinsCiv.</p>",status_code=400)
+    return HTMLResponse("<!doctype html><meta charset='utf-8'><title>RuinsCiv sign-in</title><body style='font-family:sans-serif;text-align:center;padding:3rem'><h2>✓ RuinsCiv sign-in complete</h2><p>يمكنك إغلاق هذه النافذة والعودة إلى اللعبة.</p><script>setTimeout(()=>window.close(),900)</script></body>")
 
 
 async def social_auth_status(request:Request):
@@ -252,7 +252,7 @@ async def account_links_get(request:Request):
         changed.append("web/templates/index.html")
 
     js_snippet = r'''async function loadSocialProviders(){try{const d=await api('/api/auth/providers'),host=$('#socialProviders');if(!host)return;host.innerHTML='';for(const p of d.providers||[]){const b=document.createElement('button');b.type='button';b.textContent=`${p.label}`;b.dataset.socialProvider=p.id;b.onclick=()=>socialAuth(p.id);host.appendChild(b)}}catch(e){console.warn('social providers',e)}}
-async function socialAuth(provider){const err=$('#authError');try{err.textContent='';const d=await api('/api/auth/oauth/start',{method:'POST',body:JSON.stringify({provider,client:'web'})});const popup=window.open(d.authorization_url,'terra_oauth','popup,width=520,height=720');for(let i=0;i<180;i++){await new Promise(r=>setTimeout(r,1000));const s=await api('/api/auth/oauth/status/'+encodeURIComponent(d.attempt_id));if(s.status==='pending')continue;if(s.token){token=s.token;localStorage.setItem('thf_token',token);try{popup?.close()}catch{};$('#auth').style.display='none';await ensureAvatarSetupThenBoot();return}}throw new Error('oauth_timeout')}catch(e){err.textContent=e.message}}
+async function socialAuth(provider){const err=$('#authError');try{err.textContent='';const d=await api('/api/auth/oauth/start',{method:'POST',body:JSON.stringify({provider,client:'web'})});const popup=window.open(d.authorization_url,'ruinsciv_oauth','popup,width=520,height=720');for(let i=0;i<180;i++){await new Promise(r=>setTimeout(r,1000));const s=await api('/api/auth/oauth/status/'+encodeURIComponent(d.attempt_id));if(s.status==='pending')continue;if(s.token){token=s.token;localStorage.setItem('ruinsciv_token',token);try{popup?.close()}catch{};$('#auth').style.display='none';await ensureAvatarSetupThenBoot();return}}throw new Error('oauth_timeout')}catch(e){err.textContent=e.message}}
 setTimeout(loadSocialProviders,0);
 '''
     for rel in ("web/static/game2d.js","web/static/game3d.js"):
@@ -337,7 +337,7 @@ func _poll_social_auth(attempt_id: String) -> void:
         text=text.replace(native_marker,native_funcs+native_marker,1)
     worldp.write_text(text,encoding='utf-8');changed.append('native/world/WorldMain.gd')
 
-    report={"status":"PASS","feature":"terra_social_auth_v1","providers":["google","discord","facebook"],"google_play_games":"NOT_YET_IMPLEMENTED_NATIVE_LINK","changed":sorted(set(changed)),"secrets_in_source":False}
+    report={"status":"PASS","feature":"ruinsciv_social_auth_v1","providers":["google","discord","facebook"],"google_play_games":"NOT_YET_IMPLEMENTED_NATIVE_LINK","changed":sorted(set(changed)),"secrets_in_source":False}
     (ROOT/"TERRA_SOCIAL_AUTH_V1_PATCH_RESULT.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding='utf-8')
     print(json.dumps(report,ensure_ascii=False,indent=2))
     return 0
