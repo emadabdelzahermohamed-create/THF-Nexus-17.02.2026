@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "project": "RuinsCiv independent social game",
-  "updated_utc": "2026-09-18T01:15:00Z",
+  "updated_utc": "2026-09-18T01:13:00Z",
   "working_branch": "t/s1",
   "release_identity": {
     "android_application_id": "com.topherofit.ruins.civ",
@@ -30,7 +30,15 @@
     "social_auth_source_gate_run": 35273142725,
     "legacy_rc34_candidate_sha256": "dd3d292606326acf38941269ea7631f2b3d699912dea1868a8124f0de2b6d19a",
     "legacy_rc34_candidate_status": "SUPERSEDED_BY_FINAL_PACKAGE_ID_CHANGE",
-    "identity_migration_approved_utc": "2026-09-18T01:06:00Z"
+    "identity_migration_approved_utc": "2026-09-18T01:06:00Z",
+    "play_access_probe": {
+      "run_id": 35294382996,
+      "status": "PASS_PROBE_EXECUTION",
+      "wif_auth": "PASS",
+      "package_id": "com.topherofit.ruins.civ",
+      "android_publisher_http": 404,
+      "classification": "PACKAGE_NOT_FOUND_OR_NOT_VISIBLE"
+    }
   },
   "tasks": [
     {
@@ -227,7 +235,7 @@
       "id": "P1-13",
       "priority": 1,
       "title": "Google Play policy/listing/account declarations",
-      "status": "QUEUED",
+      "status": "IN_PROGRESS",
       "depends_on": [
         "P1-12",
         "P0-07"
@@ -239,17 +247,18 @@
         "App Access",
         "account deletion in-app and external",
         "social/data disclosures"
-      ]
+      ],
+      "result": "Release identity is locked to RuinsCiv. Play policy/listing preparation can proceed, but the new package is not yet visible to Android Publisher."
     },
     {
       "id": "P1-14",
       "priority": 1,
       "title": "Play Internal/Closed track upload and store-delivered install test",
-      "status": "QUEUED",
+      "status": "BLOCKED_PLAY_APP_CREATION_OR_VISIBILITY",
       "depends_on": [
         "P1-13"
       ],
-      "blocker": "Build and register the new RuinsCiv package first, then upload the signed AAB to Play Internal.",
+      "blocker": "WIF authentication succeeds, but Android Publisher returns HTTP 404 for com.topherofit.ruins.civ. The Play Console app for this new package must exist and be visible to the authorized service account before API upload can occur.",
       "acceptance": [
         "AAB uploaded",
         "track processing succeeds",
