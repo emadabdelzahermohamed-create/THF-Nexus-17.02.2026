@@ -120,6 +120,8 @@ jobs:
             echo "base_url=$THF_FITNESS_BASE_URL"
             echo "base_url_configured=$([[ -n "$THF_FITNESS_BASE_URL" ]] && echo yes || echo no)"
             echo "pass_url_configured=$([[ -n "$THF_PASS_URL" ]] && echo yes || echo no)"
+            echo "pass_url_required=no"
+            echo "standalone_identity_mode=yes"
             echo "play_publish_ready=no"
             echo "reason=production signing and Play upload are separate gated steps"
           } > BUILD_GATE.txt
