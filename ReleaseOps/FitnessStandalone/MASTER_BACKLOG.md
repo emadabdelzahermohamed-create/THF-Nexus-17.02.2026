@@ -12,6 +12,16 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Android targetSdk: 36.
 - Web and Android must share the same production backend, account identity and synchronized user data.
 
+
+### P0 — User-visible parity gate
+- [ ] No backend-only release claims: every material Fitness capability must have a usable UI surface and UI acceptance evidence.
+- [ ] Render canonical Stage16A 3D asset in a visible user flow; text metadata alone is not sufficient.
+- [ ] Trainer workspace: clients/assignments/follow-up/bookings, not directory-only.
+- [ ] Competition + leaderboard UI; no raw JSON links as final UX.
+- [ ] AI Coach user-facing screen.
+- [ ] Web/Android visible workflow parity against the same account/data backend.
+- Evidence/audit: `ReleaseOps/FitnessStandalone/UI_SURFACE_AUDIT_20260918.md`.
+
 ## P0 — Source authority + CI
 - [x] Freeze exact source provenance for standalone Fitness branch (RC2 Drive ID + SHA pinned).
 - [x] Add CI that fails closed on missing/wrong source or avatar; privileged WIF gate runs from short `main` ref and checks out this canonical Fitness branch.
