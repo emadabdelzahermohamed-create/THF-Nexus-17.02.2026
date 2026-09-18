@@ -1,0 +1,63 @@
+name: RuinsCiv RC34 Source Recovery V1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ruinsciv-rc34-source-recovery-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  recover:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Copy read-only recovery helper
+        run: |
+          set -Eeuo pipefail
+          chmod +x ReleaseOps/RuinsCiv/recover_ruinsciv_rc34_source_from_builder.sh
+          gcloud compute scp ReleaseOps/RuinsCiv/recover_ruinsciv_rc34_source_from_builder.sh "$GCP_BUILDER:/tmp/recover_ruinsciv_rc34_source_from_builder.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Recover proven RC34 source tree
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/recover_ruinsciv_rc34_source_from_builder.sh && /tmp/recover_ruinsciv_rc34_source_from_builder.sh'
+      - name: Retrieve and validate evidence
+        run: |
+          set -Eeuo pipefail
+          mkdir -p out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/ruinsciv-recovery/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          grep -q '^RUINSCIV_RC34_SOURCE_RECOVERY=PASS$' out/RUINSCIV_RC34_SOURCE_RECOVERY_EVIDENCE.txt
+          grep -q '^world_source_sha256=19043caa07aa1470f586708b551bbe86249f0f612480657d8891458361e78372$' out/RUINSCIV_RC34_SOURCE_RECOVERY_EVIDENCE.txt
+          grep -q '^project_sha256=ce3b4e4e2c08febcdb3d25591ee3163319af828d9c91e4691d3c2c47d02ff182$' out/RUINSCIV_RC34_SOURCE_RECOVERY_EVIDENCE.txt
+          grep -q '^avatar_asset_sha256=4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f$' out/RUINSCIV_RC34_SOURCE_RECOVERY_EVIDENCE.txt
+          grep -q '^source_mutated=FALSE$' out/RUINSCIV_RC34_SOURCE_RECOVERY_EVIDENCE.txt
+          grep -q '^physical_device_status=PENDING$' out/RUINSCIV_RC34_SOURCE_RECOVERY_EVIDENCE.txt
+          test -s out/RUINSCIV_RC34_PROVEN_SOURCE_TREE.tar.gz
+          sha256sum out/RUINSCIV_RC34_PROVEN_SOURCE_TREE.tar.gz
+          cat out/RUINSCIV_RC34_SOURCE_RECOVERY_EVIDENCE.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: RUINSCIV-RC34-PROVEN-SOURCE-RECOVERY-V1
+          path: out/
+          retention-days: 14
+          compression-level: 0
