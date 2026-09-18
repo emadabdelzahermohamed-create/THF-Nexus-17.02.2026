@@ -1,4 +1,4 @@
-name: Terra Web Staging Deploy
+name: RuinsCiv Web Staging Deploy
 
 on:
   push:
@@ -48,6 +48,7 @@ jobs:
             --ssh-key-expire-after=10m --quiet \
             --command="rm -rf '$REMOTE_OPS'; mkdir -p '$REMOTE_OPS/overlay/app' '$REMOTE_OPS/delete-overlay/web/templates'"
           gcloud compute scp \
+            ReleaseOps/scripts/patch_ruinsciv_identity_v1.py \
             ReleaseOps/scripts/patch_terra_modern_human_current_source.py \
             ReleaseOps/scripts/patch_terra_social_auth_v1.py \
             ReleaseOps/scripts/patch_terra_account_deletion_v1.py \
@@ -120,8 +121,8 @@ jobs:
               for i in \$(seq 1 40); do URL=\$(grep -Eo 'https://[-a-z0-9]+\\.trycloudflare\\.com' logs/cloudflared.log | tail -1 || true); [ -n \"\$URL\" ] && break; sleep 1; done
               test -n \"\$URL\"
               printf '%s\n' \"\$URL\" > STAGING_URL.txt
-              echo TERRA_STAGING_LOCAL=PASS
-              echo TERRA_STAGING_URL=\"\$URL\"
+              echo RUINSCIV_STAGING_LOCAL=PASS
+              echo RUINSCIV_STAGING_URL=\"\$URL\"
               echo WAVE_UNTOUCHED=TRUE"
 
       - name: Read staging URL and run external smoke
@@ -144,7 +145,7 @@ jobs:
           curl -fsS "$URL/api/me" -H "Authorization: Bearer $TOKEN" | tee me.json
           curl -fsS -X DELETE "$URL/api/account/delete" -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" --data "{\"confirm\":\"DELETE $USER\"}" | tee delete.json
           grep -q '"account_deleted":true' <(tr -d ' ' < delete.json)
-          echo TERRA_PUBLIC_STAGING_SMOKE=PASS
+          echo RUINSCIV_PUBLIC_STAGING_SMOKE=PASS
 
       - name: Cleanup deployment transfer directory only
         if: always()
