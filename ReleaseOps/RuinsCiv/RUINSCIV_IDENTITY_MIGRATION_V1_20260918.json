@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "project": "RuinsCiv",
+  "final_identity": {
+    "name": "RuinsCiv",
+    "package_id": "com.topherofit.ruins.civ",
+    "qa_package_id": "com.topherofit.ruins.civ.phoneqa"
+  },
+  "legacy_identity": {
+    "name": "THF World / Terra",
+    "package_id": "com.topherofit.thf.terra",
+    "status": "SUPERSEDED_FOR_NEW_BUILDS"
+  },
+  "approved_utc": "2026-09-18T01:06:00Z",
+  "source_policy": "Keep latest RC34 gameplay/avatar/world source lineage and all later approved human/avatar/environment improvements; migrate identity forward without downgrading source.",
+  "legacy_candidate": {
+    "sha256": "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
+    "status": "SUPERSEDED_PACKAGE_ID_MISMATCH"
+  },
+  "required_next_candidate": {
+    "package_id": "com.topherofit.ruins.civ",
+    "target_sdk": 36,
+    "arm64": true,
+    "physical_device_qa_required": true,
+    "production_signing_required_for_play": true
+  },
+  "credentials_policy": {
+    "reuse_wif_oidc_infrastructure": true,
+    "reuse_wave_app_secrets": false,
+    "oauth_env_prefix": "RUINSCIV_"
+  },
+  "truth_boundary": "No new APK/AAB, Play upload, physical-device pass, or production web publication is claimed until evidence exists."
+}
