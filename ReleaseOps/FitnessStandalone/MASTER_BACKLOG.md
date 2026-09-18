@@ -50,7 +50,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 ## P5 — Android release quality
 - [ ] Remove debug suffix/debuggable state from production artifact.
 - [x] Release version identity updated: package, targetSdk 36, versionCode/versionName.
-- [ ] Release signing + Play App Signing compatible AAB.
+- [ ] Release signing + Play App Signing compatible AAB. Read-only probes found no upload-keystore candidate in connected Drive; GCP Secret Manager inventory is IAM-blocked for `thf-release-builder` (`secretmanager.secrets.list` denied).
 - [ ] Install/launch/onboarding/RTL/workout/avatar/permissions/offline-online/resume regression on physical Android.
 - [ ] Performance checks: startup, FPS, RAM and thermal behavior.
 
@@ -93,6 +93,8 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Next priority: observe the Android rebuild against the live HTTPS backend, then configure production OAuth/signing, physical-device QA and Play Internal. Do not mark Android/Web cross-device sync PASS until the rebuilt Android artifact is exercised against the same production account/data.
 
 - Web exercise UX defect fixed on production 2026-09-18: Arabic RTL tabs, 18-exercise library, 8 plans, warm-up/cool-down, instructions/warnings/recovery, workout logging, rest timer and progress persistence deployed at the production URL. Evidence: `WEB_EXERCISE_DEPLOY_20260918.md`. Full Android/physical-device regression remains open.
+
+- Signing inventory evidence: GitHub Actions run `35356106595` PASSed as a read-only probe; artifact `10552265497` reports `secret_manager_list=BLOCKED` due IAM permission denial and explicitly confirms no secret values were read. Connected Google Drive metadata searches for THF/Fitness/Pulse upload key/keystore returned no candidates.
 
 ## Execution policy
 Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
