@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "project": "THF World / Terra social game",
-  "application_id": "com.topherofit.thf.terra",
+  "project": "RuinsCiv social game",
+  "application_id": "com.topherofit.ruins.civ",
   "authority_date": "2026-09-17",
   "active_release_authority": {
     "release_line": "RC34 Phone V4",
     "engine": "Godot 4.7.2",
     "target_sdk": 36,
-    "note": "Preserve current RC34 release authority while merging forward the 2026-09-16 modern-human cleanup/overlay. Never downgrade release lineage merely to obtain the modern avatar policy."
+    "note": "Preserve the latest RC34 gameplay/avatar/world source lineage while migrating forward to the final RuinsCiv identity. Never ship a new candidate using the legacy package ID."
   },
   "avatar_policy": {
     "required_lineage": "MPFB/MakeHuman modern human",
@@ -48,5 +48,12 @@
       "Google Play upload/approval/publication",
       "production web deployment"
     ]
+  },
+  "final_identity": {
+    "name": "RuinsCiv",
+    "package_id": "com.topherofit.ruins.civ",
+    "legacy_name": "THF World / Terra",
+    "legacy_package_id": "com.topherofit.thf.terra",
+    "legacy_package_forbidden_in_new_candidates": true
   }
 }
