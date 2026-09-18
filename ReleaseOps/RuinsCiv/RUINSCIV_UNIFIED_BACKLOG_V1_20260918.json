@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_utc": "2026-09-18T04:12:00Z",
+  "updated_utc": "2026-09-18T06:11:00Z",
   "product": "RuinsCiv",
   "canonical_identity_ledger": "ReleaseOps/RuinsCiv/RUINSCIV_IDENTITY_MIGRATION_V1_20260918.json",
   "final_or_play_ready": false,
@@ -11,28 +11,25 @@
     "source_lineage": "RC34 gameplay/avatar/world source lineage or later approved improvement",
     "historical_source_sha256": "eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68",
     "historical_candidate_apk_sha256": "e0ac997e1cdb0145b765884d8a59a70403821d1d1e19fbf6a05adcc4640cfbec",
-    "engine": "Godot 4.7.2",
-    "target_sdk": 36,
-    "abi": "arm64-v8a"
+    "engine": "Godot 4.7.2", "target_sdk": 36, "abi": "arm64-v8a"
   },
   "provenance": {
     "rc34_v4_build_commit": "798b6391b5545d949bd72ac2ce70a3ed13bd119b",
     "rc34_v4_actions_run": 34861284297,
+    "rc34_v4_job_id": 104034509280,
     "rc34_v4_artifact_id": 10355450211,
     "rc34_v4_artifact_digest": "sha256:8b30603c2bb3f7d5f166d03d298eb7807350c900d5104061d9a9361a1cbdcd02",
     "builder_source_path": "~/thf-terra-rift-staging-apk-v1/terra/work",
+    "proven_world_source_sha256": "19043caa07aa1470f586708b551bbe86249f0f612480657d8891458361e78372",
+    "proven_project_sha256": "ce3b4e4e2c08febcdb3d25591ee3163319af828d9c91e4691d3c2c47d02ff182",
+    "proven_avatar_sha256": "4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f",
+    "builder_recovery_helper": "ReleaseOps/RuinsCiv/recover_ruinsciv_rc34_source_from_builder.sh",
     "historical_script_forbidden_v6_export_reference": true
   },
   "required_avatar_visual_baseline": {
-    "mpfb_makehuman": true,
-    "joints_min": 137,
-    "clips_min": 195,
-    "skeletal_wardrobe": true,
-    "footwear": true,
-    "hair_lod": true,
-    "face_viseme_identity": true,
-    "ik_foot_placement": true,
-    "pbr": true,
+    "mpfb_makehuman": true, "joints_min": 137, "clips_min": 195,
+    "skeletal_wardrobe": true, "footwear": true, "hair_lod": true,
+    "face_viseme_identity": true, "ik_foot_placement": true, "pbr": true,
     "lighting_weather_day_night": true,
     "converted_environment_assets": ["city", "nature", "interior", "street", "transport", "ruins"]
   },
@@ -42,8 +39,8 @@
     "reason": "Historical package identity is superseded and RC34 V4 export explicitly included forbidden thf_humanoid_v6.glb."
   },
   "tasks": [
-    {"id":"P0-01","priority":0,"status":"BLOCKED_EXACT_BYTES_BUILDER_PATH_IDENTIFIED","task":"Recover/converge exact latest RC34-or-better source bytes and prove no source downgrade. Builder provenance path is now identified from the historical successful RC34 script."},
-    {"id":"P0-02","priority":0,"status":"IN_PROGRESS_FORBIDDEN_V6_PROVEN","task":"Inventory active export and prove forbidden historical identities, thf_humanoid_v1..v6, and placeholder geometry are excluded. Historical V4 script is proven to include v6; new fail-closed RuinsCiv gate added. Quarantine/remove only after approved replacement proof and ledger entry."},
+    {"id":"P0-01","priority":0,"status":"IN_PROGRESS_RECOVERY_HELPER_COMMITTED","task":"Recover/converge exact latest RC34-or-better source bytes and prove no source downgrade. Builder path and three key RC34 file hashes are independently recovered from successful build logs; read-only fail-closed archive helper is committed."},
+    {"id":"P0-02","priority":0,"status":"IN_PROGRESS_FORBIDDEN_V6_PROVEN","task":"Inventory active export and prove forbidden historical identities, thf_humanoid_v1..v6, and placeholder geometry are excluded. Quarantine/remove only after approved replacement proof and ledger entry."},
     {"id":"P1-01","priority":1,"status":"BLOCKED_BY_P0_SOURCE_RECOVERY","task":"Rebuild Godot 4.7.2 API36 arm64 QA candidate as com.topherofit.ruins.civ.phoneqa; validate manifest/package/payload/avatar/assets and record SHA-256."},
     {"id":"P1-02","priority":1,"status":"PENDING_USER_DEVICE_EVIDENCE","task":"Physical phone install/boot/touch/camera/movement/GPU/FPS/RAM/thermal QA."},
     {"id":"P2-01","priority":2,"status":"PENDING","task":"Standalone RuinsCiv local account plus Google Sign-In, optional Play Games linking, provider adapters, account deletion/privacy/security; externalize RUINSCIV_* secrets and forbid WAVE secret reuse."},
@@ -52,5 +49,5 @@
     {"id":"P5-01","priority":5,"status":"PENDING","task":"Continuous approved avatar/animation/environment/PBR/mobile-performance improvements without baseline regression."},
     {"id":"P6-01","priority":6,"status":"PENDING","task":"Production package com.topherofit.ruins.civ, isolated signing/Play App Signing, Digital Asset Links, Play listing/Data Safety/App Access/content rating/privacy/account deletion/ads; Internal/Closed then production only after evidence and Google processing."}
   ],
-  "next_safe_action": "Recover the exact builder work tree at ~/thf-terra-rift-staging-apk-v1/terra/work (or a byte-identical archived source), verify authoritative SHA/lineage, then run the RuinsCiv fail-closed identity/export gate before any rebuild."
+  "next_safe_action": "Execute the committed read-only recovery helper on the proven builder via existing WIF/IAP, retrieve its archive/evidence, verify source lineage, then migrate only the active identity/export references and run the fail-closed RuinsCiv gate before rebuilding."
 }
