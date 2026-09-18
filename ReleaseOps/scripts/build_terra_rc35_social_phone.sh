@@ -14,6 +14,7 @@ GODOT="${THF_GODOT:-$HOME/.local/bin/godot-4.7.2}"
 ANDROID_SDK="${ANDROID_SDK_ROOT:-$HOME/thf-builder-rc16-build/android-sdk}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+PATCH_IDENTITY="$SCRIPT_DIR/patch_ruinsciv_identity_v1.py"
 PATCH_HUMAN="$SCRIPT_DIR/patch_terra_modern_human_current_source.py"
 VERIFY_HUMAN="$SCRIPT_DIR/verify_terra_modern_human_only.sh"
 VERIFY_ASSETS="$SCRIPT_DIR/verify_terra_uploaded_asset_lineage.sh"
@@ -32,9 +33,10 @@ fail(){ printf 'RUINSCIV_RC35_SOCIAL_BUILD=FAIL reason=%s\n' "$1" >&2; exit "${2
 
 [[ -d "$SRC" ]] || fail "terra_source_missing:$SRC" 10
 [[ -x "$GODOT" ]] || fail "godot_4_7_2_missing:$GODOT" 11
-[[ -f "$PATCH_HUMAN" ]] || fail "modern_human_patch_missing" 12
-[[ -x "$VERIFY_HUMAN" ]] || fail "modern_human_verifier_missing" 13
-[[ -x "$VERIFY_ASSETS" ]] || fail "uploaded_asset_verifier_missing" 14
+[[ -f "$PATCH_IDENTITY" ]] || fail "ruinsciv_identity_patch_missing" 12
+[[ -f "$PATCH_HUMAN" ]] || fail "modern_human_patch_missing" 13
+[[ -x "$VERIFY_HUMAN" ]] || fail "modern_human_verifier_missing" 14
+[[ -x "$VERIFY_ASSETS" ]] || fail "uploaded_asset_verifier_missing" 15
 [[ -f "$PATCH_SOCIAL" ]] || fail "social_auth_patch_missing" 15
 [[ -f "$PATCH_DELETE" ]] || fail "account_delete_patch_missing" 16
 [[ -f "$SOCIAL_OVERLAY/app/auth_social.py" ]] || fail "social_auth_overlay_missing" 17
@@ -48,6 +50,8 @@ cp -a "$SRC" "$WORK"
 cd "$WORK"
 
 # Forward-only cumulative patch sequence.
+python3 "$PATCH_IDENTITY" | tee "$OUT/00-ruinsciv-identity-patch.log"
+cp RUINSCIV_IDENTITY_PATCH_RESULT.json "$OUT/"
 python3 "$PATCH_HUMAN" | tee "$OUT/01-modern-human-patch.log"
 cp TERRA_MODERN_HUMAN_PATCH_RESULT.json "$OUT/"
 THF_TERRA_SOCIAL_AUTH_OVERLAY="$SOCIAL_OVERLAY" python3 "$PATCH_SOCIAL" | tee "$OUT/02-social-auth-patch.log"
@@ -63,6 +67,8 @@ THF_TERRA_CANONICAL_AVATAR_SHA256="$CANONICAL_AVATAR_SHA256" \
 # Static source gates for the exact source that will be exported.
 python3 -m compileall -q app
 grep -q '/api/auth/oauth/start' app/main.py || fail "social_auth_route_missing" 21
+! grep -RIl --exclude-dir=.godot --exclude-dir=build 'com.topherofit.thf.terra' project.godot export_presets.cfg native web config android app 2>/dev/null | grep -q . || fail "legacy_package_reference_active" 211
+! grep -RIl --exclude-dir=.godot --exclude-dir=build -E 'THF Terra|THF World' project.godot export_presets.cfg native web config android app 2>/dev/null | grep -q . || fail "legacy_public_brand_active" 212
 grep -q '/api/account/delete' app/main.py || fail "account_delete_api_missing" 22
 grep -q '/account-delete' app/main.py || fail "account_delete_web_route_missing" 23
 grep -q 'func _social_auth_pressed(provider: String)' native/world/WorldMain.gd || fail "native_social_auth_missing" 24
@@ -183,6 +189,8 @@ cat > "$OUT/EVIDENCE.json" <<EOF
   "architecture": "arm64-v8a",
   "avatar": "$CANONICAL_AVATAR",
   "avatar_sha256": "$AVATAR_SHA",
+  "legacy_package_in_active_runtime": false,
+  "legacy_public_brand_in_active_runtime": false,
   "legacy_humanoid_in_active_runtime": false,
   "legacy_humanoid_in_apk": false,
   "uploaded_visual16a_lineage_gate": "PASS",
