@@ -72,7 +72,7 @@ python3 -m compileall -q app
 grep -q '/api/auth/oauth/start' app/main.py || fail "social_auth_route_missing" 21
 LEGACY_PACKAGE_HITS="$(grep -RIl --exclude-dir=.godot --exclude-dir=build 'com.topherofit.thf.terra' project.godot export_presets.cfg native web config android app 2>/dev/null || true)"
 [[ -z "$LEGACY_PACKAGE_HITS" ]] || { printf '%s\n' "$LEGACY_PACKAGE_HITS" | tee "$OUT/legacy-package-hits.txt"; fail "legacy_package_reference_active" 211; }
-LEGACY_BRAND_HITS="$(grep -RIl --exclude-dir=.godot --exclude-dir=build -E 'THF Terra|THF World' project.godot export_presets.cfg native web config android app 2>/dev/null || true)"
+LEGACY_BRAND_HITS="$(grep -RIl --exclude-dir=.godot --exclude-dir=build -E 'THF Terra|THF World|Nexus World' project.godot export_presets.cfg native web config android app 2>/dev/null || true)"
 [[ -z "$LEGACY_BRAND_HITS" ]] || { printf '%s\n' "$LEGACY_BRAND_HITS" | tee "$OUT/legacy-brand-hits.txt"; fail "legacy_public_brand_active" 212; }
 grep -q '/api/account/delete' app/main.py || fail "account_delete_api_missing" 22
 grep -q '/account-delete' app/main.py || fail "account_delete_web_route_missing" 23
