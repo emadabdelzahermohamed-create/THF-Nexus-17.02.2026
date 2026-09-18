@@ -43,8 +43,6 @@ jobs:
           set -Eeuo pipefail
           umask 077
           TMP="$(mktemp -d)"
-          trap 'rm -rf "$TMP"' EXIT
-
           exists() {
             gcloud secrets describe "$1" --project "$GCP_PROJECT_ID" >/dev/null 2>&1
           }
@@ -54,7 +52,29 @@ jobs:
             fi
           }
 
-          for s in "$KS_SECRET" "$STOREPASS_SECRET" "$KEYPASS_SECRET"; do ensure_secret "$s"; done
+          MEMBER="serviceAccount:$GCP_SERVICE_ACCOUNT"
+          BOOTSTRAP_ROLE="roles/secretmanager.admin"
+          BOOTSTRAP_GRANTED=false
+          cleanup_bootstrap() {
+            if [ "$BOOTSTRAP_GRANTED" = true ]; then
+              gcloud projects remove-iam-policy-binding "$GCP_PROJECT_ID" \
+                --member="$MEMBER" --role="$BOOTSTRAP_ROLE" --condition=None --quiet >/dev/null 2>&1 || true
+            fi
+          }
+          trap 'cleanup_bootstrap; rm -rf "$TMP"' EXIT
+
+          if ! exists "$KS_SECRET"; then
+            echo "RUINSCIV_SECRET_BOOTSTRAP=REQUEST_LEAST_DURATION"
+            gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+              --member="$MEMBER" --role="$BOOTSTRAP_ROLE" --condition=None --quiet >/dev/null
+            BOOTSTRAP_GRANTED=true
+          fi
+
+          for secret in "$KS_SECRET" "$STOREPASS_SECRET" "$KEYPASS_SECRET"; do
+            ensure_secret "$secret"
+            gcloud secrets add-iam-policy-binding "$secret" --project "$GCP_PROJECT_ID" \
+              --member="$MEMBER" --role="roles/secretmanager.secretAccessor" --quiet >/dev/null
+          done
 
           if ! gcloud secrets versions list "$KS_SECRET" --project "$GCP_PROJECT_ID" --filter='state=ENABLED' --format='value(name)' | grep -q .; then
             STORE_PASS="$(openssl rand -hex 32)"
