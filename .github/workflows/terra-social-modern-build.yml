@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/terra-social-modern-build.yml'
       - 'ReleaseOps/scripts/build_terra_rc35_social_phone.sh'
+      - 'ReleaseOps/scripts/patch_ruinsciv_identity_v1.py'
       - 'ReleaseOps/scripts/verify_terra_modern_human_only.sh'
       - 'ReleaseOps/scripts/verify_terra_uploaded_asset_lineage.sh'
       - 'ReleaseOps/scripts/patch_terra_modern_human_current_source.py'
@@ -73,6 +74,7 @@ jobs:
           set -Eeuo pipefail
           gcloud compute scp \
             ReleaseOps/scripts/build_terra_rc35_social_phone.sh \
+            ReleaseOps/scripts/patch_ruinsciv_identity_v1.py \
             ReleaseOps/scripts/verify_terra_modern_human_only.sh \
             ReleaseOps/scripts/verify_terra_uploaded_asset_lineage.sh \
             ReleaseOps/scripts/patch_terra_modern_human_current_source.py \
@@ -126,6 +128,8 @@ jobs:
           test -s terra-artifacts/out/RuinsCiv-4.7.0-RC35-SOCIAL-MODERN-HUMAN-TEST.apk
           grep -q '"status": "PASS_BUILD_AND_ENGINE_GATES"' terra-artifacts/out/EVIDENCE.json
           grep -q '"uploaded_visual16a_lineage_gate": "PASS"' terra-artifacts/out/EVIDENCE.json
+          grep -q '"legacy_package_in_active_runtime": false' terra-artifacts/out/EVIDENCE.json
+          grep -q '"legacy_public_brand_in_active_runtime": false' terra-artifacts/out/EVIDENCE.json
           grep -q '"standalone_local_auth": "PATCHED_AND_STATIC_GATED"' terra-artifacts/out/EVIDENCE.json
           grep -q '"account_deletion_api_and_external_web_resource": "PATCHED_AND_STATIC_GATED"' terra-artifacts/out/EVIDENCE.json
           echo WAVE_UNTOUCHED=TRUE
