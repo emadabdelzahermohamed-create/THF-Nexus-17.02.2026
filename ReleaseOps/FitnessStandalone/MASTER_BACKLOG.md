@@ -33,7 +33,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [ ] Offline subset remains usable; ranked/economy-sensitive outcomes remain server-authoritative.
 
 ## P3 — Fitness functionality
-- [ ] Exercise catalog, plans, timers, warm-up/cool-down, injury warnings and recovery flows: full regression.
+- [ ] Exercise catalog, plans, timers, warm-up/cool-down, injury warnings and recovery flows: full regression. Production Web implementation is now visible and usable; full cross-client regression remains open.
 - [ ] Motion Coach with real sensor/motion verification.
 - [ ] Health Connect integration and production permission flow.
 - [ ] Progress, XP, competitions/leaderboards and anti-cheat verification: production regression.
@@ -91,6 +91,8 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Production legal URLs: Privacy `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/privacy.html`; Account deletion `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/account-deletion.html`; Terms `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/terms.html`. Account deletion is authenticated and removes account-scoped goal/workout records in bounded requests before sign-out.
 - Android signing source inspection: canonical RC2 `release` build has no production `signingConfig`. Fail-closed patch script `ReleaseOps/FitnessStandalone/apply_android_signing.py` and contract `ANDROID_SIGNING_CONTRACT.md` were added and locally text-tested PASS. Production upload key material remains external-only.
 - Next priority: observe the Android rebuild against the live HTTPS backend, then configure production OAuth/signing, physical-device QA and Play Internal. Do not mark Android/Web cross-device sync PASS until the rebuilt Android artifact is exercised against the same production account/data.
+
+- Web exercise UX defect fixed on production 2026-09-18: Arabic RTL tabs, 18-exercise library, 8 plans, warm-up/cool-down, instructions/warnings/recovery, workout logging, rest timer and progress persistence deployed at the production URL. Evidence: `WEB_EXERCISE_DEPLOY_20260918.md`. Full Android/physical-device regression remains open.
 
 ## Execution policy
 Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
