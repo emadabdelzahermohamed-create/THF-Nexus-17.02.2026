@@ -18,6 +18,7 @@ env:
   SOURCE_DRIVE_FILE_ID: 1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-
   SOURCE_SHA256: 2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74
   AVATAR_SHA256: 4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f
+  THF_FITNESS_BASE_URL: https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/
 
 jobs:
   validate-and-build:
@@ -97,7 +98,7 @@ jobs:
       - name: Android API 36 build gate
         shell: bash
         env:
-          THF_FITNESS_BASE_URL: ${{ vars.THF_FITNESS_BASE_URL }}
+          THF_FITNESS_BASE_URL: ${{ env.THF_FITNESS_BASE_URL }}
           THF_PASS_URL: ${{ vars.THF_PASS_URL }}
         run: |
           set -euo pipefail
@@ -116,6 +117,7 @@ jobs:
           {
             echo "source_sha256=$SOURCE_SHA256"
             echo "avatar_sha256=$AVATAR_SHA256"
+            echo "base_url=$THF_FITNESS_BASE_URL"
             echo "base_url_configured=$([[ -n "$THF_FITNESS_BASE_URL" ]] && echo yes || echo no)"
             echo "pass_url_configured=$([[ -n "$THF_PASS_URL" ]] && echo yes || echo no)"
             echo "play_publish_ready=no"
