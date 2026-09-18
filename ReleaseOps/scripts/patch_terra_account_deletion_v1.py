@@ -163,7 +163,7 @@ async def account_delete(request:Request):
             die("native settings deletion marker missing")
         text = text.replace(native_marker, native_add, 1)
     func_marker = "func _toggle_settings_panel() -> void:\n"
-    func_add = '''func _open_account_delete_page() -> void:\n    var base := endpoint.trim_suffix("/")\n    OS.shell_open(base + "/account-delete")\n\n'''
+    func_add = '''func _open_account_delete_page() -> void:\n    var base: String = str(api.base_url).trim_suffix("/")\n    if base.is_empty():\n        status_label.text = "Account deletion URL unavailable"\n        return\n    OS.shell_open(base + "/account-delete")\n\n'''
     if func_add.strip() not in text:
         if func_marker not in text:
             die("native account delete function marker missing")
