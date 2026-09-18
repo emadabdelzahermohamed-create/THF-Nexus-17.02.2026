@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check gdown
-          gdown --id "$SOURCE_DRIVE_FILE_ID" -O fitness-source.zip
+          gdown "$SOURCE_DRIVE_FILE_ID" -O fitness-source.zip
           echo "$SOURCE_SHA256  fitness-source.zip" | sha256sum -c -
           mkdir -p build/fitness
           unzip -q fitness-source.zip -d build/fitness
