@@ -34,9 +34,11 @@ env:
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
 
       - id: auth
         uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
@@ -50,16 +52,17 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Stage RuinsCiv-only deployment overlays
+      - name: Stage RuinsCiv deployment overlays
         shell: bash
         run: |
           set -Eeuo pipefail
-          REMOTE_OPS="/tmp/terra-web-ops-${GITHUB_RUN_ID}"
+          REMOTE_OPS="/tmp/ruinsciv-web-ops-${GITHUB_RUN_ID}"
           echo "REMOTE_OPS=$REMOTE_OPS" >> "$GITHUB_ENV"
           gcloud compute ssh "$GCP_BUILDER" \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap \
             --ssh-key-expire-after=10m --quiet \
             --command="rm -rf '$REMOTE_OPS'; mkdir -p '$REMOTE_OPS/overlay/app' '$REMOTE_OPS/delete-overlay/web/templates' '$REMOTE_OPS/policy-overlay/web/templates'"
+
           gcloud compute scp \
             ReleaseOps/scripts/patch_ruinsciv_identity_v1.py \
             ReleaseOps/scripts/patch_terra_modern_human_current_source.py \
@@ -68,12 +71,15 @@ jobs:
             ReleaseOps/scripts/patch_ruinsciv_policy_pages_v1.py \
             "$GCP_BUILDER:$REMOTE_OPS/" \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
           gcloud compute scp ReleaseOps/Terra/social_auth_v1/app/auth_social.py \
             "$GCP_BUILDER:$REMOTE_OPS/overlay/app/auth_social.py" \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
           gcloud compute scp ReleaseOps/Terra/account_deletion_v1/web/templates/account_delete.html \
             "$GCP_BUILDER:$REMOTE_OPS/delete-overlay/web/templates/account_delete.html" \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
           gcloud compute scp \
             ReleaseOps/RuinsCiv/policy_v1/web/templates/privacy.html \
             ReleaseOps/RuinsCiv/policy_v1/web/templates/terms.html \
@@ -89,10 +95,18 @@ jobs:
             --ssh-key-expire-after=10m --quiet \
             --command="set -Eeuo pipefail
               SRC=\"\$HOME/thf-terra-rift-staging-apk-v1/terra/work\"
-              APP=\"\$HOME/thf-terra-social-staging\"
+              APP=\"\$HOME/ruinsciv-social-staging\"
+              OLD_APP=\"\$HOME/thf-terra-social-staging\"
               OPS='$REMOTE_OPS'
-              PORT='$TERRA_PORT'
+              PORT='$RUINSCIV_PORT'
+
               test -d \"\$SRC\"
+
+              if [ -f \"\$OLD_APP/terra-web.pid\" ]; then kill \$(cat \"\$OLD_APP/terra-web.pid\") >/dev/null 2>&1 || true; fi
+              if [ -f \"\$OLD_APP/terra-tunnel.pid\" ]; then kill \$(cat \"\$OLD_APP/terra-tunnel.pid\") >/dev/null 2>&1 || true; fi
+              if [ -f \"\$APP/ruinsciv-web.pid\" ]; then kill \$(cat \"\$APP/ruinsciv-web.pid\") >/dev/null 2>&1 || true; fi
+              if [ -f \"\$APP/ruinsciv-tunnel.pid\" ]; then kill \$(cat \"\$APP/ruinsciv-tunnel.pid\") >/dev/null 2>&1 || true; fi
+
               mkdir -p \"\$APP\" \"\$APP/data\" \"\$APP/logs\"
               if command -v rsync >/dev/null 2>&1; then
                 rsync -a --delete \
@@ -113,27 +127,41 @@ jobs:
                 cp -a \"\$SRC/.\" \"\$APP/\"
                 rm -rf \"\$APP/.godot\" \"\$APP/android/build/build\" \"\$APP/android/build/src/main/assets\"
               fi
+
               mkdir -p \"\$APP/data\" \"\$APP/logs\"
               cd \"\$APP\"
+
+              python3 \"\$OPS/patch_ruinsciv_identity_v1.py\" > logs/ruinsciv-identity-pre.log
               python3 \"\$OPS/patch_terra_modern_human_current_source.py\" > logs/modern-human-patch.log
               THF_TERRA_SOCIAL_AUTH_OVERLAY=\"\$OPS/overlay\" python3 \"\$OPS/patch_terra_social_auth_v1.py\" > logs/social-auth-patch.log
               THF_TERRA_ACCOUNT_DELETE_OVERLAY=\"\$OPS/delete-overlay\" python3 \"\$OPS/patch_terra_account_deletion_v1.py\" > logs/account-delete-patch.log
+              RUINSCIV_POLICY_OVERLAY=\"\$OPS/policy-overlay\" python3 \"\$OPS/patch_ruinsciv_policy_pages_v1.py\" > logs/policy-pages-patch.log
+              python3 \"\$OPS/patch_ruinsciv_identity_v1.py\" > logs/ruinsciv-identity-post.log
+
+              LEGACY=\$(grep -RIl --exclude-dir=.godot --exclude-dir=build -E 'com\.topherofit\.thf\.terra|THF Terra|THF World' project.godot export_presets.cfg native web config android app 2>/dev/null || true)
+              test -z \"\$LEGACY\"
+
               python3 -m compileall -q app
               if [ ! -x .venv/bin/python ]; then python3 -m venv .venv; fi
               .venv/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+
               if [ ! -f .env.runtime ]; then
                 umask 077
                 TOKEN=\$(openssl rand -hex 48)
                 ADMIN=\$(openssl rand -hex 48)
-                printf 'THF_HOST=127.0.0.1\nTHF_PORT=%s\nTHF_DATABASE_PATH=data/terra-social-staging.db\nTHF_TOKEN_SECRET=%s\nTHF_ADMIN_KEY=%s\nTHF_PAYMENTS_ENABLED=false\nTHF_PAYMENT_MODE=mock\nAI_PROVIDER=disabled\n' \"\$PORT\" \"\$TOKEN\" \"\$ADMIN\" > .env.runtime
+                printf 'THF_HOST=127.0.0.1\nTHF_PORT=%s\nTHF_DATABASE_PATH=data/ruinsciv-social-staging.db\nTHF_TOKEN_SECRET=%s\nTHF_ADMIN_KEY=%s\nTHF_PAYMENTS_ENABLED=false\nTHF_PAYMENT_MODE=mock\nAI_PROVIDER=disabled\n' \"\$PORT\" \"\$TOKEN\" \"\$ADMIN\" > .env.runtime
                 chmod 600 .env.runtime
               fi
-              if [ -f ruinsciv-web.pid ]; then kill \$(cat ruinsciv-web.pid) >/dev/null 2>&1 || true; fi
+
               set -a; . ./.env.runtime; set +a
               nohup .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port \"\$PORT\" --proxy-headers --forwarded-allow-ips=127.0.0.1 > logs/uvicorn.log 2>&1 < /dev/null & echo \$! > ruinsciv-web.pid
+
               for i in \$(seq 1 30); do curl -fsS \"http://127.0.0.1:\$PORT/api/health\" >/dev/null && break; sleep 1; done
               curl -fsS \"http://127.0.0.1:\$PORT/api/health\" >/dev/null
-              if [ -f ruinsciv-tunnel.pid ]; then kill \$(cat ruinsciv-tunnel.pid) >/dev/null 2>&1 || true; fi
+              curl -fsS \"http://127.0.0.1:\$PORT/privacy\" | grep -q 'RuinsCiv Privacy Policy'
+              curl -fsS \"http://127.0.0.1:\$PORT/terms\" | grep -q 'RuinsCiv Terms of Service'
+              curl -fsS \"http://127.0.0.1:\$PORT/account-delete\" | grep -q 'Delete RuinsCiv account'
+
               : > logs/cloudflared.log
               nohup cloudflared tunnel --no-autoupdate --url \"http://127.0.0.1:\$PORT\" > logs/cloudflared.log 2>&1 < /dev/null & echo \$! > ruinsciv-tunnel.pid
               URL=''
@@ -152,13 +180,15 @@ jobs:
           URL="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='cat "$HOME/ruinsciv-social-staging/STAGING_URL.txt"')"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "RUINSCIV_STAGING_URL=$URL"
+
           for i in $(seq 1 30); do curl -fsS "$URL/api/health" >/dev/null && break; sleep 2; done
           curl -fsS "$URL/api/health" | tee health.json
-          curl -fsS "$URL/" >/dev/null
-          curl -fsS "$URL/account-delete" >/dev/null
+          curl -fsS "$URL/" | grep -q 'RuinsCiv'
+          curl -fsS "$URL/account-delete" | grep -q 'Delete RuinsCiv account'
           curl -fsS "$URL/privacy" | grep -q 'RuinsCiv Privacy Policy'
           curl -fsS "$URL/terms" | grep -q 'RuinsCiv Terms of Service'
           curl -fsS "$URL/api/auth/providers" | tee providers.json
+
           USER="gate$(date +%s)"
           PASS="RuinsCiv-Stage-$(openssl rand -hex 8)"
           REGISTER="$(curl -fsS -X POST "$URL/api/auth/register" -H 'Content-Type: application/json' --data "{\"username\":\"$USER\",\"password\":\"$PASS\"}")"
@@ -166,6 +196,7 @@ jobs:
           curl -fsS "$URL/api/me" -H "Authorization: Bearer $TOKEN" | tee me.json
           curl -fsS -X DELETE "$URL/api/account/delete" -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" --data "{\"confirm\":\"DELETE $USER\"}" | tee delete.json
           grep -q '"account_deleted":true' <(tr -d ' ' < delete.json)
+
           echo RUINSCIV_PUBLIC_STAGING_SMOKE=PASS
 
       - name: Cleanup deployment transfer directory only
