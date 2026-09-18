@@ -1,0 +1,66 @@
+name: THF Fitness GCP Production Hosting Probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-fitness-gcp-hosting-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  read-only-hosting-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Inspect Cloud Run and Artifact Registry access
+        shell: bash
+        run: |
+          set -u
+          mkdir -p evidence
+          {
+            echo "project=$GCP_PROJECT_ID"
+            if gcloud run services list --project "$GCP_PROJECT_ID" --platform managed --format='table(name,region,url)' > evidence/cloud-run-services.txt 2> evidence/cloud-run-error.txt; then
+              echo "cloud_run_list=PASS"
+            else
+              echo "cloud_run_list=BLOCKED"
+            fi
+            if gcloud artifacts repositories list --project "$GCP_PROJECT_ID" --format='table(name,format,location)' > evidence/artifact-repositories.txt 2> evidence/artifact-error.txt; then
+              echo "artifact_registry_list=PASS"
+            else
+              echo "artifact_registry_list=BLOCKED"
+            fi
+            if gcloud builds list --project "$GCP_PROJECT_ID" --limit=5 --format='table(id,status,createTime)' > evidence/cloud-builds.txt 2> evidence/cloud-build-error.txt; then
+              echo "cloud_build_list=PASS"
+            else
+              echo "cloud_build_list=BLOCKED"
+            fi
+          } | tee evidence/RESULT.txt
+
+      - name: Upload read-only hosting evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thf-fitness-gcp-hosting-probe
+          path: evidence/
+          retention-days: 7
