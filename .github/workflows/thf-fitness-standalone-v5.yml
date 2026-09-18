@@ -115,10 +115,10 @@ jobs:
           cd build/fitness/android
           gradle wrapper --gradle-version 8.11.1
           ./gradlew --no-daemon clean assembleDebug bundleRelease             -PTHF_BASE_URL="$THF_FITNESS_BASE_URL"             -PTHF_PASS_URL="$THF_PASS_URL"
-          mkdir -p ../../artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk ../../artifacts/THF-Fitness-V5-RC2-debug.apk
-          cp app/build/outputs/bundle/release/app-release.aab ../../artifacts/THF-Fitness-V5-RC2-unsigned.aab
-          cd ../../artifacts
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/artifacts/THF-Fitness-V5-RC2-debug.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "$GITHUB_WORKSPACE/artifacts/THF-Fitness-V5-RC2-unsigned.aab"
+          cd "$GITHUB_WORKSPACE/artifacts"
           sha256sum THF-Fitness-V5-RC2-debug.apk THF-Fitness-V5-RC2-unsigned.aab > SHA256SUMS.txt
           {
             echo "source_sha256=$SOURCE_SHA256"
