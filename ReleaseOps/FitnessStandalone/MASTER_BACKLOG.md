@@ -27,7 +27,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [ ] Preserve optional THF ecosystem identity bridge without making Fitness dependent on it.
 
 ## P2 — Production backend + web parity
-- [ ] Stable HTTPS API endpoint; no temporary tunnels in production config.
+- [ ] Stable HTTPS API endpoint; no temporary tunnels in production config. Fail-closed contract recorded in `PRODUCTION_HOSTING_GATE.md`.
 - [ ] Fitness mobile sync endpoint and durable queue reconciliation verified against production.
 - [ ] Publish responsive Web/PWA using the same API and account data as Android.
 - [ ] Offline subset remains usable; ranked/economy-sensitive outcomes remain server-authoritative.
@@ -56,7 +56,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 
 ## P6 — Google Play
 - [ ] Create/configure standalone Fitness Play app if not already present.
-- [ ] Internal Testing upload only after Android gates pass.
+- [ ] Internal Testing upload only after Android gates pass. Fail-closed checklist recorded in `PLAY_RELEASE_GATE.md`; unsigned RC2 is explicitly non-publishable.
 - [ ] Data Safety, Health Apps declaration, App Access, content rating, target audience.
 - [ ] Privacy policy + account deletion URL.
 - [ ] Verify install from Play Internal and post-upload runtime.
@@ -84,8 +84,10 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Debug APK SHA-256: `cfc5abb2b73cccdab338b3ec73205aad3bc6fb80557bf0f41a7a384e667e97d2`.
 - Unsigned release AAB SHA-256: `ce8e8772665e4bc94f4c334a650079d93175ebf9b8ead053a62e0ee49988410a` — DO NOT publish this unsigned AAB.
 - Production blockers reported by the successful gate: `base_url_configured=no`, `pass_url_configured=no`; production signing remains unconfigured.
-- Infrastructure probe 2026-09-18: connected DigitalOcean account currently has zero droplets, so no existing Fitness host can be safely reused there without provisioning new paid infrastructure.
-- Next priority: establish stable HTTPS backend/Web hosting using already-authorized infrastructure if available, then configure production OAuth, production signing, physical-device QA and Play Internal.
+- Infrastructure re-probe 2026-09-18: connected DigitalOcean account still has zero droplets. Repository searches found no authoritative committed `THF_FITNESS_BASE_URL` or Fitness Cloud Run deployment contract. Creating new paid infrastructure remains owner-gated.
+- Hosting acceptance/rollback requirements are now checkpointed in `PRODUCTION_HOSTING_GATE.md` (`294a9bf221ece68dfb05c8e1c581bf327ba558e4`).
+- Play pre/post-upload requirements are now checkpointed in `PLAY_RELEASE_GATE.md` (`074d83480284667a5fda8c4a877080564e7e3e4a`).
+- Next priority: establish stable HTTPS backend/Web hosting using already-authorized infrastructure if available, then configure production OAuth, production signing, physical-device QA and Play Internal. Independent security/release hardening may continue while hosting is blocked.
 
 ## Execution policy
 Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
