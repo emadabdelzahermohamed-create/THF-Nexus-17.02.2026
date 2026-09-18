@@ -98,5 +98,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 
 - Google Play state probe run `35357059466` PASS: application record exists, 4 standard tracks are readable, and all have zero releases. Evidence: `PLAY_RELEASE_STATE_20260918.md`, artifact `10552081828`. No Play edit was committed.
 
+- Android production-backend emulator smoke PASS: run `35356916175`, artifact `10552152173`, APK SHA-256 `aede65b003659b4b3ba46555b51744f365a9824e462029a5f0e6a3f1bd20f567`; install/cold-launch/ar-EG UI/no-fatal-crash/screenshot/UI-dump all PASS. Evidence: `ANDROID_EMULATOR_SMOKE_20260918.md`. Physical-device sensor/GPU testing remains open.
+
 ## Execution policy
 Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
