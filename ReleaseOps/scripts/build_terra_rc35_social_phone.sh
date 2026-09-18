@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# THF Terra RC35 independent social-game Android candidate.
+# RuinsCiv RC35 independent social-game Android candidate.
 # Source authority: current RC34 builder source, patched forward only.
 # Adds approved modern human/world lineage + standalone social auth + account deletion.
 # Never touches WAVE_MAWJA source/runtime/state.
@@ -22,13 +22,13 @@ PATCH_DELETE="$SCRIPT_DIR/patch_terra_account_deletion_v1.py"
 SOCIAL_OVERLAY="${THF_TERRA_SOCIAL_AUTH_OVERLAY:-$SCRIPT_DIR/overlay}"
 DELETE_OVERLAY="${THF_TERRA_ACCOUNT_DELETE_OVERLAY:-$SCRIPT_DIR/delete-overlay}"
 
-APK_NAME="THF-TERRA-4.6.9-RC35-SOCIAL-MODERN-HUMAN-TEST.apk"
-EXPECTED_PACKAGE="com.topherofit.thf.terra"
+APK_NAME="RuinsCiv-4.7.0-RC35-SOCIAL-MODERN-HUMAN-TEST.apk"
+EXPECTED_PACKAGE="com.topherofit.ruins.civ"
 EXPECTED_TARGET_SDK="36"
 CANONICAL_AVATAR="web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb"
 CANONICAL_AVATAR_SHA256="4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f"
 
-fail(){ printf 'TERRA_RC35_SOCIAL_BUILD=FAIL reason=%s\n' "$1" >&2; exit "${2:-1}"; }
+fail(){ printf 'RUINSCIV_RC35_SOCIAL_BUILD=FAIL reason=%s\n' "$1" >&2; exit "${2:-1}"; }
 
 [[ -d "$SRC" ]] || fail "terra_source_missing:$SRC" 10
 [[ -x "$GODOT" ]] || fail "godot_4_7_2_missing:$GODOT" 11
@@ -87,11 +87,11 @@ for sec in sections:
     if 'platform="Android"' not in sec or found:
         out.append(sec);continue
     found=True
-    sec=re.sub(r'package/unique_name="[^"]*"','package/unique_name="com.topherofit.thf.terra"',sec,count=1)
-    sec=re.sub(r'version/name="[^"]*"','version/name="4.6.9-rc35-social-v1"',sec,count=1)
+    sec=re.sub(r'package/unique_name="[^"]*"','package/unique_name="com.topherofit.ruins.civ"',sec,count=1)
+    sec=re.sub(r'version/name="[^"]*"','version/name="4.7.0-rc35-ruinsciv-v1"',sec,count=1)
     m=re.search(r'version/code=(\d+)',sec)
     if m:
-        new=max(int(m.group(1)),42074)
+        new=max(int(m.group(1)),42075)
         sec=sec[:m.start()]+f'version/code={new}'+sec[m.end():]
     out.append(sec)
 if not found: raise SystemExit('Android export preset missing')
@@ -173,10 +173,10 @@ AVATAR_SHA="$(sha256sum "$CANONICAL_AVATAR" | awk '{print $1}')"
 
 cat > "$OUT/EVIDENCE.json" <<EOF
 {
-  "gate": "THF_TERRA_RC35_INDEPENDENT_SOCIAL_ANDROID_TEST",
+  "gate": "RUINSCIV_RC35_INDEPENDENT_SOCIAL_ANDROID_TEST",
   "status": "PASS_BUILD_AND_ENGINE_GATES",
-  "source_authority": "current_builder_RC34_plus_forward_only_RC35_social_integrations",
-  "version_name": "4.6.9-rc35-social-v1",
+  "source_authority": "current_RC34_gameplay_avatar_world_baseline_plus_RuinsCiv_identity_and_RC35_social_integrations",
+  "version_name": "4.7.0-rc35-ruinsciv-v1",
   "engine": "Godot 4.7.2",
   "application_id": "$EXPECTED_PACKAGE",
   "target_sdk": 36,
