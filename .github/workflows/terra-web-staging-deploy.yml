@@ -3,7 +3,16 @@ name: RuinsCiv Web Staging Deploy
 on:
   push:
     branches: ['t/**']
-    paths: ['.github/workflows/terra-web-staging-deploy.yml']
+    paths:
+      - '.github/workflows/terra-web-staging-deploy.yml'
+      - 'ReleaseOps/scripts/patch_ruinsciv_identity_v1.py'
+      - 'ReleaseOps/scripts/patch_terra_modern_human_current_source.py'
+      - 'ReleaseOps/scripts/patch_terra_social_auth_v1.py'
+      - 'ReleaseOps/scripts/patch_terra_account_deletion_v1.py'
+      - 'ReleaseOps/scripts/patch_ruinsciv_policy_pages_v1.py'
+      - 'ReleaseOps/Terra/social_auth_v1/**'
+      - 'ReleaseOps/Terra/account_deletion_v1/**'
+      - 'ReleaseOps/RuinsCiv/policy_v1/**'
   workflow_dispatch:
 
 concurrency:
@@ -20,7 +29,7 @@ env:
   GCP_BUILDER: thf-wave-builder
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
-  TERRA_PORT: '18082'
+  RUINSCIV_PORT: '18082'
 
 jobs:
   deploy-staging:
@@ -41,7 +50,7 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Stage Terra-only deployment overlays
+      - name: Stage RuinsCiv-only deployment overlays
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -50,12 +59,13 @@ jobs:
           gcloud compute ssh "$GCP_BUILDER" \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap \
             --ssh-key-expire-after=10m --quiet \
-            --command="rm -rf '$REMOTE_OPS'; mkdir -p '$REMOTE_OPS/overlay/app' '$REMOTE_OPS/delete-overlay/web/templates'"
+            --command="rm -rf '$REMOTE_OPS'; mkdir -p '$REMOTE_OPS/overlay/app' '$REMOTE_OPS/delete-overlay/web/templates' '$REMOTE_OPS/policy-overlay/web/templates'"
           gcloud compute scp \
             ReleaseOps/scripts/patch_ruinsciv_identity_v1.py \
             ReleaseOps/scripts/patch_terra_modern_human_current_source.py \
             ReleaseOps/scripts/patch_terra_social_auth_v1.py \
             ReleaseOps/scripts/patch_terra_account_deletion_v1.py \
+            ReleaseOps/scripts/patch_ruinsciv_policy_pages_v1.py \
             "$GCP_BUILDER:$REMOTE_OPS/" \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
           gcloud compute scp ReleaseOps/Terra/social_auth_v1/app/auth_social.py \
@@ -64,8 +74,13 @@ jobs:
           gcloud compute scp ReleaseOps/Terra/account_deletion_v1/web/templates/account_delete.html \
             "$GCP_BUILDER:$REMOTE_OPS/delete-overlay/web/templates/account_delete.html" \
             --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp \
+            ReleaseOps/RuinsCiv/policy_v1/web/templates/privacy.html \
+            ReleaseOps/RuinsCiv/policy_v1/web/templates/terms.html \
+            "$GCP_BUILDER:$REMOTE_OPS/policy-overlay/web/templates/" \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
 
-      - name: Deploy isolated persistent Terra staging service
+      - name: Deploy isolated persistent RuinsCiv staging service
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -85,16 +100,16 @@ jobs:
                   --exclude '.godot/' \
                   --exclude '.env.runtime' \
                   --exclude 'logs/' \
-                  --exclude 'terra-web.pid' \
-                  --exclude 'terra-tunnel.pid' \
+                  --exclude 'ruinsciv-web.pid' \
+                  --exclude 'ruinsciv-tunnel.pid' \
                   --exclude 'STAGING_URL.txt' \
                   --exclude 'data/thf_fantasy_city.db' \
-                  --exclude 'data/terra-social-staging.db' \
+                  --exclude 'data/ruinsciv-social-staging.db' \
                   --exclude 'android/build/build/' \
                   --exclude 'android/build/src/main/assets/' \
                   \"\$SRC/\" \"\$APP/\"
               else
-                find \"\$APP\" -mindepth 1 -maxdepth 1 ! -name data ! -name logs ! -name .env.runtime ! -name .venv ! -name terra-web.pid ! -name terra-tunnel.pid ! -name STAGING_URL.txt -exec rm -rf {} +
+                find \"\$APP\" -mindepth 1 -maxdepth 1 ! -name data ! -name logs ! -name .env.runtime ! -name .venv ! -name ruinsciv-web.pid ! -name ruinsciv-tunnel.pid ! -name STAGING_URL.txt -exec rm -rf {} +
                 cp -a \"\$SRC/.\" \"\$APP/\"
                 rm -rf \"\$APP/.godot\" \"\$APP/android/build/build\" \"\$APP/android/build/src/main/assets\"
               fi
@@ -113,14 +128,14 @@ jobs:
                 printf 'THF_HOST=127.0.0.1\nTHF_PORT=%s\nTHF_DATABASE_PATH=data/terra-social-staging.db\nTHF_TOKEN_SECRET=%s\nTHF_ADMIN_KEY=%s\nTHF_PAYMENTS_ENABLED=false\nTHF_PAYMENT_MODE=mock\nAI_PROVIDER=disabled\n' \"\$PORT\" \"\$TOKEN\" \"\$ADMIN\" > .env.runtime
                 chmod 600 .env.runtime
               fi
-              if [ -f terra-web.pid ]; then kill \$(cat terra-web.pid) >/dev/null 2>&1 || true; fi
+              if [ -f ruinsciv-web.pid ]; then kill \$(cat ruinsciv-web.pid) >/dev/null 2>&1 || true; fi
               set -a; . ./.env.runtime; set +a
-              nohup .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port \"\$PORT\" --proxy-headers --forwarded-allow-ips=127.0.0.1 > logs/uvicorn.log 2>&1 < /dev/null & echo \$! > terra-web.pid
+              nohup .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port \"\$PORT\" --proxy-headers --forwarded-allow-ips=127.0.0.1 > logs/uvicorn.log 2>&1 < /dev/null & echo \$! > ruinsciv-web.pid
               for i in \$(seq 1 30); do curl -fsS \"http://127.0.0.1:\$PORT/api/health\" >/dev/null && break; sleep 1; done
               curl -fsS \"http://127.0.0.1:\$PORT/api/health\" >/dev/null
-              if [ -f terra-tunnel.pid ]; then kill \$(cat terra-tunnel.pid) >/dev/null 2>&1 || true; fi
+              if [ -f ruinsciv-tunnel.pid ]; then kill \$(cat ruinsciv-tunnel.pid) >/dev/null 2>&1 || true; fi
               : > logs/cloudflared.log
-              nohup cloudflared tunnel --no-autoupdate --url \"http://127.0.0.1:\$PORT\" > logs/cloudflared.log 2>&1 < /dev/null & echo \$! > terra-tunnel.pid
+              nohup cloudflared tunnel --no-autoupdate --url \"http://127.0.0.1:\$PORT\" > logs/cloudflared.log 2>&1 < /dev/null & echo \$! > ruinsciv-tunnel.pid
               URL=''
               for i in \$(seq 1 40); do URL=\$(grep -aEo 'https://[-a-z0-9]+\\.trycloudflare\\.com' logs/cloudflared.log | tail -1 || true); [ -n \"\$URL\" ] && break; sleep 1; done
               test -n \"\$URL\"
@@ -134,16 +149,18 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          URL="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='cat "$HOME/thf-terra-social-staging/STAGING_URL.txt"')"
+          URL="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='cat "$HOME/ruinsciv-social-staging/STAGING_URL.txt"')"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "TERRA_STAGING_URL=$URL"
+          echo "RUINSCIV_STAGING_URL=$URL"
           for i in $(seq 1 30); do curl -fsS "$URL/api/health" >/dev/null && break; sleep 2; done
           curl -fsS "$URL/api/health" | tee health.json
           curl -fsS "$URL/" >/dev/null
           curl -fsS "$URL/account-delete" >/dev/null
+          curl -fsS "$URL/privacy" | grep -q 'RuinsCiv Privacy Policy'
+          curl -fsS "$URL/terms" | grep -q 'RuinsCiv Terms of Service'
           curl -fsS "$URL/api/auth/providers" | tee providers.json
           USER="gate$(date +%s)"
-          PASS="T3rra-Stage-$(openssl rand -hex 8)"
+          PASS="RuinsCiv-Stage-$(openssl rand -hex 8)"
           REGISTER="$(curl -fsS -X POST "$URL/api/auth/register" -H 'Content-Type: application/json' --data "{\"username\":\"$USER\",\"password\":\"$PASS\"}")"
           TOKEN="$(printf '%s' "$REGISTER" | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')"
           curl -fsS "$URL/api/me" -H "Authorization: Bearer $TOKEN" | tee me.json
