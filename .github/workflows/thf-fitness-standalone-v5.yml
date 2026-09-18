@@ -31,13 +31,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Authenticate to Google with WIF
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
-          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
-          create_credentials_file: true
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -47,22 +40,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check google-api-python-client google-auth
-          python - <<'PY'
-          import os
-          import google.auth
-          from googleapiclient.discovery import build
-          from googleapiclient.http import MediaIoBaseDownload
-
-          creds, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
-          service = build('drive', 'v3', credentials=creds, cache_discovery=False)
-          request = service.files().get_media(fileId=os.environ['SOURCE_DRIVE_FILE_ID'])
-          with open('fitness-source.zip', 'wb') as raw:
-              downloader = MediaIoBaseDownload(raw, request, chunksize=8 * 1024 * 1024)
-              done = False
-              while not done:
-                  _, done = downloader.next_chunk()
-          PY
+          python -m pip install --disable-pip-version-check gdown
+          gdown --id "$SOURCE_DRIVE_FILE_ID" -O fitness-source.zip
           echo "$SOURCE_SHA256  fitness-source.zip" | sha256sum -c -
           mkdir -p build/fitness
           unzip -q fitness-source.zip -d build/fitness
@@ -114,7 +93,7 @@ jobs:
           yes | "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" >/dev/null || true
           cd build/fitness/android
           gradle wrapper --gradle-version 8.11.1
-          ./gradlew --no-daemon clean assembleDebug bundleRelease             -PTHF_BASE_URL="$THF_FITNESS_BASE_URL"             -PTHF_PASS_URL="$THF_PASS_URL"
+          ./gradlew --no-daemon clean assembleDebug bundleRelease -PTHF_BASE_URL="$THF_FITNESS_BASE_URL" -PTHF_PASS_URL="$THF_PASS_URL"
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
           cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/artifacts/THF-Fitness-V5-RC2-debug.apk"
           cp app/build/outputs/bundle/release/app-release.aab "$GITHUB_WORKSPACE/artifacts/THF-Fitness-V5-RC2-unsigned.aab"
