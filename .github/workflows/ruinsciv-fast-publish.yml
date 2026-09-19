@@ -1,0 +1,169 @@
+name: RuinsCiv Fast Publish
+
+on:
+  push:
+    branches: [ruinsciv/oss-fusion-v1-20260920]
+    paths:
+      - '.github/workflows/ruinsciv-fast-publish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_REGION: europe-west1
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  PACKAGE_NAME: com.topherofit.ruins.civ
+  CLOUD_RUN_SERVICE: ruinsciv-web
+
+jobs:
+  fast-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout latest RuinsCiv branch
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          ref: ruinsciv/oss-fusion-v1-20260920
+          fetch-depth: 1
+
+      - name: Authenticate GCP and Android Publisher
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: |-
+            https://www.googleapis.com/auth/cloud-platform
+            https://www.googleapis.com/auth/androidpublisher
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Copy bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute scp ReleaseOps/RuinsCiv/bootstrap_oss_fusion_v1.sh "$GCP_BUILDER:/tmp/ruinsciv_fast_bootstrap.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+
+      - name: Build RuinsCiv release outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/ruinsciv_fast_bootstrap.sh && RUINSCIV_ROOT="$HOME/ruinsciv-fastpublish" /tmp/ruinsciv_fast_bootstrap.sh'
+
+      - name: Retrieve release outputs only
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          rm -rf /tmp/ruinsciv-out
+          mkdir -p /tmp/ruinsciv-out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/ruinsciv-fastpublish/out/." /tmp/ruinsciv-out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+
+      - name: Deploy Web
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          E=/tmp/ruinsciv-out/WEB_DEPLOY_EVIDENCE.txt
+          mkdir -p /tmp/ruinsciv-deploy
+          : > "$E"
+          if [[ ! -s /tmp/ruinsciv-out/web/index.html ]]; then
+            echo "WEB_DEPLOY=BLOCKED" | tee -a "$E"
+            echo "REASON=web export missing" | tee -a "$E"
+            exit 0
+          fi
+          cp -a /tmp/ruinsciv-out/web/. /tmp/ruinsciv-deploy/
+          cat > /tmp/ruinsciv-deploy/Dockerfile <<'DOCKER'
+          FROM nginx:1.27-alpine
+          COPY . /usr/share/nginx/html
+          RUN printf 'server { listen 8080; server_name _; root /usr/share/nginx/html; index index.html; location / { try_files $uri $uri/ /index.html; } }' > /etc/nginx/conf.d/default.conf
+          EXPOSE 8080
+          DOCKER
+          set +e
+          gcloud run deploy "$CLOUD_RUN_SERVICE" --source /tmp/ruinsciv-deploy --region "$GCP_REGION" --project "$GCP_PROJECT_ID" --allow-unauthenticated --quiet > /tmp/ruinsciv-cloudrun.log 2>&1
+          RC=$?
+          set -e
+          cat /tmp/ruinsciv-cloudrun.log | tee -a "$E"
+          if [[ $RC -ne 0 ]]; then
+            echo "WEB_DEPLOY=BLOCKED" | tee -a "$E"
+            echo "CLOUD_RUN_EXIT=$RC" | tee -a "$E"
+            exit 0
+          fi
+          URL="$(gcloud run services describe "$CLOUD_RUN_SERVICE" --region "$GCP_REGION" --project "$GCP_PROJECT_ID" --format='value(status.url)')"
+          echo "$URL" | tee /tmp/ruinsciv-out/LIVE_URL.txt
+          curl -fsS --retry 5 --retry-delay 2 "$URL/" -o /tmp/ruinsciv-index.html
+          echo "WEB_DEPLOY=PASS" | tee -a "$E"
+          echo "LIVE_HTTP_PROBE=PASS" | tee -a "$E"
+          echo "URL=$URL" | tee -a "$E"
+
+      - name: Publish Play Internal
+        if: always()
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -u
+          E=/tmp/ruinsciv-out/PLAY_INTERNAL_EVIDENCE.txt
+          : > "$E"
+          AAB=/tmp/ruinsciv-out/android/ruinsciv.aab
+          if [[ ! -s "$AAB" ]]; then
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$E"
+            echo "REASON=AAB missing" | tee -a "$E"
+            exit 0
+          fi
+          API="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME"
+          CODE="$(curl -sS -o /tmp/edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$API/edits")"
+          echo "CREATE_EDIT_HTTP=$CODE" | tee -a "$E"
+          if [[ "$CODE" != "200" ]]; then
+            cat /tmp/edit.json | tee -a "$E"
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$E"
+            exit 0
+          fi
+          EDIT="$(python3 -c 'import json;print(json.load(open("/tmp/edit.json"))["id"])')"
+          CODE="$(curl -sS -o /tmp/bundle.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/octet-stream' --data-binary @"$AAB" "https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT/bundles?uploadType=media")"
+          echo "BUNDLE_UPLOAD_HTTP=$CODE" | tee -a "$E"
+          if [[ "$CODE" != "200" ]]; then
+            cat /tmp/bundle.json | tee -a "$E"
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$E"
+            exit 0
+          fi
+          VC="$(python3 -c 'import json;print(json.load(open("/tmp/bundle.json"))["versionCode"])')"
+          python3 - "$VC" > /tmp/track.json <<'PY'
+          import json,sys
+          print(json.dumps({"track":"internal","releases":[{"name":"RuinsCiv OSS Fusion V1","versionCodes":[sys.argv[1]],"status":"completed"}]}))
+          PY
+          CODE="$(curl -sS -o /tmp/track-res.json -w '%{http_code}' -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @/tmp/track.json "$API/edits/$EDIT/tracks/internal")"
+          echo "TRACK_UPDATE_HTTP=$CODE" | tee -a "$E"
+          if [[ "$CODE" != "200" ]]; then
+            cat /tmp/track-res.json | tee -a "$E"
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$E"
+            exit 0
+          fi
+          CODE="$(curl -sS -o /tmp/commit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$API/edits/$EDIT:commit")"
+          echo "EDIT_COMMIT_HTTP=$CODE" | tee -a "$E"
+          if [[ "$CODE" == "200" ]]; then
+            echo "PLAY_INTERNAL=PASS" | tee -a "$E"
+            echo "VERSION_CODE=$VC" | tee -a "$E"
+          else
+            cat /tmp/commit.json | tee -a "$E"
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$E"
+          fi
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruinsciv-fast-publish
+          path: /tmp/ruinsciv-out
+          if-no-files-found: warn
+          retention-days: 30
