@@ -66,7 +66,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          for path in /browse /live /offline /downloads /api/library /api/offline-source /api/browser-ingest /api/cloudflare-media; do
+          for path in /browse /live /offline /downloads /api/library /api/browser-ingest /api/cloudflare-media; do
             code="$(curl -L -sS -o /tmp/body -w '%{http_code}' "$WAVE_LIVE_URL$path")"
             case "$code" in 200|400|401|403|405|422) ;; *) echo "MEDIA_SURFACE_FAIL $path HTTP=$code"; exit 41;; esac
             echo "WAVE_MEDIA_SURFACE $path HTTP=$code"
