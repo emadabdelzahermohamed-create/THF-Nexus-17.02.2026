@@ -152,6 +152,42 @@ jobs:
             echo "reason=Play upload and physical-device acceptance remain separate gated steps"
           } > BUILD_GATE.txt
 
+      - name: Upload signed AAB to Google Play Internal
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PYPLAY'
+          import json
+          import google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          from googleapiclient.errors import HttpError
+          package = "com.topherofit.thf.pulse"
+          aab = "artifacts/THF-Fitness-V5-RC2-signed.aab"
+          creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/androidpublisher"])
+          api = build("androidpublisher", "v3", credentials=creds, cache_discovery=False)
+          edit_id = None
+          result = {"package": package, "track": "internal", "aab": aab, "committed": False}
+          try:
+              edit_id = api.edits().insert(packageName=package, body={}).execute()["id"]
+              bundle = api.edits().bundles().upload(packageName=package, editId=edit_id, media_body=MediaFileUpload(aab, mimetype="application/octet-stream", resumable=True)).execute()
+              version = str(bundle["versionCode"])
+              result["versionCode"] = version
+              api.edits().tracks().update(packageName=package, editId=edit_id, track="internal", body={"releases":[{"versionCodes":[version],"status":"completed","name":"THF Fitness V5 RC2 Internal"}]}).execute()
+              api.edits().commit(packageName=package, editId=edit_id).execute()
+              result["committed"] = True
+          except HttpError as exc:
+              result.update({"http_status": exc.resp.status, "error": str(exc)[:2000]})
+              if edit_id:
+                  try: api.edits().delete(packageName=package, editId=edit_id).execute()
+                  except Exception: pass
+              print(json.dumps(result, indent=2))
+              raise
+          print(json.dumps(result, indent=2))
+          with open("artifacts/PLAY_INTERNAL_UPLOAD.json", "w") as fh: json.dump(result, fh, indent=2)
+          PYPLAY
+
       - name: Upload signed V5 RC2 evidence
         uses: actions/upload-artifact@v4
         with:
@@ -161,4 +197,5 @@ jobs:
             artifacts/THF-Fitness-V5-RC2-signed.aab
             artifacts/SHA256SUMS.txt
             artifacts/BUILD_GATE.txt
+            artifacts/PLAY_INTERNAL_UPLOAD.json
           retention-days: 14
