@@ -1,0 +1,292 @@
+name: RuinsCiv OSS Fusion V1
+
+on:
+  push:
+    branches: [ruinsciv/oss-fusion-v1-20260920]
+    paths:
+      - 'ReleaseOps/RuinsCiv/bootstrap_oss_fusion_v1.sh'
+      - '.github/workflows/ruinsciv-oss-fusion-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: ruinsciv-oss-fusion-v1
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_REGION: europe-west1
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  PACKAGE_NAME: com.topherofit.ruins.civ
+  CLOUD_RUN_SERVICE: ruinsciv-web
+
+jobs:
+  build-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout RuinsCiv release branch
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          ref: ruinsciv/oss-fusion-v1-20260920
+          fetch-depth: 1
+
+      - name: Authenticate to Google Cloud and Android Publisher
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: |-
+            https://www.googleapis.com/auth/cloud-platform
+            https://www.googleapis.com/auth/androidpublisher
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Copy RuinsCiv bootstrap to authorized builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute scp             ReleaseOps/RuinsCiv/bootstrap_oss_fusion_v1.sh             "$GCP_BUILDER:/tmp/bootstrap_oss_fusion_v1.sh"             --project "$GCP_PROJECT_ID"             --zone "$GCP_ZONE"             --tunnel-through-iap             --quiet
+
+      - name: Build social city + farm + Web + Android on builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute ssh "$GCP_BUILDER"             --project "$GCP_PROJECT_ID"             --zone "$GCP_ZONE"             --tunnel-through-iap             --ssh-key-expire-after=30m             --quiet             --command='chmod +x /tmp/bootstrap_oss_fusion_v1.sh && /tmp/bootstrap_oss_fusion_v1.sh'
+
+      - name: Retrieve build evidence and release outputs
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          rm -rf /tmp/ruinsciv-out /tmp/ruinsciv-source
+          mkdir -p /tmp/ruinsciv-out /tmp/ruinsciv-source
+          gcloud compute scp --recurse             "$GCP_BUILDER:$HOME/ruinsciv-oss-fusion-v1/out/."             /tmp/ruinsciv-out/             --project "$GCP_PROJECT_ID"             --zone "$GCP_ZONE"             --tunnel-through-iap             --quiet || true
+
+          # Keep an exact source snapshot in the CI artifact without copying signing material.
+          gcloud compute scp --recurse             "$GCP_BUILDER:$HOME/ruinsciv-oss-fusion-v1/app"             /tmp/ruinsciv-source/             --project "$GCP_PROJECT_ID"             --zone "$GCP_ZONE"             --tunnel-through-iap             --quiet || true
+
+          if [[ -d /tmp/ruinsciv-source/app ]]; then
+            rm -rf               /tmp/ruinsciv-source/app/.godot               /tmp/ruinsciv-source/app/builds               /tmp/ruinsciv-source/app/android/build               /tmp/ruinsciv-source/app/android/.gradle 2>/dev/null || true
+          fi
+
+      - name: Checkpoint fused source into RuinsCiv branch
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f /tmp/ruinsciv-source/app/project.godot ]]; then
+            echo "No source snapshot available; skipping Git checkpoint."
+            exit 0
+          fi
+
+          rm -rf projects/RuinsCiv/app
+          mkdir -p projects/RuinsCiv
+          cp -a /tmp/ruinsciv-source/app projects/RuinsCiv/app
+
+          find projects/RuinsCiv/app -type f -size +95M -print | tee /tmp/ruinsciv_large_files.txt
+          if [[ -s /tmp/ruinsciv_large_files.txt ]]; then
+            echo "Large source files detected; source checkpoint withheld to protect repository."
+            rm -rf projects/RuinsCiv/app
+            exit 0
+          fi
+
+          git config user.name "RuinsCiv ReleaseOps"
+          git config user.email "actions@users.noreply.github.com"
+          git add projects/RuinsCiv/app
+          if git diff --cached --quiet; then
+            echo "Source checkpoint already current."
+          else
+            git commit -m "source(ruinsciv): checkpoint OSS social+farm fusion v1"
+            git push origin HEAD:ruinsciv/oss-fusion-v1-20260920
+          fi
+
+      - name: Deploy RuinsCiv Web alpha to Cloud Run
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          mkdir -p /tmp/ruinsciv-deploy
+          RESULT=/tmp/ruinsciv-out/WEB_DEPLOY_EVIDENCE.txt
+          : > "$RESULT"
+
+          if [[ ! -s /tmp/ruinsciv-out/web/index.html ]]; then
+            echo "WEB_DEPLOY=BLOCKED" | tee -a "$RESULT"
+            echo "REASON=web export missing" | tee -a "$RESULT"
+            exit 0
+          fi
+
+          cp -a /tmp/ruinsciv-out/web/. /tmp/ruinsciv-deploy/
+          cat > /tmp/ruinsciv-deploy/Dockerfile <<'DOCKER'
+          FROM nginx:1.27-alpine
+          COPY . /usr/share/nginx/html
+          RUN printf 'server { listen 8080; server_name _; root /usr/share/nginx/html; index index.html; location / { try_files $uri $uri/ /index.html; } }' > /etc/nginx/conf.d/default.conf
+          EXPOSE 8080
+          DOCKER
+
+          set +e
+          gcloud run deploy "$CLOUD_RUN_SERVICE"             --source /tmp/ruinsciv-deploy             --region "$GCP_REGION"             --project "$GCP_PROJECT_ID"             --allow-unauthenticated             --quiet > /tmp/ruinsciv-cloudrun.log 2>&1
+          RC=$?
+          set -e
+
+          cat /tmp/ruinsciv-cloudrun.log | tee -a "$RESULT"
+          if [[ $RC -ne 0 ]]; then
+            echo "WEB_DEPLOY=BLOCKED" | tee -a "$RESULT"
+            echo "CLOUD_RUN_EXIT=$RC" | tee -a "$RESULT"
+            exit 0
+          fi
+
+          URL="$(gcloud run services describe "$CLOUD_RUN_SERVICE"             --region "$GCP_REGION"             --project "$GCP_PROJECT_ID"             --format='value(status.url)')"
+          echo "$URL" | tee /tmp/ruinsciv-out/LIVE_URL.txt
+          echo "WEB_DEPLOY=PASS" | tee -a "$RESULT"
+          echo "URL=$URL" | tee -a "$RESULT"
+
+          curl -fsS --retry 5 --retry-delay 3 "$URL/" -o /tmp/ruinsciv-live-index.html
+          grep -qi '<html\|<!doctype' /tmp/ruinsciv-live-index.html
+          echo "LIVE_HTTP_PROBE=PASS" | tee -a "$RESULT"
+
+      - name: Probe Google Play package and publish Internal if possible
+        if: always()
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -u
+          OUT=/tmp/ruinsciv-out
+          mkdir -p "$OUT"
+          EVIDENCE="$OUT/PLAY_INTERNAL_EVIDENCE.txt"
+          : > "$EVIDENCE"
+
+          if [[ -z "${ACCESS_TOKEN:-}" ]]; then
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$EVIDENCE"
+            echo "REASON=no Android Publisher access token" | tee -a "$EVIDENCE"
+            exit 0
+          fi
+
+          API="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME"
+          HTTP_CODE="$(curl --silent --show-error             -o /tmp/ruinsciv-play-edit.json             -w '%{http_code}'             -X POST             -H "Authorization: Bearer $ACCESS_TOKEN"             -H 'Content-Type: application/json'             -d '{}'             "$API/edits")"
+
+          echo "CREATE_EDIT_HTTP=$HTTP_CODE" | tee -a "$EVIDENCE"
+          python3 - <<'PY' | tee -a "$EVIDENCE"
+          import json
+          try:
+              d=json.load(open('/tmp/ruinsciv-play-edit.json', encoding='utf-8'))
+          except Exception as e:
+              print("RESPONSE_PARSE_ERROR="+str(e))
+              raise SystemExit
+          if 'id' in d:
+              print("PACKAGE_ACCESS=PASS")
+              print("EDIT_ID="+d['id'])
+          else:
+              e=d.get('error',{})
+              print("PACKAGE_ACCESS=BLOCKED")
+              print("STATUS="+str(e.get('status','')))
+              print("MESSAGE="+str(e.get('message',''))[:800])
+          PY
+
+          if [[ "$HTTP_CODE" != "200" ]]; then
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$EVIDENCE"
+            echo "REASON=package is not currently accessible to Android Publisher API" | tee -a "$EVIDENCE"
+            exit 0
+          fi
+
+          EDIT_ID="$(python3 -c 'import json; print(json.load(open("/tmp/ruinsciv-play-edit.json"))["id"])')"
+          AAB="$OUT/android/ruinsciv.aab"
+
+          if [[ ! -s "$AAB" ]]; then
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$EVIDENCE"
+            echo "REASON=AAB missing after Android export" | tee -a "$EVIDENCE"
+            curl --silent --show-error -X DELETE               -H "Authorization: Bearer $ACCESS_TOKEN"               "$API/edits/$EDIT_ID" >/dev/null || true
+            exit 0
+          fi
+
+          UPLOAD_CODE="$(curl --silent --show-error             -o /tmp/ruinsciv-bundle.json             -w '%{http_code}'             -X POST             -H "Authorization: Bearer $ACCESS_TOKEN"             -H 'Content-Type: application/octet-stream'             --data-binary @"$AAB"             "https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/bundles?uploadType=media")"
+          echo "BUNDLE_UPLOAD_HTTP=$UPLOAD_CODE" | tee -a "$EVIDENCE"
+
+          if [[ "$UPLOAD_CODE" != "200" ]]; then
+            python3 - <<'PY' | tee -a "$EVIDENCE"
+          import json
+          d=json.load(open('/tmp/ruinsciv-bundle.json', encoding='utf-8'))
+          e=d.get('error',{})
+          print("BUNDLE_STATUS="+str(e.get('status','')))
+          print("BUNDLE_MESSAGE="+str(e.get('message',''))[:800])
+          PY
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$EVIDENCE"
+            curl --silent --show-error -X DELETE               -H "Authorization: Bearer $ACCESS_TOKEN"               "$API/edits/$EDIT_ID" >/dev/null || true
+            exit 0
+          fi
+
+          VERSION_CODE="$(python3 -c 'import json; print(json.load(open("/tmp/ruinsciv-bundle.json"))["versionCode"])')"
+          echo "VERSION_CODE=$VERSION_CODE" | tee -a "$EVIDENCE"
+
+          python3 - "$VERSION_CODE" > /tmp/ruinsciv-track.json <<'PY'
+          import json, sys
+          print(json.dumps({
+              "track": "internal",
+              "releases": [{
+                  "name": "RuinsCiv OSS Fusion V1",
+                  "versionCodes": [sys.argv[1]],
+                  "status": "completed"
+              }]
+          }))
+          PY
+
+          TRACK_CODE="$(curl --silent --show-error             -o /tmp/ruinsciv-track-response.json             -w '%{http_code}'             -X PUT             -H "Authorization: Bearer $ACCESS_TOKEN"             -H 'Content-Type: application/json'             --data-binary @/tmp/ruinsciv-track.json             "$API/edits/$EDIT_ID/tracks/internal")"
+          echo "TRACK_UPDATE_HTTP=$TRACK_CODE" | tee -a "$EVIDENCE"
+
+          if [[ "$TRACK_CODE" != "200" ]]; then
+            cat /tmp/ruinsciv-track-response.json | head -c 2000 | tee -a "$EVIDENCE"
+            echo | tee -a "$EVIDENCE"
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$EVIDENCE"
+            curl --silent --show-error -X DELETE               -H "Authorization: Bearer $ACCESS_TOKEN"               "$API/edits/$EDIT_ID" >/dev/null || true
+            exit 0
+          fi
+
+          COMMIT_CODE="$(curl --silent --show-error             -o /tmp/ruinsciv-commit-response.json             -w '%{http_code}'             -X POST             -H "Authorization: Bearer $ACCESS_TOKEN"             -H 'Content-Type: application/json'             -d '{}'             "$API/edits/$EDIT_ID:commit")"
+          echo "EDIT_COMMIT_HTTP=$COMMIT_CODE" | tee -a "$EVIDENCE"
+
+          if [[ "$COMMIT_CODE" == "200" ]]; then
+            echo "PLAY_INTERNAL=PASS" | tee -a "$EVIDENCE"
+            echo "TRACK=internal" | tee -a "$EVIDENCE"
+          else
+            cat /tmp/ruinsciv-commit-response.json | head -c 2000 | tee -a "$EVIDENCE"
+            echo | tee -a "$EVIDENCE"
+            echo "PLAY_INTERNAL=BLOCKED" | tee -a "$EVIDENCE"
+          fi
+
+      - name: Write release summary
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          {
+            echo "# RuinsCiv OSS Fusion V1"
+            echo
+            [[ -f /tmp/ruinsciv-out/BUILD_EVIDENCE.txt ]] && cat /tmp/ruinsciv-out/BUILD_EVIDENCE.txt
+            echo
+            [[ -f /tmp/ruinsciv-out/WEB_DEPLOY_EVIDENCE.txt ]] && cat /tmp/ruinsciv-out/WEB_DEPLOY_EVIDENCE.txt
+            echo
+            [[ -f /tmp/ruinsciv-out/PLAY_INTERNAL_EVIDENCE.txt ]] && cat /tmp/ruinsciv-out/PLAY_INTERNAL_EVIDENCE.txt
+          } > /tmp/ruinsciv-out/RELEASE_SUMMARY.md
+          cat /tmp/ruinsciv-out/RELEASE_SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload RuinsCiv build and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruinsciv-oss-fusion-v1
+          path: /tmp/ruinsciv-out
+          if-no-files-found: warn
+          retention-days: 30
