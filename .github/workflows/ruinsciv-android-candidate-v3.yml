@@ -1,0 +1,54 @@
+name: RuinsCiv Android Candidate V3
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ruinsciv-android-candidate-v3.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with: {persist-credentials: false}
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Copy V3 migration helper
+        run: gcloud compute scp ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v3.sh "$GCP_BUILDER:/tmp/prepare_ruinsciv_android_candidate_v3.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Prepare isolated RuinsCiv candidate
+        run: gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/prepare_ruinsciv_android_candidate_v3.sh && /tmp/prepare_ruinsciv_android_candidate_v3.sh'
+      - name: Retrieve evidence
+        if: always()
+        run: |
+          mkdir -p out
+          gcloud compute scp --recurse "$GCP_BUILDER:~/ruinsciv-candidate-evidence-v3/*" out/ --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          for f in out/RUINSCIV_CANDIDATE_PREP_EVIDENCE.txt out/forbidden_identity_hits.txt out/forbidden_legacy_hits.txt out/wave_secret_hits.txt; do [[ -f "$f" ]] && { echo "--- $f"; cat "$f"; }; done
+      - name: Validate candidate gate
+        run: |
+          grep -q '^RUINSCIV_CANDIDATE_PREP=PASS$' out/RUINSCIV_CANDIDATE_PREP_EVIDENCE.txt
+          grep -q '^public_name=RuinsCiv$' out/RUINSCIV_CANDIDATE_PREP_EVIDENCE.txt
+          grep -q '^qa_package=com.topherofit.ruins.civ.phoneqa$' out/RUINSCIV_CANDIDATE_PREP_EVIDENCE.txt
+          grep -q '^world_sha256=19043caa07aa1470f586708b551bbe86249f0f612480657d8891458361e78372$' out/RUINSCIV_CANDIDATE_PREP_EVIDENCE.txt
+          grep -q '^avatar_sha256=4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f$' out/RUINSCIV_CANDIDATE_PREP_EVIDENCE.txt
+          test ! -s out/forbidden_identity_hits.txt
+          test ! -s out/forbidden_legacy_hits.txt
+          test ! -s out/wave_secret_hits.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: RUINSCIV-ANDROID-CANDIDATE-PREP-V3
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
