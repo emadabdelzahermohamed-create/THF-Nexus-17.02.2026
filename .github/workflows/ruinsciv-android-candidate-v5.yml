@@ -1,0 +1,35 @@
+name: RuinsCiv Android Candidate V5
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh'
+      - '.github/workflows/ruinsciv-android-candidate-v5.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Prepare isolated RuinsCiv candidate V5 on builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute ssh "${{ vars.GCP_BUILDER_INSTANCE }}" \
+            --project="${{ vars.GCP_PROJECT_ID }}" \
+            --zone="${{ vars.GCP_BUILDER_ZONE }}" \
+            --tunnel-through-iap \
+            --command='set -euo pipefail; cd ~/THF-Nexus-17.02.2026 || cd /workspace/THF-Nexus-17.02.2026; git fetch origin main; git checkout main; git reset --hard origin/main; chmod +x ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh; ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh'
