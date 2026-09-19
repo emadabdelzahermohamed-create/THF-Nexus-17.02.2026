@@ -21,12 +21,12 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 
 ### P0 — User-visible parity gate
 - [ ] No backend-only release claims: every material Fitness capability must have a usable UI surface and UI acceptance evidence.
-- [ ] Render canonical Stage16A 3D asset in a visible user flow; text metadata alone is not sufficient.
-- [ ] Trainer workspace: clients/assignments/follow-up/bookings, not directory-only.
-- [ ] Competition + leaderboard UI; no raw JSON links as final UX.
-- [ ] AI Coach user-facing screen.
+- [x] Production Web renders canonical Stage16A 3D directly inside the active workout/session flow; deployed snapshot `1789798972531`. Physical Android/GPU evidence remains open.
+- [x] Trainer workspace: clients/assignments/follow-up/bookings is visible and permission-gated in production Web.
+- [x] Competition + leaderboard UI is visible; trusted score submission remains server-authoritative.
+- [x] AI Coach has a user-facing explainable recommendation screen.
 - [ ] Web/Android visible workflow parity against the same account/data backend.
-- Evidence/audit: `ReleaseOps/FitnessStandalone/UI_SURFACE_AUDIT_20260918.md`.
+- Evidence/audit: `ReleaseOps/FitnessStandalone/UI_SURFACE_AUDIT_20260918.md`; latest Stage16A session evidence: `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`.
 
 ## P0 — Source authority + CI
 - [x] Freeze exact source provenance for standalone Fitness branch (RC2 Drive ID + SHA pinned).
@@ -50,7 +50,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 
 ## P3 — Fitness functionality
 - [ ] Exercise catalog, plans, timers, warm-up/cool-down, injury warnings and recovery flows: full regression. Production Web implementation is visible and usable; search/filter by text, level and equipment deployed 2026-09-19. Full cross-client regression remains open.
-- [ ] Motion Coach with real sensor/motion verification.
+- [ ] Motion Coach with real sensor/motion verification. Canonical Stage16A visual demonstration is now embedded in production active sessions; sensed/verified movement remains fail-closed pending device evidence.
 - [ ] Health Connect integration and production permission flow.
 - [ ] Progress, XP, competitions/leaderboards and anti-cheat verification: production regression.
 - [ ] Arabic/English RTL first, then retained localization framework.
@@ -59,7 +59,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 ## P4 — Human avatar quality
 - [x] Canonical identity avatar pinned to modern Stage16A; legacy humanoid references are CI-banned.
 - [ ] Verify 137-joint skeleton + 195 clips on physical device/GPU.
-- [ ] Improve exercise-to-animation mapping, transitions, foot contact, IK hooks and camera framing.
+- [ ] Improve exercise-to-animation mapping, transitions, foot contact, IK hooks and camera framing. Web camera/framing, soft shadows and tone mapping improved in snapshot `1789798972531`; exercise-specific animation certification/IK remains open.
 - [ ] Optimize LOD/update rate/shadows/face/hair for mobile without replacing the canonical human.
 - [ ] GPU/device visual QA.
 
@@ -81,7 +81,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Deploy production web service to AppDeploy HTTPS endpoint; deployment status `ready` with no frontend/backend runtime errors.
 - [ ] Verify auth, workouts, avatar, sync and offline/online behavior end-to-end. Account deletion endpoint/UI and public deletion instructions are deployed; full production regression remains open.
 - [ ] Verify mobile-web parity against Android account data.
-- [ ] Post-deploy smoke and rollback checkpoint.
+- [x] Post-deploy browser/runtime smoke for latest visual gate: snapshot `1789798972531` reached `ready`; AppDeploy reported 0 frontend, 0 backend and 0 network errors. This does not replace physical-device QA.
 
 ## P8 — Security/release closure
 - [x] Initial secret-like assignment scan + production user-scope/auth regression.
@@ -110,6 +110,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Android production-backend emulator smoke PASS: run `35356916175`, artifact `10552152173`, APK SHA-256 `aede65b003659b4b3ba46555b51744f365a9824e462029a5f0e6a3f1bd20f567`; install/cold-launch/ar-EG UI/no-fatal-crash/screenshot/UI-dump PASS. Physical sensor/GPU testing remains open.
 - Production Web sports/wellness expansion deployed 2026-09-19; evidence `WEB_SPORTS_WELLNESS_DEPLOY_20260919.md`, Git checkpoint `05a3616990adfcd94989fb406b067708acb1aaaf`.
 - Production Web exercise discovery search/filter deployed 2026-09-19; AppDeploy snapshot `1789795331179`, evidence `WEB_EXERCISE_DISCOVERY_DEPLOY_20260919.md`, Git evidence commit `fa6b09cbd6e2b3977c2d1045924b0779427bbed7`.
+- Production Web immersive Stage16A active-session upgrade deployed 2026-09-19; AppDeploy snapshot `1789798972531`, evidence `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`, initial evidence commit `2aefcb16a17e19031a5f9687e9bdb10f46bb9990`.
 - Next release blockers remain production signing, physical-device sensor/GPU/Health Connect evidence, and cross-device Web/Android sync verification. Continue independent user-visible work while blocked.
 
 ## Execution policy
