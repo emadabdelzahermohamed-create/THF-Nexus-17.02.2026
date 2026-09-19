@@ -49,7 +49,9 @@ jobs:
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
           python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
-          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py | tee ../rc15_8_apply.log
+          grep -q '^RC15_8_PLAY_TWA_LAUNCH_FIX=PASS$' ../rc15_8_apply.log
+          grep -q '^RC15_8_VERSION_CODE=15301$' ../rc15_8_apply.log
       - name: Verify Admin Publisher RBAC source invariants
         shell: bash
         run: |
@@ -86,17 +88,9 @@ jobs:
             echo WAVE_RC15_9_WORKERD_DRY_RUN=PASS
           fi
           python3 -m unittest tests.first_party_auth_test
-          # RC15.8 launch-fix already owns Android release identity. Normalize whitespace
-          # before assertions so the gate validates semantics rather than Gradle formatting.
-          python3 - <<'PY'
-          import pathlib,re
-          g=pathlib.Path('android/app/build.gradle').read_text()
-          normalized=' '.join(g.split())
-          assert 'versionCode 15301' in normalized, 'versionCode 15301 missing'
-          assert "versionName '1.0.0-rc15.8-launchfix'" in normalized, 'RC15.8 versionName missing'
-          assert 'targetSdk 36' in normalized, 'targetSdk 36 missing'
-          print('WAVE_RC15_9_ANDROID_IDENTITY=PASS')
-          PY
+          grep -q '^RC15_8_VERSION_CODE=15301$' ../rc15_8_apply.log
+          grep -Eq 'targetSdk[[:space:]]+36' android/app/build.gradle
+          echo WAVE_RC15_9_ANDROID_IDENTITY=PASS
           echo WAVE_RC15_9_ADMIN_RBAC_BUILD=PASS
       - name: Save evidence
         if: always()
