@@ -73,25 +73,29 @@ jobs:
           cd wave-src
           npx wrangler d1 list --json > /tmp/wave-d1.json
           python3 - <<'PY'
-          import json,re
-          p='/tmp/wave-d1.json'
-          data=json.load(open(p))
+          import json,glob,os
+          data=json.load(open('/tmp/wave-d1.json'))
           rows=data if isinstance(data,list) else data.get('result',data.get('databases',[]))
           matches=[x for x in rows if x.get('name')=='wave-mawja-prod']
-          if len(matches)!=1:
-              raise SystemExit(f'Expected exactly one wave-mawja-prod D1 database, found {len(matches)}')
+          if len(matches)!=1: raise SystemExit(f'Expected exactly one wave-mawja-prod D1 database, found {len(matches)}')
           dbid=matches[0].get('uuid') or matches[0].get('id')
           if not dbid: raise SystemExit('wave-mawja-prod has no database id')
-          cfg='wrangler.jsonc'
-          s=open(cfg).read()
           old='00000000-0000-4000-8000-000000000000'
-          if old not in s: raise SystemExit('Expected D1 placeholder not present; refusing ambiguous mutation')
-          s=s.replace(old,dbid)
-          open(cfg,'w').write(s)
+          candidates=[]
+          for pat in ('wrangler.jsonc','wrangler.json','dist/**/wrangler.jsonc','dist/**/wrangler.json'):
+              candidates += glob.glob(pat,recursive=True)
+          patched=[]
+          for cfg in dict.fromkeys(candidates):
+              try: s=open(cfg).read()
+              except OSError: continue
+              if old in s:
+                  open(cfg,'w').write(s.replace(old,dbid)); patched.append(cfg)
+          if not patched: raise SystemExit('D1 placeholder not found in source or generated Wrangler config')
           open('/tmp/wave-d1-id.txt','w').write(dbid+'\n')
-          print('WAVE_D1_BINDING_RESOLVED=PASS')
+          open('/tmp/wave-wrangler-config.txt','w').write(patched[0]+'\n')
+          print('WAVE_D1_BINDING_RESOLVED=PASS config='+','.join(patched))
           PY
-          grep -qv '00000000-0000-4000-8000-000000000000' wrangler.jsonc
+          test -s /tmp/wave-wrangler-config.txt
       - name: Deploy WAVE to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -100,7 +104,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd wave-src
-          npx wrangler deploy 2>&1 | tee /tmp/wave-deploy.log
+          cfg="$(cat /tmp/wave-wrangler-config.txt)"
+          npx wrangler deploy --config "$cfg" 2>&1 | tee /tmp/wave-deploy.log
           grep -Eiq 'deployed|uploaded|version|workers.dev' /tmp/wave-deploy.log
       - name: Live smoke WAVE public and protected surfaces
         shell: bash
@@ -125,6 +130,7 @@ jobs:
             echo "live=$WAVE_LIVE_URL"
             echo "base_sha256=$EXPECTED_RC15_SHA256"
             test -f /tmp/wave-d1-id.txt && sed 's/.*/d1_binding_resolved=yes/' /tmp/wave-d1-id.txt || true
+            test -f /tmp/wave-wrangler-config.txt && sed 's/^/wrangler_config=/' /tmp/wave-wrangler-config.txt || true
             test -f /tmp/wave-deploy.log && sha256sum /tmp/wave-deploy.log || true
           } > WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.txt
           sha256sum WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.txt > WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.sha256
