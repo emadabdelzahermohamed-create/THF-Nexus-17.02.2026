@@ -12,8 +12,6 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Android targetSdk: 36.
 - Web and Android must share the same production backend, account identity and synchronized user data.
 
-
-
 ## P0 — Final product scope / no-regression contract
 - [ ] Treat `ReleaseOps/FitnessStandalone/FINAL_PRODUCT_SCOPE_20260918.md` as binding product scope for the next production candidate.
 - [ ] No final release may regress to the simplified RC2 UX if agreed Fitness surfaces are absent.
@@ -51,7 +49,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [ ] Offline subset remains usable; ranked/economy-sensitive outcomes remain server-authoritative.
 
 ## P3 — Fitness functionality
-- [ ] Exercise catalog, plans, timers, warm-up/cool-down, injury warnings and recovery flows: full regression. Production Web implementation is now visible and usable; full cross-client regression remains open.
+- [ ] Exercise catalog, plans, timers, warm-up/cool-down, injury warnings and recovery flows: full regression. Production Web implementation is visible and usable; search/filter by text, level and equipment deployed 2026-09-19. Full cross-client regression remains open.
 - [ ] Motion Coach with real sensor/motion verification.
 - [ ] Health Connect integration and production permission flow.
 - [ ] Progress, XP, competitions/leaderboards and anti-cheat verification: production regression.
@@ -101,22 +99,18 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Evidence artifact: `thf-fitness-v5-rc2-main-auth-gate`, artifact id `10533239127`, digest `sha256:c7f2a83497acc6e15b279e969ab927b01f8bef8398f766d1a31d7147407da281`.
 - Debug APK SHA-256: `cfc5abb2b73cccdab338b3ec73205aad3bc6fb80557bf0f41a7a384e667e97d2`.
 - Unsigned release AAB SHA-256: `ce8e8772665e4bc94f4c334a650079d93175ebf9b8ead053a62e0ee49988410a` — DO NOT publish this unsigned AAB.
-- Previous base URL blocker is resolved: Web/backend deployed at `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`. Main Android gate commit `cd38292439eef0567776186d12e9b6d99825cca7` now injects this HTTPS URL as `THF_FITNESS_BASE_URL`. `THF_PASS_URL` and production signing remain unconfigured.
-- Infrastructure re-probe 2026-09-18: connected DigitalOcean account still has zero droplets. Repository searches found no authoritative committed `THF_FITNESS_BASE_URL` or Fitness Cloud Run deployment contract. Creating new paid infrastructure remains owner-gated.
-- Hosting acceptance/rollback requirements are checkpointed in `PRODUCTION_HOSTING_GATE.md` (`294a9bf221ece68dfb05c8e1c581bf327ba558e4`).
-- Play pre/post-upload requirements are checkpointed in `PLAY_RELEASE_GATE.md` (`074d83480284667a5fda8c4a877080564e7e3e4a`).
-- P8 dependency/network/auth/Play-Integrity evidence requirements are checkpointed in `SECURITY_RELEASE_GATE.md` (`59cc26ce87a2c30631fac17db0005d6fea7dd6df`).
-- Production legal URLs: Privacy `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/privacy.html`; Account deletion `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/account-deletion.html`; Terms `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/terms.html`. Account deletion is authenticated and removes account-scoped goal/workout records in bounded requests before sign-out.
-- Android signing source inspection: canonical RC2 `release` build has no production `signingConfig`. Fail-closed patch script `ReleaseOps/FitnessStandalone/apply_android_signing.py` and contract `ANDROID_SIGNING_CONTRACT.md` were added and locally text-tested PASS. Production upload key material remains external-only.
-- Next priority: observe the Android rebuild against the live HTTPS backend, then configure production OAuth/signing, physical-device QA and Play Internal. Do not mark Android/Web cross-device sync PASS until the rebuilt Android artifact is exercised against the same production account/data.
-
-- Web exercise UX defect fixed on production 2026-09-18: Arabic RTL tabs, 18-exercise library, 8 plans, warm-up/cool-down, instructions/warnings/recovery, workout logging, rest timer and progress persistence deployed at the production URL. Evidence: `WEB_EXERCISE_DEPLOY_20260918.md`. Full Android/physical-device regression remains open.
-
-- Signing inventory evidence: GitHub Actions run `35356106595` PASSed as a read-only probe; artifact `10552265497` reports `secret_manager_list=BLOCKED` due IAM permission denial and explicitly confirms no secret values were read. Connected Google Drive metadata searches for THF/Fitness/Pulse upload key/keystore returned no candidates.
-
-- Google Play state probe run `35357059466` PASS: application record exists, 4 standard tracks are readable, and all have zero releases. Evidence: `PLAY_RELEASE_STATE_20260918.md`, artifact `10552081828`. No Play edit was committed.
-
-- Android production-backend emulator smoke PASS: run `35356916175`, artifact `10552152173`, APK SHA-256 `aede65b003659b4b3ba46555b51744f365a9824e462029a5f0e6a3f1bd20f567`; install/cold-launch/ar-EG UI/no-fatal-crash/screenshot/UI-dump all PASS. Evidence: `ANDROID_EMULATOR_SMOKE_20260918.md`. Physical-device sensor/GPU testing remains open.
+- Production Web/backend: `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`. Android gate commit `cd38292439eef0567776186d12e9b6d99825cca7` injects it as `THF_FITNESS_BASE_URL`. `THF_PASS_URL` and production signing remain unconfigured.
+- Hosting acceptance/rollback requirements: `PRODUCTION_HOSTING_GATE.md` (`294a9bf221ece68dfb05c8e1c581bf327ba558e4`).
+- Play pre/post-upload requirements: `PLAY_RELEASE_GATE.md` (`074d83480284667a5fda8c4a877080564e7e3e4a`).
+- P8 evidence requirements: `SECURITY_RELEASE_GATE.md` (`59cc26ce87a2c30631fac17db0005d6fea7dd6df`).
+- Production legal URLs: Privacy `/privacy.html`; Account deletion `/account-deletion.html`; Terms `/terms.html` on the production host.
+- Android signing source inspection: canonical RC2 release build has no production `signingConfig`; `apply_android_signing.py` + `ANDROID_SIGNING_CONTRACT.md` are fail-closed. Production upload key remains external-only.
+- Signing inventory: GitHub Actions run `35356106595` PASSed read-only probe; Secret Manager list is IAM-blocked and connected Drive searches found no upload-keystore candidate.
+- Google Play state probe run `35357059466` PASS: application record exists, four standard tracks readable, zero releases; no Play edit committed.
+- Android production-backend emulator smoke PASS: run `35356916175`, artifact `10552152173`, APK SHA-256 `aede65b003659b4b3ba46555b51744f365a9824e462029a5f0e6a3f1bd20f567`; install/cold-launch/ar-EG UI/no-fatal-crash/screenshot/UI-dump PASS. Physical sensor/GPU testing remains open.
+- Production Web sports/wellness expansion deployed 2026-09-19; evidence `WEB_SPORTS_WELLNESS_DEPLOY_20260919.md`, Git checkpoint `05a3616990adfcd94989fb406b067708acb1aaaf`.
+- Production Web exercise discovery search/filter deployed 2026-09-19; AppDeploy snapshot `1789795331179`, evidence `WEB_EXERCISE_DISCOVERY_DEPLOY_20260919.md`, Git evidence commit `fa6b09cbd6e2b3977c2d1045924b0779427bbed7`.
+- Next release blockers remain production signing, physical-device sensor/GPU/Health Connect evidence, and cross-device Web/Android sync verification. Continue independent user-visible work while blocked.
 
 ## Execution policy
 Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
