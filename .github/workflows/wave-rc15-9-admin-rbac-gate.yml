@@ -1,0 +1,98 @@
+name: WAVE RC15.9 Admin RBAC Gate
+on:
+  push:
+    branches: [releaseops/wave-rc15-9-admin-rbac-20260918]
+    paths:
+      - '.github/workflows/wave-rc15-9-admin-rbac-gate.yml'
+      - 'ReleaseOps/WAVE/RC15_3/**'
+      - 'ReleaseOps/WAVE/RC15_5/**'
+      - 'ReleaseOps/WAVE/RC15_7/**'
+      - 'ReleaseOps/WAVE/RC15_8/**'
+      - 'ReleaseOps/WAVE/RC15_9/**'
+permissions:
+  contents: read
+  id-token: write
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  admin-rbac-gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Reconstruct approved RC15.8 plus RC15.9 RBAC
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120)
+          r.raise_for_status(); open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src && unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q; git add .; git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+      - name: Verify Admin Publisher RBAC source invariants
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          test -f app/admin-login/page.tsx
+          test -f app/control/page.tsx
+          test -f app/api/control/route.ts
+          test -f components/control-dashboard.tsx
+          test -f lib/admin-session.ts
+          test -f lib/wave-auth.ts
+          grep -q 'WaveRole = "viewer" | "publisher" | "admin"' lib/wave-auth.ts
+          grep -q 'hasWaveRole' lib/wave-auth.ts
+          grep -q 'publisher' app/api/control/route.ts
+          grep -q 'admin' app/api/control/route.ts
+          echo WAVE_RC15_9_ADMIN_RBAC_SOURCE=PASS
+      - name: Install and run focused WAVE tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          npm ci --no-audit --no-fund
+          node --test tests/control-source.test.mjs
+          python3 -m unittest tests.first_party_auth_test tests.release_identity_test
+          npm run build
+          echo WAVE_RC15_9_ADMIN_RBAC_BUILD=PASS
+      - name: Save evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "base_sha256=$EXPECTED_RC15_SHA256"
+            echo "scope=WAVE_MAWJA_ONLY"
+            echo "gate=admin-rbac-focused-tests-and-build"
+          } > WAVE_RC15_9_ADMIN_RBAC_EVIDENCE.txt
+          sha256sum WAVE_RC15_9_ADMIN_RBAC_EVIDENCE.txt > WAVE_RC15_9_ADMIN_RBAC_EVIDENCE.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-RC15-9-ADMIN-RBAC-EVIDENCE
+          path: |
+            WAVE_RC15_9_ADMIN_RBAC_EVIDENCE.txt
+            WAVE_RC15_9_ADMIN_RBAC_EVIDENCE.sha256
+          retention-days: 30
