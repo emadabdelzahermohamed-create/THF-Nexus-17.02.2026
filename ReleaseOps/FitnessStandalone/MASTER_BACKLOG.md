@@ -66,13 +66,13 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 ## P5 — Android release quality
 - [ ] Remove debug suffix/debuggable state from production artifact.
 - [x] Release version identity updated: package, targetSdk 36, versionCode/versionName.
-- [ ] Release signing + Play App Signing compatible AAB. A dedicated THF Fitness upload keystore was generated on the authorized remote builder and its four components were stored as separate GCP Secret Manager secrets on 2026-09-19; CI retrieval/signing and Play certificate acceptance still require evidence before PASS.
+- [x] Release signing + Play App Signing compatible AAB. Verified signed build + Android Publisher upload in run `35434624698`; Internal edit committed with versionCode `50001`. Evidence: `PLAY_INTERNAL_COMMITTED_20260919.md`.
 - [ ] Install/launch/onboarding/RTL/workout/avatar/permissions/offline-online/resume regression on physical Android.
 - [ ] Performance checks: startup, FPS, RAM and thermal behavior.
 
 ## P6 — Google Play
-- [ ] Create/configure standalone Fitness Play app if not already present.
-- [ ] Internal Testing upload only after Android gates pass. Fail-closed checklist recorded in `PLAY_RELEASE_GATE.md`; unsigned RC2 is explicitly non-publishable.
+- [x] Standalone Fitness Play application record verified for `com.topherofit.thf.pulse`.
+- [x] Google Play Internal upload committed for signed versionCode `50001` in run `35434624698`; physical tester install/runtime remains a separate open gate.
 - [ ] Data Safety, Health Apps declaration, App Access, content rating, target audience.
 - [x] Privacy policy + account deletion URL published on the production HTTPS host.
 - [ ] Verify install from Play Internal and post-upload runtime.
@@ -98,25 +98,25 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Successful CI: `THF Fitness V5 Main Auth Gate`, run `35311644865`, commit `ffa24940dd8e1b8d560194232e521b55058bdd40`.
 - Evidence artifact: `thf-fitness-v5-rc2-main-auth-gate`, artifact id `10533239127`, digest `sha256:c7f2a83497acc6e15b279e969ab927b01f8bef8398f766d1a31d7147407da281`.
 - Debug APK SHA-256: `cfc5abb2b73cccdab338b3ec73205aad3bc6fb80557bf0f41a7a384e667e97d2`.
-- Unsigned release AAB SHA-256: `ce8e8772665e4bc94f4c334a650079d93175ebf9b8ead053a62e0ee49988410a` — DO NOT publish this unsigned AAB.
-- Production Web/backend: `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`. Android gate commit `cd38292439eef0567776186d12e9b6d99825cca7` injects it as `THF_FITNESS_BASE_URL`. `THF_PASS_URL` and production signing remain unconfigured.
+- Unsigned release AAB SHA-256: `ce8e8772665e4bc94f4c334a650079d93175ebf9b8ead053a62e0ee49988410a` — historical unsigned artifact only; do not publish it.
+- Production Web/backend: `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`. Android gate commit `cd38292439eef0567776186d12e9b6d99825cca7` injects it as `THF_FITNESS_BASE_URL`.
 - Hosting acceptance/rollback requirements: `PRODUCTION_HOSTING_GATE.md` (`294a9bf221ece68dfb05c8e1c581bf327ba558e4`).
 - Play pre/post-upload requirements: `PLAY_RELEASE_GATE.md` (`074d83480284667a5fda8c4a877080564e7e3e4a`).
 - P8 evidence requirements: `SECURITY_RELEASE_GATE.md` (`59cc26ce87a2c30631fac17db0005d6fea7dd6df`).
 - Production legal URLs: Privacy `/privacy.html`; Account deletion `/account-deletion.html`; Terms `/terms.html` on the production host.
-- Android signing source inspection: canonical RC2 release build has no production `signingConfig`; `apply_android_signing.py` + `ANDROID_SIGNING_CONTRACT.md` are fail-closed. Production upload key remains external-only.
-- Google Play state probe run `35357059466` PASS: application record exists, four standard tracks readable, zero releases; no Play edit committed.
+- Google Play Internal publication supersedes the historical zero-release probe: run `35434624698`, job `105875090547`, track `internal`, committed `true`, versionCode `50001`.
+- Signed evidence artifact: `thf-fitness-v5-rc2-signed-release`, artifact id `10581347670`, ZIP digest `sha256:6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2`.
 - Android production-backend emulator smoke PASS: run `35356916175`, artifact `10552152173`, APK SHA-256 `aede65b003659b4b3ba46555b51744f365a9824e462029a5f0e6a3f1bd20f567`; install/cold-launch/ar-EG UI/no-fatal-crash/screenshot/UI-dump PASS. Physical sensor/GPU testing remains open.
 - Production Web sports/wellness expansion deployed 2026-09-19; evidence `WEB_SPORTS_WELLNESS_DEPLOY_20260919.md`, Git checkpoint `05a3616990adfcd94989fb406b067708acb1aaaf`.
 - Production Web exercise discovery search/filter deployed 2026-09-19; AppDeploy snapshot `1789795331179`, evidence `WEB_EXERCISE_DISCOVERY_DEPLOY_20260919.md`, Git evidence commit `fa6b09cbd6e2b3977c2d1045924b0779427bbed7`.
 - Production Web immersive Stage16A active-session upgrade deployed 2026-09-19; AppDeploy snapshot `1789798972531`, evidence `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`, initial evidence commit `2aefcb16a17e19031a5f9687e9bdb10f46bb9990`.
 - Production Web exercise-detail visual upgrade deployed 2026-09-19; AppDeploy snapshot `1789804866458`, QA screenshot run `1789804885030`, evidence commit `aedaf00a587426fb248e1e5a2f2aad5bcb656f4f`.
-- Next release blockers remain CI signing retrieval/Play certificate acceptance, physical-device sensor/GPU/Health Connect evidence, and cross-device Web/Android sync verification. Continue independent user-visible work while blocked.
+- Next release blockers are physical-device install/sensor/GPU/Health Connect evidence, cross-device Web/Android sync verification, Play declarations/store-compliance completion, and P0 visual-reference acceptance. Continue independent user-visible work while blocked.
 
 ## Verified blocker refresh — 2026-09-19
-- Google Play probe evidence currently shows zero releases, including Internal; publication is NOT complete.
-- Current recorded release AAB is unsigned and explicitly non-publishable.
-- A dedicated upload key now exists in GCP Secret Manager, but signed-AAB generation, Play acceptance, and Internal upload remain fail-closed until directly evidenced.
+- Historical zero-release probe is superseded by verified Android Publisher commit evidence from run `35434624698`.
+- Google Play Internal is published for signed versionCode `50001`; artifact id `10581347670`, ZIP digest `sha256:6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2`.
+- Physical install/post-upload runtime remains fail-closed and is NOT implied by successful track publication.
 - Physical Android Stage16A/GPU/Health Connect and Web↔Android cross-device sync evidence remain open.
 - Visual quality remains FAIL-CLOSED against the approved screenshot/reference bar; functional presence does not close this gate.
 
