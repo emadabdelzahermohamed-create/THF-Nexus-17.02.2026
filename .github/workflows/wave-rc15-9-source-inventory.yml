@@ -1,0 +1,79 @@
+name: WAVE RC15.9 Source Inventory
+
+on:
+  push:
+    branches: [releaseops/wave-rc15-9-admin-rbac-20260918]
+    paths:
+      - '.github/workflows/wave-rc15-9-source-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Reconstruct approved RC15.8 source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120)
+          r.raise_for_status(); open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src && unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q; git add .; git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+      - name: Inventory WAVE admin publisher media routes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          {
+            echo 'WAVE_RC15_9_SOURCE_INVENTORY=PASS'
+            echo '=== TOP LEVEL ==='
+            find . -maxdepth 2 -type d -not -path './.git*' | sort | head -250
+            echo '=== ADMIN/PUBLISHER/AUTH FILES ==='
+            find . -type f -not -path './.git/*' | grep -Ei '(admin|publisher|auth|control)' | sort | head -400 || true
+            echo '=== ROUTE/ROLE REFERENCES ==='
+            grep -RInE --exclude-dir=.git --exclude='*.map' 'admin-login|/api/admin|/api/publisher|/control|hasWaveRole|verifyWavePassword|waveUserFromToken|publisher|role' . | head -800 || true
+            echo '=== MEDIA REFERENCES ==='
+            grep -RInE --exclude-dir=.git --exclude='*.map' 'HLS|Data Saver|offline|transcode|subtitle|dubbing|live|quality' app src worker workers 2>/dev/null | head -800 || true
+          } > ../WAVE_RC15_9_SOURCE_INVENTORY.txt
+          sha256sum ../WAVE_RC15_9_SOURCE_INVENTORY.txt > ../WAVE_RC15_9_SOURCE_INVENTORY.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-RC15-9-SOURCE-INVENTORY
+          retention-days: 30
+          path: |
+            WAVE_RC15_9_SOURCE_INVENTORY.txt
+            WAVE_RC15_9_SOURCE_INVENTORY.sha256
