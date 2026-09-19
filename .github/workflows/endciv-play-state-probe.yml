@@ -1,0 +1,72 @@
+name: EndCiv Play Release State Probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/endciv-play-state-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PACKAGE_NAME: com.endciv.game
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  play-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Authenticate Android Publisher read probe
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: true
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Inspect EndCiv package in disposable edit
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          API="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME"
+          set +e
+          CODE="$(curl --silent --show-error -o evidence/edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" "$API/edits" -d '{}')"
+          set -e
+          echo "http_status=$CODE" > evidence/PLAY_STATE.txt
+          python - <<'PY'
+          import json
+          p="evidence/edit.json"
+          d=json.load(open(p, encoding="utf-8"))
+          with open("evidence/PLAY_STATE.txt","a",encoding="utf-8") as f:
+              if "id" in d:
+                  f.write("package_exists=yes\n")
+                  f.write("edit_id="+str(d["id"])+"\n")
+              else:
+                  e=d.get("error",{})
+                  f.write("package_exists=no_or_inaccessible\n")
+                  f.write("error_status="+str(e.get("status",""))+"\n")
+                  f.write("error_message="+str(e.get("message",""))[:800]+"\n")
+          PY
+          if [ "$CODE" = "200" ]; then
+            EDIT_ID="$(python -c 'import json; print(json.load(open("evidence/edit.json"))["id"])')"
+            curl --silent --show-error -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$API/edits/$EDIT_ID" >/dev/null || true
+          fi
+          cat evidence/PLAY_STATE.txt
+
+      - name: Upload EndCiv Play evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: endciv-play-state-probe
+          path: evidence/
+          retention-days: 7
