@@ -73,10 +73,10 @@ jobs:
           set -u
           rm -rf /tmp/ruinsciv-out /tmp/ruinsciv-source
           mkdir -p /tmp/ruinsciv-out /tmp/ruinsciv-source
-          gcloud compute scp --recurse             "$GCP_BUILDER:$HOME/ruinsciv-oss-fusion-v1/out/."             /tmp/ruinsciv-out/             --project "$GCP_PROJECT_ID"             --zone "$GCP_ZONE"             --tunnel-through-iap             --quiet || true
+          gcloud compute scp --recurse             "$GCP_BUILDER:~/ruinsciv-oss-fusion-v1/out/."             /tmp/ruinsciv-out/             --project "$GCP_PROJECT_ID"             --zone "$GCP_ZONE"             --tunnel-through-iap             --quiet || true
 
           # Keep an exact source snapshot in the CI artifact without copying signing material.
-          gcloud compute scp --recurse             "$GCP_BUILDER:$HOME/ruinsciv-oss-fusion-v1/app"             /tmp/ruinsciv-source/             --project "$GCP_PROJECT_ID"             --zone "$GCP_ZONE"             --tunnel-through-iap             --quiet || true
+          gcloud compute scp --recurse             "$GCP_BUILDER:~/ruinsciv-oss-fusion-v1/app"             /tmp/ruinsciv-source/             --project "$GCP_PROJECT_ID"             --zone "$GCP_ZONE"             --tunnel-through-iap             --quiet || true
 
           if [[ -d /tmp/ruinsciv-source/app ]]; then
             rm -rf               /tmp/ruinsciv-source/app/.godot               /tmp/ruinsciv-source/app/builds               /tmp/ruinsciv-source/app/android/build               /tmp/ruinsciv-source/app/android/.gradle 2>/dev/null || true
