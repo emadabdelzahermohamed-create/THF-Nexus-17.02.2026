@@ -66,18 +66,19 @@ jobs:
           grep -q 'publisher' app/api/control/route.ts
           grep -q 'admin' app/api/control/route.ts
           echo WAVE_RC15_9_ADMIN_RBAC_SOURCE=PASS
-      - name: Repair generated dependency lock and run focused WAVE tests
+      - name: Repair lock build server and run focused WAVE tests
         shell: bash
         run: |
           set -Eeuo pipefail
           cd wave-src
-          # RC15 overlays add @cloudflare/playwright to package.json; regenerate only the
-          # recovered working-tree lockfile so npm ci validates the exact reconstructed source.
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           npm ci --no-audit --no-fund
+          # control-source is an integration test and imports dist/server/index.js.
+          # Build the recovered server first; the previous gate ran this test too early.
+          npm run build
+          test -f dist/server/index.js
           node --test tests/control-source.test.mjs
           python3 -m unittest tests.first_party_auth_test tests.release_identity_test
-          npm run build
           echo WAVE_RC15_9_ADMIN_RBAC_BUILD=PASS
       - name: Save evidence
         if: always()
