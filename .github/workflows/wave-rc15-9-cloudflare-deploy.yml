@@ -1,0 +1,108 @@
+name: WAVE RC15.9 Cloudflare Deploy
+on:
+  push:
+    branches: [releaseops/wave-rc15-9-admin-rbac-20260918]
+    paths:
+      - '.github/workflows/wave-rc15-9-cloudflare-deploy.yml'
+permissions:
+  contents: read
+  id-token: write
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_LIVE_URL: https://wave-mawja.p-my.workers.dev
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate WIF for approved source recovery
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Reconstruct validated cumulative WAVE source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120)
+          r.raise_for_status(); open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src && unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q; git add .; git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          test -f app/admin-login/page.tsx
+          test -f app/control/page.tsx
+          test -f app/api/control/route.ts
+          grep -q 'hasWaveRole' lib/wave-auth.ts
+      - name: Build production bundle
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --no-audit --no-fund
+          npm run build
+          test -f dist/server/index.js
+          npx wrangler deploy --dry-run --outdir .wrangler-dry-run >/tmp/wave-dry-run.log 2>&1
+          test -s /tmp/wave-dry-run.log
+      - name: Deploy WAVE to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"
+          cd wave-src
+          npx wrangler deploy 2>&1 | tee /tmp/wave-deploy.log
+          grep -Eiq 'deployed|uploaded|version|workers.dev' /tmp/wave-deploy.log
+      - name: Live smoke WAVE public and protected surfaces
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for path in / /login /admin-login /control; do
+            code="$(curl -L -sS -o /tmp/wave-smoke.html -w '%{http_code}' "$WAVE_LIVE_URL$path")"
+            case "$code" in 200|302|303|307|308|401|403) ;; *) echo "SMOKE_FAIL $path HTTP=$code"; exit 31;; esac
+            test -s /tmp/wave-smoke.html || test "$code" = 302 || test "$code" = 303 || test "$code" = 307 || test "$code" = 308
+            echo "WAVE_SMOKE $path HTTP=$code"
+          done
+          code="$(curl -sS -o /tmp/control-api.out -w '%{http_code}' "$WAVE_LIVE_URL/api/control")"
+          case "$code" in 401|403|405) echo "WAVE_CONTROL_UNAUTH_DENIAL=PASS HTTP=$code";; *) echo "CONTROL_API_UNEXPECTED HTTP=$code"; exit 32;; esac
+      - name: Save deploy evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "scope=WAVE_MAWJA_ONLY"
+            echo "live=$WAVE_LIVE_URL"
+            echo "base_sha256=$EXPECTED_RC15_SHA256"
+            test -f /tmp/wave-deploy.log && sha256sum /tmp/wave-deploy.log || true
+          } > WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.txt
+          sha256sum WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.txt > WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-RC15-9-CLOUDFLARE-DEPLOY-EVIDENCE
+          path: |
+            WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.txt
+            WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.sha256
+          retention-days: 30
