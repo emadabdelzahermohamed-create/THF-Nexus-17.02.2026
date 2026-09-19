@@ -415,6 +415,15 @@ p = re.sub(r'version/code=\d+', f'version/code={version_code}', p)
 p = re.sub(r'version/name="[^"]+"', f'version/name="{version_name}"', p)
 p = re.sub(r'gradle_build/target_sdk=\d+', 'gradle_build/target_sdk=36', p)
 presets.write_text(p, encoding="utf-8")
+
+import json
+app_cfg_path = app / "configs" / "app.json"
+app_cfg = json.loads(app_cfg_path.read_text(encoding="utf-8"))
+app_cfg["app_id"] = "ruinsciv"
+app_cfg["version"] = version_name
+network = app_cfg.setdefault("network", {})
+network["web_session_storage_key"] = "ruinsciv.session.v1"
+app_cfg_path.write_text(json.dumps(app_cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
 
 cat > "$APP/docs/ruinsciv/THIRD_PARTY_SOURCES.md" <<EOF
