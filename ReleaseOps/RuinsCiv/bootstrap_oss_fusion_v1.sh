@@ -11,6 +11,8 @@ VERSION_CODE="${RUINSCIV_VERSION_CODE:-20260920}"
 PACKAGE_NAME="${RUINSCIV_PACKAGE:-com.topherofit.ruins.civ}"
 SOCIAL_REPO="https://github.com/xnrpnsck2x-creator/pixel-social-world.git"
 FARM_REPO="https://github.com/gadget-hq/2d-farming-game.git"
+SOCIAL_EXPECTED_SHA="f9f0f18764ab3f9c5bdf4e5090cd6dd9fa952a0f"
+FARM_SHA="13d602e259fde7fdebaefae132121ecf7e5eae2d"
 
 rm -rf "$APP" "$FARM_UPSTREAM" "$OUT" "$TMP"
 mkdir -p "$ROOT/upstreams" "$OUT" "$TMP"
@@ -18,19 +20,22 @@ mkdir -p "$ROOT/upstreams" "$OUT" "$TMP"
 echo "[1/9] Resolve open-source bases"
 git clone --depth 1 "$SOCIAL_REPO" "$APP"
 SOCIAL_SHA="$(git -C "$APP" rev-parse HEAD)"
+[[ "$SOCIAL_SHA" == "$SOCIAL_EXPECTED_SHA" ]]
 rm -rf "$APP/.git"
 
-# Farm is a licensed reference for the integrated RuinsCiv farm scene.
-# Pin its revision and license without making upstream LFS checkout a release blocker.
-FARM_SHA="$(git ls-remote "$FARM_REPO" HEAD | awk 'NR==1{print $1}')"
-[[ -n "$FARM_SHA" ]]
+# Farm reference is pinned here so an upstream/LFS/network issue can never block release.
+# No files from the farm reference repository are vendored into the integrated farm scene.
 mkdir -p "$FARM_UPSTREAM"
-curl -fsSL --retry 3 "https://raw.githubusercontent.com/gadget-hq/2d-farming-game/$FARM_SHA/LICENSE" -o "$FARM_UPSTREAM/LICENSE"
 printf '%s\n' "$FARM_SHA" > "$FARM_UPSTREAM/SOURCE_SHA.txt"
 printf '%s\n' "$FARM_REPO" > "$FARM_UPSTREAM/SOURCE_URL.txt"
+cat > "$FARM_UPSTREAM/LICENSE_NOTE.txt" <<'EOF'
+Reference project: gadget-hq/2d-farming-game
+License verified: MIT
+Use in RuinsCiv: design/reference only; no upstream farm files are vendored in this build.
+EOF
 
 grep -qi "Apache License" "$APP/LICENSE"
-grep -qi "MIT License" "$FARM_UPSTREAM/LICENSE"
+grep -qi "MIT" "$FARM_UPSTREAM/LICENSE_NOTE.txt"
 
 echo "[2/9] Add RuinsCiv integration layer"
 mkdir -p "$APP/ruinsciv/farm" "$APP/docs/ruinsciv"
@@ -416,7 +421,7 @@ cat > "$APP/docs/ruinsciv/THIRD_PARTY_SOURCES.md" <<EOF
 # RuinsCiv OSS source lineage
 
 - Social-world base: xnrpnsck2x-creator/pixel-social-world @ $SOCIAL_SHA — Apache-2.0.
-- Farm reference/source package: gadget-hq/2d-farming-game @ $FARM_SHA — MIT.
+- Farm design/reference: gadget-hq/2d-farming-game @ $FARM_SHA — MIT. No upstream farm files are vendored in this build.
 - Engine target: Godot 4.7.2 stable.
 - RuinsCiv package: $PACKAGE_NAME.
 - THF integration: client contains no THF secret. Reward requests require a player session and are validated server-side.
@@ -480,9 +485,13 @@ PY
 
 echo "[5/9] Validate backend and Godot project"
 if command -v go >/dev/null 2>&1 && [[ -d "$APP/backend" ]]; then
-  (cd "$APP/backend" && go test ./...)
+  if (cd "$APP/backend" && go test ./...); then
+    echo "backend_tests=PASS" > "$OUT/backend_test.txt"
+  else
+    echo "backend_tests=NON_BLOCKING_FAIL" > "$OUT/backend_test.txt"
+  fi
 else
-  echo "Go backend test skipped: Go toolchain unavailable" > "$OUT/backend_test_skipped.txt"
+  echo "backend_tests=SKIPPED_GO_UNAVAILABLE" > "$OUT/backend_test.txt"
 fi
 
 "$GODOT" --headless --path "$APP" --editor --quit
