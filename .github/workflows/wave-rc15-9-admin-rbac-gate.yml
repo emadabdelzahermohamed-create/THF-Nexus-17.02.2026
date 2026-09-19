@@ -89,7 +89,14 @@ jobs:
             npx wrangler deploy --dry-run --outdir .wrangler-dry-run >/tmp/wrangler-dry-run.log 2>&1
             test -s /tmp/wrangler-dry-run.log
           fi
-          python3 -m unittest tests.first_party_auth_test tests.release_identity_test
+          # RC15.8 intentionally advanced Android identity from 15300 to 15301.
+          # Keep the legacy RC15 identity test out of this cumulative gate and assert
+          # the approved RC15.8 identity directly instead of treating 15301 as a regression.
+          python3 -m unittest tests.first_party_auth_test
+          grep -q 'versionCode 15301' android/app/build.gradle
+          grep -q "versionName '1.0.0-rc15.8-launchfix'" android/app/build.gradle
+          grep -q 'targetSdk 36' android/app/build.gradle
+          echo WAVE_RC15_9_ANDROID_IDENTITY=PASS
           echo WAVE_RC15_9_ADMIN_RBAC_BUILD=PASS
       - name: Save evidence
         if: always()
