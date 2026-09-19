@@ -1,35 +1,35 @@
 name: RuinsCiv Android Candidate V5
-
 on:
-  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - 'ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh'
       - '.github/workflows/ruinsciv-android-candidate-v5.yml'
-
+  workflow_dispatch:
 permissions:
   contents: read
   id-token: write
-
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with: {persist-credentials: false}
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
       - name: Setup gcloud
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Copy V5 migration helper
+        run: gcloud compute scp ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh "$GCP_BUILDER:/tmp/prepare_ruinsciv_android_candidate_v5.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
       - name: Prepare isolated RuinsCiv candidate V5 on builder
-        shell: bash
-        run: |
-          set -euo pipefail
-          gcloud compute ssh "${{ vars.GCP_BUILDER_INSTANCE }}" \
-            --project="${{ vars.GCP_PROJECT_ID }}" \
-            --zone="${{ vars.GCP_BUILDER_ZONE }}" \
-            --tunnel-through-iap \
-            --command='set -euo pipefail; cd ~/THF-Nexus-17.02.2026 || cd /workspace/THF-Nexus-17.02.2026; git fetch origin main; git checkout main; git reset --hard origin/main; chmod +x ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh; ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh'
+        run: gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/prepare_ruinsciv_android_candidate_v5.sh && /tmp/prepare_ruinsciv_android_candidate_v5.sh'
