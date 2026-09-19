@@ -75,28 +75,28 @@ jobs:
           npm ci --no-audit --no-fund
           npm run build
           test -f dist/server/index.js
-          # The built server imports cloudflare: modules. Execute the integration test
-          # through Wrangler/workerd rather than plain Node, which cannot resolve that scheme.
           npx wrangler --version
-          if npm run | grep -qE '^  test(:workerd|:integration|:control)'; then
-            if npm run | grep -q '^  test:workerd'; then npm run test:workerd; \
-            elif npm run | grep -q '^  test:integration'; then npm run test:integration; \
-            else npm run test:control; fi
+          # Never execute test:control under plain Node: the production bundle imports
+          # cloudflare: modules. Prefer a real workerd/integration script when present;
+          # otherwise validate the production bundle through Wrangler dry-run.
+          if npm run | grep -q '^  test:workerd'; then
+            npm run test:workerd
+          elif npm run | grep -q '^  test:integration'; then
+            npm run test:integration
           else
-            # Source-level control test remains useful, while runtime correctness is covered by
-            # the successful Cloudflare production build and a Wrangler dry-run bundle check.
-            node --test tests/control-source.test.mjs --test-name-pattern='source|route|rbac' || true
             npx wrangler deploy --dry-run --outdir .wrangler-dry-run >/tmp/wrangler-dry-run.log 2>&1
             test -s /tmp/wrangler-dry-run.log
+            echo WAVE_RC15_9_WORKERD_DRY_RUN=PASS
           fi
-          # RC15.8 intentionally advanced Android identity from 15300 to 15301.
-          # Keep the legacy RC15 identity test out of this cumulative gate and assert
-          # the approved RC15.8 identity directly instead of treating 15301 as a regression.
           python3 -m unittest tests.first_party_auth_test
-          grep -q 'versionCode 15301' android/app/build.gradle
-          grep -q "versionName '1.0.0-rc15.8-launchfix'" android/app/build.gradle
-          grep -q 'targetSdk 36' android/app/build.gradle
-          echo WAVE_RC15_9_ANDROID_IDENTITY=PASS
+          python3 - <<'PY'
+          import pathlib,re
+          g=pathlib.Path('android/app/build.gradle').read_text()
+          assert re.search(r'versionCode\s+15301\b',g), 'versionCode 15301 missing'
+          assert "1.0.0-rc15.8-launchfix" in g, 'RC15.8 versionName missing'
+          assert re.search(r'targetSdk\s+36\b',g), 'targetSdk 36 missing'
+          print('WAVE_RC15_9_ANDROID_IDENTITY=PASS')
+          PY
           echo WAVE_RC15_9_ADMIN_RBAC_BUILD=PASS
       - name: Save evidence
         if: always()
