@@ -76,9 +76,6 @@ jobs:
           npm run build
           test -f dist/server/index.js
           npx wrangler --version
-          # Never execute test:control under plain Node: the production bundle imports
-          # cloudflare: modules. Prefer a real workerd/integration script when present;
-          # otherwise validate the production bundle through Wrangler dry-run.
           if npm run | grep -q '^  test:workerd'; then
             npm run test:workerd
           elif npm run | grep -q '^  test:integration'; then
@@ -89,12 +86,15 @@ jobs:
             echo WAVE_RC15_9_WORKERD_DRY_RUN=PASS
           fi
           python3 -m unittest tests.first_party_auth_test
+          # RC15.8 launch-fix already owns Android release identity. Normalize whitespace
+          # before assertions so the gate validates semantics rather than Gradle formatting.
           python3 - <<'PY'
           import pathlib,re
           g=pathlib.Path('android/app/build.gradle').read_text()
-          assert re.search(r'versionCode\s+15301\b',g), 'versionCode 15301 missing'
-          assert "1.0.0-rc15.8-launchfix" in g, 'RC15.8 versionName missing'
-          assert re.search(r'targetSdk\s+36\b',g), 'targetSdk 36 missing'
+          normalized=' '.join(g.split())
+          assert 'versionCode 15301' in normalized, 'versionCode 15301 missing'
+          assert "versionName '1.0.0-rc15.8-launchfix'" in normalized, 'RC15.8 versionName missing'
+          assert 'targetSdk 36' in normalized, 'targetSdk 36 missing'
           print('WAVE_RC15_9_ANDROID_IDENTITY=PASS')
           PY
           echo WAVE_RC15_9_ADMIN_RBAC_BUILD=PASS
