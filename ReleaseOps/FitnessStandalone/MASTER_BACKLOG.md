@@ -26,7 +26,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Competition + leaderboard UI is visible; trusted score submission remains server-authoritative.
 - [x] AI Coach has a user-facing explainable recommendation screen.
 - [ ] Web/Android visible workflow parity against the same account/data backend.
-- Evidence/audit: `ReleaseOps/FitnessStandalone/UI_SURFACE_AUDIT_20260918.md`; latest Stage16A session evidence: `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`.
+- Evidence/audit: `ReleaseOps/FitnessStandalone/UI_SURFACE_AUDIT_20260918.md`; latest Stage16A session evidence: `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`; exercise-detail visual upgrade: `WEB_VISUAL_DETAIL_DEPLOY_20260919.md`.
 
 ## P0 — Source authority + CI
 - [x] Freeze exact source provenance for standalone Fitness branch (RC2 Drive ID + SHA pinned).
@@ -49,7 +49,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [ ] Offline subset remains usable; ranked/economy-sensitive outcomes remain server-authoritative.
 
 ## P3 — Fitness functionality
-- [ ] Exercise catalog, plans, timers, warm-up/cool-down, injury warnings and recovery flows: full regression. Production Web implementation is visible and usable; search/filter by text, level and equipment deployed 2026-09-19. Full cross-client regression remains open.
+- [ ] Exercise catalog, plans, timers, warm-up/cool-down, injury warnings and recovery flows: full regression. Production Web implementation is visible and usable; search/filter by text, level and equipment deployed 2026-09-19. Exercise-detail target-muscle visualization and prescription metrics deployed in snapshot `1789804866458`. Full cross-client regression remains open.
 - [ ] Motion Coach with real sensor/motion verification. Canonical Stage16A visual demonstration is now embedded in production active sessions; sensed/verified movement remains fail-closed pending device evidence.
 - [ ] Health Connect integration and production permission flow.
 - [ ] Progress, XP, competitions/leaderboards and anti-cheat verification: production regression.
@@ -66,7 +66,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 ## P5 — Android release quality
 - [ ] Remove debug suffix/debuggable state from production artifact.
 - [x] Release version identity updated: package, targetSdk 36, versionCode/versionName.
-- [ ] Release signing + Play App Signing compatible AAB. Read-only probes found no upload-keystore candidate in connected Drive; GCP Secret Manager inventory is IAM-blocked for `thf-release-builder` (`secretmanager.secrets.list` denied).
+- [ ] Release signing + Play App Signing compatible AAB. A dedicated THF Fitness upload keystore was generated on the authorized remote builder and its four components were stored as separate GCP Secret Manager secrets on 2026-09-19; CI retrieval/signing and Play certificate acceptance still require evidence before PASS.
 - [ ] Install/launch/onboarding/RTL/workout/avatar/permissions/offline-online/resume regression on physical Android.
 - [ ] Performance checks: startup, FPS, RAM and thermal behavior.
 
@@ -81,7 +81,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Deploy production web service to AppDeploy HTTPS endpoint; deployment status `ready` with no frontend/backend runtime errors.
 - [ ] Verify auth, workouts, avatar, sync and offline/online behavior end-to-end. Account deletion endpoint/UI and public deletion instructions are deployed; full production regression remains open.
 - [ ] Verify mobile-web parity against Android account data.
-- [x] Post-deploy browser/runtime smoke for latest visual gate: snapshot `1789798972531` reached `ready`; AppDeploy reported 0 frontend, 0 backend and 0 network errors. This does not replace physical-device QA.
+- [x] Post-deploy browser/runtime smoke for latest visual-detail gate: snapshot `1789804866458` reached `ready`; AppDeploy reported 0 frontend, 0 backend and 0 network errors. Automated QA screenshots were generated, but they show the signed-out surface and therefore do not close authenticated visual-reference acceptance.
 
 ## P8 — Security/release closure
 - [x] Initial secret-like assignment scan + production user-scope/auth regression.
@@ -105,18 +105,18 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - P8 evidence requirements: `SECURITY_RELEASE_GATE.md` (`59cc26ce87a2c30631fac17db0005d6fea7dd6df`).
 - Production legal URLs: Privacy `/privacy.html`; Account deletion `/account-deletion.html`; Terms `/terms.html` on the production host.
 - Android signing source inspection: canonical RC2 release build has no production `signingConfig`; `apply_android_signing.py` + `ANDROID_SIGNING_CONTRACT.md` are fail-closed. Production upload key remains external-only.
-- Signing inventory: GitHub Actions run `35356106595` PASSed read-only probe; Secret Manager list is IAM-blocked and connected Drive searches found no upload-keystore candidate.
 - Google Play state probe run `35357059466` PASS: application record exists, four standard tracks readable, zero releases; no Play edit committed.
 - Android production-backend emulator smoke PASS: run `35356916175`, artifact `10552152173`, APK SHA-256 `aede65b003659b4b3ba46555b51744f365a9824e462029a5f0e6a3f1bd20f567`; install/cold-launch/ar-EG UI/no-fatal-crash/screenshot/UI-dump PASS. Physical sensor/GPU testing remains open.
 - Production Web sports/wellness expansion deployed 2026-09-19; evidence `WEB_SPORTS_WELLNESS_DEPLOY_20260919.md`, Git checkpoint `05a3616990adfcd94989fb406b067708acb1aaaf`.
 - Production Web exercise discovery search/filter deployed 2026-09-19; AppDeploy snapshot `1789795331179`, evidence `WEB_EXERCISE_DISCOVERY_DEPLOY_20260919.md`, Git evidence commit `fa6b09cbd6e2b3977c2d1045924b0779427bbed7`.
 - Production Web immersive Stage16A active-session upgrade deployed 2026-09-19; AppDeploy snapshot `1789798972531`, evidence `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`, initial evidence commit `2aefcb16a17e19031a5f9687e9bdb10f46bb9990`.
-- Next release blockers remain production signing, physical-device sensor/GPU/Health Connect evidence, and cross-device Web/Android sync verification. Continue independent user-visible work while blocked.
+- Production Web exercise-detail visual upgrade deployed 2026-09-19; AppDeploy snapshot `1789804866458`, QA screenshot run `1789804885030`, evidence commit `aedaf00a587426fb248e1e5a2f2aad5bcb656f4f`.
+- Next release blockers remain CI signing retrieval/Play certificate acceptance, physical-device sensor/GPU/Health Connect evidence, and cross-device Web/Android sync verification. Continue independent user-visible work while blocked.
 
 ## Verified blocker refresh — 2026-09-19
 - Google Play probe evidence currently shows zero releases, including Internal; publication is NOT complete.
 - Current recorded release AAB is unsigned and explicitly non-publishable.
-- Production upload signing remains fail-closed until a verified Play upload keystore/certificate path is available.
+- A dedicated upload key now exists in GCP Secret Manager, but signed-AAB generation, Play acceptance, and Internal upload remain fail-closed until directly evidenced.
 - Physical Android Stage16A/GPU/Health Connect and Web↔Android cross-device sync evidence remain open.
 - Visual quality remains FAIL-CLOSED against the approved screenshot/reference bar; functional presence does not close this gate.
 
