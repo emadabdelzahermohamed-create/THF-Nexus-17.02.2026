@@ -15,12 +15,19 @@ FARM_REPO="https://github.com/gadget-hq/2d-farming-game.git"
 rm -rf "$APP" "$FARM_UPSTREAM" "$OUT" "$TMP"
 mkdir -p "$ROOT/upstreams" "$OUT" "$TMP"
 
-echo "[1/9] Clone open-source bases"
+echo "[1/9] Resolve open-source bases"
 git clone --depth 1 "$SOCIAL_REPO" "$APP"
-git clone --depth 1 "$FARM_REPO" "$FARM_UPSTREAM"
 SOCIAL_SHA="$(git -C "$APP" rev-parse HEAD)"
-FARM_SHA="$(git -C "$FARM_UPSTREAM" rev-parse HEAD)"
-rm -rf "$APP/.git" "$FARM_UPSTREAM/.git"
+rm -rf "$APP/.git"
+
+# Farm is a licensed reference for the integrated RuinsCiv farm scene.
+# Pin its revision and license without making upstream LFS checkout a release blocker.
+FARM_SHA="$(git ls-remote "$FARM_REPO" HEAD | awk 'NR==1{print $1}')"
+[[ -n "$FARM_SHA" ]]
+mkdir -p "$FARM_UPSTREAM"
+curl -fsSL --retry 3 "https://raw.githubusercontent.com/gadget-hq/2d-farming-game/$FARM_SHA/LICENSE" -o "$FARM_UPSTREAM/LICENSE"
+printf '%s\n' "$FARM_SHA" > "$FARM_UPSTREAM/SOURCE_SHA.txt"
+printf '%s\n' "$FARM_REPO" > "$FARM_UPSTREAM/SOURCE_URL.txt"
 
 grep -qi "Apache License" "$APP/LICENSE"
 grep -qi "MIT License" "$FARM_UPSTREAM/LICENSE"
