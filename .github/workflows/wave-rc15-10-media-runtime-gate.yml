@@ -1,0 +1,118 @@
+name: WAVE RC15.10 Media Runtime Gate
+on:
+  push:
+    branches: [releaseops/wave-rc15-9-admin-rbac-20260918]
+    paths:
+      - '.github/workflows/wave-rc15-10-media-runtime-gate.yml'
+permissions:
+  contents: read
+  id-token: write
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_LIVE_URL: https://wave-mawja.p-my.workers.dev
+jobs:
+  media-runtime-gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Reconstruct cumulative WAVE source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120)
+          r.raise_for_status(); open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src && unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q; git add .; git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+      - name: Verify media implementation invariants
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          test -f media-server/worker/abr.py
+          test -f media-server/worker/worker.py
+          test -f media-server/live-worker/live_worker.py
+          grep -q 'master.m3u8' media-server/worker/abr.py
+          grep -Eq '144|240|360|480|720|1080' media-server/worker/abr.py
+          grep -q 'master.m3u8' media-server/live-worker/live_worker.py
+          grep -RqiE 'data.?saver|datasaver' components app lib
+          grep -RqiE 'quality|level' components/media-player* components app 2>/dev/null
+          grep -RqiE 'offline' components app lib
+          grep -RqiE 'Arabic|arabic|ar-SA|target.*ar' media-server app lib scripts 2>/dev/null
+          echo WAVE_MEDIA_SOURCE_INVARIANTS=PASS
+      - name: Probe live media surfaces without mutation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for path in /browse /live /offline /downloads /api/library /api/offline-source /api/browser-ingest /api/cloudflare-media; do
+            code="$(curl -L -sS -o /tmp/body -w '%{http_code}' "$WAVE_LIVE_URL$path")"
+            case "$code" in 200|400|401|403|405|422) ;; *) echo "MEDIA_SURFACE_FAIL $path HTTP=$code"; exit 41;; esac
+            echo "WAVE_MEDIA_SURFACE $path HTTP=$code"
+          done
+          echo WAVE_MEDIA_LIVE_SURFACES=PASS
+      - name: Inspect production media bindings
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          cd wave-src
+          npx wrangler secret list --name wave-mawja > /tmp/wave-secrets.json
+          python3 - <<'PY'
+          import json
+          raw=open('/tmp/wave-secrets.json').read()
+          try: data=json.loads(raw)
+          except Exception: data=[]
+          names={str(x.get('name','')) for x in data if isinstance(x,dict)}
+          need={'MEDIA_API_URL','MEDIA_API_TOKEN'}
+          missing=sorted(need-names)
+          print('WAVE_MEDIA_BINDINGS_PRESENT='+(','.join(sorted(need&names)) or 'none'))
+          if missing:
+              print('WAVE_MEDIA_BINDINGS_MISSING='+','.join(missing))
+              raise SystemExit(42)
+          print('WAVE_MEDIA_BINDINGS=PASS')
+          PY
+      - name: Save evidence
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "scope=WAVE_MAWJA_ONLY"
+            echo "gate=media-runtime"
+            test -f /tmp/wave-secrets.json && sha256sum /tmp/wave-secrets.json || true
+          } > WAVE_RC15_10_MEDIA_RUNTIME_EVIDENCE.txt
+          sha256sum WAVE_RC15_10_MEDIA_RUNTIME_EVIDENCE.txt > WAVE_RC15_10_MEDIA_RUNTIME_EVIDENCE.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-RC15-10-MEDIA-RUNTIME-EVIDENCE
+          path: |
+            WAVE_RC15_10_MEDIA_RUNTIME_EVIDENCE.txt
+            WAVE_RC15_10_MEDIA_RUNTIME_EVIDENCE.sha256
+          retention-days: 30
