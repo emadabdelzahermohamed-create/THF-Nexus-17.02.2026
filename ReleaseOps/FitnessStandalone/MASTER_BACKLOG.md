@@ -113,5 +113,12 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Production Web immersive Stage16A active-session upgrade deployed 2026-09-19; AppDeploy snapshot `1789798972531`, evidence `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`, initial evidence commit `2aefcb16a17e19031a5f9687e9bdb10f46bb9990`.
 - Next release blockers remain production signing, physical-device sensor/GPU/Health Connect evidence, and cross-device Web/Android sync verification. Continue independent user-visible work while blocked.
 
+## Verified blocker refresh — 2026-09-19
+- Google Play probe evidence currently shows zero releases, including Internal; publication is NOT complete.
+- Current recorded release AAB is unsigned and explicitly non-publishable.
+- Production upload signing remains fail-closed until a verified Play upload keystore/certificate path is available.
+- Physical Android Stage16A/GPU/Health Connect and Web↔Android cross-device sync evidence remain open.
+- Visual quality remains FAIL-CLOSED against the approved screenshot/reference bar; functional presence does not close this gate.
+
 ## Execution policy
 Work top-to-bottom. Within each automation run, complete as many safe tasks as possible rather than one task per run. Do not mark a gate PASS without evidence. When a task is blocked only by an owner-only authorization or unavailable external credential, record the exact blocker and immediately continue with the next independent task.
