@@ -22,12 +22,12 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 ### P0 — User-visible parity gate
 - [ ] No backend-only release claims: every material Fitness capability must have a usable UI surface and UI acceptance evidence.
 - [x] Production Web renders canonical Stage16A 3D directly inside the active workout/session flow. Physical Android/GPU evidence remains open.
-- [x] Exercise detail now visibly combines canonical Stage16A rendering, prescription, muscle context, progression/regression, embedded video and voice guidance while keeping biomechanical certification fail-closed.
+- [x] Exercise detail now visibly combines canonical Stage16A rendering, prescription, exercise-sensitive illustrative muscle-region context, progression/regression, embedded video and voice guidance while keeping biomechanical certification fail-closed.
 - [x] Trainer workspace: clients/assignments/follow-up/bookings is visible and permission-gated in production Web.
 - [x] Competition + leaderboard UI is visible; trusted score submission remains server-authoritative.
 - [x] AI Coach has a user-facing explainable recommendation screen.
 - [ ] Web/Android visible workflow parity against the same account/data backend.
-- Evidence/audit includes `WEB_STAGE16A_EXERCISE_DETAIL_DEPLOY_20260920.md`, `WEB_STAGE16A_CONTACT_STABILITY_DEPLOY_20260920.md`, plus prior Stage16A visual/deployment evidence.
+- Evidence/audit includes `WEB_STAGE16A_MUSCLE_MAP_DEPLOY_20260920.md`, `WEB_STAGE16A_EXERCISE_DETAIL_DEPLOY_20260920.md`, `WEB_STAGE16A_CONTACT_STABILITY_DEPLOY_20260920.md`, plus prior Stage16A visual/deployment evidence.
 
 ## P0 — Source authority + CI
 - [x] Freeze exact source provenance for standalone Fitness branch (RC2 Drive ID + SHA pinned).
@@ -60,7 +60,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 ## P4 — Human avatar quality
 - [x] Canonical identity avatar pinned to modern Stage16A; legacy humanoid references are CI-banned.
 - [ ] Verify 137-joint skeleton + 195 clips on physical device/GPU.
-- [ ] Improve exercise-to-animation mapping, transitions, foot contact, IK hooks and camera framing. Production preserves dominant Stage16A workout rendering, model-aware smooth camera framing, rig-attached muscle visualization and hysteresis-stabilized near-ground foot-bone visualization. Exercise detail now embeds the same canonical Stage16A renderer and explicitly labels name-matched/unmapped motion as uncertified/reference-only. These remain visualization only: not pressure sensing, biomechanical certification, true foot-lock or IK.
+- [ ] Improve exercise-to-animation mapping, transitions, foot contact, IK hooks and camera framing. Production preserves dominant Stage16A workout rendering, model-aware smooth camera framing, rig-attached muscle visualization and hysteresis-stabilized near-ground foot-bone visualization. Exercise detail embeds the same canonical Stage16A renderer and now adds exercise-sensitive illustrative body-region highlighting while explicitly labeling name-matched/unmapped motion as uncertified/reference-only. These remain visualization only: not pressure sensing, activation measurement, biomechanical certification, true foot-lock or IK.
 - [ ] Optimize LOD/update rate/shadows/face/hair for mobile without replacing the canonical human.
 - [ ] GPU/device visual QA.
 
@@ -82,7 +82,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Deploy production web service to AppDeploy HTTPS endpoint; deployment status `ready`.
 - [ ] Verify auth, workouts, avatar, sync and offline/online behavior end-to-end.
 - [ ] Verify mobile-web parity against Android account data.
-- [x] Latest Stage16A visual gate: snapshot `1789903691755` (v30) reached `ready`; QA timestamp `1789903710853` produced Web/mobile evidence with 0 frontend, 0 backend and 0 network errors. Exercise detail now embeds canonical Stage16A plus progression/regression while preserving fail-closed biomechanical semantics. Evidence: `WEB_STAGE16A_EXERCISE_DETAIL_DEPLOY_20260920.md`. Authenticated reference-quality acceptance remains open.
+- [x] Latest Stage16A visual gate: snapshot `1789905543370` reached `ready`; QA timestamp `1789905563125` produced Web/mobile evidence with 0 frontend, 0 backend and 0 network errors. Exercise detail muscle visualization now highlights an exercise-sensitive body region and explicitly states illustrative-only semantics. Evidence: `WEB_STAGE16A_MUSCLE_MAP_DEPLOY_20260920.md`. Authenticated reference-quality acceptance remains open.
 
 ## P8 — Security/release closure
 - [x] Initial secret-like assignment scan + production user-scope/auth regression.
@@ -98,14 +98,14 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Google Play Internal: signed versionCode `50001`, run `35434624698`, committed true. Physical Play runtime remains open.
 - Android production-backend emulator smoke PASS: run `35356916175`; physical sensor/GPU testing remains open.
 - Production Web/backend: `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`.
-- Latest P0 Web visual increment: AppDeploy snapshot `1789903691755` (v30); QA timestamp `1789903710853`; evidence `WEB_STAGE16A_EXERCISE_DETAIL_DEPLOY_20260920.md`.
+- Latest P0 Web visual increment: AppDeploy snapshot `1789905543370`; QA timestamp `1789905563125`; evidence `WEB_STAGE16A_MUSCLE_MAP_DEPLOY_20260920.md`.
 - Next release blockers: physical-device install/sensor/GPU/Health Connect evidence, cross-device Web/Android sync verification, Play declarations/store-compliance completion, biomechanically certified Exercise→Animation mapping, true foot-lock/IK, first-install Android offline Stage16A packaging, and authenticated P0 visual-reference acceptance. Continue independent user-visible work while blocked.
 
 ## Verified blocker refresh — 2026-09-20
 - Google Play Internal remains published for signed versionCode `50001`; publication does not imply physical-device success.
 - Physical Android Stage16A/GPU/Health Connect and Web↔Android cross-device sync evidence remain open.
 - Web Stage16A foot-bone proximity uses hysteresis and easing to reduce threshold flicker while preserving explicit non-IK/non-pressure semantics.
-- Exercise detail now contains the canonical Stage16A renderer and progression/regression guidance; name matching remains explicitly uncertified and cannot close biomechanical mapping.
+- Exercise detail contains the canonical Stage16A renderer, progression/regression guidance and exercise-sensitive illustrative muscle-region highlighting; name matching remains explicitly uncertified and cannot close biomechanical mapping.
 - Visual quality remains FAIL-CLOSED against the approved screenshot/reference bar; functional presence does not close this gate.
 
 ## Execution policy
