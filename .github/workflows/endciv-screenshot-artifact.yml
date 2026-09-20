@@ -1,0 +1,24 @@
+name: EndCiv Runtime Screenshots Artifact
+
+on:
+  push:
+    branches:
+      - 'endciv/screenshots-20260920'
+    paths:
+      - '.github/workflows/endciv-screenshot-artifact.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload EndCiv runtime screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: endciv-runtime-screenshots
+          path: EndCiv/screenshots/*.png
+          retention-days: 7
