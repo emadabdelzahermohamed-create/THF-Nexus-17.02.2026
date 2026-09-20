@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 # V5: derive an isolated RC34 RuinsCiv candidate and gate only exportable/runtime surfaces.
-BASE="$(dirname "$0")/prepare_ruinsciv_android_candidate_v4.sh"
 REC="${RUINSCIV_RECOVERY_OUT:-$HOME/ruinsciv-recovery}"
 SRC="${RUINSCIV_SOURCE:-$HOME/thf-terra-rift-staging-apk-v1/terra/work}"
 DST="${RUINSCIV_CANDIDATE:-$HOME/ruinsciv-candidate}"
@@ -11,15 +10,24 @@ MPFB=res://web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.g
 EXPECTED_WORLD=19043caa07aa1470f586708b551bbe86249f0f612480657d8891458361e78372
 EXPECTED_PROJECT=ce3b4e4e2c08febcdb3d25591ee3163319af828d9c91e4691d3c2c47d02ff182
 EXPECTED_AVATAR=4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f
+mkdir -p "$OUT"
+exec > >(tee "$OUT/v5_trace.log") 2>&1
+trap 'rc=$?; printf "RUINSCIV_V5_FAIL rc=%s line=%s command=%q\n" "$rc" "$LINENO" "$BASH_COMMAND" | tee "$OUT/v5_failure.txt"; exit "$rc"' ERR
+printf 'RUINSCIV_V5_START user=%s home=%s\n' "$(id -un)" "$HOME"
 sha(){ sha256sum "$1"|awk '{print $1}'; }
-mkdir -p "$OUT"; rm -rf "$DST"; mkdir -p "$DST"
-[[ "$(sha "$SRC/project.godot")" == "$EXPECTED_PROJECT" ]]
-[[ "$(sha "$SRC/web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb")" == "$EXPECTED_AVATAR" ]]
-[[ "$(sha "$REC/WorldMain.RC34.proven.gd")" == "$EXPECTED_WORLD" ]]
+require_file(){ local f="$1" label="$2"; if [[ ! -f "$f" ]]; then printf 'MISSING_%s=%s\n' "$label" "$f"; return 41; fi; }
+require_file "$SRC/project.godot" SOURCE_PROJECT
+require_file "$SRC/web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb" SOURCE_AVATAR
+require_file "$REC/WorldMain.RC34.proven.gd" RC34_WORLD
+printf 'PREFLIGHT_FILES=PASS\n'
+[[ "$(sha "$SRC/project.godot")" == "$EXPECTED_PROJECT" ]] || { echo PROJECT_SHA_MISMATCH; exit 42; }
+[[ "$(sha "$SRC/web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb")" == "$EXPECTED_AVATAR" ]] || { echo AVATAR_SHA_MISMATCH; exit 43; }
+[[ "$(sha "$REC/WorldMain.RC34.proven.gd")" == "$EXPECTED_WORLD" ]] || { echo WORLD_SHA_MISMATCH; exit 44; }
+printf 'PREFLIGHT_SHA=PASS\n'
+rm -rf "$DST"; mkdir -p "$DST"
 rsync -a --delete --exclude='.git' --exclude='.godot' --exclude='*.apk' --exclude='*.aab' "$SRC/" "$DST/"
 install -m0644 "$REC/WorldMain.RC34.proven.gd" "$DST/native/world/WorldMain.gd"
 find "$DST" -type f \( -iname 'thf_humanoid_v1*' -o -iname 'thf_humanoid_v2*' -o -iname 'thf_humanoid_v3*' -o -iname 'thf_humanoid_v4*' -o -iname 'thf_humanoid_v5*' -o -iname 'thf_humanoid_v6*' \) -print -delete | sort > "$OUT/removed_forbidden_legacy.txt"
-# Historical evidence and developer-only surfaces are retained for lineage but excluded from export scan.
 PRUNES=( -path "$DST/tests" -o -path "$DST/scripts" -o -path "$DST/docs" -o -path "$DST/.github" -o -path "$DST/validation" -o -path "$DST/evidence" -o -path "$DST/ReleaseOps" )
 mapfile -d '' TEXTS < <(find "$DST" \( "${PRUNES[@]}" \) -prune -o -type f \( -name '*.godot' -o -name '*.cfg' -o -name '*.json' -o -name '*.gd' -o -name '*.py' -o -name '*.tscn' -o -name '*.tres' -o -name '*.xml' -o -name '*.html' -o -name '*.js' -o -name '*.ts' -o -name '*.css' -o -name '*.properties' -o -name '*.java' -o -name '*.kt' -o -name '*.kts' -o -name '*.gradle' -o -name '*.toml' -o -name '*.ini' -o -name '*.env.example' \) -print0)
 for f in "${TEXTS[@]}"; do
