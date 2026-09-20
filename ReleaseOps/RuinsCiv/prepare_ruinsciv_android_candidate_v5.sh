@@ -36,7 +36,9 @@ for f in "${TEXTS[@]}"; do
 done
 if [[ -f "$DST/export_presets.cfg" ]]; then sed -Ei 's#^(package/unique_name|package/name)="[^"]*"#\1="'"$QA_PACKAGE"'"#' "$DST/export_presets.cfg"; fi
 find "$DST" -type d \( -name build -o -name .gradle -o -name .cxx \) -prune -exec rm -rf {} + || true
-EX=(--exclude-dir=.git --exclude-dir=tests --exclude-dir=scripts --exclude-dir=docs --exclude-dir=.github --exclude-dir=validation --exclude-dir=evidence --exclude-dir=ReleaseOps)
+# Historical validation/checksum/deployment notes are retained for provenance but are not exportable/runtime inputs.
+# Gate only active source/config/runtime surfaces; APK/AAB payload validation remains a later independent gate.
+EX=(--exclude-dir=.git --exclude-dir=tests --exclude-dir=scripts --exclude-dir=docs --exclude-dir=.github --exclude-dir=validation --exclude-dir=evidence --exclude-dir=ReleaseOps --exclude='*_VALIDATION.txt' --exclude='*MANIFEST_SHA256.txt' --exclude='DEPLOY_NOW*.md')
 grep -RInE --binary-files=without-match "${EX[@]}" 'com\.topherofit\.thf\.terra|THF World|THF WORLD' "$DST" > "$OUT/forbidden_identity_hits.txt" || true
 grep -RInE --binary-files=without-match "${EX[@]}" 'thf_humanoid_v[1-6]([^0-9]|$)' "$DST" > "$OUT/forbidden_legacy_hits.txt" || true
 grep -RInE --binary-files=without-match "${EX[@]}" 'WAVE_[A-Z0-9_]*(SECRET|TOKEN|KEY|CLIENT)' "$DST" > "$OUT/wave_secret_hits.txt" || true
