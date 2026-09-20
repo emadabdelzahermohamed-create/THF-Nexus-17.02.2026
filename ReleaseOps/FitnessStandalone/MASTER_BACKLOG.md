@@ -74,9 +74,10 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 ## P6 — Google Play
 - [x] Standalone Fitness Play application record verified for `com.topherofit.thf.pulse`.
 - [x] Google Play Internal upload committed for signed versionCode `50001` in run `35434624698`; physical tester install/runtime remains a separate open gate.
-- [ ] Data Safety, Health Apps declaration, App Access, content rating, target audience.
+- [ ] Data Safety, Health Apps declaration, App Access, content rating, target audience and ads declarations.
 - [x] Privacy policy + account deletion URL published on the production HTTPS host.
 - [ ] Verify install from Play Internal and post-upload runtime.
+- [x] Reconciled `PLAY_RELEASE_GATE.md` on 2026-09-20 so it no longer incorrectly describes the old unsigned/pre-upload state; signed Internal publication is authoritative while device/runtime/compliance gates remain fail-closed. Checkpoint `84d2f567dd567281e851b2ea1abea1364502bdf6`.
 
 ## P7 — Web production
 - [x] Deploy production web service to AppDeploy HTTPS endpoint; deployment status `ready`.
@@ -99,6 +100,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Android production-backend emulator smoke PASS: run `35356916175`; physical sensor/GPU testing remains open.
 - Production Web/backend: `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`.
 - Latest P0 Web visual increment: AppDeploy snapshot `1789906905579`; QA timestamp `1789906923327`; evidence `WEB_STAGE16A_FLOOR_CONTACT_DEPLOY_20260920.md`.
+- Play gate reconciliation: `PLAY_RELEASE_GATE.md` now reflects the committed signed Internal release rather than stale unsigned RC2 state; physical/runtime/compliance claims remain open.
 - Next release blockers: physical-device install/sensor/GPU/Health Connect evidence, cross-device Web/Android sync verification, Play declarations/store-compliance completion, biomechanically certified Exercise→Animation mapping, true foot-lock/IK, first-install Android offline Stage16A packaging, and authenticated P0 visual-reference acceptance. Continue independent user-visible work while blocked.
 
 ## Verified blocker refresh — 2026-09-20
