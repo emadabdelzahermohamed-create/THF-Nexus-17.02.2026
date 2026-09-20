@@ -26,7 +26,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Competition + leaderboard UI is visible; trusted score submission remains server-authoritative.
 - [x] AI Coach has a user-facing explainable recommendation screen.
 - [ ] Web/Android visible workflow parity against the same account/data backend.
-- Evidence/audit: `UI_SURFACE_AUDIT_20260918.md`; `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`; `WEB_VISUAL_DETAIL_DEPLOY_20260919.md`; `WEB_STAGE16A_MOTION_MAPPING_DEPLOY_20260919.md`; `WEB_STAGE16A_FOOT_CONTACT_HOOKS_DEPLOY_20260920.md`; `WEB_STAGE16A_CAMERA_TRANSITION_DEPLOY_20260920.md`; `WEB_STAGE16A_SMOOTH_CAMERA_LIGHTING_DEPLOY_20260920.md`; `WEB_STAGE16A_MUSCLE_FOCUS_DEPLOY_20260920.md`; `WEB_STAGE16A_DYNAMIC_FOOT_PROXIMITY_DEPLOY_20260920.md`; `PRODUCTION_REVERIFY_20260920_1023_EET.md`.
+- Evidence/audit: `UI_SURFACE_AUDIT_20260918.md`; `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`; `WEB_VISUAL_DETAIL_DEPLOY_20260919.md`; `WEB_STAGE16A_MOTION_MAPPING_DEPLOY_20260919.md`; `WEB_STAGE16A_FOOT_CONTACT_HOOKS_DEPLOY_20260920.md`; `WEB_STAGE16A_CAMERA_TRANSITION_DEPLOY_20260920.md`; `WEB_STAGE16A_SMOOTH_CAMERA_LIGHTING_DEPLOY_20260920.md`; `WEB_STAGE16A_MUSCLE_FOCUS_DEPLOY_20260920.md`; `WEB_STAGE16A_DYNAMIC_FOOT_PROXIMITY_DEPLOY_20260920.md`; `WEB_PREMIUM_SESSION_COMPOSITION_DEPLOY_20260920.md`; `PRODUCTION_REVERIFY_20260920_1023_EET.md`.
 
 ## P0 — Source authority + CI
 - [x] Freeze exact source provenance for standalone Fitness branch (RC2 Drive ID + SHA pinned).
@@ -59,7 +59,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 ## P4 — Human avatar quality
 - [x] Canonical identity avatar pinned to modern Stage16A; legacy humanoid references are CI-banned.
 - [ ] Verify 137-joint skeleton + 195 clips on physical device/GPU.
-- [ ] Improve exercise-to-animation mapping, transitions, foot contact, IK hooks and camera framing. Web camera/framing, soft shadows, tone mapping and deterministic exercise-name mapping are live. Latest production snapshot `1789894747889` retains smooth interpolation across four model-aware camera views, replay transition, fill lighting, rig-attached muscle visualization, ground reference and exercise-sensitive `Muscle focus`; foot-bone markers now react to world-space proximity to the ground through opacity/scale. This remains visualization only: it is not pressure sensing, biomechanical certification, true foot-lock or IK.
+- [ ] Improve exercise-to-animation mapping, transitions, foot contact, IK hooks and camera framing. Web camera/framing, soft shadows, tone mapping and deterministic exercise-name mapping are live. Latest production snapshot `1789898615861` keeps Stage16A as the dominant motion-coach viewport with increased desktop/mobile viewport height, stronger depth/lighting composition, smooth model-aware camera framing, replay transition, rig-attached muscle visualization, ground reference, target-zone `Muscle focus`, and world-space foot proximity indicators. These remain visualization only: not pressure sensing, biomechanical certification, true foot-lock or IK.
 - [ ] Optimize LOD/update rate/shadows/face/hair for mobile without replacing the canonical human.
 - [ ] GPU/device visual QA.
 
@@ -81,7 +81,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Deploy production web service to AppDeploy HTTPS endpoint; deployment status `ready`.
 - [ ] Verify auth, workouts, avatar, sync and offline/online behavior end-to-end.
 - [ ] Verify mobile-web parity against Android account data.
-- [x] Latest Stage16A visual gate: snapshot `1789894747889` reached `ready`; QA timestamp `1789894761164` produced Web/mobile evidence with 0 frontend, 0 backend and 0 network errors. Evidence: `WEB_STAGE16A_DYNAMIC_FOOT_PROXIMITY_DEPLOY_20260920.md`. Authenticated reference-quality acceptance remains open.
+- [x] Latest Stage16A visual gate: snapshot `1789898615861` reached `ready`; QA timestamp `1789898628763` produced Web/mobile evidence with 0 frontend, 0 backend and 0 network errors. Evidence: `WEB_PREMIUM_SESSION_COMPOSITION_DEPLOY_20260920.md`. Authenticated reference-quality acceptance remains open.
 
 ## P8 — Security/release closure
 - [x] Initial secret-like assignment scan + production user-scope/auth regression.
@@ -97,13 +97,13 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Google Play Internal: signed versionCode `50001`, run `35434624698`, committed true. Physical Play runtime remains open.
 - Android production-backend emulator smoke PASS: run `35356916175`; physical sensor/GPU testing remains open.
 - Production Web/backend: `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`.
-- Latest P0 Web visual increment: AppDeploy snapshot `1789894747889`; QA timestamp `1789894761164`; evidence `WEB_STAGE16A_DYNAMIC_FOOT_PROXIMITY_DEPLOY_20260920.md`.
+- Latest P0 Web visual increment: AppDeploy snapshot `1789898615861`; QA timestamp `1789898628763`; evidence `WEB_PREMIUM_SESSION_COMPOSITION_DEPLOY_20260920.md`.
 - Next release blockers: physical-device install/sensor/GPU/Health Connect evidence, cross-device Web/Android sync verification, Play declarations/store-compliance completion, biomechanically certified Exercise→Animation mapping, true foot-lock/IK, first-install Android offline Stage16A packaging, and authenticated P0 visual-reference acceptance. Continue independent user-visible work while blocked.
 
 ## Verified blocker refresh — 2026-09-20
 - Google Play Internal remains published for signed versionCode `50001`; publication does not imply physical-device success.
 - Physical Android Stage16A/GPU/Health Connect and Web↔Android cross-device sync evidence remain open.
-- Web Stage16A has foot-bone proximity indicators where discoverable, model-aware smooth camera framing, replay transition, fill lighting, a ground reference, and target-zone `Muscle focus` framing. The proximity indicators are visual only; true IK/foot locking remains FAIL-CLOSED.
+- Web Stage16A has foot-bone proximity indicators where discoverable, model-aware smooth camera framing, replay transition, fill lighting, a ground reference, target-zone `Muscle focus` framing, and a larger premium session viewport. The proximity indicators are visual only; true IK/foot locking remains FAIL-CLOSED.
 - Visual quality remains FAIL-CLOSED against the approved screenshot/reference bar; functional presence does not close this gate.
 
 ## Execution policy
