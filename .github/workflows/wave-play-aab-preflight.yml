@@ -18,6 +18,7 @@ concurrency:
 env:
   DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
   EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  WAVE_RELEASE_INPUT_REF: releaseops/wave-rc15-8-launchfix-20260917
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
 
@@ -26,6 +27,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Authenticate Google WIF
         uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
@@ -37,6 +40,17 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          # RC15.3-RC15.8 release inputs are intentionally preserved on the
+          # cumulative WAVE release branch rather than main. Materialize only
+          # that WAVE subtree; do not merge or touch THF/RuinsCiv content.
+          git fetch --no-tags origin "$WAVE_RELEASE_INPUT_REF"
+          git checkout FETCH_HEAD -- ReleaseOps/WAVE
+          test -f ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          test -f ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          test -f ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          test -f ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          test -f ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          test -f ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
           python3 -m pip install --disable-pip-version-check -q google-auth requests
           python3 - <<'PY'
           import os,requests,google.auth
