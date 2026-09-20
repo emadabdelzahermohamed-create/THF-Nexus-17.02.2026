@@ -1,0 +1,95 @@
+name: WAVE Play AAB Preflight
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/wave-play-aab-preflight.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate Google WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Reconstruct current WAVE source through RC15.8
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120)
+          r.raise_for_status(); open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src && unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q; git add .; git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          grep -q 'versionCode 15301' android-twa/app/build.gradle
+          grep -q "versionName '1.0.0-rc15.8-launchfix'" android-twa/app/build.gradle
+          grep -q 'android.support.customtabs.trusted.DEFAULT_URL' android-twa/app/src/main/AndroidManifest.xml
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          SDK_ROOT=/usr/local/lib/android/sdk
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n1)"; fi
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Build and validate release AAB
+        working-directory: wave-src/android-twa
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gradle --no-daemon clean :app:bundleRelease
+          AAB=$(find app/build/outputs/bundle -name '*.aab' -type f | head -1)
+          test -s "$AAB"
+          sha256sum "$AAB" | tee ../../WAVE_PLAY_AAB_PREFLIGHT.sha256
+          jarsigner -verify -verbose -certs "$AAB" > ../../WAVE_PLAY_AAB_JARSIGNER.txt 2>&1
+          echo "AAB=$AAB" | tee ../../WAVE_PLAY_AAB_EVIDENCE.txt
+          grep -E 'versionCode|versionName|applicationId|targetSdk|compileSdk' app/build.gradle >> ../../WAVE_PLAY_AAB_EVIDENCE.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-PLAY-AAB-PREFLIGHT-RC15-8
+          retention-days: 14
+          path: |
+            wave-src/android-twa/app/build/outputs/bundle/**/*.aab
+            WAVE_PLAY_AAB_PREFLIGHT.sha256
+            WAVE_PLAY_AAB_JARSIGNER.txt
+            WAVE_PLAY_AAB_EVIDENCE.txt
