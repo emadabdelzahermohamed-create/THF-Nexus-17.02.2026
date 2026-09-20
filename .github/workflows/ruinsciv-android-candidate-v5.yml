@@ -32,14 +32,38 @@ jobs:
       - name: Copy V5 migration helper
         run: gcloud compute scp ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh "$GCP_BUILDER:/tmp/prepare_ruinsciv_android_candidate_v5.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
       - name: Prepare isolated RuinsCiv candidate V5 on builder with diagnostics
+        id: remote_prepare
         shell: bash
         run: |
           set +e
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='set -o pipefail; chmod +x /tmp/prepare_ruinsciv_android_candidate_v5.sh; bash -x /tmp/prepare_ruinsciv_android_candidate_v5.sh'
           rc=$?
-          if [ "$rc" -ne 0 ]; then
-            echo "RUINSCIV_V5_REMOTE_RC=$rc"
-            gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='echo ===V5_FAILURE===; cat "$HOME/ruinsciv-candidate-evidence-v5/v5_failure.txt" 2>/dev/null || true; echo ===V5_TRACE_TAIL===; tail -n 160 "$HOME/ruinsciv-candidate-evidence-v5/v5_trace.log" 2>/dev/null || true; echo ===V5_EVIDENCE===; cat "$HOME/ruinsciv-candidate-evidence-v5/RUINSCIV_CANDIDATE_PREP_EVIDENCE.txt" 2>/dev/null || true'
-            exit "$rc"
-          fi
-# ssh-mode-repair: reuse the same metadata SSH key behavior that succeeded for SCP
+          echo "remote_rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Collect V5 diagnostics from builder
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/ruinsciv-v5-diagnostics"
+          set +e
+          gcloud compute scp --recurse "$GCP_BUILDER:ruinsciv-candidate-evidence-v5" "$RUNNER_TEMP/ruinsciv-v5-diagnostics/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          scp_rc=$?
+          printf 'remote_rc=%s\nscp_rc=%s\n' '${{ steps.remote_prepare.outputs.remote_rc }}' "$scp_rc" > "$RUNNER_TEMP/ruinsciv-v5-diagnostics/run_status.txt"
+          find "$RUNNER_TEMP/ruinsciv-v5-diagnostics" -maxdepth 3 -type f -print || true
+          cat "$RUNNER_TEMP/ruinsciv-v5-diagnostics/ruinsciv-candidate-evidence-v5/v5_failure.txt" 2>/dev/null || true
+          tail -n 200 "$RUNNER_TEMP/ruinsciv-v5-diagnostics/ruinsciv-candidate-evidence-v5/v5_trace.log" 2>/dev/null || true
+          exit 0
+      - name: Upload V5 diagnostics artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ruinsciv-v5-diagnostics-${{ github.run_id }}
+          path: ${{ runner.temp }}/ruinsciv-v5-diagnostics
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Enforce V5 remote result
+        shell: bash
+        run: |
+          rc='${{ steps.remote_prepare.outputs.remote_rc }}'
+          echo "RUINSCIV_V5_REMOTE_RC=$rc"
+          test "$rc" = "0"
