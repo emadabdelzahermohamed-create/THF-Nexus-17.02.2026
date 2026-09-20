@@ -1,0 +1,96 @@
+{
+  "schema": "thf-token-manager-open-source-stack/v1",
+  "generated_at": "2026-09-20",
+  "integrations": [
+    {
+      "name": "Solana SPL Token",
+      "role": [
+        "balances",
+        "transfers",
+        "burns",
+        "token-accounts",
+        "authority-inspection"
+      ],
+      "upstream": "https://github.com/solana-program/token",
+      "integration": "direct SDK/CLI semantics"
+    },
+    {
+      "name": "Squads Protocol v4",
+      "role": [
+        "multisig",
+        "timelock",
+        "spending-limits",
+        "roles",
+        "treasury-consensus"
+      ],
+      "upstream": "https://github.com/Squads-Protocol/v4",
+      "integration": "@sqds/multisig adapter"
+    },
+    {
+      "name": "Streamflow JS SDK",
+      "role": [
+        "vesting",
+        "locks",
+        "batch-distribution"
+      ],
+      "upstream": "https://github.com/streamflow-finance/js-sdk",
+      "integration": "SDK adapter with external/user-controlled signer"
+    },
+    {
+      "name": "SPL Governance / Realms",
+      "role": [
+        "dao",
+        "proposals",
+        "voting",
+        "governance-owned-assets"
+      ],
+      "upstream": "https://github.com/Mythic-Project/solana-program-library/tree/master/governance",
+      "integration": "governance adapter; validate maintained upstream before pinning"
+    },
+    {
+      "name": "Jupiter",
+      "role": [
+        "swap-routing",
+        "dex-execution",
+        "market-route-quote"
+      ],
+      "upstream": "https://github.com/jup-ag/docs",
+      "integration": "API/SDK adapter; not treated as self-hosted core"
+    },
+    {
+      "name": "Metaplex Token Metadata",
+      "role": [
+        "metadata-read",
+        "metadata-update-if-authority-exists"
+      ],
+      "upstream": "https://github.com/metaplex-foundation/mpl-token-metadata",
+      "integration": "read-first metadata adapter"
+    },
+    {
+      "name": "Solana ConnectorKit",
+      "role": [
+        "wallet-connect",
+        "wallet-standard",
+        "mobile-support"
+      ],
+      "upstream": "https://github.com/solana-foundation/connectorkit",
+      "integration": "frontend wallet connector"
+    },
+    {
+      "name": "Solana Mobile Wallet Adapter",
+      "role": [
+        "android-signing",
+        "mobile-wallet-handoff"
+      ],
+      "upstream": "https://github.com/solana-mobile/mobile-wallet-adapter",
+      "integration": "mobile signing without seed custody"
+    }
+  ],
+  "policy": {
+    "private_key_custody": "forbidden",
+    "autonomous_signing": false,
+    "autonomous_broadcast": false,
+    "destructive_actions_require_simulation": true,
+    "multisig_required_for_financial_execution": true
+  }
+}
