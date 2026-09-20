@@ -26,7 +26,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Competition + leaderboard UI is visible; trusted score submission remains server-authoritative.
 - [x] AI Coach has a user-facing explainable recommendation screen.
 - [ ] Web/Android visible workflow parity against the same account/data backend.
-- Evidence/audit: `UI_SURFACE_AUDIT_20260918.md`; `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`; `WEB_VISUAL_DETAIL_DEPLOY_20260919.md`; `WEB_STAGE16A_MOTION_MAPPING_DEPLOY_20260919.md`; `WEB_STAGE16A_FOOT_CONTACT_HOOKS_DEPLOY_20260920.md`; `WEB_STAGE16A_CAMERA_TRANSITION_DEPLOY_20260920.md`; `WEB_STAGE16A_SMOOTH_CAMERA_LIGHTING_DEPLOY_20260920.md`.
+- Evidence/audit: `UI_SURFACE_AUDIT_20260918.md`; `WEB_IMMERSIVE_STAGE16A_DEPLOY_20260919.md`; `WEB_VISUAL_DETAIL_DEPLOY_20260919.md`; `WEB_STAGE16A_MOTION_MAPPING_DEPLOY_20260919.md`; `WEB_STAGE16A_FOOT_CONTACT_HOOKS_DEPLOY_20260920.md`; `WEB_STAGE16A_CAMERA_TRANSITION_DEPLOY_20260920.md`; `WEB_STAGE16A_SMOOTH_CAMERA_LIGHTING_DEPLOY_20260920.md`; `WEB_STAGE16A_MUSCLE_FOCUS_DEPLOY_20260920.md`; `PRODUCTION_REVERIFY_20260920_1023_EET.md`.
 
 ## P0 — Source authority + CI
 - [x] Freeze exact source provenance for standalone Fitness branch (RC2 Drive ID + SHA pinned).
@@ -59,7 +59,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 ## P4 — Human avatar quality
 - [x] Canonical identity avatar pinned to modern Stage16A; legacy humanoid references are CI-banned.
 - [ ] Verify 137-joint skeleton + 195 clips on physical device/GPU.
-- [ ] Improve exercise-to-animation mapping, transitions, foot contact, IK hooks and camera framing. Web camera/framing, soft shadows, tone mapping and deterministic exercise-name mapping are live. Snapshot `1789880423363` adds smooth interpolation across the four model-aware camera views and an additional fill light on top of the existing replay transition and foot-bone visual hooks. This remains visualization only: biomechanical mapping certification and true foot-lock/IK are open.
+- [ ] Improve exercise-to-animation mapping, transitions, foot contact, IK hooks and camera framing. Web camera/framing, soft shadows, tone mapping and deterministic exercise-name mapping are live. Latest production snapshot `1789885576486` retains smooth interpolation across four model-aware camera views, replay transition, fill lighting, foot-bone visual contact hooks and ground reference, and adds `Muscle focus` / `تركيز العضلات`: camera focus derives from exercise-sensitive target zone plus loaded Stage16A model bounds and uses the smooth interpolation path. This remains visualization only: biomechanical mapping certification and true foot-lock/IK are open.
 - [ ] Optimize LOD/update rate/shadows/face/hair for mobile without replacing the canonical human.
 - [ ] GPU/device visual QA.
 
@@ -81,7 +81,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Deploy production web service to AppDeploy HTTPS endpoint; deployment status `ready`.
 - [ ] Verify auth, workouts, avatar, sync and offline/online behavior end-to-end.
 - [ ] Verify mobile-web parity against Android account data.
-- [x] Latest Stage16A visual gate: snapshot `1789880423363` (v23) reached `ready`; QA screenshot run `1789880442804` produced Web/mobile evidence with 0 frontend, 0 backend and 0 network errors. Authenticated reference-quality acceptance remains open.
+- [x] Latest Stage16A visual gate: snapshot `1789885576486` reached `ready`; QA screenshot run `1789885593768` produced Web/mobile evidence with 0 frontend, 0 backend and 0 network errors. Subsequent production re-verification at 2026-09-20 10:23 EET remained ready with the same zero-error status. Authenticated reference-quality acceptance remains open.
 
 ## P8 — Security/release closure
 - [x] Initial secret-like assignment scan + production user-scope/auth regression.
@@ -97,13 +97,13 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Google Play Internal: signed versionCode `50001`, run `35434624698`, committed true. Physical Play runtime remains open.
 - Android production-backend emulator smoke PASS: run `35356916175`; physical sensor/GPU testing remains open.
 - Production Web/backend: `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`.
-- Latest P0 Web visual increment: AppDeploy snapshot `1789880423363`; QA `1789880442804`; evidence `WEB_STAGE16A_SMOOTH_CAMERA_LIGHTING_DEPLOY_20260920.md`.
+- Latest P0 Web visual increment: AppDeploy snapshot `1789885576486`; QA `1789885593768`; evidence `WEB_STAGE16A_MUSCLE_FOCUS_DEPLOY_20260920.md`. Production re-verification evidence: `PRODUCTION_REVERIFY_20260920_1023_EET.md`.
 - Next release blockers: physical-device install/sensor/GPU/Health Connect evidence, cross-device Web/Android sync verification, Play declarations/store-compliance completion, biomechanically certified Exercise→Animation mapping, true foot-lock/IK, first-install Android offline Stage16A packaging, and authenticated P0 visual-reference acceptance. Continue independent user-visible work while blocked.
 
 ## Verified blocker refresh — 2026-09-20
 - Google Play Internal remains published for signed versionCode `50001`; publication does not imply physical-device success.
 - Physical Android Stage16A/GPU/Health Connect and Web↔Android cross-device sync evidence remain open.
-- Web Stage16A now has explicit foot-bone visual contact hooks where discoverable, model-aware smooth camera framing, replay transition, improved fill lighting, and a ground reference; true IK/foot locking remains FAIL-CLOSED.
+- Web Stage16A now has explicit foot-bone visual contact hooks where discoverable, model-aware smooth camera framing, replay transition, improved fill lighting, a ground reference, and target-zone `Muscle focus` framing; true IK/foot locking remains FAIL-CLOSED.
 - Visual quality remains FAIL-CLOSED against the approved screenshot/reference bar; functional presence does not close this gate.
 
 ## Execution policy
