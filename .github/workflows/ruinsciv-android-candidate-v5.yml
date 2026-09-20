@@ -31,18 +31,19 @@ jobs:
         with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
       - name: Copy V5 migration helper
         run: gcloud compute scp ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh "$GCP_BUILDER:/tmp/prepare_ruinsciv_android_candidate_v5.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
-      - name: Prepare isolated RuinsCiv candidate V5 on builder with diagnostics
+      - name: Prepare isolated RuinsCiv candidate V5 on builder
         id: remote_prepare
-        continue-on-error: true
         shell: bash
         run: |
-          rc=0
-          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='set -o pipefail; chmod +x /tmp/prepare_ruinsciv_android_candidate_v5.sh; bash -x /tmp/prepare_ruinsciv_android_candidate_v5.sh' || rc=$?
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='set -o pipefail; chmod +x /tmp/prepare_ruinsciv_android_candidate_v5.sh; bash -x /tmp/prepare_ruinsciv_android_candidate_v5.sh'
+          rc=$?
+          set -e
           echo "remote_rc=$rc" >> "$GITHUB_OUTPUT"
           echo "RUINSCIV_V5_REMOTE_RC=$rc"
-          exit "$rc"
+          # Deliberately succeed here so diagnostics collection is unconditional.
+          exit 0
       - name: Collect V5 diagnostics from builder
-        if: ${{ always() }}
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/ruinsciv-v5-diagnostics"
@@ -52,9 +53,7 @@ jobs:
           find "$RUNNER_TEMP/ruinsciv-v5-diagnostics" -maxdepth 3 -type f -print || true
           cat "$RUNNER_TEMP/ruinsciv-v5-diagnostics/ruinsciv-candidate-evidence-v5/v5_failure.txt" 2>/dev/null || true
           tail -n 200 "$RUNNER_TEMP/ruinsciv-v5-diagnostics/ruinsciv-candidate-evidence-v5/v5_trace.log" 2>/dev/null || true
-          exit 0
       - name: Upload V5 diagnostics artifact
-        if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ruinsciv-v5-diagnostics-${{ github.run_id }}
@@ -62,7 +61,6 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Enforce V5 remote result
-        if: ${{ always() }}
         shell: bash
         run: |
           rc='${{ steps.remote_prepare.outputs.remote_rc }}'
