@@ -32,5 +32,5 @@ jobs:
       - name: Copy V5 migration helper
         run: gcloud compute scp ReleaseOps/RuinsCiv/prepare_ruinsciv_android_candidate_v5.sh "$GCP_BUILDER:/tmp/prepare_ruinsciv_android_candidate_v5.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
       - name: Prepare isolated RuinsCiv candidate V5 on builder
-        run: gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=30m --quiet --command='chmod +x /tmp/prepare_ruinsciv_android_candidate_v5.sh && /tmp/prepare_ruinsciv_android_candidate_v5.sh'
-# retrigger-after-wif-repair: 2026-09-20
+        run: gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='chmod +x /tmp/prepare_ruinsciv_android_candidate_v5.sh && /tmp/prepare_ruinsciv_android_candidate_v5.sh'
+# ssh-mode-repair: reuse the same metadata SSH key behavior that succeeded for SCP
