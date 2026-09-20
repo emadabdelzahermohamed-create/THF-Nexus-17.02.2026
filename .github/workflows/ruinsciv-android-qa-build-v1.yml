@@ -1,0 +1,90 @@
+name: RuinsCiv Android QA Build V1
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ruinsciv-android-qa-build-v1.yml'
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with: {persist-credentials: false}
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Build and validate RuinsCiv QA APK on builder
+        id: remote
+        shell: bash
+        run: |
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          C="$HOME/ruinsciv-candidate"
+          O="$HOME/ruinsciv-qa-build-v1"
+          rm -rf "$O"; mkdir -p "$O"
+          cd "$C"
+          GODOT="$(command -v godot4 || command -v godot || true)"
+          [[ -n "$GODOT" ]] || { echo GODOT_MISSING; exit 61; }
+          "$GODOT" --version | tee "$O/godot-version.txt"
+          grep -q '^4\.7\.2' "$O/godot-version.txt" || { echo GODOT_VERSION_NOT_4_7_2; exit 62; }
+          [[ -f export_presets.cfg ]] || { echo EXPORT_PRESETS_MISSING; exit 63; }
+          grep -nE '^\[preset\.|platform=|package/(unique_name|name)|architectures/' export_presets.cfg > "$O/export-preset-summary.txt" || true
+          grep -q 'com.topherofit.ruins.civ.phoneqa' export_presets.cfg || { echo QA_PACKAGE_NOT_CONFIGURED; exit 64; }
+          PRESET="$(awk -F'"' '/^name=/{print $2; exit}' export_presets.cfg)"
+          [[ -n "$PRESET" ]] || { echo PRESET_NAME_MISSING; exit 65; }
+          mkdir -p build/android
+          "$GODOT" --headless --path "$C" --editor --quit 2>&1 | tee "$O/godot-import.log"
+          "$GODOT" --headless --path "$C" --export-debug "$PRESET" "$O/RuinsCiv-QA-arm64.apk" 2>&1 | tee "$O/godot-export.log"
+          [[ -s "$O/RuinsCiv-QA-arm64.apk" ]] || { echo APK_MISSING; exit 66; }
+          sha256sum "$O/RuinsCiv-QA-arm64.apk" | tee "$O/RuinsCiv-QA-arm64.apk.sha256"
+          AAPT="$(command -v aapt2 || command -v aapt || find "$HOME" -type f \( -name aapt2 -o -name aapt \) -perm -111 2>/dev/null | head -1 || true)"
+          [[ -n "$AAPT" ]] && "$AAPT" dump badging "$O/RuinsCiv-QA-arm64.apk" > "$O/aapt-badging.txt" || true
+          if [[ -s "$O/aapt-badging.txt" ]]; then
+            grep -q "package: name='com.topherofit.ruins.civ.phoneqa'" "$O/aapt-badging.txt" || { echo APK_PACKAGE_MISMATCH; exit 67; }
+            grep -q "targetSdkVersion:'36'" "$O/aapt-badging.txt" || { echo APK_TARGET_SDK_MISMATCH; exit 68; }
+            grep -q "native-code:.*'arm64-v8a'" "$O/aapt-badging.txt" || { echo APK_ARM64_MISSING; exit 69; }
+          fi
+          unzip -l "$O/RuinsCiv-QA-arm64.apk" > "$O/apk-file-list.txt"
+          if grep -Eiq 'thf_humanoid_v[1-6]|com\.topherofit\.thf\.terra|THF World' "$O/apk-file-list.txt"; then echo FORBIDDEN_APK_FILENAME_HIT; exit 70; fi
+          grep -Ei 'thf_mpfb_stage16a_ual12_animated|stage16e_avatar|wardrobe|shoe|hair|runtime_pbr' "$O/apk-file-list.txt" > "$O/required-asset-hits.txt" || true
+          [[ -s "$O/required-asset-hits.txt" ]] || { echo REQUIRED_AVATAR_ASSETS_NOT_VISIBLE; exit 71; }
+          printf 'RUINSCIV_QA_BUILD=PASS\npackage=com.topherofit.ruins.civ.phoneqa\ngodot=4.7.2\ntarget_sdk=36\nabi=arm64-v8a\nphysical_device_status=PENDING\nfinal_or_play_ready=FALSE\n' > "$O/RUINSCIV_QA_BUILD_EVIDENCE.txt"
+          REMOTE
+          rc=$?
+          set -e
+          echo "remote_rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Collect QA build evidence and APK
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/ruinsciv-qa"
+          gcloud compute scp --recurse "$GCP_BUILDER:ruinsciv-qa-build-v1" "$RUNNER_TEMP/ruinsciv-qa/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          find "$RUNNER_TEMP/ruinsciv-qa" -maxdepth 3 -type f -print
+      - name: Upload QA APK and evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: RuinsCiv-QA-APK-V1-${{ github.run_id }}
+          path: ${{ runner.temp }}/ruinsciv-qa
+          if-no-files-found: error
+          retention-days: 14
+      - name: Enforce remote build result
+        run: |
+          rc='${{ steps.remote.outputs.remote_rc }}'
+          echo "RUINSCIV_QA_REMOTE_RC=$rc"
+          test -n "$rc" && test "$rc" = 0
