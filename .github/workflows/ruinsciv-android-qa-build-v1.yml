@@ -16,6 +16,7 @@ env:
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
 jobs:
   build:
+    timeout-minutes: 90
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
@@ -35,94 +36,63 @@ jobs:
           set +e
           gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='bash -s' <<'REMOTE'
           set -Eeuo pipefail
-          C="$HOME/ruinsciv-candidate"
-          O="$HOME/ruinsciv-qa-build-v1"
-          rm -rf "$O"; mkdir -p "$O"
-          cd "$C"
+          C="$HOME/ruinsciv-candidate"; O="$HOME/ruinsciv-qa-build-v1"
+          rm -rf "$O"; mkdir -p "$O"; cd "$C"
           GODOT="$(command -v godot4 || command -v godot || true)"
           if [[ -z "$GODOT" ]]; then
-            while IFS= read -r candidate; do
-              if [[ -x "$candidate" ]] && "$candidate" --version 2>/dev/null | grep -q '^4\.7\.2'; then GODOT="$candidate"; break; fi
-            done < <(find "$HOME" /opt /usr/local -maxdepth 6 -type f \( -name 'godot*' -o -name 'Godot*' \) -perm -111 2>/dev/null | sort)
+            while IFS= read -r x; do [[ -x "$x" ]] && "$x" --version 2>/dev/null | grep -q '^4\.7\.2' && { GODOT="$x"; break; }; done < <(find "$HOME" /opt /usr/local -maxdepth 7 -type f \( -name 'godot*' -o -name 'Godot*' \) -perm -111 2>/dev/null | sort)
           fi
           [[ -n "$GODOT" ]] || { echo GODOT_4_7_2_NOT_FOUND | tee "$O/build-failure.txt"; exit 61; }
+          "$GODOT" --version | tee "$O/godot-version.txt"; grep -q '^4\.7\.2' "$O/godot-version.txt" || exit 62
           printf '%s\n' "$GODOT" > "$O/godot-path.txt"
-          "$GODOT" --version | tee "$O/godot-version.txt"
-          grep -q '^4\.7\.2' "$O/godot-version.txt" || { echo GODOT_VERSION_NOT_4_7_2 | tee "$O/build-failure.txt"; exit 62; }
 
-          # Discover the already-provisioned Android SDK and JDK instead of assuming shell PATH.
           SDK=""
-          for p in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" "$HOME/Android/Sdk" "$HOME/android-sdk" "/opt/android-sdk" "/usr/local/lib/android/sdk"; do
-            [[ -n "$p" && -d "$p/platform-tools" && -d "$p/build-tools" ]] && { SDK="$p"; break; }
-          done
-          if [[ -z "$SDK" ]]; then
-            adb_bin="$(find "$HOME" /opt /usr/local -maxdepth 7 -type f -name adb -perm -111 2>/dev/null | head -1 || true)"
-            [[ -n "$adb_bin" ]] && SDK="$(dirname "$(dirname "$adb_bin")")"
+          for p in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" "$HOME/Android/Sdk" "$HOME/android-sdk" "$HOME/thf-builder-rc16-build/android-sdk" /opt/android-sdk /usr/local/lib/android/sdk; do [[ -n "$p" && -d "$p/platforms/android-36" ]] && { SDK="$p"; break; }; done
+          [[ -n "$SDK" ]] || { echo ANDROID_API36_SDK_NOT_FOUND | tee "$O/build-failure.txt"; exit 72; }
+          mkdir -p "$SDK/build-tools"
+          if ! find "$SDK/build-tools" -mindepth 2 -maxdepth 2 -type f \( -name aapt2 -o -name aapt \) -perm -111 | grep -q .; then
+            OTHER_BT="$(find "$HOME" /opt /usr/local -type f -path '*/build-tools/*/aapt2' -perm -111 2>/dev/null | grep -v "^$SDK/" | sort -V | tail -1 || true)"
+            if [[ -n "$OTHER_BT" ]]; then
+              SRC_BT="$(dirname "$OTHER_BT")"; cp -a "$SRC_BT" "$SDK/build-tools/$(basename "$SRC_BT")"; echo "reused=$SRC_BT" | tee "$O/build-tools-repair.txt"
+            else
+              SDKMANAGER="$(find "$SDK" "$HOME" /opt /usr/local -type f -name sdkmanager -perm -111 2>/dev/null | head -1 || true)"
+              [[ -n "$SDKMANAGER" ]] || { echo ANDROID_BUILD_TOOLS_AND_SDKMANAGER_MISSING | tee "$O/build-failure.txt"; exit 76; }
+              yes | "$SDKMANAGER" --sdk_root="$SDK" --licenses >/dev/null 2>&1 || true
+              "$SDKMANAGER" --sdk_root="$SDK" 'build-tools;36.0.0' | tee "$O/sdkmanager-build-tools.log"
+            fi
           fi
-          [[ -n "$SDK" && -d "$SDK/platform-tools" && -d "$SDK/build-tools" ]] || { echo ANDROID_SDK_WITH_PLATFORM_AND_BUILD_TOOLS_NOT_FOUND | tee "$O/build-failure.txt"; exit 72; }
-          export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"
-          printf '%s\n' "$SDK" > "$O/android-sdk-path.txt"
-          find "$SDK/platforms" -maxdepth 1 -type d -name 'android-36' -print | tee "$O/android-api36.txt"
-          [[ -s "$O/android-api36.txt" ]] || { echo ANDROID_API36_NOT_FOUND | tee "$O/build-failure.txt"; exit 73; }
+          AAPT="$(find "$SDK/build-tools" -type f \( -name aapt2 -o -name aapt \) -perm -111 2>/dev/null | sort -V | tail -1 || true)"
+          [[ -n "$AAPT" ]] || { echo ANDROID_BUILD_TOOLS_REPAIR_FAILED | tee "$O/build-failure.txt"; exit 77; }
+          export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"; printf '%s\n' "$SDK" > "$O/android-sdk-path.txt"; dirname "$AAPT" > "$O/android-build-tools-path.txt"
 
-          JAVA="$(command -v javac || true)"
-          [[ -z "$JAVA" ]] && JAVA="$(find /usr/lib/jvm "$HOME" /opt -maxdepth 6 -type f -name javac -perm -111 2>/dev/null | head -1 || true)"
-          [[ -n "$JAVA" ]] || { echo JDK_NOT_FOUND | tee "$O/build-failure.txt"; exit 74; }
-          JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$JAVA")")")"; export JAVA_HOME
-          printf '%s\n' "$JAVA_HOME" > "$O/java-home.txt"
-          "$JAVA" -version > "$O/javac-version.txt" 2>&1 || true
-
-          # Persist paths where Godot 4.x export validation reads them.
-          SETTINGS_DIR="$HOME/.config/godot"
-          mkdir -p "$SETTINGS_DIR"
-          SETTINGS="$SETTINGS_DIR/editor_settings-4.tres"
-          [[ -f "$SETTINGS" ]] || printf '[gd_resource format=3]\n\n[resource]\n' > "$SETTINGS"
+          JAVA="$(command -v javac || true)"; [[ -z "$JAVA" ]] && JAVA="$(find /usr/lib/jvm "$HOME" /opt -maxdepth 7 -type f -name javac -perm -111 2>/dev/null | head -1 || true)"; [[ -n "$JAVA" ]] || exit 74
+          JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$JAVA")")")"; export JAVA_HOME; printf '%s\n' "$JAVA_HOME" > "$O/java-home.txt"
+          SETTINGS="$HOME/.config/godot/editor_settings-4.tres"; mkdir -p "$(dirname "$SETTINGS")"; [[ -f "$SETTINGS" ]] || printf '[gd_resource format=3]\n\n[resource]\n' > "$SETTINGS"
           python3 - "$SETTINGS" "$SDK" "$JAVA_HOME" <<'PY'
           import sys,re
-          p,sdk,jdk=sys.argv[1:]
-          t=open(p,encoding='utf-8').read()
+          p,sdk,jdk=sys.argv[1:]; t=open(p,encoding='utf-8').read()
           for k,v in [('export/android/android_sdk_path',sdk),('export/android/java_sdk_path',jdk)]:
-              line=f'{k} = "{v}"'
-              if re.search(rf'(?m)^{re.escape(k)}\s*=.*$',t): t=re.sub(rf'(?m)^{re.escape(k)}\s*=.*$',line,t)
-              else: t += '\n'+line+'\n'
+              line=f'{k} = "{v}"'; t=re.sub(rf'(?m)^{re.escape(k)}\s*=.*$',line,t) if re.search(rf'(?m)^{re.escape(k)}\s*=',t) else t+'\n'+line+'\n'
           open(p,'w',encoding='utf-8').write(t)
           PY
-          grep -E '^export/android/(android_sdk_path|java_sdk_path)' "$SETTINGS" > "$O/godot-android-settings.txt" || true
+          [[ -f export_presets.cfg ]] || exit 63; grep -q 'com.topherofit.ruins.civ.phoneqa' export_presets.cfg || exit 64; PRESET="$(awk -F'"' '/^name=/{print $2; exit}' export_presets.cfg)"; [[ -n "$PRESET" ]] || exit 65
 
-          [[ -f export_presets.cfg ]] || { echo EXPORT_PRESETS_MISSING | tee "$O/build-failure.txt"; exit 63; }
-          grep -nE '^\[preset\.|platform=|package/(unique_name|name)|architectures/' export_presets.cfg > "$O/export-preset-summary.txt" || true
-          grep -q 'com.topherofit.ruins.civ.phoneqa' export_presets.cfg || { echo QA_PACKAGE_NOT_CONFIGURED | tee "$O/build-failure.txt"; exit 64; }
-          PRESET="$(awk -F'"' '/^name=/{print $2; exit}' export_presets.cfg)"
-          [[ -n "$PRESET" ]] || { echo PRESET_NAME_MISSING | tee "$O/build-failure.txt"; exit 65; }
-
-          "$GODOT" --headless --path "$C" --editor --quit 2>&1 | tee "$O/godot-import.log"
-          # Custom Gradle export requires the project Android build template. Install from the proven 4.7.2 editor/templates when absent.
+          timeout 20m "$GODOT" --headless --path "$C" --editor --quit 2>&1 | tee "$O/godot-import.log" || { rc=${PIPESTATUS[0]}; [[ $rc -eq 124 ]] && echo GODOT_IMPORT_TIMEOUT | tee "$O/build-failure.txt"; exit $rc; }
           if [[ ! -f "$C/android/build/build.gradle" && ! -f "$C/android/build/build.gradle.kts" ]]; then
-            "$GODOT" --headless --path "$C" --install-android-build-template 2>&1 | tee "$O/android-template-install.log" || true
+            timeout 10m "$GODOT" --headless --path "$C" --install-android-build-template 2>&1 | tee "$O/android-template-install.log" || { rc=${PIPESTATUS[0]}; echo ANDROID_TEMPLATE_INSTALL_FAILED_RC_$rc | tee "$O/build-failure.txt"; exit 78; }
           fi
-          find "$C/android" -maxdepth 3 -type f 2>/dev/null | sort > "$O/android-template-files.txt" || true
-          "$GODOT" --headless --path "$C" --export-debug "$PRESET" "$O/RuinsCiv-QA-arm64.apk" 2>&1 | tee "$O/godot-export.log"
-          [[ -s "$O/RuinsCiv-QA-arm64.apk" ]] || { echo APK_MISSING | tee "$O/build-failure.txt"; exit 66; }
+          timeout 45m "$GODOT" --headless --path "$C" --export-debug "$PRESET" "$O/RuinsCiv-QA-arm64.apk" 2>&1 | tee "$O/godot-export.log" || { rc=${PIPESTATUS[0]}; echo GODOT_EXPORT_FAILED_RC_$rc | tee "$O/build-failure.txt"; exit $rc; }
+          [[ -s "$O/RuinsCiv-QA-arm64.apk" ]] || exit 66
           sha256sum "$O/RuinsCiv-QA-arm64.apk" | tee "$O/RuinsCiv-QA-arm64.apk.sha256"
-          AAPT="$(find "$SDK/build-tools" -type f \( -name aapt2 -o -name aapt \) -perm -111 2>/dev/null | sort -V | tail -1 || true)"
-          [[ -n "$AAPT" ]] && "$AAPT" dump badging "$O/RuinsCiv-QA-arm64.apk" > "$O/aapt-badging.txt" || true
-          [[ -s "$O/aapt-badging.txt" ]] || { echo AAPT_BADGING_UNAVAILABLE | tee "$O/build-failure.txt"; exit 75; }
-          grep -q "package: name='com.topherofit.ruins.civ.phoneqa'" "$O/aapt-badging.txt" || { echo APK_PACKAGE_MISMATCH | tee "$O/build-failure.txt"; exit 67; }
-          grep -q "targetSdkVersion:'36'" "$O/aapt-badging.txt" || { echo APK_TARGET_SDK_MISMATCH | tee "$O/build-failure.txt"; exit 68; }
-          grep -q "native-code:.*'arm64-v8a'" "$O/aapt-badging.txt" || { echo APK_ARM64_MISSING | tee "$O/build-failure.txt"; exit 69; }
-          unzip -l "$O/RuinsCiv-QA-arm64.apk" > "$O/apk-file-list.txt"
-          if grep -Eiq 'thf_humanoid_v[1-6]|com\.topherofit\.thf\.terra|THF World' "$O/apk-file-list.txt"; then echo FORBIDDEN_APK_FILENAME_HIT | tee "$O/build-failure.txt"; exit 70; fi
-          grep -Ei 'thf_mpfb_stage16a_ual12_animated|stage16e_avatar|wardrobe|shoe|hair|runtime_pbr' "$O/apk-file-list.txt" > "$O/required-asset-hits.txt" || true
-          [[ -s "$O/required-asset-hits.txt" ]] || { echo REQUIRED_AVATAR_ASSETS_NOT_VISIBLE | tee "$O/build-failure.txt"; exit 71; }
+          "$AAPT" dump badging "$O/RuinsCiv-QA-arm64.apk" > "$O/aapt-badging.txt"
+          grep -q "package: name='com.topherofit.ruins.civ.phoneqa'" "$O/aapt-badging.txt" || exit 67; grep -q "targetSdkVersion:'36'" "$O/aapt-badging.txt" || exit 68; grep -q "native-code:.*'arm64-v8a'" "$O/aapt-badging.txt" || exit 69
+          unzip -l "$O/RuinsCiv-QA-arm64.apk" > "$O/apk-file-list.txt"; ! grep -Eiq 'thf_humanoid_v[1-6]|com\.topherofit\.thf\.terra|THF World' "$O/apk-file-list.txt" || exit 70
+          grep -Ei 'thf_mpfb_stage16a_ual12_animated|stage16e_avatar|wardrobe|shoe|hair|runtime_pbr' "$O/apk-file-list.txt" > "$O/required-asset-hits.txt" || true; [[ -s "$O/required-asset-hits.txt" ]] || exit 71
           printf 'RUINSCIV_QA_BUILD=PASS\npackage=com.topherofit.ruins.civ.phoneqa\ngodot=4.7.2\ntarget_sdk=36\nabi=arm64-v8a\nphysical_device_status=PENDING\nfinal_or_play_ready=FALSE\n' > "$O/RUINSCIV_QA_BUILD_EVIDENCE.txt"
           REMOTE
-          rc=$?
-          set -e
-          echo "remote_rc=$rc" >> "$GITHUB_OUTPUT"
-          exit 0
+          rc=$?; set -e; echo "remote_rc=$rc" >> "$GITHUB_OUTPUT"; exit 0
       - name: Collect QA build evidence and APK
         if: always()
-        shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/ruinsciv-qa"
           gcloud compute scp --recurse "$GCP_BUILDER:ruinsciv-qa-build-v1" "$RUNNER_TEMP/ruinsciv-qa/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
@@ -138,6 +108,4 @@ jobs:
       - name: Enforce remote build result
         if: always()
         run: |
-          rc='${{ steps.remote.outputs.remote_rc }}'
-          echo "RUINSCIV_QA_REMOTE_RC=$rc"
-          test -n "$rc" && test "$rc" = 0
+          rc='${{ steps.remote.outputs.remote_rc }}'; echo "RUINSCIV_QA_REMOTE_RC=$rc"; test -n "$rc" && test "$rc" = 0
