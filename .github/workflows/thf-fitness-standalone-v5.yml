@@ -36,7 +36,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      # Pull-request runs intentionally avoid privileged Google OIDC. The canonical
+      # signed/publish gate runs from short main via thf-fitness-v5-main-auth-gate.yml.
+      # This branch gate remains useful for push/workflow_dispatch validation only.
       - name: Authenticate to Google Cloud for read-only source retrieval
+        if: github.event_name != 'pull_request'
         id: auth
         uses: google-github-actions/auth@v2
         with:
@@ -46,6 +50,7 @@ jobs:
           create_credentials_file: true
 
       - name: Download exact V5 RC2 source from Drive
+        if: github.event_name != 'pull_request'
         shell: bash
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
@@ -60,7 +65,16 @@ jobs:
           mkdir -p build/fitness
           unzip -q fitness-source.zip -d build/fitness
 
+      - name: Explain privileged PR gate boundary
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'Privileged Drive/WIF build is intentionally skipped on pull_request.'
+          echo 'Use THF Fitness V5 Main Auth Gate for canonical source/build/sign/Play evidence.'
+
       - name: Verify release authority and canonical human
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
@@ -75,6 +89,7 @@ jobs:
           ! grep -RniE --exclude='*.glb' 'thf_humanoid_v[1-6]|stage15j_ual1_animated\.glb' "$ROOT/app" "$ROOT/templates" "$ROOT/static" "$ROOT/android"
 
       - name: Backend tests
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
@@ -84,17 +99,20 @@ jobs:
           pytest -q
 
       - name: Set up Java
+        if: github.event_name != 'pull_request'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Gradle 8.11.1
+        if: github.event_name != 'pull_request'
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
 
       - name: Android API 36 build gate
+        if: github.event_name != 'pull_request'
         shell: bash
         env:
           THF_FITNESS_BASE_URL: ${{ vars.THF_FITNESS_BASE_URL }}
@@ -123,6 +141,7 @@ jobs:
           } > BUILD_GATE.txt
 
       - name: Upload V5 RC2 evidence
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: thf-fitness-v5-rc2-gate
