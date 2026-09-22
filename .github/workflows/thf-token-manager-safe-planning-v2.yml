@@ -49,18 +49,18 @@ jobs:
 
       - name: Enforce non-execution boundaries
         run: |
-          rg -n "transactionBytesCreated: false" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
-          rg -n "sign: false" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
-          rg -n "broadcast: false" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
-          rg -n "signerBoundary: 'EXTERNAL_MULTISIG'" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
-          if rg -n "sendRawTransaction|sendTransaction|wallet\.sign|secretKey|mnemonic" ReleaseOps/TokenManager/appdeploy; then
+          grep -nF "transactionBytesCreated: false" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
+          grep -nF "sign: false" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
+          grep -nF "broadcast: false" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
+          grep -nF "signerBoundary: 'EXTERNAL_MULTISIG'" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
+          if grep -RInE "sendRawTransaction|sendTransaction|wallet\.sign|secretKey|mnemonic" ReleaseOps/TokenManager/appdeploy; then
             echo 'Executable signer or secret-bearing surface detected.' >&2
             exit 1
           fi
 
       - name: High-confidence secret scan
         run: |
-          if rg -n "BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}" ReleaseOps/TokenManager; then
+          if grep -RInE "BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}" ReleaseOps/TokenManager; then
             echo 'High-confidence secret pattern detected.' >&2
             exit 1
           fi
