@@ -24,7 +24,7 @@
 | Alerts | Partial via TokenOps incidents | Wallet/RPC/treasury anomaly alerts |
 | Reports | Evidence JSON exists | Arabic CSV/JSON/PDF reports |
 | Android signing | Not enabled | Mobile Wallet Adapter |
-| PWA / Web admin | LIVE v1; safe-planning v2 candidate | Expand + auth/RBAC |
+| PWA / Web admin | LIVE safe-planning v2 (`1790082990998`) | Expand + auth/RBAC; authenticated E2E remains open |
 | Secrets | Forbidden in source | external secret manager only |
 
 ## Safe-planning v2 release gate
@@ -33,6 +33,7 @@
 - A plan is rejected if token program, decimals, authorities, supply bounds, slot, or UI/raw supply consistency fail.
 - Plans carry a digest over the confirmed anchor, supply context, mint-account context, immutable identity, authorities and exact supply, with a 15-minute expiry.
 - Plans remain review-only with `transactionBytesCreated=false`, `sign=false`, `signed=false`, `submitted=false`, and `broadcast=false`.
+- Production source for the four runtime files matches merged SHA `ecc2a7c5fe11ef6a6eef7cf36f4fea0edcdadc6a`; deployment evidence is in `WEB_SAFE_PLANNING_V2_DEPLOY_20260922.md`.
 
 ## Required approvals before financial execution
 - Reward epoch: minimum 2 approvals.
