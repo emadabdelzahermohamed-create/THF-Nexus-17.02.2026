@@ -24,8 +24,15 @@
 | Alerts | Partial via TokenOps incidents | Wallet/RPC/treasury anomaly alerts |
 | Reports | Evidence JSON exists | Arabic CSV/JSON/PDF reports |
 | Android signing | Not enabled | Mobile Wallet Adapter |
-| PWA / Web admin | LIVE v1 | Expand + auth/RBAC |
+| PWA / Web admin | LIVE v1; safe-planning v2 candidate | Expand + auth/RBAC |
 | Secrets | Forbidden in source | external secret manager only |
+
+## Safe-planning v2 release gate
+- Amounts are parsed as exact 8-decimal integer base units; JavaScript floating-point is not used for financial quantities.
+- Burn headroom is derived from the freshly observed current supply, not from the theoretical 10B ceiling.
+- A plan is rejected if token program, decimals, authorities, supply bounds, slot, or UI/raw supply consistency fail.
+- Plans carry a digest over the confirmed anchor, supply context, mint-account context, immutable identity, authorities and exact supply, with a 15-minute expiry.
+- Plans remain review-only with `transactionBytesCreated=false`, `sign=false`, `signed=false`, `submitted=false`, and `broadcast=false`.
 
 ## Required approvals before financial execution
 - Reward epoch: minimum 2 approvals.
