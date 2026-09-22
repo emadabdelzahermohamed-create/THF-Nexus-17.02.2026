@@ -4,6 +4,7 @@ on:
     branches: [releaseops/wave-rc15-9-admin-rbac-20260918]
     paths:
       - '.github/workflows/wave-rc15-9-cloudflare-deploy.yml'
+      - 'ReleaseOps/WAVE/RC15_11/**'
 permissions:
   contents: read
   id-token: write
@@ -17,7 +18,7 @@ jobs:
   deploy:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Authenticate WIF for approved source recovery
         uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
@@ -46,10 +47,14 @@ jobs:
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
           python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
           python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          cp -a ../ReleaseOps/WAVE/RC15_11/overlay/. .
           test -f app/admin-login/page.tsx
           test -f app/control/page.tsx
           test -f app/api/control/route.ts
+          test -f app/admin/page.tsx
+          test -f app/publisher/page.tsx
           grep -q 'hasWaveRole' lib/wave-auth.ts
+          python3 ../ReleaseOps/WAVE/RC15_11/test_admin_publisher_aliases.py
       - name: Build production bundle
         shell: bash
         run: |
@@ -119,6 +124,16 @@ jobs:
           done
           code="$(curl -sS -o /tmp/control-api.out -w '%{http_code}' "$WAVE_LIVE_URL/api/control")"
           case "$code" in 401|403|405) echo "WAVE_CONTROL_UNAUTH_DENIAL=PASS HTTP=$code";; *) echo "CONTROL_API_UNEXPECTED HTTP=$code"; exit 32;; esac
+          for path in /admin /publisher; do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' "$WAVE_LIVE_URL$path")"
+            target="$(curl -sS -o /dev/null -w '%{redirect_url}' "$WAVE_LIVE_URL$path")"
+            test "$code" = 307 || test "$code" = 308
+            test "$target" = "$WAVE_LIVE_URL/control"
+            final="$(curl -L -sS -o /tmp/wave-alias.html -w '%{http_code} %{url_effective}' "$WAVE_LIVE_URL$path")"
+            test "$final" = "200 $WAVE_LIVE_URL/admin-login?return_to=%2Fcontrol"
+            grep -q 'دخول لوحة التحكم' /tmp/wave-alias.html
+            echo "WAVE_CONTROL_ALIAS=PASS path=$path"
+          done
       - name: Save deploy evidence
         if: always()
         shell: bash
@@ -134,7 +149,7 @@ jobs:
             test -f /tmp/wave-deploy.log && sha256sum /tmp/wave-deploy.log || true
           } > WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.txt
           sha256sum WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.txt > WAVE_RC15_9_CLOUDFLARE_DEPLOY_EVIDENCE.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: WAVE-RC15-9-CLOUDFLARE-DEPLOY-EVIDENCE
