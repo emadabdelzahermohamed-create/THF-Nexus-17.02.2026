@@ -35,8 +35,8 @@ export const handler = router({
     async ({ body }) => {
       try {
         return json(
-          createOperationPlan(
-            (body ?? {}) as { kind?: string; amountUi?: number }
+          await createOperationPlan(
+            (body ?? {}) as { kind?: string; amountUi?: string | number }
           )
         );
       } catch (e) {

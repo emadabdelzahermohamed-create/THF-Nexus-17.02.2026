@@ -1,0 +1,66 @@
+name: THF Token Manager Safe Planning V2
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'ReleaseOps/TokenManager/**'
+      - '.github/workflows/thf-token-manager-safe-planning-v2.yml'
+  push:
+    branches:
+      - 'automation/tokenops-safe-batch-20260922'
+      - 'token-manager-ar-v1-20260920'
+    paths:
+      - 'ReleaseOps/TokenManager/**'
+      - '.github/workflows/thf-token-manager-safe-planning-v2.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: token-manager-safe-planning-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  safety-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+
+      - name: Use Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.x'
+
+      - name: Parse AppDeploy acceptance contract
+        run: jq -e 'type == "array" and length >= 3 and ([.[] | select(.sanity == true)] | length == 1)' ReleaseOps/TokenManager/appdeploy/tests/tests.json
+
+      - name: Run exact-amount and fail-closed unit tests
+        run: node --test --experimental-strip-types ReleaseOps/TokenManager/appdeploy/backend/tokenService.test.ts
+
+      - name: Check TypeScript syntax
+        run: |
+          node --check --experimental-strip-types ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
+          node --check --experimental-strip-types ReleaseOps/TokenManager/appdeploy/backend/index.ts
+
+      - name: Enforce non-execution boundaries
+        run: |
+          rg -n "transactionBytesCreated: false" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
+          rg -n "sign: false" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
+          rg -n "broadcast: false" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
+          rg -n "signerBoundary: 'EXTERNAL_MULTISIG'" ReleaseOps/TokenManager/appdeploy/backend/tokenService.ts
+          if rg -n "sendRawTransaction|sendTransaction|wallet\.sign|secretKey|mnemonic" ReleaseOps/TokenManager/appdeploy; then
+            echo 'Executable signer or secret-bearing surface detected.' >&2
+            exit 1
+          fi
+
+      - name: High-confidence secret scan
+        run: |
+          if rg -n "BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}" ReleaseOps/TokenManager; then
+            echo 'High-confidence secret pattern detected.' >&2
+            exit 1
+          fi

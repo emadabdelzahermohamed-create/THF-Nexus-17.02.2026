@@ -26,13 +26,20 @@ type Overview = {
   mint: string;
   network: string;
   slot: number;
+  contextSlots: {
+    anchor: number;
+    supply: number;
+    mintAccount: number;
+  };
   supplyUi: string;
+  supplyRaw: string;
   decimals: number;
   programId: string;
   mintAuthority: string | null;
   freezeAuthority: string | null;
   recentCount: number;
   status: string;
+  invariantFailures: string[];
   observedAt: string;
 };
 
@@ -48,16 +55,38 @@ type HolderResult = {
 type Plan = {
   id: string;
   kind: string;
-  amountUi: number;
+  amountUi: string;
+  amountRaw: string;
   status: string;
   minimumApprovals: number;
   executionAuthorized: boolean;
+  simulationRequired: boolean;
+  externalSignerRequired: boolean;
+  signerBoundary: string;
+  sign: boolean;
   broadcast: boolean;
+  chainSnapshot: {
+    slot: number;
+    supplyUi: string;
+    digest: string;
+    contextSlots: {
+      anchor: number;
+      supply: number;
+      mintAccount: number;
+    };
+  };
+  expiresAt: string;
   notes: string[];
   createdAt: string;
 };
 
 const mint = 'HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv';
+
+function formatTokenUi(value: string) {
+  const [whole, fraction] = value.split('.');
+  const grouped = BigInt(whole).toLocaleString('ar-EG');
+  return fraction ? `${grouped}.${fraction}` : grouped;
+}
 
 const modules = [
   [
@@ -208,10 +237,7 @@ function App() {
   const invariantOk = useMemo(
     () =>
       !!overview &&
-      overview.mintAuthority === null &&
-      overview.freezeAuthority === null &&
-      overview.programId === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' &&
-      overview.decimals === 8,
+      overview.status === 'PASS' && overview.invariantFailures.length === 0,
     [overview]
   );
 
@@ -232,7 +258,7 @@ function App() {
     try {
       const r = await api.post('/api/operations/plan', {
         kind,
-        amountUi: Number(amount),
+        amountUi: amount,
       });
       setPlan(r.data);
     } catch (e) {
@@ -453,7 +479,7 @@ function App() {
         </div>
         {planError && <p className="inlineError">{planError}</p>}
         {plan && (
-          <div className="planResult">
+          <div className="planResult" role="status" aria-live="polite">
             <div className="planTop">
               <CheckCircle2 size={20} />
               <b>تم إنشاء حزمة غير تنفيذية</b>
@@ -461,9 +487,14 @@ function App() {
             </div>
             <div className="planFacts">
               <span>النوع: {plan.kind}</span>
-              <span>الكمية: {plan.amountUi.toLocaleString('ar-EG')} THF</span>
+              <span>الكمية: {formatTokenUi(plan.amountUi)} THF</span>
               <span>الحد الأدنى للموافقات: {plan.minimumApprovals}</span>
+              <span>Sign: لا</span>
               <span>Broadcast: لا</span>
+              <span>الموقّع: خارجي عبر Multisig فقط</span>
+              <span>لقطة الشبكة: slot {plan.chainSnapshot.slot}</span>
+              <span>سياق المعروض: {plan.chainSnapshot.contextSlots.supply}</span>
+              <span>سياق هوية التوكن: {plan.chainSnapshot.contextSlots.mintAccount}</span>
             </div>
             <ul>
               {plan.notes.map(x => (

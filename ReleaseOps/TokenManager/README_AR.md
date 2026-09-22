@@ -31,11 +31,15 @@
    - Liquidity action
    - DAO execution
 7. Enforced review metadata: minimum approvals, no transaction bytes, no signature, no submission, no broadcast.
+8. Every review packet is bound to a fresh fail-closed Solana snapshot and expires after 15 minutes; supply and mint-account reads must both be at or after the same confirmed anchor slot.
+9. All token amounts and concentration calculations use exact integer base units (`BigInt`) across 8 decimals.
+10. Explicit external signer boundary: `sign=false`, `broadcast=false`, `EXTERNAL_MULTISIG` required.
 
 ## مبادئ أمان إلزامية
 - ممنوع حفظ seed phrase / private key / raw signed transaction في المصدر أو قاعدة البيانات.
 - لا توقيع تلقائي ولا broadcast تلقائي.
 - كل عملية مالية مستقبلية: Simulation -> Review -> Multisig -> User-controlled signing -> Broadcast -> Post-chain verification.
+- هذه النسخة تنتهي عند Review: لا تنشئ transaction bytes ولا تستدعي wallet ولا توقّع ولا تبث.
 - أي اختلاف في mint/program/decimals/authorities يفعّل Fail-Closed.
 - الحرق لا يسمح بخفض supply أسفل 8B وفق السياسة الحالية.
 - تغيير السياسات المالية نفسها يحتاج Governance/Multisig ولا يتم من واجهة فردية مباشرة.
