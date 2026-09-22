@@ -61,6 +61,7 @@ jobs:
           fi
           [[ -x "$SDK/platform-tools/adb" ]] || { echo ANDROID_PLATFORM_TOOLS_MISSING | tee "$O/build-failure.txt"; exit 79; }
           APKSIGNER="$(find "$SDK/build-tools" -type f -name apksigner -perm -111 2>/dev/null | sort -V | tail -1 || true)"; [[ -n "$APKSIGNER" ]] || exit 77
+          ZIPALIGN="$(find "$SDK/build-tools" -type f -name zipalign -perm -111 2>/dev/null | sort -V | tail -1 || true)"; [[ -n "$ZIPALIGN" ]] || exit 77
           AAPT="$(find "$SDK/build-tools" -type f \( -name aapt2 -o -name aapt \) -perm -111 2>/dev/null | sort -V | tail -1 || true)"; [[ -n "$AAPT" ]] || exit 77
           BASE_HOME="$HOME"
           JAVA="$(command -v javac || true)"; [[ -n "$JAVA" ]] || exit 74; JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$JAVA")")")"
@@ -113,13 +114,31 @@ jobs:
           timeout 45m "$GODOT" --headless --path "$C" --export-debug "$PRESET" "$O/RuinsCiv-QA-arm64.apk" 2>&1 | tee "$O/godot-export.log" || { rc=${PIPESTATUS[0]}; echo GODOT_EXPORT_FAILED_RC_$rc | tee "$O/build-failure.txt"; exit $rc; }
           [[ -s "$O/RuinsCiv-QA-arm64.apk" ]] || exit 66
           unzip -tq "$O/RuinsCiv-QA-arm64.apk" | tee "$O/apk-integrity.txt"
+          if "$APKSIGNER" verify --verbose "$O/RuinsCiv-QA-arm64.apk" > "$O/apksigner-initial.txt" 2>&1; then
+            QA_SIGN_RECOVERY=false
+          else
+            echo 'APK_SIGNATURE_INITIAL=FAIL; applying isolated ephemeral QA signing only.' | tee -a "$O/apksigner-initial.txt"
+            "$ZIPALIGN" -f -p 4 "$O/RuinsCiv-QA-arm64.apk" "$O/RuinsCiv-QA-aligned-unsigned.apk" > "$O/zipalign-recovery.txt" 2>&1
+            QA_KEYSTORE="$ISO/ruinsciv-qa-ephemeral.keystore"
+            keytool -genkeypair -noprompt -keystore "$QA_KEYSTORE" -storepass android -alias ruinscivqa -keypass android \
+              -dname 'CN=RuinsCiv QA,O=THF,C=EG' -keyalg RSA -keysize 2048 -validity 30 > "$O/qa-keytool.txt" 2>&1
+            "$APKSIGNER" sign --ks "$QA_KEYSTORE" --ks-key-alias ruinscivqa --ks-pass pass:android --key-pass pass:android \
+              --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false \
+              --out "$O/RuinsCiv-QA-signed.apk" "$O/RuinsCiv-QA-aligned-unsigned.apk"
+            mv "$O/RuinsCiv-QA-signed.apk" "$O/RuinsCiv-QA-arm64.apk"
+            rm -f "$O/RuinsCiv-QA-aligned-unsigned.apk" "$QA_KEYSTORE"
+            QA_SIGN_RECOVERY=true
+          fi
           "$APKSIGNER" verify --verbose --print-certs "$O/RuinsCiv-QA-arm64.apk" > "$O/apksigner-verify.txt"
+          "$ZIPALIGN" -c -p 4 "$O/RuinsCiv-QA-arm64.apk" > "$O/zipalign-verify.txt" 2>&1
+          if [[ "$QA_SIGN_RECOVERY" == true ]]; then grep -q 'Signer #1 certificate DN:.*CN=RuinsCiv QA' "$O/apksigner-verify.txt" || exit 83; fi
+          printf 'qa_sign_recovery=%s\nsigning_scope=EPHEMERAL_QA_ONLY\nproduction_key_accessed=FALSE\n' "$QA_SIGN_RECOVERY" > "$O/signing-boundary.txt"
           sha256sum "$O/RuinsCiv-QA-arm64.apk" | tee "$O/RuinsCiv-QA-arm64.apk.sha256"
           "$AAPT" dump badging "$O/RuinsCiv-QA-arm64.apk" > "$O/aapt-badging.txt"
           grep -q "package: name='com.topherofit.ruins.civ.phoneqa'" "$O/aapt-badging.txt" || exit 67; grep -q "targetSdkVersion:'36'" "$O/aapt-badging.txt" || exit 68; grep -q "native-code:.*'arm64-v8a'" "$O/aapt-badging.txt" || exit 69
           unzip -l "$O/RuinsCiv-QA-arm64.apk" > "$O/apk-file-list.txt"; ! grep -Eiq 'thf_humanoid_v[1-6]|com\.topherofit\.thf\.terra|THF World' "$O/apk-file-list.txt" || exit 70
           grep -Ei 'thf_mpfb_stage16a_ual12_animated|stage16e_avatar|wardrobe|shoe|hair|runtime_pbr' "$O/apk-file-list.txt" > "$O/required-asset-hits.txt" || true; [[ -s "$O/required-asset-hits.txt" ]] || exit 71
-          printf 'RUINSCIV_QA_BUILD=PASS\npackage=com.topherofit.ruins.civ.phoneqa\ngodot=4.7.2\ntarget_sdk=36\nabi=arm64-v8a\nphysical_device_status=PENDING\nfinal_or_play_ready=FALSE\n' > "$O/RUINSCIV_QA_BUILD_EVIDENCE.txt"
+          printf 'RUINSCIV_QA_BUILD=PASS\npackage=com.topherofit.ruins.civ.phoneqa\ngodot=4.7.2\ntarget_sdk=36\nabi=arm64-v8a\nqa_signing=EPHEMERAL_NON_PRODUCTION\nphysical_device_status=PENDING\nfinal_or_play_ready=FALSE\n' > "$O/RUINSCIV_QA_BUILD_EVIDENCE.txt"
           REMOTE
           rc=$?; set -e; echo "remote_rc=$rc" >> "$GITHUB_OUTPUT"; exit 0
       - name: Collect QA build evidence and APK
