@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "product": "WAVE_MAWJA",
+  "scope": "WAVE_MAWJA_ONLY",
+  "base_commit": "d6a5774be03a8140aa27e01a74ff38f28a359540",
+  "recorded_utc": "2026-09-21T23:20:15Z",
+  "live_url": "https://wave-mawja.p-my.workers.dev",
+  "observed_before_change": {
+    "public_home_http": 200,
+    "browse_http": 200,
+    "live_http": 200,
+    "offline_http": 200,
+    "downloads_http": 200,
+    "admin_login_http": 200,
+    "control_unauth_http": 307,
+    "control_unauth_redirect": "/admin-login?return_to=%2Fcontrol",
+    "control_api_unauth_http": 401,
+    "admin_alias_http": 404,
+    "publisher_alias_http": 404
+  },
+  "implemented": {
+    "admin_alias": "/admin -> /control",
+    "publisher_alias": "/publisher -> /control",
+    "authorization_boundary": "Existing /control page and /api/control RBAC remain authoritative; aliases contain no auth or role logic."
+  },
+  "gates": {
+    "local_contract_tests": "PASS_2_OF_2",
+    "workflow_yaml_parse": "PASS",
+    "embedded_bash_parse": "PASS_4_OF_4",
+    "json_parse": "PASS",
+    "git_diff_check": "PASS",
+    "high_confidence_secret_scan": "PASS_NO_MATCH",
+    "source_inventory": "PENDING_REMOTE_CI",
+    "cumulative_source_build": "PENDING_REMOTE_CI",
+    "cloudflare_deploy": "PENDING_REMOTE_CI",
+    "live_alias_smoke": "PENDING_DEPLOY",
+    "android_candidate_changed": false,
+    "play_upload_performed": false,
+    "final": false
+  },
+  "next_safe_action": "Run the cumulative Admin/RBAC build and Cloudflare deployment gates, then require exact /admin and /publisher redirects through the guarded /control surface and retain artifact SHA evidence."
+}
