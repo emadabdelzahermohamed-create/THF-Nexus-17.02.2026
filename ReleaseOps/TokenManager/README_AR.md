@@ -16,6 +16,8 @@
 
 ## النسخة الحية
 - AppDeploy: https://thf-token-manager-yrh1nu.v2.appdeploy.ai/
+- Safe-planning v2 snapshot: `1790082990998` (`ready`، Web/mobile QA، بدون أخطاء frontend/backend/network مُبلّغ عنها).
+- Canonical Git source: `ecc2a7c5fe11ef6a6eef7cf36f4fea0edcdadc6a`؛ ملفات التشغيل الأربعة المنشورة مطابقة له حرفيًا.
 
 ## ما يعمل الآن
 1. Live read-only token overview.
@@ -34,6 +36,7 @@
 8. Every review packet is bound to a fresh fail-closed Solana snapshot and expires after 15 minutes; supply and mint-account reads must both be at or after the same confirmed anchor slot.
 9. All token amounts and concentration calculations use exact integer base units (`BigInt`) across 8 decimals.
 10. Explicit external signer boundary: `sign=false`, `broadcast=false`, `EXTERNAL_MULTISIG` required.
+11. Production evidence is recorded in `WEB_SAFE_PLANNING_V2_DEPLOY_20260922.md`; automated authenticated E2E was not returned and remains open.
 
 ## مبادئ أمان إلزامية
 - ممنوع حفظ seed phrase / private key / raw signed transaction في المصدر أو قاعدة البيانات.
