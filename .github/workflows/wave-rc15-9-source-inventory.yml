@@ -5,6 +5,7 @@ on:
     branches: [releaseops/wave-rc15-9-admin-rbac-20260918]
     paths:
       - '.github/workflows/wave-rc15-9-source-inventory.yml'
+      - 'ReleaseOps/WAVE/RC15_11/**'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +23,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Authenticate WIF
         uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
@@ -53,6 +54,8 @@ jobs:
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
           python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
           python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          cp -a ../ReleaseOps/WAVE/RC15_11/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_11/test_admin_publisher_aliases.py
       - name: Inventory WAVE admin publisher media routes
         shell: bash
         run: |
@@ -70,7 +73,7 @@ jobs:
             grep -RInE --exclude-dir=.git --exclude='*.map' 'HLS|Data Saver|offline|transcode|subtitle|dubbing|live|quality' app src worker workers 2>/dev/null | head -800 || true
           } > ../WAVE_RC15_9_SOURCE_INVENTORY.txt
           sha256sum ../WAVE_RC15_9_SOURCE_INVENTORY.txt > ../WAVE_RC15_9_SOURCE_INVENTORY.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: WAVE-RC15-9-SOURCE-INVENTORY
           retention-days: 30
