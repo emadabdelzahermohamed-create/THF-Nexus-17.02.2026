@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/wave-rc15-9-cloudflare-deploy.yml'
       - 'ReleaseOps/WAVE/RC15_11/**'
+      - 'ReleaseOps/WAVE/RC15_12/**'
 permissions:
   contents: read
   id-token: write
@@ -124,16 +125,7 @@ jobs:
           done
           code="$(curl -sS -o /tmp/control-api.out -w '%{http_code}' "$WAVE_LIVE_URL/api/control")"
           case "$code" in 401|403|405) echo "WAVE_CONTROL_UNAUTH_DENIAL=PASS HTTP=$code";; *) echo "CONTROL_API_UNEXPECTED HTTP=$code"; exit 32;; esac
-          for path in /admin /publisher; do
-            code="$(curl -sS -o /dev/null -w '%{http_code}' "$WAVE_LIVE_URL$path")"
-            target="$(curl -sS -o /dev/null -w '%{redirect_url}' "$WAVE_LIVE_URL$path")"
-            test "$code" = 307 || test "$code" = 308
-            test "$target" = "$WAVE_LIVE_URL/control"
-            final="$(curl -L -sS -o /tmp/wave-alias.html -w '%{http_code} %{url_effective}' "$WAVE_LIVE_URL$path")"
-            test "$final" = "200 $WAVE_LIVE_URL/admin-login?return_to=%2Fcontrol"
-            grep -q 'دخول لوحة التحكم' /tmp/wave-alias.html
-            echo "WAVE_CONTROL_ALIAS=PASS path=$path"
-          done
+          bash ReleaseOps/WAVE/RC15_12/smoke_control_aliases.sh
       - name: Save deploy evidence
         if: always()
         shell: bash
