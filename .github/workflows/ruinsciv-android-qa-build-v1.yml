@@ -71,6 +71,21 @@ jobs:
           done
           [[ -n "$TEMPLATE_ROOT" ]] || { echo GODOT_ANDROID_SOURCE_TEMPLATE_4_7_2_NOT_FOUND | tee "$O/build-failure.txt"; exit 78; }
           printf '%s\n' "$TEMPLATE_ROOT" > "$O/godot-template-root.txt"
+          source_manifest() {
+            (cd "$C"; find . -type f \
+              ! -path './.git/*' ! -path './.godot/*' ! -path './.import/*' \
+              ! -path './android/build/*' ! -path '*/.gradle/*' ! -path '*/.cxx/*' \
+              ! -name '*.import' ! -name '*.apk' ! -name '*.aab' ! -name '*.keystore' \
+              ! -name '*.jks' ! -name '*.p12' ! -name '*.pfx' \
+              -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum)
+          }
+          source_manifest > "$O/source-content-before.sha256"
+          SOURCE_MANIFEST_SHA256="$(sha256sum "$O/source-content-before.sha256" | awk '{print $1}')"
+          PROJECT_SHA256="$(sha256sum "$C/project.godot" | awk '{print $1}')"
+          WORLD_SHA256="$(sha256sum "$C/native/world/WorldMain.gd" | awk '{print $1}')"
+          AVATAR_SHA256="$(sha256sum "$C/web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb" | awk '{print $1}')"
+          printf 'source_manifest_sha256=%s\nproject_sha256=%s\nworld_sha256=%s\navatar_sha256=%s\n' \
+            "$SOURCE_MANIFEST_SHA256" "$PROJECT_SHA256" "$WORLD_SHA256" "$AVATAR_SHA256" > "$O/source-provenance.txt"
           ISO="$BASE_HOME/ruinsciv-qa-godot-home"; rm -rf "$ISO"; mkdir -p "$ISO/.config/godot" "$ISO/.local/share/godot"
           trap 'rm -rf "$ISO"' EXIT
           ln -s "$BASE_HOME/.local/share/godot/export_templates" "$ISO/.local/share/godot/export_templates"
@@ -137,8 +152,12 @@ jobs:
           "$AAPT" dump badging "$O/RuinsCiv-QA-arm64.apk" > "$O/aapt-badging.txt"
           grep -q "package: name='com.topherofit.ruins.civ.phoneqa'" "$O/aapt-badging.txt" || exit 67; grep -q "targetSdkVersion:'36'" "$O/aapt-badging.txt" || exit 68; grep -q "native-code:.*'arm64-v8a'" "$O/aapt-badging.txt" || exit 69
           unzip -l "$O/RuinsCiv-QA-arm64.apk" > "$O/apk-file-list.txt"; ! grep -Eiq 'thf_humanoid_v[1-6]|com\.topherofit\.thf\.terra|THF World' "$O/apk-file-list.txt" || exit 70
+          ! grep -Eiq '(^|/)(\.env([^/]*|$)|id_rsa|[^/]*\.(jks|keystore|p12|pfx|pem))([[:space:]]|$)' "$O/apk-file-list.txt" || { echo SENSITIVE_FILE_IN_APK | tee "$O/build-failure.txt"; exit 85; }
           grep -Ei 'thf_mpfb_stage16a_ual12_animated|stage16e_avatar|wardrobe|shoe|hair|runtime_pbr' "$O/apk-file-list.txt" > "$O/required-asset-hits.txt" || true; [[ -s "$O/required-asset-hits.txt" ]] || exit 71
-          printf 'RUINSCIV_QA_BUILD=PASS\npackage=com.topherofit.ruins.civ.phoneqa\ngodot=4.7.2\ntarget_sdk=36\nabi=arm64-v8a\nqa_signing=EPHEMERAL_NON_PRODUCTION\nphysical_device_status=PENDING\nfinal_or_play_ready=FALSE\n' > "$O/RUINSCIV_QA_BUILD_EVIDENCE.txt"
+          source_manifest > "$O/source-content-after.sha256"
+          cmp -s "$O/source-content-before.sha256" "$O/source-content-after.sha256" || { echo SOURCE_MUTATED_DURING_BUILD | tee "$O/build-failure.txt"; exit 84; }
+          printf 'RUINSCIV_QA_BUILD=PASS\npackage=com.topherofit.ruins.civ.phoneqa\ngodot=4.7.2\ntarget_sdk=36\nabi=arm64-v8a\nsource_manifest_sha256=%s\nproject_sha256=%s\nworld_sha256=%s\navatar_sha256=%s\nsource_stable_during_build=TRUE\nqa_signing=EPHEMERAL_NON_PRODUCTION\nphysical_device_status=PENDING\nfinal_or_play_ready=FALSE\n' \
+            "$SOURCE_MANIFEST_SHA256" "$PROJECT_SHA256" "$WORLD_SHA256" "$AVATAR_SHA256" > "$O/RUINSCIV_QA_BUILD_EVIDENCE.txt"
           REMOTE
           rc=$?; set -e; echo "remote_rc=$rc" >> "$GITHUB_OUTPUT"; exit 0
       - name: Collect QA build evidence and APK

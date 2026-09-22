@@ -7,6 +7,8 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/ruinsciv-android-qa-build-v1.yml"
+RECOVERY_WORKFLOW = ROOT / ".github/workflows/ruinsciv-rc34-source-recovery-v1.yml"
+RECOVERY_HELPER = ROOT / "ReleaseOps/RuinsCiv/recover_ruinsciv_rc34_source_from_builder.sh"
 BACKLOG = ROOT / "ReleaseOps/RuinsCiv/RUINSCIV_UNIFIED_BACKLOG_V1_20260918.json"
 
 
@@ -14,6 +16,8 @@ class RuinsCivAndroidQaWorkflowTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.workflow = WORKFLOW.read_text(encoding="utf-8")
+        cls.recovery_workflow = RECOVERY_WORKFLOW.read_text(encoding="utf-8")
+        cls.recovery_helper = RECOVERY_HELPER.read_text(encoding="utf-8")
 
     def test_godot_472_uses_versioned_isolated_settings(self):
         self.assertIn('editor_settings-4.7.tres', self.workflow)
@@ -47,6 +51,24 @@ class RuinsCivAndroidQaWorkflowTests(unittest.TestCase):
         self.assertIn('verify --verbose --print-certs', self.workflow)
         self.assertIn('aapt-badging.txt', self.workflow)
         self.assertIn('required-asset-hits.txt', self.workflow)
+
+    def test_source_provenance_is_stable_across_build(self):
+        self.assertIn('source-content-before.sha256', self.workflow)
+        self.assertIn('source-content-after.sha256', self.workflow)
+        self.assertIn('cmp -s', self.workflow)
+        self.assertIn('source_manifest_sha256=', self.workflow)
+        self.assertIn('source_stable_during_build=TRUE', self.workflow)
+
+    def test_sensitive_material_is_rejected_from_source_and_apk(self):
+        self.assertIn('SENSITIVE_FILE_IN_APK', self.workflow)
+        self.assertIn('RUINSCIV_RC34_SENSITIVE_FILE_INVENTORY.txt', self.recovery_helper)
+        self.assertIn('SENSITIVE_SOURCE_MATERIAL_DETECTED', self.recovery_helper)
+        self.assertIn("--exclude='*.keystore'", self.recovery_helper)
+
+    def test_recovery_runs_on_same_repo_pull_requests_in_isolation(self):
+        self.assertIn('pull_request:', self.recovery_workflow)
+        self.assertIn('group: ruinsciv-source-recovery-', self.recovery_workflow)
+        self.assertIn('cancel-in-progress: false', self.recovery_workflow)
 
     def test_remote_script_parses_as_bash(self):
         marker = "<<'REMOTE'\n"
