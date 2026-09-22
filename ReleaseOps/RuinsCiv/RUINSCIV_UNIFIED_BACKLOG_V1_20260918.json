@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_utc": "2026-09-18T08:11:00Z",
+  "updated_utc": "2026-09-21T22:58:20Z",
   "product": "RuinsCiv",
   "canonical_identity_ledger": "ReleaseOps/RuinsCiv/RUINSCIV_IDENTITY_MIGRATION_V1_20260918.json",
   "final_or_play_ready": false,
@@ -31,6 +31,14 @@
     "recovery_helper_provenance_upgrade_commit": "5e5931de3c3bc599c7b40e01d42e838c2819a7f9",
     "recovery_execution": "STAGED_NOT_YET_OBSERVED",
     "recovery_execution_note": "Read-only WIF/IAP workflow is committed. No matching workflow run was observed after connector-originated commits; do not claim builder recovery until a real run/artifact exists.",
+    "qa_build_workflow": ".github/workflows/ruinsciv-android-qa-build-v1.yml",
+    "qa_build_last_failed_commit": "8e04560bdc032a779fce3aa28f74f0b206b4e8a3",
+    "qa_build_last_failed_run": 35643232783,
+    "qa_build_last_failed_job": 106477371376,
+    "qa_build_last_diagnostics_artifact": 10659185526,
+    "qa_build_last_diagnostics_size_bytes": 2191,
+    "qa_build_last_diagnostics_digest": "sha256:4625aa7345e92a8754e1de12058bb8a6f6ea49487564e4fe779414ea911e9a52",
+    "qa_build_last_observation": "No APK was produced. The 34-second remote step is consistent with the obsolete editor_settings-4.tres bootstrap timeout before import; the corrected gate uses an isolated editor_settings-4.7.tres and the installed official 4.7.2.stable/android_source.zip with path-safe extraction. A new real run is required before claiming PASS.",
     "historical_script_forbidden_v6_export_reference": true
   },
   "required_avatar_visual_baseline": {
@@ -57,7 +65,7 @@
   "tasks": [
     {"id":"P0-01","priority":0,"status":"IN_PROGRESS_RECOVERY_WORKFLOW_STAGED","task":"Recover/converge exact latest RC34-or-better source bytes and prove no source downgrade. Builder path and three key RC34 file hashes are proven; read-only WIF/IAP recovery workflow is committed and helper now emits deterministic full content manifest plus inventories. Execution evidence is still required."},
     {"id":"P0-02","priority":0,"status":"IN_PROGRESS_FORBIDDEN_V6_PROVEN","task":"Inventory active export and prove forbidden historical identities, thf_humanoid_v1..v6, and placeholder geometry are excluded. Recovery helper now inventories legacy humanoids and converted environment matches without mutation. Quarantine/remove only after approved replacement proof and ledger entry."},
-    {"id":"P1-01","priority":1,"status":"BLOCKED_BY_P0_SOURCE_RECOVERY","task":"Rebuild Godot 4.7.2 API36 arm64 QA candidate as com.topherofit.ruins.civ.phoneqa; validate manifest/package/payload/avatar/assets and record SHA-256."},
+    {"id":"P1-01","priority":1,"status":"IN_PROGRESS_QA_TOOLCHAIN_REPAIR","task":"Rebuild Godot 4.7.2 API36 arm64 QA candidate as com.topherofit.ruins.civ.phoneqa; validate manifest/package/payload/avatar/assets and record SHA-256. The latest run produced diagnostics only; the next run must prove import, main-scene boot, isolated official Android template restoration, export, ZIP integrity, signature, package, SDK, ABI and asset gates."},
     {"id":"P1-02","priority":1,"status":"PENDING_USER_DEVICE_EVIDENCE","task":"Physical phone install/boot/touch/camera/movement/GPU/FPS/RAM/thermal QA."},
     {"id":"P2-01","priority":2,"status":"PENDING","task":"Standalone RuinsCiv local account plus Google Sign-In, optional Play Games linking, provider adapters, account deletion/privacy/security; externalize RUINSCIV_* secrets and forbid WAVE secret reuse."},
     {"id":"P3-01","priority":3,"status":"PENDING","task":"One isolated RuinsCiv backend/account/world-state contract shared by Android and web/PWA; HTTPS production deploy only after gates."},
@@ -65,5 +73,5 @@
     {"id":"P5-01","priority":5,"status":"PENDING","task":"Continuous approved avatar/animation/environment/PBR/mobile-performance improvements without baseline regression."},
     {"id":"P6-01","priority":6,"status":"PENDING","task":"Production package com.topherofit.ruins.civ, isolated signing/Play App Signing, Digital Asset Links, Play listing/Data Safety/App Access/content rating/privacy/account deletion/ads; Internal/Closed then production only after evidence and Google processing."}
   ],
-  "next_safe_action": "Obtain a real run of the committed read-only recovery workflow (or equivalent authorized WIF/IAP execution), retrieve its source archive/content manifest/inventories, verify RC34 lineage, then migrate only active identity/export references and run the fail-closed RuinsCiv gate before rebuilding."
+  "next_safe_action": "Run the corrected RuinsCiv Android QA workflow, retain the complete diagnostics/APK artifact, and accept it only if import/main-scene boot/export/archive integrity/package/API36/arm64/signature/payload/avatar gates pass. Keep physical-device status PENDING and final_or_play_ready false until separate real-device evidence exists."
 }
