@@ -4,6 +4,7 @@ on:
     branches: [releaseops/wave-rc15-9-admin-rbac-20260918]
     paths:
       - '.github/workflows/wave-rc15-10-media-runtime-gate.yml'
+      - 'ReleaseOps/WAVE/RC15_11/**'
 permissions:
   contents: read
   id-token: write
@@ -17,7 +18,7 @@ jobs:
   media-runtime-gate:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Authenticate WIF
         uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
@@ -46,6 +47,7 @@ jobs:
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
           python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
           python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          cp -a ../ReleaseOps/WAVE/RC15_11/overlay/. .
       - name: Verify media implementation invariants
         shell: bash
         run: |
@@ -108,7 +110,7 @@ jobs:
             test -f /tmp/wave-secrets.json && sha256sum /tmp/wave-secrets.json || true
           } > WAVE_RC15_10_MEDIA_RUNTIME_EVIDENCE.txt
           sha256sum WAVE_RC15_10_MEDIA_RUNTIME_EVIDENCE.txt > WAVE_RC15_10_MEDIA_RUNTIME_EVIDENCE.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: WAVE-RC15-10-MEDIA-RUNTIME-EVIDENCE
