@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "product": "WAVE_MAWJA",
+  "scope": "WAVE_MAWJA_ONLY",
+  "base_commit": "b85da47d0e1afe74e9a832a4535aaa4785ceac6b",
+  "recorded_utc": "2026-09-22T13:41:04Z",
+  "live_url": "https://wave-mawja.p-my.workers.dev",
+  "observed_deploy": {
+    "workflow_run": 35683881549,
+    "cloudflare_version_id": "8b71a48b-edde-4670-9162-305ddb2c9a85",
+    "upload": "PASS",
+    "deploy": "PASS",
+    "admin_alias_smoke": "PASS",
+    "publisher_alias_smoke": "FAILED_DURING_IMMEDIATE_POST_DEPLOY_WINDOW"
+  },
+  "independent_live_recheck": {
+    "method": "PUBLIC_BROWSER",
+    "admin_final_url": "https://wave-mawja.p-my.workers.dev/admin-login?return_to=%2Fcontrol",
+    "publisher_final_url": "https://wave-mawja.p-my.workers.dev/admin-login?return_to=%2Fcontrol",
+    "guarded_login_ui_visible": true
+  },
+  "change": {
+    "bounded_attempts": 12,
+    "retry_seconds": 5,
+    "maximum_alias_wait_seconds_per_path": 55,
+    "exact_redirect_and_guarded_ui_checks_preserved": true,
+    "persistent_failure_exit_code": 33
+  },
+  "gates": {
+    "unit_tests": "PASS_2_OF_2",
+    "shell_parse": "PASS",
+    "workflow_yaml_parse": "PASS",
+    "json_parse": "PASS",
+    "git_diff_check": "PASS",
+    "security_scan": "PASS_NO_HIGH_CONFIDENCE_SECRET_MATCH",
+    "cloudflare_redeploy": "PENDING_REMOTE_CI",
+    "final": false
+  },
+  "local_source_sha256": {
+    "workflow": "d6cf9d6520d5167a49ebc6ad85b5f21c37097f971a0f84472831fd06860590b4",
+    "smoke_script": "395ff6c2f07dfe1c17e06876588377dd816bc4bedcd4b4997be0bf81f8d92c33",
+    "unit_test": "710e74be63f8740c872aff56aedcbca370914715f677e05b4810efbf01e6e8f3"
+  },
+  "android_candidate_changed": false,
+  "play_upload_performed": false,
+  "next_safe_action": "Run local gates, publish an isolated checkpoint, merge only after review, then require the canonical Cloudflare workflow to pass build, deploy, and both exact alias smokes."
+}
