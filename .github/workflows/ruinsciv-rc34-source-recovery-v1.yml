@@ -2,11 +2,20 @@
 name: RuinsCiv RC34 Source Recovery V1
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/ruinsciv-rc34-source-recovery-v1.yml'
+      - 'ReleaseOps/RuinsCiv/recover_ruinsciv_rc34_source_from_builder.sh'
+      - 'ReleaseOps/RuinsCiv/test_ruinsciv_android_qa_workflow.py'
   push:
     branches: [main]
     paths:
       - '.github/workflows/ruinsciv-rc34-source-recovery-v1.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ruinsciv-source-recovery-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read

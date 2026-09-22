@@ -43,10 +43,30 @@ verify "$WORLD" "$EXPECTED_WORLD" world_source
 # Preserve exact recovered WorldMain separately if current worktree advanced; archive remains the untouched current tree for provenance.
 cp "$WORLD" "$OUT/WorldMain.RC34.proven.gd"
 MANIFEST="$OUT/RUINSCIV_RC34_SOURCE_CONTENT_SHA256.txt"
-(cd "$SRC"; find . -type f ! -path './.git/*' ! -path './.godot/*' ! -name '*.apk' ! -name '*.aab' -print0|sort -z|xargs -0 sha256sum) > "$MANIFEST"
+(cd "$SRC"; find . -type f \
+  ! -path './.git/*' ! -path './.godot/*' ! -path './.import/*' \
+  ! -path '*/build/*' ! -path '*/.gradle/*' ! -path '*/.cxx/*' \
+  ! -name '*.import' ! -name '*.apk' ! -name '*.aab' ! -name '*.keystore' \
+  ! -name '*.jks' ! -name '*.p12' ! -name '*.pfx' -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum) > "$MANIFEST"
 FORBIDDEN="$OUT/RUINSCIV_RC34_FORBIDDEN_LEGACY_INVENTORY.txt"; find "$SRC" -type f \( -iname 'thf_humanoid_v1*' -o -iname 'thf_humanoid_v2*' -o -iname 'thf_humanoid_v3*' -o -iname 'thf_humanoid_v4*' -o -iname 'thf_humanoid_v5*' -o -iname 'thf_humanoid_v6*' \) -print|sort > "$FORBIDDEN"
 ENVINV="$OUT/RUINSCIV_RC34_ENVIRONMENT_ASSET_INVENTORY.txt"; find "$SRC" -type f|grep -Ei '(downtown|city|nature|house|interior|furniture|street|transport|ruin)'|sort > "$ENVINV" || true
-ARCHIVE="$OUT/RUINSCIV_RC34_PROVEN_SOURCE_TREE.tar.gz"; tar --exclude='.godot' --exclude='*.apk' --exclude='*.aab' --exclude='.git' -C "$(dirname "$SRC")" -czf "$ARCHIVE" "$(basename "$SRC")"
+SENSITIVE_FILES="$OUT/RUINSCIV_RC34_SENSITIVE_FILE_INVENTORY.txt"
+find "$SRC" -type f -print0 | while IFS= read -r -d '' f; do
+  b="$(basename "$f")"
+  case "$b" in
+    .env|.env.local|.env.production|.env.development|id_rsa|id_ed25519|*.jks|*.keystore|*.p12|*.pfx) printf '%s\n' "$f" ;;
+  esac
+done | LC_ALL=C sort > "$SENSITIVE_FILES"
+SENSITIVE_CONTENT="$OUT/RUINSCIV_RC34_SENSITIVE_CONTENT_HITS.txt"
+grep -RIlE --binary-files=without-match --exclude-dir=.git --exclude-dir=.godot --exclude-dir=build --exclude-dir=.gradle \
+  -- '-----BEGIN ([A-Z ]+ )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}' "$SRC" | LC_ALL=C sort > "$SENSITIVE_CONTENT" || true
+[[ ! -s "$SENSITIVE_FILES" && ! -s "$SENSITIVE_CONTENT" ]] || { echo SENSITIVE_SOURCE_MATERIAL_DETECTED >&2; exit 46; }
+ARCHIVE="$OUT/RUINSCIV_RC34_PROVEN_SOURCE_TREE.tar.gz"
+tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner \
+  --exclude='.godot' --exclude='.git' --exclude='.import' --exclude='*/build' --exclude='*/.gradle' --exclude='*/.cxx' \
+  --exclude='*.import' --exclude='*.apk' --exclude='*.aab' --exclude='*.keystore' --exclude='*.jks' --exclude='*.p12' --exclude='*.pfx' \
+  --exclude='.env' --exclude='.env.local' --exclude='.env.production' --exclude='.env.development' \
+  -C "$(dirname "$SRC")" -czf "$ARCHIVE" "$(basename "$SRC")"
 cat > "$OUT/RUINSCIV_RC34_SOURCE_RECOVERY_EVIDENCE.txt" <<EOF
 RUINSCIV_RC34_SOURCE_RECOVERY=PASS
 source_path=$SRC
@@ -58,6 +78,8 @@ archive_sha256=$(sha "$ARCHIVE")
 archive_size_bytes=$(stat -c %s "$ARCHIVE")
 forbidden_legacy_inventory_count=$(wc -l < "$FORBIDDEN"|tr -d ' ')
 converted_environment_inventory_matches=$(wc -l < "$ENVINV"|tr -d ' ')
+sensitive_file_inventory_count=0
+sensitive_content_hit_count=0
 source_mutated=FALSE
 migration_performed=FALSE
 physical_device_status=PENDING

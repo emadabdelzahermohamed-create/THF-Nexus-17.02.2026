@@ -1,10 +1,16 @@
 name: RuinsCiv Android QA Build V1
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/ruinsciv-android-qa-build-v1.yml'
   push:
     branches: [main]
     paths:
       - '.github/workflows/ruinsciv-android-qa-build-v1.yml'
+concurrency:
+  group: ruinsciv-android-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 permissions:
   contents: read
   id-token: write
@@ -55,41 +61,103 @@ jobs:
           fi
           [[ -x "$SDK/platform-tools/adb" ]] || { echo ANDROID_PLATFORM_TOOLS_MISSING | tee "$O/build-failure.txt"; exit 79; }
           APKSIGNER="$(find "$SDK/build-tools" -type f -name apksigner -perm -111 2>/dev/null | sort -V | tail -1 || true)"; [[ -n "$APKSIGNER" ]] || exit 77
+          ZIPALIGN="$(find "$SDK/build-tools" -type f -name zipalign -perm -111 2>/dev/null | sort -V | tail -1 || true)"; [[ -n "$ZIPALIGN" ]] || exit 77
           AAPT="$(find "$SDK/build-tools" -type f \( -name aapt2 -o -name aapt \) -perm -111 2>/dev/null | sort -V | tail -1 || true)"; [[ -n "$AAPT" ]] || exit 77
-          export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"
-          JAVA="$(command -v javac || true)"; [[ -n "$JAVA" ]] || exit 74; JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$JAVA")")")"; export JAVA_HOME
-          SETTINGS="$HOME/.config/godot/editor_settings-4.tres"; mkdir -p "$(dirname "$SETTINGS")"
-          timeout 30s "$GODOT" --headless --editor --quit >/dev/null 2>&1 || true
-          [[ -f "$SETTINGS" ]] || { echo GODOT_EDITOR_SETTINGS_NOT_CREATED | tee "$O/build-failure.txt"; exit 80; }
-          python3 - "$SETTINGS" "$SDK" "$JAVA_HOME" <<'PY'
-          import sys,re
-          p,sdk,jdk=sys.argv[1:]; t=open(p,encoding='utf-8').read()
-          for k,v in [('export/android/android_sdk_path',sdk),('export/android/java_sdk_path',jdk)]:
-              line=f'{k} = "{v}"'; t=re.sub(rf'(?m)^{re.escape(k)}\s*=.*$',line,t) if re.search(rf'(?m)^{re.escape(k)}\s*=',t) else t.rstrip()+'\n'+line+'\n'
-          open(p,'w',encoding='utf-8').write(t)
-          PY
+          BASE_HOME="$HOME"
+          JAVA="$(command -v javac || true)"; [[ -n "$JAVA" ]] || exit 74; JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$JAVA")")")"
+          TEMPLATE_ROOT=""
+          for p in "$BASE_HOME/.local/share/godot/export_templates/4.7.2.stable" "$BASE_HOME/.local/share/godot/export_templates/4.7.2"; do
+            [[ -f "$p/android_source.zip" ]] && { TEMPLATE_ROOT="$p"; break; }
+          done
+          [[ -n "$TEMPLATE_ROOT" ]] || { echo GODOT_ANDROID_SOURCE_TEMPLATE_4_7_2_NOT_FOUND | tee "$O/build-failure.txt"; exit 78; }
+          printf '%s\n' "$TEMPLATE_ROOT" > "$O/godot-template-root.txt"
+          source_manifest() {
+            (cd "$C"; find . -type f \
+              ! -path './.git/*' ! -path './.godot/*' ! -path './.import/*' \
+              ! -path './android/build/*' ! -path '*/.gradle/*' ! -path '*/.cxx/*' \
+              ! -name '*.import' ! -name '*.apk' ! -name '*.aab' ! -name '*.keystore' \
+              ! -name '*.jks' ! -name '*.p12' ! -name '*.pfx' \
+              -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum)
+          }
+          source_manifest > "$O/source-content-before.sha256"
+          SOURCE_MANIFEST_SHA256="$(sha256sum "$O/source-content-before.sha256" | awk '{print $1}')"
+          PROJECT_SHA256="$(sha256sum "$C/project.godot" | awk '{print $1}')"
+          WORLD_SHA256="$(sha256sum "$C/native/world/WorldMain.gd" | awk '{print $1}')"
+          AVATAR_SHA256="$(sha256sum "$C/web/static/assets/avatars/stage16a/thf_mpfb_stage16a_ual12_animated.glb" | awk '{print $1}')"
+          printf 'source_manifest_sha256=%s\nproject_sha256=%s\nworld_sha256=%s\navatar_sha256=%s\n' \
+            "$SOURCE_MANIFEST_SHA256" "$PROJECT_SHA256" "$WORLD_SHA256" "$AVATAR_SHA256" > "$O/source-provenance.txt"
+          ISO="$BASE_HOME/ruinsciv-qa-godot-home"; rm -rf "$ISO"; mkdir -p "$ISO/.config/godot" "$ISO/.local/share/godot"
+          trap 'rm -rf "$ISO"' EXIT
+          ln -s "$BASE_HOME/.local/share/godot/export_templates" "$ISO/.local/share/godot/export_templates"
+          SETTINGS="$ISO/.config/godot/editor_settings-4.7.tres"
+          printf '%s\n' '[gd_resource type="EditorSettings" format=3]' '' '[resource]' \
+            "export/android/android_sdk_path = \"$SDK\"" \
+            "export/android/java_sdk_path = \"$JAVA_HOME\"" > "$SETTINGS"
+          export HOME="$ISO" ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" JAVA_HOME
+          export PATH="$JAVA_HOME/bin:$SDK/platform-tools:$(dirname "$APKSIGNER"):$PATH"
           grep -E 'export/android/(android_sdk_path|java_sdk_path)' "$SETTINGS" | tee "$O/godot-android-settings.txt"
           [[ -f export_presets.cfg ]] || exit 63; grep -q 'com.topherofit.ruins.civ.phoneqa' export_presets.cfg || exit 64; PRESET="$(awk -F'"' '/^name=/{print $2; exit}' export_presets.cfg)"; [[ -n "$PRESET" ]] || exit 65
           timeout 20m "$GODOT" --headless --path "$C" --editor --quit 2>&1 | tee "$O/godot-import.log" || exit ${PIPESTATUS[0]}
-          if [[ ! -f "$C/android/build/build.gradle" && ! -f "$C/android/build/build.gradle.kts" ]]; then
-            echo 'No RuinsCiv-local Android Gradle template; legacy THF/Terra/WAVE template reuse is forbidden.' | tee "$O/android-template-restore.log"
-            TPL_ZIP="$(find "$HOME" /opt /usr/local -type f \( -iname '*android*template*.zip' -o -iname '*android*template*.tpz' -o -iname '*export*templates*.tpz' \) 2>/dev/null | grep -Ei '4[._-]?7[._-]?2|godot' | grep -Eiv 'terra|thf|wave' | head -1 || true)"
-            if [[ -n "$TPL_ZIP" ]]; then
-              rm -rf "$O/template-unpack"; mkdir -p "$O/template-unpack"; unzip -q "$TPL_ZIP" -d "$O/template-unpack" || true
-              SRC="$(find "$O/template-unpack" -type f \( -name build.gradle -o -name build.gradle.kts \) | grep '/android/' | head -1 | xargs -r dirname)"
-              if [[ -n "$SRC" ]]; then while [[ "$SRC" != "$O/template-unpack" && ! -f "$SRC/settings.gradle" && ! -f "$SRC/settings.gradle.kts" ]]; do SRC="$(dirname "$SRC")"; done; mkdir -p "$C/android/build"; cp -a "$SRC"/. "$C/android/build"/; echo "restored_archive=$TPL_ZIP" | tee -a "$O/android-template-restore.log"; fi
-            fi
-            [[ -f "$C/android/build/build.gradle" || -f "$C/android/build/build.gradle.kts" ]] || { echo GODOT_ANDROID_TEMPLATE_4_7_2_NOT_FOUND | tee "$O/build-failure.txt"; exit 78; }
+          timeout 3m "$GODOT" --headless --path "$C" --quit-after 30 --verbose 2>&1 | tee "$O/godot-scene-boot.log" || { rc=${PIPESTATUS[0]}; echo GODOT_SCENE_BOOT_FAILED_RC_$rc | tee "$O/build-failure.txt"; exit $rc; }
+          if [[ ! -x "$C/android/build/gradlew" || ( ! -f "$C/android/build/build.gradle" && ! -f "$C/android/build/build.gradle.kts" ) ]]; then
+            echo 'Restoring the isolated official Godot 4.7.2 Android source template.' | tee "$O/android-template-restore.log"
+            rm -rf "$C/android/build"; mkdir -p "$C/android/build"
+            python3 - "$TEMPLATE_ROOT/android_source.zip" "$C/android/build" <<'PY'
+          import pathlib, shutil, sys, zipfile
+          src, dst = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]).resolve()
+          with zipfile.ZipFile(src) as archive:
+              for info in archive.infolist():
+                  rel = pathlib.PurePosixPath(info.filename)
+                  if rel.is_absolute() or '..' in rel.parts:
+                      raise SystemExit(f'unsafe Android template member: {info.filename}')
+                  target = (dst / pathlib.Path(*rel.parts)).resolve()
+                  if target != dst and dst not in target.parents:
+                      raise SystemExit(f'Android template escape: {info.filename}')
+                  if info.is_dir():
+                      target.mkdir(parents=True, exist_ok=True)
+                      continue
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  with archive.open(info) as source, open(target, 'wb') as output:
+                      shutil.copyfileobj(source, output)
+          PY
+            chmod +x "$C/android/build/gradlew"
+            printf '%s\n' '4.7.2.stable' > "$C/android/.build_version"
+            echo "restored_archive=$TEMPLATE_ROOT/android_source.zip" | tee -a "$O/android-template-restore.log"
           fi
+          [[ -x "$C/android/build/gradlew" ]] || { echo GODOT_ANDROID_TEMPLATE_4_7_2_INCOMPLETE | tee "$O/build-failure.txt"; exit 82; }
           ! grep -REiq 'com\.topherofit\.thf\.terra|THF World|WAVE_MAWJA|wave-mawja' "$C/android/build" || { echo FORBIDDEN_LEGACY_ANDROID_TEMPLATE_IDENTITY | tee "$O/build-failure.txt"; exit 81; }
           timeout 45m "$GODOT" --headless --path "$C" --export-debug "$PRESET" "$O/RuinsCiv-QA-arm64.apk" 2>&1 | tee "$O/godot-export.log" || { rc=${PIPESTATUS[0]}; echo GODOT_EXPORT_FAILED_RC_$rc | tee "$O/build-failure.txt"; exit $rc; }
           [[ -s "$O/RuinsCiv-QA-arm64.apk" ]] || exit 66
+          unzip -tq "$O/RuinsCiv-QA-arm64.apk" | tee "$O/apk-integrity.txt"
+          if "$APKSIGNER" verify --verbose "$O/RuinsCiv-QA-arm64.apk" > "$O/apksigner-initial.txt" 2>&1; then
+            QA_SIGN_RECOVERY=false
+          else
+            echo 'APK_SIGNATURE_INITIAL=FAIL; applying isolated ephemeral QA signing only.' | tee -a "$O/apksigner-initial.txt"
+            "$ZIPALIGN" -f -p 4 "$O/RuinsCiv-QA-arm64.apk" "$O/RuinsCiv-QA-aligned-unsigned.apk" > "$O/zipalign-recovery.txt" 2>&1
+            QA_KEYSTORE="$ISO/ruinsciv-qa-ephemeral.keystore"
+            keytool -genkeypair -noprompt -keystore "$QA_KEYSTORE" -storepass android -alias ruinscivqa -keypass android \
+              -dname 'CN=RuinsCiv QA,O=THF,C=EG' -keyalg RSA -keysize 2048 -validity 30 > "$O/qa-keytool.txt" 2>&1
+            "$APKSIGNER" sign --ks "$QA_KEYSTORE" --ks-key-alias ruinscivqa --ks-pass pass:android --key-pass pass:android \
+              --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false \
+              --out "$O/RuinsCiv-QA-signed.apk" "$O/RuinsCiv-QA-aligned-unsigned.apk"
+            mv "$O/RuinsCiv-QA-signed.apk" "$O/RuinsCiv-QA-arm64.apk"
+            rm -f "$O/RuinsCiv-QA-aligned-unsigned.apk" "$QA_KEYSTORE"
+            QA_SIGN_RECOVERY=true
+          fi
+          "$APKSIGNER" verify --verbose --print-certs "$O/RuinsCiv-QA-arm64.apk" > "$O/apksigner-verify.txt"
+          "$ZIPALIGN" -c -p 4 "$O/RuinsCiv-QA-arm64.apk" > "$O/zipalign-verify.txt" 2>&1
+          if [[ "$QA_SIGN_RECOVERY" == true ]]; then grep -q 'Signer #1 certificate DN:.*CN=RuinsCiv QA' "$O/apksigner-verify.txt" || exit 83; fi
+          printf 'qa_sign_recovery=%s\nsigning_scope=EPHEMERAL_QA_ONLY\nproduction_key_accessed=FALSE\n' "$QA_SIGN_RECOVERY" > "$O/signing-boundary.txt"
           sha256sum "$O/RuinsCiv-QA-arm64.apk" | tee "$O/RuinsCiv-QA-arm64.apk.sha256"
           "$AAPT" dump badging "$O/RuinsCiv-QA-arm64.apk" > "$O/aapt-badging.txt"
           grep -q "package: name='com.topherofit.ruins.civ.phoneqa'" "$O/aapt-badging.txt" || exit 67; grep -q "targetSdkVersion:'36'" "$O/aapt-badging.txt" || exit 68; grep -q "native-code:.*'arm64-v8a'" "$O/aapt-badging.txt" || exit 69
           unzip -l "$O/RuinsCiv-QA-arm64.apk" > "$O/apk-file-list.txt"; ! grep -Eiq 'thf_humanoid_v[1-6]|com\.topherofit\.thf\.terra|THF World' "$O/apk-file-list.txt" || exit 70
+          ! grep -Eiq '(^|/)(\.env([^/]*|$)|id_rsa|[^/]*\.(jks|keystore|p12|pfx|pem))([[:space:]]|$)' "$O/apk-file-list.txt" || { echo SENSITIVE_FILE_IN_APK | tee "$O/build-failure.txt"; exit 85; }
           grep -Ei 'thf_mpfb_stage16a_ual12_animated|stage16e_avatar|wardrobe|shoe|hair|runtime_pbr' "$O/apk-file-list.txt" > "$O/required-asset-hits.txt" || true; [[ -s "$O/required-asset-hits.txt" ]] || exit 71
-          printf 'RUINSCIV_QA_BUILD=PASS\npackage=com.topherofit.ruins.civ.phoneqa\ngodot=4.7.2\ntarget_sdk=36\nabi=arm64-v8a\nphysical_device_status=PENDING\nfinal_or_play_ready=FALSE\n' > "$O/RUINSCIV_QA_BUILD_EVIDENCE.txt"
+          source_manifest > "$O/source-content-after.sha256"
+          cmp -s "$O/source-content-before.sha256" "$O/source-content-after.sha256" || { echo SOURCE_MUTATED_DURING_BUILD | tee "$O/build-failure.txt"; exit 84; }
+          printf 'RUINSCIV_QA_BUILD=PASS\npackage=com.topherofit.ruins.civ.phoneqa\ngodot=4.7.2\ntarget_sdk=36\nabi=arm64-v8a\nsource_manifest_sha256=%s\nproject_sha256=%s\nworld_sha256=%s\navatar_sha256=%s\nsource_stable_during_build=TRUE\nqa_signing=EPHEMERAL_NON_PRODUCTION\nphysical_device_status=PENDING\nfinal_or_play_ready=FALSE\n' \
+            "$SOURCE_MANIFEST_SHA256" "$PROJECT_SHA256" "$WORLD_SHA256" "$AVATAR_SHA256" > "$O/RUINSCIV_QA_BUILD_EVIDENCE.txt"
           REMOTE
           rc=$?; set -e; echo "remote_rc=$rc" >> "$GITHUB_OUTPUT"; exit 0
       - name: Collect QA build evidence and APK
