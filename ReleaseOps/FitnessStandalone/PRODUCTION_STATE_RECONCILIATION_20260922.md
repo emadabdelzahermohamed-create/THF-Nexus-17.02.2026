@@ -32,3 +32,12 @@ Source audit of applied production `src/App.tsx` found a session-progression cor
 A new AppDeploy deployment could not be started in this run because the deployment service reported its daily free-tier deployment credit minimum was exhausted and instructed not to retry before its UTC reset at `2026-09-22T00:00:00Z`. This is external/transient and does not block repository/audit work. No claim is made that the identified set-progression fix is deployed yet.
 
 No WAVE-MAWJA source, release, deployment, or configuration was touched.
+
+## Superseding verified increment — set sequence guard
+- The identified prescribed-set progression gap was implemented and present in production before the next change.
+- A further session-integrity fix is now deployed as AppDeploy snapshot `1790082588730`.
+- Terminal deployment state: `ready`; QA timestamp `1790082607869`; Web/mobile screenshots present; frontend/backend/network errors all `0`.
+- The client prevents duplicate in-flight set submission and sends `expectedSet`.
+- The backend rejects out-of-order exercises and stale set numbers before persisting a log.
+- Evidence: `WEB_SET_SEQUENCE_GUARD_DEPLOY_20260922.md`.
+- Authenticated E2E, physical Android/GPU/Health Connect, cross-device sync, biomechanical certification, true foot-lock/IK, and final visual-reference acceptance remain open.

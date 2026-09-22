@@ -83,7 +83,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - [x] Deploy production web service to AppDeploy HTTPS endpoint; deployment status `ready`.
 - [ ] Verify auth, workouts, avatar, sync and offline/online behavior end-to-end.
 - [ ] Verify mobile-web parity against Android account data.
-- [x] Latest Stage16A visual increment: snapshot `1790011570099` reached `ready`; QA timestamp `1790011584738` produced Web/mobile screenshots with 0 frontend, 0 backend and 0 network errors. The active session preserves canonical MPFB/MakeHuman Stage16A as the dominant motion coach and adds a prominent phase-aware clock: work state shows the current exercise work target; rest state provides a live countdown with Pause/Resume/Skip-rest controls. Existing compact in-app reference-video PiP, phase rail, prescription, Up Next, camera/contact preview, RTL/LTR behavior and prior contact/grounding/replay/lighting improvements remain preserved. This is runtime/visual-increment evidence only; authenticated screenshot-reference acceptance remains open.
+- [x] Latest session-integrity increment: snapshot `1790082588730` reached `ready`; QA timestamp `1790082607869` produced Web/mobile screenshots with 0 frontend, 0 backend and 0 network errors. The set action now serializes in-flight writes with a bilingual saving state, while the backend enforces the first incomplete exercise and expected one-based set number before accepting a log. Canonical Stage16A, dominant motion viewport, compact in-app video PiP, phase/timer controls, RTL/LTR behavior and prior visual improvements remain preserved. Authenticated E2E and screenshot-reference acceptance remain open.
 
 ## P8 — Security/release closure
 - [x] Initial secret-like assignment scan + production user-scope/auth regression.
@@ -99,8 +99,8 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Google Play Internal: signed versionCode `50001`, run `35434624698`, committed true. Physical Play runtime remains open.
 - Android production-backend emulator smoke PASS: run `35356916175`; physical sensor/GPU testing remains open.
 - Production Web/backend: `https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/`.
-- Latest P0 Web visual increment: AppDeploy snapshot `1790011570099`; QA timestamp `1790011584738`; Web/mobile screenshots reported 0 frontend/backend/network errors.
-- Latest visual evidence checkpoint: `d54b1bedc0152343133f4323de31b6dc90ad3d4c` (`WEB_SESSION_PHASE_TIMER_DEPLOY_20260921.md`).
+- Latest P0 Web/session-integrity increment: AppDeploy snapshot `1790082588730`; QA timestamp `1790082607869`; Web/mobile screenshots reported 0 frontend/backend/network errors.
+- Latest deployment evidence: `WEB_SET_SEQUENCE_GUARD_DEPLOY_20260922.md`; Git checkpoint SHA is the commit containing that evidence.
 - Play gate reconciliation remains authoritative for signed Internal versionCode `50001`; physical/runtime/compliance claims remain open.
 - Next release blockers: physical-device install/sensor/GPU/Health Connect evidence, cross-device Web/Android sync verification, Play declarations/store-compliance completion, biomechanically certified Exercise→Animation mapping, true foot-lock/IK, first-install Android offline Stage16A packaging, and authenticated P0 visual-reference acceptance. Continue independent user-visible work while blocked.
 
@@ -109,7 +109,7 @@ Rule: WAVE-MAWJA source and releases are out of scope and must remain untouched.
 - Physical Android Stage16A/GPU/Health Connect and Web↔Android cross-device sync evidence remain open.
 - Web Stage16A contact stability is a time + velocity-qualified visual anchor preview only, not IK/foot-lock/pressure sensing.
 - Exercise detail contains canonical Stage16A, progression/regression guidance and illustrative muscle-region highlighting; name matching remains explicitly uncertified and cannot close biomechanical mapping.
-- Latest production visual evidence is snapshot `1790011570099` / QA `1790011584738`; dominant Stage16A + phase-aware work/rest timer + in-app video PiP + RTL/LTR behavior, together with prior contact-dwell, velocity qualification, grounding, replay blending, lighting and motion-aware camera improvements, are production evidence, not biomechanical certification or final reference acceptance.
+- Latest production evidence is snapshot `1790082588730` / QA `1790082607869`; dominant Stage16A + phase-aware work/rest timer + in-app video PiP + RTL/LTR behavior remain present, and set submission now has a client in-flight guard plus server-enforced exercise/set sequence. This is deployment/runtime evidence, not biomechanical certification, authenticated E2E, physical-device evidence, or final reference acceptance.
 - Visual quality remains FAIL-CLOSED against the approved screenshot/reference bar; the latest increment is evidence of improvement, not automatic final acceptance.
 
 ## Execution policy
