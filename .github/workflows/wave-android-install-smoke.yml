@@ -150,7 +150,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
-            set -Eeuo pipefail
+            set -eu
             adb wait-for-device
             adb install -r WAVE_MAWJA_15301_RELEASE.apk | tee WAVE_ANDROID_ADB_INSTALL.txt
             grep -q 'Success' WAVE_ANDROID_ADB_INSTALL.txt
