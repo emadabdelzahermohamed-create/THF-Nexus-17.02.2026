@@ -82,7 +82,7 @@ jobs:
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
           python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
           python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
-          grep -q 'applicationId "com.wave.mawja"' android-twa/app/build.gradle
+          grep -q 'providers.gradleProperty' android-twa/app/build.gradle
           grep -q 'versionCode 15301' android-twa/app/build.gradle
           grep -q 'android.support.customtabs.trusted.DEFAULT_URL' android-twa/app/src/main/AndroidManifest.xml
 
