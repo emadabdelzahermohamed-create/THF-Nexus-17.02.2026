@@ -1,0 +1,125 @@
+name: WAVE Google Play Closed Test Bootstrap
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-play-closed-test-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+  WAVE_VERSION_CODE: '15301'
+  WAVE_CLOSED_TRACK: wave-closed-readiness
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Authenticate as Play service account
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Create closed-test track and assign tested Internal bundle
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          base="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
+          test -n "$ACCESS_TOKEN"
+
+          edit_code="$(curl -sS -o edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
+          echo "EDIT_INSERT_HTTP=$edit_code"; test "$edit_code" = 200
+          edit_id="$(python3 -c 'import json; print(json.load(open("edit.json"))["id"])')"
+
+          list_code="$(curl -sS -o tracks-before.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/tracks")"
+          echo "TRACK_LIST_HTTP=$list_code"; test "$list_code" = 200
+          exists="$(python3 - <<'PY'
+          import json, os
+          d=json.load(open("tracks-before.json"))
+          print("yes" if any(x.get("track")==os.environ["WAVE_CLOSED_TRACK"] for x in d.get("tracks",[])) else "no")
+          PY
+          )"
+
+          if [ "$exists" = no ]; then
+            printf '{"track":"%s","type":"CLOSED_TESTING","formFactor":"DEFAULT"}' "$WAVE_CLOSED_TRACK" > create-track.json
+            create_code="$(curl -sS -o create-track-response.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @create-track.json "$base/$edit_id/tracks")"
+            echo "CLOSED_TRACK_CREATE_HTTP=$create_code"
+            if [ "$create_code" != 200 ]; then cat create-track-response.json; curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true; exit 21; fi
+          else
+            echo "CLOSED_TRACK_ALREADY_EXISTS=YES"
+          fi
+
+          printf '{"releases":[{"name":"WAVE MAWJA Closed Readiness","versionCodes":["%s"],"status":"completed"}]}' "$WAVE_VERSION_CODE" > closed-release.json
+          put_code="$(curl -sS -o closed-release-response.json -w '%{http_code}' -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @closed-release.json "$base/$edit_id/tracks/$WAVE_CLOSED_TRACK")"
+          echo "CLOSED_TRACK_RELEASE_PUT_HTTP=$put_code"
+          if [ "$put_code" != 200 ]; then cat closed-release-response.json; curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true; exit 22; fi
+
+          validate_code="$(curl -sS -o validate.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' "$base/$edit_id:validate")"
+          echo "EDIT_VALIDATE_HTTP=$validate_code"
+          if [ "$validate_code" != 200 ]; then cat validate.json; curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true; exit 23; fi
+
+          commit_code="$(curl -sS -o commit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' "$base/$edit_id:commit")"
+          echo "EDIT_COMMIT_HTTP=$commit_code"
+          if [ "$commit_code" != 200 ]; then cat commit.json; exit 24; fi
+
+          edit2_code="$(curl -sS -o edit2.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
+          test "$edit2_code" = 200
+          edit2_id="$(python3 -c 'import json; print(json.load(open("edit2.json"))["id"])')"
+          track_code="$(curl -sS -o closed-track-after.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit2_id/tracks/$WAVE_CLOSED_TRACK")"
+          testers_code="$(curl -sS -o closed-testers-after.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit2_id/testers/$WAVE_CLOSED_TRACK" || true)"
+          echo "CLOSED_TRACK_AFTER_HTTP=$track_code"
+          echo "CLOSED_TESTERS_AFTER_HTTP=$testers_code"
+          curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit2_id" || true
+
+          python3 - <<'PY'
+          import json, os, pathlib
+          track=json.load(open("closed-track-after.json"))
+          rel=track.get("releases") or []
+          vcs=[]
+          for r in rel: vcs += r.get("versionCodes") or []
+          testers={}
+          try: testers=json.load(open("closed-testers-after.json"))
+          except Exception: pass
+          groups=testers.get("googleGroups") or []
+          lines=[
+            "package="+os.environ["WAVE_PACKAGE"],
+            "track="+os.environ["WAVE_CLOSED_TRACK"],
+            "versionCode="+os.environ["WAVE_VERSION_CODE"],
+            "release_present="+str(os.environ["WAVE_VERSION_CODE"] in vcs).lower(),
+            "google_group_count="+str(len(groups)),
+            "google_groups="+",".join(groups),
+          ]
+          pathlib.Path("WAVE_PLAY_CLOSED_TEST_RESULT.txt").write_text("\n".join(lines)+"\n")
+          print("\n".join(lines))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-PLAY-CLOSED-TEST-EVIDENCE
+          retention-days: 30
+          path: |
+            WAVE_PLAY_CLOSED_TEST_RESULT.txt
+            tracks-before.json
+            create-track.json
+            create-track-response.json
+            closed-release.json
+            closed-release-response.json
+            validate.json
+            commit.json
+            closed-track-after.json
+            closed-testers-after.json
