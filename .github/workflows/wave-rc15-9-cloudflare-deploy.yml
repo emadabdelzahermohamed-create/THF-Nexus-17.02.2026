@@ -6,6 +6,7 @@ on:
       - '.github/workflows/wave-rc15-9-cloudflare-deploy.yml'
       - 'ReleaseOps/WAVE/RC15_11/**'
       - 'ReleaseOps/WAVE/RC15_12/**'
+      - 'ReleaseOps/WAVE/RC15_13/**'
 permissions:
   contents: read
   id-token: write
@@ -49,6 +50,9 @@ jobs:
           python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
           python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
           cp -a ../ReleaseOps/WAVE/RC15_11/overlay/. .
+          cp -a ../ReleaseOps/WAVE/RC15_13/overlay/. .
+          test -f app/privacy/page.tsx
+          test -f app/terms/page.tsx
           test -f app/admin-login/page.tsx
           test -f app/control/page.tsx
           test -f app/api/control/route.ts
@@ -125,6 +129,13 @@ jobs:
           done
           code="$(curl -sS -o /tmp/control-api.out -w '%{http_code}' "$WAVE_LIVE_URL/api/control")"
           case "$code" in 401|403|405) echo "WAVE_CONTROL_UNAUTH_DENIAL=PASS HTTP=$code";; *) echo "CONTROL_API_UNEXPECTED HTTP=$code"; exit 32;; esac
+          for path in /privacy /terms; do
+            code="$(curl -L -sS -o /tmp/wave-legal.html -w '%{http_code}' "$WAVE_LIVE_URL$path")"
+            test "$code" = 200
+            test -s /tmp/wave-legal.html
+            grep -q 'WAVE MAWJA' /tmp/wave-legal.html
+            echo "WAVE_LEGAL_SMOKE $path HTTP=$code"
+          done
           bash ReleaseOps/WAVE/RC15_12/smoke_control_aliases.sh
       - name: Save deploy evidence
         if: always()
