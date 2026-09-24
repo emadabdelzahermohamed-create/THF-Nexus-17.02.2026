@@ -6,6 +6,7 @@ on:
       - releaseops/wave-rc15-9-admin-rbac-20260918
     paths:
       - '.github/workflows/wave-android-install-smoke.yml'
+      - 'ReleaseOps/WAVE/RC15_15/**'
   workflow_dispatch:
 
 permissions:
@@ -82,8 +83,10 @@ jobs:
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
           python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
           python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          python3 ../ReleaseOps/WAVE/RC15_15/apply_rc15_15_twa_manage_data_fix.py
+          python3 ../ReleaseOps/WAVE/RC15_15/test_rc15_15_twa_manage_data_fix.py
           grep -q 'providers.gradleProperty' android-twa/app/build.gradle
-          grep -q 'versionCode 15301' android-twa/app/build.gradle
+          grep -q 'versionCode 15302' android-twa/app/build.gradle
           grep -q 'android.support.customtabs.trusted.DEFAULT_URL' android-twa/app/src/main/AndroidManifest.xml
 
       - uses: actions/setup-java@v4
@@ -126,11 +129,11 @@ jobs:
           test -x "$AAPT"
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee WAVE_ANDROID_APKSIGNER.txt
           "$AAPT" dump badging "$APK" | tee WAVE_ANDROID_BADGING.txt
-          grep -q "package: name='com.wave.mawja' versionCode='15301'" WAVE_ANDROID_BADGING.txt
+          grep -q "package: name='com.wave.mawja' versionCode='15302'" WAVE_ANDROID_BADGING.txt
           grep -q "targetSdkVersion:'36'" WAVE_ANDROID_BADGING.txt
           sha256sum "$APK" | tee WAVE_ANDROID_APK.sha256
           stat -c 'apk_bytes=%s' "$APK" | tee WAVE_ANDROID_APK_SIZE.txt
-          cp "$APK" WAVE_MAWJA_15301_RELEASE.apk
+          cp "$APK" WAVE_MAWJA_15302_RELEASE.apk
 
       - name: Enable KVM permissions for emulator
         shell: bash
@@ -152,7 +155,7 @@ jobs:
           script: |
             set -eu
             adb wait-for-device
-            adb install -r WAVE_MAWJA_15301_RELEASE.apk | tee WAVE_ANDROID_ADB_INSTALL.txt
+            adb install -r WAVE_MAWJA_15302_RELEASE.apk | tee WAVE_ANDROID_ADB_INSTALL.txt
             grep -q 'Success' WAVE_ANDROID_ADB_INSTALL.txt
             adb shell pm list packages | grep -q "package:$WAVE_PACKAGE"
             adb logcat -c
@@ -165,25 +168,9 @@ jobs:
             adb pull /sdcard/wave-window.xml WAVE_ANDROID_UI.xml >/dev/null 2>&1 || true
             adb exec-out screencap -p > WAVE_ANDROID_SCREENSHOT.png
             test -s WAVE_ANDROID_SCREENSHOT.png
-            if grep -Eiq 'FATAL EXCEPTION.*com\.wave\.mawja|Process: com\.wave\.mawja.*FATAL EXCEPTION' WAVE_ANDROID_LOGCAT.txt; then
-              echo 'WAVE_ANDROID_FATAL_CRASH=YES'
-              exit 41
-            fi
-            if ! grep -Eq 'com\.wave\.mawja|com\.android\.chrome|org\.chromium' WAVE_ANDROID_ACTIVITY_DUMPSYS.txt; then
-              echo 'WAVE_ANDROID_NO_RELEVANT_ACTIVITY=YES'
-              tail -200 WAVE_ANDROID_ACTIVITY_DUMPSYS.txt
-              exit 42
-            fi
-            {
-              echo "package=$WAVE_PACKAGE"
-              echo "versionCode=15301"
-              echo "targetSdk=36"
-              echo "emulatorApi=35"
-              echo "install=PASS"
-              echo "launch=PASS"
-              echo "fatalCrash=NO"
-              echo "liveUrl=$WAVE_URL"
-            } | tee WAVE_ANDROID_INSTALL_SMOKE_RESULT.txt
+            if grep -Eiq 'FATAL EXCEPTION.*com\.wave\.mawja|Process: com\.wave\.mawja.*FATAL EXCEPTION' WAVE_ANDROID_LOGCAT.txt; then echo 'WAVE_ANDROID_FATAL_CRASH=YES'; exit 41; fi
+            if ! grep -Eq 'com\.wave\.mawja|com\.android\.chrome|org\.chromium' WAVE_ANDROID_ACTIVITY_DUMPSYS.txt; then echo 'WAVE_ANDROID_NO_RELEVANT_ACTIVITY=YES'; tail -200 WAVE_ANDROID_ACTIVITY_DUMPSYS.txt; exit 42; fi
+            printf 'package=%s\nversionCode=15302\ntargetSdk=36\nemulatorApi=35\ninstall=PASS\nlaunch=PASS\nfatalCrash=NO\nliveUrl=%s\n' "$WAVE_PACKAGE" "$WAVE_URL" | tee WAVE_ANDROID_INSTALL_SMOKE_RESULT.txt
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -203,4 +190,4 @@ jobs:
             WAVE_ANDROID_LOGCAT.txt
             WAVE_ANDROID_UI.xml
             WAVE_ANDROID_SCREENSHOT.png
-            WAVE_MAWJA_15301_RELEASE.apk
+            WAVE_MAWJA_15302_RELEASE.apk
