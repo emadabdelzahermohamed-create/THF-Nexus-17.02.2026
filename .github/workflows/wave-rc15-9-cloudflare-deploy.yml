@@ -7,6 +7,7 @@ on:
       - 'ReleaseOps/WAVE/RC15_11/**'
       - 'ReleaseOps/WAVE/RC15_12/**'
       - 'ReleaseOps/WAVE/RC15_13/overlay/**'
+      - 'ReleaseOps/WAVE/RC15_14/**'
 permissions:
   contents: read
   id-token: write
@@ -55,6 +56,8 @@ jobs:
           python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
           cp -a ../ReleaseOps/WAVE/RC15_11/overlay/. .
           cp -a ../ReleaseOps/WAVE/RC15_13/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_14/apply_rc15_14_account_resilience.py
+          python3 ../ReleaseOps/WAVE/RC15_14/test_rc15_14_account_resilience.py
           test -f app/privacy/page.tsx
           test -f app/terms/page.tsx
           test -f app/admin-login/page.tsx
