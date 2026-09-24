@@ -1,0 +1,132 @@
+name: WAVE Google Play Production Promotion
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-play-production-promote.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+  WAVE_VERSION_CODE: '15301'
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Authenticate as Play service account
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Validate and promote tested WAVE Internal bundle to Production
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$ACCESS_TOKEN"
+          base="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
+
+          edit_code="$(curl -sS -o edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
+          echo "PLAY_EDIT_INSERT_HTTP=$edit_code"
+          test "$edit_code" = 200
+          edit_id="$(python3 -c 'import json; print(json.load(open("edit.json"))["id"])')"
+          test -n "$edit_id"
+
+          for track in internal production; do
+            code="$(curl -sS -o "track-$track-before.json" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/tracks/$track")"
+            echo "PLAY_TRACK_${track^^}_BEFORE_HTTP=$code"
+            test "$code" = 200
+          done
+
+          python3 - <<'PY'
+          import json, os, sys
+          vc=os.environ["WAVE_VERSION_CODE"]
+          internal=json.load(open("track-internal-before.json"))
+          prod=json.load(open("track-production-before.json"))
+          def versions(track):
+              out=[]
+              for r in track.get("releases") or []:
+                  out.extend(r.get("versionCodes") or [])
+              return out
+          iv=versions(internal)
+          pv=versions(prod)
+          print("INTERNAL_VERSION_CODES="+",".join(iv))
+          print("PRODUCTION_VERSION_CODES="+",".join(pv))
+          if vc not in iv:
+              raise SystemExit(f"Required tested versionCode {vc} is not on Internal")
+          if vc in pv:
+              open("WAVE_PLAY_PRODUCTION_RESULT.txt","w").write(
+                  f"package={os.environ['WAVE_PACKAGE']}\ntrack=production\nversionCode={vc}\nstatus=already_present\n"
+              )
+              sys.exit(42)
+          if pv:
+              raise SystemExit("Production is no longer empty; refusing to overwrite existing production releases")
+          PY
+          rc=$?
+          if [ "$rc" = 42 ]; then
+            echo "PLAY_PRODUCTION_ALREADY_PRESENT=PASS"
+            curl -sS -o /dev/null -w 'PLAY_EDIT_DELETE_HTTP=%{http_code}\n' -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id"
+            exit 0
+          fi
+
+          cat > production-track.json <<'JSON'
+          {
+            "releases": [
+              {
+                "name": "WAVE MAWJA 1.0 RC15.12",
+                "versionCodes": ["15301"],
+                "status": "completed",
+                "releaseNotes": [
+                  {"language": "ar", "text": "الإصدار الأول من WAVE MAWJA مع تحسينات الاستقرار وواجهة الإدارة والنشر."}
+                ]
+              }
+            ]
+          }
+          JSON
+
+          put_code="$(curl -sS -o production-track-response.json -w '%{http_code}' -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @production-track.json "$base/$edit_id/tracks/production")"
+          echo "PLAY_PRODUCTION_TRACK_PUT_HTTP=$put_code"
+          if [ "$put_code" != 200 ]; then cat production-track-response.json; exit 1; fi
+
+          validate_code="$(curl -sS -o validate.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' "$base/$edit_id:validate")"
+          echo "PLAY_EDIT_VALIDATE_HTTP=$validate_code"
+          if [ "$validate_code" != 200 ]; then
+            cat validate.json
+            curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true
+            exit 2
+          fi
+
+          commit_code="$(curl -sS -o commit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' "$base/$edit_id:commit")"
+          echo "PLAY_EDIT_COMMIT_HTTP=$commit_code"
+          if [ "$commit_code" != 200 ]; then cat commit.json; exit 3; fi
+
+          printf 'package=%s\ntrack=production\nversionCode=%s\nstatus=submitted_or_completed\nsource_track=internal\n' "$WAVE_PACKAGE" "$WAVE_VERSION_CODE" | tee WAVE_PLAY_PRODUCTION_RESULT.txt
+          echo "WAVE_PLAY_PRODUCTION_PROMOTION=PASS"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-PLAY-PRODUCTION-PROMOTION-EVIDENCE
+          retention-days: 30
+          path: |
+            WAVE_PLAY_PRODUCTION_RESULT.txt
+            track-internal-before.json
+            track-production-before.json
+            production-track.json
+            production-track-response.json
+            validate.json
+            commit.json
