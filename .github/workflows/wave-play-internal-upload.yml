@@ -2,7 +2,7 @@ name: WAVE Play Internal Upload
 
 on:
   push:
-    branches: [releaseops/wave-rc15-3-20260917]
+    branches: [releaseops/wave-rc15-9-admin-rbac-20260918]
     paths:
       - '.github/workflows/wave-play-internal-upload.yml'
   workflow_dispatch:
