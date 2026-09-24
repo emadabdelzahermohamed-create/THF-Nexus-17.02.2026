@@ -55,7 +55,26 @@ jobs:
             const browser = await chromium.launch({ executablePath: process.env.CHROME, headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] });
             const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
             await page.goto(process.env.WAVE_URL + '/', { waitUntil: 'networkidle', timeout: 90000 });
-            await page.waitForTimeout(1500);
+            await page.waitForTimeout(1200);
+
+            // Clear the first-run age-band gate so store screenshots show WAVE itself.
+            const adultCandidates = [
+              page.getByRole('button', { name: /18/ }),
+              page.locator('button').filter({ hasText: /adult/i }),
+              page.locator('button').filter({ hasText: /بالغ|فأكثر/i })
+            ];
+            for (const candidate of adultCandidates) {
+              if (await candidate.count()) {
+                try { await candidate.first().click({ timeout: 3000 }); break; } catch (_) {}
+              }
+            }
+            await page.waitForTimeout(1200);
+            const firstText = (await page.locator('body').innerText()).slice(0, 8000);
+            if (/اختر الفئة المناسبة لهذا الجهاز|choose.*age|Not Found/i.test(firstText)) {
+              throw new Error('Age gate or error page still blocks the WAVE storefront capture');
+            }
+
+            await page.evaluate(() => window.scrollTo(0, 0));
             await page.screenshot({ path: 'store-assets/phone-01.png' });
 
             const maxScroll = await page.evaluate(() => Math.max(0, document.documentElement.scrollHeight - window.innerHeight));
@@ -66,11 +85,12 @@ jobs:
               await page.screenshot({ path: `store-assets/phone-0${i+1}.png` });
             }
 
-            try {
-              await page.goto(process.env.WAVE_URL + '/apk', { waitUntil: 'networkidle', timeout: 60000 });
-              await page.waitForTimeout(1000);
-              await page.screenshot({ path: 'store-assets/phone-04.png' });
-            } catch (_) {}
+            await page.goto(process.env.WAVE_URL + '/login', { waitUntil: 'networkidle', timeout: 60000 });
+            await page.waitForTimeout(1000);
+            const loginText = (await page.locator('body').innerText()).slice(0, 4000);
+            if (/Not Found/i.test(loginText)) throw new Error('Login route returned Not Found');
+            await page.screenshot({ path: 'store-assets/phone-04.png' });
+
             await browser.close();
 
             const files = ['phone-01.png','phone-02.png','phone-03.png','phone-04.png'].filter(f => fs.existsSync('store-assets/'+f));
@@ -173,6 +193,10 @@ jobs:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
           set -Eeuo pipefail
+          if [ ! -f WAVE_PLAY_LISTING_COMMITTED.flag ]; then
+            echo "WAVE_PLAY_LISTING_VERIFY=SKIPPED_WAITING_FOR_CONTACT_EMAIL"
+            exit 0
+          fi
           base="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
           edit_code="$(curl -sS -o edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
           echo "EDIT_INSERT_HTTP=$edit_code"; test "$edit_code" = 200
@@ -205,6 +229,13 @@ jobs:
           if [ "$listing_code" != 200 ]; then cat listing-response.json; curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true; exit 31; fi
 
           curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/details" > details-current.json
+          contact_email="$(python3 -c 'import json; print(json.load(open("details-current.json")).get("contactEmail") or "")')"
+          if [ -z "$contact_email" ]; then
+            printf 'status=WAITING_FOR_CONTACT_EMAIL\npackage=%s\ncontactEmail_present=false\nassets_prepared=true\n' "$WAVE_PACKAGE" | tee WAVE_PLAY_LISTING_REPAIR_RESULT.txt
+            curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true
+            echo "WAVE_PLAY_LISTING_BLOCKER=CONTACT_EMAIL"
+            exit 0
+          fi
           python3 - <<'PY'
           import json, os
           d=json.load(open("details-current.json"))
@@ -240,6 +271,7 @@ jobs:
           commit_code="$(curl -sS -o commit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' "$base/$edit_id:commit")"
           echo "EDIT_COMMIT_HTTP=$commit_code"
           if [ "$commit_code" != 200 ]; then cat commit.json; exit 34; fi
+          touch WAVE_PLAY_LISTING_COMMITTED.flag
 
       - name: Verify persisted listing
         shell: bash
