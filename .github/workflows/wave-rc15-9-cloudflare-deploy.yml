@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
   id-token: write
+
+concurrency:
+  group: wave-mawja-cloudflare-production
+  cancel-in-progress: true
 env:
   DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
   EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
