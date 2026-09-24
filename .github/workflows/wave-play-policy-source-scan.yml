@@ -91,6 +91,8 @@ jobs:
             echo '=== LEGAL PAGE SOURCE ==='
             sed -n '1,260p' app/legal/page.tsx 2>/dev/null || true
             sed -n '1,360p' 'app/legal/[slug]/page.tsx' 2>/dev/null || true
+            echo '=== LEGAL POLICIES CONTENT ==='
+            sed -n '1,900p' lib/legal-policies.ts 2>/dev/null || true
             echo '=== AUTH IMPLEMENTATION SIGNALS ==='
             grep -RInE --exclude-dir=.git 'registerWaveUser|verifyWavePassword|createWaveSession|password_hash|passwordHash|PBKDF|scrypt|argon|SHA-256|sessionCookie' lib app 2>/dev/null | head -400 || true
           } > ../WAVE_PLAY_POLICY_SOURCE_SCAN.txt
