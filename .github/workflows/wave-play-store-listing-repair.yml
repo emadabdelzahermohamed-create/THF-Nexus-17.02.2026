@@ -193,6 +193,7 @@ jobs:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
           set -Eeuo pipefail
+          base="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
           edit_code="$(curl -sS -o edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
           echo "EDIT_INSERT_HTTP=$edit_code"; test "$edit_code" = 200
           edit_id="$(python3 -c 'import json; print(json.load(open("edit.json"))["id"])')"
