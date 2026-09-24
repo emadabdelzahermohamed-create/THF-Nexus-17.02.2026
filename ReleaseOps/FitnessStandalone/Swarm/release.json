@@ -1,0 +1,14 @@
+{
+  "lane": "release",
+  "phase": "FITNESS",
+  "status": "READY",
+  "candidate_sha": null,
+  "integrated_lanes": {
+    "product": null,
+    "motion": null,
+    "backend": null,
+    "android": null
+  },
+  "next_product": "WAVE_MAWJA",
+  "updated_at": "2026-09-24"
+}
