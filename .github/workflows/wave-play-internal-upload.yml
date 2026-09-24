@@ -89,6 +89,10 @@ jobs:
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
           python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
           python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          python3 ../ReleaseOps/WAVE/RC15_15/apply_rc15_15_twa_manage_data_fix.py
+          python3 ../ReleaseOps/WAVE/RC15_15/test_rc15_15_twa_manage_data_fix.py
+          grep -q 'versionCode 15302' android-twa/app/build.gradle
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -138,10 +142,14 @@ jobs:
           echo "BUNDLE_UPLOAD_HTTP=$upload_code"
           if [ "$upload_code" != 200 ]; then cat bundle.json; exit 1; fi
           version_code="$(python3 -c 'import json; print(json.load(open("bundle.json"))["versionCode"])')"
-          printf '{"releases":[{"name":"WAVE MAWJA Internal RC15.3","versionCodes":["%s"],"status":"completed","releaseNotes":[{"language":"ar","text":"نسخة اختبار داخلية لـ WAVE MAWJA."},{"language":"en-US","text":"WAVE MAWJA internal test release."}]}]}' "$version_code" > track.json
+          test "$version_code" = 15302
+          printf '{"releases":[{"name":"WAVE MAWJA Internal RC15.15","versionCodes":["%s"],"status":"completed","releaseNotes":[{"language":"ar","text":"إصلاح تشغيل Android TWA وتحسين ثبات WAVE MAWJA."},{"language":"en-US","text":"Android TWA launch fix and WAVE MAWJA stability improvements."}]}]}' "$version_code" > track.json
           track_code="$(curl -sS -o track-response.json -w '%{http_code}' -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @track.json "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits/$edit_id/tracks/internal")"
           echo "TRACK_UPDATE_HTTP=$track_code"
           if [ "$track_code" != 200 ]; then cat track-response.json; exit 1; fi
+          validate_code="$(curl -sS -o validate.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits/$edit_id:validate")"
+          echo "EDIT_VALIDATE_HTTP=$validate_code"
+          if [ "$validate_code" != 200 ]; then cat validate.json; exit 1; fi
           commit_code="$(curl -sS -o commit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits/$edit_id:commit")"
           echo "EDIT_COMMIT_HTTP=$commit_code"
           if [ "$commit_code" != 200 ]; then cat commit.json; exit 1; fi
@@ -159,4 +167,6 @@ jobs:
             WAVE_PLAY_INTERNAL_RESULT.txt
             bundle.json
             track-response.json
+            validate.json
             commit.json
+            wave-src/android-twa/app/build/outputs/bundle/release/app-release.aab
