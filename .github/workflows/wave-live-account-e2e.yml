@@ -1,0 +1,142 @@
+name: WAVE Live Account E2E
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-live-account-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wave-live-account-e2e
+  cancel-in-progress: true
+
+env:
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Exercise public and first-party account lifecycle
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p wave-e2e
+          email="wave-e2e-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}@example.invalid"
+          display="WAVE E2E ${GITHUB_RUN_ID}"
+          password="WaveE2E-${GITHUB_RUN_ID}-S9x!p4Q2"
+          jar="wave-e2e/cookies.txt"
+
+          request() {
+            method="$1"; url="$2"; outfile="$3"; data="${4:-}"
+            if [ -n "$data" ]; then
+              curl -sS -D "${outfile}.headers" -o "$outfile" -w '%{http_code}'                 -X "$method" -H 'content-type: application/json'                 -b "$jar" -c "$jar" --data-binary "$data" "$url"
+            else
+              curl -sS -D "${outfile}.headers" -o "$outfile" -w '%{http_code}'                 -X "$method" -b "$jar" -c "$jar" "$url"
+            fi
+          }
+
+          : > "$jar"
+          for p in / /login /privacy /terms /browse /live /downloads; do
+            code="$(curl -L -sS -o "wave-e2e/public-$(echo "$p" | tr '/ ' '__').html" -w '%{http_code}' "$WAVE_URL$p")"
+            echo "PUBLIC $p HTTP=$code"
+            test "$code" = 200
+          done
+
+          register_json="$(python3 - "$email" "$display" "$password" <<'PY'
+          import json,sys
+          print(json.dumps({"email":sys.argv[1],"displayName":sys.argv[2],"password":sys.argv[3],"returnTo":"/profile"}))
+          PY
+          )"
+          code="$(request POST "$WAVE_URL/api/auth/register" wave-e2e/register.json "$register_json")"
+          echo "REGISTER_HTTP=$code"
+          cat wave-e2e/register.json
+          test "$code" = 200
+          python3 - <<'PY'
+          import json
+          d=json.load(open("wave-e2e/register.json"))
+          assert d.get("ok") is True
+          assert d.get("redirectTo") == "/profile"
+          assert isinstance(d.get("user"),dict) and d["user"].get("email","").endswith("@example.invalid")
+          PY
+          grep -Eiq '^set-cookie:.*(wave|session)' wave-e2e/register.json.headers
+
+          code="$(request GET "$WAVE_URL/api/account" wave-e2e/account-get.json)"
+          echo "ACCOUNT_GET_HTTP=$code"
+          test "$code" = 200
+          python3 - "$email" <<'PY'
+          import json,sys
+          d=json.load(open("wave-e2e/account-get.json"))
+          account=d.get("account") or {}
+          assert account.get("email")==sys.argv[1], d
+          PY
+
+          code="$(curl -L -sS -b "$jar" -c "$jar" -o wave-e2e/profile.html -w '%{http_code}' "$WAVE_URL/profile")"
+          echo "PROFILE_HTTP=$code"
+          test "$code" = 200
+          grep -Fq "$display" wave-e2e/profile.html
+
+          code="$(request GET "$WAVE_URL/api/auth/logout?return_to=%2F" wave-e2e/logout.out)"
+          echo "LOGOUT_HTTP=$code"
+          case "$code" in 302|303|307|308) ;; *) exit 31;; esac
+
+          login_json="$(python3 - "$email" "$password" <<'PY'
+          import json,sys
+          print(json.dumps({"email":sys.argv[1],"password":sys.argv[2],"returnTo":"/profile"}))
+          PY
+          )"
+          code="$(request POST "$WAVE_URL/api/auth/login" wave-e2e/login.json "$login_json")"
+          echo "LOGIN_HTTP=$code"
+          test "$code" = 200
+          python3 - <<'PY'
+          import json
+          d=json.load(open("wave-e2e/login.json"))
+          assert d.get("ok") is True and d.get("redirectTo")=="/profile"
+          PY
+
+          code="$(request DELETE "$WAVE_URL/api/account" wave-e2e/account-delete.json)"
+          echo "ACCOUNT_DELETE_HTTP=$code"
+          cat wave-e2e/account-delete.json
+          test "$code" = 200
+          python3 - <<'PY'
+          import json
+          d=json.load(open("wave-e2e/account-delete.json"))
+          assert d.get("ok") is True
+          PY
+
+          rm -f "$jar"
+          : > "$jar"
+          code="$(request POST "$WAVE_URL/api/auth/login" wave-e2e/login-after-delete.json "$login_json")"
+          echo "LOGIN_AFTER_DELETE_HTTP=$code"
+          case "$code" in 401|403) ;; *) cat wave-e2e/login-after-delete.json; exit 32;; esac
+
+          {
+            echo "WAVE_LIVE_ACCOUNT_E2E=PASS"
+            echo "public_routes=PASS"
+            echo "register=PASS"
+            echo "account_read=PASS"
+            echo "profile=PASS"
+            echo "logout=PASS"
+            echo "login=PASS"
+            echo "delete=PASS"
+            echo "login_after_delete=DENIED"
+          } | tee WAVE_LIVE_ACCOUNT_E2E_RESULT.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-LIVE-ACCOUNT-E2E
+          retention-days: 30
+          path: |
+            WAVE_LIVE_ACCOUNT_E2E_RESULT.txt
+            wave-e2e/*.json
+            wave-e2e/*.headers
+            wave-e2e/profile.html
