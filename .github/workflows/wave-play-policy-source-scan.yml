@@ -88,6 +88,11 @@ jobs:
             echo '=== PRIVACY / TERMS ROUTES OR TEXT ==='
             find app src -type f 2>/dev/null | grep -Ei 'privacy|terms|policy|legal' || true
             grep -RInEi --exclude-dir=.git --exclude='*.map' 'privacy|terms|سياسة الخصوصية|الشروط' app src worker workers 2>/dev/null | head -300 || true
+            echo '=== LEGAL PAGE SOURCE ==='
+            sed -n '1,260p' app/legal/page.tsx 2>/dev/null || true
+            sed -n '1,360p' 'app/legal/[slug]/page.tsx' 2>/dev/null || true
+            echo '=== AUTH IMPLEMENTATION SIGNALS ==='
+            grep -RInE --exclude-dir=.git 'registerWaveUser|verifyWavePassword|createWaveSession|password_hash|passwordHash|PBKDF|scrypt|argon|SHA-256|sessionCookie' lib app 2>/dev/null | head -400 || true
           } > ../WAVE_PLAY_POLICY_SOURCE_SCAN.txt
           sha256sum ../WAVE_PLAY_POLICY_SOURCE_SCAN.txt > ../WAVE_PLAY_POLICY_SOURCE_SCAN.sha256
 
@@ -96,7 +101,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           : > WAVE_LIVE_POLICY_ROUTES.txt
-          for p in privacy privacy-policy terms terms-of-service; do
+          for p in privacy privacy-policy terms terms-of-service legal/privacy legal/terms legal/cookies legal/content; do
             code="$(curl -L -sS -o "/tmp/wave-$p.html" -w '%{http_code}' --connect-timeout 10 --max-time 30 "$WAVE_URL/$p" || true)"
             bytes="$(wc -c < "/tmp/wave-$p.html" 2>/dev/null || echo 0)"
             printf '%s http=%s bytes=%s\n' "/$p" "$code" "$bytes" | tee -a WAVE_LIVE_POLICY_ROUTES.txt
