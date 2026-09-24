@@ -1,0 +1,202 @@
+name: WAVE Android Install Smoke
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-android-install-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate WIF
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Fetch existing WAVE upload key
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='sudo test -s /srv/wave-play-signing/wave-upload.jks && sudo test -s /srv/wave-play-signing/signing.env'
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='sudo base64 -w0 /srv/wave-play-signing/wave-upload.jks' > /tmp/wave-upload.b64
+          base64 -d /tmp/wave-upload.b64 > /tmp/wave-upload.jks
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='sudo cat /srv/wave-play-signing/signing.env' > /tmp/wave-signing.env
+          chmod 600 /tmp/wave-upload.jks /tmp/wave-signing.env
+
+      - name: Reconstruct Android RC15.8 launch-fix source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os, requests, google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
+          c.refresh(Request())
+          r=requests.get(
+              f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",
+              headers={'Authorization':f'Bearer {c.token}'}, timeout=120)
+          r.raise_for_status()
+          open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src
+          unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q
+          git add .
+          git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          grep -q 'applicationId "com.wave.mawja"' android-twa/app/build.gradle
+          grep -q 'versionCode 15301' android-twa/app/build.gradle
+          grep -q 'android.support.customtabs.trusted.DEFAULT_URL' android-twa/app/src/main/AndroidManifest.xml
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android build tools
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SDK_ROOT=/usr/local/lib/android/sdk
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n1)"; fi
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build signed release APK and verify package metadata
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set -a
+          source /tmp/wave-signing.env
+          set +a
+          echo "::add-mask::$WAVE_ANDROID_STORE_PASSWORD"
+          echo "::add-mask::$WAVE_ANDROID_KEY_PASSWORD"
+          export WAVE_ANDROID_KEYSTORE=/tmp/wave-upload.jks
+          (cd wave-src/android-twa && gradle --no-daemon clean :app:assembleRelease)
+          APK=wave-src/android-twa/app/build/outputs/apk/release/app-release.apk
+          test -s "$APK"
+          apksigner verify --verbose --print-certs "$APK" | tee WAVE_ANDROID_APKSIGNER.txt
+          aapt dump badging "$APK" | tee WAVE_ANDROID_BADGING.txt
+          grep -q "package: name='com.wave.mawja' versionCode='15301'" WAVE_ANDROID_BADGING.txt
+          grep -q "targetSdkVersion:'36'" WAVE_ANDROID_BADGING.txt
+          sha256sum "$APK" | tee WAVE_ANDROID_APK.sha256
+          stat -c 'apk_bytes=%s' "$APK" | tee WAVE_ANDROID_APK_SIZE.txt
+          cp "$APK" WAVE_MAWJA_15301_RELEASE.apk
+
+      - name: Enable KVM permissions for emulator
+        shell: bash
+        run: |
+          if [ -e /dev/kvm ]; then
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules >/dev/null
+            sudo udevadm control --reload-rules
+            sudo udevadm trigger --name-match=kvm || true
+          fi
+
+      - name: Android emulator install and launch smoke
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            set -Eeuo pipefail
+            adb wait-for-device
+            adb install -r WAVE_MAWJA_15301_RELEASE.apk | tee WAVE_ANDROID_ADB_INSTALL.txt
+            grep -q 'Success' WAVE_ANDROID_ADB_INSTALL.txt
+            adb shell pm list packages | grep -q "package:$WAVE_PACKAGE"
+            adb logcat -c
+            adb shell monkey -p "$WAVE_PACKAGE" -c android.intent.category.LAUNCHER 1 | tee WAVE_ANDROID_LAUNCH.txt
+            sleep 12
+            adb shell dumpsys package "$WAVE_PACKAGE" > WAVE_ANDROID_PACKAGE_DUMPSYS.txt
+            adb shell dumpsys activity activities > WAVE_ANDROID_ACTIVITY_DUMPSYS.txt
+            adb logcat -d -v threadtime > WAVE_ANDROID_LOGCAT.txt
+            adb shell uiautomator dump /sdcard/wave-window.xml >/dev/null 2>&1 || true
+            adb pull /sdcard/wave-window.xml WAVE_ANDROID_UI.xml >/dev/null 2>&1 || true
+            adb exec-out screencap -p > WAVE_ANDROID_SCREENSHOT.png
+            test -s WAVE_ANDROID_SCREENSHOT.png
+            if grep -Eiq 'FATAL EXCEPTION.*com\.wave\.mawja|Process: com\.wave\.mawja.*FATAL EXCEPTION' WAVE_ANDROID_LOGCAT.txt; then
+              echo 'WAVE_ANDROID_FATAL_CRASH=YES'
+              exit 41
+            fi
+            if ! grep -Eq 'com\.wave\.mawja|com\.android\.chrome|org\.chromium' WAVE_ANDROID_ACTIVITY_DUMPSYS.txt; then
+              echo 'WAVE_ANDROID_NO_RELEVANT_ACTIVITY=YES'
+              tail -200 WAVE_ANDROID_ACTIVITY_DUMPSYS.txt
+              exit 42
+            fi
+            {
+              echo "package=$WAVE_PACKAGE"
+              echo "versionCode=15301"
+              echo "targetSdk=36"
+              echo "emulatorApi=35"
+              echo "install=PASS"
+              echo "launch=PASS"
+              echo "fatalCrash=NO"
+              echo "liveUrl=$WAVE_URL"
+            } | tee WAVE_ANDROID_INSTALL_SMOKE_RESULT.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-ANDROID-INSTALL-SMOKE
+          retention-days: 30
+          path: |
+            WAVE_ANDROID_INSTALL_SMOKE_RESULT.txt
+            WAVE_ANDROID_APKSIGNER.txt
+            WAVE_ANDROID_BADGING.txt
+            WAVE_ANDROID_APK.sha256
+            WAVE_ANDROID_APK_SIZE.txt
+            WAVE_ANDROID_ADB_INSTALL.txt
+            WAVE_ANDROID_LAUNCH.txt
+            WAVE_ANDROID_PACKAGE_DUMPSYS.txt
+            WAVE_ANDROID_ACTIVITY_DUMPSYS.txt
+            WAVE_ANDROID_LOGCAT.txt
+            WAVE_ANDROID_UI.xml
+            WAVE_ANDROID_SCREENSHOT.png
+            WAVE_MAWJA_15301_RELEASE.apk
