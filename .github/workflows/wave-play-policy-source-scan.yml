@@ -1,0 +1,112 @@
+name: WAVE Play Policy Source Scan
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-play-policy-source-scan.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate source access
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Reconstruct cumulative WAVE source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os, requests, google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
+          c.refresh(Request())
+          r=requests.get(
+              f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",
+              headers={'Authorization':f'Bearer {c.token}'}, timeout=120)
+          r.raise_for_status()
+          open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          rm -rf wave-src
+          mkdir wave-src
+          unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q
+          git add .
+          git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          cp -a ../ReleaseOps/WAVE/RC15_11/overlay/. .
+
+      - name: Build policy evidence report
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          {
+            echo 'WAVE_PLAY_POLICY_SOURCE_SCAN=PASS'
+            echo '=== ANDROID MANIFEST ==='
+            sed -n '1,260p' android-twa/app/src/main/AndroidManifest.xml 2>/dev/null || true
+            echo '=== ANDROID PERMISSION REFERENCES ==='
+            grep -RInE --exclude-dir=.git 'uses-permission|AD_ID|READ_MEDIA|READ_EXTERNAL|WRITE_EXTERNAL|CAMERA|RECORD_AUDIO|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|POST_NOTIFICATIONS|BLUETOOTH|QUERY_ALL_PACKAGES' android-twa 2>/dev/null | head -300 || true
+            echo '=== PACKAGE DEPENDENCIES ==='
+            cat package.json 2>/dev/null || true
+            echo '=== ANALYTICS / ADS / AUTH SDK REFERENCES ==='
+            grep -RInEi --exclude-dir=.git --exclude='*.map' 'firebase|analytics|telemetry|sentry|segment|mixpanel|amplitude|google-analytics|gtag|adsense|admob|doubleclick|facebook.*sdk|oauth|google.*sign|apple.*sign|auth0' app src worker workers package.json package-lock.json 2>/dev/null | head -500 || true
+            echo '=== USER / ACCOUNT / PERSONAL DATA FIELD REFERENCES ==='
+            grep -RInEi --exclude-dir=.git --exclude='*.map' 'email|phone|name|avatar|profile|account|userId|user_id|session|cookie|token|ip address|device|playback|history|favorite|watchlist' app src worker workers 2>/dev/null | head -700 || true
+            echo '=== STORAGE / DATABASE REFERENCES ==='
+            grep -RInEi --exclude-dir=.git --exclude='*.map' 'D1|KV|R2|database|sqlite|localStorage|indexedDB|cache|storage' app src worker workers wrangler* 2>/dev/null | head -500 || true
+            echo '=== PRIVACY / TERMS ROUTES OR TEXT ==='
+            find app src -type f 2>/dev/null | grep -Ei 'privacy|terms|policy|legal' || true
+            grep -RInEi --exclude-dir=.git --exclude='*.map' 'privacy|terms|سياسة الخصوصية|الشروط' app src worker workers 2>/dev/null | head -300 || true
+          } > ../WAVE_PLAY_POLICY_SOURCE_SCAN.txt
+          sha256sum ../WAVE_PLAY_POLICY_SOURCE_SCAN.txt > ../WAVE_PLAY_POLICY_SOURCE_SCAN.sha256
+
+      - name: Probe live policy routes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : > WAVE_LIVE_POLICY_ROUTES.txt
+          for p in privacy privacy-policy terms terms-of-service; do
+            code="$(curl -L -sS -o "/tmp/wave-$p.html" -w '%{http_code}' --connect-timeout 10 --max-time 30 "$WAVE_URL/$p" || true)"
+            bytes="$(wc -c < "/tmp/wave-$p.html" 2>/dev/null || echo 0)"
+            printf '%s http=%s bytes=%s\n' "/$p" "$code" "$bytes" | tee -a WAVE_LIVE_POLICY_ROUTES.txt
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-PLAY-POLICY-SOURCE-SCAN
+          retention-days: 30
+          path: |
+            WAVE_PLAY_POLICY_SOURCE_SCAN.txt
+            WAVE_PLAY_POLICY_SOURCE_SCAN.sha256
+            WAVE_LIVE_POLICY_ROUTES.txt
