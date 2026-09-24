@@ -120,8 +120,12 @@ jobs:
           (cd wave-src/android-twa && gradle --no-daemon clean :app:assembleRelease)
           APK=wave-src/android-twa/app/build/outputs/apk/release/app-release.apk
           test -s "$APK"
-          apksigner verify --verbose --print-certs "$APK" | tee WAVE_ANDROID_APKSIGNER.txt
-          aapt dump badging "$APK" | tee WAVE_ANDROID_BADGING.txt
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee WAVE_ANDROID_APKSIGNER.txt
+          "$AAPT" dump badging "$APK" | tee WAVE_ANDROID_BADGING.txt
           grep -q "package: name='com.wave.mawja' versionCode='15301'" WAVE_ANDROID_BADGING.txt
           grep -q "targetSdkVersion:'36'" WAVE_ANDROID_BADGING.txt
           sha256sum "$APK" | tee WAVE_ANDROID_APK.sha256
