@@ -63,7 +63,7 @@ jobs:
             echo "CLOSED_TRACK_ALREADY_EXISTS=YES"
           fi
 
-          printf '{"releases":[{"name":"WAVE MAWJA Closed Readiness","versionCodes":["%s"],"status":"completed"}]}' "$WAVE_VERSION_CODE" > closed-release.json
+          printf '{"releases":[{"name":"WAVE MAWJA Closed Readiness","versionCodes":["%s"],"status":"draft"}]}' "$WAVE_VERSION_CODE" > closed-release.json
           put_code="$(curl -sS -o closed-release-response.json -w '%{http_code}' -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @closed-release.json "$base/$edit_id/tracks/$WAVE_CLOSED_TRACK")"
           echo "CLOSED_TRACK_RELEASE_PUT_HTTP=$put_code"
           if [ "$put_code" != 200 ]; then cat closed-release-response.json; curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true; exit 22; fi
