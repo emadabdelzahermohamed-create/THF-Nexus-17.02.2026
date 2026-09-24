@@ -1,0 +1,93 @@
+name: WAVE Google Play Store Readiness
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-play-store-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Authenticate as Play service account
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Inspect store-listing readiness without mutations
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          base="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
+          edit_code="$(curl -sS -o edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
+          test "$edit_code" = 200
+          edit_id="$(python3 -c 'import json; print(json.load(open("edit.json"))["id"])')"
+
+          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/details" > details.json
+          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/listings" > listings.json
+
+          for type in icon featureGraphic phoneScreenshots sevenInchScreenshots tenInchScreenshots; do
+            code="$(curl -sS -o "images-$type.json" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/listings/ar/$type" || true)"
+            echo "IMAGE_${type}_HTTP=$code"
+          done
+
+          python3 - <<'PY'
+          import json, pathlib
+          details=json.load(open("details.json"))
+          listings=json.load(open("listings.json")).get("listings") or []
+          lines=[
+            "defaultLanguage="+str(details.get("defaultLanguage","")),
+            "contactEmail_present="+str(bool(details.get("contactEmail"))).lower(),
+            "contactPhone_present="+str(bool(details.get("contactPhone"))).lower(),
+            "contactWebsite="+str(details.get("contactWebsite","")),
+            "listing_languages="+",".join(sorted(x.get("language","") for x in listings if x.get("language"))),
+          ]
+          for x in listings:
+              lang=x.get("language","")
+              lines += [
+                f"{lang}_title_present="+str(bool(x.get("title"))).lower(),
+                f"{lang}_shortDescription_len="+str(len(x.get("shortDescription") or "")),
+                f"{lang}_fullDescription_len="+str(len(x.get("fullDescription") or "")),
+                f"{lang}_video_present="+str(bool(x.get("video"))).lower(),
+              ]
+          for t in ("icon","featureGraphic","phoneScreenshots","sevenInchScreenshots","tenInchScreenshots"):
+              try:
+                  d=json.load(open(f"images-{t}.json"))
+                  n=len(d.get("images") or [])
+              except Exception:
+                  n=-1
+              lines.append(f"ar_{t}_count={n}")
+          pathlib.Path("WAVE_PLAY_STORE_READINESS.txt").write_text("\n".join(lines)+"\n")
+          print("\n".join(lines))
+          PY
+
+          curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-PLAY-STORE-READINESS
+          retention-days: 30
+          path: |
+            WAVE_PLAY_STORE_READINESS.txt
+            details.json
+            listings.json
+            images-*.json
