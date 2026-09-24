@@ -6,7 +6,7 @@ on:
       - '.github/workflows/wave-rc15-9-cloudflare-deploy.yml'
       - 'ReleaseOps/WAVE/RC15_11/**'
       - 'ReleaseOps/WAVE/RC15_12/**'
-      - 'ReleaseOps/WAVE/RC15_13/**'
+      - 'ReleaseOps/WAVE/RC15_13/overlay/**'
 permissions:
   contents: read
   id-token: write
