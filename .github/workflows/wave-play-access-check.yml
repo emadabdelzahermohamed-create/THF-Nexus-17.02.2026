@@ -1,8 +1,9 @@
-name: WAVE Google Play Access Check
+name: WAVE Google Play Release State Check
 
 on:
   push:
-    branches: [releaseops/wave-rc15-3-20260917]
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
     paths:
       - '.github/workflows/wave-play-access-check.yml'
   workflow_dispatch:
@@ -18,7 +19,7 @@ env:
   WAVE_PACKAGE: com.wave.mawja
 
 jobs:
-  check:
+  inspect:
     runs-on: ubuntu-24.04
     steps:
       - name: Authenticate as Play service account
@@ -30,48 +31,77 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/androidpublisher
 
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
-
-      - name: Ensure Android Publisher API is enabled
-        shell: bash
-        run: |
-          set +e
-          gcloud services enable androidpublisher.googleapis.com --project "$GCP_PROJECT_ID"
-          rc=$?
-          if [ "$rc" -eq 0 ]; then echo "ANDROID_PUBLISHER_API_ENABLE=PASS"; else echo "ANDROID_PUBLISHER_API_ENABLE=NO_PERMISSION_OR_FAILED"; fi
-          exit 0
-
-      - name: Verify Android Publisher read access
+      - name: Inspect Play package and release tracks without changing release state
         shell: bash
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
           set -Eeuo pipefail
           test -n "$ACCESS_TOKEN"
-          code="$(curl -sS -o response.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/reviews?maxResults=1")"
-          echo "PLAY_HTTP=$code"
-          if [ "$code" = 200 ]; then
-            echo "PLAY_API_ACCESS=PASS"
-            exit 0
-          fi
+          base="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
+
+          reviews_code="$(curl -sS -o reviews.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/reviews?maxResults=1")"
+          echo "PLAY_REVIEWS_HTTP=$reviews_code"
+
+          edit_code="$(curl -sS -o edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
+          echo "PLAY_EDIT_INSERT_HTTP=$edit_code"
+          test "$edit_code" = 200
+          edit_id="$(python3 -c 'import json; print(json.load(open("edit.json"))["id"])')"
+          test -n "$edit_id"
+
+          for track in internal alpha beta production; do
+            code="$(curl -sS -o "track-$track.json" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/tracks/$track")"
+            echo "PLAY_TRACK_${track^^}_HTTP=$code"
+          done
+
+          listings_code="$(curl -sS -o listings.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/listings")"
+          details_code="$(curl -sS -o details.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/details")"
+          echo "PLAY_LISTINGS_HTTP=$listings_code"
+          echo "PLAY_DETAILS_HTTP=$details_code"
+
           python3 - <<'PY'
-          import json
+          import json, pathlib
+          out=[]
+          for track in ("internal","alpha","beta","production"):
+              p=pathlib.Path(f"track-{track}.json")
+              try:
+                  d=json.loads(p.read_text())
+              except Exception:
+                  out.append(f"{track}=UNPARSEABLE")
+                  continue
+              releases=d.get("releases") or []
+              if not releases:
+                  out.append(f"{track}=EMPTY")
+                  continue
+              parts=[]
+              for r in releases:
+                  vcs=",".join(r.get("versionCodes") or [])
+                  parts.append(f"{r.get('status','unknown')}:{vcs}")
+              out.append(f"{track}={'|'.join(parts)}")
           try:
-              data=json.load(open('response.json',encoding='utf-8'))
-              err=data.get('error',{}) if isinstance(data,dict) else {}
-              print('PLAY_ERROR_STATUS='+str(err.get('status','unknown')))
-              print('PLAY_ERROR_MESSAGE='+str(err.get('message','unknown')).replace('\n',' ')[:500])
+              listings=json.loads(pathlib.Path("listings.json").read_text()).get("listings") or []
+              out.append("listings_languages="+",".join(sorted(x.get("language","") for x in listings if x.get("language"))))
           except Exception:
-              print('PLAY_ERROR_RESPONSE_UNPARSEABLE')
+              out.append("listings_languages=UNPARSEABLE")
+          pathlib.Path("WAVE_PLAY_RELEASE_STATE.txt").write_text("\n".join(out)+"\n")
+          print("\n".join(out))
           PY
-          if [ "$code" = 401 ] || [ "$code" = 403 ]; then
-            echo "PLAY_API_ACCESS=DENIED"
-          elif [ "$code" = 404 ]; then
-            echo "PLAY_PACKAGE_NOT_FOUND_OR_NOT_CREATED=YES"
-          else
-            echo "PLAY_API_ACCESS=UNRESOLVED"
-          fi
-          exit 1
+
+          del_code="$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id")"
+          echo "PLAY_EDIT_DELETE_HTTP=$del_code"
+          test "$del_code" = 204
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-PLAY-RELEASE-STATE
+          retention-days: 30
+          path: |
+            WAVE_PLAY_RELEASE_STATE.txt
+            reviews.json
+            track-internal.json
+            track-alpha.json
+            track-beta.json
+            track-production.json
+            listings.json
+            details.json
