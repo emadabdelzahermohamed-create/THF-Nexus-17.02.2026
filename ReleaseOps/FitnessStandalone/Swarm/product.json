@@ -1,0 +1,8 @@
+{
+  "lane": "product",
+  "phase": "FITNESS",
+  "status": "READY",
+  "active_task": null,
+  "source_branch": "release/fitness-standalone-v1-20260918",
+  "updated_at": "2026-09-24"
+}
