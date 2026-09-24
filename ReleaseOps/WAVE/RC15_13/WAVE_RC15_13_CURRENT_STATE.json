@@ -1,0 +1,121 @@
+{
+  "project": "WAVE_MAWJA",
+  "checkpoint": "RC15.13",
+  "recorded_at": "2026-09-24T11:08:00+03:00",
+  "branch": "releaseops/wave-rc15-9-admin-rbac-20260918",
+  "web": {
+    "live_url": "https://wave-mawja.p-my.workers.dev",
+    "deploy_commit": "52bbfeaddd40cc17f9844ac6440db1f08563091e",
+    "deploy_run_id": 35973309097,
+    "cloudflare_version_id": "f08b563e-43d4-4237-a40a-72e7baf1625d",
+    "status": "PASS",
+    "smoke": {
+      "root": 200,
+      "login": 200,
+      "admin_login": 200,
+      "control": 200,
+      "control_api_unauthorized": 401,
+      "privacy": 200,
+      "terms": 200,
+      "admin_alias": "PASS",
+      "publisher_alias": "PASS"
+    }
+  },
+  "google_play": {
+    "package": "com.wave.mawja",
+    "version_code": "15301",
+    "internal": {
+      "status": "completed",
+      "version_code": "15301"
+    },
+    "production": {
+      "status": "EMPTY_BLOCKED_BY_DRAFT_APP"
+    },
+    "closed_testing": {
+      "track": "wave-closed-readiness",
+      "release_status": "draft",
+      "version_code": "15301",
+      "release_present": true,
+      "google_group_count": 0
+    },
+    "listing": {
+      "language": "ar",
+      "prepared": {
+        "title": true,
+        "short_description": true,
+        "full_description": true,
+        "contact_website": true,
+        "icon": true,
+        "feature_graphic": true,
+        "phone_screenshots": 4
+      },
+      "last_edit_result": "NOT_COMMITTED",
+      "blocker": "Google Play validation requires a public contact email address.",
+      "contact_email_set": false
+    },
+    "policy_evidence": {
+      "android_permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ],
+      "external_ad_or_analytics_sdk_detected": false,
+      "privacy_url": "https://wave-mawja.p-my.workers.dev/privacy",
+      "terms_url": "https://wave-mawja.p-my.workers.dev/terms",
+      "account_password_storage": "PBKDF2_SHA256_HASH_WITH_RANDOM_SALT",
+      "session_cookie": [
+        "HttpOnly",
+        "Secure_when_https",
+        "SameSite=Lax"
+      ]
+    }
+  },
+  "checkpoints": [
+    {
+      "commit": "9b31b0996e30b2d3b2288120e267ebb172207066",
+      "purpose": "Inspect Play release tracks"
+    },
+    {
+      "commit": "690fb1f22795c1a4d4789fa7bb388895930b712a",
+      "purpose": "Fail-closed production promotion attempt"
+    },
+    {
+      "commit": "23fcf124fc31479ddeaaf5b3f3f3b5cf164aa151",
+      "purpose": "Diagnose Play production precondition"
+    },
+    {
+      "commit": "669fba8479d65fc26c8ab6984145a6944aeed072",
+      "purpose": "Commit closed-test draft track"
+    },
+    {
+      "commit": "413a5e2c6c03bca2a507b86441d862fa8502b450",
+      "purpose": "Inspect Play store readiness"
+    },
+    {
+      "commit": "19acd06d941a5ff28166063d5e79e144ca6a1ead",
+      "purpose": "Prepare Play listing assets and metadata"
+    },
+    {
+      "commit": "f4c7d777749ddd3ac600d7dac118728ae67f56c9",
+      "purpose": "Policy/source evidence scan"
+    },
+    {
+      "commit": "46886ff39ba0a9e9ff34b497dfeb859b7565021e",
+      "purpose": "Add direct privacy route"
+    },
+    {
+      "commit": "6bb8ed168e5112c668c9ba9051afcd4088c714a8",
+      "purpose": "Add direct terms route"
+    },
+    {
+      "commit": "52bbfeaddd40cc17f9844ac6440db1f08563091e",
+      "purpose": "Deploy RC15.13 to Cloudflare"
+    }
+  ],
+  "next_actions": [
+    "Set a verified public contact email for the Google Play store listing after owner approval.",
+    "Re-run store listing repair and commit validated metadata/assets.",
+    "Promote closed-test release from draft to completed if Play allows it after app setup requirements are satisfied.",
+    "Complete any remaining Play Console App content/Data safety/content rating/target audience declarations that are not exposed by the publishing API.",
+    "When Play enables production, promote the already-tested versionCode 15301 unless a newer Android binary is required."
+  ]
+}
