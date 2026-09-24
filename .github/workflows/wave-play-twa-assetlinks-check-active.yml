@@ -1,0 +1,109 @@
+name: WAVE Play TWA Asset Links Active Check
+
+on:
+  push:
+    branches: [releaseops/wave-rc15-9-admin-rbac-20260918]
+    paths:
+      - '.github/workflows/wave-play-twa-assetlinks-check-active.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+  WAVE_VERSION_CODE: '15302'
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Authenticate Android Publisher API
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Compare Play signing certificate with live Digital Asset Links
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p twa-check
+
+          code="$(curl -sS -o twa-check/generated-apks.json -w '%{http_code}'             -H "Authorization: Bearer $ACCESS_TOKEN"             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/generatedApks/$WAVE_VERSION_CODE")"
+          echo "GENERATED_APKS_HTTP=$code"
+          test "$code" = 200
+
+          asset_code="$(curl -L -sS -o twa-check/assetlinks.json -w '%{http_code}'             "$WAVE_URL/.well-known/assetlinks.json")"
+          echo "ASSETLINKS_HTTP=$asset_code"
+
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          g=json.load(open("twa-check/generated-apks.json"))
+          groups=g.get("generatedApks") or []
+          certs=[x.get("certificateSha256Hash","") for x in groups if x.get("certificateSha256Hash")]
+          if not certs:
+              raise SystemExit("No Play signing certificate hash returned")
+
+          def norm(v):
+              return re.sub(r"[^0-9a-fA-F]","",v).lower()
+
+          play={norm(x) for x in certs if norm(x)}
+          pathlib.Path("twa-check/play-signing-sha256.txt").write_text("\n".join(certs)+"\n")
+
+          try:
+              asset=json.load(open("twa-check/assetlinks.json"))
+          except Exception:
+              pathlib.Path("WAVE_TWA_ASSETLINKS_RESULT.txt").write_text(
+                  "status=MISSING_OR_INVALID_ASSETLINKS\n"
+                  "package="+os.environ["WAVE_PACKAGE"]+"\n"
+                  "versionCode="+os.environ["WAVE_VERSION_CODE"]+"\n"
+                  "playCertificateSha256="+",".join(certs)+"\n"
+              )
+              print("WAVE_TWA_ASSETLINKS=MISSING_OR_INVALID")
+              raise SystemExit(41)
+
+          seen=[]
+          matched=False
+          for item in asset if isinstance(asset,list) else []:
+              target=item.get("target") or {}
+              if target.get("namespace")!="android_app" or target.get("package_name")!=os.environ["WAVE_PACKAGE"]:
+                  continue
+              fps=target.get("sha256_cert_fingerprints") or []
+              seen.extend(fps)
+              if any(norm(fp) in play for fp in fps):
+                  matched=True
+
+          lines=[
+              "package="+os.environ["WAVE_PACKAGE"],
+              "versionCode="+os.environ["WAVE_VERSION_CODE"],
+              "playCertificateSha256="+",".join(certs),
+              "liveFingerprintCount="+str(len(seen)),
+              "matchingStatement="+str(matched).lower(),
+          ]
+          pathlib.Path("WAVE_TWA_ASSETLINKS_RESULT.txt").write_text("\n".join(lines)+"\n")
+          print("\n".join(lines))
+          if not matched:
+              raise SystemExit(42)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-PLAY-TWA-ASSETLINKS-ACTIVE-CHECK
+          retention-days: 30
+          path: |
+            WAVE_TWA_ASSETLINKS_RESULT.txt
+            twa-check/generated-apks.json
+            twa-check/assetlinks.json
+            twa-check/play-signing-sha256.txt
