@@ -1,0 +1,125 @@
+name: WAVE Google Play Production Diagnostics
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-play-production-diagnostics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+  WAVE_VERSION_CODE: '15301'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Authenticate as Play service account
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Probe production eligibility without committing any changes
+        shell: bash
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$ACCESS_TOKEN"
+          base="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
+          edit_code="$(curl -sS -o edit.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
+          echo "EDIT_INSERT_HTTP=$edit_code"
+          test "$edit_code" = 200
+          edit_id="$(python3 -c 'import json; print(json.load(open("edit.json"))["id"])')"
+
+          probe_get () {
+            name="$1"; url="$2"
+            code="$(curl -sS -o "$name.json" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$url" || true)"
+            echo "$name HTTP=$code"
+          }
+
+          probe_get COUNTRY_PRODUCTION "$base/$edit_id/countryAvailability/production"
+          probe_get COUNTRY_INTERNAL "$base/$edit_id/countryAvailability/internal"
+          probe_get TRACKS_LIST "$base/$edit_id/tracks"
+          probe_get DETAILS "$base/$edit_id/details"
+          probe_get LISTINGS "$base/$edit_id/listings"
+
+          cat > production-draft.json <<JSON
+          {"releases":[{"name":"WAVE MAWJA production eligibility probe","versionCodes":["$WAVE_VERSION_CODE"],"status":"draft"}]}
+          JSON
+          draft_code="$(curl -sS -o production-draft-response.json -w '%{http_code}' -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @production-draft.json "$base/$edit_id/tracks/production" || true)"
+          echo "PRODUCTION_DRAFT_PUT_HTTP=$draft_code"
+
+          cat > closed-track.json <<'JSON'
+          {"track":"wave-closed-readiness","type":"CLOSED_TESTING","formFactor":"DEFAULT"}
+          JSON
+          closed_code="$(curl -sS -o closed-track-response.json -w '%{http_code}' -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @closed-track.json "$base/$edit_id/tracks" || true)"
+          echo "CLOSED_TRACK_CREATE_HTTP=$closed_code"
+
+          python3 - <<'PY'
+          import json, pathlib
+          def load(name):
+              p=pathlib.Path(name)
+              try: return json.loads(p.read_text())
+              except Exception: return None
+          lines=[]
+          cp=load("COUNTRY_PRODUCTION.json")
+          ci=load("COUNTRY_INTERNAL.json")
+          tl=load("TRACKS_LIST.json")
+          dr=load("production-draft-response.json")
+          cr=load("closed-track-response.json")
+          if isinstance(cp,dict):
+              lines.append("production_countries="+str(len(cp.get("countries") or [])))
+              lines.append("production_rest_of_world="+str(cp.get("restOfWorld")))
+              lines.append("production_sync="+str(cp.get("syncWithProduction")))
+          if isinstance(ci,dict):
+              lines.append("internal_countries="+str(len(ci.get("countries") or [])))
+              lines.append("internal_rest_of_world="+str(ci.get("restOfWorld")))
+              lines.append("internal_sync="+str(ci.get("syncWithProduction")))
+          if isinstance(tl,dict):
+              names=[x.get("track","") for x in tl.get("tracks") or []]
+              lines.append("tracks="+",".join(x for x in names if x))
+          if isinstance(dr,dict) and dr.get("error"):
+              e=dr["error"]; lines.append("production_draft_error="+str(e.get("status"))+":"+str(e.get("message")))
+          elif isinstance(dr,dict):
+              lines.append("production_draft_probe=ACCEPTED_IN_EDIT_ONLY")
+          if isinstance(cr,dict) and cr.get("error"):
+              e=cr["error"]; lines.append("closed_track_create_error="+str(e.get("status"))+":"+str(e.get("message")))
+          elif isinstance(cr,dict):
+              lines.append("closed_track_probe=ACCEPTED_IN_EDIT_ONLY")
+          pathlib.Path("WAVE_PLAY_PRODUCTION_DIAGNOSTICS.txt").write_text("\n".join(lines)+"\n")
+          print("\n".join(lines))
+          PY
+
+          delete_code="$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true)"
+          echo "EDIT_DELETE_HTTP=$delete_code"
+          test "$delete_code" = 204
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-PLAY-PRODUCTION-DIAGNOSTICS
+          retention-days: 30
+          path: |
+            WAVE_PLAY_PRODUCTION_DIAGNOSTICS.txt
+            COUNTRY_PRODUCTION.json
+            COUNTRY_INTERNAL.json
+            TRACKS_LIST.json
+            DETAILS.json
+            LISTINGS.json
+            production-draft.json
+            production-draft-response.json
+            closed-track.json
+            closed-track-response.json
