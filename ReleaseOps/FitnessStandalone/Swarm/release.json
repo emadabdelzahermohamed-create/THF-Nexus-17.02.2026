@@ -1,8 +1,9 @@
 {
   "lane": "release",
   "phase": "FITNESS",
-  "status": "READY",
-  "candidate_sha": null,
+  "status": "ACTIVE",
+  "active_task": "FITNESS_RELEASE_INTEGRATION_AND_HOURLY_REPORTING",
+  "candidate_sha": "b0a190339dedebf2710292cbdc5906689e405dc6",
   "integrated_lanes": {
     "product": null,
     "motion": null,
@@ -10,5 +11,6 @@
     "android": null
   },
   "next_product": "WAVE_MAWJA",
-  "updated_at": "2026-09-24"
+  "next_action": "Integrate only validated PASS checkpoints; independently verify live Web/Play state and report every run including NO_PROGRESS.",
+  "updated_at": "2026-09-26"
 }
