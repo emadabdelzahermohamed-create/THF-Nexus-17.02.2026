@@ -77,10 +77,10 @@ jobs:
           PY
 
           download_id="$(cat play-apk/download-id.txt)"
-          dl_url="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/generatedApks/$WAVE_VERSION_CODE/downloads/$download_id:download"
+          dl_url="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/generatedApks/$WAVE_VERSION_CODE/downloads/$download_id:download?alt=media"
           dl_code="$(curl -L -sS -o play-apk/wave-play-15302.apk -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$dl_url")"
           echo "APK_DOWNLOAD_HTTP=$dl_code"
-          test "$dl_code" = 200
+          case "$dl_code" in 200|206) ;; *) exit 37;; esac
           test -s play-apk/wave-play-15302.apk
           file play-apk/wave-play-15302.apk
           unzip -tq play-apk/wave-play-15302.apk >/dev/null
