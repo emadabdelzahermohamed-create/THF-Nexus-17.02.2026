@@ -1,0 +1,81 @@
+name: THF Fitness Android Source Packaging V1
+
+on:
+  push:
+    branches:
+      - automation/fitness-swarm-android-20260924
+    paths:
+      - '.github/workflows/thf-fitness-android-source-packaging-v1.yml'
+      - 'ReleaseOps/FitnessStandalone/android_source_packaging_contract.py'
+      - 'tests/releaseops/test_fitness_android_source_packaging_contract.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  SOURCE_DRIVE_FILE_ID: 1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-
+  SOURCE_SHA256: 2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74
+  AVATAR_SHA256: 4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f
+  DAL_HOST: thf-fitness-pulse-ul26f1.v2.appdeploy.ai
+
+jobs:
+  immutable-source-packaging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run source-packaging auditor regressions
+        run: python3 -m unittest tests.releaseops.test_fitness_android_source_packaging_contract -v
+
+      - name: Authenticate read-only source retrieval through WIF
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+
+      - name: Download immutable Fitness source
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          test -n "$ACCESS_TOKEN"
+          mkdir -p build/fitness out
+          curl --fail --location --retry 4 --retry-all-errors \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://www.googleapis.com/drive/v3/files/${SOURCE_DRIVE_FILE_ID}?alt=media&supportsAllDrives=true" \
+            -o out/fitness-source.zip
+          echo "$SOURCE_SHA256  out/fitness-source.zip" | sha256sum -c -
+          unzip -q out/fitness-source.zip -d build/fitness
+
+      - name: Audit exact Android source packaging fail-closed
+        run: |
+          set -euo pipefail
+          python3 ReleaseOps/FitnessStandalone/android_source_packaging_contract.py \
+            --source-root build/fitness \
+            --source-sha256 "$SOURCE_SHA256" \
+            --expected-avatar-sha256 "$AVATAR_SHA256" \
+            --expected-package com.topherofit.thf.pulse \
+            --minimum-version-code 50002 \
+            --expected-dal-host "$DAL_HOST" \
+            --recorded-at 2026-09-26T22:45:00Z \
+            --output out/android-source-packaging-contract.json \
+            --expect BLOCKED
+          grep -q '"canonical_stage16a_hash_matches": true' out/android-source-packaging-contract.json
+          grep -q 'FIRST_INSTALL_STAGE16A_NOT_PACKAGED' out/android-source-packaging-contract.json
+          grep -q 'OFFLINE_ENTRYPOINT_PLACEHOLDER' out/android-source-packaging-contract.json
+          grep -q 'HEALTH_CONNECT_IMPLEMENTATION_MISSING' out/android-source-packaging-contract.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-FITNESS-ANDROID-SOURCE-PACKAGING-V1
+          path: out/android-source-packaging-contract.json
+          retention-days: 30
