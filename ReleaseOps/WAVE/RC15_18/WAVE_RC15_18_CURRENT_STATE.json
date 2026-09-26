@@ -2,7 +2,7 @@
   "project": "WAVE_MAWJA",
   "package": "com.wave.mawja",
   "branch": "releaseops/wave-rc15-9-admin-rbac-20260918",
-  "updated_at": "2026-09-26T12:56:00Z",
+  "updated_at": "2026-09-26T13:10:00Z",
   "release_candidate": {
     "versionCode": 15302,
     "versionName": "1.0.0-rc15.15-twa-fix",
@@ -25,7 +25,18 @@
     "listing": "PASS committed",
     "generated_apks": "PASS for 15302",
     "data_safety_api": "AVAILABLE",
-    "closed_tester_google_groups": 0
+    "closed_tester_google_groups": 0,
+    "data_safety": "PASS submitted via Android Publisher API HTTP 204",
+    "data_safety_run": 36243903548,
+    "data_safety_commit": "c061266e5e052351b812e6230ac34b6de12c3568",
+    "production_gate_probe": {
+      "run": 36244009743,
+      "commit": "6554da48dcd93932bc94d586bccbf5f145a6facc",
+      "draft_track_update_http": 400,
+      "completed_track_update_http": 400,
+      "status": "FAILED_PRECONDITION",
+      "committed": false
+    }
   },
   "admin": {
     "email": "TopHeroFit@gmail.com",
@@ -44,16 +55,21 @@
     "admin_key_rotation_sha": "a431df2283f05be03b200ee6460bb75da8966183",
     "data_safety_source_scan_run": 36243290210,
     "data_safety_source_scan_sha": "89790af1765b941eedbb85782fc31e76de06aaa6",
-    "play_apk_privacy_inspection_run": 36243489417,
-    "play_apk_privacy_inspection_sha": "759dd83a39d693d5c2ffcbb25fe0693f4b7a60a9"
+    "play_apk_privacy_inspection_run": 36243580600,
+    "play_apk_privacy_inspection_sha": "dd1f692078c13e142e4db23bd916cdffa8e75500",
+    "play_apk_sha256": "961e5f60fe8b4694472029b09a34357d6e2004114c9ecfb2a69c831895041dc7",
+    "data_safety_server_evidence_run": 36244216547,
+    "data_safety_server_evidence_sha": "2a0dd37f4220930e2c1e5096445e3f6f3ca8abce"
   },
   "current_findings": [
-    "Source-wide privacy scan found stale-or-real AdMob markers plus location/camera/microphone permissions; this conflicts with prior release assumptions.",
-    "Do not submit Data Safety until the exact Play-generated 15302 APK is inspected.",
-    "Public account deletion URL is now live.",
-    "Internal 15302 is completed; Closed 15302 remains draft; Production remains empty."
+    "Exact Google Play-generated 15302 APK contains only INTERNET and ACCESS_NETWORK_STATE; no Camera, Microphone, Location, AD_ID, AdMob, or Firebase Analytics markers.",
+    "Google Play Data Safety declaration was generated from evidence and accepted by the Android Publisher API with HTTP 204.",
+    "Public privacy and account deletion URLs are live and return HTTP 200.",
+    "Internal 15302 is completed; Closed 15302 remains draft; Production remains empty.",
+    "No-commit Production gate probe returns HTTP 400 FAILED_PRECONDITION for both draft and completed release attempts, without a more specific API error detail.",
+    "Closed tester Google-group count remains 0."
   ],
-  "next_exact_task": "Wait for/run WAVE Play APK Privacy Inspect 36243489417; inspect exact Play-generated 15302 manifest/SDK markers. If source scan is false positive, repair source evidence gate and generate/submit accurate Data Safety CSV. If actual 15302 contains unnecessary permissions/ads SDK, remove them, build/upload next version and re-run privacy gates before Data Safety.",
+  "next_exact_task": "Continue release readiness after Data Safety: determine remaining Play Console App Content/production-access prerequisites; prepare any automatable reviewer/access evidence; keep Closed 15302 aligned; if the developer account requires closed testing, the remaining human dependency is a real eligible tester group/list and sustained tester participation. Do not repeat Data Safety or APK privacy gates unless the release artifact changes.",
   "owner_action_required_now": false,
   "automation": {
     "title": "WAVE Release Autopilot",
