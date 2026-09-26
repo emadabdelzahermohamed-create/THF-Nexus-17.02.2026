@@ -1,0 +1,81 @@
+name: THF Fitness Backend Release Contract V1
+
+on:
+  push:
+    branches:
+      - automation/fitness-swarm-backend-20260924
+    paths:
+      - '.github/workflows/thf-fitness-backend-release-contract-v1.yml'
+      - 'ReleaseOps/FitnessStandalone/backend_release_contract.py'
+      - 'tests/releaseops/test_fitness_backend_release_contract.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  SOURCE_DRIVE_FILE_ID: 1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-
+  SOURCE_SHA256: 2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74
+
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run release-auditor regressions
+        run: python3 -m unittest tests.releaseops.test_fitness_backend_release_contract -v
+
+      - name: Authenticate read-only source retrieval through WIF
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: true
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
+
+      - name: Download immutable Fitness source
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          test -n "${ACCESS_TOKEN}"
+          mkdir -p build/fitness out
+          curl --fail --location --retry 4 --retry-all-errors \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://www.googleapis.com/drive/v3/files/${SOURCE_DRIVE_FILE_ID}?alt=media&supportsAllDrives=true" \
+            -o out/fitness-source.zip
+          echo "${SOURCE_SHA256}  out/fitness-source.zip" | tee out/source.sha256 | sha256sum -c -
+          unzip -q out/fitness-source.zip -d build/fitness
+
+      - name: Run exact-source backend tests
+        run: |
+          set -euo pipefail
+          cd build/fitness
+          python3 -m pip install --disable-pip-version-check -r requirements.txt
+          python3 -m compileall -q app
+          pytest -q | tee "$GITHUB_WORKSPACE/out/pytest.txt"
+
+      - name: Inventory release-critical backend contracts
+        run: |
+          set -euo pipefail
+          python3 ReleaseOps/FitnessStandalone/backend_release_contract.py build/fitness \
+            --source-sha256 "${SOURCE_SHA256}" \
+            --recorded-at 2026-09-26T17:45:00Z \
+            --output out/backend-release-contract.json \
+            --expect PROGRESS
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-FITNESS-BACKEND-RELEASE-CONTRACT-V1
+          path: |
+            out/backend-release-contract.json
+            out/pytest.txt
+            out/source.sha256
+          retention-days: 30
