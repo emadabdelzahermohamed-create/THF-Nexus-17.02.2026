@@ -126,11 +126,27 @@ def make_artifact(
             "base/manifest/AndroidManifest.xml",
             manifest_proto(release_contracts=release_contracts),
         )
-        bundle.writestr("base/dex/classes.dex", b"dex")
-        bundle.writestr("base/assets/offline.html", b"offline")
+        dex = b"dex"
+        if with_stage16a:
+            dex += b" file:///android_asset/offline.html"
+        if release_contracts:
+            dex += b" HealthConnectClient androidx/health/connect StepsRecord"
+        bundle.writestr("base/dex/classes.dex", dex)
+        bundle.writestr(
+            "base/assets/offline.html",
+            (
+                b'<canvas></canvas><script type="module" src="offline-runtime.mjs"></script>'
+                if with_stage16a
+                else b"The secure service is not available yet."
+            ),
+        )
         if with_stage16a:
             bundle.writestr(
                 "base/assets/avatar/thf_mpfb_stage16a_ual12_animated.glb", b"glTF-stage16a"
+            )
+            bundle.writestr(
+                "base/assets/offline-runtime.mjs",
+                b"fetch('avatar/thf_mpfb_stage16a_ual12_animated.glb')",
             )
         if with_signature:
             bundle.writestr("META-INF/THF.SF", b"sf")
@@ -162,6 +178,9 @@ class FitnessAndroidCandidateIntegrityTests(unittest.TestCase):
         self.assertEqual(report["result"], "BLOCKED")
         self.assertIn("FIRST_INSTALL_STAGE16A_ASSET_MISSING", report["issues"])
         self.assertIn("OFFLINE_PAYLOAD_IS_FALLBACK_HTML_ONLY", report["issues"])
+        self.assertIn("OFFLINE_ENTRYPOINT_PLACEHOLDER", report["issues"])
+        self.assertIn("OFFLINE_RUNTIME_ASSETS_MISSING", report["issues"])
+        self.assertIn("OFFLINE_ENTRYPOINT_NOT_REACHABLE", report["issues"])
 
     def test_blocks_digest_drift_and_unsigned_bundle(self):
         with tempfile.TemporaryDirectory() as tmp:

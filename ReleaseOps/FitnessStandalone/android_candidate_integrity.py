@@ -23,6 +23,22 @@ LEGACY_AVATAR_PATTERN = re.compile(
     r"(?:thf_humanoid_v[1-6]|stage15j_ual1_animated)\.glb$", re.IGNORECASE
 )
 SIGNATURE_PATTERN = re.compile(r"^META-INF/[^/]+\.(?:RSA|DSA|EC)$", re.IGNORECASE)
+PLACEHOLDER_PATTERN = re.compile(
+    rb"(?:service\s+is\s+not\s+available|not\s+available\s+yet|coming\s+soon|placeholder)",
+    re.IGNORECASE,
+)
+OFFLINE_ENTRYPOINT_MARKERS = (
+    b"file:///android_asset/offline.html",
+    b"https://appassets.androidplatform.net/assets/offline.html",
+    b"WebViewAssetLoader",
+)
+HEALTH_IMPLEMENTATION_MARKERS = (
+    b"HealthConnectClient",
+    b"androidx/health/connect",
+    b"HealthPermission",
+    b"ExerciseSessionRecord",
+    b"StepsRecord",
+)
 ANDROID_NAMESPACE = "http://schemas.android.com/apk/res/android"
 
 
@@ -287,6 +303,27 @@ def audit_candidate(
         members = sorted(entry.filename for entry in infos)
         uncompressed_bytes = sum(entry.file_size for entry in infos)
         manifest_bytes = aab.read("base/manifest/AndroidManifest.xml")
+        offline_html_bytes = (
+            aab.read("base/assets/offline.html")
+            if "base/assets/offline.html" in members
+            else b""
+        )
+        offline_runtime_members = [
+            name
+            for name in members
+            if name.startswith("base/assets/")
+            and name.lower().endswith((".js", ".mjs", ".wasm"))
+        ]
+        offline_runtime_bytes = b"\n".join(
+            aab.read(name)
+            for name in offline_runtime_members
+            if aab.getinfo(name).file_size <= 4 * 1024 * 1024
+        )
+        dex_bytes = b"\n".join(
+            aab.read(name)
+            for name in members
+            if name.startswith("base/dex/") and name.endswith(".dex")
+        )
 
     try:
         manifest, manifest_issues = _manifest_audit(
@@ -303,6 +340,17 @@ def audit_candidate(
     asset_members = [name for name in members if name.startswith("base/assets/")]
     native_lib_members = [name for name in members if name.startswith("base/lib/")]
     arm64_members = [name for name in native_lib_members if "/arm64-v8a/" in name]
+    offline_reference_bytes = offline_html_bytes + b"\n" + offline_runtime_bytes
+    offline_stage16a_referenced = any(
+        Path(name).name.lower().encode("utf-8") in offline_reference_bytes.lower()
+        for name in stage16a_members
+    )
+    offline_entrypoint_reachable = any(
+        marker in dex_bytes for marker in OFFLINE_ENTRYPOINT_MARKERS
+    )
+    health_implementation_present = any(
+        marker in dex_bytes for marker in HEALTH_IMPLEMENTATION_MARKERS
+    )
 
     if not signature_members:
         issues.append("AAB_SIGNATURE_BLOCK_MISSING")
@@ -312,6 +360,18 @@ def audit_candidate(
         issues.append("LEGACY_AVATAR_ASSET_PRESENT")
     if asset_members == ["base/assets/offline.html"]:
         issues.append("OFFLINE_PAYLOAD_IS_FALLBACK_HTML_ONLY")
+    if not offline_html_bytes:
+        issues.append("OFFLINE_ENTRYPOINT_MISSING")
+    elif PLACEHOLDER_PATTERN.search(offline_html_bytes):
+        issues.append("OFFLINE_ENTRYPOINT_PLACEHOLDER")
+    if not offline_runtime_members:
+        issues.append("OFFLINE_RUNTIME_ASSETS_MISSING")
+    if not offline_stage16a_referenced:
+        issues.append("OFFLINE_STAGE16A_NOT_REFERENCED")
+    if not offline_entrypoint_reachable:
+        issues.append("OFFLINE_ENTRYPOINT_NOT_REACHABLE")
+    if not health_implementation_present:
+        issues.append("HEALTH_CONNECT_IMPLEMENTATION_MISSING")
 
     result = "PASS" if not issues else "BLOCKED"
     return {
@@ -344,6 +404,10 @@ def audit_candidate(
             "asset_count": len(asset_members),
             "stage16a_members": stage16a_members,
             "legacy_avatar_members": legacy_avatar_members,
+            "offline_runtime_members": offline_runtime_members,
+            "offline_stage16a_referenced": offline_stage16a_referenced,
+            "offline_entrypoint_reachable": offline_entrypoint_reachable,
+            "health_connect_implementation_present": health_implementation_present,
             "signature_members": signature_members,
             "native_lib_count": len(native_lib_members),
             "arm64_native_lib_count": len(arm64_members),
@@ -352,12 +416,12 @@ def audit_candidate(
         "issues": sorted(issues),
         "recorded_at": metadata["recorded_at"],
         "next_action": (
-            "Keep versionCode 50001 on Internal only. Motion lane must provide the canonical "
-            "Stage16A first-install asset; Android lane must package it into a newly signed "
-            "successor with versionCode >50001, add a verified HTTPS autoVerify Digital Asset "
-            "Links intent filter and the minimum declared Health Connect permissions, rerun this "
-            "integrity gate, then perform exact-candidate physical install/runtime QA before "
-            "promotion."
+            "Keep versionCode 50001 on Internal only. The canonical source already contains the "
+            "verified Stage16A GLB, but Android must package it with a non-placeholder offline "
+            "renderer and a reachable local entrypoint in a newly signed successor with "
+            "versionCode >50001. Add the HTTPS autoVerify DAL filter and implement only the "
+            "Health Connect permissions actually used, rerun this integrity gate, then perform "
+            "exact-candidate physical install/runtime QA before promotion."
         ),
     }
 
