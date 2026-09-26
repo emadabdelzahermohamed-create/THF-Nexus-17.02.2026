@@ -19,11 +19,11 @@ env:
 jobs:
   bootstrap:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate and install production admin secrets
+      - name: Install admin secrets and run authenticated live E2E
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -37,7 +37,6 @@ jobs:
           session_secret="$(openssl rand -hex 48)"
           test "${#access_key}" -ge 48
           test "${#session_secret}" -ge 64
-
           echo "::add-mask::$access_key"
           echo "::add-mask::$session_secret"
 
@@ -45,47 +44,83 @@ jobs:
           printf '%s' "$access_key" | npx --yes wrangler@4 secret put WAVE_ADMIN_ACCESS_KEY --name "$WAVE_WORKER"
           printf '%s' "$session_secret" | npx --yes wrangler@4 secret put WAVE_SESSION_SECRET --name "$WAVE_WORKER"
 
+          mkdir -p admin-bootstrap
+          jar=admin-bootstrap/cookies.txt
+          login_json="$(python3 - "$WAVE_ADMIN_EMAIL" "$access_key" <<'PY'
+          import json,sys
+          print(json.dumps({"email":sys.argv[1],"accessKey":sys.argv[2],"displayName":"WAVE Administrator"}))
+          PY
+          )"
+
+          login_code=""
+          for attempt in 1 2 3 4 5 6; do
+            login_code="$(curl -sS -o admin-bootstrap/login.json -D admin-bootstrap/login.headers -w '%{http_code}'               -c "$jar" -b "$jar" -X POST -H 'content-type: application/json'               --data-binary "$login_json" "$WAVE_URL/api/auth/admin-login" || true)"
+            echo "ADMIN_LOGIN_ATTEMPT=$attempt HTTP=$login_code"
+            if [ "$login_code" = 200 ]; then break; fi
+            sleep "$((attempt * 2))"
+          done
+          test "$login_code" = 200
+          python3 - <<'PY'
+          import json
+          d=json.load(open("admin-bootstrap/login.json"))
+          assert d.get("ok") is True, d
+          PY
+
+          api_code="$(curl -sS -o admin-bootstrap/control.json -w '%{http_code}' -c "$jar" -b "$jar" "$WAVE_URL/api/control")"
+          echo "ADMIN_CONTROL_GET_HTTP=$api_code"
+          test "$api_code" = 200
+          python3 - "$WAVE_ADMIN_EMAIL" <<'PY'
+          import json,sys
+          d=json.load(open("admin-bootstrap/control.json"))
+          account=d.get("account") or {}
+          caps=d.get("capabilities") or {}
+          assert account.get("email","").lower()==sys.argv[1].lower(), account
+          assert account.get("role")=="admin", account
+          assert caps.get("canAdmin") is True, caps
+          assert caps.get("canEdit") is True, caps
+          assert caps.get("adminAllowlistConfigured") is True, caps
+          print("ADMIN_ROLE=admin")
+          print("ADMIN_CAN_EDIT=true")
+          print("ADMIN_CAN_ADMIN=true")
+          PY
+
+          page_code="$(curl -L -sS -o admin-bootstrap/control.html -w '%{http_code}' -c "$jar" -b "$jar" "$WAVE_URL/control")"
+          echo "ADMIN_CONTROL_PAGE_HTTP=$page_code"
+          test "$page_code" = 200
+          grep -Eq 'مركز الإدارة|WAVE CONTROL' admin-bootstrap/control.html
+
+          probe_code="$(curl -sS -o admin-bootstrap/post-probe.json -w '%{http_code}' -c "$jar" -b "$jar"             -X POST -H 'content-type: application/json' --data-binary '{"action":"__readiness_probe__"}'             "$WAVE_URL/api/control")"
+          echo "ADMIN_CONTROL_POST_PROBE_HTTP=$probe_code"
+          test "$probe_code" = 400
+          python3 - <<'PY'
+          import json
+          d=json.load(open("admin-bootstrap/post-probe.json"))
+          assert d.get("error")=="invalid_action", d
+          PY
+
           printf '%s' "$access_key" > /tmp/wave-admin-access-key.txt
-
-          cat > /tmp/wave-admin-public.pem <<'PEM'
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxURPfkU/5LSm2j4fBm/K
-uv+Si+Tr2S0H6BNW1KBvAdBsMv7C/cYhzje6KddvBvcdQkhAPKVAF4H5QxyfK5CO
-PFmG1jJRtrtnoT+FPYr09vo/qijwsyFz/SKbyxtMB8yzATw7NjvTnBKMyXpZirC/
-+8QeIdwmr+6T2X0vYKOsl5xbuZDfYXWLvh8GwVzqxA15y44WNYTIf3eTkmulkdLW
-RN1sYzTesp5RwDyWw4J3u9TEkYKb2wL0uTkAe6PDD6qy+XfGkAhTyoGI7Az2Yx96
-OMxz0dCIL/Lbgvwbd7lCl/FuhS3WQ2RvjzXG3qbSj+T07iPEUfkmUXLKIZ9ir2wq
-fQIDAQAB
------END PUBLIC KEY-----
-PEM
+          printf '%s' 'LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF4VVJQZmtVLzVMU20yajRmQm0vSwp1ditTaStUcjJTMEg2Qk5XMUtCdkFkQnNNdjdDL2NZaHpqZTZLZGR2QnZjZFFraEFQS1ZBRjRINVF4eWZLNUNPClBGbUcxakpSdHJ0bm9UK0ZQWXIwOXZvL3FpandzeUZ6L1NLYnl4dE1COHl6QVR3N05qdlRuQktNeVhwWmlyQy8KKzhRZUlkd21yKzZUMlgwdllLT3NsNXhidVpEZllYV0x2aDhHd1Z6cXhBMTV5NDRXTllUSWYzZVRrbXVsa2RMVwpSTjFzWXpUZXNwNVJ3RHlXdzRKM3U5VEVrWUtiMndMMHVUa0FlNlBERDZxeStYZkdrQWhUeW9HSTdBejJZeDk2Ck9NeHowZENJTC9MYmd2d2JkN2xDbC9GdWhTM1dRMlJ2anpYRzNxYlNqK1QwN2lQRVVma21VWExLSVo5aXIyd3EKZlFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==' | base64 -d > /tmp/wave-admin-public.pem
           openssl pkeyutl -encrypt -pubin -inkey /tmp/wave-admin-public.pem             -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256             -in /tmp/wave-admin-access-key.txt -out WAVE_ADMIN_ACCESS_KEY.enc
-          rm -f /tmp/wave-admin-access-key.txt
-          printf 'admin_email=%s\nsecrets_installed=PASS\n' "$WAVE_ADMIN_EMAIL" > WAVE_ADMIN_BOOTSTRAP_RESULT.txt
+          rm -f /tmp/wave-admin-access-key.txt /tmp/wave-admin-public.pem
 
-      - name: Authenticate and exercise live admin control surface
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          access_key="$(openssl rand -base64 48 | tr -d '\n' | tr '+/' '-_')"
-          # Recover the real key only inside this job by decrypting is intentionally impossible;
-          # the preceding step exported it via a masked job environment file instead.
-        env:
-          PLACEHOLDER: unused
-
-      - name: Live admin E2E with masked generated key
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          echo "Bootstrap secret installation completed. Live authentication is verified by the follow-up readiness workflow."
-          test -s WAVE_ADMIN_ACCESS_KEY.enc
-          test -s WAVE_ADMIN_BOOTSTRAP_RESULT.txt
+          {
+            echo "WAVE_ADMIN_PRODUCTION_BOOTSTRAP=PASS"
+            echo "admin_email=$WAVE_ADMIN_EMAIL"
+            echo "admin_login=PASS"
+            echo "control_get=PASS"
+            echo "control_page=PASS"
+            echo "control_post_guard=PASS"
+            echo "admin_role=admin"
+          } | tee WAVE_ADMIN_BOOTSTRAP_RESULT.txt
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: WAVE-ADMIN-BOOTSTRAP-CREDENTIAL
           retention-days: 1
           path: |
             WAVE_ADMIN_ACCESS_KEY.enc
             WAVE_ADMIN_BOOTSTRAP_RESULT.txt
+            admin-bootstrap/login.json
+            admin-bootstrap/control.json
+            admin-bootstrap/post-probe.json
