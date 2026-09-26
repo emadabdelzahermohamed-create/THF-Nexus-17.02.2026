@@ -38,7 +38,14 @@ def _text_files(root: Path) -> list[Path]:
     files = []
     for path in root.rglob("*"):
         if path.is_file() and path.suffix.lower() in TEXT_SUFFIXES:
-            if not any(part in {"node_modules", ".git", "build", "dist"} for part in path.parts):
+            # Only exclusions *inside* the inspected source root are relevant.
+            # CI intentionally extracts the immutable source below ``build/``;
+            # checking the absolute path therefore discarded every source file.
+            relative_parts = path.relative_to(root).parts
+            if not any(
+                part in {"node_modules", ".git", "build", "dist"}
+                for part in relative_parts
+            ):
                 files.append(path)
     return sorted(files)
 
