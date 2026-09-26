@@ -97,6 +97,9 @@ jobs:
             echo '=== ADMIN LOGIN API ==='
             sed -n '1,900p' app/api/auth/admin-login/route.ts
             echo
+            echo '=== ADMIN SESSION ==='
+            sed -n '1,1200p' lib/admin-session.ts
+            echo
             echo '=== AUTH ROLE SIGNALS ==='
             grep -RInE 'hasWaveRole|role|admin|publisher|control|unauthorized|forbidden' lib/wave-auth.ts app/control app/api/control app/admin-login 2>/dev/null | head -1000 || true
           } > ../WAVE_ADMIN_SOURCE_AUDIT.txt
@@ -109,6 +112,7 @@ jobs:
           auth=Path("lib/wave-auth.ts").read_text()
           login=Path("app/admin-login/page.tsx").read_text()
           login_api=Path("app/api/auth/admin-login/route.ts").read_text()
+          admin_session=Path("lib/admin-session.ts").read_text()
 
           checks={
             "control_has_role_guard": ("hasWaveRole" in p or "hasWaveRole" in api or "hasWaveRole" in auth),
@@ -116,7 +120,9 @@ jobs:
             "control_api_has_GET": ("export async function GET" in api),
             "control_api_has_mutation": any(x in api for x in ("export async function POST","export async function PUT","export async function PATCH","export async function DELETE")),
             "admin_login_exists": ("admin" in login.lower() and "/api/auth/admin-login" in login),
-            "admin_login_api_role_guard": ("WAVE_ADMIN_EMAILS" in login_api and "accessKey" in login_api and "admin" in login_api.lower()),
+            "admin_login_api_role_guard": all(x in login_api for x in ("standaloneAdminConfigured","isAllowedAdminEmail","verifyAdminAccessKey","createAdminSession")),
+            "admin_session_has_allowlist": ("WAVE_ADMIN_EMAILS" in admin_session or "MAWJA_ADMIN_EMAILS" in admin_session),
+            "admin_session_has_secret_key": ("ADMIN_ACCESS_KEY" in admin_session or "ADMIN_KEY" in admin_session),
             "dashboard_has_interactive_controls": any(x in dash for x in ("<button","onClick","onSubmit","<form")),
             "admin_alias_redirects_control": ('redirect("/control")' in Path("app/admin/page.tsx").read_text()),
             "publisher_alias_redirects_control": ('redirect("/control")' in Path("app/publisher/page.tsx").read_text()),
