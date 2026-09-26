@@ -56,6 +56,17 @@ class FitnessBackendOpenApiContractTests(unittest.TestCase):
         self.assertIn("HEALTH_INGESTION_ROUTE_MISSING", report["issues"])
         self.assertIn("OPENAPI_SECURITY_SCHEME_MISSING", report["issues"])
 
+    def test_post_account_delete_action_counts_as_deletion_contract(self):
+        spec = {
+            "openapi": "3.1.0",
+            "paths": {
+                "/api/account/delete": {"post": operation(secured=False)},
+            },
+        }
+        report = analyze_openapi(spec, "d" * 64, "2026-09-27T00:00:00Z")
+        self.assertTrue(report["checks"]["account_deletion_route_present"])
+        self.assertNotIn("ACCOUNT_DELETION_ROUTE_MISSING", report["issues"])
+
     def test_evidence_excludes_schema_bodies(self):
         report = analyze_openapi(GOOD_SPEC, "c" * 64, "2026-09-26T18:00:00Z")
         self.assertNotIn("components", report)

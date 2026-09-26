@@ -74,6 +74,10 @@ def analyze_openapi(
         ),
         "account_deletion_route_present": has_route(
             {"delete"}, r"/(?:account|users?|profile|me)(?:/|$)"
+        )
+        or has_route(
+            {"post"},
+            r"/(?:account|users?|profile|me)/(?:delete|deletion|remove)/?$",
         ),
         "explicit_sync_route_present": has_route(
             {"get", "post", "put", "patch"}, r"sync"
