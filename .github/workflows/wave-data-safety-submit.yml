@@ -117,10 +117,37 @@ jobs:
           if rows[0] != expected_header:
               raise SystemExit("DATA_SAFETY_TEMPLATE_HEADER_CHANGED")
 
+          # Google's public sample URL can lag the validation schema. Add the
+          # current account/deletion rows only when the downloaded template
+          # does not contain them; the Publisher API validates these IDs.
+          current_rows=[
+            ["PSL_SUPPORTED_ACCOUNT_CREATION_METHODS","PSL_ACM_USER_ID_PASSWORD","","MULTIPLE_CHOICE","Which account creation methods does the app support? / Username and password"],
+            ["PSL_SUPPORTED_ACCOUNT_CREATION_METHODS","PSL_ACM_USER_ID_OTHER_AUTH","","MULTIPLE_CHOICE","Which account creation methods does the app support? / Username and other authentication"],
+            ["PSL_SUPPORTED_ACCOUNT_CREATION_METHODS","PSL_ACM_USER_ID_PASSWORD_OTHER_AUTH","","MULTIPLE_CHOICE","Which account creation methods does the app support? / Username, password, and other authentication"],
+            ["PSL_SUPPORTED_ACCOUNT_CREATION_METHODS","PSL_ACM_OAUTH","","MULTIPLE_CHOICE","Which account creation methods does the app support? / OAuth"],
+            ["PSL_SUPPORTED_ACCOUNT_CREATION_METHODS","PSL_ACM_OTHER","","MULTIPLE_CHOICE","Which account creation methods does the app support? / Other"],
+            ["PSL_SUPPORTED_ACCOUNT_CREATION_METHODS","PSL_ACM_NONE","","MULTIPLE_CHOICE","Which account creation methods does the app support? / App does not allow account creation"],
+            ["PSL_ACCOUNT_DELETION_URL","","","MAYBE_REQUIRED","Account deletion URL"],
+            ["PSL_SUPPORT_DATA_DELETION_BY_USER","DATA_DELETION_YES","","SINGLE_CHOICE","Data deletion request supported / Yes"],
+            ["PSL_SUPPORT_DATA_DELETION_BY_USER","DATA_DELETION_NO","","SINGLE_CHOICE","Data deletion request supported / No"],
+            ["PSL_SUPPORT_DATA_DELETION_BY_USER","DATA_DELETION_NO_AUTO_DELETED","","SINGLE_CHOICE","Data deletion request supported / No, auto-deleted"],
+            ["PSL_DATA_DELETION_URL","","","MAYBE_REQUIRED","Delete data URL"],
+            ["PSL_HAS_OUTSIDE_APP_ACCOUNTS","","","OPTIONAL","Can users login with accounts created outside the app?"],
+          ]
+          existing={(r[0],r[1]) for r in rows[1:]}
+          for r in current_rows:
+              if (r[0],r[1]) not in existing:
+                  rows.append(r)
+
+          delete_url="https://wave-mawja.p-my.workers.dev/delete-account"
           answers={
             ("PSL_DATA_COLLECTION_COLLECTS_PERSONAL_DATA",""):"TRUE",
             ("PSL_DATA_COLLECTION_ENCRYPTED_IN_TRANSIT",""):"TRUE",
             ("PSL_DATA_COLLECTION_USER_REQUEST_DELETE",""):"TRUE",
+            ("PSL_SUPPORTED_ACCOUNT_CREATION_METHODS","PSL_ACM_USER_ID_PASSWORD"):"TRUE",
+            ("PSL_SUPPORT_DATA_DELETION_BY_USER","DATA_DELETION_YES"):"TRUE",
+            ("PSL_ACCOUNT_DELETION_URL",""):delete_url,
+            ("PSL_DATA_DELETION_URL",""):delete_url,
 
             ("PSL_DATA_TYPES_PERSONAL","PSL_NAME"):"TRUE",
             ("PSL_DATA_TYPES_PERSONAL","PSL_EMAIL"):"TRUE",
