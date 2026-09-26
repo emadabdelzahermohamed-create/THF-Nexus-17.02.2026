@@ -2,7 +2,7 @@
   "project": "WAVE_MAWJA",
   "package": "com.wave.mawja",
   "branch": "releaseops/wave-rc15-9-admin-rbac-20260918",
-  "updated_at": "2026-09-26T13:10:00Z",
+  "updated_at": "2026-09-26T17:50:02Z",
   "release_candidate": {
     "versionCode": 15302,
     "versionName": "1.0.0-rc15.15-twa-fix",
@@ -36,6 +36,15 @@
       "completed_track_update_http": 400,
       "status": "FAILED_PRECONDITION",
       "committed": false
+    },
+    "production_access_blocker": {
+      "status": "BLOCKED_EXTERNAL",
+      "github_issue": 39,
+      "official_requirement_url": "https://support.google.com/googleplay/android-developer/answer/14151465?hl=en",
+      "likely_requirement": "For a new personal developer account, at least 12 eligible testers must remain opted in to a closed test continuously for 14 days before applying for production access.",
+      "authoritative_confirmation_surface": "Google Play Console Dashboard",
+      "owner_action": "Confirm account gate, attach a real 12+ tester group/list to wave-closed-readiness, publish the closed release for versionCode 15302, maintain continuous opt-in for 14 days, collect genuine feedback, then apply for production access.",
+      "prohibited_shortcuts": "Do not invent, purchase, or automate fake testers."
     }
   },
   "admin": {
@@ -59,7 +68,8 @@
     "play_apk_privacy_inspection_sha": "dd1f692078c13e142e4db23bd916cdffa8e75500",
     "play_apk_sha256": "961e5f60fe8b4694472029b09a34357d6e2004114c9ecfb2a69c831895041dc7",
     "data_safety_server_evidence_run": 36244216547,
-    "data_safety_server_evidence_sha": "2a0dd37f4220930e2c1e5096445e3f6f3ca8abce"
+    "data_safety_server_evidence_sha": "2a0dd37f4220930e2c1e5096445e3f6f3ca8abce",
+    "production_access_blocker_issue": 39
   },
   "current_findings": [
     "Exact Google Play-generated 15302 APK contains only INTERNET and ACCESS_NETWORK_STATE; no Camera, Microphone, Location, AD_ID, AdMob, or Firebase Analytics markers.",
@@ -67,10 +77,12 @@
     "Public privacy and account deletion URLs are live and return HTTP 200.",
     "Internal 15302 is completed; Closed 15302 remains draft; Production remains empty.",
     "No-commit Production gate probe returns HTTP 400 FAILED_PRECONDITION for both draft and completed release attempts, without a more specific API error detail.",
-    "Closed tester Google-group count remains 0."
+    "Closed tester Google-group count remains 0.",
+    "Google's current official rule for new personal developer accounts requires at least 12 testers opted in continuously for 14 days before a production-access application.",
+    "The production gate is now tracked as an explicit external blocker in GitHub issue #39; do not rerun PASS gates or create fake testers."
   ],
-  "next_exact_task": "Continue release readiness after Data Safety: determine remaining Play Console App Content/production-access prerequisites; prepare any automatable reviewer/access evidence; keep Closed 15302 aligned; if the developer account requires closed testing, the remaining human dependency is a real eligible tester group/list and sustained tester participation. Do not repeat Data Safety or APK privacy gates unless the release artifact changes.",
-  "owner_action_required_now": false,
+  "next_exact_task": "Owner: confirm the Play Console production-access gate and enroll a real 12+ eligible tester group/list on wave-closed-readiness for versionCode 15302. Automation: preserve the exact candidate, verify closed-track/tester evidence when it changes, and prepare reviewer/app-access notes; rerun the no-commit production probe only after the prerequisite changes.",
+  "owner_action_required_now": true,
   "automation": {
     "title": "WAVE Release Autopilot",
     "id": "6aac4a57caa08191be7f72bbca651f84",
