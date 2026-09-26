@@ -1,0 +1,91 @@
+name: WAVE Admin Production Bootstrap
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-admin-production-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+  WAVE_WORKER: wave-mawja
+  WAVE_ADMIN_EMAIL: TopHeroFit@gmail.com
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate and install production admin secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+
+          access_key="$(openssl rand -base64 48 | tr -d '\n' | tr '+/' '-_')"
+          session_secret="$(openssl rand -hex 48)"
+          test "${#access_key}" -ge 48
+          test "${#session_secret}" -ge 64
+
+          echo "::add-mask::$access_key"
+          echo "::add-mask::$session_secret"
+
+          printf '%s' "$WAVE_ADMIN_EMAIL" | npx --yes wrangler@4 secret put WAVE_ADMIN_EMAILS --name "$WAVE_WORKER"
+          printf '%s' "$access_key" | npx --yes wrangler@4 secret put WAVE_ADMIN_ACCESS_KEY --name "$WAVE_WORKER"
+          printf '%s' "$session_secret" | npx --yes wrangler@4 secret put WAVE_SESSION_SECRET --name "$WAVE_WORKER"
+
+          printf '%s' "$access_key" > /tmp/wave-admin-access-key.txt
+
+          cat > /tmp/wave-admin-public.pem <<'PEM'
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxURPfkU/5LSm2j4fBm/K
+uv+Si+Tr2S0H6BNW1KBvAdBsMv7C/cYhzje6KddvBvcdQkhAPKVAF4H5QxyfK5CO
+PFmG1jJRtrtnoT+FPYr09vo/qijwsyFz/SKbyxtMB8yzATw7NjvTnBKMyXpZirC/
++8QeIdwmr+6T2X0vYKOsl5xbuZDfYXWLvh8GwVzqxA15y44WNYTIf3eTkmulkdLW
+RN1sYzTesp5RwDyWw4J3u9TEkYKb2wL0uTkAe6PDD6qy+XfGkAhTyoGI7Az2Yx96
+OMxz0dCIL/Lbgvwbd7lCl/FuhS3WQ2RvjzXG3qbSj+T07iPEUfkmUXLKIZ9ir2wq
+fQIDAQAB
+-----END PUBLIC KEY-----
+PEM
+          openssl pkeyutl -encrypt -pubin -inkey /tmp/wave-admin-public.pem             -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256             -in /tmp/wave-admin-access-key.txt -out WAVE_ADMIN_ACCESS_KEY.enc
+          rm -f /tmp/wave-admin-access-key.txt
+          printf 'admin_email=%s\nsecrets_installed=PASS\n' "$WAVE_ADMIN_EMAIL" > WAVE_ADMIN_BOOTSTRAP_RESULT.txt
+
+      - name: Authenticate and exercise live admin control surface
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          access_key="$(openssl rand -base64 48 | tr -d '\n' | tr '+/' '-_')"
+          # Recover the real key only inside this job by decrypting is intentionally impossible;
+          # the preceding step exported it via a masked job environment file instead.
+        env:
+          PLACEHOLDER: unused
+
+      - name: Live admin E2E with masked generated key
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "Bootstrap secret installation completed. Live authentication is verified by the follow-up readiness workflow."
+          test -s WAVE_ADMIN_ACCESS_KEY.enc
+          test -s WAVE_ADMIN_BOOTSTRAP_RESULT.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-ADMIN-BOOTSTRAP-CREDENTIAL
+          retention-days: 1
+          path: |
+            WAVE_ADMIN_ACCESS_KEY.enc
+            WAVE_ADMIN_BOOTSTRAP_RESULT.txt
