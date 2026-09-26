@@ -1,0 +1,64 @@
+{
+  "project": "WAVE_MAWJA",
+  "package": "com.wave.mawja",
+  "branch": "releaseops/wave-rc15-9-admin-rbac-20260918",
+  "updated_at": "2026-09-26T12:56:00Z",
+  "release_candidate": {
+    "versionCode": 15302,
+    "versionName": "1.0.0-rc15.15-twa-fix",
+    "internal": "completed",
+    "closed_track": "wave-closed-readiness",
+    "closed_status": "draft",
+    "production": "empty"
+  },
+  "web": {
+    "url": "https://wave-mawja.p-my.workers.dev",
+    "cloudflare_worker": "wave-mawja",
+    "worker_version": "c215caf1-b59c-4be1-851e-0d5e75eca053",
+    "privacy": "PASS /privacy HTTP 200",
+    "terms": "PASS /terms HTTP 200",
+    "delete_account": "PASS /delete-account HTTP 200",
+    "assetlinks": "PASS matchingStatement=true"
+  },
+  "play": {
+    "support_email": "TopHeroFit@gmail.com",
+    "listing": "PASS committed",
+    "generated_apks": "PASS for 15302",
+    "data_safety_api": "AVAILABLE",
+    "closed_tester_google_groups": 0
+  },
+  "admin": {
+    "email": "TopHeroFit@gmail.com",
+    "source_audit": "PASS",
+    "production_login": "PASS",
+    "control_get": "PASS",
+    "control_mutation_guard": "PASS",
+    "key_rotation": "PASS; old chat-exposed key invalidated; plaintext key not stored in Git"
+  },
+  "evidence": {
+    "release_readiness_run": 36243068952,
+    "release_readiness_sha": "e7357aaee4478d96b6fca06384f6fef3b5ed19c7",
+    "deletion_deploy_run": 36243240163,
+    "deletion_deploy_sha": "2a4b412d584e2a3e29f5ac70adcb9cbe2c63210d",
+    "admin_key_rotation_run": 36239304270,
+    "admin_key_rotation_sha": "a431df2283f05be03b200ee6460bb75da8966183",
+    "data_safety_source_scan_run": 36243290210,
+    "data_safety_source_scan_sha": "89790af1765b941eedbb85782fc31e76de06aaa6",
+    "play_apk_privacy_inspection_run": 36243489417,
+    "play_apk_privacy_inspection_sha": "759dd83a39d693d5c2ffcbb25fe0693f4b7a60a9"
+  },
+  "current_findings": [
+    "Source-wide privacy scan found stale-or-real AdMob markers plus location/camera/microphone permissions; this conflicts with prior release assumptions.",
+    "Do not submit Data Safety until the exact Play-generated 15302 APK is inspected.",
+    "Public account deletion URL is now live.",
+    "Internal 15302 is completed; Closed 15302 remains draft; Production remains empty."
+  ],
+  "next_exact_task": "Wait for/run WAVE Play APK Privacy Inspect 36243489417; inspect exact Play-generated 15302 manifest/SDK markers. If source scan is false positive, repair source evidence gate and generate/submit accurate Data Safety CSV. If actual 15302 contains unnecessary permissions/ads SDK, remove them, build/upload next version and re-run privacy gates before Data Safety.",
+  "owner_action_required_now": false,
+  "automation": {
+    "title": "WAVE Release Autopilot",
+    "id": "6aac4a57caa08191be7f72bbca651f84",
+    "schedule": "hourly at :45 Africa/Cairo",
+    "enabled": true
+  }
+}
