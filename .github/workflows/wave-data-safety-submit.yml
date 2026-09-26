@@ -1,0 +1,245 @@
+name: WAVE Data Safety Submit
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-data-safety-submit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+  WAVE_VERSION_CODE: '15302'
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+  TEMPLATE_URL: https://storage.googleapis.com/support-kms-prod/b5v9It2EgwrgyY1gPFVB3jPUypc5lL3oNg2G
+
+jobs:
+  submit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate Google Play
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Verify live privacy and deletion surfaces
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p data-safety
+          for path in /privacy /delete-account; do
+            code="$(curl -L -sS -o "data-safety${path//\//-}.html" -w '%{http_code}' "$WAVE_URL$path")"
+            echo "LIVE_${path//\//_}_HTTP=$code"
+            test "$code" = 200
+          done
+
+      - name: Re-verify exact Play 15302 privacy surface
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          meta_url="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/generatedApks/$WAVE_VERSION_CODE"
+          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$meta_url" > data-safety/generated.json
+          python3 - <<'PY'
+          import json,pathlib
+          d=json.load(open("data-safety/generated.json"))
+          did=""
+          for g in d.get("generatedApks") or []:
+              u=g.get("generatedUniversalApk") or {}
+              if u.get("downloadId"):
+                  did=u["downloadId"]; break
+          if not did:
+              raise SystemExit("NO_UNIVERSAL_APK_FOR_PRIVACY_GATE")
+          pathlib.Path("data-safety/download-id.txt").write_text(did)
+          PY
+          did="$(cat data-safety/download-id.txt)"
+          curl -L -sS -f -H "Authorization: Bearer $ACCESS_TOKEN"             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/generatedApks/$WAVE_VERSION_CODE/downloads/$did:download?alt=media"             -o data-safety/play-15302.apk
+          unzip -tq data-safety/play-15302.apk >/dev/null
+          AAPT="$(command -v aapt || find "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/build-tools" -type f -name aapt 2>/dev/null | sort -V | tail -1)"
+          test -x "$AAPT"
+          "$AAPT" dump badging data-safety/play-15302.apk > data-safety/badging.txt
+          "$AAPT" dump permissions data-safety/play-15302.apk > data-safety/permissions.txt
+          grep -q "package: name='com.wave.mawja'" data-safety/badging.txt
+          grep -q "versionCode='15302'" data-safety/badging.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,zipfile
+          p=Path("data-safety/permissions.txt").read_text(errors="ignore")
+          perms=set(re.findall(r"android\.permission\.[A-Z0-9_]+",p))
+          assert perms <= {"android.permission.INTERNET","android.permission.ACCESS_NETWORK_STATE"}, perms
+          assert "android.permission.AD_ID" not in perms
+          assert "android.permission.CAMERA" not in perms
+          assert "android.permission.RECORD_AUDIO" not in perms
+          assert "android.permission.ACCESS_FINE_LOCATION" not in perms
+          assert "android.permission.ACCESS_COARSE_LOCATION" not in perms
+          with zipfile.ZipFile("data-safety/play-15302.apk") as z:
+              blob="\n".join(z.namelist()).lower()
+              for n in [x for x in z.namelist() if x.startswith("classes") and x.endswith(".dex")]:
+                  blob += z.read(n).decode("latin1","ignore").lower()
+          forbidden=("com/google/android/gms/ads","com.google.android.gms.ads","com/google/firebase/analytics","com.google.firebase.analytics")
+          assert not any(x in blob for x in forbidden)
+          print("EXACT_PLAY_PRIVACY_GATE=PASS")
+          PY
+          sha256sum data-safety/play-15302.apk | tee data-safety/play-15302.apk.sha256
+
+      - name: Generate fail-closed Data Safety CSV
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl -fsSL --retry 3 "$TEMPLATE_URL" -o data-safety/template.csv
+          sha256sum data-safety/template.csv | tee data-safety/template.sha256
+          python3 - <<'PY'
+          import csv,io,json,pathlib
+          src=pathlib.Path("data-safety/template.csv").read_text(encoding="utf-8-sig")
+          rows=list(csv.reader(io.StringIO(src)))
+          expected_header=[
+              "Question ID (machine readable)",
+              "Response ID (machine readable)",
+              "Response value",
+              "Answer requirement",
+              "Human-friendly question label",
+          ]
+          if rows[0] != expected_header:
+              raise SystemExit("DATA_SAFETY_TEMPLATE_HEADER_CHANGED")
+
+          answers={
+            ("PSL_DATA_COLLECTION_COLLECTS_PERSONAL_DATA",""):"TRUE",
+            ("PSL_DATA_COLLECTION_ENCRYPTED_IN_TRANSIT",""):"TRUE",
+            ("PSL_DATA_COLLECTION_USER_REQUEST_DELETE",""):"TRUE",
+
+            ("PSL_DATA_TYPES_PERSONAL","PSL_NAME"):"TRUE",
+            ("PSL_DATA_TYPES_PERSONAL","PSL_EMAIL"):"TRUE",
+            ("PSL_DATA_TYPES_PERSONAL","PSL_USER_ACCOUNT"):"TRUE",
+            ("PSL_DATA_TYPES_PERSONAL","PSL_OTHER_PERSONAL"):"TRUE",
+            ("PSL_DATA_TYPES_APP_ACTIVITY","PSL_USER_INTERACTION"):"TRUE",
+          }
+
+          def usage(dtype, part):
+              return f"PSL_DATA_USAGE_RESPONSES:{dtype}:{part}"
+
+          specs={
+            "PSL_NAME": {
+              "optional":True,
+              "purposes":["PSL_APP_FUNCTIONALITY","PSL_ACCOUNT_MANAGEMENT"],
+            },
+            "PSL_EMAIL": {
+              "optional":True,
+              "purposes":["PSL_APP_FUNCTIONALITY","PSL_ACCOUNT_MANAGEMENT","PSL_FRAUD_PREVENTION_SECURITY"],
+            },
+            "PSL_USER_ACCOUNT": {
+              "optional":True,
+              "purposes":["PSL_APP_FUNCTIONALITY","PSL_ACCOUNT_MANAGEMENT","PSL_FRAUD_PREVENTION_SECURITY"],
+            },
+            "PSL_OTHER_PERSONAL": {
+              "optional":True,
+              "purposes":["PSL_APP_FUNCTIONALITY","PSL_PERSONALIZATION"],
+            },
+            "PSL_USER_INTERACTION": {
+              "optional":True,
+              "purposes":["PSL_APP_FUNCTIONALITY","PSL_ANALYTICS","PSL_ADVERTISING","PSL_PERSONALIZATION"],
+            },
+          }
+          for dtype,s in specs.items():
+              answers[(usage(dtype,"PSL_DATA_USAGE_COLLECTION_AND_SHARING"),"PSL_DATA_USAGE_ONLY_COLLECTED")]="TRUE"
+              answers[(usage(dtype,"PSL_DATA_USAGE_EPHEMERAL"),"")]="FALSE"
+              choice="PSL_DATA_USAGE_USER_CONTROL_OPTIONAL" if s["optional"] else "PSL_DATA_USAGE_USER_CONTROL_REQUIRED"
+              answers[(usage(dtype,"DATA_USAGE_USER_CONTROL"),choice)]="TRUE"
+              for purpose in s["purposes"]:
+                  answers[(usage(dtype,"DATA_USAGE_COLLECTION_PURPOSE"),purpose)]="TRUE"
+
+          seen=set()
+          out=[rows[0]]
+          for row in rows[1:]:
+              if len(row)!=5:
+                  raise SystemExit("DATA_SAFETY_TEMPLATE_BAD_ROW")
+              key=(row[0],row[1])
+              value=answers.get(key,"")
+              if key in answers:
+                  seen.add(key)
+              out.append([row[0],row[1],value,row[3],row[4]])
+          missing=set(answers)-seen
+          if missing:
+              raise SystemExit("DATA_SAFETY_SCHEMA_IDS_MISSING="+repr(sorted(missing)))
+
+          # Fail if a top-level REQUIRED question is left blank. Conditional
+          # per-data-type rows are validated by Google's endpoint below.
+          blank_required=[]
+          for row in out[1:]:
+              if row[3]=="REQUIRED" and not row[2] and not row[0].startswith("PSL_DATA_USAGE_RESPONSES:"):
+                  blank_required.append((row[0],row[1],row[4]))
+          if blank_required:
+              raise SystemExit("DATA_SAFETY_UNANSWERED_REQUIRED="+repr(blank_required[:20]))
+
+          buf=io.StringIO()
+          csv.writer(buf,lineterminator="\r\n").writerows(out)
+          text=buf.getvalue()
+          pathlib.Path("data-safety/wave-data-safety.csv").write_text(text,encoding="utf-8",newline="")
+          pathlib.Path("data-safety/declaration.json").write_text(json.dumps({
+              "data_types":["Name","Email address","Personal identifiers","Other personal info (locale/language preference)","Page views and taps / account interactions"],
+              "sharing":"No declared sharing; infrastructure processors operate on behalf of WAVE.",
+              "encrypted_in_transit":True,
+              "deletion_request_supported":True,
+              "android_release_reference":"Play-generated com.wave.mawja versionCode 15302",
+          },indent=2))
+          print("DATA_SAFETY_TEMPLATE_ROWS="+str(len(rows)-1))
+          print("DATA_SAFETY_ANSWER_KEYS="+str(len(answers)))
+          print("DATA_SAFETY_CSV_GENERATION=PASS")
+          PY
+          sha256sum data-safety/wave-data-safety.csv | tee data-safety/wave-data-safety.csv.sha256
+
+      - name: Submit Data Safety declaration to Google Play
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import json,pathlib
+          csv=pathlib.Path("data-safety/wave-data-safety.csv").read_text(encoding="utf-8")
+          pathlib.Path("data-safety/request.json").write_text(json.dumps({"safetyLabels":csv}))
+          PY
+          url="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/dataSafety"
+          code="$(curl -sS -o data-safety/response.json -w '%{http_code}' -X POST             -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json'             --data-binary @data-safety/request.json "$url")"
+          echo "DATA_SAFETY_POST_HTTP=$code"
+          case "$code" in
+            200|204)
+              echo "WAVE_DATA_SAFETY_SUBMIT=PASS"
+              ;;
+            *)
+              echo "WAVE_DATA_SAFETY_SUBMIT=FAIL"
+              cat data-safety/response.json
+              exit 41
+              ;;
+          esac
+          printf 'status=PASS\npackage=%s\nversionCode=%s\nhttp=%s\nprivacy=%s/privacy\ndeleteAccount=%s/delete-account\n'             "$WAVE_PACKAGE" "$WAVE_VERSION_CODE" "$code" "$WAVE_URL" "$WAVE_URL"             > WAVE_DATA_SAFETY_SUBMIT_RESULT.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-DATA-SAFETY-SUBMIT-EVIDENCE
+          retention-days: 30
+          path: |
+            WAVE_DATA_SAFETY_SUBMIT_RESULT.txt
+            data-safety/declaration.json
+            data-safety/template.sha256
+            data-safety/wave-data-safety.csv
+            data-safety/wave-data-safety.csv.sha256
+            data-safety/play-15302.apk.sha256
+            data-safety/permissions.txt
+            data-safety/badging.txt
+            data-safety/response.json
