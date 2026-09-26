@@ -111,7 +111,7 @@ jobs:
           import json, os
           tracks=json.load(open("readiness/tracks.json")).get("tracks") or []
           details=json.load(open("readiness/details.json"))
-          listing=json.load(open("readiness/listing-ar.json"))
+          listing=json.load(open("readiness/listing_ar.json"))
           testers=json.load(open("readiness/testers-closed.json"))
           gen=json.load(open("readiness/generated-apks.json"))
           disc=json.load(open("readiness/discovery.json"))
