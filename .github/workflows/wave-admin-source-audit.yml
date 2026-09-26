@@ -85,11 +85,17 @@ jobs:
             echo '=== CONTROL PAGE ==='
             sed -n '1,900p' app/control/page.tsx
             echo
+            echo '=== CONTROL DASHBOARD COMPONENT ==='
+            sed -n '1,1800p' components/control-dashboard.tsx
+            echo
             echo '=== CONTROL API ==='
-            sed -n '1,1200p' app/api/control/route.ts
+            sed -n '1,1800p' app/api/control/route.ts
             echo
             echo '=== ADMIN LOGIN ==='
             sed -n '1,700p' app/admin-login/page.tsx
+            echo
+            echo '=== ADMIN LOGIN API ==='
+            sed -n '1,900p' app/api/auth/admin-login/route.ts
             echo
             echo '=== AUTH ROLE SIGNALS ==='
             grep -RInE 'hasWaveRole|role|admin|publisher|control|unauthorized|forbidden' lib/wave-auth.ts app/control app/api/control app/admin-login 2>/dev/null | head -1000 || true
@@ -98,16 +104,20 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p=Path("app/control/page.tsx").read_text()
+          dash=Path("components/control-dashboard.tsx").read_text()
           api=Path("app/api/control/route.ts").read_text()
           auth=Path("lib/wave-auth.ts").read_text()
           login=Path("app/admin-login/page.tsx").read_text()
+          login_api=Path("app/api/auth/admin-login/route.ts").read_text()
 
           checks={
             "control_has_role_guard": ("hasWaveRole" in p or "hasWaveRole" in api or "hasWaveRole" in auth),
-            "control_calls_api": ("/api/control" in p),
+            "control_dashboard_calls_api": ("/api/control" in dash),
             "control_api_has_GET": ("export async function GET" in api),
             "control_api_has_mutation": any(x in api for x in ("export async function POST","export async function PUT","export async function PATCH","export async function DELETE")),
-            "admin_login_exists": ("admin" in login.lower() and ("login" in login.lower() or "/api/auth/login" in login)),
+            "admin_login_exists": ("admin" in login.lower() and "/api/auth/admin-login" in login),
+            "admin_login_api_role_guard": ("WAVE_ADMIN_EMAILS" in login_api and "accessKey" in login_api and "admin" in login_api.lower()),
+            "dashboard_has_interactive_controls": any(x in dash for x in ("<button","onClick","onSubmit","<form")),
             "admin_alias_redirects_control": ('redirect("/control")' in Path("app/admin/page.tsx").read_text()),
             "publisher_alias_redirects_control": ('redirect("/control")' in Path("app/publisher/page.tsx").read_text()),
           }
