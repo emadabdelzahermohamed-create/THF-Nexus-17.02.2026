@@ -1,0 +1,97 @@
+name: WAVE Admin Live Readiness
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-admin-live-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Verify live admin authentication and guarded control surface
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p admin-live
+
+          code="$(curl -sS -o admin-live/admin-login.html -w '%{http_code}' "$WAVE_URL/admin-login")"
+          echo "ADMIN_LOGIN_PAGE_HTTP=$code"
+          test "$code" = 200
+          grep -q 'دخول لوحة التحكم' admin-live/admin-login.html
+          grep -q 'WAVE CONTROL' admin-live/admin-login.html
+
+          bad='{"email":"wave-admin-readiness@example.invalid","accessKey":"definitely-wrong-readiness-key-000000000000000000000","displayName":"WAVE Admin Readiness"}'
+          auth_code="$(curl -sS -o admin-live/bad-login.json -w '%{http_code}' -X POST             -H 'content-type: application/json' --data-binary "$bad"             "$WAVE_URL/api/auth/admin-login")"
+          echo "ADMIN_BAD_LOGIN_HTTP=$auth_code"
+          if [ "$auth_code" = 503 ]; then
+            echo "ADMIN_CONFIGURED=NO"
+            cat admin-live/bad-login.json
+            exit 41
+          fi
+          test "$auth_code" = 401
+          echo "ADMIN_CONFIGURED=YES"
+
+          api_code="$(curl -sS -o admin-live/control-api.json -w '%{http_code}' "$WAVE_URL/api/control")"
+          echo "CONTROL_API_UNAUTH_HTTP=$api_code"
+          case "$api_code" in 401|403) ;; *) cat admin-live/control-api.json; exit 42;; esac
+
+          control_code="$(curl -sS -D admin-live/control.headers -o admin-live/control.out -w '%{http_code}' "$WAVE_URL/control")"
+          echo "CONTROL_NO_SESSION_HTTP=$control_code"
+          case "$control_code" in
+            301|302|303|307|308)
+              grep -Eiq '^location:.*admin-login' admin-live/control.headers
+              ;;
+            200)
+              grep -Eq 'دخول لوحة التحكم|admin-login|WAVE CONTROL' admin-live/control.out
+              ;;
+            *)
+              exit 43
+              ;;
+          esac
+
+          for path in admin publisher; do
+            code="$(curl -sS -D "admin-live/$path.headers" -o "admin-live/$path.out" -w '%{http_code}' "$WAVE_URL/$path")"
+            echo "ALIAS_$path HTTP=$code"
+            case "$code" in
+              301|302|303|307|308)
+                grep -Eiq '^location:.*control' "admin-live/$path.headers"
+                ;;
+              200)
+                grep -Eq 'دخول لوحة التحكم|admin-login|WAVE CONTROL|مركز الإدارة' "admin-live/$path.out"
+                ;;
+              *)
+                exit 44
+                ;;
+            esac
+          done
+
+          {
+            echo "WAVE_ADMIN_LIVE_READINESS=PASS"
+            echo "admin_login_page=PASS"
+            echo "admin_secrets_configured=PASS"
+            echo "bad_credentials_denied=PASS"
+            echo "control_api_guard=PASS"
+            echo "control_page_guard=PASS"
+            echo "admin_alias=PASS"
+            echo "publisher_alias=PASS"
+          } | tee WAVE_ADMIN_LIVE_READINESS_RESULT.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-ADMIN-LIVE-READINESS
+          retention-days: 30
+          path: |
+            WAVE_ADMIN_LIVE_READINESS_RESULT.txt
+            admin-live/*
