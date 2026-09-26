@@ -1,0 +1,140 @@
+name: WAVE Data Safety Evidence
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-data-safety-evidence.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate source access
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Reconstruct current WAVE source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly']); c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120)
+          r.raise_for_status(); open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src && unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q; git add .; git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          cp -a ../ReleaseOps/WAVE/RC15_11/overlay/. .
+          cp -a ../ReleaseOps/WAVE/RC15_13/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_14/apply_rc15_14_account_resilience.py
+          cp -a ../ReleaseOps/WAVE/RC15_16/overlay/. .
+          cp -a ../ReleaseOps/WAVE/RC15_18/overlay/. .
+
+      - name: Build evidence from shipped implementation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re
+
+          def read(p):
+              q=Path(p)
+              return q.read_text(errors='ignore') if q.exists() else ""
+
+          all_files=[]
+          for root in ("app","components","lib","android"):
+              p=Path(root)
+              if p.exists():
+                  all_files += [x for x in p.rglob("*") if x.is_file() and x.suffix.lower() in {".ts",".tsx",".js",".jsx",".json",".xml",".kt",".java",".gradle",".properties"}]
+          corpus="\n".join(x.read_text(errors='ignore') for x in all_files)
+
+          manifest_candidates=list(Path(".").rglob("AndroidManifest.xml"))
+          manifest="\n".join(x.read_text(errors='ignore') for x in manifest_candidates)
+          perms=sorted(set(re.findall(r'android.permission.[A-Z0-9_]+', manifest)))
+
+          package_json=read("package.json")
+          lower=(corpus+"\n"+package_json).lower()
+
+          evidence={
+            "android_permissions":perms,
+            "has_email_account_data": all(s in corpus for s in ("email","user_accounts")),
+            "has_display_name": "display_name" in corpus or "displayName" in corpus,
+            "has_locale": "locale" in corpus,
+            "has_library_or_favorites": any(s in lower for s in ("favorite","library")),
+            "has_playback_progress": any(s in lower for s in ("progress","duration")) and any(s in lower for s in ("watch","playback","library")),
+            "has_account_delete_handler": ("DELETE" in read("app/api/account/route.ts") or "export async function DELETE" in corpus),
+            "has_public_delete_account_page": Path("app/delete-account/page.tsx").exists(),
+            "has_admob_sdk": any(s in lower for s in ("com.google.android.gms.ads","google-mobile-ads","admob")),
+            "has_firebase_analytics_sdk": any(s in lower for s in ("firebase-analytics","com.google.firebase.analytics")),
+            "has_sentry_sdk": "@sentry/" in lower or "sentry-android" in lower,
+            "has_location_permission": any("LOCATION" in p for p in perms),
+            "has_camera_permission": any("CAMERA" in p for p in perms),
+            "has_microphone_permission": any("RECORD_AUDIO" in p for p in perms),
+            "has_contacts_permission": any("CONTACT" in p for p in perms),
+            "has_ad_id_permission": any("AD_ID" in p for p in perms),
+            "has_youtube_nocookie_embed": "youtube-nocookie.com" in lower,
+            "password_hash_pbkdf2": "pbkdf2" in lower,
+            "https_live_origin_referenced": "https://wave-mawja.p-my.workers.dev" in corpus,
+          }
+
+          expected_perms={"android.permission.INTERNET","android.permission.ACCESS_NETWORK_STATE"}
+          unexpected=[p for p in perms if p not in expected_perms]
+          evidence["unexpected_android_permissions"]=unexpected
+          evidence["source_gate_pass"]=(
+              evidence["has_email_account_data"]
+              and evidence["has_account_delete_handler"]
+              and evidence["has_public_delete_account_page"]
+              and not evidence["has_admob_sdk"]
+              and not evidence["has_firebase_analytics_sdk"]
+              and not evidence["has_location_permission"]
+              and not evidence["has_camera_permission"]
+              and not evidence["has_microphone_permission"]
+              and not evidence["has_contacts_permission"]
+              and not evidence["has_ad_id_permission"]
+              and not unexpected
+          )
+          Path("../WAVE_DATA_SAFETY_EVIDENCE.json").write_text(json.dumps(evidence,indent=2))
+          print(json.dumps(evidence,indent=2))
+          if not evidence["source_gate_pass"]:
+              raise SystemExit("WAVE_DATA_SAFETY_SOURCE_GATE=FAIL")
+          print("WAVE_DATA_SAFETY_SOURCE_GATE=PASS")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-DATA-SAFETY-EVIDENCE
+          retention-days: 30
+          path: WAVE_DATA_SAFETY_EVIDENCE.json
