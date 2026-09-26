@@ -72,6 +72,7 @@ jobs:
             --expect PROGRESS
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: THF-FITNESS-BACKEND-RELEASE-CONTRACT-V1
           path: |
