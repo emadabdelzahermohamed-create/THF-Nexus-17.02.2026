@@ -103,7 +103,7 @@ jobs:
           echo "GENERATED_APKS_HTTP=$gen_code"
           if [ "$gen_code" != 200 ]; then cat readiness/generated-apks.json || true; exit 35; fi
 
-          disc_code="$(curl -sS -o readiness/discovery.json -w '%{http_code}' "https://androidpublisher.googleapis.com/$discovery/rest?version=v3")"
+          disc_code="$(curl -sS -o readiness/discovery.json -w '%{http_code}' 'https://androidpublisher.googleapis.com/$discovery/rest?version=v3')"
           echo "DISCOVERY_HTTP=$disc_code"
           if [ "$disc_code" != 200 ]; then cat readiness/discovery.json || true; exit 36; fi
 
