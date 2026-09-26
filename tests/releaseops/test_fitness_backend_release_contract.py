@@ -50,6 +50,17 @@ class FitnessBackendReleaseContractTests(unittest.TestCase):
             report = inventory(root, "c" * 64, "2026-09-26T17:45:00Z")
         self.assertNotIn("do-not-export", str(report))
 
+    def test_source_root_below_build_directory_is_not_excluded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "build" / "fitness"
+            path = root / "backend" / "index.ts"
+            path.parent.mkdir(parents=True)
+            path.write_text(GOOD_SOURCE, encoding="utf-8")
+            report = inventory(root, "d" * 64, "2026-09-26T17:45:00Z")
+        self.assertEqual(report["result"], "PROGRESS")
+        self.assertEqual(report["source"]["file_count"], 1)
+        self.assertEqual(report["source"]["backend_file_count"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
