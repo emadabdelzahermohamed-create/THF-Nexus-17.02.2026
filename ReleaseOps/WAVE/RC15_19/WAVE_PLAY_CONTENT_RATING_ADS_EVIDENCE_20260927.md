@@ -1,6 +1,6 @@
 # WAVE RC15.19 — Google Play Content Rating and Ads Evidence
 
-Recorded UTC: 2026-09-26T23:00:00Z  
+Recorded UTC: 2026-09-26T22:49:00Z  
 Product: WAVE_MAWJA  
 Package: `com.wave.mawja`  
 Release reference: versionCode `15302`
