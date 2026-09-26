@@ -8,6 +8,7 @@ on:
       - 'ReleaseOps/WAVE/RC15_12/**'
       - 'ReleaseOps/WAVE/RC15_13/overlay/**'
       - 'ReleaseOps/WAVE/RC15_14/**'
+      - 'ReleaseOps/WAVE/RC15_16/**'
 permissions:
   contents: read
   id-token: write
@@ -58,6 +59,7 @@ jobs:
           cp -a ../ReleaseOps/WAVE/RC15_13/overlay/. .
           python3 ../ReleaseOps/WAVE/RC15_14/apply_rc15_14_account_resilience.py
           python3 ../ReleaseOps/WAVE/RC15_14/test_rc15_14_account_resilience.py
+          cp -a ../ReleaseOps/WAVE/RC15_16/overlay/. .
           test -f app/privacy/page.tsx
           test -f app/terms/page.tsx
           test -f app/admin-login/page.tsx
@@ -143,6 +145,18 @@ jobs:
             grep -q 'WAVE MAWJA' /tmp/wave-legal.html
             echo "WAVE_LEGAL_SMOKE $path HTTP=$code"
           done
+          asset_code="$(curl -L -sS -o /tmp/wave-assetlinks.json -w '%{http_code}' "$WAVE_LIVE_URL/.well-known/assetlinks.json")"
+          test "$asset_code" = 200
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/wave-assetlinks.json'))
+          assert isinstance(d,list) and d
+          t=d[0].get('target') or {}
+          assert t.get('package_name')=='com.wave.mawja'
+          fps=t.get('sha256_cert_fingerprints') or []
+          assert 'B7:78:50:F0:30:AA:7D:C9:FF:45:9F:FD:60:BA:50:0A:8C:C6:5A:89:98:34:91:2C:E3:C2:28:E6:0A:47:36:A0' in fps
+          PY
+          echo "WAVE_ASSETLINKS_SMOKE=PASS HTTP=$asset_code"
           bash ReleaseOps/WAVE/RC15_12/smoke_control_aliases.sh
       - name: Save deploy evidence
         if: always()
