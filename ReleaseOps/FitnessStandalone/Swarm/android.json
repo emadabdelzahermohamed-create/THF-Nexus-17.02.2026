@@ -5,74 +5,113 @@
   "result": "BLOCKED",
   "active_task": "ANDROID_OFFLINE_STAGE16A_AND_EXACT_CANDIDATE_CLOSURE",
   "acceptance": [
-    "Stage16A assets available on first install where required",
+    "Stage16A assets and a real offline renderer available on first install",
     "Exact APK/AAB candidate integrity",
     "targetSdk 36/package/signing/DAL verified",
+    "Health Connect permissions backed by real implementation",
     "Physical-device gates kept fail-closed until real evidence"
   ],
   "completed_items": [
-    "Downloaded and digest-verified immutable GitHub Actions artifact 10581347670 from successful run 35434624698/job 105875090547.",
-    "Bound the audit to artifact SHA-256 6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2 and signed AAB SHA-256 80e94754a9dd710f08d61fb735d8ea381e9cb4ae4a14fc85ebc178a4eb7328a2.",
-    "Verified the AAB contains a release signature block and no legacy humanoid asset.",
-    "Added a fail-closed exact-candidate validator, four regression tests, immutable evidence JSON, and a GitHub Actions evidence workflow.",
-    "Parsed the AAB aapt2 XmlNode manifest and proved package com.topherofit.thf.pulse, versionCode 50001, compileSdk/targetSdk 36, non-debuggable release, cleartext disabled, RTL enabled, backup disabled, and exported MainActivity.",
-    "Classified versionCode 50001 as Internal-only and ineligible for promotion because its AAB has one asset (offline.html), no Stage16A GLB, no verified HTTPS autoVerify DAL filter, and no Health Connect permissions."
+    "Downloaded the canonical Drive source read-only and independently verified SHA-256 2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74.",
+    "Proved the canonical source already contains static/assets/avatar/thf_mpfb_stage16a_ual12_animated.glb (26,296,432 bytes) at SHA-256 4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f.",
+    "Added a fail-closed immutable-source packaging auditor and three regression tests; GitHub Actions source-packaging gate passed.",
+    "Proved the Android source has package com.topherofit.thf.pulse and compileSdk/targetSdk 36, but remains versionCode 50001 with one placeholder asset and no packaged Stage16A/offline runtime/DAL/Health Connect.",
+    "Hardened the exact-candidate validator so a GLB copied beside inert HTML can no longer pass: it now requires non-placeholder offline HTML, runtime assets, a Stage16A reference, a reachable local entrypoint, and Health Connect implementation markers.",
+    "Candidate-integrity regression suite and exact signed versionCode 50001 fail-closed audit passed on GitHub Actions.",
+    "Kept signed versionCode 50001 on Play Internal only; no promotion or competing upload was performed."
   ],
   "checkpoint": {
-    "implementation_sha": "ddc4b2bbf2d9532f3970cb7875819f6ff657d7c6",
     "source_commit_sha": "89cd7d4c1abd3e258c701dd5660f79be8cc19f53",
-    "github_run_id": 35434624698,
-    "github_job_id": 105875090547,
-    "artifact_id": 10581347670,
-    "validator_commit_sha": "ebb17cd7bc6e078222afdd5dadcb7ebf9fcac856",
-    "validator_workflow_run_id": 36260672387,
-    "validator_workflow_job_id": 108455732879,
-    "validator_evidence_artifact_id": 10911634611,
-    "validator_evidence_artifact_sha256": "16b1e50f7295d1e8b614a1b66c874d4008ddb231195399fe551a1a19644e4100",
-    "version_code": 50001,
-    "track": "internal",
-    "package": "com.topherofit.thf.pulse",
-    "compile_sdk": 36,
-    "target_sdk": 36,
-    "min_sdk": 26,
-    "release_debuggable": false,
-    "cleartext_enabled": false,
-    "rtl_enabled": true,
-    "backup_enabled": false,
-    "main_activity_exported": true,
-    "digital_asset_links_hosts": [],
-    "health_connect_permissions": [],
-    "tests": "4/4 PASS",
-    "evidence": "ReleaseOps/FitnessStandalone/evidence/ANDROID_CANDIDATE_INTEGRITY_20260926.json"
+    "source_drive_file_id": "1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-",
+    "source_size_bytes": 20086054,
+    "source_sha256": "2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74",
+    "canonical_stage16a_path": "static/assets/avatar/thf_mpfb_stage16a_ual12_animated.glb",
+    "canonical_stage16a_size_bytes": 26296432,
+    "canonical_stage16a_sha256": "4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f",
+    "source_auditor_commit_sha": "c6df5d8711c178e9b7c19407daee6cb576b81d9a",
+    "source_audit_workflow_run_id": 36277150737,
+    "source_audit_workflow_job_id": 108502007414,
+    "source_audit_artifact_id": 10916973510,
+    "source_audit_artifact_sha256": "456c0fe39b166f43069e4eb1f50a07079a402f44188b06c8ca1907154f3c95ba",
+    "validator_commit_sha": "8d6e18781943ac303e93241e6985b2781c26b07a",
+    "validator_workflow_run_id": 36277267011,
+    "validator_workflow_job_id": 108502323178,
+    "validator_evidence_artifact_id": 10916754084,
+    "validator_evidence_artifact_sha256": "102405a1b40ec7080fdfaa0b4e6f9bcfe8279f09ba8b4ea6e0488a182fda1b46",
+    "existing_internal_candidate": {
+      "github_run_id": 35434624698,
+      "github_job_id": 105875090547,
+      "artifact_id": 10581347670,
+      "artifact_sha256": "6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2",
+      "aab_sha256": "80e94754a9dd710f08d61fb735d8ea381e9cb4ae4a14fc85ebc178a4eb7328a2",
+      "version_code": 50001,
+      "track": "internal",
+      "package": "com.topherofit.thf.pulse",
+      "compile_sdk": 36,
+      "target_sdk": 36,
+      "min_sdk": 26,
+      "release_debuggable": false,
+      "cleartext_enabled": false,
+      "rtl_enabled": true,
+      "backup_enabled": false,
+      "main_activity_exported": true,
+      "digital_asset_links_hosts": [],
+      "health_connect_permissions": [],
+      "health_connect_implementation_present": false,
+      "offline_entrypoint_reachable": false,
+      "offline_runtime_assets": [],
+      "stage16a_assets": []
+    },
+    "tests": {
+      "local_combined_android_auditors": "7/7 PASS",
+      "source_packaging_workflow": "PASS",
+      "exact_candidate_integrity_workflow": "PASS"
+    }
   },
   "blocker": {
-    "code": "FIRST_INSTALL_STAGE16A_ASSET_MISSING",
-    "detail": "The exact signed Internal AAB is 26,561 bytes with 15 files and contains only base/assets/offline.html; it does not package the canonical Stage16A GLB required on first install.",
-    "dependency": "Motion lane must provide the canonical Stage16A asset checkpoint; Android lane may package it but must not modify shared Motion source."
+    "code": "ANDROID_SUCCESSOR_SOURCE_REQUIRED",
+    "detail": "The Stage16A GLB already exists and is hash-verified in the canonical source; the blocker is Android packaging/runtime, not a missing avatar checkpoint. The immutable source still has versionCode 50001, only placeholder offline.html, no packaged renderer/GLB, no reachable offline entrypoint, no HTTPS autoVerify DAL filter, and no Health Connect implementation.",
+    "dependency": "Produce one successor canonical Android package source/overlay with versionCode >=50002. Motion-owned renderer inputs remain read-only; Android may package them only after the offline dependency bundle is available."
   },
   "blockers": [
     {
-      "code": "FIRST_INSTALL_STAGE16A_ASSET_MISSING",
-      "detail": "The exact signed Internal AAB contains no canonical Stage16A GLB."
+      "code": "SUCCESSOR_VERSION_CODE_NOT_RESERVED",
+      "detail": "Canonical Android source is still versionCode 50001; the next build must be >=50002."
     },
     {
-      "code": "OFFLINE_PAYLOAD_IS_FALLBACK_HTML_ONLY",
-      "detail": "The only bundled app asset is base/assets/offline.html, a service-unavailable fallback rather than the required first-install offline exercise experience."
+      "code": "FIRST_INSTALL_STAGE16A_NOT_PACKAGED",
+      "detail": "The canonical Stage16A GLB is present in static source but absent from android/app/src/main/assets and from the signed AAB."
     },
     {
-      "code": "DIGITAL_ASSET_LINKS_INTENT_FILTER_MISSING",
-      "detail": "The release manifest exposes custom-scheme deep links but no browsable HTTPS intent filter with android:autoVerify=true; DAL cannot be declared PASS."
+      "code": "OFFLINE_ENTRYPOINT_PLACEHOLDER",
+      "detail": "android/app/src/main/assets/offline.html only says the service is unavailable; it is not an exercise experience."
+    },
+    {
+      "code": "OFFLINE_RUNTIME_ASSETS_MISSING",
+      "detail": "Android assets contain no offline JS/MJS/WASM renderer and the signed AAB contains no such runtime."
+    },
+    {
+      "code": "OFFLINE_ENTRYPOINT_NOT_REACHABLE",
+      "detail": "MainActivity shows a native status panel when offline and contains no file:///android_asset/offline.html or WebViewAssetLoader entrypoint."
+    },
+    {
+      "code": "DAL_HTTPS_AUTOVERIFY_FILTER_MISSING",
+      "detail": "AndroidManifest.xml has only custom-scheme deep links; no HTTPS autoVerify filter exists for thf-fitness-pulse-ul26f1.v2.appdeploy.ai."
+    },
+    {
+      "code": "HEALTH_CONNECT_IMPLEMENTATION_MISSING",
+      "detail": "No HealthConnectClient/androidx.health.connect/record implementation marker exists in Android source or the signed candidate."
     },
     {
       "code": "HEALTH_CONNECT_PERMISSIONS_MISSING",
-      "detail": "The release manifest declares only INTERNET and ACCESS_NETWORK_STATE; no android.permission.health.* permission is present."
+      "detail": "No android.permission.health.* permission is declared. Permissions must not be added until backed by actual implementation and Play declarations."
     },
     {
       "code": "PHYSICAL_DEVICE_EVIDENCE_MISSING",
-      "detail": "Install, launch, offline Stage16A runtime, resume and core-journey evidence for the exact signed successor does not exist and remains fail-closed."
+      "detail": "Install, launch, offline Stage16A render/motion, resume, Health Connect and core-journey evidence for the exact signed successor does not exist and remains fail-closed."
     }
   ],
-  "next_action": "Keep versionCode 50001 on Internal only. Build and sign one successor with versionCode greater than 50001 that packages the canonical Motion-lane Stage16A asset, adds the verified HTTPS autoVerify Digital Asset Links filter and minimum declared Health Connect permissions, rerun the exact-candidate integrity gate, then execute physical install/runtime QA before any promotion.",
+  "next_action": "Create a successor canonical Android packaging overlay with versionCode >=50002; package the verified Stage16A asset together with a vendored offline renderer and reachable local entrypoint, add the HTTPS autoVerify DAL filter, implement the minimum Health Connect reads/writes actually used, then build/sign one AAB, rerun both source and exact-candidate gates, and execute physical-device QA before any Play promotion.",
   "no_progress_rule": "If physical device is the only blocker, finish every package/Play gate first and record exact device action.",
-  "updated_at": "2026-09-26T17:55:00Z"
+  "updated_at": "2026-09-26T22:45:39Z"
 }
