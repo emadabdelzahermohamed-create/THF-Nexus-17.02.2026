@@ -1,14 +1,74 @@
 {
   "lane": "backend",
   "phase": "FITNESS",
-  "status": "ACTIVE",
+  "status": "BLOCKED",
+  "result": "BLOCKED",
   "active_task": "AUTH_SYNC_AND_SESSION_BACKEND_RELEASE_CLOSURE",
   "acceptance": [
     "Auth/session/data-sync correctness",
     "Server-authoritative session integrity",
     "No regression in live backend"
   ],
-  "next_action": "Verify latest production contracts and close the highest release-critical backend gap; checkpoint tests/evidence.",
+  "completed_items": [
+    "Release auditor regression suite passed 4/4, including build-root discovery regression",
+    "Immutable Drive source retrieved through GitHub OIDC/WIF and SHA-256 verified",
+    "Exact source compiled successfully",
+    "Exact source backend test suite passed 20/20 (one upstream deprecation warning)",
+    "Auth/session, authenticated user scope, sync/report, Health ingestion and 15 route contracts inventoried",
+    "Fail-closed evidence artifact uploaded and independently SHA-256 verified"
+  ],
+  "evidence": {
+    "source_drive_file_id": "1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-",
+    "source_sha256": "2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74",
+    "branch_head_sha": "74b6434e08eeeb09ab9b71726a0fcccc553bb32a",
+    "workflow_name": "THF Fitness Backend Release Contract V1",
+    "workflow_run_id": 36260208576,
+    "workflow_run_number": 4,
+    "workflow_job_id": 108454461029,
+    "workflow_conclusion": "failure",
+    "artifact_id": 10911698892,
+    "artifact_name": "THF-FITNESS-BACKEND-RELEASE-CONTRACT-V1",
+    "artifact_sha256": "9d817aba10ee6817e98b7ce2d27b22c19401f085c9e5155620705aa756fe0f28",
+    "exact_source_tests": {
+      "passed": 20,
+      "failed": 0,
+      "warnings": 1
+    },
+    "auditor_tests": {
+      "passed": 4,
+      "failed": 0
+    },
+    "contract_checks": {
+      "backend_source_present": true,
+      "routes_present": true,
+      "auth_session_contract_present": true,
+      "authenticated_user_scope_present": true,
+      "sync_report_contract_present": true,
+      "health_ingestion_contract_present": true,
+      "health_provenance_dedup_present": false,
+      "server_authority_contract_present": false,
+      "set_sequence_contract_complete": false
+    }
+  },
+  "blockers": [
+    {
+      "id": "SERVER_AUTHORITY_CONTRACT_MISSING",
+      "detail": "Canonical backend source has no detected server-authoritative competition or anti-cheat contract."
+    },
+    {
+      "id": "SET_SEQUENCE_CONTRACT_MISSING",
+      "detail": "Canonical backend source lacks acceptedSet, expectedSet, exercise_out_of_order and stale_set_sequence enforcement markers."
+    },
+    {
+      "id": "HEALTH_PROVENANCE_DEDUP_MISSING",
+      "detail": "Health ingestion exists, but provenance/deduplication contract is absent from the exact source."
+    },
+    {
+      "id": "CANONICAL_SOURCE_NOT_IN_GIT_BRANCH",
+      "detail": "The lane branch contains release evidence only; the exact application source is an immutable Drive ZIP fetched with drive.readonly, so these source gaps cannot be patched from this branch without a new canonical source artifact and SHA."
+    }
+  ],
+  "next_action": "Publish a successor canonical backend source ZIP containing server-authoritative competition/set sequencing and Health provenance/dedup contracts; record its new SHA-256, rerun exact-source tests and this audit, then execute authenticated non-destructive production E2E for login, scoped workout write, second-client sync, logout/session revocation and account deletion.",
   "no_progress_rule": "If backend has no runnable gap, mark PASS with evidence rather than remaining READY.",
-  "updated_at": "2026-09-26"
+  "updated_at": "2026-09-26T17:47:00Z"
 }
