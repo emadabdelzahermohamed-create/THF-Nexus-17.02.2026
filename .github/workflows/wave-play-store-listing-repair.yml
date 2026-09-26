@@ -17,6 +17,7 @@ env:
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
   WAVE_PACKAGE: com.wave.mawja
   WAVE_URL: https://wave-mawja.p-my.workers.dev
+  WAVE_SUPPORT_EMAIL: TopHeroFit@gmail.com
 
 jobs:
   repair:
@@ -225,18 +226,12 @@ jobs:
           if [ "$listing_code" != 200 ]; then cat listing-response.json; curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true; exit 31; fi
 
           curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id/details" > details-current.json
-          contact_email="$(python3 -c 'import json; print(json.load(open("details-current.json")).get("contactEmail") or "")')"
-          if [ -z "$contact_email" ]; then
-            printf 'status=WAITING_FOR_CONTACT_EMAIL\npackage=%s\ncontactEmail_present=false\nassets_prepared=true\n' "$WAVE_PACKAGE" | tee WAVE_PLAY_LISTING_REPAIR_RESULT.txt
-            curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit_id" || true
-            echo "WAVE_PLAY_LISTING_BLOCKER=CONTACT_EMAIL"
-            exit 0
-          fi
           python3 - <<'PY'
           import json, os
           d=json.load(open("details-current.json"))
           d["defaultLanguage"]="ar"
           d["contactWebsite"]=os.environ["WAVE_URL"]
+          d["contactEmail"]=os.environ["WAVE_SUPPORT_EMAIL"]
           open("details-update.json","w").write(json.dumps(d,ensure_ascii=False))
           PY
           det_code="$(curl -sS -o details-response.json -w '%{http_code}' -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @details-update.json "$base/$edit_id/details")"
@@ -297,6 +292,7 @@ jobs:
             "shortDescription_len="+str(len(li.get("shortDescription") or "")),
             "fullDescription_len="+str(len(li.get("fullDescription") or "")),
             "contactWebsite="+str(de.get("contactWebsite","")),
+            "contactEmail="+str(de.get("contactEmail","")),
             "contactEmail_present="+str(bool(de.get("contactEmail"))).lower(),
             "icon_count="+str(count("icon")),
             "featureGraphic_count="+str(count("featureGraphic")),
