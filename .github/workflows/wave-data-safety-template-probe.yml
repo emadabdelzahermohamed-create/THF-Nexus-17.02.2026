@@ -1,0 +1,60 @@
+name: WAVE Data Safety Template Probe
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-data-safety-template-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch and inspect current Google Data Safety template
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          url='https://storage.googleapis.com/support-kms-prod/b5v9It2EgwrgyY1gPFVB3jPUypc5lL3oNg2G'
+          curl -fsSL --retry 3 "$url" -o google-data-safety-template.csv
+          test -s google-data-safety-template.csv
+          sha256sum google-data-safety-template.csv | tee google-data-safety-template.sha256
+          python3 - <<'PY'
+          import csv,json,pathlib
+          rows=list(csv.reader(open("google-data-safety-template.csv",encoding="utf-8-sig",newline="")))
+          print("HEADER="+json.dumps(rows[0],ensure_ascii=False))
+          print("ROW_COUNT="+str(len(rows)-1))
+          prefixes=(
+            "PSL_DATA_COLLECTION_",
+            "PSL_SUPPORT_DATA_DELETION_BY_USER",
+            "PSL_DATA_DELETION_URL",
+            "PSL_ACCOUNT_DELETION_URL",
+            "PSL_SUPPORTED_ACCOUNT_CREATION_METHODS",
+            "PSL_DATA_TYPES_PERSONAL",
+            "PSL_DATA_TYPES_APP_ACTIVITY",
+            "PSL_DATA_TYPES_IDENTIFIERS",
+            "PSL_DATA_USAGE_RESPONSES:PSL_NAME",
+            "PSL_DATA_USAGE_RESPONSES:PSL_EMAIL",
+            "PSL_DATA_USAGE_RESPONSES:PSL_OTHER_PERSONAL",
+            "PSL_DATA_USAGE_RESPONSES:PSL_USER_ACCOUNT",
+            "PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION",
+          )
+          selected=[r for r in rows[1:] if r and any(r[0].startswith(p) for p in prefixes)]
+          pathlib.Path("WAVE_DATA_SAFETY_TEMPLATE_RELEVANT.json").write_text(json.dumps(selected,ensure_ascii=False,indent=2))
+          for r in selected:
+              print("ROW="+json.dumps(r,ensure_ascii=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WAVE-DATA-SAFETY-TEMPLATE-PROBE
+          retention-days: 30
+          path: |
+            google-data-safety-template.csv
+            google-data-safety-template.sha256
+            WAVE_DATA_SAFETY_TEMPLATE_RELEVANT.json
