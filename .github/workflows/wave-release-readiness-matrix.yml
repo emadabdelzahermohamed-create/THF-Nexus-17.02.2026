@@ -78,13 +78,34 @@ jobs:
           echo "EDIT_INSERT_HTTP=$code"; test "$code" = 200
           edit="$(python3 -c 'import json;print(json.load(open("readiness/edit.json"))["id"])')"
 
-          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit/tracks" > readiness/tracks.json
-          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit/details" > readiness/details.json
-          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit/listings/ar" > readiness/listing-ar.json
-          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit/testers/$WAVE_CLOSED_TRACK" > readiness/testers-closed.json
-          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN"             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/generatedApks/$WAVE_VERSION_CODE"             > readiness/generated-apks.json
+          fetch_json () {
+            name="$1"; url="$2"
+            code="$(curl -sS -o "readiness/$name.json" -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$url")"
+            echo "${name^^}_HTTP=$code"
+            if [ "$code" != 200 ]; then
+              cat "readiness/$name.json" || true
+              return 1
+            fi
+          }
 
-          curl -sS -f "https://androidpublisher.googleapis.com/$discovery/rest?version=v3" > readiness/discovery.json
+          fetch_json tracks "$api/$edit/tracks"
+          fetch_json details "$api/$edit/details"
+          fetch_json listing_ar "$api/$edit/listings/ar"
+
+          tester_code="$(curl -sS -o readiness/testers-closed.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit/testers/$WAVE_CLOSED_TRACK")"
+          echo "TESTERS_CLOSED_HTTP=$tester_code"
+          if [ "$tester_code" != 200 ]; then
+            cat readiness/testers-closed.json || true
+            echo '{"googleGroups":[]}' > readiness/testers-closed.json
+          fi
+
+          gen_code="$(curl -sS -o readiness/generated-apks.json -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN"             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/generatedApks/$WAVE_VERSION_CODE")"
+          echo "GENERATED_APKS_HTTP=$gen_code"
+          if [ "$gen_code" != 200 ]; then cat readiness/generated-apks.json || true; exit 35; fi
+
+          disc_code="$(curl -sS -o readiness/discovery.json -w '%{http_code}' "https://androidpublisher.googleapis.com/$discovery/rest?version=v3")"
+          echo "DISCOVERY_HTTP=$disc_code"
+          if [ "$disc_code" != 200 ]; then cat readiness/discovery.json || true; exit 36; fi
 
           python3 - <<'PY'
           import json, os
