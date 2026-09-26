@@ -8,7 +8,6 @@ on:
       - '.github/workflows/thf-fitness-android-candidate-integrity-v1.yml'
       - 'ReleaseOps/FitnessStandalone/android_candidate_integrity.py'
       - 'tests/releaseops/test_fitness_android_candidate_integrity.py'
-      - 'ReleaseOps/FitnessStandalone/Swarm/android.json'
   workflow_dispatch:
 
 permissions:
