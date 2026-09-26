@@ -14,8 +14,9 @@
     "Downloaded and digest-verified immutable GitHub Actions artifact 10581347670 from successful run 35434624698/job 105875090547.",
     "Bound the audit to artifact SHA-256 6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2 and signed AAB SHA-256 80e94754a9dd710f08d61fb735d8ea381e9cb4ae4a14fc85ebc178a4eb7328a2.",
     "Verified the AAB contains a release signature block and no legacy humanoid asset.",
-    "Added a fail-closed exact-candidate validator, three regression tests, immutable evidence JSON, and a GitHub Actions evidence workflow.",
-    "Classified versionCode 50001 as Internal-only and ineligible for promotion because its AAB has one asset (offline.html) and no Stage16A GLB."
+    "Added a fail-closed exact-candidate validator, four regression tests, immutable evidence JSON, and a GitHub Actions evidence workflow.",
+    "Parsed the AAB aapt2 XmlNode manifest and proved package com.topherofit.thf.pulse, versionCode 50001, compileSdk/targetSdk 36, non-debuggable release, cleartext disabled, RTL enabled, backup disabled, and exported MainActivity.",
+    "Classified versionCode 50001 as Internal-only and ineligible for promotion because its AAB has one asset (offline.html), no Stage16A GLB, no verified HTTPS autoVerify DAL filter, and no Health Connect permissions."
   ],
   "checkpoint": {
     "implementation_sha": "ddc4b2bbf2d9532f3970cb7875819f6ff657d7c6",
@@ -23,15 +24,25 @@
     "github_run_id": 35434624698,
     "github_job_id": 105875090547,
     "artifact_id": 10581347670,
-    "validator_commit_sha": "d2c59cfca87ff0a2ad7994f371417b1375b60e6a",
-    "validator_workflow_run_id": 36259836065,
-    "validator_workflow_job_id": 108453425645,
-    "validator_evidence_artifact_id": 10911489438,
-    "validator_evidence_artifact_sha256": "f0ae65e4094f1885601a7cc04290787c2e045ed26060d2adc092123c5deceee4",
+    "validator_commit_sha": "ebb17cd7bc6e078222afdd5dadcb7ebf9fcac856",
+    "validator_workflow_run_id": 36260672387,
+    "validator_workflow_job_id": 108455732879,
+    "validator_evidence_artifact_id": 10911634611,
+    "validator_evidence_artifact_sha256": "16b1e50f7295d1e8b614a1b66c874d4008ddb231195399fe551a1a19644e4100",
     "version_code": 50001,
     "track": "internal",
     "package": "com.topherofit.thf.pulse",
-    "tests": "3/3 PASS",
+    "compile_sdk": 36,
+    "target_sdk": 36,
+    "min_sdk": 26,
+    "release_debuggable": false,
+    "cleartext_enabled": false,
+    "rtl_enabled": true,
+    "backup_enabled": false,
+    "main_activity_exported": true,
+    "digital_asset_links_hosts": [],
+    "health_connect_permissions": [],
+    "tests": "4/4 PASS",
     "evidence": "ReleaseOps/FitnessStandalone/evidence/ANDROID_CANDIDATE_INTEGRITY_20260926.json"
   },
   "blocker": {
@@ -39,7 +50,29 @@
     "detail": "The exact signed Internal AAB is 26,561 bytes with 15 files and contains only base/assets/offline.html; it does not package the canonical Stage16A GLB required on first install.",
     "dependency": "Motion lane must provide the canonical Stage16A asset checkpoint; Android lane may package it but must not modify shared Motion source."
   },
-  "next_action": "Keep versionCode 50001 on Internal only. Package the canonical Motion-lane Stage16A asset into a newly signed successor with versionCode greater than 50001, rerun the integrity workflow, then run exact-candidate physical install/runtime QA before any promotion.",
+  "blockers": [
+    {
+      "code": "FIRST_INSTALL_STAGE16A_ASSET_MISSING",
+      "detail": "The exact signed Internal AAB contains no canonical Stage16A GLB."
+    },
+    {
+      "code": "OFFLINE_PAYLOAD_IS_FALLBACK_HTML_ONLY",
+      "detail": "The only bundled app asset is base/assets/offline.html, a service-unavailable fallback rather than the required first-install offline exercise experience."
+    },
+    {
+      "code": "DIGITAL_ASSET_LINKS_INTENT_FILTER_MISSING",
+      "detail": "The release manifest exposes custom-scheme deep links but no browsable HTTPS intent filter with android:autoVerify=true; DAL cannot be declared PASS."
+    },
+    {
+      "code": "HEALTH_CONNECT_PERMISSIONS_MISSING",
+      "detail": "The release manifest declares only INTERNET and ACCESS_NETWORK_STATE; no android.permission.health.* permission is present."
+    },
+    {
+      "code": "PHYSICAL_DEVICE_EVIDENCE_MISSING",
+      "detail": "Install, launch, offline Stage16A runtime, resume and core-journey evidence for the exact signed successor does not exist and remains fail-closed."
+    }
+  ],
+  "next_action": "Keep versionCode 50001 on Internal only. Build and sign one successor with versionCode greater than 50001 that packages the canonical Motion-lane Stage16A asset, adds the verified HTTPS autoVerify Digital Asset Links filter and minimum declared Health Connect permissions, rerun the exact-candidate integrity gate, then execute physical install/runtime QA before any promotion.",
   "no_progress_rule": "If physical device is the only blocker, finish every package/Play gate first and record exact device action.",
-  "updated_at": "2026-09-26T17:44:00Z"
+  "updated_at": "2026-09-26T17:55:00Z"
 }
