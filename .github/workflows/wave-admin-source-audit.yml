@@ -1,0 +1,129 @@
+name: WAVE Admin Source Audit
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-admin-source-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DRIVE_FILE_ID: 1B35W6nyNlhpJCv0wjRXleNRXWuoVOn16
+  EXPECTED_RC15_SHA256: 71965ff9ed3405304743b4014cbbac269b96d83533557f28381781e67520d41f
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate source access
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Reconstruct current WAVE source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -q google-auth requests
+          python3 - <<'PY'
+          import os,requests,google.auth
+          from google.auth.transport.requests import Request
+          c,_=google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
+          c.refresh(Request())
+          r=requests.get(f"https://www.googleapis.com/drive/v3/files/{os.environ['DRIVE_FILE_ID']}?alt=media",headers={'Authorization':f'Bearer {c.token}'},timeout=120)
+          r.raise_for_status()
+          open('base.zip','wb').write(r.content)
+          PY
+          echo "$EXPECTED_RC15_SHA256  base.zip" | sha256sum -c -
+          mkdir wave-src
+          unzip -q base.zip -d wave-src
+          cd wave-src
+          git init -q
+          git add .
+          git -c user.name=wave-builder -c user.email=wave@example.invalid commit -qm baseline
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_1_SIGNING_CARRYFORWARD.patch
+          git apply ../ReleaseOps/WAVE/RC15_3/WAVE_RC15_3_EXISTING_FILES.patch
+          cp -a ../ReleaseOps/WAVE/RC15_3/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5.py
+          python3 ../ReleaseOps/WAVE/RC15_5/apply_rc15_5_nllb.py
+          python3 ../ReleaseOps/WAVE/RC15_7/apply_rc15_7.py
+          python3 ../ReleaseOps/WAVE/RC15_8/apply_rc15_8_launchfix.py
+          cp -a ../ReleaseOps/WAVE/RC15_11/overlay/. .
+          cp -a ../ReleaseOps/WAVE/RC15_13/overlay/. .
+          python3 ../ReleaseOps/WAVE/RC15_14/apply_rc15_14_account_resilience.py
+          cp -a ../ReleaseOps/WAVE/RC15_16/overlay/. .
+
+      - name: Audit admin/control source contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd wave-src
+          test -f app/admin-login/page.tsx
+          test -f app/control/page.tsx
+          test -f app/api/control/route.ts
+          test -f app/admin/page.tsx
+          test -f app/publisher/page.tsx
+          test -f lib/wave-auth.ts
+
+          {
+            echo '=== ROUTES ==='
+            find app -maxdepth 4 -type f | sort | grep -E '/(admin|publisher|control)|api/control|admin-login' || true
+            echo
+            echo '=== CONTROL PAGE ==='
+            sed -n '1,900p' app/control/page.tsx
+            echo
+            echo '=== CONTROL API ==='
+            sed -n '1,1200p' app/api/control/route.ts
+            echo
+            echo '=== ADMIN LOGIN ==='
+            sed -n '1,700p' app/admin-login/page.tsx
+            echo
+            echo '=== AUTH ROLE SIGNALS ==='
+            grep -RInE 'hasWaveRole|role|admin|publisher|control|unauthorized|forbidden' lib/wave-auth.ts app/control app/api/control app/admin-login 2>/dev/null | head -1000 || true
+          } > ../WAVE_ADMIN_SOURCE_AUDIT.txt
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/control/page.tsx").read_text()
+          api=Path("app/api/control/route.ts").read_text()
+          auth=Path("lib/wave-auth.ts").read_text()
+          login=Path("app/admin-login/page.tsx").read_text()
+
+          checks={
+            "control_has_role_guard": ("hasWaveRole" in p or "hasWaveRole" in api or "hasWaveRole" in auth),
+            "control_calls_api": ("/api/control" in p),
+            "control_api_has_GET": ("export async function GET" in api),
+            "control_api_has_mutation": any(x in api for x in ("export async function POST","export async function PUT","export async function PATCH","export async function DELETE")),
+            "admin_login_exists": ("admin" in login.lower() and ("login" in login.lower() or "/api/auth/login" in login)),
+            "admin_alias_redirects_control": ('redirect("/control")' in Path("app/admin/page.tsx").read_text()),
+            "publisher_alias_redirects_control": ('redirect("/control")' in Path("app/publisher/page.tsx").read_text()),
+          }
+          for k,v in checks.items():
+              print(f"{k}={'PASS' if v else 'FAIL'}")
+          failed=[k for k,v in checks.items() if not v]
+          if failed:
+              raise SystemExit("ADMIN_SOURCE_AUDIT_FAILED="+",".join(failed))
+          Path("../WAVE_ADMIN_SOURCE_AUDIT_RESULT.txt").write_text("\n".join(f"{k}=PASS" for k in checks)+"\n")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-ADMIN-SOURCE-AUDIT
+          retention-days: 30
+          path: |
+            WAVE_ADMIN_SOURCE_AUDIT.txt
+            WAVE_ADMIN_SOURCE_AUDIT_RESULT.txt
