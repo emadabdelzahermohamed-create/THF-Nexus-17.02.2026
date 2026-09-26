@@ -1,0 +1,118 @@
+name: WAVE Play Production Gate Probe
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-play-production-gate-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+  WAVE_VERSION_CODE: '15302'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate Google Play
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Probe production gates without committing
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p production-probe
+          base="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
+
+          probe_status () {
+            status="$1"
+            edit_code="$(curl -sS -o "production-probe/edit-$status.json" -w '%{http_code}' -X POST               -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' -d '{}' "$base")"
+            echo "${status^^}_EDIT_INSERT_HTTP=$edit_code"
+            test "$edit_code" = 200
+            edit="$(python3 -c "import json;print(json.load(open('production-probe/edit-$status.json'))['id'])")"
+
+            python3 - "$status" "$WAVE_VERSION_CODE" <<'PY'
+          import json,sys
+          status=sys.argv[1]; version=sys.argv[2]
+          body={"track":"production","releases":[{"name":"WAVE RC15.18 Production Gate Probe","versionCodes":[version],"status":status}]}
+          open(f"production-probe/track-{status}.json","w").write(json.dumps(body))
+          PY
+
+            put_code="$(curl -sS -o "production-probe/track-$status-response.json" -w '%{http_code}' -X PUT               -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json'               --data-binary "@production-probe/track-$status.json" "$base/$edit/tracks/production")"
+            echo "${status^^}_TRACK_UPDATE_HTTP=$put_code"
+
+            validate_code="SKIPPED"
+            if [ "$put_code" = 200 ]; then
+              validate_code="$(curl -sS -o "production-probe/validate-$status.json" -w '%{http_code}' -X POST                 -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json'                 "$base/$edit:validate")"
+              echo "${status^^}_EDIT_VALIDATE_HTTP=$validate_code"
+            fi
+
+            curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$base/$edit" || true
+
+            python3 - "$status" "$put_code" "$validate_code" <<'PY'
+          import json,sys,pathlib
+          status,put_code,validate_code=sys.argv[1:]
+          def load(p):
+              q=pathlib.Path(p)
+              if not q.exists(): return {}
+              try: return json.loads(q.read_text())
+              except Exception: return {"raw":q.read_text(errors="ignore")}
+          out={
+            "status":status,
+            "trackUpdateHttp":put_code,
+            "trackResponse":load(f"production-probe/track-{status}-response.json"),
+            "validateHttp":validate_code,
+            "validateResponse":load(f"production-probe/validate-{status}.json"),
+            "committed":False,
+          }
+          pathlib.Path(f"production-probe/result-{status}.json").write_text(json.dumps(out,indent=2))
+          PY
+          }
+
+          probe_status draft
+          probe_status completed
+
+          python3 - <<'PY'
+          import json,pathlib
+          draft=json.load(open("production-probe/result-draft.json"))
+          completed=json.load(open("production-probe/result-completed.json"))
+          result={"package":"com.wave.mawja","versionCode":"15302","draft":draft,"completed":completed,"noCommit":True}
+          pathlib.Path("WAVE_PRODUCTION_GATE_PROBE.json").write_text(json.dumps(result,indent=2))
+          def msg(o):
+              e=o.get("trackResponse") or o.get("validateResponse") or {}
+              return ((e.get("error") or {}).get("message") or "").replace("\n"," | ")
+          print("DRAFT_TRACK_HTTP="+draft["trackUpdateHttp"])
+          print("DRAFT_VALIDATE_HTTP="+str(draft["validateHttp"]))
+          print("DRAFT_MESSAGE="+msg(draft))
+          print("COMPLETED_TRACK_HTTP="+completed["trackUpdateHttp"])
+          print("COMPLETED_VALIDATE_HTTP="+str(completed["validateHttp"]))
+          print("COMPLETED_MESSAGE="+msg(completed))
+          print("PRODUCTION_GATE_PROBE_NO_COMMIT=PASS")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-PRODUCTION-GATE-PROBE
+          retention-days: 30
+          path: |
+            WAVE_PRODUCTION_GATE_PROBE.json
+            production-probe/*.json
