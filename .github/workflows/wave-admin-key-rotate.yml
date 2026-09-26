@@ -1,0 +1,94 @@
+name: WAVE Admin Key Rotate
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-admin-key-rotate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+  WAVE_WORKER: wave-mawja
+  WAVE_ADMIN_EMAIL: TopHeroFit@gmail.com
+
+jobs:
+  rotate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rotate admin access key and verify live login
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+
+          access_key="$(openssl rand -base64 48 | tr -d '\n' | tr '+/' '-_')"
+          test "${#access_key}" -ge 48
+          echo "::add-mask::$access_key"
+
+          printf '%s' "$access_key" | npx --yes wrangler@4 secret put WAVE_ADMIN_ACCESS_KEY --name "$WAVE_WORKER"
+
+          mkdir -p admin-rotate
+          jar=admin-rotate/cookies.txt
+          login_json="$(python3 - "$WAVE_ADMIN_EMAIL" "$access_key" <<'PY'
+          import json,sys
+          print(json.dumps({"email":sys.argv[1],"accessKey":sys.argv[2],"displayName":"WAVE Administrator"}))
+          PY
+          )"
+
+          login_code=""
+          for attempt in 1 2 3 4 5 6; do
+            login_code="$(curl -sS -o admin-rotate/login.json -w '%{http_code}'               -c "$jar" -b "$jar" -X POST -H 'content-type: application/json'               --data-binary "$login_json" "$WAVE_URL/api/auth/admin-login" || true)"
+            echo "ROTATED_ADMIN_LOGIN_ATTEMPT=$attempt HTTP=$login_code"
+            [ "$login_code" = 200 ] && break
+            sleep "$((attempt * 2))"
+          done
+          test "$login_code" = 200
+
+          api_code="$(curl -sS -o admin-rotate/control.json -w '%{http_code}' -c "$jar" -b "$jar" "$WAVE_URL/api/control")"
+          echo "ROTATED_ADMIN_CONTROL_HTTP=$api_code"
+          test "$api_code" = 200
+
+          python3 - "$WAVE_ADMIN_EMAIL" <<'PY'
+          import json,sys
+          d=json.load(open("admin-rotate/control.json"))
+          account=d.get("account") or {}
+          caps=d.get("capabilities") or {}
+          assert account.get("email","").lower()==sys.argv[1].lower()
+          assert account.get("role")=="admin"
+          assert caps.get("canEdit") is True
+          assert caps.get("canAdmin") is True
+          PY
+
+          printf '%s' "$access_key" > /tmp/wave-admin-rotated-key.txt
+          printf '%s' 'LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF1RFo4Uzl5NzNZU1M2ZFVRVEZxcQo3YzFyajdDR1U0RDk3WDRLYndhVHlubGpnZlMxYWhGUkV1UUw5RUxtYjd4elkwK08xajBLMXU0N3BsbUJCR0x3ClNDWGt2bTk5NFBVZXFXb3pLcVNkTFZWTkVZdkozVGtudC9PYWFJYkEwcmZobnd6SG5Mb0R0Z3pvamRtNDlKL3gKak5ISmdZNDlXeEI0Rmh1RjdKUW9SaXp1Rm5NbkNXKzNPUTFZSW9CN0R0d25XUExlWi94SDFmUzBBSjdSWXlDSwozS1FMVDdNVThtdy9YYU9YWTBKZzBlaUk3UGROMjdTbnp4ZjBWSlBodFVDRmtOeTJJbktJN1VOOVZjU3Y5c2FvCnBDd3k2aURvZWRVR1dRQnFKNFhTbjRLcXU0dzJOdE85QmM1clRHT0c1azJyUFZkWWRFcjkxWWkzY3ZBL1FvdGkKZHdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==' | base64 -d > /tmp/wave-admin-rotate-public.pem
+          openssl pkeyutl -encrypt -pubin -inkey /tmp/wave-admin-rotate-public.pem             -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256             -in /tmp/wave-admin-rotated-key.txt -out WAVE_ADMIN_ROTATED_KEY.enc
+          rm -f /tmp/wave-admin-rotated-key.txt /tmp/wave-admin-rotate-public.pem
+
+          {
+            echo "WAVE_ADMIN_KEY_ROTATE=PASS"
+            echo "admin_email=$WAVE_ADMIN_EMAIL"
+            echo "login=PASS"
+            echo "control=PASS"
+            echo "role=admin"
+          } | tee WAVE_ADMIN_KEY_ROTATE_RESULT.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-ADMIN-ROTATED-CREDENTIAL
+          retention-days: 1
+          path: |
+            WAVE_ADMIN_ROTATED_KEY.enc
+            WAVE_ADMIN_KEY_ROTATE_RESULT.txt
