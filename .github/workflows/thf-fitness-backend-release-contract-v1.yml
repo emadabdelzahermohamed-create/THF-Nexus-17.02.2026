@@ -7,7 +7,9 @@ on:
     paths:
       - '.github/workflows/thf-fitness-backend-release-contract-v1.yml'
       - 'ReleaseOps/FitnessStandalone/backend_release_contract.py'
+      - 'ReleaseOps/FitnessStandalone/backend_openapi_contract.py'
       - 'tests/releaseops/test_fitness_backend_release_contract.py'
+      - 'tests/releaseops/test_fitness_backend_openapi_contract.py'
   workflow_dispatch:
 
 permissions:
@@ -28,7 +30,10 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
       - name: Run release-auditor regressions
-        run: python3 -m unittest tests.releaseops.test_fitness_backend_release_contract -v
+        run: |
+          python3 -m unittest \
+            tests.releaseops.test_fitness_backend_release_contract \
+            tests.releaseops.test_fitness_backend_openapi_contract -v
 
       - name: Authenticate read-only source retrieval through WIF
         id: auth
@@ -69,7 +74,19 @@ jobs:
             --source-sha256 "${SOURCE_SHA256}" \
             --recorded-at 2026-09-26T17:45:00Z \
             --output out/backend-release-contract.json \
-            --expect PROGRESS
+            --expect BLOCKED
+          grep -q 'SERVER_AUTHORITY_CONTRACT_MISSING\|server_authority_contract_present' out/backend-release-contract.json
+          grep -q 'health_provenance_dedup_present' out/backend-release-contract.json
+
+      - name: Audit exact-source runtime OpenAPI contract
+        run: |
+          set -euo pipefail
+          python3 ReleaseOps/FitnessStandalone/backend_openapi_contract.py \
+            --source-root build/fitness \
+            --source-sha256 "${SOURCE_SHA256}" \
+            --recorded-at 2026-09-26T18:00:00Z \
+            --output out/backend-openapi-contract.json \
+            --expect BLOCKED
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
@@ -77,6 +94,7 @@ jobs:
           name: THF-FITNESS-BACKEND-RELEASE-CONTRACT-V1
           path: |
             out/backend-release-contract.json
+            out/backend-openapi-contract.json
             out/pytest.txt
             out/source.sha256
           retention-days: 30
