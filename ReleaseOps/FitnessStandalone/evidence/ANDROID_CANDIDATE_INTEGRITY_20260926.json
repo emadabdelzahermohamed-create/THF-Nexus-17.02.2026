@@ -1,0 +1,43 @@
+{
+  "android": {
+    "aab_compressed_bytes": 26561,
+    "aab_name": "THF-Fitness-V5-RC2-signed.aab",
+    "aab_sha256": "80e94754a9dd710f08d61fb735d8ea381e9cb4ae4a14fc85ebc178a4eb7328a2",
+    "aab_sha256_expected": "80e94754a9dd710f08d61fb735d8ea381e9cb4ae4a14fc85ebc178a4eb7328a2",
+    "aab_uncompressed_bytes": 50146,
+    "arm64_native_lib_count": 0,
+    "asset_count": 1,
+    "file_count": 15,
+    "legacy_avatar_members": [],
+    "native_lib_count": 0,
+    "package": "com.topherofit.thf.pulse",
+    "signature_members": [
+      "META-INF/THF-FITN.RSA"
+    ],
+    "stage16a_members": [],
+    "track": "internal",
+    "version_code": 50001
+  },
+  "artifact": {
+    "artifact_id": 10581347670,
+    "artifact_name": "thf-fitness-v5-rc2-signed-release",
+    "artifact_sha256": "6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2",
+    "artifact_sha256_expected": "6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2",
+    "github_job_id": 105875090547,
+    "github_run_id": 35434624698,
+    "source_commit_sha": "89cd7d4c1abd3e258c701dd5660f79be8cc19f53"
+  },
+  "final": false,
+  "issues": [
+    "FIRST_INSTALL_STAGE16A_ASSET_MISSING",
+    "OFFLINE_PAYLOAD_IS_FALLBACK_HTML_ONLY"
+  ],
+  "lane": "android",
+  "next_action": "Keep versionCode 50001 on Internal only. Motion lane must provide the canonical Stage16A first-install asset; Android lane must package it into a newly signed successor with versionCode >50001, rerun this integrity gate, then perform exact-candidate physical install/runtime QA before promotion.",
+  "phone_pass": false,
+  "play_ready": false,
+  "recorded_at": "2026-09-26T17:30:00Z",
+  "result": "BLOCKED",
+  "schema": "thf-fitness-android-candidate-integrity-v1",
+  "scope": "release_integrity_only"
+}

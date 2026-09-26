@@ -1,0 +1,63 @@
+name: THF Fitness Android Candidate Integrity V1
+
+on:
+  push:
+    branches:
+      - automation/fitness-swarm-android-20260924
+    paths:
+      - '.github/workflows/thf-fitness-android-candidate-integrity-v1.yml'
+      - 'ReleaseOps/FitnessStandalone/android_candidate_integrity.py'
+      - 'tests/releaseops/test_fitness_android_candidate_integrity.py'
+      - 'ReleaseOps/FitnessStandalone/Swarm/android.json'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  exact-candidate-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Run validator regression tests
+        run: python3 -m unittest tests.releaseops.test_fitness_android_candidate_integrity -v
+
+      - name: Download immutable Internal candidate artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: '10581347670'
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          curl --fail --location --retry 4 --retry-all-errors \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+            -o out/thf-fitness-v5-rc2-signed-release.zip
+
+      - name: Audit exact signed versionCode 50001 fail-closed
+        run: |
+          set -euo pipefail
+          python3 ReleaseOps/FitnessStandalone/android_candidate_integrity.py \
+            --artifact-zip out/thf-fitness-v5-rc2-signed-release.zip \
+            --artifact-sha256 6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2 \
+            --aab-sha256 80e94754a9dd710f08d61fb735d8ea381e9cb4ae4a14fc85ebc178a4eb7328a2 \
+            --output out/android-candidate-integrity.json \
+            --recorded-at 2026-09-26T17:30:00Z \
+            --expect BLOCKED \
+            --github-run-id 35434624698 \
+            --github-job-id 105875090547 \
+            --artifact-id 10581347670 \
+            --source-commit-sha 89cd7d4c1abd3e258c701dd5660f79be8cc19f53
+          grep -q 'FIRST_INSTALL_STAGE16A_ASSET_MISSING' out/android-candidate-integrity.json
+          grep -q 'OFFLINE_PAYLOAD_IS_FALLBACK_HTML_ONLY' out/android-candidate-integrity.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: THF-FITNESS-ANDROID-CANDIDATE-INTEGRITY-V1
+          path: out/android-candidate-integrity.json
+          retention-days: 30
