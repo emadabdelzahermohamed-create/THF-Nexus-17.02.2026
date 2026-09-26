@@ -1,7 +1,8 @@
 {
   "lane": "android",
   "phase": "FITNESS",
-  "status": "ACTIVE",
+  "status": "BLOCKED",
+  "result": "BLOCKED",
   "active_task": "ANDROID_OFFLINE_STAGE16A_AND_EXACT_CANDIDATE_CLOSURE",
   "acceptance": [
     "Stage16A assets available on first install where required",
@@ -9,7 +10,31 @@
     "targetSdk 36/package/signing/DAL verified",
     "Physical-device gates kept fail-closed until real evidence"
   ],
-  "next_action": "Audit exact Android candidate and package offline 3D assets; build and verify package before requesting any owner-only action.",
+  "completed_items": [
+    "Downloaded and digest-verified immutable GitHub Actions artifact 10581347670 from successful run 35434624698/job 105875090547.",
+    "Bound the audit to artifact SHA-256 6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2 and signed AAB SHA-256 80e94754a9dd710f08d61fb735d8ea381e9cb4ae4a14fc85ebc178a4eb7328a2.",
+    "Verified the AAB contains a release signature block and no legacy humanoid asset.",
+    "Added a fail-closed exact-candidate validator, three regression tests, immutable evidence JSON, and a GitHub Actions evidence workflow.",
+    "Classified versionCode 50001 as Internal-only and ineligible for promotion because its AAB has one asset (offline.html) and no Stage16A GLB."
+  ],
+  "checkpoint": {
+    "implementation_sha": "ddc4b2bbf2d9532f3970cb7875819f6ff657d7c6",
+    "source_commit_sha": "89cd7d4c1abd3e258c701dd5660f79be8cc19f53",
+    "github_run_id": 35434624698,
+    "github_job_id": 105875090547,
+    "artifact_id": 10581347670,
+    "version_code": 50001,
+    "track": "internal",
+    "package": "com.topherofit.thf.pulse",
+    "tests": "3/3 PASS",
+    "evidence": "ReleaseOps/FitnessStandalone/evidence/ANDROID_CANDIDATE_INTEGRITY_20260926.json"
+  },
+  "blocker": {
+    "code": "FIRST_INSTALL_STAGE16A_ASSET_MISSING",
+    "detail": "The exact signed Internal AAB is 26,561 bytes with 15 files and contains only base/assets/offline.html; it does not package the canonical Stage16A GLB required on first install.",
+    "dependency": "Motion lane must provide the canonical Stage16A asset checkpoint; Android lane may package it but must not modify shared Motion source."
+  },
+  "next_action": "Keep versionCode 50001 on Internal only. Package the canonical Motion-lane Stage16A asset into a newly signed successor with versionCode greater than 50001, rerun the integrity workflow, then run exact-candidate physical install/runtime QA before any promotion.",
   "no_progress_rule": "If physical device is the only blocker, finish every package/Play gate first and record exact device action.",
-  "updated_at": "2026-09-26"
+  "updated_at": "2026-09-26T17:36:00Z"
 }
