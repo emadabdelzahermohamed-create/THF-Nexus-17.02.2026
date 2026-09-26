@@ -23,6 +23,11 @@
     "github_run_id": 35434624698,
     "github_job_id": 105875090547,
     "artifact_id": 10581347670,
+    "validator_commit_sha": "d2c59cfca87ff0a2ad7994f371417b1375b60e6a",
+    "validator_workflow_run_id": 36259836065,
+    "validator_workflow_job_id": 108453425645,
+    "validator_evidence_artifact_id": 10911489438,
+    "validator_evidence_artifact_sha256": "f0ae65e4094f1885601a7cc04290787c2e045ed26060d2adc092123c5deceee4",
     "version_code": 50001,
     "track": "internal",
     "package": "com.topherofit.thf.pulse",
@@ -36,5 +41,5 @@
   },
   "next_action": "Keep versionCode 50001 on Internal only. Package the canonical Motion-lane Stage16A asset into a newly signed successor with versionCode greater than 50001, rerun the integrity workflow, then run exact-candidate physical install/runtime QA before any promotion.",
   "no_progress_rule": "If physical device is the only blocker, finish every package/Play gate first and record exact device action.",
-  "updated_at": "2026-09-26T17:36:00Z"
+  "updated_at": "2026-09-26T17:44:00Z"
 }
