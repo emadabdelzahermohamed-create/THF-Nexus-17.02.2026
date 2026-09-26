@@ -9,6 +9,39 @@
     "asset_count": 1,
     "file_count": 15,
     "legacy_avatar_members": [],
+    "manifest": {
+      "application_attributes": {
+        "allowBackup": "false",
+        "debuggable": null,
+        "supportsRtl": "true",
+        "usesCleartextTraffic": "false"
+      },
+      "checks": {
+        "backup_disabled": true,
+        "cleartext_disabled": true,
+        "compile_sdk_36": true,
+        "digital_asset_links_filter_present": false,
+        "health_connect_permissions_present": false,
+        "main_activity_exported": true,
+        "package_matches": true,
+        "release_not_debuggable": true,
+        "rtl_enabled": true,
+        "target_sdk_36": true,
+        "version_code_matches": true
+      },
+      "compile_sdk": "36",
+      "digital_asset_links_hosts": [],
+      "health_connect_permissions": [],
+      "min_sdk": "26",
+      "package": "com.topherofit.thf.pulse",
+      "permissions": [
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.INTERNET"
+      ],
+      "target_sdk": "36",
+      "version_code": "50001",
+      "version_name": "5.0.0-standalone-rc2"
+    },
     "native_lib_count": 0,
     "package": "com.topherofit.thf.pulse",
     "signature_members": [
@@ -29,14 +62,16 @@
   },
   "final": false,
   "issues": [
+    "DIGITAL_ASSET_LINKS_INTENT_FILTER_MISSING",
     "FIRST_INSTALL_STAGE16A_ASSET_MISSING",
+    "HEALTH_CONNECT_PERMISSIONS_MISSING",
     "OFFLINE_PAYLOAD_IS_FALLBACK_HTML_ONLY"
   ],
   "lane": "android",
-  "next_action": "Keep versionCode 50001 on Internal only. Motion lane must provide the canonical Stage16A first-install asset; Android lane must package it into a newly signed successor with versionCode >50001, rerun this integrity gate, then perform exact-candidate physical install/runtime QA before promotion.",
+  "next_action": "Keep versionCode 50001 on Internal only. Motion lane must provide the canonical Stage16A first-install asset; Android lane must package it into a newly signed successor with versionCode >50001, add a verified HTTPS autoVerify Digital Asset Links intent filter and the minimum declared Health Connect permissions, rerun this integrity gate, then perform exact-candidate physical install/runtime QA before promotion.",
   "phone_pass": false,
   "play_ready": false,
-  "recorded_at": "2026-09-26T17:30:00Z",
+  "recorded_at": "2026-09-26T19:50:00Z",
   "result": "BLOCKED",
   "schema": "thf-fitness-android-candidate-integrity-v1",
   "scope": "release_integrity_only"

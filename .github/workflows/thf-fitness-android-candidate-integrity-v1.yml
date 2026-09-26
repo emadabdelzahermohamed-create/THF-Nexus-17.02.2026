@@ -54,6 +54,8 @@ jobs:
             --source-commit-sha 89cd7d4c1abd3e258c701dd5660f79be8cc19f53
           grep -q 'FIRST_INSTALL_STAGE16A_ASSET_MISSING' out/android-candidate-integrity.json
           grep -q 'OFFLINE_PAYLOAD_IS_FALLBACK_HTML_ONLY' out/android-candidate-integrity.json
+          grep -q 'DIGITAL_ASSET_LINKS_INTENT_FILTER_MISSING' out/android-candidate-integrity.json
+          grep -q 'HEALTH_CONNECT_PERMISSIONS_MISSING' out/android-candidate-integrity.json
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
