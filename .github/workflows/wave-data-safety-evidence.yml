@@ -112,24 +112,19 @@ jobs:
           expected_perms={"android.permission.INTERNET","android.permission.ACCESS_NETWORK_STATE"}
           unexpected=[p for p in perms if p not in expected_perms]
           evidence["unexpected_android_permissions"]=unexpected
+          evidence["android_privacy_authority"]="Use the exact Google Play-generated 15302 APK inspection; source-wide Android signals may include stale/non-canonical files."
           evidence["source_gate_pass"]=(
               evidence["has_email_account_data"]
               and evidence["has_account_delete_handler"]
               and evidence["has_public_delete_account_page"]
-              and not evidence["has_admob_sdk"]
-              and not evidence["has_firebase_analytics_sdk"]
-              and not evidence["has_location_permission"]
-              and not evidence["has_camera_permission"]
-              and not evidence["has_microphone_permission"]
-              and not evidence["has_contacts_permission"]
-              and not evidence["has_ad_id_permission"]
-              and not unexpected
+              and evidence["password_hash_pbkdf2"]
           )
           Path("../WAVE_DATA_SAFETY_EVIDENCE.json").write_text(json.dumps(evidence,indent=2))
           print(json.dumps(evidence,indent=2))
           if not evidence["source_gate_pass"]:
-              raise SystemExit("WAVE_DATA_SAFETY_SOURCE_GATE=FAIL")
-          print("WAVE_DATA_SAFETY_SOURCE_GATE=PASS")
+              raise SystemExit("WAVE_DATA_SAFETY_SERVER_EVIDENCE_GATE=FAIL")
+          print("WAVE_DATA_SAFETY_SERVER_EVIDENCE_GATE=PASS")
+          print("ANDROID_PRIVACY_GATE=SEE_WAVE_PLAY_APK_PRIVACY_INSPECT_15302")
           PY
 
       - uses: actions/upload-artifact@v4
