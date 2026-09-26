@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.wave.mawja",
+      "sha256_cert_fingerprints": [
+        "B7:78:50:F0:30:AA:7D:C9:FF:45:9F:FD:60:BA:50:0A:8C:C6:5A:89:98:34:91:2C:E3:C2:28:E6:0A:47:36:A0"
+      ]
+    }
+  }
+]
