@@ -1,8 +1,15 @@
 {
   "lane": "motion",
   "phase": "FITNESS",
-  "status": "READY",
-  "active_task": null,
-  "source_branch": "release/fitness-standalone-v1-20260918",
-  "updated_at": "2026-09-24"
+  "status": "ACTIVE",
+  "active_task": "P0_STAGE16A_MOTION_VISUAL_QUALITY_CLOSURE",
+  "acceptance": [
+    "Human-readable exercise demonstration",
+    "Camera/framing/lighting/transitions improved",
+    "IK/foot-contact hooks and biomechanical mapping evidence",
+    "Rendered/runtime evidence"
+  ],
+  "next_action": "Use Stage16A/UAL/MediaPipe/Blender fallback to improve one exercise-motion path end-to-end and record rendered evidence.",
+  "no_progress_rule": "Never wait for Mixamo/DeepMotion; if blocked, use fallback or record exact blocker.",
+  "updated_at": "2026-09-26"
 }
