@@ -1,0 +1,180 @@
+name: WAVE Release Readiness Matrix
+
+on:
+  push:
+    branches:
+      - releaseops/wave-rc15-9-admin-rbac-20260918
+    paths:
+      - '.github/workflows/wave-release-readiness-matrix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  WAVE_PACKAGE: com.wave.mawja
+  WAVE_URL: https://wave-mawja.p-my.workers.dev
+  WAVE_VERSION_CODE: '15302'
+  WAVE_CLOSED_TRACK: wave-closed-readiness
+
+jobs:
+  matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate Google Play
+        id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Live WAVE surface matrix
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p readiness
+          python3 - <<'PY'
+          import json, urllib.request, urllib.error, os
+          base=os.environ["WAVE_URL"].rstrip("/")
+          paths=["/","/login","/admin-login","/control","/privacy","/terms","/.well-known/assetlinks.json"]
+          out={}
+          for p in paths:
+              req=urllib.request.Request(base+p,headers={"User-Agent":"WAVE-Readiness/1.0"})
+              try:
+                  with urllib.request.urlopen(req,timeout=20) as r:
+                      body=r.read(512000)
+                      out[p]={"status":r.status,"bytes":len(body),"final_url":r.geturl()}
+              except urllib.error.HTTPError as e:
+                  body=e.read(512000)
+                  out[p]={"status":e.code,"bytes":len(body),"final_url":e.geturl()}
+          assert out["/"]["status"]==200
+          assert out["/login"]["status"]==200
+          assert out["/admin-login"]["status"]==200
+          assert out["/privacy"]["status"]==200
+          assert out["/terms"]["status"]==200
+          assert out["/.well-known/assetlinks.json"]["status"]==200
+          open("readiness/live.json","w").write(json.dumps(out,indent=2))
+          print(json.dumps(out,indent=2))
+          PY
+
+      - name: Google Play state matrix
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          api="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/edits"
+          auth=(-H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json')
+
+          code="$(curl -sS -o readiness/edit.json -w '%{http_code}' -X POST "${auth[@]}" -d '{}' "$api")"
+          echo "EDIT_INSERT_HTTP=$code"; test "$code" = 200
+          edit="$(python3 -c 'import json;print(json.load(open("readiness/edit.json"))["id"])')"
+
+          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit/tracks" > readiness/tracks.json
+          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit/details" > readiness/details.json
+          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit/listings/ar" > readiness/listing-ar.json
+          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit/testers/$WAVE_CLOSED_TRACK" > readiness/testers-closed.json
+          curl -sS -f -H "Authorization: Bearer $ACCESS_TOKEN"             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$WAVE_PACKAGE/generatedApks/$WAVE_VERSION_CODE"             > readiness/generated-apks.json
+
+          curl -sS -f "https://androidpublisher.googleapis.com/$discovery/rest?version=v3" > readiness/discovery.json
+
+          python3 - <<'PY'
+          import json, os
+          tracks=json.load(open("readiness/tracks.json")).get("tracks") or []
+          details=json.load(open("readiness/details.json"))
+          listing=json.load(open("readiness/listing-ar.json"))
+          testers=json.load(open("readiness/testers-closed.json"))
+          gen=json.load(open("readiness/generated-apks.json"))
+          disc=json.load(open("readiness/discovery.json"))
+
+          def rels(track):
+              for t in tracks:
+                  if t.get("track")==track:
+                      return [{"status":r.get("status"),"versionCodes":r.get("versionCodes",[]),"name":r.get("name","")} for r in (t.get("releases") or [])]
+              return []
+
+          apps=((disc.get("resources") or {}).get("applications") or {})
+          methods=apps.get("methods") or {}
+          data_safety=methods.get("dataSafety") or {}
+          path=data_safety.get("path","")
+
+          generated=gen.get("generatedApks") or []
+          result={
+            "package":os.environ["WAVE_PACKAGE"],
+            "versionCode":os.environ["WAVE_VERSION_CODE"],
+            "internal":rels("internal"),
+            "closed":rels(os.environ["WAVE_CLOSED_TRACK"]),
+            "production":rels("production"),
+            "testerGoogleGroups":testers.get("googleGroups") or [],
+            "testerGoogleGroupsCount":len(testers.get("googleGroups") or []),
+            "listing":{
+              "title":listing.get("title",""),
+              "shortDescriptionLength":len(listing.get("shortDescription") or ""),
+              "fullDescriptionLength":len(listing.get("fullDescription") or ""),
+              "contactEmail":details.get("contactEmail",""),
+              "contactWebsite":details.get("contactWebsite",""),
+            },
+            "generatedApksPresent":bool(generated),
+            "dataSafetyApi":{
+              "method":data_safety.get("httpMethod",""),
+              "path":path,
+              "available": data_safety.get("httpMethod")=="POST" and "{packageName}/dataSafety" in path,
+            },
+          }
+          assert any("15302" in (r.get("versionCodes") or []) and r.get("status")=="completed" for r in result["internal"]), result["internal"]
+          assert result["listing"]["contactEmail"].lower()=="topherofit@gmail.com"
+          assert result["listing"]["contactWebsite"].startswith("https://wave-mawja.")
+          assert result["listing"]["title"]=="WAVE MAWJA"
+          assert result["generatedApksPresent"] is True
+          assert result["dataSafetyApi"]["available"] is True
+          open("WAVE_RELEASE_READINESS_MATRIX.json","w").write(json.dumps(result,indent=2))
+          print(json.dumps(result,indent=2))
+          PY
+
+          curl -sS -o /dev/null -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "$api/$edit"
+
+      - name: Render concise checkpoint
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import json
+          r=json.load(open("WAVE_RELEASE_READINESS_MATRIX.json"))
+          def f(x):
+              return ",".join(f"{i.get('status')}:{'/'.join(i.get('versionCodes') or [])}" for i in x) or "EMPTY"
+          lines=[
+            "# WAVE Release Readiness Matrix",
+            "",
+            f"- package: {r['package']}",
+            f"- versionCode: {r['versionCode']}",
+            f"- internal: {f(r['internal'])}",
+            f"- closed: {f(r['closed'])}",
+            f"- production: {f(r['production'])}",
+            f"- closed tester Google groups: {r['testerGoogleGroupsCount']}",
+            f"- listing title: {r['listing']['title']}",
+            f"- contact email: {r['listing']['contactEmail']}",
+            f"- contact website: {r['listing']['contactWebsite']}",
+            f"- generated APK metadata: {'PASS' if r['generatedApksPresent'] else 'FAIL'}",
+            f"- Data Safety API available: {'PASS' if r['dataSafetyApi']['available'] else 'FAIL'}",
+          ]
+          open("WAVE_RELEASE_READINESS_MATRIX.md","w").write("\n".join(lines)+"\n")
+          PY
+          cat WAVE_RELEASE_READINESS_MATRIX.md
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAVE-RELEASE-READINESS-MATRIX
+          retention-days: 30
+          path: |
+            WAVE_RELEASE_READINESS_MATRIX.json
+            WAVE_RELEASE_READINESS_MATRIX.md
+            readiness/*.json
