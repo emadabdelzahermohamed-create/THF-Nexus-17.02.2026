@@ -1,0 +1,108 @@
+{
+  "checks": {
+    "auth_session_contract_present": true,
+    "authenticated_user_scope_present": true,
+    "backend_source_present": true,
+    "health_ingestion_contract_present": true,
+    "health_provenance_dedup_present": true,
+    "routes_present": true,
+    "server_authority_contract_present": true,
+    "set_sequence_contract_complete": true,
+    "sync_report_contract_present": true
+  },
+  "final": false,
+  "lane": "backend",
+  "marker_counts": {
+    "auth_session": 28,
+    "health_ingestion": 26,
+    "health_provenance_dedup": 23,
+    "server_authority": 8,
+    "sync_reports": 10,
+    "user_scope": 98
+  },
+  "marker_files": {
+    "auth_session": [
+      "BACKEND_SUCCESSOR_V52.json",
+      "app/backend_authority.py",
+      "app/main.py",
+      "tests/test_backend_authority_v51.py"
+    ],
+    "health_ingestion": [
+      "app/backend_authority.py",
+      "app/main.py",
+      "tests/test_backend_authority_v51.py"
+    ],
+    "health_provenance_dedup": [
+      "app/backend_authority.py",
+      "tests/test_backend_authority_v51.py"
+    ],
+    "server_authority": [
+      "app/main.py",
+      "tests/test_backend_authority_v51.py"
+    ],
+    "sync_reports": [
+      "BACKEND_SUCCESSOR_V52.json",
+      "app/backend_authority.py",
+      "app/main.py",
+      "tests/test_backend_authority_v51.py"
+    ],
+    "user_scope": [
+      "app/backend_authority.py",
+      "app/main.py"
+    ]
+  },
+  "next_action": "Use authenticated non-destructive production E2E to prove login, scoped workout write, second-client sync, logout/session revocation and account deletion. Keep Health ingestion, deduplication and provenance fail-closed unless exact source and runtime evidence pass.",
+  "open_checks": [],
+  "recorded_at": "2026-09-27T14:38:00Z",
+  "result": "PROGRESS",
+  "routes": [
+    "/",
+    "/admin",
+    "/api/admin/catalog",
+    "/api/admin/exercises",
+    "/api/body/{user_id}",
+    "/api/goals/{user_id}",
+    "/api/health/records",
+    "/api/progress/{user_id}",
+    "/api/recommendation/{user_id}",
+    "/api/sync",
+    "/api/workouts/start",
+    "/api/workouts/{session_id}/finish",
+    "/api/workouts/{session_id}/proof",
+    "/api/workouts/{session_id}/sets",
+    "/health",
+    "/program/{slug}",
+    "/program/{slug}/enroll"
+  ],
+  "schema": "thf-fitness-backend-release-contract-v1",
+  "scope": "release_gate_only",
+  "set_sequence_marker_files": {
+    "acceptedSet": [
+      "app/main.py",
+      "tests/test_backend_authority_v51.py"
+    ],
+    "exercise_out_of_order": [
+      "app/main.py",
+      "tests/test_backend_authority_v51.py"
+    ],
+    "expectedSet": [
+      "app/main.py",
+      "tests/test_backend_authority_v51.py"
+    ],
+    "stale_set_sequence": [
+      "app/main.py",
+      "tests/test_backend_authority_v51.py"
+    ]
+  },
+  "source": {
+    "backend_file_count": 4,
+    "backend_files": [
+      "BACKEND_SUCCESSOR_V52.json",
+      "app/backend_authority.py",
+      "app/main.py",
+      "tests/test_backend_authority_v51.py"
+    ],
+    "file_count": 29,
+    "sha256": "babfbcb997e7b5347da1141e1455aa290e1e143bac8d00c48fa65a0f6d02d1f6"
+  }
+}

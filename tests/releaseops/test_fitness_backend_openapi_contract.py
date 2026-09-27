@@ -67,6 +67,17 @@ class FitnessBackendOpenApiContractTests(unittest.TestCase):
         self.assertTrue(report["checks"]["account_deletion_route_present"])
         self.assertNotIn("ACCOUNT_DELETION_ROUTE_MISSING", report["issues"])
 
+    def test_public_register_is_not_counted_as_unsecured_protected_mutation(self):
+        spec = dict(GOOD_SPEC)
+        spec["paths"] = {
+            **GOOD_SPEC["paths"],
+            "/auth/register": {"post": operation(secured=False)},
+        }
+        report = analyze_openapi(spec, "e" * 64, "2026-09-27T14:38:00Z")
+        self.assertEqual(report["result"], "PROGRESS")
+        self.assertTrue(report["checks"]["all_mutations_declare_security"])
+        self.assertEqual(report["mutation_count"], report["secured_mutation_count"])
+
     def test_evidence_excludes_schema_bodies(self):
         report = analyze_openapi(GOOD_SPEC, "c" * 64, "2026-09-26T18:00:00Z")
         self.assertNotIn("components", report)

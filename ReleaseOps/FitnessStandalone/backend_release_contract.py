@@ -56,6 +56,7 @@ def inventory(root: Path, source_sha256: str, recorded_at: str) -> dict[str, obj
         path
         for path in files
         if "backend" in {part.lower() for part in path.parts}
+        or "backend" in path.stem.lower()
         or path.name.lower() in {"main.py", "server.py", "index.ts", "index.js"}
     ]
     counts = {name: 0 for name in CATEGORIES}

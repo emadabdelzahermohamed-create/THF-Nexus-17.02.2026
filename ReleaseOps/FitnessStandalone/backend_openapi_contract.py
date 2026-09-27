@@ -46,11 +46,15 @@ def analyze_openapi(
         else {}
     )
     global_security = spec.get("security")
+    # Login and registration are intentionally public boundaries.  FastAPI
+    # represents an explicit public override as ``security: []``; do not
+    # mistake that for a missing security declaration on protected mutations.
+    public_auth_mutation = re.compile(r"/(?:auth/)?(?:login|register)/?$", re.I)
     mutation_operations = [
         (path, method, operation)
         for path, method, operation in operations
         if method in {"post", "put", "patch", "delete"}
-        and not re.search(r"/(?:auth/)?login/?$", path, re.I)
+        and not public_auth_mutation.search(path)
     ]
     secured_mutations = [
         f"{method.upper()} {path}"

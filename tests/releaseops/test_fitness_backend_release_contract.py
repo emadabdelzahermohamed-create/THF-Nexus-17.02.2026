@@ -61,6 +61,27 @@ class FitnessBackendReleaseContractTests(unittest.TestCase):
         self.assertEqual(report["source"]["file_count"], 1)
         self.assertEqual(report["source"]["backend_file_count"], 1)
 
+    def test_backend_named_module_contributes_health_provenance_markers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main = root / "app" / "main.py"
+            authority = root / "app" / "backend_authority.py"
+            main.parent.mkdir(parents=True)
+            main.write_text(GOOD_SOURCE, encoding="utf-8")
+            authority.write_text(
+                "provenance = record.provenance\n"
+                "sourceId = record.sourceId\n"
+                "deduplication = True\n"
+                "health = record.health\n",
+                encoding="utf-8",
+            )
+            report = inventory(root, "e" * 64, "2026-09-27T14:38:00Z")
+        self.assertTrue(report["checks"]["health_provenance_dedup_present"])
+        self.assertIn(
+            "app/backend_authority.py",
+            report["marker_files"]["health_provenance_dedup"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
