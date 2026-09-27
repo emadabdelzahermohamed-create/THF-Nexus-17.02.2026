@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">Ervaringsinstellingen</string>
+  <string name="retry">Opnieuw proberen</string>
+  <string name="retry_connection">Verbinding opnieuw proberen</string>
+  <string name="service_endpoint_missing">Het beveiligde service-eindpunt is niet ingesteld in deze build.</string>
+  <string name="pass_endpoint_missing">Het THF Pass-eindpunt is niet ingesteld.</string>
+  <string name="handoff_target_mismatch">Overdrachtsdoel komt niet overeen</string>
+  <string name="offline_title">Offline</string>
+  <string name="offline_body">%1$s maakt opnieuw verbinding zodra een netwerk beschikbaar is. Instellingen voor Databesparing blijven bewaard.</string>
+  <string name="network_error_title">Verbinding onderbroken</string>
+  <string name="network_error_body">De service kon niet veilig worden bereikt. Controleer de verbinding en probeer opnieuw.</string>
+  <string name="service_not_configured">Service niet ingesteld</string>
+  <string name="data_saver">Databesparing</string>
+  <string name="reduce_motion">Beweging verminderen</string>
+  <string name="high_contrast">Hoog contrast</string>
+  <string name="apply">Toepassen</string>
+  <string name="text_size">Tekstgrootte</string>
+  <string name="cancel">Annuleren</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

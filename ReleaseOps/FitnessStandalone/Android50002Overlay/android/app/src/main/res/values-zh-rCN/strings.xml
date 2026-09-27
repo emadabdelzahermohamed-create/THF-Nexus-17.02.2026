@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">体验设置</string>
+  <string name="retry">重试</string>
+  <string name="retry_connection">重试连接</string>
+  <string name="service_endpoint_missing">此版本尚未配置安全服务端点。</string>
+  <string name="pass_endpoint_missing">尚未配置 THF Pass 端点。</string>
+  <string name="handoff_target_mismatch">交接目标不匹配</string>
+  <string name="offline_title">离线</string>
+  <string name="offline_body">网络可用时，%1$s 将重新连接。数据节省偏好会保留。</string>
+  <string name="network_error_title">连接中断</string>
+  <string name="network_error_body">无法安全访问服务。请检查连接后重试。</string>
+  <string name="service_not_configured">服务未配置</string>
+  <string name="data_saver">数据节省</string>
+  <string name="reduce_motion">减少动态效果</string>
+  <string name="high_contrast">高对比度</string>
+  <string name="apply">应用</string>
+  <string name="text_size">文字大小</string>
+  <string name="cancel">取消</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

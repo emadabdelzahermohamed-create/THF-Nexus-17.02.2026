@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">অভিজ্ঞতা সেটিংস</string>
+  <string name="retry">আবার চেষ্টা করুন</string>
+  <string name="retry_connection">সংযোগ আবার চেষ্টা করুন</string>
+  <string name="service_endpoint_missing">এই বিল্ডে নিরাপদ সার্ভিস এন্ডপয়েন্ট কনফিগার করা হয়নি।</string>
+  <string name="pass_endpoint_missing">THF Pass এন্ডপয়েন্ট কনফিগার করা নেই।</string>
+  <string name="handoff_target_mismatch">হ্যান্ডঅফ লক্ষ্য মেলেনি</string>
+  <string name="offline_title">অফলাইন</string>
+  <string name="offline_body">নেটওয়ার্ক পাওয়া গেলে %1$s আবার সংযুক্ত হবে। ডেটা সেভার পছন্দ সংরক্ষিত থাকবে।</string>
+  <string name="network_error_title">সংযোগ বিচ্ছিন্ন</string>
+  <string name="network_error_body">সেবায় নিরাপদভাবে পৌঁছানো যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।</string>
+  <string name="service_not_configured">সেবা কনফিগার করা নেই</string>
+  <string name="data_saver">ডেটা সেভার</string>
+  <string name="reduce_motion">গতি কমান</string>
+  <string name="high_contrast">উচ্চ কনট্রাস্ট</string>
+  <string name="apply">প্রয়োগ করুন</string>
+  <string name="text_size">টেক্সটের আকার</string>
+  <string name="cancel">বাতিল</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

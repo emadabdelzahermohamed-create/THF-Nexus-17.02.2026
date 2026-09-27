@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">Настройки интерфейса</string>
+  <string name="retry">Повторить</string>
+  <string name="retry_connection">Повторить подключение</string>
+  <string name="service_endpoint_missing">Безопасный адрес сервиса не задан для этой сборки.</string>
+  <string name="pass_endpoint_missing">Адрес THF Pass не настроен.</string>
+  <string name="handoff_target_mismatch">Цель передачи не совпадает</string>
+  <string name="offline_title">Нет сети</string>
+  <string name="offline_body">%1$s подключится снова, когда сеть станет доступна. Настройки экономии данных сохраняются.</string>
+  <string name="network_error_title">Соединение прервано</string>
+  <string name="network_error_body">Не удалось безопасно подключиться к сервису. Проверьте соединение и повторите попытку.</string>
+  <string name="service_not_configured">Сервис не настроен</string>
+  <string name="data_saver">Экономия данных</string>
+  <string name="reduce_motion">Уменьшить анимацию</string>
+  <string name="high_contrast">Высокая контрастность</string>
+  <string name="apply">Применить</string>
+  <string name="text_size">Размер текста</string>
+  <string name="cancel">Отмена</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

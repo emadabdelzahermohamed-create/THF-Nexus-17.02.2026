@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">تنظیمات تجربه</string>
+  <string name="retry">تلاش دوباره</string>
+  <string name="retry_connection">تلاش دوباره برای اتصال</string>
+  <string name="service_endpoint_missing">نقطه پایانی امن سرویس در این ساخت پیکربندی نشده است.</string>
+  <string name="pass_endpoint_missing">نقطه پایانی THF Pass پیکربندی نشده است.</string>
+  <string name="handoff_target_mismatch">هدف انتقال مطابقت ندارد</string>
+  <string name="offline_title">آفلاین</string>
+  <string name="offline_body">وقتی شبکه در دسترس باشد %1$s دوباره متصل می‌شود. تنظیمات صرفه‌جویی داده حفظ می‌شود.</string>
+  <string name="network_error_title">اتصال قطع شد</string>
+  <string name="network_error_body">دسترسی امن به سرویس ممکن نبود. اتصال را بررسی و دوباره تلاش کنید.</string>
+  <string name="service_not_configured">سرویس پیکربندی نشده</string>
+  <string name="data_saver">صرفه‌جویی داده</string>
+  <string name="reduce_motion">کاهش حرکت</string>
+  <string name="high_contrast">کنتراست بالا</string>
+  <string name="apply">اعمال</string>
+  <string name="text_size">اندازه متن</string>
+  <string name="cancel">لغو</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

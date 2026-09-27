@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">Deneyim ayarları</string>
+  <string name="retry">Yeniden dene</string>
+  <string name="retry_connection">Bağlantıyı yeniden dene</string>
+  <string name="service_endpoint_missing">Güvenli hizmet uç noktası bu derlemeye eklenmemiş.</string>
+  <string name="pass_endpoint_missing">THF Pass uç noktası yapılandırılmamış.</string>
+  <string name="handoff_target_mismatch">Devir hedefi eşleşmiyor</string>
+  <string name="offline_title">Çevrimdışı</string>
+  <string name="offline_body">Ağ kullanılabilir olduğunda %1$s yeniden bağlanacak. Veri Tasarrufu tercihleri korunur.</string>
+  <string name="network_error_title">Bağlantı kesildi</string>
+  <string name="network_error_body">Hizmete güvenli biçimde ulaşılamadı. Bağlantıyı kontrol edip yeniden deneyin.</string>
+  <string name="service_not_configured">Hizmet yapılandırılmamış</string>
+  <string name="data_saver">Veri Tasarrufu</string>
+  <string name="reduce_motion">Hareketi azalt</string>
+  <string name="high_contrast">Yüksek kontrast</string>
+  <string name="apply">Uygula</string>
+  <string name="text_size">Metin boyutu</string>
+  <string name="cancel">İptal</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

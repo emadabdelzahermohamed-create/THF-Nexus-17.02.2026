@@ -1,0 +1,24 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">Experience settings</string>
+  <string name="retry">Retry</string>
+  <string name="retry_connection">Retry connection</string>
+  <string name="service_endpoint_missing">The secure service endpoint has not been injected into this build.</string>
+  <string name="pass_endpoint_missing">THF Pass endpoint is not configured.</string>
+  <string name="handoff_target_mismatch">Handoff target mismatch</string>
+  <string name="offline_title">You are offline</string>
+  <string name="offline_body">%1$s will reconnect when a network is available. Data Saver preferences are preserved.</string>
+  <string name="network_error_title">Connection interrupted</string>
+  <string name="network_error_body">The service could not be reached securely. Check your connection and retry.</string>
+  <string name="service_not_configured">Service not configured</string>
+  <string name="data_saver">Data Saver</string>
+  <string name="reduce_motion">Reduce motion</string>
+  <string name="high_contrast">High contrast</string>
+  <string name="apply">Apply</string>
+  <string name="text_size">Text size</string>
+  <string name="health_connect" translatable="false">Health Connect</string>
+  <string name="cancel">Cancel</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

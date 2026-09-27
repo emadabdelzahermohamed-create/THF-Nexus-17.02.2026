@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">Ustawienia interfejsu</string>
+  <string name="retry">Spróbuj ponownie</string>
+  <string name="retry_connection">Ponów połączenie</string>
+  <string name="service_endpoint_missing">Bezpieczny punkt końcowy usługi nie został skonfigurowany w tej kompilacji.</string>
+  <string name="pass_endpoint_missing">Punkt końcowy THF Pass nie jest skonfigurowany.</string>
+  <string name="handoff_target_mismatch">Cel przekazania jest niezgodny</string>
+  <string name="offline_title">Offline</string>
+  <string name="offline_body">%1$s połączy się ponownie, gdy sieć będzie dostępna. Ustawienia oszczędzania danych zostaną zachowane.</string>
+  <string name="network_error_title">Połączenie przerwane</string>
+  <string name="network_error_body">Nie udało się bezpiecznie połączyć z usługą. Sprawdź połączenie i spróbuj ponownie.</string>
+  <string name="service_not_configured">Usługa nieskonfigurowana</string>
+  <string name="data_saver">Oszczędzanie danych</string>
+  <string name="reduce_motion">Ogranicz ruch</string>
+  <string name="high_contrast">Wysoki kontrast</string>
+  <string name="apply">Zastosuj</string>
+  <string name="text_size">Rozmiar tekstu</string>
+  <string name="cancel">Anuluj</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

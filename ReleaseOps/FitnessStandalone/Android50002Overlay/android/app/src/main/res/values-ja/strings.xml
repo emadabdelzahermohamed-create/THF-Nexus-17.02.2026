@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">表示設定</string>
+  <string name="retry">再試行</string>
+  <string name="retry_connection">接続を再試行</string>
+  <string name="service_endpoint_missing">このビルドには安全なサービスエンドポイントが設定されていません。</string>
+  <string name="pass_endpoint_missing">THF Pass エンドポイントが設定されていません。</string>
+  <string name="handoff_target_mismatch">ハンドオフ先が一致しません</string>
+  <string name="offline_title">オフライン</string>
+  <string name="offline_body">ネットワークが利用可能になると %1$s は再接続します。データセーバー設定は保持されます。</string>
+  <string name="network_error_title">接続が中断されました</string>
+  <string name="network_error_body">サービスへ安全に接続できませんでした。接続を確認して再試行してください。</string>
+  <string name="service_not_configured">サービス未設定</string>
+  <string name="data_saver">データセーバー</string>
+  <string name="reduce_motion">動きを減らす</string>
+  <string name="high_contrast">高コントラスト</string>
+  <string name="apply">適用</string>
+  <string name="text_size">文字サイズ</string>
+  <string name="cancel">キャンセル</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

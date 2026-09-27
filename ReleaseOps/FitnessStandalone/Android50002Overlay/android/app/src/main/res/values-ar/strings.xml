@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">إعدادات التجربة</string>
+  <string name="retry">إعادة المحاولة</string>
+  <string name="retry_connection">إعادة محاولة الاتصال</string>
+  <string name="service_endpoint_missing">لم تتم إضافة عنوان الخدمة الآمن إلى هذا الإصدار.</string>
+  <string name="pass_endpoint_missing">لم تتم تهيئة عنوان THF Pass.</string>
+  <string name="handoff_target_mismatch">هدف التحويل غير مطابق</string>
+  <string name="offline_title">أنت غير متصل</string>
+  <string name="offline_body">سيعيد %1$s الاتصال عند توفر الشبكة. تظل تفضيلات توفير البيانات محفوظة.</string>
+  <string name="network_error_title">انقطع الاتصال</string>
+  <string name="network_error_body">تعذر الوصول إلى الخدمة بشكل آمن. تحقق من الاتصال وأعد المحاولة.</string>
+  <string name="service_not_configured">الخدمة غير مهيأة</string>
+  <string name="data_saver">توفير البيانات</string>
+  <string name="reduce_motion">تقليل الحركة</string>
+  <string name="high_contrast">تباين عالٍ</string>
+  <string name="apply">تطبيق</string>
+  <string name="text_size">حجم النص</string>
+  <string name="cancel">إلغاء</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

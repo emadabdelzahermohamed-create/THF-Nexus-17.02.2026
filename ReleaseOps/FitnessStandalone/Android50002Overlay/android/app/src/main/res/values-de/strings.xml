@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">Erlebniseinstellungen</string>
+  <string name="retry">Erneut versuchen</string>
+  <string name="retry_connection">Verbindung erneut versuchen</string>
+  <string name="service_endpoint_missing">Der sichere Dienst-Endpunkt wurde in diesem Build nicht konfiguriert.</string>
+  <string name="pass_endpoint_missing">Der THF-Pass-Endpunkt ist nicht konfiguriert.</string>
+  <string name="handoff_target_mismatch">Übergabeziel stimmt nicht überein</string>
+  <string name="offline_title">Offline</string>
+  <string name="offline_body">%1$s stellt die Verbindung wieder her, sobald ein Netzwerk verfügbar ist. Datenspar-Einstellungen bleiben erhalten.</string>
+  <string name="network_error_title">Verbindung unterbrochen</string>
+  <string name="network_error_body">Der Dienst konnte nicht sicher erreicht werden. Prüfe die Verbindung und versuche es erneut.</string>
+  <string name="service_not_configured">Dienst nicht konfiguriert</string>
+  <string name="data_saver">Datensparen</string>
+  <string name="reduce_motion">Bewegung reduzieren</string>
+  <string name="high_contrast">Hoher Kontrast</string>
+  <string name="apply">Anwenden</string>
+  <string name="text_size">Textgröße</string>
+  <string name="cancel">Abbrechen</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

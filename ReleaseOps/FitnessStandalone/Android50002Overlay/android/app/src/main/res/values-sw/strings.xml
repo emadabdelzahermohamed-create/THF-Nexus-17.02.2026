@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">Mipangilio ya matumizi</string>
+  <string name="retry">Jaribu tena</string>
+  <string name="retry_connection">Jaribu muunganisho tena</string>
+  <string name="service_endpoint_missing">Mwisho salama wa huduma haujawekwa kwenye toleo hili.</string>
+  <string name="pass_endpoint_missing">Mwisho wa THF Pass haujawekwa.</string>
+  <string name="handoff_target_mismatch">Lengo la handoff halilingani</string>
+  <string name="offline_title">Nje ya mtandao</string>
+  <string name="offline_body">%1$s itaunganishwa tena mtandao unapopatikana. Mapendeleo ya Kuokoa Data yatahifadhiwa.</string>
+  <string name="network_error_title">Muunganisho umekatika</string>
+  <string name="network_error_body">Huduma haikuweza kufikiwa kwa usalama. Kagua muunganisho na ujaribu tena.</string>
+  <string name="service_not_configured">Huduma haijawekwa</string>
+  <string name="data_saver">Kuokoa Data</string>
+  <string name="reduce_motion">Punguza mwendo</string>
+  <string name="high_contrast">Utofautishaji mkubwa</string>
+  <string name="apply">Tumia</string>
+  <string name="text_size">Ukubwa wa maandishi</string>
+  <string name="cancel">Ghairi</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

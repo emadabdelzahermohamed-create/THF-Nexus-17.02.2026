@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Top Hero Fit — Offline Motion Coach</title>
+<script type="module" src="offline/vendor/model-viewer.min.js"></script>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;color:#f8fafc;background:#07111f}
+*{box-sizing:border-box} body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0,#17335d 0,#07111f 42%,#030712 100%)}
+main{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#67e8f9;font-weight:800}
+h1{margin:4px 0 0;font-size:clamp(22px,6vw,34px);line-height:1.05}
+.badge{padding:8px 10px;border:1px solid #334155;border-radius:999px;background:#0f172acc;font-size:12px;white-space:nowrap}
+.stage{position:relative;min-height:55vh;border:1px solid #243b59;border-radius:24px;overflow:hidden;background:linear-gradient(180deg,#12233d,#060b14);box-shadow:0 24px 70px #0008}
+model-viewer{width:100%;height:100%;min-height:55vh;--poster-color:transparent;background:radial-gradient(ellipse at 50% 78%,#21446a55 0,transparent 48%)}
+.status{position:absolute;left:12px;right:12px;bottom:12px;padding:10px 12px;border-radius:14px;background:#020617d9;border:1px solid #334155;font-size:13px;backdrop-filter:blur(10px)}
+.controls{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px}
+select,button{min-height:48px;border-radius:14px;border:1px solid #334155;background:#0f172a;color:#f8fafc;padding:0 14px;font:inherit}
+button{font-weight:800;cursor:pointer} button.primary{background:#0891b2;border-color:#22d3ee}
+.quick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.quick button{min-height:42px;padding:0 6px;font-size:12px}
+.note{margin:0;color:#94a3b8;font-size:12px;line-height:1.45;text-align:center}
+@media(max-width:520px){.quick{grid-template-columns:repeat(3,1fr)}.stage,model-viewer{min-height:52vh}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div><div class="eyebrow" data-i18n="eyebrow">Offline Motion Coach</div><h1 data-i18n="title">Stage16A stays with you.</h1></div>
+<div class="badge" id="clipCount">Loading…</div>
+</header>
+<section class="stage" aria-label="3D exercise demonstration">
+<model-viewer id="coach" src="offline/thf_mpfb_stage16a_ual12_animated.glb" camera-controls autoplay animation-name="breathe"
+shadow-intensity="1.15" shadow-softness=".85" exposure="1.05" interaction-prompt="none"
+camera-orbit="0deg 82deg 3.1m" min-camera-orbit="auto auto 1.6m" max-camera-orbit="auto auto 5m">
+</model-viewer>
+<div class="status" id="status" role="status">Preparing the offline coach…</div>
+</section>
+<section class="controls">
+<div class="row">
+<select id="animation" aria-label="Animation clip"></select>
+<button class="primary" id="replay" type="button" data-i18n="replay">Replay</button>
+</div>
+<div class="quick" aria-label="Quick motions">
+<button data-clip="breathe">Breathe</button>
+<button data-clip="walk">Walk</button>
+<button data-clip="run">Run</button>
+<button data-clip="UAL1_Push_Loop">Push</button>
+<button data-clip="UAL1_Jump_Loop">Jump</button>
+</div>
+<button id="retry" type="button" data-i18n="retry">Reconnect to full Top Hero Fit</button>
+<p class="note" data-i18n="note">This offline guide demonstrates stored motion only. Sensor/form verification and account sync require supported permissions and connectivity.</p>
+</section>
+</main>
+<script>
+const model=document.getElementById('coach'), select=document.getElementById('animation');
+const status=document.getElementById('status'), count=document.getElementById('clipCount');
+const ar=(navigator.language||'').toLowerCase().startsWith('ar');
+const t=ar?{
+eyebrow:'مدرب الحركة بدون إنترنت',title:'Stage16A متاح معك بدون إنترنت.',replay:'إعادة',
+retry:'إعادة الاتصال بـ Top Hero Fit',note:'هذا الدليل يعرض الحركة المخزنة فقط. التحقق بالحساسات ومزامنة الحساب يحتاجان الصلاحيات والاتصال.',
+ready:n=>`جاهز — ${n} حركة محلية`,playing:n=>`الحركة الحالية: ${n}`
+}:{
+eyebrow:'Offline Motion Coach',title:'Stage16A stays with you.',replay:'Replay',
+retry:'Reconnect to full Top Hero Fit',note:'This offline guide demonstrates stored motion only. Sensor/form verification and account sync require supported permissions and connectivity.',
+ready:n=>`Ready — ${n} local motions`,playing:n=>`Playing: ${n}`
+};
+if(ar){document.documentElement.lang='ar';document.documentElement.dir='rtl'}
+document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(typeof t[k]==='string')el.textContent=t[k]});
+function play(name){
+ if(!name)return;
+ model.animationName=name; model.currentTime=0; model.play();
+ select.value=name; status.textContent=t.playing(name);
+}
+model.addEventListener('load',()=>{
+ const clips=model.availableAnimations||[];
+ select.innerHTML='';
+ clips.forEach(name=>{const o=document.createElement('option');o.value=name;o.textContent=name;select.appendChild(o)});
+ const preferred=clips.includes('UAL1_Push_Loop')?'UAL1_Push_Loop':clips.includes('breathe')?'breathe':clips[0];
+ count.textContent=`${clips.length} clips`;status.textContent=t.ready(clips.length);play(preferred);
+});
+model.addEventListener('error',()=>{status.textContent=ar?'تعذر تحميل نموذج الحركة المحلي.':'Offline motion model failed to load.'});
+select.addEventListener('change',()=>play(select.value));
+document.getElementById('replay').addEventListener('click',()=>play(select.value));
+document.querySelectorAll('[data-clip]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.clip)));
+document.getElementById('retry').addEventListener('click',()=>location.href='topherofit://retry');
+</script>
+</body>
+</html>

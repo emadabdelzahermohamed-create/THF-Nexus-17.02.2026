@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">تجربے کی ترتیبات</string>
+  <string name="retry">دوبارہ کوشش کریں</string>
+  <string name="retry_connection">کنکشن دوبارہ آزمائیں</string>
+  <string name="service_endpoint_missing">اس بلڈ میں محفوظ سروس اینڈ پوائنٹ ترتیب نہیں دیا گیا۔</string>
+  <string name="pass_endpoint_missing">THF Pass اینڈ پوائنٹ ترتیب نہیں دیا گیا۔</string>
+  <string name="handoff_target_mismatch">ہینڈ آف ہدف مطابقت نہیں رکھتا</string>
+  <string name="offline_title">آف لائن</string>
+  <string name="offline_body">نیٹ ورک دستیاب ہونے پر %1$s دوبارہ جڑ جائے گا۔ ڈیٹا سیور کی ترجیحات محفوظ رہیں گی۔</string>
+  <string name="network_error_title">کنکشن منقطع ہو گیا</string>
+  <string name="network_error_body">سروس تک محفوظ طریقے سے رسائی نہیں ہو سکی۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔</string>
+  <string name="service_not_configured">سروس ترتیب نہیں دی گئی</string>
+  <string name="data_saver">ڈیٹا سیور</string>
+  <string name="reduce_motion">حرکت کم کریں</string>
+  <string name="high_contrast">زیادہ کنٹراسٹ</string>
+  <string name="apply">لاگو کریں</string>
+  <string name="text_size">متن کا سائز</string>
+  <string name="cancel">منسوخ</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

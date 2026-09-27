@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">환경 설정</string>
+  <string name="retry">다시 시도</string>
+  <string name="retry_connection">연결 다시 시도</string>
+  <string name="service_endpoint_missing">이 빌드에 보안 서비스 엔드포인트가 설정되지 않았습니다.</string>
+  <string name="pass_endpoint_missing">THF Pass 엔드포인트가 설정되지 않았습니다.</string>
+  <string name="handoff_target_mismatch">핸드오프 대상이 일치하지 않습니다</string>
+  <string name="offline_title">오프라인</string>
+  <string name="offline_body">네트워크를 사용할 수 있게 되면 %1$s이(가) 다시 연결됩니다. 데이터 절약 설정은 유지됩니다.</string>
+  <string name="network_error_title">연결이 끊어졌습니다</string>
+  <string name="network_error_body">서비스에 안전하게 연결할 수 없습니다. 연결을 확인하고 다시 시도하세요.</string>
+  <string name="service_not_configured">서비스가 설정되지 않음</string>
+  <string name="data_saver">데이터 절약</string>
+  <string name="reduce_motion">동작 줄이기</string>
+  <string name="high_contrast">고대비</string>
+  <string name="apply">적용</string>
+  <string name="text_size">텍스트 크기</string>
+  <string name="cancel">취소</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>

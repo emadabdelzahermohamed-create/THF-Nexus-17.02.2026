@@ -1,0 +1,23 @@
+<resources>
+  <string name="app_name">THF Pulse</string>
+  <string name="experience_settings">Setelan pengalaman</string>
+  <string name="retry">Coba lagi</string>
+  <string name="retry_connection">Coba sambungan lagi</string>
+  <string name="service_endpoint_missing">Endpoint layanan aman belum dikonfigurasi pada build ini.</string>
+  <string name="pass_endpoint_missing">Endpoint THF Pass belum dikonfigurasi.</string>
+  <string name="handoff_target_mismatch">Target handoff tidak cocok</string>
+  <string name="offline_title">Offline</string>
+  <string name="offline_body">%1$s akan tersambung kembali saat jaringan tersedia. Preferensi Penghemat Data tetap tersimpan.</string>
+  <string name="network_error_title">Koneksi terputus</string>
+  <string name="network_error_body">Layanan tidak dapat dijangkau dengan aman. Periksa koneksi lalu coba lagi.</string>
+  <string name="service_not_configured">Layanan belum dikonfigurasi</string>
+  <string name="data_saver">Penghemat Data</string>
+  <string name="reduce_motion">Kurangi gerakan</string>
+  <string name="high_contrast">Kontras tinggi</string>
+  <string name="apply">Terapkan</string>
+  <string name="text_size">Ukuran teks</string>
+  <string name="cancel">Batal</string>
+  <string name="zoom_100">100%</string>
+  <string name="zoom_115">115%</string>
+  <string name="zoom_130">130%</string>
+</resources>
