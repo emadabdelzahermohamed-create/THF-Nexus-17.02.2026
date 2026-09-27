@@ -14,28 +14,50 @@
     "Synchronized document lang and dir with the application locale state",
     "Removed the unsupported CTA arrow glyph and centered the bilingual sign-in label",
     "Captured mobile and web runtime screenshots with zero frontend, backend, or network errors",
-    "Recorded font provenance, screenshot dimensions, hashes, and fail-closed boundaries"
+    "Recorded font provenance, screenshot dimensions, hashes, and fail-closed boundaries",
+    "Implemented an explicit query-scoped, non-privileged visual QA fixture that never creates auth tokens or calls protected account state",
+    "Intercepted fixture profile/workout mutations in memory and exposed a persistent no-auth/no-server-write boundary banner",
+    "Captured inspected Arabic RTL onboarding and English LTR dashboard mobile/web runtime evidence",
+    "Suppressed external video embeds only in fixture mode while retaining Stage16A as the primary offline guide",
+    "Corrected the AppDeploy test suite to exactly one sanity test and added fixture-boundary coverage",
+    "Restored the production root to normal authentication and captured zero-error mobile/web regression proof"
   ],
   "appdeploy": {
     "app_id": "thf-fitness-pulse-ul26f1",
-    "snapshot_version": "1790482175088",
-    "qa_timestamp": 1790482188855,
-    "mobile_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790482197004/mobile.png",
-    "mobile_sha256": "c3b9e686c9e0f7b967be1e0ba5f3f6e4a3544217ad945210e6467271188ec0bc",
-    "web_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790482197004/web.png",
-    "web_sha256": "394a485a85850bde9895923ffcbf7fffa1220eb975b085e9ef961ea1e5cc5978",
+    "snapshot_version": "1790500694233",
+    "qa_timestamp": 1790500707991,
+    "mobile_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790500731642/mobile.png",
+    "mobile_sha256": "3b1ac322eb9f4026d833fae8fa268561fb6e8fec1cd5afdd5cce1ed96598817c",
+    "web_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790500731642/web.png",
+    "web_sha256": "ba19c001464503006ba6fee5c56dfa92d7ad5bcf7df7ce46560ddc7e1abf5c8e",
     "errors": {
       "frontend": 0,
       "backend": 0,
       "network": 0
-    }
+    },
+    "visual_qa_captures": [
+      {
+        "scene": "onboarding-ar",
+        "snapshot_version": "1790499939566",
+        "qa_timestamp": 1790499958940,
+        "mobile_sha256": "33de966811f06a574810c222f4965f270125a16e4e45d044317c6a60d9f65a2b",
+        "web_sha256": "2e214198a66cd746fc697b2c589a63544f7d95d79adac7a28b096f307657f621"
+      },
+      {
+        "scene": "dashboard-en",
+        "snapshot_version": "1790500005572",
+        "qa_timestamp": 1790500022494,
+        "mobile_sha256": "86e123649cdcaf5906a1730d490f24a677dd7a844b09fc073a1a2b090196ef6e",
+        "web_sha256": "9cc3a4abfc853a62630889728be1fb44f7ddc6c7fc4cbdfe3541566592a0abda"
+      }
+    ]
   },
   "evidence": {
-    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_RTL_RUNTIME_20260927.md",
-    "commit_sha": "5d5f5fcb5fe0671534147c0c9fb4cb9da2246db9"
+    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_VISUAL_QA_FIXTURE_20260927.md",
+    "commit_sha": "bccd7fc744a2de2146d016dc758f774a9cb71a35"
   },
-  "blocker": "AUTHENTICATED_ONBOARDING_DASHBOARD_SESSION_AND_ENGLISH_LTR_RUNTIME_SCREENSHOTS_NOT_CAPTURED; Stage16A visibility is owned by Motion",
-  "next_action": "After Motion restores visible Stage16A rendering, capture authenticated Arabic RTL and English LTR onboarding, dashboard, and workout/session runtime evidence; keep Product PASS fail-closed until those visuals are verified.",
+  "blocker": "ACTIVE_WORKOUT_FIXTURE_VERSIONS_REACHED_READY_WITH_ZERO_SURFACED_ERRORS_BUT_APPDEPLOY_EMITTED_NO_QA_SCREENSHOT; remaining Arabic/English onboarding-dashboard-workout matrix and real interaction proof remain open",
+  "next_action": "Use the durable visualQa fixture with an approved host-managed browser, or retry when AppDeploy emits fixture screenshots, to capture Arabic and English active-workout frames plus real navigation interactions; keep Product PASS fail-closed until the complete matrix is inspected.",
   "no_progress_rule": "If no commit/deploy/evidence is produced, write BLOCKED with exact tool/permission/dependency cause.",
-  "updated_at": "2026-09-27T04:11:46Z"
+  "updated_at": "2026-09-27T09:20:54.758Z"
 }
