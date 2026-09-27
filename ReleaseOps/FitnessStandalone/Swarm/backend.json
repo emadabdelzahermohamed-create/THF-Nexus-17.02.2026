@@ -4,7 +4,7 @@
   "status": "ACTIVE",
   "result": "PROGRESS",
   "final": false,
-  "active_task": "BACKEND_V52_CI_AND_AUTHENTICATED_E2E_CLOSURE",
+  "active_task": "AUTHENTICATED_NON_DESTRUCTIVE_E2E_CLOSURE",
   "acceptance": [
     "Auth/session/data-sync correctness",
     "Health ingestion provenance and deterministic deduplication",
@@ -19,7 +19,8 @@
     "Static release contract passed all nine checks: auth/session, user scope, sync/report, server authority, set sequence, Health ingestion, and Health provenance/deduplication.",
     "Runtime OpenAPI contract passed with 61 paths, 62 operations, and 26/26 protected mutations secured by declared sessionCookie or adminKey boundaries.",
     "Checkpointed the source adoption, fail-closed evidence, auditor fixes, and exact-source GitHub workflow on the Backend lane branch.",
-    "Started canonical GitHub Actions run 36326955001 against exact checkpoint a7c99024d395b9c613a9ed69e009cf36d916144b."
+    "Started canonical GitHub Actions run 36326955001 against exact checkpoint a7c99024d395b9c613a9ed69e009cf36d916144b.",
+    "Canonical GitHub Actions run 36326955001 completed successfully on exact checkpoint a7c99024d395b9c613a9ed69e009cf36d916144b and produced evidence artifact 10934247335."
   ],
   "evidence": {
     "successor_source": {
@@ -79,22 +80,20 @@
       "run_id": 36326955001,
       "run_number": 7,
       "head_sha": "a7c99024d395b9c613a9ed69e009cf36d916144b",
-      "status": "in_progress",
-      "conclusion": null,
-      "artifact_id": null
+      "status": "completed",
+      "conclusion": "success",
+      "artifact_id": 10934247335,
+      "artifact_name": "THF-FITNESS-BACKEND-V52-RELEASE-CONTRACT",
+      "artifact_digest": "sha256:a7d4cbca5ec35460f19fbad5939f295af31d3d7a61cf56183d1a4c5173f2a046"
     }
   },
   "blockers": [
-    {
-      "id": "BACKEND_V52_GITHUB_CI_PENDING",
-      "detail": "Canonical run 36326955001 must reproduce the exact Drive SHA, 25 source tests, and both PROGRESS contract reports before PASS can be considered."
-    },
     {
       "id": "AUTHENTICATED_NON_DESTRUCTIVE_E2E_PENDING",
       "detail": "Login, scoped workout write, second-client sync, logout/session revocation, and account deletion have not yet been proven against a deployed V52 environment."
     }
   ],
-  "next_action": "Reconcile GitHub Actions run 36326955001 and its artifact. If it passes, deploy this exact V52 SHA to an isolated non-production target and run authenticated non-destructive E2E for login, scoped workout write, second-client sync, logout/session revocation, and account deletion; keep PASS fail-closed until both gates are evidence-backed.",
+  "next_action": "Deploy the exact V52 SHA to an isolated non-production target and run authenticated non-destructive E2E for login, scoped workout write, second-client sync, logout/session revocation, and account deletion; keep PASS fail-closed until this runtime gate is evidence-backed.",
   "no_progress_rule": "If backend has no runnable gap, mark PASS with evidence rather than remaining READY.",
-  "updated_at": "2026-09-27T14:44:30Z"
+  "updated_at": "2026-09-27T23:19:25Z"
 }
