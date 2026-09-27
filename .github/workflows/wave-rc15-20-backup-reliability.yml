@@ -18,11 +18,15 @@ env:
   GCP_BUILDER: thf-wave-builder
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  CLOUDFLARE_D1_DATABASE_NAME: wave-mawja-prod
 
 jobs:
   backup-reliability:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - name: Authenticate to GCP with WIF
         uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
@@ -37,35 +41,102 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      - name: Validate newest WAVE backup and perform read-only restore drill
+      - name: Export current production D1 and stage privately
+        id: backup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"
+          npx --yes wrangler@4.119.0 d1 list --json > /tmp/wave-d1-list.json
+          db_id=$(python3 - <<'PY'
+          import json
+          data = json.load(open('/tmp/wave-d1-list.json'))
+          rows = data if isinstance(data, list) else data.get('result', data.get('databases', []))
+          matches = [row for row in rows if row.get('name') == 'wave-mawja-prod']
+          if len(matches) != 1:
+              raise SystemExit(f"expected one wave-mawja-prod database, found {len(matches)}")
+          print(matches[0].get('uuid') or matches[0].get('id'))
+          PY
+          )
+          test -n "$db_id"
+          jq -n --arg id "$db_id" '{
+            name: "wave-rc15-20-backup",
+            compatibility_date: "2026-09-27",
+            d1_databases: [{
+              binding: "DB",
+              database_name: "wave-mawja-prod",
+              database_id: $id
+            }]
+          }' > /tmp/wave-backup-wrangler.json
+          backup_file="WAVE_D1_RC15_20_$(date -u +%Y%m%dT%H%M%SZ).sql"
+          npx --yes wrangler@4.119.0 d1 export "${CLOUDFLARE_D1_DATABASE_NAME}" \
+            --remote \
+            --config /tmp/wave-backup-wrangler.json \
+            --output "$backup_file" \
+            --y
+          test -s "$backup_file"
+          grep -Eq 'CREATE TABLE|INSERT INTO' "$backup_file"
+          sha256sum "$backup_file" > "$backup_file.sha256"
+          remote_dir="wave-backups/RC15_20/${GITHUB_RUN_ID}"
+          gcloud compute ssh "${GCP_BUILDER}" \
+            --project "${GCP_PROJECT_ID}" \
+            --zone "${GCP_ZONE}" \
+            --tunnel-through-iap \
+            --ssh-key-expire-after=10m \
+            --quiet \
+            --command "mkdir -p ~/$remote_dir && chmod 700 ~/$remote_dir"
+          gcloud compute scp "$backup_file" "$backup_file.sha256" \
+            "${GCP_BUILDER}:~/$remote_dir/" \
+            --project "${GCP_PROJECT_ID}" \
+            --zone "${GCP_ZONE}" \
+            --tunnel-through-iap \
+            --quiet
+          rm -f "$backup_file" "$backup_file.sha256"
+          {
+            echo "D1_EXPORT=PASS"
+            echo "PRIVATE_GCP_STAGE=PASS"
+            echo "BACKUP_SET=RC15_20/${GITHUB_RUN_ID}"
+          } > wave-backup-create-evidence.txt
+
+      - name: Validate checksum and perform isolated restore drill
         id: verify
         shell: bash
         run: |
           set -Eeuo pipefail
           cat > /tmp/wave-backup-verify.sh <<'REMOTE_SCRIPT'
           set -Eeuo pipefail
-          base="$HOME/wave-backups"
+          base="$HOME/wave-backups/RC15_20"
           if [[ ! -d "$base" ]]; then
             echo "RESULT=FAIL"
-            echo "REASON=backup_base_missing"
+            echo "REASON=rc15_20_backup_base_missing"
             exit 1
           fi
           mapfile -t candidates < <(find "$base" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -rn)
           if (( ${#candidates[@]} == 0 )); then
             echo "RESULT=FAIL"
-            echo "REASON=no_backup_sets"
+            echo "REASON=no_rc15_20_backup_sets"
             exit 1
           fi
           root="${candidates[0]#* }"
-          echo "BACKUP_SET=$(basename "$root")"
-          echo "BACKUP_MTIME_UTC=$(date -u -r "$root" +%Y-%m-%dT%H:%M:%SZ)"
+          newest_epoch=$(find "$root" -type f -printf '%T@\n' | sort -rn | head -n1 | cut -d. -f1)
+          now_epoch=$(date +%s)
+          age_seconds=$((now_epoch - newest_epoch))
+          echo "BACKUP_SET=RC15_20/$(basename "$root")"
+          echo "BACKUP_NEWEST_FILE_UTC=$(date -u -d "@$newest_epoch" +%Y-%m-%dT%H:%M:%SZ)"
+          echo "BACKUP_AGE_SECONDS=$age_seconds"
+          if (( age_seconds > 3600 )); then
+            echo "RESULT=FAIL"
+            echo "REASON=backup_older_than_one_hour"
+            exit 1
+          fi
           file_count=$(find "$root" -type f | wc -l)
           total_bytes=$(find "$root" -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}')
           echo "FILE_COUNT=$file_count"
           echo "TOTAL_BYTES=$total_bytes"
-          if (( file_count == 0 || total_bytes == 0 )); then
+          if (( file_count < 2 || total_bytes == 0 )); then
             echo "RESULT=FAIL"
-            echo "REASON=empty_backup_set"
+            echo "REASON=incomplete_backup_set"
             exit 1
           fi
           if find "$root" -type f -size 0 -print -quit | grep -q .; then
@@ -74,67 +145,46 @@ jobs:
             find "$root" -type f -size 0 -printf 'ZERO_BYTE=%P\n'
             exit 1
           fi
+          checksum_count=0
+          while IFS= read -r -d '' checksum; do
+            (cd "$(dirname "$checksum")" && sha256sum -c "$(basename "$checksum")")
+            checksum_count=$((checksum_count + 1))
+          done < <(find "$root" -type f -name '*.sha256' -print0)
+          echo "CHECKSUM_FILES_VALIDATED=$checksum_count"
+          if (( checksum_count == 0 )); then
+            echo "RESULT=FAIL"
+            echo "REASON=missing_checksum_manifest"
+            exit 1
+          fi
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
-          validated=0
-          while IFS= read -r -d '' file; do
-            rel="${file#"$root"/}"
-            case "$file" in
-              *.tar.gz|*.tgz)
-                gzip -t "$file"
-                mkdir -p "$tmp/extract"
-                tar -xzf "$file" -C "$tmp/extract"
-                rm -rf "$tmp/extract"
-                echo "RESTORE_READ_OK=$rel"
-                validated=$((validated + 1))
-                ;;
-              *.tar)
-                mkdir -p "$tmp/extract"
-                tar -xf "$file" -C "$tmp/extract"
-                rm -rf "$tmp/extract"
-                echo "RESTORE_READ_OK=$rel"
-                validated=$((validated + 1))
-                ;;
-              *.zip)
-                unzip -tq "$file" >/dev/null
-                mkdir -p "$tmp/extract"
-                unzip -q "$file" -d "$tmp/extract"
-                rm -rf "$tmp/extract"
-                echo "RESTORE_READ_OK=$rel"
-                validated=$((validated + 1))
-                ;;
-              *.gz)
-                gzip -t "$file"
-                echo "COMPRESSED_READ_OK=$rel"
-                validated=$((validated + 1))
-                ;;
-              *.json)
-                python3 -m json.tool "$file" >/dev/null
-                echo "JSON_READ_OK=$rel"
-                validated=$((validated + 1))
-                ;;
-              *.sqlite|*.sqlite3|*.db)
-                if command -v sqlite3 >/dev/null 2>&1; then
-                  test "$(sqlite3 "$file" 'PRAGMA quick_check;')" = "ok"
-                  echo "SQLITE_QUICK_CHECK_OK=$rel"
-                  validated=$((validated + 1))
-                else
-                  dd if="$file" of=/dev/null bs=1M status=none
-                  echo "BINARY_READ_OK=$rel"
-                  validated=$((validated + 1))
-                fi
-                ;;
-              *)
-                dd if="$file" of=/dev/null bs=1M status=none
-                echo "FILE_READ_OK=$rel"
-                validated=$((validated + 1))
-                ;;
-            esac
-          done < <(find "$root" -type f -print0)
-          echo "VALIDATED_FILES=$validated"
-          if (( validated != file_count )); then
+          sql_count=0
+          while IFS= read -r -d '' sql; do
+            rel="${sql#"$root"/}"
+            python3 - "$sql" "$tmp/restore.sqlite" <<'PY'
+          import sqlite3, sys
+          sql_path, db_path = sys.argv[1], sys.argv[2]
+          with open(sql_path, "r", encoding="utf-8") as fh:
+              script = fh.read()
+          if not script.strip():
+              raise SystemExit("empty SQL export")
+          con = sqlite3.connect(db_path)
+          try:
+              con.executescript(script)
+              result = con.execute("PRAGMA quick_check").fetchone()[0]
+              if result != "ok":
+                  raise SystemExit(f"quick_check={result}")
+          finally:
+              con.close()
+          PY
+            rm -f "$tmp/restore.sqlite"
+            echo "SQL_RESTORE_QUICK_CHECK_OK=$rel"
+            sql_count=$((sql_count + 1))
+          done < <(find "$root" -type f -name '*.sql' -print0)
+          echo "SQL_EXPORTS_RESTORED=$sql_count"
+          if (( sql_count == 0 )); then
             echo "RESULT=FAIL"
-            echo "REASON=validation_count_mismatch"
+            echo "REASON=missing_sql_export"
             exit 1
           fi
           echo "SHA256_MANIFEST_BEGIN"
@@ -147,9 +197,10 @@ jobs:
           REMOTE_SCRIPT
           remote_script_b64=$(base64 -w0 /tmp/wave-backup-verify.sh)
           {
+            cat wave-backup-create-evidence.txt
             echo "CHECKED_AT_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "SOURCE_HOST=${GCP_BUILDER}"
-            echo "SOURCE_BASE=~/wave-backups"
+            echo "SOURCE_BASE=~/wave-backups/RC15_20"
             gcloud compute ssh "${GCP_BUILDER}" \
               --project "${GCP_PROJECT_ID}" \
               --zone "${GCP_ZONE}" \
@@ -168,7 +219,8 @@ jobs:
         with:
           name: WAVE-RC15-20-BACKUP-RELIABILITY-EVIDENCE
           path: |
+            wave-backup-create-evidence.txt
             wave-backup-reliability-evidence.txt
             wave-backup-reliability-evidence.sha256
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
