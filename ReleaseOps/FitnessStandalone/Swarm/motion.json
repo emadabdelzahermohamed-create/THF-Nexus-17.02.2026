@@ -23,7 +23,11 @@
     "Added a bounded allowlist of closest UAL reference clips for squat, lunge, push, jump, jog, shuffle, and breathing rhythms",
     "Exposed the actual selected clip and truthful wording that reference proxies are not certified biomechanical instruction",
     "Deployed the mapping and preserved visible canonical Stage16A rendering on the restored production root",
-    "Recorded missing active-workout screenshot output as an evidence gap instead of claiming visual PASS"
+    "Recorded missing active-workout screenshot output as an evidence gap instead of claiming visual PASS",
+    "Audited v63 renderer source and verified real clip selection, eased target-zone camera, sculpted lighting, rig-attached anatomy markers, and velocity plus dwell-qualified foot-contact visual anchors",
+    "Reapplied non-privileged workout-ar v58 and workout-en v62 fixtures without credentials or protected writes",
+    "Captured and inspected a new workout-en QA snapshot and proved that the host credit-limit pause overlay obscures the runtime instead of mislabeling it as motion evidence",
+    "Restored production v63 and captured a fresh zero-error QA snapshot while retaining the pause overlay as an explicit release blocker"
   ],
   "canonical_asset": {
     "source_commit": "6965062e0d438e865fb4b4bcb1cb97ed2dfdde38",
@@ -41,30 +45,55 @@
     "snapshot_version": "1790500694233",
     "mapping_version": "1790500307224",
     "deterministic_fixture_version": "1790500635667",
-    "qa_timestamp": 1790500707991,
-    "mobile_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790500731642/mobile.png",
-    "mobile_sha256": "3b1ac322eb9f4026d833fae8fa268561fb6e8fec1cd5afdd5cce1ed96598817c",
-    "web_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790500731642/web.png",
-    "web_sha256": "ba19c001464503006ba6fee5c56dfa92d7ad5bcf7df7ce46560ddc7e1abf5c8e",
+    "qa_timestamp": 1790517964024,
+    "mobile_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790517990315/mobile.png",
+    "mobile_sha256": "6f0f8344f80d8176a45054d0cfefe85c9c000f0ba2804a1d964b9977f14f1f41",
+    "web_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790517990315/web.png",
+    "web_sha256": "5a3cf3249a65e1c3dab81525b8ace8648aae6ad8a39254f3f63eb2f40463e49e",
     "active_workout_qa_snapshot": false,
     "errors": {
       "frontend": 0,
       "backend": 0,
       "network": 0
     },
+    "capture_attempts": [
+      {
+        "scene": "workout-ar",
+        "snapshot_version": "1790500055575",
+        "deployment_status": "ready",
+        "qa_snapshot": null,
+        "visual_result": "NO_SCREENSHOT"
+      },
+      {
+        "scene": "workout-en",
+        "snapshot_version": "1790500635667",
+        "deployment_status": "ready",
+        "qa_timestamp": 1790517902477,
+        "mobile_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790517905893/mobile.png",
+        "mobile_sha256": "dc997592207b1f028c97777eaf3f5a684df8bf5f0d79b69356159433eed5dec8",
+        "web_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790517905893/web.png",
+        "web_sha256": "739f20adbb43f5fe07f05a4e49bcbfecaa8cf37c0c4b71e8a903e99632b8fe2f",
+        "visual_result": "HOST_CREDIT_LIMIT_PAUSE_OVERLAY; NOT_USABLE_MOTION_EVIDENCE"
+      }
+    ],
     "deployment_credit_block": {
       "code": "CREDITS_USAGE_LIMIT_REACHED",
       "retry_after": "2026-09-28T00:00:00.000Z",
       "source_unchanged": true,
-      "production_version": "1790500694233"
+      "production_version": "1790500694233",
+      "host_overlay_observed": true
     }
   },
   "evidence": {
-    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_REFERENCE_PROXY_20260927.md",
-    "commit_sha": "37aa9a74f14ff942a9fea41d0c1e1c2ae063ea3a"
+    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_RUNTIME_CAPTURE_BLOCKER_20260927.md",
+    "commit_sha": "3544404005fdb7a78430dc411b9d8ff081022659",
+    "previous": {
+      "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_REFERENCE_PROXY_20260927.md",
+      "commit_sha": "37aa9a74f14ff942a9fea41d0c1e1c2ae063ea3a"
+    }
   },
-  "blocker": "APPDEPLOY_RETURNED_NO_QA_SCREENSHOT_FOR_WORKOUT_AR_OR_WORKOUT_EN_FIXTURE_VERSIONS_V58_V59_V60_V62; further capture deployment is temporarily blocked by CREDITS_USAGE_LIMIT_REACHED until 2026-09-28T00:00:00Z; no approved host-managed interactive browser was available, so motion controls and foot-contact remain visually unproven",
-  "next_action": "After AppDeploy credits resume, reopen the query-scoped workout fixture in an approved host-managed browser or recovered QA pipeline and capture video/sequential frames of one Stage16A exercise path in Arabic and English; keep Motion PASS fail-closed.",
+  "blocker": "APPDEPLOY_HOST_LEVEL_CREDIT_LIMIT_PAUSE_OVERLAY_OBSCURES_THE_PUBLIC_RUNTIME; workout-ar v58 still emitted qa_snapshot null, workout-en v62 emitted screenshots but they show the pause overlay rather than an active Stage16A exercise; no approved host-managed interactive browser was exposed, so bilingual workout motion, controls, and foot-contact remain visually unproven",
+  "next_action": "After the documented AppDeploy reset at 2026-09-28T00:00:00.000Z, first verify the host pause overlay is gone on production v63, then capture workout-ar and workout-en through the query-scoped non-privileged fixture and record sequential frames or video for one complete Stage16A exercise path; keep biomechanical and IK certification fail-closed.",
   "no_progress_rule": "Never wait for Mixamo/DeepMotion; if blocked, use fallback or record exact blocker.",
-  "updated_at": "2026-09-27T09:21:37.602Z"
+  "updated_at": "2026-09-27T14:07:18Z"
 }
