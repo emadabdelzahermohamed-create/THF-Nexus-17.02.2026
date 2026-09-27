@@ -1,0 +1,17 @@
+{
+  "project": "WAVE_MAWJA",
+  "phase": "RELEASE_CLOSURE",
+  "status": "ACTIVE",
+  "active_task": "VERIFY_CURRENT_RC15_12_AND_CLOSE_NEXT_PUBLICATION_BLOCKER",
+  "source_branch": "releaseops/wave-rc15-9-admin-rbac-20260918",
+  "worker_branch": "automation/wave-release-autopilot-20260927",
+  "last_verified": {
+    "pr34": "merged",
+    "pr38": "merged",
+    "admin_publisher_aliases": "guarded",
+    "final_android_play": "not_verified"
+  },
+  "mandatory_run_contract": "Every run must update this state with PROGRESS/PASS/BLOCKED plus exact SHA/run/deploy/Play evidence.",
+  "next_action": "Inspect exact post-RC15.12 source/live/build/Play state; finish one release-critical task end-to-end and checkpoint it before switching.",
+  "updated_at": "2026-09-27T06:23:00Z"
+}
