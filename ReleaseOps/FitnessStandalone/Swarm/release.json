@@ -3,14 +3,163 @@
   "phase": "FITNESS",
   "status": "ACTIVE",
   "active_task": "FITNESS_RELEASE_INTEGRATION_AND_HOURLY_REPORTING",
+  "run_result": "PROGRESS",
   "candidate_sha": "b0a190339dedebf2710292cbdc5906689e405dc6",
+  "candidate_advanced": false,
+  "merge_decision": "NO_MERGE",
   "integrated_lanes": {
     "product": null,
     "motion": null,
     "backend": null,
     "android": null
   },
+  "worker_heartbeats": {
+    "product": {
+      "automation_last_run_at": "2026-09-27T03:00:16.661397Z",
+      "branch": "automation/fitness-swarm-product-20260924",
+      "branch_head_sha": "ead04fbf362a90bc1d09dea0dedd5d1c50ac10bc",
+      "branch_head_at": "2026-09-26T11:04:06Z",
+      "state_blob_sha": "bea9b26f3036596f42f2aff22a4fdf07aca2430b",
+      "state_updated_at": "2026-09-26",
+      "state_result": "MISSING",
+      "durable_progress_since_expected_runs": false,
+      "missed_expected_runs_minimum": 2,
+      "watchdog_status": "STALLED",
+      "diagnosis": "AUTOMATION_LAST_RUN_ADVANCED_WITHOUT_BRANCH_OR_STATE_CHECKPOINT",
+      "pull_request": null
+    },
+    "motion": {
+      "automation_last_run_at": "2026-09-27T03:00:16.661397Z",
+      "branch": "automation/fitness-swarm-motion-20260924",
+      "branch_head_sha": "f64d9f02a68b5793db00cd84bf57b4d66ee145e5",
+      "branch_head_at": "2026-09-26T11:04:08Z",
+      "state_blob_sha": "305971a6096b20588c3d80014f95a1fc9b2263ab",
+      "state_updated_at": "2026-09-26",
+      "state_result": "MISSING",
+      "durable_progress_since_expected_runs": false,
+      "missed_expected_runs_minimum": 2,
+      "watchdog_status": "STALLED",
+      "diagnosis": "AUTOMATION_LAST_RUN_ADVANCED_WITHOUT_BRANCH_OR_STATE_CHECKPOINT",
+      "pull_request": null
+    },
+    "backend": {
+      "automation_last_run_at": "2026-09-27T03:30:59.843458Z",
+      "branch": "automation/fitness-swarm-backend-20260924",
+      "branch_head_sha": "c7e5c26f383d792c6750082d651ea104b7f9bd0c",
+      "branch_head_at": "2026-09-26T22:37:21Z",
+      "state_blob_sha": "8e77146baa4221c4bd16f4aa3250f773e19a8df5",
+      "state_updated_at": "2026-09-26T22:36:50Z",
+      "state_result": "BLOCKED",
+      "durable_progress_since_expected_runs": false,
+      "missed_expected_runs_minimum": 2,
+      "watchdog_status": "STALLED",
+      "diagnosis": "AUTOMATION_LAST_RUN_ADVANCED_WITHOUT_BRANCH_OR_STATE_CHECKPOINT",
+      "pull_request": null
+    },
+    "android": {
+      "automation_last_run_at": "2026-09-27T03:30:59.843458Z",
+      "branch": "automation/fitness-swarm-android-20260924",
+      "branch_head_sha": "61382153a0f5141fa81d71c77333d0434ca0c19d",
+      "branch_head_at": "2026-09-26T22:46:23Z",
+      "state_blob_sha": "f3bb0d0681f0b89eed16fd4bc5c02f566bc7cb82",
+      "state_updated_at": "2026-09-26T22:45:39Z",
+      "state_result": "BLOCKED",
+      "durable_progress_since_expected_runs": false,
+      "missed_expected_runs_minimum": 2,
+      "watchdog_status": "STALLED",
+      "diagnosis": "AUTOMATION_LAST_RUN_ADVANCED_WITHOUT_BRANCH_OR_STATE_CHECKPOINT",
+      "pull_request": null
+    }
+  },
+  "submissions": {
+    "product_pass": null,
+    "motion_pass": null,
+    "backend_pass": null,
+    "android_pass": null
+  },
+  "live_web_verification": {
+    "app_id": "thf-fitness-pulse-ul26f1",
+    "url": "https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/",
+    "status": "ready",
+    "latest_version_name": "v50",
+    "latest_version_id": "1790082588730",
+    "deployed_at": "2026-09-22T13:09:48.730Z",
+    "frontend_errors": [],
+    "network_errors": [],
+    "e2e_result": "NOT_REPORTED",
+    "qa_snapshot_timestamp": "1790082607869",
+    "mobile_snapshot": {
+      "dimensions": "390x844",
+      "sha256": "1843507cfa9adb6d50133ca1b96b892e81b3d4d33086d93db47e5db79d5d396a",
+      "url": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790082616536/mobile.png"
+    },
+    "web_snapshot": {
+      "dimensions": "1280x720",
+      "sha256": "6fb3071b97dd6101970a75c94f8f1c1da0799c617c4b6648cf01e4558204611b",
+      "url": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790082616536/web.png"
+    },
+    "visual_gate": "FAIL",
+    "visual_quality_score": "1/5",
+    "visual_issues": [
+      "Primary Stage16A viewport is visually blank in both stored QA snapshots.",
+      "User-facing copy is missing, clipped, or incomplete, including the sign-in control and 137/195 metric labels.",
+      "Arabic RTL and English LTR mobile evidence is not visually complete.",
+      "Mobile composition contains oversized empty regions and does not meet premium onboarding/dashboard/session quality."
+    ],
+    "privacy_page_present": true,
+    "account_deletion_page_present": true,
+    "digital_asset_links_present": false,
+    "evidence_scope": "APPDEPLOY_STATUS_AND_STORED_QA_SNAPSHOTS_ONLY_NOT_PHYSICAL_DEVICE"
+  },
+  "android_release_gate": {
+    "play_internal_version_code": 50001,
+    "play_internal_evidence": true,
+    "exact_aab_sha256": "80e947bc43dbb96106fb3471f722062096da326194e834dc383bd9127122e293",
+    "promotion_allowed": false,
+    "blockers": [
+      "Stage16A asset is not packaged in the Android candidate payload.",
+      "Offline first-install experience remains a placeholder.",
+      "Digital Asset Links are absent.",
+      "Health Connect runtime evidence is absent.",
+      "Physical install, launch, interaction, background-resume, GPU, and device evidence are absent."
+    ],
+    "physical_phone_pass": false,
+    "gpu_pass": false,
+    "health_connect_pass": false
+  },
+  "orchestration_repairs": [
+    "Read the canonical protocol and all five lane state files.",
+    "Compared automation heartbeats against lane branch heads and state blobs.",
+    "Searched for worker pull requests; no Product, Motion, Backend, or Android PR exists.",
+    "Inspected the live AppDeploy status and stored mobile/web QA snapshots.",
+    "Did not rerun unchanged passing CI because known source, payload, visual, and device blockers would remain and the protocol forbids treating unchanged audits as progress."
+  ],
+  "blockers": [
+    "PRODUCT_STALLED_NO_DURABLE_CHECKPOINT",
+    "MOTION_STALLED_NO_DURABLE_CHECKPOINT",
+    "BACKEND_STALLED_BLOCKED_STATE_NOT_ADVANCED",
+    "ANDROID_STALLED_BLOCKED_STATE_NOT_ADVANCED",
+    "NO_PASS_SUBMISSIONS_OR_PULL_REQUESTS",
+    "LIVE_VISUAL_GATE_FAILED",
+    "ANDROID_CANDIDATE_NOT_ELIGIBLE_FOR_PROMOTION",
+    "PHYSICAL_ANDROID_GPU_AND_HEALTH_CONNECT_EVIDENCE_MISSING"
+  ],
+  "unvalidated_observations": [
+    {
+      "kind": "BACKEND_SUCCESSOR_ARTIFACT",
+      "artifact_id": "161Hd1XE45dpKBIdl4CeCsIeZE9-MnAzG",
+      "sha256": "bd9676075750beafcfba5e2262cb505eaf1920b2f42b1965b2dbae05bfe0b428",
+      "disposition": "NOT_A_WORKER_PASS_SUBMISSION; backend lane must adopt, validate, checkpoint, and submit it before integration."
+    }
+  ],
   "next_product": "WAVE_MAWJA",
-  "next_action": "Integrate only validated PASS checkpoints; independently verify live Web/Play state and report every run including NO_PROGRESS.",
-  "updated_at": "2026-09-26"
+  "next_actions": {
+    "product": "Persist a Product checkpoint and PR with premium Arabic RTL/English LTR onboarding, dashboard, and session runtime screenshots; metadata alone is insufficient.",
+    "motion": "Persist a Motion checkpoint and PR with visibly rendered Stage16A exercise motion, camera, lighting, materials, transitions, and IK/foot-contact runtime evidence.",
+    "backend": "Adopt or supersede the unvalidated successor artifact, close the recorded server-authority/Health/sync/OpenAPI blockers, run canonical CI, update backend.json to PASS, and open a PR.",
+    "android": "Build a new candidate above versionCode 50001 with the Stage16A offline payload, DAL, Health Connect, integrity proof, and physical-device evidence; update android.json to PASS and open a PR.",
+    "release": "Merge only independently validated PASS submissions one at a time; keep candidate SHA and Play track unchanged until all release gates pass."
+  },
+  "next_action": "Recover stalled lanes and accept only durable PASS checkpoints; no merge, deployment, or Play promotion is authorized from the current evidence.",
+  "updated_at": "2026-09-27T03:59:52Z"
 }
