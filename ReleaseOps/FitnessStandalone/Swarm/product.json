@@ -20,7 +20,9 @@
     "Captured inspected Arabic RTL onboarding and English LTR dashboard mobile/web runtime evidence",
     "Suppressed external video embeds only in fixture mode while retaining Stage16A as the primary offline guide",
     "Corrected the AppDeploy test suite to exactly one sanity test and added fixture-boundary coverage",
-    "Restored the production root to normal authentication and captured zero-error mobile/web regression proof"
+    "Restored the production root to normal authentication and captured zero-error mobile/web regression proof",
+    "Independently revalidated the exact Arabic onboarding and English dashboard mobile/web screenshot bytes, dimensions, hashes, RTL/LTR direction, hierarchy, and fixture boundary",
+    "Narrowed a Product-specific mobile navigation gap: the 390 px tab rail overflows as designed but lacks localized navigation semantics, active-tab announcement, scroll snapping, and an explicit edge affordance"
   ],
   "appdeploy": {
     "app_id": "thf-fitness-pulse-ul26f1",
@@ -55,15 +57,43 @@
       "code": "CREDITS_USAGE_LIMIT_REACHED",
       "retry_after": "2026-09-28T00:00:00.000Z",
       "source_unchanged": true,
-      "production_version": "1790500694233"
+      "production_version": "1790500694233",
+      "preflight_result": "get_deploy_instructions rejected before source generation",
+      "minimum_required_credits": 14
     }
   },
   "evidence": {
-    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_VISUAL_QA_FIXTURE_20260927.md",
-    "commit_sha": "bccd7fc744a2de2146d016dc758f774a9cb71a35"
+    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_MOBILE_VISUAL_AUDIT_20260927.md",
+    "commit_sha": "9ef4b2fe14573579778fe343fbac8f253c701833",
+    "previous": {
+      "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_VISUAL_QA_FIXTURE_20260927.md",
+      "commit_sha": "bccd7fc744a2de2146d016dc758f774a9cb71a35"
+    }
   },
-  "blocker": "ACTIVE_WORKOUT_FIXTURE_VERSIONS_REACHED_READY_WITH_ZERO_SURFACED_ERRORS_BUT_APPDEPLOY_EMITTED_NO_QA_SCREENSHOT; additional EN-onboarding/AR-dashboard capture is temporarily blocked by CREDITS_USAGE_LIMIT_REACHED until 2026-09-28T00:00:00Z; remaining bilingual workout and interaction proof stays open",
-  "next_action": "After AppDeploy credits resume, capture English onboarding and Arabic dashboard, then use the durable visualQa fixture with an approved host-managed browser or recovered QA snapshots for Arabic/English active-workout and real navigation evidence; keep Product PASS fail-closed.",
+  "blocker": "APPDEPLOY_GET_DEPLOY_INSTRUCTIONS_FAILS_CLOSED_WITH_CREDITS_USAGE_LIMIT_REACHED_UNTIL_2026-09-28T00:00:00Z; production v63 is unchanged; the safe mobile tab-rail accessibility/discoverability patch cannot be deployed or runtime-captured before reset, and bilingual active-workout plus reciprocal EN-onboarding/AR-dashboard interaction evidence remains open",
+  "next_action": "After the documented UTC reset, deploy the Product-only tab-rail patch (localized navigation label, aria-current, scroll snapping, stable focus and bidirectional edge affordance), run the existing sanity/fixture tests, then capture EN onboarding, AR dashboard, AR workout and EN workout at 390 px plus one real navigation path; keep Product PASS fail-closed until those images and interactions are inspected.",
   "no_progress_rule": "If no commit/deploy/evidence is produced, write BLOCKED with exact tool/permission/dependency cause.",
-  "updated_at": "2026-09-27T09:21:36.653Z"
+  "updated_at": "2026-09-27T14:14:30.046Z",
+  "visual_review": {
+    "evidence_type": "RUNTIME_SCREENSHOT_INSPECTION",
+    "evidence_commit_sha": "9ef4b2fe14573579778fe343fbac8f253c701833",
+    "inspected": [
+      {
+        "scene": "onboarding-ar",
+        "mobile": "390x844",
+        "web": "1280x720",
+        "mobile_sha256": "33de966811f06a574810c222f4965f270125a16e4e45d044317c6a60d9f65a2b",
+        "web_sha256": "2e214198a66cd746fc697b2c589a63544f7d95d79adac7a28b096f307657f621"
+      },
+      {
+        "scene": "dashboard-en",
+        "mobile": "390x844",
+        "web": "1280x720",
+        "mobile_sha256": "86e123649cdcaf5906a1730d490f24a677dd7a844b09fc073a1a2b090196ef6e",
+        "web_sha256": "9cc3a4abfc853a62630889728be1fb44f7ddc6c7fc4cbdfe3541566592a0abda"
+      }
+    ],
+    "new_finding": "MOBILE_TAB_RAIL_DISCOVERABILITY_AND_A11Y_REMAIN_OPEN_IN_RTL_AND_LTR",
+    "visual_pass": false
+  }
 }
