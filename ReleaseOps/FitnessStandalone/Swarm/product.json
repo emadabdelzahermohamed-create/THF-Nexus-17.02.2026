@@ -50,14 +50,20 @@
         "mobile_sha256": "86e123649cdcaf5906a1730d490f24a677dd7a844b09fc073a1a2b090196ef6e",
         "web_sha256": "9cc3a4abfc853a62630889728be1fb44f7ddc6c7fc4cbdfe3541566592a0abda"
       }
-    ]
+    ],
+    "deployment_credit_block": {
+      "code": "CREDITS_USAGE_LIMIT_REACHED",
+      "retry_after": "2026-09-28T00:00:00.000Z",
+      "source_unchanged": true,
+      "production_version": "1790500694233"
+    }
   },
   "evidence": {
     "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_VISUAL_QA_FIXTURE_20260927.md",
     "commit_sha": "bccd7fc744a2de2146d016dc758f774a9cb71a35"
   },
-  "blocker": "ACTIVE_WORKOUT_FIXTURE_VERSIONS_REACHED_READY_WITH_ZERO_SURFACED_ERRORS_BUT_APPDEPLOY_EMITTED_NO_QA_SCREENSHOT; remaining Arabic/English onboarding-dashboard-workout matrix and real interaction proof remain open",
-  "next_action": "Use the durable visualQa fixture with an approved host-managed browser, or retry when AppDeploy emits fixture screenshots, to capture Arabic and English active-workout frames plus real navigation interactions; keep Product PASS fail-closed until the complete matrix is inspected.",
+  "blocker": "ACTIVE_WORKOUT_FIXTURE_VERSIONS_REACHED_READY_WITH_ZERO_SURFACED_ERRORS_BUT_APPDEPLOY_EMITTED_NO_QA_SCREENSHOT; additional EN-onboarding/AR-dashboard capture is temporarily blocked by CREDITS_USAGE_LIMIT_REACHED until 2026-09-28T00:00:00Z; remaining bilingual workout and interaction proof stays open",
+  "next_action": "After AppDeploy credits resume, capture English onboarding and Arabic dashboard, then use the durable visualQa fixture with an approved host-managed browser or recovered QA snapshots for Arabic/English active-workout and real navigation evidence; keep Product PASS fail-closed.",
   "no_progress_rule": "If no commit/deploy/evidence is produced, write BLOCKED with exact tool/permission/dependency cause.",
-  "updated_at": "2026-09-27T09:20:54.758Z"
+  "updated_at": "2026-09-27T09:21:36.653Z"
 }
