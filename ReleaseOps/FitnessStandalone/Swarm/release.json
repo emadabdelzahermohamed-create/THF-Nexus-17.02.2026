@@ -3,10 +3,10 @@
   "phase": "FITNESS",
   "status": "ACTIVE",
   "active_task": "FITNESS_RELEASE_INTEGRATION_AND_HOURLY_REPORTING",
-  "run_result": "NO_PROGRESS",
+  "run_result": "PROGRESS",
   "candidate_sha": "b0a190339dedebf2710292cbdc5906689e405dc6",
   "candidate_advanced": false,
-  "merge_decision": "NO_PASS_SUBMISSION",
+  "merge_decision": "NO_PASS_PR",
   "integrated_lanes": {
     "product": null,
     "motion": null,
@@ -83,7 +83,7 @@
   "android_release_gate": {
     "play_internal_version_code": 50001,
     "play_internal_evidence": true,
-    "exact_aab_sha256": "80e947bc43dbb96106fb3471f722062096da326194e834dc383bd9127122e293",
+    "exact_aab_sha256": "80e94754a9dd710f08d61fb735d8ea381e9cb4ae4a14fc85ebc178a4eb7328a2",
     "promotion_allowed": false,
     "blockers": [
       "Stage16A asset is not packaged in the Android candidate payload.",
@@ -94,7 +94,10 @@
     ],
     "physical_phone_pass": false,
     "gpu_pass": false,
-    "health_connect_pass": false
+    "health_connect_pass": false,
+    "github_artifact_id": 10581347670,
+    "github_artifact_sha256": "6926a59d830f038d351b3b44d8b0f886cba87c9941efa0497d6f4441d4a765b2",
+    "source_state_blob_sha": "f3bb0d0681f0b89eed16fd4bc5c02f566bc7cb82"
   },
   "orchestration_repairs": [
     "Read the canonical protocol and all five lane state files.",
@@ -102,7 +105,8 @@
     "Searched for worker pull requests; no Product, Motion, Backend, or Android PR exists.",
     "Inspected the live AppDeploy status and stored mobile/web QA snapshots.",
     "Did not rerun unchanged passing CI because known source, payload, visual, and device blockers would remain and the protocol forbids treating unchanged audits as progress.",
-    "Reconciled all candidate-associated workflow runs and artifacts; classified the green V5 workflow as non-qualifying because every release-critical build/test/evidence step was skipped."
+    "Reconciled all candidate-associated workflow runs and artifacts; classified the green V5 workflow as non-qualifying because every release-critical build/test/evidence step was skipped.",
+    "Reconciled the release registry AAB SHA with authoritative android.json state blob f3bb0d0681f0b89eed16fd4bc5c02f566bc7cb82."
   ],
   "blockers": [
     "AUTHENTICATED_RUNTIME_FIXTURE_NEEDED_FOR_FINAL_PRODUCT_AND_MOTION_VISUAL_EVIDENCE",
@@ -127,8 +131,8 @@
     "android": "Build a new candidate above versionCode 50001 with the Stage16A offline payload, DAL, Health Connect, integrity proof, and physical-device evidence; update android.json to PASS and open a PR.",
     "release": "Merge only independently validated PASS submissions one at a time; keep candidate SHA and Play track unchanged until all release gates pass."
   },
-  "next_action": "Wait for a new evidence-backed lane state; validate and merge at most one PASS PR when it exists. Keep visual and physical Android/GPU/Health Connect gates fail-closed.",
-  "updated_at": "2026-09-27T08:56:52.577Z",
+  "next_action": "Await one new evidence-backed lane update. Validate ownership and merge at most one PASS PR when available; otherwise keep candidate and Play track unchanged and all visual/device gates fail-closed.",
+  "updated_at": "2026-09-27T08:58:01.656Z",
   "candidate_ci": {
     "commit_status_contexts": [],
     "workflow_runs": [
@@ -205,7 +209,7 @@
     "conclusion": "NO_QUALIFYING_CANDIDATE_BUILD_OR_RUNTIME_PASS"
   },
   "reconciliation": {
-    "observed_at": "2026-09-27T08:56:52.577Z",
+    "observed_at": "2026-09-27T08:58:01.656Z",
     "lane_state_blobs": {
       "product": "31e370ade2d52e0bbf87275aa2f1d1dd8fbc60f1",
       "motion": "70f3679d395e71cf84218cab34f81c120dab74e2",
@@ -214,7 +218,27 @@
     },
     "newer_lane_states_since_previous_release_heartbeat": [],
     "pass_submissions": [],
-    "result": "NO_NEWER_LANE_STATE",
-    "note": "All four lane states were already represented in the prior release heartbeat. BLOCKED backend and Android lanes retain their explicit dependency classification and are not marked STALLED."
+    "result": "CANONICAL_ANDROID_AAB_HASH_RECONCILED",
+    "note": "Lane results are unchanged. The release registry AAB SHA was corrected to the authoritative Android lane value; BLOCKED backend and Android lanes remain dependency-blocked, not STALLED.",
+    "reconciled_fields": [
+      {
+        "field": "android_release_gate.exact_aab_sha256",
+        "previous_value": "80e947bc43dbb96106fb3471f722062096da326194e834dc383bd9127122e293",
+        "canonical_value": "80e94754a9dd710f08d61fb735d8ea381e9cb4ae4a14fc85ebc178a4eb7328a2",
+        "source": "android.json state blob f3bb0d0681f0b89eed16fd4bc5c02f566bc7cb82"
+      }
+    ]
+  },
+  "integration_pr_scan": {
+    "observed_at": "2026-09-27T08:58:01.656Z",
+    "open_worker_prs": {
+      "product": 0,
+      "motion": 0,
+      "backend": 0,
+      "android": 0
+    },
+    "pass_prs": [],
+    "merge_performed": false,
+    "interpretation": "No PASS PR exists; no merge or repeated unchanged audit was performed."
   }
 }
