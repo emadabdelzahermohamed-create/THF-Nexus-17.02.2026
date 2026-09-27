@@ -1,0 +1,141 @@
+--- a/src/AvatarStage16A.tsx
++++ b/src/AvatarStage16A.tsx
+@@ -40,6 +40,16 @@
+ type Stage16AProps = { rtl: boolean; motionHint?: string; compact?: boolean };
+ type MotionStatus = 'unmapped' | 'name-match' | 'reference-proxy';
+ 
++const MOTION_QA_PHASES = new Set([0, 25, 50, 75]);
++
++function motionQaPhaseFromLocation() {
++  if (typeof window === 'undefined') return null;
++  const raw = new URLSearchParams(window.location.search).get('motionQaPhase');
++  if (raw === null || raw.trim() === '') return null;
++  const phase = Number(raw);
++  return Number.isFinite(phase) && MOTION_QA_PHASES.has(phase) ? phase : null;
++}
++
+ const motionReferenceProxies: Array<{ exercise: RegExp; clip: RegExp }> = [
+   { exercise: /bodyweight squat|wall sit/i, clip: /^UAL1_Crouch_Idle_Loop$/i },
+   { exercise: /reverse lunge|mountain climber/i, clip: /^UAL1_Crouch_Fwd_Loop$/i },
+@@ -63,6 +73,8 @@
+   const [activeClipName, setActiveClipName] = useState('');
+   const [mirrored, setMirrored] = useState(false);
+   const [transitioning, setTransitioning] = useState(false);
++  const [motionQaPhase] = useState<number | null>(() => motionQaPhaseFromLocation());
++  const [motionQaReady, setMotionQaReady] = useState(false);
+   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+   const actionRef = useRef<THREE.AnimationAction | null>(null);
+   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+@@ -91,6 +103,9 @@
+     let frame = 0;
+     let mixer: THREE.AnimationMixer | null = null;
+     let activeAction: THREE.AnimationAction | null = null;
++    let motionQaArmed = false;
++    let motionQaSettledFrames = 0;
++    setMotionQaReady(false);
+     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+     renderer.outputColorSpace = THREE.SRGBColorSpace;
+@@ -266,7 +281,15 @@
+           actionRef.current = activeAction;
+           activeAction.setLoop(THREE.LoopRepeat, Infinity);
+           activeAction.clampWhenFinished = false;
+-          activeAction.reset().fadeIn(0.6).play();
++          activeAction.reset().play();
++          if (motionQaPhase !== null) {
++            mixer.setTime(Math.max(preferred.duration, 0.001) * (motionQaPhase / 100));
++            mixer.timeScale = 0;
++            setPlaying(false);
++            motionQaArmed = true;
++          } else {
++            activeAction.fadeIn(0.6);
++          }
+         }
+         setState('ready');
+         setProgress(100);
+@@ -375,6 +398,13 @@
+       });
+       setGroundedFeet(current => current === grounded ? current : grounded);
+       renderer.render(scene, camera);
++      if (motionQaArmed) {
++        motionQaSettledFrames += 1;
++        if (motionQaSettledFrames >= 45) {
++          motionQaArmed = false;
++          setMotionQaReady(true);
++        }
++      }
+       frame = requestAnimationFrame(tick);
+     }
+     tick();
+@@ -397,7 +427,7 @@
+       contactDwellRefs.current = [0, 0];
+       if (objectUrl) URL.revokeObjectURL(objectUrl);
+     };
+-  }, [motionHint]);
++  }, [motionHint, motionQaPhase]);
+ 
+   useEffect(() => { if (mixerRef.current) mixerRef.current.timeScale = playing ? speed : 0; }, [playing, speed]);
+   function replay() { const action = actionRef.current; if (!action) return; setTransitioning(true); action.enabled = true; action.paused = false; action.setEffectiveWeight(1); action.setEffectiveTimeScale(speed); action.fadeOut(0.16); window.setTimeout(() => { action.reset().fadeIn(0.48).play(); setPlaying(true); window.setTimeout(() => setTransitioning(false), 480); }, 170); }
+@@ -405,7 +435,7 @@
+   function focusTarget() { const model = modelRef.current; if (!model) return; const box = new THREE.Box3().setFromObject(model); const center = box.getCenter(new THREE.Vector3()); const height = Math.max(box.max.y - box.min.y, 1.8); const zoneY = targetZone === 'lower-body' ? box.min.y + height * .36 : targetZone === 'upper-body' ? box.min.y + height * .69 : targetZone === 'core' ? box.min.y + height * .53 : center.y; const distance = targetZone === 'full-body' ? Math.max(2.65, height * 1.2) : Math.max(1.65, height * .72); desiredTargetRef.current.set(center.x, zoneY, center.z); desiredCameraRef.current.set(center.x + height * .12, zoneY + height * .035, center.z + distance); baseTargetRef.current.copy(desiredTargetRef.current); baseCameraRef.current.copy(desiredCameraRef.current); setCameraMode(0); }
+ 
+   return (
+-    <section className={'avatar-stage' + (compact ? ' compact' : '')} aria-label="Stage16A 3D avatar">
++    <section className={'avatar-stage' + (compact ? ' compact' : '')} aria-label="Stage16A 3D avatar" data-motion-status={motionStatus} data-active-clip={activeClipName || undefined} data-motion-qa-phase={motionQaPhase ?? undefined} data-motion-qa-ready={motionQaPhase === null ? undefined : String(motionQaReady)}>
+       <div className="avatar-stage-head">
+         <div>
+           <div className="eyebrow">{rtl ? 'معاينة 3D حقيقية' : 'REAL 3D PREVIEW'}</div>
+@@ -417,10 +447,10 @@
+           {state === 'ready' && <small>{offlineReady ? (rtl ? ' · تم التشغيل من النسخة المحلية' : ' · loaded from local cache') : (rtl ? ' · تم تنزيله الآن؛ سيعمل محليًا في التشغيل التالي' : ' · downloaded now; local replay is available on the next load')}</small>}
+         </div>
+       </div>
+-      <div className={'avatar-live' + (mirrored ? ' mirrored' : '')}><canvas ref={canvasRef} className="avatar-canvas" />{state !== 'ready' && <div className={'avatar-load-overlay ' + state} role="status" aria-live="polite"><span>{state === 'error' ? (rtl ? 'تعذّر فتح الأصل المعتمد' : 'CANONICAL ASSET UNAVAILABLE') : (rtl ? 'يُحمّل الآن من المصدر المعتمد' : 'STREAMING CANONICAL STAGE16A')}</span><strong>{state === 'error' ? (rtl ? 'لم يتم استخدام نموذج بديل' : 'No fallback model was used') : progress + '%'}</strong><small>{state === 'error' ? (rtl ? 'أعد المحاولة عند توفر الاتصال؛ الحركة غير معتمدة حتى ظهور النموذج.' : 'Retry when connected; motion stays unapproved until the model is visible.') : (rtl ? '26.3 MB · يبدأ العرض مباشرة قبل التخزين المحلي' : '26.3 MB · direct render path before durable caching')}</small></div>}<div className="live-badge"><i />{offlineReady ? (rtl ? 'الأصل المحلي جاهز' : 'LOCAL ASSET READY') : (rtl ? 'أصل Stage16A متصل' : 'STAGE16A NETWORK ASSET')}</div><div className="anatomy-badge"><span className="anatomy-dot" />{rtl ? 'العضلات المتحركة مع الهيكل: ' : 'RIG-ATTACHED MUSCLES: '}{targetZone === 'lower-body' ? (rtl ? 'الجزء السفلي' : 'LOWER BODY') : targetZone === 'upper-body' ? (rtl ? 'الجزء العلوي' : 'UPPER BODY') : targetZone === 'core' ? (rtl ? 'الجذع' : 'CORE') : (rtl ? 'الجسم بالكامل' : 'FULL BODY')} · {anatomyAttached ? (rtl ? 'مرتبطة' : 'ATTACHED') : (rtl ? 'غير متاحة' : 'UNAVAILABLE')}</div><div className="motion-controls"><button onClick={() => setPlaying(v => !v)}>{playing ? (rtl ? 'إيقاف مؤقت' : 'Pause') : (rtl ? 'تشغيل' : 'Play')}</button><button onClick={replay} disabled={transitioning}>{transitioning ? (rtl ? 'انتقال…' : 'Blending…') : (rtl ? 'إعادة' : 'Replay')}</button><button onClick={() => setSpeed(v => v === .5 ? .75 : v === .75 ? 1 : v === 1 ? 1.25 : v === 1.25 ? 1.5 : .5)}>{speed}×</button><button onClick={cycleCamera}>{rtl ? 'زاوية ' + (cameraMode + 1) + '/4' : 'View ' + (cameraMode + 1) + '/4'}</button><button onClick={focusTarget}>{rtl ? 'تركيز العضلات' : 'Muscle focus'}</button><button onClick={() => setMirrored(v => !v)}>{rtl ? 'مرآة' : 'Mirror'}</button></div>{!compact && <div className="motion-readout"><span>{rtl ? 'الحركة الحالية' : 'CURRENT MOTION'}</span><strong>{motionHint || (rtl ? 'وضع الاستعداد' : 'Ready stance')}</strong><small>{rtl ? 'Clip فعلي: ' : 'Actual clip: '}{activeClipName || '—'} · {motionStatus === 'name-match' ? (rtl ? 'مطابقة اسمية فقط · الاعتماد الحركي مفتوح' : 'name match only · motion certification open') : motionStatus === 'reference-proxy' ? (rtl ? 'مرجع إيقاع فقط · غير معتمد كشرح' : 'rhythm reference only · not certified instruction') : (rtl ? 'غير مربوط · لا يُستخدم كشرح للتمرين' : 'unmapped · not used as exercise instruction')}</small></div>}</div>
++      <div className={'avatar-live' + (mirrored ? ' mirrored' : '')}><canvas ref={canvasRef} className="avatar-canvas" />{state !== 'ready' && <div className={'avatar-load-overlay ' + state} role="status" aria-live="polite"><span>{state === 'error' ? (rtl ? 'تعذّر فتح الأصل المعتمد' : 'CANONICAL ASSET UNAVAILABLE') : (rtl ? 'يُحمّل الآن من المصدر المعتمد' : 'STREAMING CANONICAL STAGE16A')}</span><strong>{state === 'error' ? (rtl ? 'لم يتم استخدام نموذج بديل' : 'No fallback model was used') : progress + '%'}</strong><small>{state === 'error' ? (rtl ? 'أعد المحاولة عند توفر الاتصال؛ الحركة غير معتمدة حتى ظهور النموذج.' : 'Retry when connected; motion stays unapproved until the model is visible.') : (rtl ? '26.3 MB · يبدأ العرض مباشرة قبل التخزين المحلي' : '26.3 MB · direct render path before durable caching')}</small></div>}<div className="live-badge"><i />{offlineReady ? (rtl ? 'الأصل المحلي جاهز' : 'LOCAL ASSET READY') : (rtl ? 'أصل Stage16A متصل' : 'STAGE16A NETWORK ASSET')}</div>{motionQaPhase !== null && <div className={'motion-qa-badge ' + (motionQaReady ? 'ready' : 'settling')} role="status" aria-live="polite">{motionQaReady ? (rtl ? `لقطة QA ثابتة · ${motionQaPhase}%` : `QA FRAME READY · ${motionQaPhase}%`) : (rtl ? 'تثبيت الكاميرا والحركة…' : 'SETTLING CAMERA + MOTION…')}</div>}<div className="anatomy-badge"><span className="anatomy-dot" />{rtl ? 'العضلات المتحركة مع الهيكل: ' : 'RIG-ATTACHED MUSCLES: '}{targetZone === 'lower-body' ? (rtl ? 'الجزء السفلي' : 'LOWER BODY') : targetZone === 'upper-body' ? (rtl ? 'الجزء العلوي' : 'UPPER BODY') : targetZone === 'core' ? (rtl ? 'الجذع' : 'CORE') : (rtl ? 'الجسم بالكامل' : 'FULL BODY')} · {anatomyAttached ? (rtl ? 'مرتبطة' : 'ATTACHED') : (rtl ? 'غير متاحة' : 'UNAVAILABLE')}</div><div className="motion-controls"><button onClick={() => setPlaying(v => !v)}>{playing ? (rtl ? 'إيقاف مؤقت' : 'Pause') : (rtl ? 'تشغيل' : 'Play')}</button><button onClick={replay} disabled={transitioning}>{transitioning ? (rtl ? 'انتقال…' : 'Blending…') : (rtl ? 'إعادة' : 'Replay')}</button><button onClick={() => setSpeed(v => v === .5 ? .75 : v === .75 ? 1 : v === 1 ? 1.25 : v === 1.25 ? 1.5 : .5)}>{speed}×</button><button onClick={cycleCamera}>{rtl ? 'زاوية ' + (cameraMode + 1) + '/4' : 'View ' + (cameraMode + 1) + '/4'}</button><button onClick={focusTarget}>{rtl ? 'تركيز العضلات' : 'Muscle focus'}</button><button onClick={() => setMirrored(v => !v)}>{rtl ? 'مرآة' : 'Mirror'}</button></div>{!compact && <div className="motion-readout"><span>{rtl ? 'الحركة الحالية' : 'CURRENT MOTION'}</span><strong>{motionHint || (rtl ? 'وضع الاستعداد' : 'Ready stance')}</strong><small>{rtl ? 'Clip فعلي: ' : 'Actual clip: '}{activeClipName || '—'} · {motionStatus === 'name-match' ? (rtl ? 'مطابقة اسمية فقط · الاعتماد الحركي مفتوح' : 'name match only · motion certification open') : motionStatus === 'reference-proxy' ? (rtl ? 'مرجع إيقاع فقط · غير معتمد كشرح' : 'rhythm reference only · not certified instruction') : (rtl ? 'غير مربوط · لا يُستخدم كشرح للتمرين' : 'unmapped · not used as exercise instruction')}</small></div>}</div>
+       <div className="avatar-contract-grid">
+         <span><strong>137</strong>{rtl ? ' مفصل' : ' joints'}</span>
+-        <span><strong>{clips || 195}</strong>{rtl ? ' حركة' : ' clips'}</span>
++        <span><strong>{state === 'ready' ? clips : '—'}</strong>{rtl ? ' حركة' : ' clips'}</span>
+         <span><strong>0</strong>{rtl ? ' fallback قديم' : ' legacy fallback'}</span>
+       </div>
+       <div className="contact-contract"><strong>{rtl ? 'تماس القدم' : 'FOOT CONTACT'}</strong><span>{contactHooks === 2 ? (rtl ? `مؤشرا قرب مرتبطان بعظمتي القدم · معاينة تلامس مؤهلة بالزمن والسرعة ${groundedFeet}/2 · تثبيت بصري فقط وليس IK أو قياس ضغط` : `2 foot-bone proximity hooks · time + velocity-qualified planted-contact preview ${groundedFeet}/2 · visual anchor only, not IK or pressure sensing`) : (rtl ? 'مرجع الأرضية فقط · لم يتم العثور على عظمتَي القدم · IK غير معتمد' : 'floor reference only · foot-bone hooks unavailable · IK unapproved')}</span></div>
+--- a/src/index.css
++++ b/src/index.css
+@@ -102,6 +102,7 @@
+ .render-state { border-radius:999px; padding:8px 12px; border:1px solid #365b6d; color:#b9cfda; white-space:nowrap; }
+ .render-state.ready { border-color:#3bd5a3; color:#8ff3d2; }
+ .render-state.error { border-color:#a84e5a; color:#ffd7dc; }
++.motion-qa-badge{position:absolute;z-index:5;top:58px;inset-inline-start:16px;padding:7px 10px;border-radius:999px;border:1px solid rgba(125,211,252,.34);background:rgba(3,12,18,.86);color:#b9cfda;font-size:.64rem;font-weight:900;letter-spacing:.08em;backdrop-filter:blur(12px)}.motion-qa-badge.ready{border-color:rgba(99,230,190,.52);color:#8ff3d2}.motion-qa-badge.settling{animation:qaSettlePulse 1s ease-in-out infinite}@keyframes qaSettlePulse{50%{opacity:.55}}
+ .avatar-contract-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+ .avatar-contract-grid span { display:flex; flex-direction:column; align-items:center; background:#081b27; border:1px solid #183f50; border-radius:14px; padding:10px; }
+ .avatar-contract-grid strong { color:#7beec9; font-size:1.35rem; }
+--- a/tests/tests.json
++++ b/tests/tests.json
+@@ -1,5 +1,28 @@
+ [
+   {
++    "name": "Capture deterministic Stage16A motion phases for bilingual visual evidence",
++    "viewport": "mobile",
++    "covers": [
++      "query-scoped non-privileged visual fixture",
++      "canonical Stage16A runtime render",
++      "deterministic 0 25 50 75 percent animation phases",
++      "camera and contact-overlay settlement",
++      "Arabic RTL workout evidence",
++      "English LTR workout evidence",
++      "machine-readable active clip and mapping status",
++      "truthful clip-count loading state"
++    ],
++    "description": "Makes sequential Stage16A evidence reproducible without authentication secrets or server writes while keeping motion approval fail-closed.",
++    "steps": [
++      "Open ?visualQa=workout-ar&motionQaPhase=0 on a 390 px viewport",
++      "Wait until data-motion-qa-ready is true and record the active clip, mapping status and 0 percent frame",
++      "Repeat at motionQaPhase 25, 50 and 75 and confirm each frame is stable after camera and contact overlays settle",
++      "Repeat the same sequence for visualQa=workout-en",
++      "Remove motionQaPhase and verify normal playback and controls resume"
++    ],
++    "expected": "Each supported phase freezes the same real Stage16A clip at a reproducible point, exposes a localized QA-ready badge plus machine-readable clip/status/phase attributes, waits 45 render frames for camera and overlays to settle, shows no fabricated 195 count before the GLB is ready, performs no privileged or persistent action, and leaves normal playback unchanged outside the explicit fixture URL."
++  },
++  {
+     "name": "Stream the canonical Stage16A model without blocking first render on durable cache writes",
+     "sanity": true,
+     "viewport": "desktop",
