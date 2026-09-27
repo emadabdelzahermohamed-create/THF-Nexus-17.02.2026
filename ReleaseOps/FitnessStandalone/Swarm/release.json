@@ -132,7 +132,8 @@
     "Compared automation heartbeats against lane branch heads and state blobs.",
     "Searched for worker pull requests; no Product, Motion, Backend, or Android PR exists.",
     "Inspected the live AppDeploy status and stored mobile/web QA snapshots.",
-    "Did not rerun unchanged passing CI because known source, payload, visual, and device blockers would remain and the protocol forbids treating unchanged audits as progress."
+    "Did not rerun unchanged passing CI because known source, payload, visual, and device blockers would remain and the protocol forbids treating unchanged audits as progress.",
+    "Reconciled all candidate-associated workflow runs and artifacts; classified the green V5 workflow as non-qualifying because every release-critical build/test/evidence step was skipped."
   ],
   "blockers": [
     "PRODUCT_STALLED_NO_DURABLE_CHECKPOINT",
@@ -142,7 +143,8 @@
     "NO_PASS_SUBMISSIONS_OR_PULL_REQUESTS",
     "LIVE_VISUAL_GATE_FAILED",
     "ANDROID_CANDIDATE_NOT_ELIGIBLE_FOR_PROMOTION",
-    "PHYSICAL_ANDROID_GPU_AND_HEALTH_CONNECT_EVIDENCE_MISSING"
+    "PHYSICAL_ANDROID_GPU_AND_HEALTH_CONNECT_EVIDENCE_MISSING",
+    "CANDIDATE_CI_HAS_NO_QUALIFYING_BUILD_OR_RUNTIME_PASS"
   ],
   "unvalidated_observations": [
     {
@@ -161,5 +163,80 @@
     "release": "Merge only independently validated PASS submissions one at a time; keep candidate SHA and Play track unchanged until all release gates pass."
   },
   "next_action": "Recover stalled lanes and accept only durable PASS checkpoints; no merge, deployment, or Play promotion is authorized from the current evidence.",
-  "updated_at": "2026-09-27T03:59:52Z"
+  "updated_at": "2026-09-27T04:03:07Z",
+  "candidate_ci": {
+    "commit_status_contexts": [],
+    "workflow_runs": [
+      {
+        "run_id": 35771497729,
+        "run_number": 213,
+        "name": "THF Fitness Standalone V5 Gate",
+        "conclusion": "success",
+        "qualifying_release_pass": false,
+        "critical_steps_skipped": [
+          "Download exact V5 RC2 source from Drive",
+          "Verify release authority and canonical human",
+          "Backend tests",
+          "Set up Java",
+          "Set up Gradle 8.11.1",
+          "Android API 36 build gate",
+          "Upload V5 RC2 evidence"
+        ],
+        "artifacts": [],
+        "interpretation": "Workflow conclusion is not a build/test PASS because all release-critical source, backend, Android, and evidence steps were skipped."
+      },
+      {
+        "run_id": 35771497570,
+        "run_number": 299,
+        "name": "THF No Arbitrary Artifact Size Cap V1",
+        "conclusion": "success",
+        "qualifying_release_pass": false,
+        "artifact": {
+          "id": 10714078236,
+          "name": "THF-SIZE-POLICY-PASS",
+          "digest": "sha256:d5fa92fa6b163ecd4fdabf4d487a5ea4eb96619598c5c00c8cb902a1b6d68569",
+          "executable_files_checked": 347,
+          "violations": 0
+        },
+        "interpretation": "Size-policy PASS only; it does not validate payload, visual runtime, Android installability, or release compliance."
+      },
+      {
+        "run_id": 35771497556,
+        "run_number": 100,
+        "name": "THF Fitness VM Readiness Probe",
+        "conclusion": "success",
+        "qualifying_release_pass": false,
+        "artifact": {
+          "id": 10713554904,
+          "name": "thf-fitness-vm-readiness",
+          "digest": "sha256:fc1575f02bccd4e62e9565f41b0e498d4ca0a39ba84bcc5b612fac0d2732e71f",
+          "scope": "read_only",
+          "target_vm": "thf-wave-builder",
+          "wave_paths_accessed": false
+        },
+        "interpretation": "Read-only infrastructure access proof only; it is not a Fitness build, deploy, or runtime PASS."
+      },
+      {
+        "run_id": 35771497573,
+        "run_number": 99,
+        "name": "THF Fitness Google Play Access Probe",
+        "conclusion": "success",
+        "qualifying_release_pass": false,
+        "artifact": {
+          "id": 10713933400,
+          "name": "thf-fitness-play-access-probe",
+          "digest": "sha256:fac302d1aabc4060b465813727f3cefeef66fe09aacfba93bc31cd0f251e7cf7",
+          "package": "com.topherofit.thf.pulse",
+          "wif": true,
+          "package_visible": true,
+          "edit_insert": "PASS",
+          "edit_cleanup": "PASS",
+          "upload_attempted": false,
+          "commit_attempted": false
+        },
+        "interpretation": "Play API access proof only; no upload, track commit, review, approval, or promotion occurred."
+      }
+    ],
+    "conclusion": "NO_QUALIFYING_CANDIDATE_BUILD_OR_RUNTIME_PASS"
+  }
 }
