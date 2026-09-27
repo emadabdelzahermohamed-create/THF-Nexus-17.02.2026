@@ -51,14 +51,20 @@
       "frontend": 0,
       "backend": 0,
       "network": 0
+    },
+    "deployment_credit_block": {
+      "code": "CREDITS_USAGE_LIMIT_REACHED",
+      "retry_after": "2026-09-28T00:00:00.000Z",
+      "source_unchanged": true,
+      "production_version": "1790500694233"
     }
   },
   "evidence": {
     "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_REFERENCE_PROXY_20260927.md",
     "commit_sha": "37aa9a74f14ff942a9fea41d0c1e1c2ae063ea3a"
   },
-  "blocker": "APPDEPLOY_RETURNED_NO_QA_SCREENSHOT_FOR_WORKOUT_AR_OR_WORKOUT_EN_FIXTURE_VERSIONS_V58_V59_V60_V62; no approved host-managed interactive browser was available, so clip motion, blend, camera controls, muscle overlay, and foot-contact hooks remain visually unproven",
-  "next_action": "Open the query-scoped workout fixture in an approved host-managed browser and capture video or sequential frames of one full Stage16A exercise path in Arabic and English, including reference clip motion, replay blend, camera change, muscle context, and foot-contact hooks; keep Motion PASS fail-closed.",
+  "blocker": "APPDEPLOY_RETURNED_NO_QA_SCREENSHOT_FOR_WORKOUT_AR_OR_WORKOUT_EN_FIXTURE_VERSIONS_V58_V59_V60_V62; further capture deployment is temporarily blocked by CREDITS_USAGE_LIMIT_REACHED until 2026-09-28T00:00:00Z; no approved host-managed interactive browser was available, so motion controls and foot-contact remain visually unproven",
+  "next_action": "After AppDeploy credits resume, reopen the query-scoped workout fixture in an approved host-managed browser or recovered QA pipeline and capture video/sequential frames of one Stage16A exercise path in Arabic and English; keep Motion PASS fail-closed.",
   "no_progress_rule": "Never wait for Mixamo/DeepMotion; if blocked, use fallback or record exact blocker.",
-  "updated_at": "2026-09-27T09:20:54.758Z"
+  "updated_at": "2026-09-27T09:21:37.602Z"
 }
