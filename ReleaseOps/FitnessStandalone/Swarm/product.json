@@ -22,7 +22,8 @@
     "Corrected the AppDeploy test suite to exactly one sanity test and added fixture-boundary coverage",
     "Restored the production root to normal authentication and captured zero-error mobile/web regression proof",
     "Independently revalidated the exact Arabic onboarding and English dashboard mobile/web screenshot bytes, dimensions, hashes, RTL/LTR direction, hierarchy, and fixture boundary",
-    "Narrowed a Product-specific mobile navigation gap: the 390 px tab rail overflows as designed but lacks localized navigation semantics, active-tab announcement, scroll snapping, and an explicit edge affordance"
+    "Narrowed a Product-specific mobile navigation gap: the 390 px tab rail overflows as designed but lacks localized navigation semantics, active-tab announcement, scroll snapping, and an explicit edge affordance",
+    "Prepared an exact Product-only AppDeploy patch for localized nav semantics, active-page announcement, RTL/LTR mobile scroll snapping, visible focus, compact overflow affordance, and a dedicated 390 px bilingual QA case; it is staged but deliberately not claimed deployed"
   ],
   "appdeploy": {
     "app_id": "thf-fitness-pulse-ul26f1",
@@ -71,9 +72,9 @@
     }
   },
   "blocker": "APPDEPLOY_GET_DEPLOY_INSTRUCTIONS_FAILS_CLOSED_WITH_CREDITS_USAGE_LIMIT_REACHED_UNTIL_2026-09-28T00:00:00Z; production v63 is unchanged; the safe mobile tab-rail accessibility/discoverability patch cannot be deployed or runtime-captured before reset, and bilingual active-workout plus reciprocal EN-onboarding/AR-dashboard interaction evidence remains open",
-  "next_action": "After the documented UTC reset, deploy the Product-only tab-rail patch (localized navigation label, aria-current, scroll snapping, stable focus and bidirectional edge affordance), run the existing sanity/fixture tests, then capture EN onboarding, AR dashboard, AR workout and EN workout at 390 px plus one real navigation path; keep Product PASS fail-closed until those images and interactions are inspected.",
+  "next_action": "After the documented UTC reset, apply staged patch c6d1dead5d8ed119faa76bd3fd2bc15ee277ea0a to AppDeploy v63, run its dedicated 390 px AR/EN rail QA plus existing sanity/fixture tests, then capture EN onboarding, AR dashboard, AR workout and EN workout and one real navigation path; keep Product PASS fail-closed until those images and interactions are inspected.",
   "no_progress_rule": "If no commit/deploy/evidence is produced, write BLOCKED with exact tool/permission/dependency cause.",
-  "updated_at": "2026-09-27T14:14:30.046Z",
+  "updated_at": "2026-09-27T14:16:20.846Z",
   "visual_review": {
     "evidence_type": "RUNTIME_SCREENSHOT_INSPECTION",
     "evidence_commit_sha": "9ef4b2fe14573579778fe343fbac8f253c701833",
@@ -95,5 +96,18 @@
     ],
     "new_finding": "MOBILE_TAB_RAIL_DISCOVERABILITY_AND_A11Y_REMAIN_OPEN_IN_RTL_AND_LTR",
     "visual_pass": false
+  },
+  "prepared_patch": {
+    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_MOBILE_TAB_RAIL_PATCH_20260927.patch",
+    "commit_sha": "c6d1dead5d8ed119faa76bd3fd2bc15ee277ea0a",
+    "target_files": [
+      "src/App.tsx",
+      "src/index.css",
+      "tests/tests.json"
+    ],
+    "ownership": "PRODUCT_ONLY",
+    "source_applied": false,
+    "runtime_validated": false,
+    "blocked_by": "CREDITS_USAGE_LIMIT_REACHED_UNTIL_2026-09-28T00:00:00Z"
   }
 }
