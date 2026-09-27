@@ -12,21 +12,28 @@
     "final_android_play": "not_verified"
   },
   "mandatory_run_contract": "Every run must update this state with PROGRESS/PASS/BLOCKED plus exact SHA/run/deploy/Play evidence.",
-  "next_action": "Preserve 15302; continue independent WAVE release-closure evidence and recheck Play prerequisite evidence without repeating PASS build/backup gates.",
-  "updated_at": "2026-09-27T12:44:00Z",
+  "next_action": "Preserve 15302. Continue independent WAVE release-closure work that does not require owner Play-console interaction; recheck external Play prerequisite evidence only when new evidence appears.",
+  "updated_at": "2026-09-27T14:46:00Z",
   "result": "PROGRESS",
   "latest_canonical_sha": "dfef7e8e239c7b122003c24c4ea3e4f1efc97885",
   "completed_this_run": [
     "Resumed PLAY_RELEASE_PREREQUISITES from canonical worker state",
-    "Preserved Android versionCode 15302; no evidence-backed defect justified version churn",
-    "Rechecked repository for newer WAVE release-closure commits; no newer closure candidate was found",
-    "Kept verified Android smoke run 35985903589, Play Internal run 35986508330, and backup/restore run 36292648069 as current evidence"
+    "Re-verified exact Android install/launch artifact rather than repeating build: run 35985903589 success, artifact 10802372219, digest sha256:da8b7ad118a8fb9d2663269759f50b66a1bf44e0d027655ef787f0ccd4bd9c4d",
+    "Re-verified Google Play Internal upload rather than repeating it: run 35986508330 success, artifact 10801873572, digest sha256:3e88e2d974e642d1d01ac73dd7984fc96bcfccdf9187123fff6b09e0fef381fb",
+    "Re-verified backup/isolated restore evidence: run 36292648069 success, artifact 10923106100, digest sha256:68d462ab9bbac5e6bc019f2d60c2c212663a681fe0d91aadc0d821ae647268df",
+    "No evidence-backed Android defect found; versionCode 15302 remains frozen"
   ],
   "evidence": {
     "backup_run": 36292648069,
+    "backup_artifact_id": 10923106100,
+    "backup_artifact_digest": "sha256:68d462ab9bbac5e6bc019f2d60c2c212663a681fe0d91aadc0d821ae647268df",
     "android_smoke_run": 35985903589,
+    "android_smoke_artifact_id": 10802372219,
+    "android_smoke_artifact_digest": "sha256:da8b7ad118a8fb9d2663269759f50b66a1bf44e0d027655ef787f0ccd4bd9c4d",
     "play_internal_run": 35986508330,
+    "play_internal_artifact_id": 10801873572,
+    "play_internal_artifact_digest": "sha256:3e88e2d974e642d1d01ac73dd7984fc96bcfccdf9187123fff6b09e0fef381fb",
     "versionCode": 15302
   },
-  "blocker": "Public-release closure still depends on Play account prerequisites and real tester participation; no new repository evidence closes those external requirements."
+  "blocker": "Public-release closure still depends on Play account prerequisites and real tester participation; repository evidence does not show those external requirements closed."
 }
