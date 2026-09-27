@@ -2,6 +2,7 @@
   "lane": "motion",
   "phase": "FITNESS",
   "status": "ACTIVE",
+  "result": "PROGRESS",
   "active_task": "P0_STAGE16A_MOTION_VISUAL_QUALITY_CLOSURE",
   "acceptance": [
     "Human-readable exercise demonstration",
@@ -9,7 +10,44 @@
     "IK/foot-contact hooks and biomechanical mapping evidence",
     "Rendered/runtime evidence"
   ],
-  "next_action": "Use Stage16A/UAL/MediaPipe/Blender fallback to improve one exercise-motion path end-to-end and record rendered evidence.",
+  "completed_items": [
+    "Removed blocking CacheStorage persistence from the canonical Stage16A first-render path",
+    "Added best-effort asynchronous canonical-asset cache warmup after successful decode",
+    "Added high-priority pinned GLB preload and truthful visible loading/error state with no fallback",
+    "Added aspect-aware full-body camera fitting from model bounds, camera FOV, and canvas aspect",
+    "Added compact-preview safe framing margin and removed its duplicate internal motion readout",
+    "Captured mobile and web runtime proof that the canonical human now renders instead of a blank canvas",
+    "Recorded canonical asset provenance, three deployment IDs, screenshot hashes, and fail-closed boundaries"
+  ],
+  "canonical_asset": {
+    "source_commit": "6965062e0d438e865fb4b4bcb1cb97ed2dfdde38",
+    "path": "public-assets/fitness/stage16a/thf_mpfb_stage16a_ual12_animated.glb",
+    "blob_sha": "0ff06a17f4c3d1da96687e5b440ea910b2b989da",
+    "bytes": 26296432,
+    "joints_contract": 137,
+    "clips_contract": 195,
+    "legacy_fallbacks": 0
+  },
+  "appdeploy": {
+    "app_id": "thf-fitness-pulse-ul26f1",
+    "snapshot_version": "1790482730395",
+    "qa_timestamp": 1790482744576,
+    "mobile_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790482769518/mobile.png",
+    "mobile_sha256": "f167aac9e568d5edf057a33c6efef1b386df96069929de03267464ab984ff8aa",
+    "web_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790482769518/web.png",
+    "web_sha256": "4e47548bc44e3c25a8ec3d56fada8132a4c46219195bfa1a4e6b76335c7a584f",
+    "errors": {
+      "frontend": 0,
+      "backend": 0,
+      "network": 0
+    }
+  },
+  "evidence": {
+    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_STAGE16A_RUNTIME_20260927.md",
+    "commit_sha": "dadcec0024a60c2a8cb091f218c63bdb47069bad"
+  },
+  "blocker": "AUTHENTICATED_WORKOUT_RUNTIME_CAPTURE_NOT_AVAILABLE_IN_CURRENT_SIGNED_OUT_APPDEPLOY_QA; exercise animation, transitions, controls, muscle overlay, and foot-contact hooks remain visually unproven",
+  "next_action": "Use an authorized authenticated runtime fixture/session to capture one exercise path end-to-end in Arabic and English, including visible animation, blend transition, camera change, muscle context, and foot-contact hooks; keep Motion PASS fail-closed until those frames or video are verified.",
   "no_progress_rule": "Never wait for Mixamo/DeepMotion; if blocked, use fallback or record exact blocker.",
-  "updated_at": "2026-09-26"
+  "updated_at": "2026-09-27T04:31:00Z"
 }
