@@ -1,103 +1,100 @@
 {
   "lane": "backend",
   "phase": "FITNESS",
-  "status": "BLOCKED",
-  "result": "BLOCKED",
-  "active_task": "AUTH_SYNC_AND_SESSION_BACKEND_RELEASE_CLOSURE",
+  "status": "ACTIVE",
+  "result": "PROGRESS",
+  "final": false,
+  "active_task": "BACKEND_V52_CI_AND_AUTHENTICATED_E2E_CLOSURE",
   "acceptance": [
     "Auth/session/data-sync correctness",
-    "Server-authoritative session integrity",
-    "No regression in live backend"
+    "Health ingestion provenance and deterministic deduplication",
+    "Server-authoritative workout and competition integrity",
+    "No regression in an authenticated non-destructive environment E2E"
   ],
   "completed_items": [
-    "Release auditor regression suite passed 8/8, including build-root discovery and POST /api/account/delete recognition regressions.",
-    "Immutable Drive source retrieved through GitHub OIDC/WIF and SHA-256 verified.",
-    "Exact source compiled successfully.",
-    "Exact source backend test suite passed 20/20 (one upstream deprecation warning).",
-    "Runtime OpenAPI audit inventoried 59 paths and 60 operations from the exact source.",
-    "Auth login, logout, current-user session, account deletion, reports/progress, and workout set/proof routes are present in the runtime OpenAPI contract.",
-    "Corrected a false ACCOUNT_DELETION_ROUTE_MISSING finding; the exact source exposes POST /api/account/delete.",
-    "Fail-closed evidence artifact uploaded and independently SHA-256 verified."
+    "Adopted Backend V52 as a backend-only successor of the verified canonical source and V51 predecessor.",
+    "Uploaded the immutable V52 ZIP to the canonical Drive folder, downloaded it again, and independently matched byte size, ZIP integrity, and SHA-256.",
+    "Exact V52 source suite passed 25/25 locally with one upstream Starlette/httpx deprecation warning.",
+    "Release-auditor regression suite passed 10/10 after adding public registration and backend_authority.py discovery regressions.",
+    "Static release contract passed all nine checks: auth/session, user scope, sync/report, server authority, set sequence, Health ingestion, and Health provenance/deduplication.",
+    "Runtime OpenAPI contract passed with 61 paths, 62 operations, and 26/26 protected mutations secured by declared sessionCookie or adminKey boundaries.",
+    "Checkpointed the source adoption, fail-closed evidence, auditor fixes, and exact-source GitHub workflow on the Backend lane branch.",
+    "Started canonical GitHub Actions run 36326955001 against exact checkpoint a7c99024d395b9c613a9ed69e009cf36d916144b."
   ],
   "evidence": {
-    "source_drive_file_id": "1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-",
-    "source_sha256": "2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74",
-    "auditor_commit_sha": "9d92c48fbef6fd4b4bb55ec13cca83900c83bfcc",
-    "workflow_name": "THF Fitness Backend Release Contract V1",
-    "workflow_run_id": 36276760983,
-    "workflow_run_number": 6,
-    "workflow_job_id": 108500910062,
-    "workflow_conclusion": "success",
-    "artifact_id": 10917018187,
-    "artifact_name": "THF-FITNESS-BACKEND-RELEASE-CONTRACT-V1",
-    "artifact_sha256": "9f4e1fbf2f9489ea936d0c50e7f0bc1c059f8e243daa902262035bde14c3777b",
-    "exact_source_tests": {
-      "passed": 20,
-      "failed": 0,
-      "warnings": 1
+    "successor_source": {
+      "schema": "thf-fitness-backend-successor-v2",
+      "drive_file_id": "17De4XMcHKAENViMN4QZkNd7yqHf4lyt_",
+      "file_name": "THF_FITNESS_STANDALONE_V5_RC2_BACKEND_V52_SOURCE.zip",
+      "size_bytes": 20157248,
+      "sha256": "babfbcb997e7b5347da1141e1455aa290e1e143bac8d00c48fa65a0f6d02d1f6",
+      "parent_folder_id": "0AE_eISTZ0j1lUk9PVA",
+      "drive_round_trip_sha256_match": true,
+      "zip_integrity": "PASS",
+      "scope": "backend_only"
     },
-    "auditor_tests": {
-      "passed": 8,
-      "failed": 0
+    "lineage": {
+      "original_drive_file_id": "1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40-",
+      "original_source_sha256": "2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74",
+      "predecessor_drive_file_id": "161Hd1XE45dpKBIdl4CeCsIeZE9-MnAzG",
+      "predecessor_source_sha256": "bd9676075750beafcfba5e2262cb505eaf1920b2f42b1965b2dbae05bfe0b428"
     },
-    "openapi": {
-      "version": "3.1.0",
-      "route_count": 59,
-      "operation_count": 60,
-      "mutation_count": 25,
-      "secured_mutation_count": 0,
-      "account_deletion_route_present": true,
-      "auth_login_route_present": true,
-      "auth_logout_route_present": true,
-      "session_or_current_user_route_present": true,
-      "reports_or_progress_route_present": true,
-      "workout_set_and_proof_routes_present": true,
-      "explicit_sync_route_present": false,
-      "health_ingestion_route_present": false,
-      "health_provenance_dedup_schema_declared": false,
-      "security_schemes_declared": false,
-      "all_mutations_declare_security": false,
-      "server_authority_schema_declared": false
+    "checkpoint": {
+      "implementation_commit_sha": "a7c99024d395b9c613a9ed69e009cf36d916144b",
+      "tree_sha": "c1fd153da683c068f5a863097a2ca6311422caa1",
+      "evidence_path": "ReleaseOps/FitnessStandalone/Swarm/evidence/BACKEND_SUCCESSOR_V52_ADOPTION_20260927.md"
     },
-    "static_contract_checks": {
-      "backend_source_present": true,
-      "routes_present": true,
-      "auth_session_contract_present": true,
-      "authenticated_user_scope_present": true,
-      "sync_report_contract_present": true,
-      "health_ingestion_contract_present": true,
-      "health_provenance_dedup_present": false,
-      "server_authority_contract_present": false,
-      "set_sequence_contract_complete": false
+    "local_validation": {
+      "exact_source_tests": {
+        "passed": 25,
+        "failed": 0,
+        "warnings": 1
+      },
+      "auditor_regression_tests": {
+        "passed": 10,
+        "failed": 0
+      },
+      "static_contract": {
+        "result": "PROGRESS",
+        "checks_passed": 9,
+        "checks_failed": 0,
+        "open_checks": []
+      },
+      "openapi_contract": {
+        "result": "PROGRESS",
+        "openapi_version": "3.1.0",
+        "route_count": 61,
+        "operation_count": 62,
+        "protected_mutation_count": 26,
+        "secured_protected_mutation_count": 26,
+        "security_scheme_names": [
+          "adminKey",
+          "sessionCookie"
+        ],
+        "issues": []
+      }
+    },
+    "github_ci": {
+      "workflow_name": "THF Fitness Backend Release Contract V1",
+      "run_id": 36326955001,
+      "run_number": 7,
+      "head_sha": "a7c99024d395b9c613a9ed69e009cf36d916144b",
+      "status": "in_progress",
+      "conclusion": null,
+      "artifact_id": null
     }
   },
   "blockers": [
     {
-      "id": "SERVER_AUTHORITY_CONTRACT_MISSING",
-      "detail": "Exact source has no detected server-authoritative competition or anti-cheat contract/schema."
+      "id": "BACKEND_V52_GITHUB_CI_PENDING",
+      "detail": "Canonical run 36326955001 must reproduce the exact Drive SHA, 25 source tests, and both PROGRESS contract reports before PASS can be considered."
     },
     {
-      "id": "SET_SEQUENCE_CONTRACT_MISSING",
-      "detail": "Exact source lacks acceptedSet, expectedSet, exercise_out_of_order and stale_set_sequence enforcement markers."
-    },
-    {
-      "id": "HEALTH_PROVENANCE_DEDUP_MISSING",
-      "detail": "Health-related source markers exist, but runtime ingestion plus provenance/deduplication contracts are absent."
-    },
-    {
-      "id": "DATA_SYNC_ROUTE_MISSING",
-      "detail": "The runtime OpenAPI contract exposes reports/progress but no explicit authenticated sync route."
-    },
-    {
-      "id": "OPENAPI_SECURITY_DECLARATIONS_MISSING",
-      "detail": "The runtime OpenAPI contract declares no security scheme and 0 of 25 mutation operations declare security."
-    },
-    {
-      "id": "CANONICAL_SOURCE_NOT_IN_GIT_BRANCH",
-      "detail": "The lane branch contains release tooling/evidence only; application source remains immutable Drive ZIP 1gcOkJ-EXnCEbCHMcBSUWAwVcQxj4j40- at SHA-256 2290c5897eab827dd778204de03f6f70c49fd162a32d187e4844172ececf7b74, so source gaps cannot be patched without a successor canonical source artifact and SHA."
+      "id": "AUTHENTICATED_NON_DESTRUCTIVE_E2E_PENDING",
+      "detail": "Login, scoped workout write, second-client sync, logout/session revocation, and account deletion have not yet been proven against a deployed V52 environment."
     }
   ],
-  "next_action": "Publish a successor canonical backend source ZIP with declared authenticated security, explicit data sync, runtime Health ingestion provenance/deduplication, and server-authoritative competition/set sequencing. Record its new SHA-256, rerun exact-source tests and both audits, then execute authenticated non-destructive production E2E for login, scoped workout write, second-client sync, logout/session revocation and account deletion.",
+  "next_action": "Reconcile GitHub Actions run 36326955001 and its artifact. If it passes, deploy this exact V52 SHA to an isolated non-production target and run authenticated non-destructive E2E for login, scoped workout write, second-client sync, logout/session revocation, and account deletion; keep PASS fail-closed until both gates are evidence-backed.",
   "no_progress_rule": "If backend has no runnable gap, mark PASS with evidence rather than remaining READY.",
-  "updated_at": "2026-09-26T22:36:50Z"
+  "updated_at": "2026-09-27T14:44:30Z"
 }
