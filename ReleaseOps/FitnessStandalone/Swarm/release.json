@@ -3,10 +3,10 @@
   "phase": "FITNESS",
   "status": "ACTIVE",
   "active_task": "FITNESS_RELEASE_INTEGRATION_AND_HOURLY_REPORTING",
-  "run_result": "PROGRESS",
+  "run_result": "NO_PROGRESS",
   "candidate_sha": "b0a190339dedebf2710292cbdc5906689e405dc6",
   "candidate_advanced": false,
-  "merge_decision": "NO_MERGE",
+  "merge_decision": "NO_PASS_SUBMISSION",
   "integrated_lanes": {
     "product": null,
     "motion": null,
@@ -21,7 +21,8 @@
       "evidence_commit_sha": "5d5f5fcb5fe0671534147c0c9fb4cb9da2246db9",
       "appdeploy_snapshot": "1790482175088",
       "watchdog_status": "HEALTHY",
-      "diagnosis": "DURABLE_PRODUCT_PROGRESS_PRESENT"
+      "diagnosis": "DURABLE_PRODUCT_PROGRESS_PRESENT",
+      "state_blob_sha": "31e370ade2d52e0bbf87275aa2f1d1dd8fbc60f1"
     },
     "motion": {
       "branch": "automation/fitness-swarm-motion-20260924",
@@ -30,7 +31,8 @@
       "evidence_commit_sha": "dadcec0024a60c2a8cb091f218c63bdb47069bad",
       "appdeploy_snapshot": "1790482730395",
       "watchdog_status": "HEALTHY",
-      "diagnosis": "DURABLE_MOTION_PROGRESS_PRESENT"
+      "diagnosis": "DURABLE_MOTION_PROGRESS_PRESENT",
+      "state_blob_sha": "70f3679d395e71cf84218cab34f81c120dab74e2"
     },
     "backend": {
       "branch": "automation/fitness-swarm-backend-20260924",
@@ -38,7 +40,8 @@
       "state_updated_at": "2026-09-26T22:36:50Z",
       "evidence_commit_sha": "9d92c48fbef6fd4b4bb55ec13cca83900c83bfcc",
       "watchdog_status": "BLOCKED_NOT_STALLED",
-      "diagnosis": "CANONICAL_BACKEND_SUCCESSOR_SOURCE_REQUIRED"
+      "diagnosis": "CANONICAL_BACKEND_SUCCESSOR_SOURCE_REQUIRED",
+      "state_blob_sha": "8e77146baa4221c4bd16f4aa3250f773e19a8df5"
     },
     "android": {
       "branch": "automation/fitness-swarm-android-20260924",
@@ -46,7 +49,8 @@
       "state_updated_at": "2026-09-26T22:45:39Z",
       "evidence_commit_sha": "8d6e18781943ac303e93241e6985b2781c26b07a",
       "watchdog_status": "BLOCKED_NOT_STALLED",
-      "diagnosis": "ANDROID_SUCCESSOR_SOURCE_REQUIRED"
+      "diagnosis": "ANDROID_SUCCESSOR_SOURCE_REQUIRED",
+      "state_blob_sha": "f3bb0d0681f0b89eed16fd4bc5c02f566bc7cb82"
     }
   },
   "submissions": {
@@ -123,8 +127,8 @@
     "android": "Build a new candidate above versionCode 50001 with the Stage16A offline payload, DAL, Health Connect, integrity proof, and physical-device evidence; update android.json to PASS and open a PR.",
     "release": "Merge only independently validated PASS submissions one at a time; keep candidate SHA and Play track unchanged until all release gates pass."
   },
-  "next_action": "Product/Motion continue authenticated visual closure; Platform lane must create/adopt successor backend+Android source artifacts instead of re-auditing immutable v50001; Integrator must report each run even with no merge.",
-  "updated_at": "2026-09-27T06:20:00Z",
+  "next_action": "Wait for a new evidence-backed lane state; validate and merge at most one PASS PR when it exists. Keep visual and physical Android/GPU/Health Connect gates fail-closed.",
+  "updated_at": "2026-09-27T08:56:52.577Z",
   "candidate_ci": {
     "commit_status_contexts": [],
     "workflow_runs": [
@@ -199,5 +203,18 @@
       }
     ],
     "conclusion": "NO_QUALIFYING_CANDIDATE_BUILD_OR_RUNTIME_PASS"
+  },
+  "reconciliation": {
+    "observed_at": "2026-09-27T08:56:52.577Z",
+    "lane_state_blobs": {
+      "product": "31e370ade2d52e0bbf87275aa2f1d1dd8fbc60f1",
+      "motion": "70f3679d395e71cf84218cab34f81c120dab74e2",
+      "backend": "8e77146baa4221c4bd16f4aa3250f773e19a8df5",
+      "android": "f3bb0d0681f0b89eed16fd4bc5c02f566bc7cb82"
+    },
+    "newer_lane_states_since_previous_release_heartbeat": [],
+    "pass_submissions": [],
+    "result": "NO_NEWER_LANE_STATE",
+    "note": "All four lane states were already represented in the prior release heartbeat. BLOCKED backend and Android lanes retain their explicit dependency classification and are not marked STALLED."
   }
 }
