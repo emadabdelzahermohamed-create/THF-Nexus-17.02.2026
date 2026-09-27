@@ -1,0 +1,502 @@
+[Reading 498 lines from start (total: 498 lines, 0 remaining)]
+
+diff --git a/android/app/build.gradle b/android/app/build.gradle
+index f648792..e06ebf5 100644
+--- a/android/app/build.gradle
++++ b/android/app/build.gradle
+@@ -1,4 +1,7 @@
+-plugins { id 'com.android.application' }
++plugins {
++    id 'com.android.application'
++    id 'org.jetbrains.kotlin.android'
++}
+ 
+ android {
+     namespace 'com.topherofit.thf.pulse'
+@@ -7,8 +10,8 @@ android {
+         applicationId 'com.topherofit.thf.pulse'
+         minSdk 26
+         targetSdk 36
+-        versionCode 50001
+-        versionName '5.0.0-standalone-rc2'
++        versionCode 50002
++        versionName '5.0.0-standalone-rc3'
+         def baseUrl = project.findProperty('THF_BASE_URL') ?: ''
+         def passUrl = project.findProperty('THF_PASS_URL') ?: ''
+         buildConfigField 'String', 'THF_BASE_URL', '"' + baseUrl.replace('\\','\\\\').replace('"','\\"') + '"'
+@@ -16,8 +19,20 @@ android {
+         buildConfigField 'String', 'THF_APP_SLUG', '"pulse"'
+     }
+     buildFeatures { buildConfig true }
++    compileOptions {
++        sourceCompatibility JavaVersion.VERSION_17
++        targetCompatibility JavaVersion.VERSION_17
++    }
++    kotlinOptions { jvmTarget = '17' }
+     buildTypes {
+         debug { applicationIdSuffix '.debug'; versionNameSuffix '-debug' }
+         release { minifyEnabled false; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' }
+     }
+ }
++
++dependencies {
++    implementation 'androidx.activity:activity:1.10.1'
++    implementation 'androidx.webkit:webkit:1.17.1'
++    implementation 'androidx.health.connect:connect-client:1.1.0'
++    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
++}
+diff --git a/android/app/src/main/AndroidManifest.xml b/android/app/src/main/AndroidManifest.xml
+index 066027e..7818b5c 100644
+--- a/android/app/src/main/AndroidManifest.xml
++++ b/android/app/src/main/AndroidManifest.xml
+@@ -2,23 +2,32 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+   <uses-permission android:name="android.permission.INTERNET"/>
+   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
++  <uses-permission android:name="android.permission.health.READ_STEPS"/>
++  <uses-permission android:name="android.permission.health.READ_EXERCISE"/>
++  <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
++  <queries>
++    <package android:name="com.google.android.apps.healthdata"/>
++  </queries>
+   <application android:supportsRtl="true" android:allowBackup="false" android:usesCleartextTraffic="false" android:theme="@style/AppTheme" android:label="@string/app_name" android:networkSecurityConfig="@xml/network_security_config">
+-    <activity android:name=".MainActivity" android:exported="true">
+-      <intent-filter>
+-        <action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/>
+-      </intent-filter>
+-      <intent-filter>
+-        <action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/>
+-        <data android:scheme="topherofit" android:host="app" android:pathPrefix="/pulse"/>
+-      </intent-filter>
++    <activity android:name=".PermissionsRationaleActivity" android:exported="true">
++      <intent-filter><action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/></intent-filter>
++    </activity>
++    <activity-alias android:name=".ViewPermissionUsageActivity" android:exported="true" android:targetActivity=".PermissionsRationaleActivity" android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+       <intent-filter>
+-        <action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/>
+-        <data android:scheme="topherofit" android:host="pass" android:pathPrefix="/handoff"/>
++        <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
++        <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
+       </intent-filter>
+-      <intent-filter>
++    </activity-alias>
++    <activity android:name=".MainActivity" android:exported="true">
++      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
++      <intent-filter android:autoVerify="true">
+         <action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/>
+-        <data android:scheme="topherofit" android:host="auth" android:pathPrefix="/complete"/>
++        <data android:scheme="https" android:host="thf-fitness-pulse-ul26f1.v2.appdeploy.ai"/>
+       </intent-filter>
++      <intent-filter><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="topherofit" android:host="app" android:pathPrefix="/pulse"/></intent-filter>
++      <intent-filter><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="topherofit" android:host="pass" android:pathPrefix="/handoff"/></intent-filter>
++      <intent-filter><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="topherofit" android:host="auth" android:pathPrefix="/complete"/></intent-filter>
++      <intent-filter><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="topherofit" android:host="health"/></intent-filter>
+     </activity>
+   </application>
+ </manifest>
+diff --git a/android/app/src/main/assets/offline.html b/android/app/src/main/assets/offline.html
+index 8ac8e5a..a0765ec 100644
+--- a/android/app/src/main/assets/offline.html
++++ b/android/app/src/main/assets/offline.html
+@@ -1 +1,93 @@
+-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>THF Pulse</title><style>body{font-family:system-ui;margin:0;background:#111827;color:#fff;display:grid;min-height:100vh;place-items:center}main{max-width:34rem;padding:2rem;text-align:center}button{min-height:48px;padding:.8rem 1.2rem;border-radius:.7rem}</style><main><h1>THF Pulse</h1><p>The secure service is not available yet. Your local experience settings remain on this device.</p><button onclick="location.href='topherofit://retry'">Retry</button><p><small>com.topherofit.thf.pulse</small></p></main></html>
+\ No newline at end of file
++<!doctype html>
++<html lang="en" dir="ltr">
++<head>
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
++<meta name="color-scheme" content="dark">
++<title>Top Hero Fit — Offline Motion Coach</title>
++<script type="module" src="offline/vendor/model-viewer.min.js"></script>
++<style>
++:root{font-family:Inter,system-ui,sans-serif;color:#f8fafc;background:#07111f}
++*{box-sizing:border-box} body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0,#17335d 0,#07111f 42%,#030712 100%)}
++main{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom))}
++header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
++.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#67e8f9;font-weight:800}
++h1{margin:4px 0 0;font-size:clamp(22px,6vw,34px);line-height:1.05}
++.badge{padding:8px 10px;border:1px solid #334155;border-radius:999px;background:#0f172acc;font-size:12px;white-space:nowrap}
++.stage{position:relative;min-height:55vh;border:1px solid #243b59;border-radius:24px;overflow:hidden;background:linear-gradient(180deg,#12233d,#060b14);box-shadow:0 24px 70px #0008}
++model-viewer{width:100%;height:100%;min-height:55vh;--poster-color:transparent;background:radial-gradient(ellipse at 50% 78%,#21446a55 0,transparent 48%)}
++.status{position:absolute;left:12px;right:12px;bottom:12px;padding:10px 12px;border-radius:14px;background:#020617d9;border:1px solid #334155;font-size:13px;backdrop-filter:blur(10px)}
++.controls{display:grid;gap:10px}
++.row{display:grid;grid-template-columns:1fr auto;gap:8px}
++select,button{min-height:48px;border-radius:14px;border:1px solid #334155;background:#0f172a;color:#f8fafc;padding:0 14px;font:inherit}
++button{font-weight:800;cursor:pointer} button.primary{background:#0891b2;border-color:#22d3ee}
++.quick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
++.quick button{min-height:42px;padding:0 6px;font-size:12px}
++.note{margin:0;color:#94a3b8;font-size:12px;line-height:1.45;text-align:center}
++@media(max-width:520px){.quick{grid-template-columns:repeat(3,1fr)}.stage,model-viewer{min-height:52vh}}
++</style>
++</head>
++<body>
++<main>
++<header>
++<div><div class="eyebrow" data-i18n="eyebrow">Offline Motion Coach</div><h1 data-i18n="title">Stage16A stays with you.</h1></div>
++<div class="badge" id="clipCount">Loading…</div>
++</header>
++<section class="stage" aria-label="3D exercise demonstration">
++<model-viewer id="coach" src="offline/stage16a.glb" camera-controls autoplay animation-name="breathe"
++shadow-intensity="1.15" shadow-softness=".85" exposure="1.05" interaction-prompt="none"
++camera-orbit="0deg 82deg 3.1m" min-camera-orbit="auto auto 1.6m" max-camera-orbit="auto auto 5m">
++</model-viewer>
++<div class="status" id="status" role="status">Preparing the offline coach…</div>
++</section>
++<section class="controls">
++<div class="row">
++<select id="animation" aria-label="Animation clip"></select>
++<button class="primary" id="replay" type="button" data-i18n="replay">Replay</button>
++</div>
++<div class="quick" aria-label="Quick motions">
++<button data-clip="breathe">Breathe</button>
++<button data-clip="walk">Walk</button>
++<button data-clip="run">Run</button>
++<button data-clip="UAL1_Push_Loop">Push</button>
++<button data-clip="UAL1_Jump_Loop">Jump</button>
++</div>
++<button id="retry" type="button" data-i18n="retry">Reconnect to full Top Hero Fit</button>
++<p class="note" data-i18n="note">This offline guide demonstrates stored motion only. Sensor/form verification and account sync require supported permissions and connectivity.</p>
++</section>
++</main>
++<script>
++const model=document.getElementById('coach'), select=document.getElementById('animation');
++const status=document.getElementById('status'), count=document.getElementById('clipCount');
++const ar=(navigator.language||'').toLowerCase().startsWith('ar');
++const t=ar?{
++eyebrow:'مدرب الحركة بدون إنترنت',title:'Stage16A متاح معك بدون إنترنت.',replay:'إعادة',
++retry:'إعادة الاتصال بـ Top Hero Fit',note:'هذا الدليل يعرض الحركة المخزنة فقط. التحقق بالحساسات ومزامنة الحساب يحتاجان الصلاحيات والاتصال.',
++ready:n=>`جاهز — ${n} حركة محلية`,playing:n=>`الحركة الحالية: ${n}`
++}:{
++eyebrow:'Offline Motion Coach',title:'Stage16A stays with you.',replay:'Replay',
++retry:'Reconnect to full Top Hero Fit',note:'This offline guide demonstrates stored motion only. Sensor/form verification and account sync require supported permissions and connectivity.',
++ready:n=>`Ready — ${n} local motions`,playing:n=>`Playing: ${n}`
++};
++if(ar){document.documentElement.lang='ar';document.documentElement.dir='rtl'}
++document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(typeof t[k]==='string')el.textContent=t[k]});
++function play(name){
++ if(!name)return;
++ model.animationName=name; model.currentTime=0; model.play();
++ select.value=name; status.textContent=t.playing(name);
++}
++model.addEventListener('load',()=>{
++ const clips=model.availableAnimations||[];
++ select.innerHTML='';
++ clips.forEach(name=>{const o=document.createElement('option');o.value=name;o.textContent=name;select.appendChild(o)});
++ const preferred=clips.includes('UAL1_Push_Loop')?'UAL1_Push_Loop':clips.includes('breathe')?'breathe':clips[0];
++ count.textContent=`${clips.length} clips`;status.textContent=t.ready(clips.length);play(preferred);
++});
++model.addEventListener('error',()=>{status.textContent=ar?'تعذر تحميل نموذج الحركة المحلي.':'Offline motion model failed to load.'});
++select.addEventListener('change',()=>play(select.value));
++document.getElementById('replay').addEventListener('click',()=>play(select.value));
++document.querySelectorAll('[data-clip]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.clip)));
++document.getElementById('retry').addEventListener('click',()=>location.href='topherofit://retry');
++</script>
++</body>
++</html>
+diff --git a/android/app/src/main/java/com/topherofit/thf/pulse/HealthConnectBridge.kt b/android/app/src/main/java/com/topherofit/thf/pulse/HealthConnectBridge.kt
+new file mode 100644
+index 0000000..37abe36
+--- /dev/null
++++ b/android/app/src/main/java/com/topherofit/thf/pulse/HealthConnectBridge.kt
+@@ -0,0 +1,116 @@
++package com.topherofit.thf.pulse
++
++import android.content.Intent
++import android.net.Uri
++import android.widget.Toast
++import androidx.activity.ComponentActivity
++import androidx.activity.result.ActivityResultLauncher
++import androidx.health.connect.client.HealthConnectClient
++import androidx.health.connect.client.permission.HealthPermission
++import androidx.health.connect.client.records.ExerciseSessionRecord
++import androidx.health.connect.client.records.StepsRecord
++import androidx.health.connect.client.records.metadata.Metadata
++import androidx.health.connect.client.request.AggregateRequest
++import androidx.health.connect.client.time.TimeRangeFilter
++import kotlinx.coroutines.CoroutineScope
++import kotlinx.coroutines.Dispatchers
++import kotlinx.coroutines.SupervisorJob
++import kotlinx.coroutines.cancel
++import kotlinx.coroutines.launch
++import java.time.Instant
++import java.time.LocalDate
++import java.time.ZoneId
++
++class HealthConnectBridge(
++    private val activity: ComponentActivity,
++    private val permissionLauncher: ActivityResultLauncher<Set<String>>,
++) {
++    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
++    private val permissions = setOf(
++        HealthPermission.getReadPermission(StepsRecord::class),
++        HealthPermission.getReadPermission(ExerciseSessionRecord::class),
++        HealthPermission.getWritePermission(ExerciseSessionRecord::class),
++    )
++
++    private val client: HealthConnectClient by lazy { HealthConnectClient.getOrCreate(activity) }
++
++    fun requestPermissionsAndReadSteps() {
++        when (HealthConnectClient.getSdkStatus(activity)) {
++            HealthConnectClient.SDK_AVAILABLE -> scope.launch {
++                runCatching { client.permissionController.getGrantedPermissions() }
++                    .onSuccess { granted ->
++                        if (granted.containsAll(permissions)) readTodaySteps() else permissionLauncher.launch(permissions)
++                    }
++                    .onFailure { toast("Health Connect: ${it.message ?: "permission check failed"}") }
++            }
++            HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> {
++                val uri = Uri.parse("market://details?id=com.google.android.apps.healthdata")
++                runCatching { activity.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
++                    .onFailure { toast("Health Connect requires an update") }
++            }
++            else -> toast("Health Connect is not available on this device")
++        }
++    }
++
++    fun onPermissionsResult(granted: Set<String>) {
++        if (granted.containsAll(permissions)) {
++            toast("Health Connect permissions granted")
++            readTodaySteps()
++        } else toast("Health Connect permissions were not fully granted")
++    }
++
++    fun readTodaySteps() {
++        scope.launch {
++            val zone = ZoneId.systemDefault()
++            val start = LocalDate.now(zone).atStartOfDay(zone).toInstant()
++            val end = Instant.now()
++            runCatching {
++                client.aggregate(
++                    AggregateRequest(
++                        metrics = setOf(StepsRecord.COUNT_TOTAL),
++                        timeRangeFilter = TimeRangeFilter.between(start, end),
++                    )
++                )[StepsRecord.COUNT_TOTAL] ?: 0L
++            }.onSuccess { toast("Today: $it steps") }
++                .onFailure { toast("Health Connect read failed: ${it.message ?: "unknown error"}") }
++        }
++    }
++
++    fun writeExerciseSession(startEpochMs: Long, endEpochMs: Long, title: String?) {
++        if (endEpochMs <= startEpochMs) return
++        scope.launch {
++            runCatching {
++                val granted = client.permissionController.getGrantedPermissions()
++                if (!granted.contains(HealthPermission.getWritePermission(ExerciseSessionRecord::class))) {
++                    permissionLauncher.launch(permissions)
++                    return@runCatching
++                }
++                val start = Instant.ofEpochMilli(startEpochMs)
++                val end = Instant.ofEpochMilli(endEpochMs)
++                val rules = ZoneId.systemDefault().rules
++                val record = ExerciseSessionRecord(
++                    startTime = start,
++                    startZoneOffset = rules.getOffset(start),
++                    endTime = end,
++                    endZoneOffset = rules.getOffset(end),
++                    metadata = Metadata.manualEntry(),
++                    exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
++                    title = title?.take(80),
++                    notes = "Top Hero Fit",
++                    segments = emptyList(),
++                    laps = emptyList(),
++                    exerciseRoute = null,
++                    plannedExerciseSessionId = null,
++                )
++                client.insertRecords(listOf(record))
++            }.onSuccess { toast("Workout saved to Health Connect") }
++                .onFailure { toast("Health Connect write failed: ${it.message ?: "unknown error"}") }
++        }
++    }
++
++    fun close() = scope.cancel()
++
++    private fun toast(message: String) {
++        activity.runOnUiThread { Toast.makeText(activity, message, Toast.LENGTH_SHORT).show() }
++    }
++}
+diff --git a/android/app/src/main/java/com/topherofit/thf/pulse/MainActivity.java b/android/app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
+index cfd6d5c..c820eff 100644
+--- a/android/app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
++++ b/android/app/src/main/java/com/topherofit/thf/pulse/MainActivity.java
+@@ -1,7 +1,10 @@
+ package com.topherofit.thf.pulse;
+ 
+-import android.app.Activity;
+ import android.app.AlertDialog;
++import androidx.activity.ComponentActivity;
++import androidx.activity.result.ActivityResultLauncher;
++import androidx.health.connect.client.PermissionController;
++import androidx.webkit.WebViewAssetLoader;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.SharedPreferences;
+@@ -17,6 +20,7 @@ import android.webkit.CookieManager;
+ import android.webkit.WebChromeClient;
+ import android.webkit.WebResourceError;
+ import android.webkit.WebResourceRequest;
++import android.webkit.WebResourceResponse;
+ import android.webkit.WebSettings;
+ import android.webkit.WebView;
+ import android.webkit.WebViewClient;
+@@ -28,8 +32,9 @@ import android.widget.ProgressBar;
+ import android.widget.TextView;
+ import android.widget.Toast;
+ import java.util.Locale;
++import java.util.Set;
+ 
+-public final class MainActivity extends Activity {
++public final class MainActivity extends ComponentActivity {
+     private static final String PREFS="thf_ux";
+     private WebView web;
+     private ProgressBar progress;
+@@ -38,9 +43,17 @@ public final class MainActivity extends Activity {
+     private TextView statusBody;
+     private Button retry;
+     private SharedPreferences prefs;
++    private WebViewAssetLoader assetLoader;
++    private HealthConnectBridge healthConnect;
++    private ActivityResultLauncher<Set<String>> healthPermissionLauncher;
+ 
+     @Override public void onCreate(Bundle state) {
+         super.onCreate(state);
++        healthPermissionLauncher=registerForActivityResult(
++            PermissionController.createRequestPermissionResultContract(),
++            granted -> { if (healthConnect!=null) healthConnect.onPermissionsResult(granted); }
++        );
++        healthConnect=new HealthConnectBridge(this,healthPermissionLauncher);
+         prefs=getSharedPreferences(PREFS,MODE_PRIVATE);
+         buildUi();
+         configureWebView();
+@@ -79,6 +92,9 @@ public final class MainActivity extends Activity {
+     }
+ 
+     private void configureWebView() {
++        assetLoader=new WebViewAssetLoader.Builder()
++            .addPathHandler("/assets/",new WebViewAssetLoader.AssetsPathHandler(this))
++            .build();
+         CookieManager.getInstance().setAcceptThirdPartyCookies(web,false);
+         WebSettings s=web.getSettings();
+         s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setAllowFileAccess(false); s.setAllowContentAccess(false);
+@@ -90,6 +106,11 @@ public final class MainActivity extends Activity {
+             }
+         });
+         web.setWebViewClient(new WebViewClient() {
++            @Override public WebResourceResponse shouldInterceptRequest(WebView view,WebResourceRequest request) {
++                Uri url=request.getUrl();
++                if (url!=null && "appassets.androidplatform.net".equals(url.getHost())) return assetLoader.shouldInterceptRequest(url);
++                return super.shouldInterceptRequest(view,request);
++            }
+             @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap icon) { hideStatus(); progress.setVisibility(View.VISIBLE); }
+             @Override public void onPageFinished(WebView view,String url) { progress.setVisibility(View.GONE); injectNativePrefs(); }
+             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req) {
+@@ -142,6 +163,7 @@ public final class MainActivity extends Activity {
+     private void handleDeepLink(Uri u) {
+         if (u==null) { loadProduct(); return; }
+         if ("retry".equals(u.getHost())) { loadProduct(); return; }
++        if ("health".equals(u.getHost())) { handleHealthLink(u); return; }
+         if ("auth".equals(u.getHost()) && "/complete".equals(u.getPath())) {
+             String ticket=u.getQueryParameter("ticket");
+             String base=BuildConfig.THF_BASE_URL==null?"":BuildConfig.THF_BASE_URL.trim();
+@@ -161,7 +183,19 @@ public final class MainActivity extends Activity {
+         loadProduct();
+     }
+ 
+-    private void showOffline() { showStatus(getString(R.string.offline_title),getString(R.string.offline_body,getString(R.string.app_name)),true); }
++    private void handleHealthLink(Uri u) {
++        String path=u.getPath()==null?"":u.getPath();
++        if ("/permissions".equals(path) || "/steps".equals(path)) { healthConnect.requestPermissionsAndReadSteps(); return; }
++        if ("/exercise".equals(path)) {
++            try {
++                long start=Long.parseLong(u.getQueryParameter("start"));
++                long end=Long.parseLong(u.getQueryParameter("end"));
++                healthConnect.writeExerciseSession(start,end,u.getQueryParameter("title"));
++            } catch (Exception ignored) { Toast.makeText(this,"Invalid Health Connect workout payload",Toast.LENGTH_SHORT).show(); }
++        }
++    }
++
++    private void showOffline() { hideStatus(); web.loadUrl("https://appassets.androidplatform.net/assets/offline.html"); }
+     private void showNetworkError() { showStatus(getString(R.string.network_error_title),getString(R.string.network_error_body),true); }
+     private void showConfigError(String message) { showStatus(getString(R.string.service_not_configured),message,false); }
+     private void showStatus(String title,String body,boolean canRetry) { statusTitle.setText(title); statusBody.setText(body); retry.setVisibility(canRetry?View.VISIBLE:View.GONE); statusPanel.setVisibility(View.VISIBLE); progress.setVisibility(View.GONE); }
+@@ -172,8 +206,8 @@ public final class MainActivity extends Activity {
+         final boolean[] checked={prefs.getBoolean("data_saver",false),prefs.getBoolean("reduce_motion",false),prefs.getBoolean("high_contrast",false)};
+         new AlertDialog.Builder(this).setTitle(R.string.experience_settings).setMultiChoiceItems(items,checked,(d,w,isChecked)->checked[w]=isChecked)
+           .setPositiveButton(R.string.apply,(d,w)->{ prefs.edit().putBoolean("data_saver",checked[0]).putBoolean("reduce_motion",checked[1]).putBoolean("high_contrast",checked[2]).apply(); applyPrefs(true); })
+-          .setNeutralButton(R.string.text_size,(d,w)->showTextSize())
+-          .setNegativeButton(R.string.cancel,null).show();
++          .setNeutralButton(R.string.health_connect,(d,w)->healthConnect.requestPermissionsAndReadSteps())
++          .setNegativeButton(R.string.text_size,(d,w)->showTextSize()).show();
+     }
+     private void showTextSize() {
+         new AlertDialog.Builder(this).setTitle(R.string.text_size).setSingleChoiceItems(new String[]{getString(R.string.zoom_100),getString(R.string.zoom_115),getString(R.string.zoom_130)},zoomIndex(),(d,w)->{ prefs.edit().putInt("text_zoom",w==1?115:w==2?130:100).apply(); d.dismiss(); applyPrefs(true); }).setNegativeButton(R.string.cancel,null).show();
+@@ -196,5 +230,6 @@ public final class MainActivity extends Activity {
+     }
+     private int dp(int v) { return Math.round(v*getResources().getDisplayMetrics().density); }
+     @Override protected void onResume() { super.onResume(); if (statusPanel!=null && statusPanel.getVisibility()==View.VISIBLE && isOnline()) { /* explicit retry remains user-controlled */ } }
++    @Override protected void onDestroy() { if (healthConnect!=null) healthConnect.close(); if (web!=null) web.destroy(); super.onDestroy(); }
+     @Override public void onBackPressed() { if (statusPanel!=null && statusPanel.getVisibility()==View.VISIBLE) { hideStatus(); return; } if (web!=null && web.canGoBack()) web.goBack(); else super.onBackPressed(); }
+ }
+diff --git a/android/app/src/main/java/com/topherofit/thf/pulse/PermissionsRationaleActivity.java b/android/app/src/main/java/com/topherofit/thf/pulse/PermissionsRationaleActivity.java
+new file mode 100644
+index 0000000..7a2cbd4
+--- /dev/null
++++ b/android/app/src/main/java/com/topherofit/thf/pulse/PermissionsRationaleActivity.java
+@@ -0,0 +1,33 @@
++package com.topherofit.thf.pulse;
++
++import android.app.Activity;
++import android.graphics.Color;
++import android.os.Bundle;
++import android.view.Gravity;
++import android.widget.Button;
++import android.widget.LinearLayout;
++import android.widget.TextView;
++import java.util.Locale;
++
++public final class PermissionsRationaleActivity extends Activity {
++    @Override public void onCreate(Bundle state) {
++        super.onCreate(state);
++        boolean ar = Locale.getDefault().getLanguage().startsWith("ar");
++        LinearLayout root = new LinearLayout(this);
++        root.setOrientation(LinearLayout.VERTICAL);
++        root.setGravity(Gravity.CENTER);
++        root.setPadding(48,48,48,48);
++        root.setBackgroundColor(0xFF07111F);
++        TextView title = new TextView(this);
++        title.setTextColor(Color.WHITE); title.setTextSize(24);
++        title.setText(ar ? "بيانات الصحة واللياقة" : "Health & fitness data");
++        TextView body = new TextView(this);
++        body.setTextColor(0xFFCBD5E1); body.setTextSize(16); body.setPadding(0,24,0,32);
++        body.setText(ar ? "يستخدم Top Hero Fit بيانات الخطوات وجلسات التمرين بعد موافقتك فقط لعرض التقدم ومزامنة الجلسات. يمكنك إلغاء الصلاحيات في أي وقت من Health Connect."
++                : "Top Hero Fit uses steps and exercise sessions only after your permission to show progress and synchronize workouts. You can revoke access at any time in Health Connect.");
++        Button done = new Button(this);
++        done.setText(ar ? "فهمت" : "Got it"); done.setOnClickListener(v -> finish());
++        root.addView(title); root.addView(body); root.addView(done);
++        setContentView(root);
++    }
++}
+diff --git a/android/app/src/main/res/values/strings.xml b/android/app/src/main/res/values/strings.xml
+index f1e1cbd..c80cee0 100644
+--- a/android/app/src/main/res/values/strings.xml
++++ b/android/app/src/main/res/values/strings.xml
+@@ -16,6 +16,7 @@
+   <string name="high_contrast">High contrast</string>
+   <string name="apply">Apply</string>
+   <string name="text_size">Text size</string>
++  <string name="health_connect">Health Connect</string>
+   <string name="cancel">Cancel</string>
+   <string name="zoom_100">100%</string>
+   <string name="zoom_115">115%</string>
+diff --git a/android/build.gradle b/android/build.gradle
+index 9e42cfd..1928c97 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -1,3 +1,4 @@
+ plugins {
+     id 'com.android.application' version '8.10.1' apply false
++    id 'org.jetbrains.kotlin.android' version '2.2.21' apply false
+ }
+
+[executed on device: thf-wave-builder (a80e193a-153c-44d6-bf51-b0e33719cfba)]
