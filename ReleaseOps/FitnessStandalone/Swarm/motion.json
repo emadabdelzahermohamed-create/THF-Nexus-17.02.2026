@@ -29,7 +29,8 @@
     "Captured and inspected a new workout-en QA snapshot and proved that the host credit-limit pause overlay obscures the runtime instead of mislabeling it as motion evidence",
     "Restored production v63 and captured a fresh zero-error QA snapshot while retaining the pause overlay as an explicit release blocker",
     "Prepared a Motion-only deterministic Stage16A capture patch for query-scoped 0/25/50/75 percent phases, 45-frame camera/contact settlement, machine-readable clip/status evidence, and truthful pre-load clip counts",
-    "Validated the prepared patch with git apply check, JSON parsing, zero whitespace diagnostics, static capture-contract assertions, and direct parsing of the canonical GLB at exactly 195 animations with all referenced clip names present"
+    "Validated the prepared patch with git apply check, JSON parsing, zero whitespace diagnostics, static capture-contract assertions, and direct parsing of the canonical GLB at exactly 195 animations with all referenced clip names present",
+    "Locked all six interactive motion controls during deterministic capture so a declared QA-ready pose cannot drift before screenshot capture"
   ],
   "canonical_asset": {
     "source_commit": "6965062e0d438e865fb4b4bcb1cb97ed2dfdde38",
@@ -88,11 +89,11 @@
   },
   "evidence": {
     "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_DETERMINISTIC_CAPTURE_PREP_20260927.md",
-    "commit_sha": "058a356124c348f8aadbf08f89ce280348c4cf9b",
+    "commit_sha": "d825213d36074b49c8299c1dea0ac777ebae8bb8",
     "patch": {
       "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_DETERMINISTIC_CAPTURE_PATCH_20260927.patch",
-      "commit_sha": "5808ef2bdecbfbf12dfb45e2e823bc4ffd3006c1",
-      "sha256": "5133ae253f79c3213a5e490338870067a3a898287df8f4387a9adf1535b4a6c7"
+      "commit_sha": "f94fbe513f1b5f37ae78a79706eaa0ae11befcb8",
+      "sha256": "d2d136e50ed418d8ecbd03b608ebd5ef892144d461810c32e57c8703bb9c063e"
     },
     "previous": {
       "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_RUNTIME_CAPTURE_BLOCKER_20260927.md",
@@ -102,15 +103,15 @@
   "blocker": "APPDEPLOY_HOST_LEVEL_CREDIT_LIMIT_PAUSE_OVERLAY_AND_CREDITS_USAGE_LIMIT_REACHED_UNTIL_2026-09-28T00:00:00Z; the validated deterministic capture patch is intentionally not deployed, and no approved host-managed interactive browser is exposed; therefore Arabic/English active-workout screenshots, sequential motion frames/video, controls, and foot-contact remain visually unproven",
   "next_action": "After 2026-09-28T00:00:00Z, apply the prepared patch to AppDeploy, require build/e2e/runtime success, then capture workout-ar and workout-en at motionQaPhase=0/25/50/75 only after data-motion-qa-ready=true, followed by a normal-playback video with the query removed; keep biomechanical, IK, and visual PASS fail-closed until those artifacts are inspected.",
   "no_progress_rule": "Never wait for Mixamo/DeepMotion; if blocked, use fallback or record exact blocker.",
-  "updated_at": "2026-09-27T19:13:37.633Z",
+  "updated_at": "2026-09-27T19:16:09.249Z",
   "prepared_change": {
     "status": "PATCH_VALIDATED_NOT_DEPLOYED",
     "source_baseline_version": "1790500694233",
     "patch_path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_DETERMINISTIC_CAPTURE_PATCH_20260927.patch",
-    "patch_commit_sha": "5808ef2bdecbfbf12dfb45e2e823bc4ffd3006c1",
-    "patch_sha256": "5133ae253f79c3213a5e490338870067a3a898287df8f4387a9adf1535b4a6c7",
+    "patch_commit_sha": "f94fbe513f1b5f37ae78a79706eaa0ae11befcb8",
+    "patch_sha256": "d2d136e50ed418d8ecbd03b608ebd5ef892144d461810c32e57c8703bb9c063e",
     "evidence_path": "ReleaseOps/FitnessStandalone/Swarm/evidence/MOTION_DETERMINISTIC_CAPTURE_PREP_20260927.md",
-    "evidence_commit_sha": "058a356124c348f8aadbf08f89ce280348c4cf9b",
+    "evidence_commit_sha": "d825213d36074b49c8299c1dea0ac777ebae8bb8",
     "files": [
       "src/AvatarStage16A.tsx",
       "src/index.css",
@@ -120,6 +121,7 @@
       "Freezes the real selected Stage16A GLB clip at 0/25/50/75 percent only under explicit motionQaPhase query control",
       "Waits 45 rendered frames before exposing capture readiness",
       "Exposes active clip, mapping status, phase, and readiness as data attributes",
+      "Locks playback, replay, speed, camera, focus, and mirror controls while deterministic capture is active",
       "Keeps normal playback unchanged when motionQaPhase is absent",
       "Displays no 195-clip claim before the canonical GLB is actually ready"
     ],
@@ -128,6 +130,9 @@
       "tests_json_parse": "PASS",
       "whitespace_diagnostics": 0,
       "static_contract": "PASS",
+      "static_required_tokens": 7,
+      "locked_controls": 6,
+      "patch_bytes": 16663,
       "canonical_glb_clip_count": 195,
       "referenced_clip_names_missing": [],
       "typescript_build": "NOT_RUN_APPDEPLOY_CREDIT_GATE_AND_NO_LOCAL_TOOLCHAIN",
