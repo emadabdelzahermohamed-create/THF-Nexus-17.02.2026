@@ -18,10 +18,12 @@
     "offline_payload": "PASS_80_EXERCISES_26_PROGRAMS_160_IMAGES_NO_STAGE16A",
     "backend_live_https_auth": "BLOCKED_NOT_DEPLOYED",
     "production_signing": "BLOCKED_MISSING_EXISTING_UPLOAD_SECRETS",
+    "digital_asset_links": "NOT_RUN_WAITING_FOR_V2_ORIGIN_AND_RELEASE_CERTIFICATE",
     "emulator_runtime": "NOT_RUN_NO_EMULATOR",
     "physical_phone": "NOT_RUN",
     "health_connect_physical": "NOT_RUN",
     "samsung_health_origin": "NOT_RUN",
+    "play_data_safety_health_apps_declaration": "NOT_RUN_FOR_V2_HEALTH_PERMISSIONS",
     "play_internal_51002": "NOT_RUN",
     "exact_play_candidate_verification": "NOT_RUN"
   },
@@ -37,9 +39,10 @@
     "AppDeploy backend deployment was blocked by the daily free-tier credit minimum until 2026-10-03T00:00:00Z.",
     "A production account-token acquisition/handoff path is not implemented in the packaged V2 client, so cross-platform authenticated sync is not reachable.",
     "The existing four upload-signing secrets were not available to GitHub Actions, so the AAB is not a production candidate.",
+    "Digital Asset Links and the V2-specific Play Data Safety/Health apps declarations have no exact-candidate evidence.",
     "Physical phone, Health Connect, Samsung-origin and Play Internal evidence does not exist for versionCode 51002."
   ],
-  "next_action": "Retry the authorized free AppDeploy backend deployment after its UTC reset, validate authenticated V2 JSON contracts, complete the secure production account-token handoff, bind the exact Android build, then sign and physically test versionCode 51002 before any Play upload.",
+  "next_action": "Retry the authorized free AppDeploy backend deployment after its UTC reset, validate authenticated V2 JSON contracts, complete the secure production account-token handoff, bind and sign the exact Android build, publish certificate-correct Digital Asset Links, complete the V2 Health Play declarations, then physically test versionCode 51002 before any Play upload.",
   "evidence_path": "ReleaseOps/FitnessV2/evidence/PLATFORM_HEALTH_ANDROID_20261002.md",
   "updated_at": "2026-10-02T18:54:58Z"
 }

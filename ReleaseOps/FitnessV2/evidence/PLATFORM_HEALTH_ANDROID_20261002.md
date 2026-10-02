@@ -52,7 +52,7 @@ Automated results:
 
 ## Fail-closed boundary
 
-This is progress, not release closure. The AAB is unsigned because all four existing upload-signing secrets were unavailable to the workflow. `THF_FITNESS_V2_BASE_URL` was not configured, no production V2 endpoint has been validated, and no production account-token acquisition/handoff path is reachable from the packaged client. No emulator or physical phone was available, so install/launch, background/resume, offline workout, real Health Connect permission/read/write, Samsung Health-originated activity and exact-candidate Play Internal are all NOT RUN. None is claimed PASS.
+This is progress, not release closure. The AAB is unsigned because all four existing upload-signing secrets were unavailable to the workflow. `THF_FITNESS_V2_BASE_URL` was not configured, no production V2 endpoint has been validated, and no production account-token acquisition/handoff path is reachable from the packaged client. Certificate-correct Digital Asset Links and the V2-specific Play Data Safety/Health apps declarations have no exact-candidate evidence. No emulator or physical phone was available, so install/launch, background/resume, offline workout, real Health Connect permission/read/write, Samsung Health-originated activity and exact-candidate Play Internal are all NOT RUN. None is claimed PASS.
 
 ## Next task
 
