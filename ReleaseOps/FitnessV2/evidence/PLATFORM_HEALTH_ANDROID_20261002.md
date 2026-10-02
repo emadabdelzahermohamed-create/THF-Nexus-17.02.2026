@@ -21,6 +21,7 @@ Evidence:
 - GitHub source-and-backend job: `110981592612`, PASS.
 - Live deployment: NOT RUN. The existing AppDeploy origin returned `text/html` SPA content for V2 paths rather than the required authenticated JSON API.
 - AppDeploy deployment preparation was attempted once and returned `CREDITS_USAGE_LIMIT_REACHED`; its reported daily reset is `2026-10-03T00:00:00Z`. No paid upgrade was started.
+- Account integration: NOT RUN. Android exposes `setBackendAccessToken` as a memory-only bridge, but the packaged V2 Product JavaScript does not acquire a production access token or call that bridge. The live AppDeploy account runtime is still the earlier product and is not evidence of a V2 Web/Android account model.
 
 ## Android/Health source and package gates
 
@@ -51,8 +52,8 @@ Automated results:
 
 ## Fail-closed boundary
 
-This is progress, not release closure. The AAB is unsigned because all four existing upload-signing secrets were unavailable to the workflow. `THF_FITNESS_V2_BASE_URL` was not configured, and no production V2 endpoint has been validated. No emulator or physical phone was available, so install/launch, background/resume, offline workout, real Health Connect permission/read/write, Samsung Health-originated activity and exact-candidate Play Internal are all NOT RUN. None is claimed PASS.
+This is progress, not release closure. The AAB is unsigned because all four existing upload-signing secrets were unavailable to the workflow. `THF_FITNESS_V2_BASE_URL` was not configured, no production V2 endpoint has been validated, and no production account-token acquisition/handoff path is reachable from the packaged client. No emulator or physical phone was available, so install/launch, background/resume, offline workout, real Health Connect permission/read/write, Samsung Health-originated activity and exact-candidate Play Internal are all NOT RUN. None is claimed PASS.
 
 ## Next task
 
-After the authorized free deployment quota resets, deploy the authenticated V2 API to a persistent HTTPS runtime, validate the JSON contracts using a non-privileged test account, bind that URL, produce one signed versionCode 51002 AAB using the existing protected upload key, and run exact-artifact physical phone and Health Connect/Samsung-origin QA before Play Internal.
+After the authorized free deployment quota resets, deploy the authenticated V2 API to a persistent HTTPS runtime, validate the JSON contracts using a non-privileged test account, complete a secure account-token handoff into the memory-only Android bridge, bind that URL, produce one signed versionCode 51002 AAB using the existing protected upload key, and run exact-artifact physical phone and Health Connect/Samsung-origin QA before Play Internal.

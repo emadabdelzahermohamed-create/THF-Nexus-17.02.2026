@@ -35,10 +35,11 @@
   "blockers": [
     "Persistent authenticated V2 backend deployment and Android endpoint binding remain open.",
     "AppDeploy backend deployment was blocked by the daily free-tier credit minimum until 2026-10-03T00:00:00Z.",
+    "A production account-token acquisition/handoff path is not implemented in the packaged V2 client, so cross-platform authenticated sync is not reachable.",
     "The existing four upload-signing secrets were not available to GitHub Actions, so the AAB is not a production candidate.",
     "Physical phone, Health Connect, Samsung-origin and Play Internal evidence does not exist for versionCode 51002."
   ],
-  "next_action": "Retry the authorized free AppDeploy backend deployment after its UTC reset, validate authenticated V2 JSON contracts, bind the exact Android build, then sign and physically test versionCode 51002 before any Play upload.",
+  "next_action": "Retry the authorized free AppDeploy backend deployment after its UTC reset, validate authenticated V2 JSON contracts, complete the secure production account-token handoff, bind the exact Android build, then sign and physically test versionCode 51002 before any Play upload.",
   "evidence_path": "ReleaseOps/FitnessV2/evidence/PLATFORM_HEALTH_ANDROID_20261002.md",
   "updated_at": "2026-10-02T18:54:58Z"
 }

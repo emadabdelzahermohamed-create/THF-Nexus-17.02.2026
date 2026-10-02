@@ -74,9 +74,10 @@
   "blockers": [
     "The exact release AAB is unsigned because all four existing upload-signing secrets were unavailable to the workflow.",
     "The persistent V2 backend endpoint is not deployed or bound into this candidate.",
+    "The packaged Product JavaScript does not acquire a production access token or call the non-persistent setBackendAccessToken bridge, so authenticated Android sync is not reachable yet.",
     "No Android emulator or physical phone was available, so install, launch, background/resume, offline workout and Health Connect runtime gates remain open.",
     "Samsung Health-originated activity and Play Internal were not tested for versionCode 51002."
   ],
-  "next_action": "Deploy and bind the authenticated V2 backend, make the existing upload-signing secrets available to the protected workflow, rebuild one signed versionCode 51002 AAB, then run exact-artifact install/core-workout/offline/background-resume/Health Connect/Samsung-origin QA on a physical Android phone before Play Internal.",
+  "next_action": "Deploy and bind the authenticated V2 backend, complete a secure tested production account-token handoff to the existing non-persistent Android bridge, make the existing upload-signing secrets available to the protected workflow, rebuild one signed versionCode 51002 AAB, then run exact-artifact install/core-workout/offline/background-resume/Health Connect/Samsung-origin QA on a physical Android phone before Play Internal.",
   "updated_at": "2026-10-02T18:54:58Z"
 }

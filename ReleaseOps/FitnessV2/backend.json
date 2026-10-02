@@ -38,8 +38,9 @@
     "The V2 API source is tested but is not deployed to a persistent HTTPS runtime, so no authenticated production sync claim is made.",
     "The existing AppDeploy origin returns the SPA HTML for /v2/workouts:sync and cannot be bound as the V2 API endpoint.",
     "AppDeploy paused new deployments because fewer than 14 free daily credits remained; its reported reset is 2026-10-03T00:00:00Z.",
-    "Production auth issuer, audience, key ring and durable database configuration have not been provisioned to a V2 runtime."
+    "Production auth issuer, audience, key ring and durable database configuration have not been provisioned to a V2 runtime.",
+    "The packaged V2 offline client does not yet acquire a production account access token; it exposes a non-persistent native token handoff boundary, but the current Product JavaScript does not invoke it."
   ],
-  "next_action": "After the free deployment quota resets, deploy a backend-only V2 route on the existing authorized persistent runtime (or another authorized persistent HTTPS host), configure its production auth and durable store, run authenticated sync/history/progress/competition probes, then set THF_FITNESS_V2_BASE_URL and rebuild the exact Android candidate.",
+  "next_action": "After the free deployment quota resets, deploy a backend-only V2 route on the existing authorized persistent runtime (or another authorized persistent HTTPS host), configure its production auth and durable store, implement and test a secure account-token handoff into the Android bridge, run authenticated sync/history/progress/competition probes, then set THF_FITNESS_V2_BASE_URL and rebuild the exact Android candidate.",
   "updated_at": "2026-10-02T18:54:58Z"
 }
