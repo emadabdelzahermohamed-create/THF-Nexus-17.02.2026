@@ -1,0 +1,1432 @@
+--- a/src/AvatarStage16A.tsx
++++ b/src/AvatarStage16A.tsx
+@@ -1,467 +1,512 @@
+-import { useEffect, useRef, useState } from 'react';
+-import * as THREE from 'three';
+-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+-
+-const AVATAR_URL = 'https://raw.githubusercontent.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/6965062e0d438e865fb4b4bcb1cb97ed2dfdde38/public-assets/fitness/stage16a/thf_mpfb_stage16a_ual12_animated.glb';
+-const AVATAR_CACHE = 'thf-fitness-motion-v1';
+-
+-async function cachedAvatarUrl() {
+-  if (!('caches' in window)) return { url: AVATAR_URL, source: 'network' as const };
+-  const cache = await caches.open(AVATAR_CACHE);
+-  const cached = await cache.match(AVATAR_URL);
+-  if (cached) {
+-    const blob = await cached.blob();
+-    return { url: URL.createObjectURL(blob), source: 'cache' as const };
+-  }
+-  return { url: AVATAR_URL, source: 'network' as const };
+-}
+-
+-async function cacheAvatarInBackground() {
+-  if (!('caches' in window)) return;
+-  try {
+-    const cache = await caches.open(AVATAR_CACHE);
+-    if (await cache.match(AVATAR_URL)) return;
+-    const response = await fetch(AVATAR_URL, { cache: 'force-cache' });
+-    if (response.ok) await cache.put(AVATAR_URL, response);
+-  } catch {
+-    // Runtime rendering must not fail if durable browser caching is unavailable.
+-  }
+-}
+-
+-function fittedCameraDistance(width: number, height: number, aspect: number, verticalFovDegrees: number, margin = 1.18) {
+-  const verticalFov = THREE.MathUtils.degToRad(verticalFovDegrees);
+-  const safeAspect = Math.max(aspect, 0.55);
+-  const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * safeAspect);
+-  const verticalDistance = (height / 2) / Math.tan(verticalFov / 2);
+-  const horizontalDistance = (width / 2) / Math.tan(horizontalFov / 2);
+-  return Math.max(verticalDistance, horizontalDistance) * margin;
+-}
+-
+-type Stage16AProps = { rtl: boolean; motionHint?: string; compact?: boolean };
+-type MotionStatus = 'unmapped' | 'name-match' | 'reference-proxy';
+-
+-const MOTION_QA_PHASES = new Set([0, 25, 50, 75]);
+-
+-function motionQaPhaseFromLocation() {
+-  if (typeof window === 'undefined') return null;
+-  const raw = new URLSearchParams(window.location.search).get('motionQaPhase');
+-  if (raw === null || raw.trim() === '') return null;
+-  const phase = Number(raw);
+-  return Number.isFinite(phase) && MOTION_QA_PHASES.has(phase) ? phase : null;
+-}
+-
+-const motionReferenceProxies: Array<{ exercise: RegExp; clip: RegExp }> = [
+-  { exercise: /bodyweight squat|wall sit/i, clip: /^UAL1_Crouch_Idle_Loop$/i },
+-  { exercise: /reverse lunge|mountain climber/i, clip: /^UAL1_Crouch_Fwd_Loop$/i },
+-  { exercise: /incline push.?up|shoulder tap/i, clip: /^UAL1_Push_Loop$/i },
+-  { exercise: /jumping jack/i, clip: /^UAL1_Jump_Loop$/i },
+-  { exercise: /high knees/i, clip: /^UAL1_Jog_Fwd_Loop$/i },
+-  { exercise: /lateral shuffle/i, clip: /^UAL2_Slide_Loop$/i },
+-  { exercise: /box breathing/i, clip: /^breathe$/i },
+-];
+-
+-export default function AvatarStage16A({ rtl, motionHint = '', compact = false }: Stage16AProps) {
+-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+-  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+-  const [clips, setClips] = useState(0);
+-  const [progress, setProgress] = useState(0);
+-  const [playing, setPlaying] = useState(true);
+-  const [speed, setSpeed] = useState(1);
+-  const [cameraMode, setCameraMode] = useState(0);
+-  const [offlineReady, setOfflineReady] = useState(false);
+-  const [motionStatus, setMotionStatus] = useState<MotionStatus>('unmapped');
+-  const [activeClipName, setActiveClipName] = useState('');
+-  const [mirrored, setMirrored] = useState(false);
+-  const [transitioning, setTransitioning] = useState(false);
+-  const [motionQaPhase] = useState<number | null>(() => motionQaPhaseFromLocation());
+-  const [motionQaReady, setMotionQaReady] = useState(false);
+-  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+-  const actionRef = useRef<THREE.AnimationAction | null>(null);
+-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+-  const cameraTargetRef = useRef(new THREE.Vector3(0, 1.15, 0));
+-  const desiredCameraRef = useRef(new THREE.Vector3(0, 1.32, 3.15));
+-  const desiredTargetRef = useRef(new THREE.Vector3(0, 1.15, 0));
+-  const [targetZone, setTargetZone] = useState('full-body');
+-  const [anatomyAttached, setAnatomyAttached] = useState(false);
+-  const [contactHooks, setContactHooks] = useState(0);
+-  const [groundedFeet, setGroundedFeet] = useState(0);
+-  const footContactRefs = useRef<Array<{ marker: THREE.Mesh; floorDisc: THREE.Mesh; bone: THREE.Bone; baseOpacity: number; grounded: boolean }>>([]);
+-  const modelRef = useRef<THREE.Object3D | null>(null);
+-  const baseTargetRef = useRef(new THREE.Vector3(0, 1.15, 0));
+-  const baseCameraRef = useRef(new THREE.Vector3(0, 1.32, 3.15));
+-  const hipsRef = useRef<THREE.Bone | null>(null);
+-  const groundingShadowRef = useRef<THREE.Mesh | null>(null);
+-  const plantedAnchorRefs = useRef<Array<THREE.Vector3 | null>>([null, null]);
+-  const footMotionRefs = useRef<Array<{ position: THREE.Vector3 | null; velocity: THREE.Vector3 }>>([{ position: null, velocity: new THREE.Vector3() }, { position: null, velocity: new THREE.Vector3() }]);
+-  const contactDwellRefs = useRef<number[]>([0, 0]);
+-
+-  useEffect(() => {
+-    const canvas = canvasRef.current;
+-    if (!canvas) return;
+-
+-    let disposed = false;
+-    let frame = 0;
+-    let mixer: THREE.AnimationMixer | null = null;
+-    let activeAction: THREE.AnimationAction | null = null;
+-    let motionQaArmed = false;
+-    let motionQaSettledFrames = 0;
+-    setMotionQaReady(false);
+-    let renderer: THREE.WebGLRenderer;
+-    try {
+-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+-    } catch {
+-      setState('error');
+-      setProgress(0);
+-      return;
+-    }
+-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+-    renderer.shadowMap.enabled = true;
+-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+-    renderer.toneMappingExposure = 1.08;
+-
+-    const scene = new THREE.Scene();
+-    const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
+-    camera.position.set(0, 1.32, 3.15);
+-    camera.lookAt(0, 1.15, 0);
+-    cameraRef.current = camera;
+-    desiredCameraRef.current.copy(camera.position);
+-    cameraTargetRef.current.set(0, 1.15, 0);
+-    desiredTargetRef.current.copy(cameraTargetRef.current);
+-
+-    scene.add(new THREE.HemisphereLight(0xffffff, 0x183248, 2.2));
+-    const key = new THREE.DirectionalLight(0xffffff, 2.8);
+-    key.position.set(2.5, 4, 3);
+-    key.castShadow = true;
+-    key.shadow.mapSize.set(1024, 1024);
+-    key.shadow.camera.near = 0.1;
+-    key.shadow.camera.far = 12;
+-    key.shadow.camera.left = -3;
+-    key.shadow.camera.right = 3;
+-    key.shadow.camera.top = 4;
+-    key.shadow.camera.bottom = -1;
+-    key.shadow.bias = -0.00035;
+-    key.shadow.normalBias = 0.018;
+-    key.shadow.radius = 3;
+-    scene.add(key);
+-    const rim = new THREE.DirectionalLight(0x65f0c1, 1.4);
+-    rim.position.set(-3, 2, -2);
+-    scene.add(rim);
+-    const fill = new THREE.DirectionalLight(0x9fc8ff, 0.72);
+-    fill.position.set(-2.2, 2.6, 2.4);
+-    scene.add(fill);
+-    const sculpt = new THREE.SpotLight(0xbdeeff, 18, 9, Math.PI / 7, 0.58, 1.6);
+-    sculpt.position.set(0.8, 3.8, 3.6);
+-    sculpt.target.position.set(0, 1.15, 0);
+-    sculpt.castShadow = true;
+-    sculpt.shadow.mapSize.set(1024, 1024);
+-    sculpt.shadow.bias = -0.00025;
+-    scene.add(sculpt, sculpt.target);
+-
+-    const floor = new THREE.Mesh(
+-      new THREE.CircleGeometry(1.55, 64),
+-      new THREE.MeshStandardMaterial({ color: 0x071820, roughness: 0.78, metalness: 0.08 })
+-    );
+-    floor.rotation.x = -Math.PI / 2;
+-    floor.position.y = -0.015;
+-    floor.receiveShadow = true;
+-    scene.add(floor);
+-    const groundingShadow = new THREE.Mesh(
+-      new THREE.CircleGeometry(0.72, 64),
+-      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false })
+-    );
+-    groundingShadow.rotation.x = -Math.PI / 2;
+-    groundingShadow.scale.set(1.45, 0.62, 1);
+-    groundingShadow.position.set(0, -0.006, 0.08);
+-    scene.add(groundingShadow);
+-    groundingShadowRef.current = groundingShadow;
+-    const contactRing = new THREE.Mesh(
+-      new THREE.RingGeometry(0.32, 0.37, 64),
+-      new THREE.MeshBasicMaterial({ color: 0x65f0c1, transparent: true, opacity: 0.24, side: THREE.DoubleSide })
+-    );
+-    contactRing.rotation.x = -Math.PI / 2;
+-    contactRing.position.y = -0.009;
+-    scene.add(contactRing);
+-    const contactMaterial = new THREE.MeshBasicMaterial({ color: 0x65f0c1, transparent: true, opacity: 0.82, depthTest: false });
+-
+-    const clock = new THREE.Clock();
+-    const loader = new GLTFLoader();
+-    let objectUrl = '';
+-    cachedAvatarUrl().then(asset => {
+-      const url = asset.url;
+-      objectUrl = url.startsWith('blob:') ? url : '';
+-      setOfflineReady(asset.source === 'cache');
+-      loader.load(
+-      url,
+-      gltf => {
+-        if (disposed) return;
+-        const model = gltf.scene;
+-        model.traverse(obj => {
+-          if (obj instanceof THREE.Mesh) {
+-            obj.castShadow = true;
+-            obj.receiveShadow = true;
+-          }
+-        });
+-        const initial = new THREE.Box3().setFromObject(model);
+-        const size = new THREE.Vector3();
+-        initial.getSize(size);
+-        const scale = 2.45 / Math.max(size.y, 0.1);
+-        model.scale.setScalar(scale);
+-        const box = new THREE.Box3().setFromObject(model);
+-        const center = new THREE.Vector3();
+-        box.getCenter(center);
+-        model.position.x -= center.x;
+-        model.position.z -= center.z;
+-        model.position.y -= box.min.y;
+-        scene.add(model);
+-        modelRef.current = model;
+-
+-        const hint = motionHint.toLowerCase();
+-        const zone = /squat|lunge|calf|knee|glute|hinge/.test(hint) ? 'lower-body' : /push|shoulder|plank/.test(hint) ? 'upper-body' : /dead|bird|core|cat|breath/.test(hint) ? 'core' : 'full-body';
+-        setTargetZone(zone);
+-        const framedBox = new THREE.Box3().setFromObject(model);
+-        const framedCenter = framedBox.getCenter(new THREE.Vector3());
+-        const framedHeight = Math.max(framedBox.max.y - framedBox.min.y, 1.8);
+-        const framedWidth = Math.max(framedBox.max.x - framedBox.min.x, 0.8);
+-        const framedY = zone === 'lower-body' ? framedBox.min.y + framedHeight * .42 : zone === 'upper-body' ? framedBox.min.y + framedHeight * .68 : zone === 'core' ? framedBox.min.y + framedHeight * .54 : framedCenter.y;
+-        const fullBodyDistance = fittedCameraDistance(framedWidth, framedHeight, camera.aspect, camera.fov, compact ? 1.38 : 1.18);
+-        const framedDistance = zone === 'full-body' ? Math.max(3.15, fullBodyDistance) : Math.max(2.08, framedHeight * .86);
+-        desiredTargetRef.current.set(framedCenter.x, framedY, framedCenter.z);
+-        desiredCameraRef.current.set(framedCenter.x + framedHeight * .08, framedY + framedHeight * .035, framedCenter.z + framedDistance);
+-        baseTargetRef.current.copy(desiredTargetRef.current);
+-        baseCameraRef.current.copy(desiredCameraRef.current);
+-        const markerMaterial = new THREE.MeshStandardMaterial({ color: 0xff342e, emissive: 0x8d0909, emissiveIntensity: 0.72, transparent: true, opacity: 0.72, roughness: 0.62, depthWrite: false });
+-        const bones: THREE.Bone[] = [];
+-        model.traverse(obj => { if (obj instanceof THREE.Bone) bones.push(obj); });
+-        const aliases: Record<string, string[]> = {
+-          thighL: ['thigh_l','thigh.l','leftupleg','upperleg_l','l_thigh'], thighR: ['thigh_r','thigh.r','rightupleg','upperleg_r','r_thigh'],
+-          calfL: ['shin_l','shin.l','leftleg','calf_l','lowerleg_l'], calfR: ['shin_r','shin.r','rightleg','calf_r','lowerleg_r'],
+-          upperArmL: ['upperarm_l','upperarm.l','leftarm','arm_l'], upperArmR: ['upperarm_r','upperarm.r','rightarm','arm_r'],
+-          spine: ['spine2','spine_02','spine.002','chest','upperchest'], pelvis: ['pelvis','hips','hip']
+-        };
+-        const findBone = (keys: string[]) => bones.find(bone => keys.some(key => bone.name.toLowerCase().includes(key)));
+-        hipsRef.current = findBone(['pelvis','hips','hip']) || null;
+-        const footAliases = [['foot_l','foot.l','leftfoot','l_foot'], ['foot_r','foot.r','rightfoot','r_foot']];
+-        let hookedFeet = 0;
+-        footAliases.forEach(keys => {
+-          const foot = findBone(keys);
+-          if (!foot) return;
+-          const marker = new THREE.Mesh(new THREE.RingGeometry(0.075, 0.095, 32), contactMaterial.clone());
+-          marker.rotation.x = -Math.PI / 2;
+-          marker.position.set(0, -0.035, 0.035);
+-          marker.renderOrder = 5;
+-          foot.add(marker);
+-          const floorDiscMaterial = new THREE.MeshBasicMaterial({ color: 0x65f0c1, transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending });
+-          const floorDisc = new THREE.Mesh(new THREE.CircleGeometry(0.14, 40), floorDiscMaterial);
+-          floorDisc.rotation.x = -Math.PI / 2;
+-          floorDisc.position.y = -0.007;
+-          floorDisc.renderOrder = 2;
+-          scene.add(floorDisc);
+-          footContactRefs.current.push({ marker, floorDisc, bone: foot, baseOpacity: 0.82, grounded: false });
+-          hookedFeet += 1;
+-        });
+-        setContactHooks(hookedFeet);
+-        const attach = (keys: string[], radius: number, length: number, offset: [number, number, number] = [0,0,0]) => {
+-          const bone = findBone(keys); if (!bone) return false;
+-          const marker = new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 8, 16), markerMaterial.clone());
+-          marker.position.set(offset[0], offset[1], offset[2]); marker.rotation.z = Math.PI / 2; marker.renderOrder = 3; bone.add(marker); return true;
+-        };
+-        let attached = 0;
+-        if (zone === 'lower-body') { attached += Number(attach(aliases.thighL,.07,.25,[0,-.08,.02])); attached += Number(attach(aliases.thighR,.07,.25,[0,-.08,.02])); attached += Number(attach(aliases.calfL,.055,.2,[0,-.07,.015])); attached += Number(attach(aliases.calfR,.055,.2,[0,-.07,.015])); }
+-        if (zone === 'upper-body') { attached += Number(attach(aliases.upperArmL,.055,.2,[0,-.05,.015])); attached += Number(attach(aliases.upperArmR,.055,.2,[0,-.05,.015])); attached += Number(attach(aliases.spine,.13,.22,[0,.03,.055])); }
+-        if (zone === 'core') { attached += Number(attach(aliases.spine,.14,.28,[0,.01,.06])); attached += Number(attach(aliases.pelvis,.12,.16,[0,.04,.04])); }
+-        setAnatomyAttached(attached > 0);
+-
+-        setClips(gltf.animations.length);
+-        if (gltf.animations.length > 0) {
+-          mixer = new THREE.AnimationMixer(model);
+-          mixerRef.current = mixer;
+-          const tokens = motionHint.toLowerCase().split(/[^a-z0-9]+/).filter(token => token.length > 2);
+-          const named = gltf.animations.find(clip => tokens.some(token => clip.name.toLowerCase().includes(token)));
+-          const proxyRule = motionReferenceProxies.find(rule => rule.exercise.test(motionHint));
+-          const referenceProxy = !named && proxyRule ? gltf.animations.find(clip => proxyRule.clip.test(clip.name)) : undefined;
+-          const preferred = named || referenceProxy || gltf.animations.find(clip => /idle|breath|stand/i.test(clip.name)) || gltf.animations[0];
+-          setMotionStatus(named ? 'name-match' : referenceProxy ? 'reference-proxy' : 'unmapped');
+-          setActiveClipName(preferred.name || 'unnamed clip');
+-          activeAction = mixer.clipAction(preferred);
+-          actionRef.current = activeAction;
+-          activeAction.setLoop(THREE.LoopRepeat, Infinity);
+-          activeAction.clampWhenFinished = false;
+-          activeAction.reset().play();
+-          if (motionQaPhase !== null) {
+-            mixer.setTime(Math.max(preferred.duration, 0.001) * (motionQaPhase / 100));
+-            mixer.timeScale = 0;
+-            setPlaying(false);
+-            motionQaArmed = true;
+-          } else {
+-            activeAction.fadeIn(0.6);
+-          }
+-        }
+-        setState('ready');
+-        setProgress(100);
+-        void cacheAvatarInBackground();
+-      },
+-      event => {
+-        if (event.total > 0) setProgress(Math.min(99, Math.round((event.loaded / event.total) * 100)));
+-      },
+-      () => {
+-        if (!disposed) setState('error');
+-      }
+-    );
+-    }).catch(() => { if (!disposed) setState('error'); });
+-
+-    function resize() {
+-      const width = Math.max(320, canvas.clientWidth || 640);
+-      const height = Math.max(360, canvas.clientHeight || 520);
+-      renderer.setSize(width, height, false);
+-      camera.aspect = width / height;
+-      camera.updateProjectionMatrix();
+-    }
+-    const observer = new ResizeObserver(resize);
+-    observer.observe(canvas);
+-    resize();
+-
+-    function tick() {
+-      if (disposed) return;
+-      const dt = Math.min(clock.getDelta(), 0.05);
+-      mixer?.update(dt);
+-      const cameraEase = 1 - Math.exp(-dt * 6.5);
+-      const hips = hipsRef.current;
+-      if (hips) {
+-        const hipWorld = new THREE.Vector3();
+-        hips.getWorldPosition(hipWorld);
+-        const shadow = groundingShadowRef.current;
+-        if (shadow) {
+-          shadow.position.x = THREE.MathUtils.lerp(shadow.position.x, THREE.MathUtils.clamp(hipWorld.x * .72, -.42, .42), 1 - Math.exp(-dt * 7));
+-          shadow.position.z = THREE.MathUtils.lerp(shadow.position.z, THREE.MathUtils.clamp(hipWorld.z * .34 + .08, -.22, .3), 1 - Math.exp(-dt * 7));
+-          const lift = THREE.MathUtils.clamp((hipWorld.y - .92) / .72, 0, 1);
+-          const shadowScale = 1 - lift * .22;
+-          shadow.scale.x = THREE.MathUtils.lerp(shadow.scale.x, 1.45 * shadowScale, 1 - Math.exp(-dt * 5));
+-          shadow.scale.y = THREE.MathUtils.lerp(shadow.scale.y, .62 * shadowScale, 1 - Math.exp(-dt * 5));
+-          (shadow.material as THREE.MeshBasicMaterial).opacity = THREE.MathUtils.lerp((shadow.material as THREE.MeshBasicMaterial).opacity, .3 - lift * .11, 1 - Math.exp(-dt * 5));
+-        }
+-        if (cameraMode === 0) {
+-          const baseTarget = baseTargetRef.current;
+-          const baseCamera = baseCameraRef.current;
+-          const verticalFollow = THREE.MathUtils.clamp((hipWorld.y - 1.08) * .16, -.12, .12);
+-          const lateralFollow = THREE.MathUtils.clamp(hipWorld.x * .08, -.08, .08);
+-          desiredTargetRef.current.set(baseTarget.x + lateralFollow, baseTarget.y + verticalFollow, baseTarget.z);
+-          desiredCameraRef.current.set(baseCamera.x + lateralFollow * .65, baseCamera.y + verticalFollow * .5, baseCamera.z);
+-        }
+-      }
+-      camera.position.lerp(desiredCameraRef.current, cameraEase);
+-      cameraTargetRef.current.lerp(desiredTargetRef.current, cameraEase);
+-      camera.lookAt(cameraTargetRef.current);
+-      contactRing.material.opacity = 0.2 + Math.sin(clock.elapsedTime * 2.4) * 0.035;
+-      let grounded = 0;
+-      footContactRefs.current.forEach((contact, contactIndex) => {
+-        const world = new THREE.Vector3();
+-        contact.bone.getWorldPosition(world);
+-        const motion = footMotionRefs.current[contactIndex];
+-        if (motion) {
+-          if (motion.position) {
+-            const instantaneous = world.clone().sub(motion.position).divideScalar(Math.max(dt, 0.001));
+-            motion.velocity.lerp(instantaneous, 1 - Math.exp(-dt * 18));
+-            motion.position.copy(world);
+-          } else {
+-            motion.position = world.clone();
+-          }
+-        }
+-        const planarSpeed = motion ? Math.hypot(motion.velocity.x, motion.velocity.z) : 0;
+-        const verticalSpeed = motion ? Math.abs(motion.velocity.y) : 0;
+-        const enterCandidate = world.y <= 0.055 && planarSpeed <= 0.55 && verticalSpeed <= 0.72;
+-        const leaveGround = world.y >= 0.085 || planarSpeed >= 1.05 || verticalSpeed >= 1.2;
+-        contactDwellRefs.current[contactIndex] = enterCandidate ? Math.min((contactDwellRefs.current[contactIndex] || 0) + dt, 0.2) : 0;
+-        if (!contact.grounded && contactDwellRefs.current[contactIndex] >= 0.045) {
+-          contact.grounded = true;
+-          plantedAnchorRefs.current[contactIndex] = new THREE.Vector3(world.x, 0, world.z);
+-        }
+-        if (contact.grounded && leaveGround) {
+-          contact.grounded = false;
+-          contactDwellRefs.current[contactIndex] = 0;
+-          plantedAnchorRefs.current[contactIndex] = null;
+-        }
+-        if (contact.grounded) grounded += 1;
+-        const proximity = THREE.MathUtils.clamp(1 - Math.max(0, world.y) / 0.16, 0.12, 1);
+-        const material = contact.marker.material as THREE.MeshBasicMaterial;
+-        const targetOpacity = contact.baseOpacity * (contact.grounded ? Math.max(proximity, 0.82) : proximity * 0.72);
+-        material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, 1 - Math.exp(-dt * 12));
+-        const targetScale = contact.grounded ? 1.16 : 0.9 + proximity * 0.14;
+-        const easedScale = THREE.MathUtils.lerp(contact.marker.scale.x, targetScale, 1 - Math.exp(-dt * 10));
+-        contact.marker.scale.setScalar(easedScale);
+-        const anchor = plantedAnchorRefs.current[contactIndex];
+-        const stillness = THREE.MathUtils.clamp(1 - planarSpeed / 0.8, 0, 1);
+-        const anchorStrength = contact.grounded ? 0.58 + stillness * 0.34 : 0;
+-        const displayX = contact.grounded && anchor ? THREE.MathUtils.lerp(world.x, anchor.x, anchorStrength) : world.x;
+-        const displayZ = contact.grounded && anchor ? THREE.MathUtils.lerp(world.z, anchor.z, anchorStrength) : world.z;
+-        contact.floorDisc.position.x = THREE.MathUtils.lerp(contact.floorDisc.position.x, displayX, 1 - Math.exp(-dt * 16));
+-        contact.floorDisc.position.z = THREE.MathUtils.lerp(contact.floorDisc.position.z, displayZ, 1 - Math.exp(-dt * 16));
+-        const discMaterial = contact.floorDisc.material as THREE.MeshBasicMaterial;
+-        const discOpacity = contact.grounded ? 0.2 + proximity * 0.18 : proximity * 0.08;
+-        discMaterial.opacity = THREE.MathUtils.lerp(discMaterial.opacity, discOpacity, 1 - Math.exp(-dt * 10));
+-        const discScale = contact.grounded ? 0.9 + proximity * 0.32 : 0.72 + proximity * 0.12;
+-        contact.floorDisc.scale.setScalar(THREE.MathUtils.lerp(contact.floorDisc.scale.x, discScale, 1 - Math.exp(-dt * 9)));
+-      });
+-      setGroundedFeet(current => current === grounded ? current : grounded);
+-      renderer.render(scene, camera);
+-      if (motionQaArmed) {
+-        motionQaSettledFrames += 1;
+-        if (motionQaSettledFrames >= 45) {
+-          motionQaArmed = false;
+-          setMotionQaReady(true);
+-        }
+-      }
+-      frame = requestAnimationFrame(tick);
+-    }
+-    tick();
+-
+-    return () => {
+-      disposed = true;
+-      cancelAnimationFrame(frame);
+-      observer.disconnect();
+-      scene.traverse(obj => {
+-        if (obj instanceof THREE.Mesh) {
+-          obj.geometry?.dispose();
+-          const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+-          materials.forEach(material => material?.dispose());
+-        }
+-      });
+-      renderer.dispose();
+-      footContactRefs.current = [];
+-      plantedAnchorRefs.current = [null, null];
+-      footMotionRefs.current = [{ position: null, velocity: new THREE.Vector3() }, { position: null, velocity: new THREE.Vector3() }];
+-      contactDwellRefs.current = [0, 0];
+-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+-    };
+-  }, [motionHint, motionQaPhase]);
+-
+-  useEffect(() => { if (mixerRef.current) mixerRef.current.timeScale = playing ? speed : 0; }, [playing, speed]);
+-  function replay() { const action = actionRef.current; if (!action) return; setTransitioning(true); action.enabled = true; action.paused = false; action.setEffectiveWeight(1); action.setEffectiveTimeScale(speed); action.fadeOut(0.16); window.setTimeout(() => { action.reset().fadeIn(0.48).play(); setPlaying(true); window.setTimeout(() => setTransitioning(false), 480); }, 170); }
+-  function cycleCamera() { const camera = cameraRef.current; const model = modelRef.current; if (!camera) return; const next = (cameraMode + 1) % 4; setCameraMode(next); const box = model ? new THREE.Box3().setFromObject(model) : null; const center = box ? box.getCenter(new THREE.Vector3()) : new THREE.Vector3(0, 1.1, 0); const height = box ? Math.max(box.max.y - box.min.y, 1.8) : 2.45; const width = box ? Math.max(box.max.x - box.min.x, 0.8) : 1.4; const fullBodyDistance = fittedCameraDistance(width, height, camera.aspect, camera.fov, compact ? 1.38 : 1.18); const poses = [{p:[0,center.y,Math.max(3.15,fullBodyDistance)],t:[center.x,center.y,center.z]},{p:[height*.92,center.y,height*.92],t:[center.x,center.y*.96,center.z]},{p:[0,center.y,-Math.max(2.75,height*1.25)],t:[center.x,center.y*.98,center.z]},{p:[0,center.y+height*.18,Math.max(1.9,height*.82)],t:[center.x,center.y+height*.08,center.z]}]; const pose=poses[next]; desiredCameraRef.current.set(pose.p[0],pose.p[1],pose.p[2]); desiredTargetRef.current.set(pose.t[0],pose.t[1],pose.t[2]); }
+-  function focusTarget() { const model = modelRef.current; if (!model) return; const box = new THREE.Box3().setFromObject(model); const center = box.getCenter(new THREE.Vector3()); const height = Math.max(box.max.y - box.min.y, 1.8); const zoneY = targetZone === 'lower-body' ? box.min.y + height * .36 : targetZone === 'upper-body' ? box.min.y + height * .69 : targetZone === 'core' ? box.min.y + height * .53 : center.y; const distance = targetZone === 'full-body' ? Math.max(2.65, height * 1.2) : Math.max(1.65, height * .72); desiredTargetRef.current.set(center.x, zoneY, center.z); desiredCameraRef.current.set(center.x + height * .12, zoneY + height * .035, center.z + distance); baseTargetRef.current.copy(desiredTargetRef.current); baseCameraRef.current.copy(desiredCameraRef.current); setCameraMode(0); }
+-
+-  return (
+-    <section className={'avatar-stage' + (compact ? ' compact' : '')} aria-label="Stage16A 3D avatar" data-motion-status={motionStatus} data-active-clip={activeClipName || undefined} data-motion-qa-phase={motionQaPhase ?? undefined} data-motion-qa-ready={motionQaPhase === null ? undefined : String(motionQaReady)}>
+-      <div className="avatar-stage-head">
+-        <div>
+-          <div className="eyebrow">{rtl ? 'معاينة 3D حقيقية' : 'REAL 3D PREVIEW'}</div>
+-          <h3>MPFB/MakeHuman Stage16A</h3>
+-          <p>{motionHint ? (motionStatus === 'name-match' ? (rtl ? 'تم العثور على حركة Stage16A مرتبطة باسم التمرين؛ المطابقة البيوميكانيكية تظل غير معتمدة حتى المراجعة.' : 'A Stage16A clip matched the exercise name; biomechanical equivalence remains unapproved until reviewed.') : motionStatus === 'reference-proxy' ? (rtl ? 'يعمل أقرب clip مرجعي من Stage16A (' + (activeClipName || 'UAL') + ') لإظهار الإيقاع فقط؛ ليس شرحًا بيوميكانيكيًا معتمدًا.' : 'The closest Stage16A reference clip (' + (activeClipName || 'UAL') + ') shows rhythm only; it is not certified biomechanical instruction.') : (rtl ? 'لا توجد حركة معتمدة لهذا التمرين بعد؛ يعرض النموذج وضعًا مرجعيًا فقط ولا يدّعي شرح التمرين.' : 'No approved exercise motion is available yet; the avatar is reference-only and does not claim to teach this exercise.')) : (rtl ? 'يتم تحميل ملف GLB الأصلي المعتمد، وليس صورة أو humanoid بديل.' : 'Loads the approved canonical GLB, not an image or legacy humanoid.')}</p>
+-        </div>
+-        <div className={'render-state ' + state}>
+-          {state === 'loading' ? (rtl ? 'تحميل ' + progress + '%' : 'Loading ' + progress + '%') : state === 'ready' ? (rtl ? '3D جاهز' : '3D ready') : (rtl ? 'فشل تحميل الأصل' : 'Canonical asset failed')}
+-          {state === 'ready' && <small>{offlineReady ? (rtl ? ' · تم التشغيل من النسخة المحلية' : ' · loaded from local cache') : (rtl ? ' · تم تنزيله الآن؛ سيعمل محليًا في التشغيل التالي' : ' · downloaded now; local replay is available on the next load')}</small>}
+-        </div>
+-      </div>
+-      <div className={'avatar-live' + (mirrored ? ' mirrored' : '')}><canvas ref={canvasRef} className="avatar-canvas" />{state !== 'ready' && <div className={'avatar-load-overlay ' + state} role="status" aria-live="polite"><span>{state === 'error' ? (rtl ? 'تعذّر تشغيل العرض المعتمد' : 'CANONICAL RENDER UNAVAILABLE') : (rtl ? 'يُحمّل الآن من المصدر المعتمد' : 'STREAMING CANONICAL STAGE16A')}</span><strong>{state === 'error' ? (rtl ? 'لم يتم استخدام نموذج بديل' : 'No fallback model was used') : progress + '%'}</strong><small>{state === 'error' ? (rtl ? 'هذا الجهاز لا يوفّر WebGL أو تعذّر تحميل الأصل؛ لا نموذج بديل، والحركة غير معتمدة.' : 'WebGL is unavailable or the canonical asset failed to load; no fallback model is used and motion stays unapproved.') : (rtl ? '26.3 MB · يبدأ العرض مباشرة قبل التخزين المحلي' : '26.3 MB · direct render path before durable caching')}</small></div>}<div className="live-badge"><i />{offlineReady ? (rtl ? 'الأصل المحلي جاهز' : 'LOCAL ASSET READY') : (rtl ? 'أصل Stage16A متصل' : 'STAGE16A NETWORK ASSET')}</div>{motionQaPhase !== null && <div className={'motion-qa-badge ' + (motionQaReady ? 'ready' : 'settling')} role="status" aria-live="polite">{motionQaReady ? (rtl ? `لقطة QA ثابتة · ${motionQaPhase}%` : `QA FRAME READY · ${motionQaPhase}%`) : (rtl ? 'تثبيت الكاميرا والحركة…' : 'SETTLING CAMERA + MOTION…')}</div>}<div className="anatomy-badge"><span className="anatomy-dot" />{rtl ? 'العضلات المتحركة مع الهيكل: ' : 'RIG-ATTACHED MUSCLES: '}{targetZone === 'lower-body' ? (rtl ? 'الجزء السفلي' : 'LOWER BODY') : targetZone === 'upper-body' ? (rtl ? 'الجزء العلوي' : 'UPPER BODY') : targetZone === 'core' ? (rtl ? 'الجذع' : 'CORE') : (rtl ? 'الجسم بالكامل' : 'FULL BODY')} · {anatomyAttached ? (rtl ? 'مرتبطة' : 'ATTACHED') : (rtl ? 'غير متاحة' : 'UNAVAILABLE')}</div><div className="motion-controls"><button onClick={() => setPlaying(v => !v)} disabled={motionQaPhase !== null}>{playing ? (rtl ? 'إيقاف مؤقت' : 'Pause') : (rtl ? 'تشغيل' : 'Play')}</button><button onClick={replay} disabled={transitioning || motionQaPhase !== null}>{transitioning ? (rtl ? 'انتقال…' : 'Blending…') : (rtl ? 'إعادة' : 'Replay')}</button><button onClick={() => setSpeed(v => v === .5 ? .75 : v === .75 ? 1 : v === 1 ? 1.25 : v === 1.25 ? 1.5 : .5)} disabled={motionQaPhase !== null}>{speed}×</button><button onClick={cycleCamera} disabled={motionQaPhase !== null}>{rtl ? 'زاوية ' + (cameraMode + 1) + '/4' : 'View ' + (cameraMode + 1) + '/4'}</button><button onClick={focusTarget} disabled={motionQaPhase !== null}>{rtl ? 'تركيز العضلات' : 'Muscle focus'}</button><button onClick={() => setMirrored(v => !v)} disabled={motionQaPhase !== null}>{rtl ? 'مرآة' : 'Mirror'}</button></div>{!compact && <div className="motion-readout"><span>{rtl ? 'الحركة الحالية' : 'CURRENT MOTION'}</span><strong>{motionHint || (rtl ? 'وضع الاستعداد' : 'Ready stance')}</strong><small>{rtl ? 'Clip فعلي: ' : 'Actual clip: '}{activeClipName || '—'} · {motionStatus === 'name-match' ? (rtl ? 'مطابقة اسمية فقط · الاعتماد الحركي مفتوح' : 'name match only · motion certification open') : motionStatus === 'reference-proxy' ? (rtl ? 'مرجع إيقاع فقط · غير معتمد كشرح' : 'rhythm reference only · not certified instruction') : (rtl ? 'غير مربوط · لا يُستخدم كشرح للتمرين' : 'unmapped · not used as exercise instruction')}</small></div>}</div>
+-      <div className="avatar-contract-grid">
+-        <span><strong>137</strong>{rtl ? ' مفصل' : ' joints'}</span>
+-        <span><strong>{state === 'ready' ? clips : '—'}</strong>{rtl ? ' حركة' : ' clips'}</span>
+-        <span><strong>0</strong>{rtl ? ' fallback قديم' : ' legacy fallback'}</span>
+-      </div>
+-      <div className="contact-contract"><strong>{rtl ? 'تماس القدم' : 'FOOT CONTACT'}</strong><span>{contactHooks === 2 ? (rtl ? `مؤشرا قرب مرتبطان بعظمتي القدم · معاينة تلامس مؤهلة بالزمن والسرعة ${groundedFeet}/2 · تثبيت بصري فقط وليس IK أو قياس ضغط` : `2 foot-bone proximity hooks · time + velocity-qualified planted-contact preview ${groundedFeet}/2 · visual anchor only, not IK or pressure sensing`) : (rtl ? 'مرجع الأرضية فقط · لم يتم العثور على عظمتَي القدم · IK غير معتمد' : 'floor reference only · foot-bone hooks unavailable · IK unapproved')}</span></div>
+-      {state === 'ready' && clips !== 195 && <div className="warning">{rtl ? 'تم تحميل الأصل، لكن عدد الحركات لا يطابق عقد 195؛ لا يتم اعتماد الحركة حتى المراجعة.' : 'Asset loaded, but clip count differs from the 195-clip contract; motion remains unapproved.'}</div>}
+-    </section>
+-  );
+-}
++import { useEffect, useRef, useState } from 'react';
++import * as THREE from 'three';
++import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
++
++const AVATAR_URL = 'https://raw.githubusercontent.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/6965062e0d438e865fb4b4bcb1cb97ed2dfdde38/public-assets/fitness/stage16a/thf_mpfb_stage16a_ual12_animated.glb';
++const AVATAR_CACHE = 'thf-fitness-motion-v1';
++
++async function cachedAvatarUrl() {
++  if (!('caches' in window)) return { url: AVATAR_URL, source: 'network' as const };
++  const cache = await caches.open(AVATAR_CACHE);
++  const cached = await cache.match(AVATAR_URL);
++  if (cached) {
++    const blob = await cached.blob();
++    return { url: URL.createObjectURL(blob), source: 'cache' as const };
++  }
++  return { url: AVATAR_URL, source: 'network' as const };
++}
++
++async function cacheAvatarInBackground() {
++  if (!('caches' in window)) return;
++  try {
++    const cache = await caches.open(AVATAR_CACHE);
++    if (await cache.match(AVATAR_URL)) return;
++    const response = await fetch(AVATAR_URL, { cache: 'force-cache' });
++    if (response.ok) await cache.put(AVATAR_URL, response);
++  } catch {
++    // Runtime rendering must not fail if durable browser caching is unavailable.
++  }
++}
++
++function fittedCameraDistance(width: number, height: number, aspect: number, verticalFovDegrees: number, margin = 1.18) {
++  const verticalFov = THREE.MathUtils.degToRad(verticalFovDegrees);
++  const safeAspect = Math.max(aspect, 0.55);
++  const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * safeAspect);
++  const verticalDistance = (height / 2) / Math.tan(verticalFov / 2);
++  const horizontalDistance = (width / 2) / Math.tan(horizontalFov / 2);
++  return Math.max(verticalDistance, horizontalDistance) * margin;
++}
++
++type Stage16AProps = { rtl: boolean; motionHint?: string; compact?: boolean };
++type MotionStatus = 'unmapped' | 'name-match' | 'reference-proxy' | 'exercise-blend';
++
++const MOTION_QA_PHASES = new Set([0, 25, 50, 75]);
++const EXERCISE_BLEND_CYCLE_SECONDS = 4;
++
++const exerciseBlendRules: Array<{ exercise: RegExp; base: RegExp; target: RegExp }> = [
++  { exercise: /bodyweight squat/i, base: /^idle$/i, target: /^UAL1_Crouch_Idle_Loop$/i },
++];
++
++function motionQaPhaseFromLocation() {
++  if (typeof window === 'undefined') return null;
++  const raw = new URLSearchParams(window.location.search).get('motionQaPhase');
++  if (raw === null || raw.trim() === '') return null;
++  const phase = Number(raw);
++  return Number.isFinite(phase) && MOTION_QA_PHASES.has(phase) ? phase : null;
++}
++
++const motionReferenceProxies: Array<{ exercise: RegExp; clip: RegExp }> = [
++  { exercise: /wall sit/i, clip: /^UAL1_Crouch_Idle_Loop$/i },
++  { exercise: /reverse lunge|mountain climber/i, clip: /^UAL1_Crouch_Fwd_Loop$/i },
++  { exercise: /incline push.?up|shoulder tap/i, clip: /^UAL1_Push_Loop$/i },
++  { exercise: /jumping jack/i, clip: /^UAL1_Jump_Loop$/i },
++  { exercise: /high knees/i, clip: /^UAL1_Jog_Fwd_Loop$/i },
++  { exercise: /lateral shuffle/i, clip: /^UAL2_Slide_Loop$/i },
++  { exercise: /box breathing/i, clip: /^breathe$/i },
++];
++
++export default function AvatarStage16A({ rtl, motionHint = '', compact = false }: Stage16AProps) {
++  const canvasRef = useRef<HTMLCanvasElement | null>(null);
++  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
++  const [clips, setClips] = useState(0);
++  const [progress, setProgress] = useState(0);
++  const [playing, setPlaying] = useState(true);
++  const [speed, setSpeed] = useState(1);
++  const [cameraMode, setCameraMode] = useState(0);
++  const [offlineReady, setOfflineReady] = useState(false);
++  const [motionStatus, setMotionStatus] = useState<MotionStatus>('unmapped');
++  const [activeClipName, setActiveClipName] = useState('');
++  const [mirrored, setMirrored] = useState(false);
++  const [transitioning, setTransitioning] = useState(false);
++  const [motionQaPhase] = useState<number | null>(() => motionQaPhaseFromLocation());
++  const [motionQaReady, setMotionQaReady] = useState(false);
++  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
++  const actionRef = useRef<THREE.AnimationAction | null>(null);
++  const exerciseBlendRef = useRef<{ base: THREE.AnimationAction; target: THREE.AnimationAction } | null>(null);
++  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
++  const cameraTargetRef = useRef(new THREE.Vector3(0, 1.15, 0));
++  const desiredCameraRef = useRef(new THREE.Vector3(0, 1.32, 3.15));
++  const desiredTargetRef = useRef(new THREE.Vector3(0, 1.15, 0));
++  const [targetZone, setTargetZone] = useState('full-body');
++  const [anatomyAttached, setAnatomyAttached] = useState(false);
++  const [contactHooks, setContactHooks] = useState(0);
++  const [groundedFeet, setGroundedFeet] = useState(0);
++  const footContactRefs = useRef<Array<{ marker: THREE.Mesh; floorDisc: THREE.Mesh; bone: THREE.Bone; baseOpacity: number; grounded: boolean }>>([]);
++  const modelRef = useRef<THREE.Object3D | null>(null);
++  const baseTargetRef = useRef(new THREE.Vector3(0, 1.15, 0));
++  const baseCameraRef = useRef(new THREE.Vector3(0, 1.32, 3.15));
++  const hipsRef = useRef<THREE.Bone | null>(null);
++  const groundingShadowRef = useRef<THREE.Mesh | null>(null);
++  const plantedAnchorRefs = useRef<Array<THREE.Vector3 | null>>([null, null]);
++  const footMotionRefs = useRef<Array<{ position: THREE.Vector3 | null; velocity: THREE.Vector3 }>>([{ position: null, velocity: new THREE.Vector3() }, { position: null, velocity: new THREE.Vector3() }]);
++  const contactDwellRefs = useRef<number[]>([0, 0]);
++
++  useEffect(() => {
++    const canvas = canvasRef.current;
++    if (!canvas) return;
++
++    let disposed = false;
++    let frame = 0;
++    let mixer: THREE.AnimationMixer | null = null;
++    let activeAction: THREE.AnimationAction | null = null;
++    let motionQaArmed = false;
++    let motionQaSettledFrames = 0;
++    setMotionQaReady(false);
++    let renderer: THREE.WebGLRenderer;
++    try {
++      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
++    } catch {
++      setState('error');
++      setProgress(0);
++      return;
++    }
++    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
++    renderer.outputColorSpace = THREE.SRGBColorSpace;
++    renderer.shadowMap.enabled = true;
++    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
++    renderer.toneMapping = THREE.ACESFilmicToneMapping;
++    renderer.toneMappingExposure = 1.08;
++
++    const scene = new THREE.Scene();
++    const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
++    camera.position.set(0, 1.32, 3.15);
++    camera.lookAt(0, 1.15, 0);
++    cameraRef.current = camera;
++    desiredCameraRef.current.copy(camera.position);
++    cameraTargetRef.current.set(0, 1.15, 0);
++    desiredTargetRef.current.copy(cameraTargetRef.current);
++
++    scene.add(new THREE.HemisphereLight(0xffffff, 0x183248, 2.2));
++    const key = new THREE.DirectionalLight(0xffffff, 2.8);
++    key.position.set(2.5, 4, 3);
++    key.castShadow = true;
++    key.shadow.mapSize.set(1024, 1024);
++    key.shadow.camera.near = 0.1;
++    key.shadow.camera.far = 12;
++    key.shadow.camera.left = -3;
++    key.shadow.camera.right = 3;
++    key.shadow.camera.top = 4;
++    key.shadow.camera.bottom = -1;
++    key.shadow.bias = -0.00035;
++    key.shadow.normalBias = 0.018;
++    key.shadow.radius = 3;
++    scene.add(key);
++    const rim = new THREE.DirectionalLight(0x65f0c1, 1.4);
++    rim.position.set(-3, 2, -2);
++    scene.add(rim);
++    const fill = new THREE.DirectionalLight(0x9fc8ff, 0.72);
++    fill.position.set(-2.2, 2.6, 2.4);
++    scene.add(fill);
++    const sculpt = new THREE.SpotLight(0xbdeeff, 18, 9, Math.PI / 7, 0.58, 1.6);
++    sculpt.position.set(0.8, 3.8, 3.6);
++    sculpt.target.position.set(0, 1.15, 0);
++    sculpt.castShadow = true;
++    sculpt.shadow.mapSize.set(1024, 1024);
++    sculpt.shadow.bias = -0.00025;
++    scene.add(sculpt, sculpt.target);
++
++    const floor = new THREE.Mesh(
++      new THREE.CircleGeometry(1.55, 64),
++      new THREE.MeshStandardMaterial({ color: 0x071820, roughness: 0.78, metalness: 0.08 })
++    );
++    floor.rotation.x = -Math.PI / 2;
++    floor.position.y = -0.015;
++    floor.receiveShadow = true;
++    scene.add(floor);
++    const groundingShadow = new THREE.Mesh(
++      new THREE.CircleGeometry(0.72, 64),
++      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false })
++    );
++    groundingShadow.rotation.x = -Math.PI / 2;
++    groundingShadow.scale.set(1.45, 0.62, 1);
++    groundingShadow.position.set(0, -0.006, 0.08);
++    scene.add(groundingShadow);
++    groundingShadowRef.current = groundingShadow;
++    const contactRing = new THREE.Mesh(
++      new THREE.RingGeometry(0.32, 0.37, 64),
++      new THREE.MeshBasicMaterial({ color: 0x65f0c1, transparent: true, opacity: 0.24, side: THREE.DoubleSide })
++    );
++    contactRing.rotation.x = -Math.PI / 2;
++    contactRing.position.y = -0.009;
++    scene.add(contactRing);
++    const contactMaterial = new THREE.MeshBasicMaterial({ color: 0x65f0c1, transparent: true, opacity: 0.82, depthTest: false });
++
++    const clock = new THREE.Clock();
++    const loader = new GLTFLoader();
++    let objectUrl = '';
++    cachedAvatarUrl().then(asset => {
++      const url = asset.url;
++      objectUrl = url.startsWith('blob:') ? url : '';
++      setOfflineReady(asset.source === 'cache');
++      loader.load(
++      url,
++      gltf => {
++        if (disposed) return;
++        const model = gltf.scene;
++        model.traverse(obj => {
++          if (obj instanceof THREE.Mesh) {
++            obj.castShadow = true;
++            obj.receiveShadow = true;
++          }
++        });
++        const initial = new THREE.Box3().setFromObject(model);
++        const size = new THREE.Vector3();
++        initial.getSize(size);
++        const scale = 2.45 / Math.max(size.y, 0.1);
++        model.scale.setScalar(scale);
++        const box = new THREE.Box3().setFromObject(model);
++        const center = new THREE.Vector3();
++        box.getCenter(center);
++        model.position.x -= center.x;
++        model.position.z -= center.z;
++        model.position.y -= box.min.y;
++        scene.add(model);
++        modelRef.current = model;
++
++        const hint = motionHint.toLowerCase();
++        const zone = /squat|lunge|calf|knee|glute|hinge/.test(hint) ? 'lower-body' : /push|shoulder|plank/.test(hint) ? 'upper-body' : /dead|bird|core|cat|breath/.test(hint) ? 'core' : 'full-body';
++        setTargetZone(zone);
++        const framedBox = new THREE.Box3().setFromObject(model);
++        const framedCenter = framedBox.getCenter(new THREE.Vector3());
++        const framedHeight = Math.max(framedBox.max.y - framedBox.min.y, 1.8);
++        const framedWidth = Math.max(framedBox.max.x - framedBox.min.x, 0.8);
++        const framedY = zone === 'lower-body' ? framedBox.min.y + framedHeight * .42 : zone === 'upper-body' ? framedBox.min.y + framedHeight * .68 : zone === 'core' ? framedBox.min.y + framedHeight * .54 : framedCenter.y;
++        const fullBodyDistance = fittedCameraDistance(framedWidth, framedHeight, camera.aspect, camera.fov, compact ? 1.38 : 1.18);
++        const framedDistance = zone === 'full-body' ? Math.max(3.15, fullBodyDistance) : Math.max(2.08, framedHeight * .86);
++        desiredTargetRef.current.set(framedCenter.x, framedY, framedCenter.z);
++        desiredCameraRef.current.set(framedCenter.x + framedHeight * .08, framedY + framedHeight * .035, framedCenter.z + framedDistance);
++        baseTargetRef.current.copy(desiredTargetRef.current);
++        baseCameraRef.current.copy(desiredCameraRef.current);
++        const markerMaterial = new THREE.MeshStandardMaterial({ color: 0xff342e, emissive: 0x8d0909, emissiveIntensity: 0.72, transparent: true, opacity: 0.72, roughness: 0.62, depthWrite: false });
++        const bones: THREE.Bone[] = [];
++        model.traverse(obj => { if (obj instanceof THREE.Bone) bones.push(obj); });
++        const aliases: Record<string, string[]> = {
++          thighL: ['thigh_l','thigh.l','leftupleg','upperleg_l','l_thigh'], thighR: ['thigh_r','thigh.r','rightupleg','upperleg_r','r_thigh'],
++          calfL: ['shin_l','shin.l','leftleg','calf_l','lowerleg_l'], calfR: ['shin_r','shin.r','rightleg','calf_r','lowerleg_r'],
++          upperArmL: ['upperarm_l','upperarm.l','leftarm','arm_l'], upperArmR: ['upperarm_r','upperarm.r','rightarm','arm_r'],
++          spine: ['spine2','spine_02','spine.002','chest','upperchest'], pelvis: ['pelvis','hips','hip']
++        };
++        const findBone = (keys: string[]) => bones.find(bone => keys.some(key => bone.name.toLowerCase().includes(key)));
++        hipsRef.current = findBone(['pelvis','hips','hip']) || null;
++        const footAliases = [['foot_l','foot.l','leftfoot','l_foot'], ['foot_r','foot.r','rightfoot','r_foot']];
++        let hookedFeet = 0;
++        footAliases.forEach(keys => {
++          const foot = findBone(keys);
++          if (!foot) return;
++          const marker = new THREE.Mesh(new THREE.RingGeometry(0.075, 0.095, 32), contactMaterial.clone());
++          marker.rotation.x = -Math.PI / 2;
++          marker.position.set(0, -0.035, 0.035);
++          marker.renderOrder = 5;
++          foot.add(marker);
++          const floorDiscMaterial = new THREE.MeshBasicMaterial({ color: 0x65f0c1, transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending });
++          const floorDisc = new THREE.Mesh(new THREE.CircleGeometry(0.14, 40), floorDiscMaterial);
++          floorDisc.rotation.x = -Math.PI / 2;
++          floorDisc.position.y = -0.007;
++          floorDisc.renderOrder = 2;
++          scene.add(floorDisc);
++          footContactRefs.current.push({ marker, floorDisc, bone: foot, baseOpacity: 0.82, grounded: false });
++          hookedFeet += 1;
++        });
++        setContactHooks(hookedFeet);
++        const attach = (keys: string[], radius: number, length: number, offset: [number, number, number] = [0,0,0]) => {
++          const bone = findBone(keys); if (!bone) return false;
++          const marker = new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 8, 16), markerMaterial.clone());
++          marker.position.set(offset[0], offset[1], offset[2]); marker.rotation.z = Math.PI / 2; marker.renderOrder = 3; bone.add(marker); return true;
++        };
++        let attached = 0;
++        if (zone === 'lower-body') { attached += Number(attach(aliases.thighL,.07,.25,[0,-.08,.02])); attached += Number(attach(aliases.thighR,.07,.25,[0,-.08,.02])); attached += Number(attach(aliases.calfL,.055,.2,[0,-.07,.015])); attached += Number(attach(aliases.calfR,.055,.2,[0,-.07,.015])); }
++        if (zone === 'upper-body') { attached += Number(attach(aliases.upperArmL,.055,.2,[0,-.05,.015])); attached += Number(attach(aliases.upperArmR,.055,.2,[0,-.05,.015])); attached += Number(attach(aliases.spine,.13,.22,[0,.03,.055])); }
++        if (zone === 'core') { attached += Number(attach(aliases.spine,.14,.28,[0,.01,.06])); attached += Number(attach(aliases.pelvis,.12,.16,[0,.04,.04])); }
++        setAnatomyAttached(attached > 0);
++
++        setClips(gltf.animations.length);
++        if (gltf.animations.length > 0) {
++          mixer = new THREE.AnimationMixer(model);
++          mixerRef.current = mixer;
++          const blendRule = exerciseBlendRules.find(rule => rule.exercise.test(motionHint));
++          const blendBase = blendRule ? gltf.animations.find(clip => blendRule.base.test(clip.name)) : undefined;
++          const blendTarget = blendRule ? gltf.animations.find(clip => blendRule.target.test(clip.name)) : undefined;
++          if (blendBase && blendTarget) {
++            const baseAction = mixer.clipAction(blendBase);
++            const targetAction = mixer.clipAction(blendTarget);
++            [baseAction, targetAction].forEach(action => {
++              action.setLoop(THREE.LoopRepeat, Infinity);
++              action.clampWhenFinished = false;
++              action.reset().play();
++              action.setEffectiveTimeScale(0);
++            });
++            baseAction.time = Math.max(blendBase.duration, 0.001) * 0.35;
++            targetAction.time = Math.max(blendTarget.duration, 0.001) * 0.35;
++            baseAction.setEffectiveWeight(1);
++            targetAction.setEffectiveWeight(0);
++            exerciseBlendRef.current = { base: baseAction, target: targetAction };
++            activeAction = targetAction;
++            actionRef.current = targetAction;
++            setMotionStatus('exercise-blend');
++            setActiveClipName((blendBase.name || 'idle') + ' ↔ ' + (blendTarget.name || 'crouch'));
++            if (motionQaPhase !== null) {
++              mixer.setTime(EXERCISE_BLEND_CYCLE_SECONDS * (motionQaPhase / 100));
++              mixer.timeScale = 0;
++              setPlaying(false);
++              motionQaArmed = true;
++            } else {
++              baseAction.fadeIn(0.45);
++            }
++          } else {
++            const tokens = motionHint.toLowerCase().split(/[^a-z0-9]+/).filter(token => token.length > 2);
++            const named = gltf.animations.find(clip => tokens.some(token => clip.name.toLowerCase().includes(token)));
++            const proxyRule = motionReferenceProxies.find(rule => rule.exercise.test(motionHint));
++            const referenceProxy = !named && proxyRule ? gltf.animations.find(clip => proxyRule.clip.test(clip.name)) : undefined;
++            const preferred = named || referenceProxy || gltf.animations.find(clip => /idle|breath|stand/i.test(clip.name)) || gltf.animations[0];
++            setMotionStatus(named ? 'name-match' : referenceProxy ? 'reference-proxy' : 'unmapped');
++            setActiveClipName(preferred.name || 'unnamed clip');
++            activeAction = mixer.clipAction(preferred);
++            actionRef.current = activeAction;
++            activeAction.setLoop(THREE.LoopRepeat, Infinity);
++            activeAction.clampWhenFinished = false;
++            activeAction.reset().play();
++            if (motionQaPhase !== null) {
++              mixer.setTime(Math.max(preferred.duration, 0.001) * (motionQaPhase / 100));
++              mixer.timeScale = 0;
++              setPlaying(false);
++              motionQaArmed = true;
++            } else {
++              activeAction.fadeIn(0.6);
++            }
++          }
++        }
++        setState('ready');
++        setProgress(100);
++        void cacheAvatarInBackground();
++      },
++      event => {
++        if (event.total > 0) setProgress(Math.min(99, Math.round((event.loaded / event.total) * 100)));
++      },
++      () => {
++        if (!disposed) setState('error');
++      }
++    );
++    }).catch(() => { if (!disposed) setState('error'); });
++
++    function resize() {
++      const width = Math.max(320, canvas.clientWidth || 640);
++      const height = Math.max(360, canvas.clientHeight || 520);
++      renderer.setSize(width, height, false);
++      camera.aspect = width / height;
++      camera.updateProjectionMatrix();
++    }
++    const observer = new ResizeObserver(resize);
++    observer.observe(canvas);
++    resize();
++
++    function tick() {
++      if (disposed) return;
++      const dt = Math.min(clock.getDelta(), 0.05);
++      mixer?.update(dt);
++      const exerciseBlend = exerciseBlendRef.current;
++      if (exerciseBlend && mixer) {
++        const phase = motionQaPhase !== null ? motionQaPhase / 100 : (mixer.time % EXERCISE_BLEND_CYCLE_SECONDS) / EXERCISE_BLEND_CYCLE_SECONDS;
++        const blendWeight = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2);
++        exerciseBlend.base.setEffectiveWeight(1 - blendWeight);
++        exerciseBlend.target.setEffectiveWeight(blendWeight);
++      }
++      const cameraEase = 1 - Math.exp(-dt * 6.5);
++      const hips = hipsRef.current;
++      if (hips) {
++        const hipWorld = new THREE.Vector3();
++        hips.getWorldPosition(hipWorld);
++        const shadow = groundingShadowRef.current;
++        if (shadow) {
++          shadow.position.x = THREE.MathUtils.lerp(shadow.position.x, THREE.MathUtils.clamp(hipWorld.x * .72, -.42, .42), 1 - Math.exp(-dt * 7));
++          shadow.position.z = THREE.MathUtils.lerp(shadow.position.z, THREE.MathUtils.clamp(hipWorld.z * .34 + .08, -.22, .3), 1 - Math.exp(-dt * 7));
++          const lift = THREE.MathUtils.clamp((hipWorld.y - .92) / .72, 0, 1);
++          const shadowScale = 1 - lift * .22;
++          shadow.scale.x = THREE.MathUtils.lerp(shadow.scale.x, 1.45 * shadowScale, 1 - Math.exp(-dt * 5));
++          shadow.scale.y = THREE.MathUtils.lerp(shadow.scale.y, .62 * shadowScale, 1 - Math.exp(-dt * 5));
++          (shadow.material as THREE.MeshBasicMaterial).opacity = THREE.MathUtils.lerp((shadow.material as THREE.MeshBasicMaterial).opacity, .3 - lift * .11, 1 - Math.exp(-dt * 5));
++        }
++        if (cameraMode === 0) {
++          const baseTarget = baseTargetRef.current;
++          const baseCamera = baseCameraRef.current;
++          const verticalFollow = THREE.MathUtils.clamp((hipWorld.y - 1.08) * .16, -.12, .12);
++          const lateralFollow = THREE.MathUtils.clamp(hipWorld.x * .08, -.08, .08);
++          desiredTargetRef.current.set(baseTarget.x + lateralFollow, baseTarget.y + verticalFollow, baseTarget.z);
++          desiredCameraRef.current.set(baseCamera.x + lateralFollow * .65, baseCamera.y + verticalFollow * .5, baseCamera.z);
++        }
++      }
++      camera.position.lerp(desiredCameraRef.current, cameraEase);
++      cameraTargetRef.current.lerp(desiredTargetRef.current, cameraEase);
++      camera.lookAt(cameraTargetRef.current);
++      contactRing.material.opacity = 0.2 + Math.sin(clock.elapsedTime * 2.4) * 0.035;
++      let grounded = 0;
++      footContactRefs.current.forEach((contact, contactIndex) => {
++        const world = new THREE.Vector3();
++        contact.bone.getWorldPosition(world);
++        const motion = footMotionRefs.current[contactIndex];
++        if (motion) {
++          if (motion.position) {
++            const instantaneous = world.clone().sub(motion.position).divideScalar(Math.max(dt, 0.001));
++            motion.velocity.lerp(instantaneous, 1 - Math.exp(-dt * 18));
++            motion.position.copy(world);
++          } else {
++            motion.position = world.clone();
++          }
++        }
++        const planarSpeed = motion ? Math.hypot(motion.velocity.x, motion.velocity.z) : 0;
++        const verticalSpeed = motion ? Math.abs(motion.velocity.y) : 0;
++        const enterCandidate = world.y <= 0.055 && planarSpeed <= 0.55 && verticalSpeed <= 0.72;
++        const leaveGround = world.y >= 0.085 || planarSpeed >= 1.05 || verticalSpeed >= 1.2;
++        contactDwellRefs.current[contactIndex] = enterCandidate ? Math.min((contactDwellRefs.current[contactIndex] || 0) + dt, 0.2) : 0;
++        if (!contact.grounded && contactDwellRefs.current[contactIndex] >= 0.045) {
++          contact.grounded = true;
++          plantedAnchorRefs.current[contactIndex] = new THREE.Vector3(world.x, 0, world.z);
++        }
++        if (contact.grounded && leaveGround) {
++          contact.grounded = false;
++          contactDwellRefs.current[contactIndex] = 0;
++          plantedAnchorRefs.current[contactIndex] = null;
++        }
++        if (contact.grounded) grounded += 1;
++        const proximity = THREE.MathUtils.clamp(1 - Math.max(0, world.y) / 0.16, 0.12, 1);
++        const material = contact.marker.material as THREE.MeshBasicMaterial;
++        const targetOpacity = contact.baseOpacity * (contact.grounded ? Math.max(proximity, 0.82) : proximity * 0.72);
++        material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, 1 - Math.exp(-dt * 12));
++        const targetScale = contact.grounded ? 1.16 : 0.9 + proximity * 0.14;
++        const easedScale = THREE.MathUtils.lerp(contact.marker.scale.x, targetScale, 1 - Math.exp(-dt * 10));
++        contact.marker.scale.setScalar(easedScale);
++        const anchor = plantedAnchorRefs.current[contactIndex];
++        const stillness = THREE.MathUtils.clamp(1 - planarSpeed / 0.8, 0, 1);
++        const anchorStrength = contact.grounded ? 0.58 + stillness * 0.34 : 0;
++        const displayX = contact.grounded && anchor ? THREE.MathUtils.lerp(world.x, anchor.x, anchorStrength) : world.x;
++        const displayZ = contact.grounded && anchor ? THREE.MathUtils.lerp(world.z, anchor.z, anchorStrength) : world.z;
++        contact.floorDisc.position.x = THREE.MathUtils.lerp(contact.floorDisc.position.x, displayX, 1 - Math.exp(-dt * 16));
++        contact.floorDisc.position.z = THREE.MathUtils.lerp(contact.floorDisc.position.z, displayZ, 1 - Math.exp(-dt * 16));
++        const discMaterial = contact.floorDisc.material as THREE.MeshBasicMaterial;
++        const discOpacity = contact.grounded ? 0.2 + proximity * 0.18 : proximity * 0.08;
++        discMaterial.opacity = THREE.MathUtils.lerp(discMaterial.opacity, discOpacity, 1 - Math.exp(-dt * 10));
++        const discScale = contact.grounded ? 0.9 + proximity * 0.32 : 0.72 + proximity * 0.12;
++        contact.floorDisc.scale.setScalar(THREE.MathUtils.lerp(contact.floorDisc.scale.x, discScale, 1 - Math.exp(-dt * 9)));
++      });
++      setGroundedFeet(current => current === grounded ? current : grounded);
++      renderer.render(scene, camera);
++      if (motionQaArmed) {
++        motionQaSettledFrames += 1;
++        if (motionQaSettledFrames >= 45) {
++          motionQaArmed = false;
++          setMotionQaReady(true);
++        }
++      }
++      frame = requestAnimationFrame(tick);
++    }
++    tick();
++
++    return () => {
++      disposed = true;
++      cancelAnimationFrame(frame);
++      observer.disconnect();
++      scene.traverse(obj => {
++        if (obj instanceof THREE.Mesh) {
++          obj.geometry?.dispose();
++          const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
++          materials.forEach(material => material?.dispose());
++        }
++      });
++      renderer.dispose();
++      exerciseBlendRef.current = null;
++      footContactRefs.current = [];
++      plantedAnchorRefs.current = [null, null];
++      footMotionRefs.current = [{ position: null, velocity: new THREE.Vector3() }, { position: null, velocity: new THREE.Vector3() }];
++      contactDwellRefs.current = [0, 0];
++      if (objectUrl) URL.revokeObjectURL(objectUrl);
++    };
++  }, [motionHint, motionQaPhase]);
++
++  useEffect(() => { if (mixerRef.current) mixerRef.current.timeScale = playing ? speed : 0; }, [playing, speed]);
++  function replay() { const blend = exerciseBlendRef.current; const mixer = mixerRef.current; if (blend && mixer) { setTransitioning(true); mixer.setTime(0); blend.base.setEffectiveWeight(1); blend.target.setEffectiveWeight(0); setPlaying(true); window.setTimeout(() => setTransitioning(false), 480); return; } const action = actionRef.current; if (!action) return; setTransitioning(true); action.enabled = true; action.paused = false; action.setEffectiveWeight(1); action.setEffectiveTimeScale(speed); action.fadeOut(0.16); window.setTimeout(() => { action.reset().fadeIn(0.48).play(); setPlaying(true); window.setTimeout(() => setTransitioning(false), 480); }, 170); }
++  function cycleCamera() { const camera = cameraRef.current; const model = modelRef.current; if (!camera) return; const next = (cameraMode + 1) % 4; setCameraMode(next); const box = model ? new THREE.Box3().setFromObject(model) : null; const center = box ? box.getCenter(new THREE.Vector3()) : new THREE.Vector3(0, 1.1, 0); const height = box ? Math.max(box.max.y - box.min.y, 1.8) : 2.45; const width = box ? Math.max(box.max.x - box.min.x, 0.8) : 1.4; const fullBodyDistance = fittedCameraDistance(width, height, camera.aspect, camera.fov, compact ? 1.38 : 1.18); const poses = [{p:[0,center.y,Math.max(3.15,fullBodyDistance)],t:[center.x,center.y,center.z]},{p:[height*.92,center.y,height*.92],t:[center.x,center.y*.96,center.z]},{p:[0,center.y,-Math.max(2.75,height*1.25)],t:[center.x,center.y*.98,center.z]},{p:[0,center.y+height*.18,Math.max(1.9,height*.82)],t:[center.x,center.y+height*.08,center.z]}]; const pose=poses[next]; desiredCameraRef.current.set(pose.p[0],pose.p[1],pose.p[2]); desiredTargetRef.current.set(pose.t[0],pose.t[1],pose.t[2]); }
++  function focusTarget() { const model = modelRef.current; if (!model) return; const box = new THREE.Box3().setFromObject(model); const center = box.getCenter(new THREE.Vector3()); const height = Math.max(box.max.y - box.min.y, 1.8); const zoneY = targetZone === 'lower-body' ? box.min.y + height * .36 : targetZone === 'upper-body' ? box.min.y + height * .69 : targetZone === 'core' ? box.min.y + height * .53 : center.y; const distance = targetZone === 'full-body' ? Math.max(2.65, height * 1.2) : Math.max(1.65, height * .72); desiredTargetRef.current.set(center.x, zoneY, center.z); desiredCameraRef.current.set(center.x + height * .12, zoneY + height * .035, center.z + distance); baseTargetRef.current.copy(desiredTargetRef.current); baseCameraRef.current.copy(desiredCameraRef.current); setCameraMode(0); }
++
++  return (
++    <section className={'avatar-stage' + (compact ? ' compact' : '')} aria-label="Stage16A 3D avatar" data-motion-status={motionStatus} data-active-clip={activeClipName || undefined} data-motion-qa-phase={motionQaPhase ?? undefined} data-motion-qa-ready={motionQaPhase === null ? undefined : String(motionQaReady)}>
++      <div className="avatar-stage-head">
++        <div>
++          <div className="eyebrow">{rtl ? 'معاينة 3D حقيقية' : 'REAL 3D PREVIEW'}</div>
++          <h3>MPFB/MakeHuman Stage16A</h3>
++          <p>{motionHint ? (motionStatus === 'exercise-blend' ? (rtl ? 'مسار قرفصاء مضبوط يمزج الوقوف مع وضع القرفصاء الحقيقي عبر مراحل النزول والقاع والصعود؛ المراجعة البصرية البيوميكانيكية ما زالت مفتوحة.' : 'A controlled squat path blends the real upright and crouch poses through descent, bottom and ascent; visual biomechanical review remains open.') : motionStatus === 'name-match' ? (rtl ? 'تم العثور على حركة Stage16A مرتبطة باسم التمرين؛ المطابقة البيوميكانيكية تظل غير معتمدة حتى المراجعة.' : 'A Stage16A clip matched the exercise name; biomechanical equivalence remains unapproved until reviewed.') : motionStatus === 'reference-proxy' ? (rtl ? 'يعمل أقرب clip مرجعي من Stage16A (' + (activeClipName || 'UAL') + ') لإظهار الإيقاع فقط؛ ليس شرحًا بيوميكانيكيًا معتمدًا.' : 'The closest Stage16A reference clip (' + (activeClipName || 'UAL') + ') shows rhythm only; it is not certified biomechanical instruction.') : (rtl ? 'لا توجد حركة معتمدة لهذا التمرين بعد؛ يعرض النموذج وضعًا مرجعيًا فقط ولا يدّعي شرح التمرين.' : 'No approved exercise motion is available yet; the avatar is reference-only and does not claim to teach this exercise.')) : (rtl ? 'يتم تحميل ملف GLB الأصلي المعتمد، وليس صورة أو humanoid بديل.' : 'Loads the approved canonical GLB, not an image or legacy humanoid.')}</p>
++        </div>
++        <div className={'render-state ' + state}>
++          {state === 'loading' ? (rtl ? 'تحميل ' + progress + '%' : 'Loading ' + progress + '%') : state === 'ready' ? (rtl ? '3D جاهز' : '3D ready') : (rtl ? 'فشل تحميل الأصل' : 'Canonical asset failed')}
++          {state === 'ready' && <small>{offlineReady ? (rtl ? ' · تم التشغيل من النسخة المحلية' : ' · loaded from local cache') : (rtl ? ' · تم تنزيله الآن؛ سيعمل محليًا في التشغيل التالي' : ' · downloaded now; local replay is available on the next load')}</small>}
++        </div>
++      </div>
++      <div className={'avatar-live' + (mirrored ? ' mirrored' : '')}><canvas ref={canvasRef} className="avatar-canvas" />{state !== 'ready' && <div className={'avatar-load-overlay ' + state} role="status" aria-live="polite"><span>{state === 'error' ? (rtl ? 'تعذّر تشغيل العرض المعتمد' : 'CANONICAL RENDER UNAVAILABLE') : (rtl ? 'يُحمّل الآن من المصدر المعتمد' : 'STREAMING CANONICAL STAGE16A')}</span><strong>{state === 'error' ? (rtl ? 'لم يتم استخدام نموذج بديل' : 'No fallback model was used') : progress + '%'}</strong><small>{state === 'error' ? (rtl ? 'هذا الجهاز لا يوفّر WebGL أو تعذّر تحميل الأصل؛ لا نموذج بديل، والحركة غير معتمدة.' : 'WebGL is unavailable or the canonical asset failed to load; no fallback model is used and motion stays unapproved.') : (rtl ? '26.3 MB · يبدأ العرض مباشرة قبل التخزين المحلي' : '26.3 MB · direct render path before durable caching')}</small></div>}<div className="live-badge"><i />{offlineReady ? (rtl ? 'الأصل المحلي جاهز' : 'LOCAL ASSET READY') : (rtl ? 'أصل Stage16A متصل' : 'STAGE16A NETWORK ASSET')}</div>{motionQaPhase !== null && <div className={'motion-qa-badge ' + (motionQaReady ? 'ready' : 'settling')} role="status" aria-live="polite">{motionQaReady ? (rtl ? `لقطة QA ثابتة · ${motionQaPhase}%` : `QA FRAME READY · ${motionQaPhase}%`) : (rtl ? 'تثبيت الكاميرا والحركة…' : 'SETTLING CAMERA + MOTION…')}</div>}<div className="anatomy-badge"><span className="anatomy-dot" />{rtl ? 'العضلات المتحركة مع الهيكل: ' : 'RIG-ATTACHED MUSCLES: '}{targetZone === 'lower-body' ? (rtl ? 'الجزء السفلي' : 'LOWER BODY') : targetZone === 'upper-body' ? (rtl ? 'الجزء العلوي' : 'UPPER BODY') : targetZone === 'core' ? (rtl ? 'الجذع' : 'CORE') : (rtl ? 'الجسم بالكامل' : 'FULL BODY')} · {anatomyAttached ? (rtl ? 'مرتبطة' : 'ATTACHED') : (rtl ? 'غير متاحة' : 'UNAVAILABLE')}</div><div className="motion-controls"><button onClick={() => setPlaying(v => !v)} disabled={motionQaPhase !== null}>{playing ? (rtl ? 'إيقاف مؤقت' : 'Pause') : (rtl ? 'تشغيل' : 'Play')}</button><button onClick={replay} disabled={transitioning || motionQaPhase !== null}>{transitioning ? (rtl ? 'انتقال…' : 'Blending…') : (rtl ? 'إعادة' : 'Replay')}</button><button onClick={() => setSpeed(v => v === .5 ? .75 : v === .75 ? 1 : v === 1 ? 1.25 : v === 1.25 ? 1.5 : .5)} disabled={motionQaPhase !== null}>{speed}×</button><button onClick={cycleCamera} disabled={motionQaPhase !== null}>{rtl ? 'زاوية ' + (cameraMode + 1) + '/4' : 'View ' + (cameraMode + 1) + '/4'}</button><button onClick={focusTarget} disabled={motionQaPhase !== null}>{rtl ? 'تركيز العضلات' : 'Muscle focus'}</button><button onClick={() => setMirrored(v => !v)} disabled={motionQaPhase !== null}>{rtl ? 'مرآة' : 'Mirror'}</button></div>{!compact && <div className="motion-readout"><span>{rtl ? 'الحركة الحالية' : 'CURRENT MOTION'}</span><strong>{motionHint || (rtl ? 'وضع الاستعداد' : 'Ready stance')}</strong><small>{rtl ? 'Clip فعلي: ' : 'Actual clip: '}{activeClipName || '—'} · {motionStatus === 'exercise-blend' ? (rtl ? 'مسار تمرين مضبوط · المراجعة البصرية مفتوحة' : 'controlled exercise path · visual review open') : motionStatus === 'name-match' ? (rtl ? 'مطابقة اسمية فقط · الاعتماد الحركي مفتوح' : 'name match only · motion certification open') : motionStatus === 'reference-proxy' ? (rtl ? 'مرجع إيقاع فقط · غير معتمد كشرح' : 'rhythm reference only · not certified instruction') : (rtl ? 'غير مربوط · لا يُستخدم كشرح للتمرين' : 'unmapped · not used as exercise instruction')}</small></div>}</div>
++      <div className="avatar-contract-grid">
++        <span><strong>137</strong>{rtl ? ' مفصل' : ' joints'}</span>
++        <span><strong>{state === 'ready' ? clips : '—'}</strong>{rtl ? ' حركة' : ' clips'}</span>
++        <span><strong>0</strong>{rtl ? ' fallback قديم' : ' legacy fallback'}</span>
++      </div>
++      <div className="contact-contract"><strong>{rtl ? 'تماس القدم' : 'FOOT CONTACT'}</strong><span>{contactHooks === 2 ? (rtl ? `مؤشرا قرب مرتبطان بعظمتي القدم · معاينة تلامس مؤهلة بالزمن والسرعة ${groundedFeet}/2 · تثبيت بصري فقط وليس IK أو قياس ضغط` : `2 foot-bone proximity hooks · time + velocity-qualified planted-contact preview ${groundedFeet}/2 · visual anchor only, not IK or pressure sensing`) : (rtl ? 'مرجع الأرضية فقط · لم يتم العثور على عظمتَي القدم · IK غير معتمد' : 'floor reference only · foot-bone hooks unavailable · IK unapproved')}</span></div>
++      {state === 'ready' && clips !== 195 && <div className="warning">{rtl ? 'تم تحميل الأصل، لكن عدد الحركات لا يطابق عقد 195؛ لا يتم اعتماد الحركة حتى المراجعة.' : 'Asset loaded, but clip count differs from the 195-clip contract; motion remains unapproved.'}</div>}
++    </section>
++  );
++}
+
+--- a/tests/tests.json
++++ b/tests/tests.json
+@@ -1,223 +1,223 @@
+-[
+-  {
+-    "name": "Capture deterministic Stage16A motion phases for bilingual visual evidence",
+-    "viewport": "mobile",
+-    "covers": [
+-      "query-scoped non-privileged visual fixture",
+-      "canonical Stage16A runtime render",
+-      "deterministic 0 25 50 75 percent animation phases",
+-      "camera and contact-overlay settlement",
+-      "Arabic RTL workout evidence",
+-      "English LTR workout evidence",
+-      "machine-readable active clip and mapping status",
+-      "truthful clip-count loading state"
+-    ],
+-    "description": "Makes sequential Stage16A evidence reproducible without authentication secrets or server writes while keeping motion approval fail-closed.",
+-    "steps": [
+-      "Open ?visualQa=workout-ar&motionQaPhase=0 on a 390 px viewport",
+-      "Wait until data-motion-qa-ready is true and record the active clip, mapping status and 0 percent frame",
+-      "Confirm playback, replay, speed, camera, focus and mirror controls are locked while deterministic capture mode is active",
+-      "Repeat at motionQaPhase 25, 50 and 75 and confirm each frame is stable after camera and contact overlays settle",
+-      "Repeat the same sequence for visualQa=workout-en",
+-      "Remove motionQaPhase and verify normal playback and controls resume"
+-    ],
+-    "expected": "Each supported phase freezes the same real Stage16A clip at a reproducible point, exposes a localized QA-ready badge plus machine-readable clip/status/phase attributes, waits 45 render frames for camera and overlays to settle, locks all interactive motion controls so the captured pose cannot drift, shows no fabricated 195 count before the GLB is ready, performs no privileged or persistent action, and leaves normal playback unchanged outside the explicit fixture URL."
+-  },
+-  {
+-    "name": "Stream the canonical Stage16A model without blocking first render on durable cache writes",
+-    "sanity": true,
+-    "viewport": "desktop",
+-    "covers": [
+-      "direct canonical GLB streaming",
+-      "high-priority model preload",
+-      "non-blocking cache warmup",
+-      "truthful loading and error state",
+-      "aspect-aware full-body framing",
+-      "unobstructed compact preview framing",
+-      "legacy fallback rejection"
+-    ],
+-    "description": "Verifies the first visit starts the canonical 26.3 MB GLB render path immediately and never substitutes a placeholder while durable browser caching remains best-effort.",
+-    "steps": [
+-      "Open the signed-out app with an empty Cache Storage",
+-      "Observe the Stage16A panel while the model downloads",
+-      "Wait for the canonical model to become visible",
+-      "Confirm head, hands and feet remain inside the canvas at both mobile and desktop widths",
+-      "Reload and inspect the asset provenance label"
+-    ],
+-    "expected": "Before ready, a truthful progress surface identifies canonical Stage16A and no fallback; the GLTF loader is not delayed by Cache API persistence, the real model becomes visible with head, hands and feet framed inside the canvas across mobile and desktop aspect ratios, compact public previews do not place a duplicate motion readout over the body, and a later load may truthfully report local cache readiness."
+-  },
+-  {
+-    "name": "Run an anatomical offline-capable motion-coached workout",
+-    "viewport": "mobile",
+-    "covers": [
+-      "active workout",
+-      "canonical Stage16A motion coach",
+-      "truthful offline cache provenance",
+-      "network-versus-local asset badge",
+-      "fail-closed animation mapping",
+-      "explicit conservative reference-proxy mapping",
+-      "actual clip readout",
+-      "rig-attached anatomical muscle overlay",
+-      "ground contact reference",
+-      "cinematic key rim sculpt lighting",
+-      "pelvis-reactive dynamic grounding shadow",
+-      "foot-bone contact visualization hooks",
+-      "ground-proximity reactive foot indicators",
+-      "hysteresis-stabilized near-ground contact state",
+-      "time + velocity-qualified planted-contact visual anchor preview",
+-      "floor-projected soft foot-contact shadows",
+-      "fail-closed IK certification",
+-      "play pause replay",
+-      "crossfaded replay transition",
+-      "visible transition state",
+-      "five speed steps",
+-      "four model-aware camera views",
+-      "smooth cinematic camera interpolation",
+-      "automatic exercise-sensitive opening camera framing",
+-      "exercise-sensitive muscle-focus camera",
+-      "mirror view",
+-      "current exercise readout",
+-      "session phase rail",
+-      "phase-aware work/rest timer",
+-      "pause resume skip-rest controls",
+-      "current prescription",
+-      "prescribed-set counted session progress",
+-      "current set number",
+-      "completed-set overrun prevention",
+-      "duplicate set submission guard",
+-      "server-enforced exercise order",
+-      "expected set sequence validation",
+-      "server-enforced workout prescription",
+-      "incomplete-session finish prevention",
+-      "current move index and focus hierarchy",
+-      "up-next exercise preview and readiness cue",
+-      "collapsible secondary session details",
+-      "compact in-app video reference",
+-      "dominant Stage16A viewport",
+-      "voice guide"
+-    ],
+-    "description": "Verifies the primary workout presents the canonical human as a visually instructional motion surface with exercise-sensitive muscle context attached to the animated rig.",
+-    "steps": [
+-      "Sign in and start Home Foundation",
+-      "Inspect the rig-attached red muscle overlay moving with Stage16A, foot-bone contact indicators when available, confirm their intensity reacts to foot proximity to the ground, the near-ground count remains stable rather than flickering at the threshold, and the soft floor-projected contact discs gain a visibly steadier time + velocity-qualified planted-contact anchor only after the foot remains low and sufficiently still for a short dwell, releasing on lift or fast travel without being presented as pressure sensing or IK; inspect the cinematic key/rim/sculpt lighting and confirm the soft grounding shadow subtly follows pelvis translation and tightens/fades as the body lifts",
+-      "Confirm the exercise video remains inside the app as a compact picture-in-picture reference and does not displace or shrink the dominant Stage16A coach viewport; use Pause and Replay and confirm the control briefly reports the blend transition and motion resumes through a fade rather than a hard visual jump, cycle all four model-aware camera views and confirm framing glides between viewpoints rather than cutting abruptly, use Muscle focus and confirm the camera smoothly reframes the exercise-sensitive target zone, inspect the phase rail, prominent work target timer and current set/work/rest prescription; complete the first set of a multi-set exercise and verify the same exercise remains active, its indicator advances from set 1 to set 2, progress advances by one prescribed set rather than a whole exercise, and the rest countdown plus Pause, Resume and Skip rest controls respond; verify Finish remains disabled while prescribed sets are incomplete; complete every prescribed set and verify the session advances only after the final set, Finish becomes available only at 100%, and an already-complete or off-plan exercise cannot add a server-accepted set even from stale UI; inspect the current-move focus block, move index, Up Next preview and recovery-readiness cue, confirm the secondary warm-up/exercise-order/cool-down details stay collapsed by default so Stage16A remains dominant, expand Session Details and verify the full workout order and Finish action remain available, rapidly activate Complete set twice and verify only one set is accepted while the button exposes a saving state; verify a stale or later-exercise submission is rejected until the current prescription is complete; then change speed and use Mirror"
+-    ],
+-    "expected": "Stage16A remains the only human renderer, the workout shows an exercise-sensitive muscle overlay attached to the moving Stage16A rig, truthful hysteresis-stabilized ground-proximity foot-contact visualization with a time + velocity-qualified planted-contact visual anchor preview and soft floor-projected contact discs that require a short stable dwell and release during fast travel without claiming IK or pressure sensing, cinematic sculpted lighting and a pelvis-reactive grounding shadow that follows body translation and lift without claiming force sensing, smooth camera movement including exercise-sensitive target-zone focus, a readable phase rail plus prominent phase-aware work/rest timer with pause/resume/skip-rest controls, current prescription, current-set count and set-based progress; the set action serializes rapid taps, the server accepts only the expected set number and current exercise, completing one set does not skip the remaining prescription, completing the final set advances to the next exercise, and the server rejects stale, out-of-order, off-plan or extra sets plus incomplete-session completion. The current-move index/focus hierarchy, next-exercise readiness preview, collapsed-by-default secondary details tray, full workout order and Finish action remain available without competing with the Stage16A viewport; the asset badge truthfully distinguishes network load from local cache readiness, and the UI never presents an unmapped, name-matched, or conservative reference-proxy clip as biomechanically certified instruction."
+-  },
+-  {
+-    "name": "Inspect exercise teaching detail in Arabic RTL",
+-    "viewport": "mobile",
+-    "covers": [
+-      "exercise search",
+-      "exercise detail",
+-      "canonical Stage16A exercise-detail rendering",
+-      "fail-closed biomechanical mapping",
+-      "exercise-sensitive muscle-region visualization",
+-      "truthful muscle-map semantics",
+-      "progression regression",
+-      "embedded demonstration video",
+-      "Arabic RTL",
+-      "sets reps work rest",
+-      "voice TTS"
+-    ],
+-    "description": "Verifies the exercise library remains a complete teaching surface alongside the offline motion coach.",
+-    "steps": [
+-      "Switch to Arabic and open Exercises",
+-      "Open Bodyweight Squat",
+-      "Confirm the visual muscle map highlights the lower-body focus region and explicitly states that it is illustrative rather than a diagnosis or activation measurement; then inspect the embedded canonical Stage16A surface and verify it labels name-matched or unmapped motion as uncertified/reference-only, regression/progression guidance, embedded video, prescription and voice guide"
+-    ],
+-    "expected": "The teaching detail is readable RTL, highlights an exercise-sensitive target region with truthful illustrative-only semantics, and keeps canonical Stage16A rendering, uncertified motion semantics, regression/progression, video and prescription together without presenting name matching as biomechanical certification."
+-  },
+-  {
+-    "name": "Complete persisted three-step onboarding and receive an explainable plan",
+-    "viewport": "mobile",
+-    "covers": [
+-      "three-step onboarding",
+-      "goal",
+-      "experience",
+-      "equipment",
+-      "weekly schedule",
+-      "session duration",
+-      "account persistence",
+-      "explainable plan recommendation",
+-      "Arabic RTL",
+-      "plan start"
+-    ],
+-    "description": "Verifies plan generation uses persisted user inputs and selects a matching plan instead of always falling back to the first catalog item.",
+-    "steps": [
+-      "Sign in and open Today in Arabic",
+-      "Choose Strength & muscle, Intermediate, Full gym, four days and 45 minutes across the three setup steps",
+-      "Save the training profile",
+-      "Confirm Strength Builder is recommended with goal, schedule, duration and equipment reasons",
+-      "Refresh the page and return to Today",
+-      "Start the recommended plan"
+-    ],
+-    "expected": "The saved profile survives reload, the recommendation matches the selected goal and constraints, the rationale is visible, and the recommended plan starts from the same dashboard."
+-  },
+-  {
+-    "name": "Navigate the bilingual mobile section rail",
+-    "viewport": "mobile",
+-    "covers": [
+-      "Arabic RTL tab overflow",
+-      "English LTR tab overflow",
+-      "localized navigation label",
+-      "active-page announcement",
+-      "touch scroll snapping",
+-      "keyboard focus visibility",
+-      "overflow affordance"
+-    ],
+-    "description": "Verifies the dense primary section rail remains discoverable and accessible at 390 px in both directions without changing the information architecture.",
+-    "steps": [
+-      "Open the dashboard at 390 px in Arabic and inspect the tab rail",
+-      "Swipe through the full rail in the RTL direction and activate a distant section",
+-      "Confirm the active item is announced as the current page and snaps fully into view",
+-      "Switch to English, repeat in LTR, then keyboard-focus every tab"
+-    ],
+-    "expected": "The localized navigation landmark is announced, the current page is exposed, every tab can be reached by touch and keyboard in RTL and LTR, focus remains visible, snap alignment prevents half-hidden selected items, and the compact overflow affordance does not cover labels."
+-  },
+-  {
+-    "name": "Preserve canonical avatar contract and fail closed",
+-    "viewport": "desktop",
+-    "covers": [
+-      "MPFB MakeHuman Stage16A",
+-      "137 joints",
+-      "195 clips",
+-      "legacy fallback rejection",
+-      "clip-count warning",
+-      "WebGL failure isolation",
+-      "localized fail-closed workout state"
+-    ],
+-    "description": "Verifies visual upgrades do not replace the canonical avatar lineage, hide contract mismatches, or blank the workout when WebGL cannot initialize.",
+-    "steps": [
+-      "Open Coach and a workout fixture",
+-      "Observe the canonical 3D preview in the available browser graphics environment",
+-      "Inspect the avatar contract counters, warning area, and the rest of the workout UI"
+-    ],
+-    "expected": "When WebGL is available the UI identifies and renders Stage16A with 137 joints and the loaded clip count; if WebGL or the canonical asset is unavailable, a localized explicit fail-closed state remains visible while the workout UI stays usable. Neither path substitutes a legacy humanoid, and the UI warns if a loaded clip count differs from 195."
+-  },
+-  {
+-    "name": "Present a premium bilingual sign-in surface with the real motion coach",
+-    "viewport": "desktop",
+-    "covers": [
+-      "signed-out landing",
+-      "Arabic RTL",
+-      "English switch",
+-      "complete Arabic glyph rendering",
+-      "deterministic OFL Arabic font",
+-      "canonical Stage16A public preview",
+-      "product value",
+-      "privacy boundary",
+-      "non-privileged visual QA fixture boundary",
+-      "external embed suppression in visual fixtures"
+-    ],
+-    "description": "Verifies the first impression is a complete product surface rather than an empty login card.",
+-    "steps": [
+-      "Open the app signed out",
+-      "Inspect the hero, product proof and Stage16A panel",
+-      "Confirm the Arabic headline, paragraph, sign-in button and all three proof captions render as complete words with no missing glyphs",
+-      "Switch to English and back to Arabic and confirm the document direction changes without clipping",
+-      "Open ?visualQa=workout-ar and confirm the visible visual-only fixture banner, then remove the query and activate Sign in"
+-    ],
+-    "expected": "The landing page shows complete Arabic glyphs and readable English without clipping in both directions, shows the actual canonical Stage16A renderer and clear product/safety proof, and exposes one unambiguous sign-in action. The explicit fixture labels itself non-privileged, never claims backend authentication, suppresses external video embeds while keeping Stage16A primary, and disappears when the query is removed."
+-  }
+-]
++[
++  {
++    "name": "Capture deterministic Stage16A motion phases for bilingual visual evidence",
++    "viewport": "mobile",
++    "covers": [
++      "query-scoped non-privileged visual fixture",
++      "canonical Stage16A runtime render",
++      "deterministic 0 25 50 75 percent animation phases",
++      "camera and contact-overlay settlement",
++      "Arabic RTL workout evidence",
++      "English LTR workout evidence",
++      "machine-readable active clip and mapping status",
++      "truthful clip-count loading state"
++    ],
++    "description": "Makes sequential Stage16A evidence reproducible without authentication secrets or server writes while keeping motion approval fail-closed.",
++    "steps": [
++      "Open ?visualQa=workout-ar&motionQaPhase=0 on a 390 px viewport",
++      "Wait until data-motion-qa-ready is true and record the active clip, mapping status and 0 percent frame",
++      "Confirm playback, replay, speed, camera, focus and mirror controls are locked while deterministic capture mode is active",
++      "Repeat at motionQaPhase 25, 50 and 75 and confirm each frame is stable after camera and contact overlays settle",
++      "Repeat the same sequence for visualQa=workout-en",
++      "Remove motionQaPhase and verify normal playback and controls resume"
++    ],
++    "expected": "Each supported phase freezes the real Stage16A bodyweight-squat exercise blend at a reproducible point, reports data-motion-status=exercise-blend plus the upright and crouch source clips, exposes a localized QA-ready badge and phase attributes, waits 45 rendered frames for camera and overlays to settle, locks all interactive motion controls so the captured pose cannot drift, shows no fabricated 195 count before the GLB is ready, performs no privileged or persistent action, and leaves normal playback unchanged outside the explicit fixture URL."
++  },
++  {
++    "name": "Stream the canonical Stage16A model without blocking first render on durable cache writes",
++    "sanity": true,
++    "viewport": "desktop",
++    "covers": [
++      "direct canonical GLB streaming",
++      "high-priority model preload",
++      "non-blocking cache warmup",
++      "truthful loading and error state",
++      "aspect-aware full-body framing",
++      "unobstructed compact preview framing",
++      "legacy fallback rejection"
++    ],
++    "description": "Verifies the first visit starts the canonical 26.3 MB GLB render path immediately and never substitutes a placeholder while durable browser caching remains best-effort.",
++    "steps": [
++      "Open the signed-out app with an empty Cache Storage",
++      "Observe the Stage16A panel while the model downloads",
++      "Wait for the canonical model to become visible",
++      "Confirm head, hands and feet remain inside the canvas at both mobile and desktop widths",
++      "Reload and inspect the asset provenance label"
++    ],
++    "expected": "Before ready, a truthful progress surface identifies canonical Stage16A and no fallback; the GLTF loader is not delayed by Cache API persistence, the real model becomes visible with head, hands and feet framed inside the canvas across mobile and desktop aspect ratios, compact public previews do not place a duplicate motion readout over the body, and a later load may truthfully report local cache readiness."
++  },
++  {
++    "name": "Run an anatomical offline-capable motion-coached workout",
++    "viewport": "mobile",
++    "covers": [
++      "active workout",
++      "canonical Stage16A motion coach",
++      "truthful offline cache provenance",
++      "network-versus-local asset badge",
++      "fail-closed animation mapping",
++      "explicit conservative reference-proxy mapping",
++      "actual clip readout",
++      "rig-attached anatomical muscle overlay",
++      "ground contact reference",
++      "cinematic key rim sculpt lighting",
++      "pelvis-reactive dynamic grounding shadow",
++      "foot-bone contact visualization hooks",
++      "ground-proximity reactive foot indicators",
++      "hysteresis-stabilized near-ground contact state",
++      "time + velocity-qualified planted-contact visual anchor preview",
++      "floor-projected soft foot-contact shadows",
++      "fail-closed IK certification",
++      "play pause replay",
++      "crossfaded replay transition",
++      "visible transition state",
++      "five speed steps",
++      "four model-aware camera views",
++      "smooth cinematic camera interpolation",
++      "automatic exercise-sensitive opening camera framing",
++      "exercise-sensitive muscle-focus camera",
++      "mirror view",
++      "current exercise readout",
++      "session phase rail",
++      "phase-aware work/rest timer",
++      "pause resume skip-rest controls",
++      "current prescription",
++      "prescribed-set counted session progress",
++      "current set number",
++      "completed-set overrun prevention",
++      "duplicate set submission guard",
++      "server-enforced exercise order",
++      "expected set sequence validation",
++      "server-enforced workout prescription",
++      "incomplete-session finish prevention",
++      "current move index and focus hierarchy",
++      "up-next exercise preview and readiness cue",
++      "collapsible secondary session details",
++      "compact in-app video reference",
++      "dominant Stage16A viewport",
++      "voice guide"
++    ],
++    "description": "Verifies the primary workout presents the canonical human as a visually instructional motion surface with exercise-sensitive muscle context attached to the animated rig.",
++    "steps": [
++      "Sign in and start Home Foundation",
++      "Inspect the rig-attached red muscle overlay moving with Stage16A, foot-bone contact indicators when available, confirm their intensity reacts to foot proximity to the ground, the near-ground count remains stable rather than flickering at the threshold, and the soft floor-projected contact discs gain a visibly steadier time + velocity-qualified planted-contact anchor only after the foot remains low and sufficiently still for a short dwell, releasing on lift or fast travel without being presented as pressure sensing or IK; inspect the cinematic key/rim/sculpt lighting and confirm the soft grounding shadow subtly follows pelvis translation and tightens/fades as the body lifts",
++      "Confirm the exercise video remains inside the app as a compact picture-in-picture reference and does not displace or shrink the dominant Stage16A coach viewport; use Pause and Replay and confirm the control briefly reports the blend transition and motion resumes through a fade rather than a hard visual jump, cycle all four model-aware camera views and confirm framing glides between viewpoints rather than cutting abruptly, use Muscle focus and confirm the camera smoothly reframes the exercise-sensitive target zone, inspect the phase rail, prominent work target timer and current set/work/rest prescription; complete the first set of a multi-set exercise and verify the same exercise remains active, its indicator advances from set 1 to set 2, progress advances by one prescribed set rather than a whole exercise, and the rest countdown plus Pause, Resume and Skip rest controls respond; verify Finish remains disabled while prescribed sets are incomplete; complete every prescribed set and verify the session advances only after the final set, Finish becomes available only at 100%, and an already-complete or off-plan exercise cannot add a server-accepted set even from stale UI; inspect the current-move focus block, move index, Up Next preview and recovery-readiness cue, confirm the secondary warm-up/exercise-order/cool-down details stay collapsed by default so Stage16A remains dominant, expand Session Details and verify the full workout order and Finish action remain available, rapidly activate Complete set twice and verify only one set is accepted while the button exposes a saving state; verify a stale or later-exercise submission is rejected until the current prescription is complete; then change speed and use Mirror"
++    ],
++    "expected": "Stage16A remains the only human renderer, the workout shows an exercise-sensitive muscle overlay attached to the moving Stage16A rig, truthful hysteresis-stabilized ground-proximity foot-contact visualization with a time + velocity-qualified planted-contact visual anchor preview and soft floor-projected contact discs that require a short stable dwell and release during fast travel without claiming IK or pressure sensing, cinematic sculpted lighting and a pelvis-reactive grounding shadow that follows body translation and lift without claiming force sensing, smooth camera movement including exercise-sensitive target-zone focus, a readable phase rail plus prominent phase-aware work/rest timer with pause/resume/skip-rest controls, current prescription, current-set count and set-based progress; the set action serializes rapid taps, the server accepts only the expected set number and current exercise, completing one set does not skip the remaining prescription, completing the final set advances to the next exercise, and the server rejects stale, out-of-order, off-plan or extra sets plus incomplete-session completion. The current-move index/focus hierarchy, next-exercise readiness preview, collapsed-by-default secondary details tray, full workout order and Finish action remain available without competing with the Stage16A viewport; the asset badge truthfully distinguishes network load from local cache readiness, and the UI never presents an unmapped, name-matched, or conservative reference-proxy clip as biomechanically certified instruction."
++  },
++  {
++    "name": "Inspect exercise teaching detail in Arabic RTL",
++    "viewport": "mobile",
++    "covers": [
++      "exercise search",
++      "exercise detail",
++      "canonical Stage16A exercise-detail rendering",
++      "fail-closed biomechanical mapping",
++      "exercise-sensitive muscle-region visualization",
++      "truthful muscle-map semantics",
++      "progression regression",
++      "embedded demonstration video",
++      "Arabic RTL",
++      "sets reps work rest",
++      "voice TTS"
++    ],
++    "description": "Verifies the exercise library remains a complete teaching surface alongside the offline motion coach.",
++    "steps": [
++      "Switch to Arabic and open Exercises",
++      "Open Bodyweight Squat",
++      "Confirm the visual muscle map highlights the lower-body focus region and explicitly states that it is illustrative rather than a diagnosis or activation measurement; then inspect the embedded canonical Stage16A surface and verify it labels name-matched or unmapped motion as uncertified/reference-only, regression/progression guidance, embedded video, prescription and voice guide"
++    ],
++    "expected": "The teaching detail is readable RTL, highlights an exercise-sensitive target region with truthful illustrative-only semantics, and keeps canonical Stage16A rendering, uncertified motion semantics, regression/progression, video and prescription together without presenting name matching as biomechanical certification."
++  },
++  {
++    "name": "Complete persisted three-step onboarding and receive an explainable plan",
++    "viewport": "mobile",
++    "covers": [
++      "three-step onboarding",
++      "goal",
++      "experience",
++      "equipment",
++      "weekly schedule",
++      "session duration",
++      "account persistence",
++      "explainable plan recommendation",
++      "Arabic RTL",
++      "plan start"
++    ],
++    "description": "Verifies plan generation uses persisted user inputs and selects a matching plan instead of always falling back to the first catalog item.",
++    "steps": [
++      "Sign in and open Today in Arabic",
++      "Choose Strength & muscle, Intermediate, Full gym, four days and 45 minutes across the three setup steps",
++      "Save the training profile",
++      "Confirm Strength Builder is recommended with goal, schedule, duration and equipment reasons",
++      "Refresh the page and return to Today",
++      "Start the recommended plan"
++    ],
++    "expected": "The saved profile survives reload, the recommendation matches the selected goal and constraints, the rationale is visible, and the recommended plan starts from the same dashboard."
++  },
++  {
++    "name": "Navigate the bilingual mobile section rail",
++    "viewport": "mobile",
++    "covers": [
++      "Arabic RTL tab overflow",
++      "English LTR tab overflow",
++      "localized navigation label",
++      "active-page announcement",
++      "touch scroll snapping",
++      "keyboard focus visibility",
++      "overflow affordance"
++    ],
++    "description": "Verifies the dense primary section rail remains discoverable and accessible at 390 px in both directions without changing the information architecture.",
++    "steps": [
++      "Open the dashboard at 390 px in Arabic and inspect the tab rail",
++      "Swipe through the full rail in the RTL direction and activate a distant section",
++      "Confirm the active item is announced as the current page and snaps fully into view",
++      "Switch to English, repeat in LTR, then keyboard-focus every tab"
++    ],
++    "expected": "The localized navigation landmark is announced, the current page is exposed, every tab can be reached by touch and keyboard in RTL and LTR, focus remains visible, snap alignment prevents half-hidden selected items, and the compact overflow affordance does not cover labels."
++  },
++  {
++    "name": "Preserve canonical avatar contract and fail closed",
++    "viewport": "desktop",
++    "covers": [
++      "MPFB MakeHuman Stage16A",
++      "137 joints",
++      "195 clips",
++      "legacy fallback rejection",
++      "clip-count warning",
++      "WebGL failure isolation",
++      "localized fail-closed workout state"
++    ],
++    "description": "Verifies visual upgrades do not replace the canonical avatar lineage, hide contract mismatches, or blank the workout when WebGL cannot initialize.",
++    "steps": [
++      "Open Coach and a workout fixture",
++      "Observe the canonical 3D preview in the available browser graphics environment",
++      "Inspect the avatar contract counters, warning area, and the rest of the workout UI"
++    ],
++    "expected": "When WebGL is available the UI identifies and renders Stage16A with 137 joints and the loaded clip count; if WebGL or the canonical asset is unavailable, a localized explicit fail-closed state remains visible while the workout UI stays usable. Neither path substitutes a legacy humanoid, and the UI warns if a loaded clip count differs from 195."
++  },
++  {
++    "name": "Present a premium bilingual sign-in surface with the real motion coach",
++    "viewport": "desktop",
++    "covers": [
++      "signed-out landing",
++      "Arabic RTL",
++      "English switch",
++      "complete Arabic glyph rendering",
++      "deterministic OFL Arabic font",
++      "canonical Stage16A public preview",
++      "product value",
++      "privacy boundary",
++      "non-privileged visual QA fixture boundary",
++      "external embed suppression in visual fixtures"
++    ],
++    "description": "Verifies the first impression is a complete product surface rather than an empty login card.",
++    "steps": [
++      "Open the app signed out",
++      "Inspect the hero, product proof and Stage16A panel",
++      "Confirm the Arabic headline, paragraph, sign-in button and all three proof captions render as complete words with no missing glyphs",
++      "Switch to English and back to Arabic and confirm the document direction changes without clipping",
++      "Open ?visualQa=workout-ar and confirm the visible visual-only fixture banner, then remove the query and activate Sign in"
++    ],
++    "expected": "The landing page shows complete Arabic glyphs and readable English without clipping in both directions, shows the actual canonical Stage16A renderer and clear product/safety proof, and exposes one unambiguous sign-in action. The explicit fixture labels itself non-privileged, never claims backend authentication, suppresses external video embeds while keeping Stage16A primary, and disappears when the query is removed."
++  }
++]
