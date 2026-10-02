@@ -61,36 +61,53 @@
 
     <section id="trainScreen" class="screen" aria-labelledby="trainTitle">
       <div class="section-heading">
-        <div><p class="eyebrow" data-i18n="trainEyebrow">80 تمرينًا موثقًا</p><h1 id="trainTitle" data-i18n="trainTitle">ابحث واختر وتدرّب</h1></div>
+        <div><p class="eyebrow" data-i18n="trainEyebrow">26 برنامجًا · 80 تمرينًا موثقًا</p><h1 id="trainTitle" data-i18n="trainTitle">اختر خطتك وتدرّب بوضوح</h1></div>
       </div>
-      <label class="search-box">
-        <span aria-hidden="true">⌕</span>
-        <span class="sr-only" data-i18n="searchLabel">ابحث في التمارين</span>
-        <input id="exerciseSearch" type="search" autocomplete="off" data-i18n-placeholder="searchPlaceholder" placeholder="اسم التمرين أو العضلة أو المعدة">
-        <button id="clearSearch" type="button" aria-label="مسح البحث">×</button>
-      </label>
-
-      <div id="sectionRail" class="section-rail" role="tablist" aria-label="أقسام التدريب"></div>
-
-      <article id="gymIntro" class="gym-intro">
-        <div><p class="eyebrow" data-i18n="gymLibrary">مكتبة الجيم</p><h2 data-i18n="gymTitle">ابنِ جلستك حسب جسمك ومعداتك</h2><p class="muted" data-i18n="gymHint">فلترة حقيقية للعضلة والمعدة ونمط الحركة والمستوى والهدف.</p></div>
-        <div class="gym-count"><strong id="gymCount">36</strong><span data-i18n="exercises">تمرين</span></div>
-      </article>
-
-      <button id="filterToggle" class="button secondary filter-toggle" type="button" aria-expanded="true"><span data-i18n="filters">الفلاتر</span><b id="activeFilterCount">0</b></button>
-      <div id="filterPanel" class="filter-panel">
-        <label><span data-i18n="bodyPart">جزء الجسم</span><select id="bodyFilter"></select></label>
-        <label><span data-i18n="muscle">العضلة</span><select id="muscleFilter"></select></label>
-        <label><span data-i18n="equipment">المعدة</span><select id="equipmentFilter"></select></label>
-        <label><span data-i18n="movement">نمط الحركة</span><select id="movementFilter"></select></label>
-        <label><span data-i18n="level">المستوى</span><select id="levelFilter"></select></label>
-        <label><span data-i18n="goal">الهدف</span><select id="goalFilter"></select></label>
-        <button id="resetFilters" class="text-button" type="button" data-i18n="resetFilters">إعادة ضبط الفلاتر</button>
+      <div id="trainModeTabs" class="mode-tabs" role="tablist" aria-label="نوع محتوى التدريب">
+        <button id="programsTab" type="button" role="tab" data-mode="programs" aria-controls="programsPane" aria-selected="true" tabindex="0" data-i18n="programs">البرامج</button>
+        <button id="exercisesTab" type="button" role="tab" data-mode="exercises" aria-controls="exerciseLibraryPane" aria-selected="false" tabindex="-1" data-i18n="exerciseLibrary">مكتبة التمارين</button>
       </div>
 
-      <div class="results-heading"><h2 id="resultsTitle">الجيم</h2><span id="resultsCount" class="count-badge">36</span></div>
-      <div id="exerciseGrid" class="exercise-grid" aria-live="polite"></div>
-      <div id="emptyResults" class="empty-state hidden"><span aria-hidden="true">⌕</span><h3 data-i18n="noResults">لا توجد نتائج مطابقة</h3><p class="muted" data-i18n="noResultsHint">جرّب مسح البحث أو تقليل عدد الفلاتر.</p><button class="button secondary" id="emptyReset" type="button" data-i18n="resetFilters">إعادة ضبط الفلاتر</button></div>
+      <div id="programsPane" role="tabpanel" aria-labelledby="programsTab" aria-hidden="false">
+        <article class="program-intro">
+          <div><p class="eyebrow" data-i18n="programLibrary">برامج أوفلاين منظمة</p><h2 data-i18n="programTitle">ابدأ بمسار واضح وتدرّج آمن</h2><p class="muted" data-i18n="programHint">كل برنامج يحدد الأسابيع والجلسات والتمارين وRPE وRIR ومعيار التدرج.</p></div>
+          <div class="gym-count"><strong id="programCount">26</strong><span data-i18n="programs">برنامج</span></div>
+        </article>
+        <div id="programSectionRail" class="section-rail" role="tablist" aria-label="أقسام البرامج"></div>
+        <div id="programGrid" class="program-grid" aria-live="polite"></div>
+        <div id="emptyPrograms" class="empty-state hidden"><span aria-hidden="true">◇</span><h3 data-i18n="noPrograms">لا توجد برامج في هذا القسم</h3></div>
+      </div>
+
+      <div id="exerciseLibraryPane" class="hidden" role="tabpanel" aria-labelledby="exercisesTab" aria-hidden="true">
+        <label class="search-box">
+          <span aria-hidden="true">⌕</span>
+          <span class="sr-only" data-i18n="searchLabel">ابحث في التمارين</span>
+          <input id="exerciseSearch" type="search" autocomplete="off" data-i18n-placeholder="searchPlaceholder" placeholder="اسم التمرين أو العضلة أو المعدة">
+          <button id="clearSearch" type="button" aria-label="مسح البحث">×</button>
+        </label>
+
+        <div id="sectionRail" class="section-rail" role="tablist" aria-label="أقسام التدريب"></div>
+
+        <article id="gymIntro" class="gym-intro">
+          <div><p class="eyebrow" data-i18n="gymLibrary">مكتبة الجيم</p><h2 data-i18n="gymTitle">ابنِ جلستك حسب جسمك ومعداتك</h2><p class="muted" data-i18n="gymHint">فلترة حقيقية للعضلة والمعدة ونمط الحركة والمستوى والهدف.</p></div>
+          <div class="gym-count"><strong id="gymCount">36</strong><span data-i18n="exercises">تمرين</span></div>
+        </article>
+
+        <button id="filterToggle" class="button secondary filter-toggle" type="button" aria-expanded="true"><span data-i18n="filters">الفلاتر</span><b id="activeFilterCount">0</b></button>
+        <div id="filterPanel" class="filter-panel">
+          <label><span data-i18n="bodyPart">جزء الجسم</span><select id="bodyFilter"></select></label>
+          <label><span data-i18n="muscle">العضلة</span><select id="muscleFilter"></select></label>
+          <label><span data-i18n="equipment">المعدة</span><select id="equipmentFilter"></select></label>
+          <label><span data-i18n="movement">نمط الحركة</span><select id="movementFilter"></select></label>
+          <label><span data-i18n="level">المستوى</span><select id="levelFilter"></select></label>
+          <label><span data-i18n="goal">الهدف</span><select id="goalFilter"></select></label>
+          <button id="resetFilters" class="text-button" type="button" data-i18n="resetFilters">إعادة ضبط الفلاتر</button>
+        </div>
+
+        <div class="results-heading"><h2 id="resultsTitle">الجيم</h2><span id="resultsCount" class="count-badge">36</span></div>
+        <div id="exerciseGrid" class="exercise-grid" aria-live="polite"></div>
+        <div id="emptyResults" class="empty-state hidden"><span aria-hidden="true">⌕</span><h3 data-i18n="noResults">لا توجد نتائج مطابقة</h3><p class="muted" data-i18n="noResultsHint">جرّب مسح البحث أو تقليل عدد الفلاتر.</p><button class="button secondary" id="emptyReset" type="button" data-i18n="resetFilters">إعادة ضبط الفلاتر</button></div>
+      </div>
     </section>
 
     <section id="activeWorkoutScreen" class="screen workout-screen" aria-labelledby="activeExerciseName">
@@ -163,8 +180,19 @@
     </article>
   </div>
 
+  <div id="programDetail" class="detail-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="programDetailName">
+    <button id="closeProgramDetail" class="sheet-backdrop" type="button" aria-label="إغلاق"></button>
+    <article class="sheet-panel program-sheet">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <button id="programDetailCloseButton" class="sheet-close" type="button" aria-label="إغلاق">×</button>
+      <div class="program-hero"><span id="programDetailSection" class="pill gold"></span><h1 id="programDetailName"></h1><p id="programDetailSummary" class="muted"></p><div id="programDetailMeta" class="tag-row"></div></div>
+      <div class="detail-body"><button id="useProgramBtn" class="button primary full large" type="button" data-i18n="useProgram">استخدم هذا البرنامج</button><div id="programSessions"></div><section class="detail-section"><h3 data-i18n="progression">التدرج</h3><ol id="programProgression"></ol></section><section class="detail-section safety-card"><h3 data-i18n="safety">السلامة أولًا</h3><p id="programSafety"></p></section><details class="source-details"><summary data-i18n="sourceLicense">المصدر والترخيص</summary><p id="programSource" class="small muted"></p></details></div>
+    </article>
+  </div>
+
   <div id="toast" class="toast hidden" role="status"></div>
   <script src="./data/exercises.js"></script>
+  <script src="./data/programs.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
