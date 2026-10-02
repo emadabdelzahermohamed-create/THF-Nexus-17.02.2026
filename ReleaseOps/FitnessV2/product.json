@@ -1,0 +1,58 @@
+{
+  "lane": "product-content",
+  "branch": "release/fitness-v2-rebuild-20261002",
+  "result": "PROGRESS",
+  "active_task": "P0_REPLACE_LEGACY_8_PLAN_BASELINE_WITH_STRUCTURED_BILINGUAL_PROGRAMS",
+  "source_commit": "690eb6e6e6a1f3d4e76549fc1d708fbbc7f7df6f",
+  "evidence_commit": "64f3c632d274ad2db266d705ef71a998537c99d4",
+  "completed_items": [
+    "Removed Stage16A references from the production Product HTML/CSS/JavaScript path",
+    "Replaced the 18-exercise baseline with 80 bilingual exercises in 13 populated sections",
+    "Bundled 160 hash-verified offline demonstration frames with per-item public-domain provenance",
+    "Implemented Today, Train, Progress, Health, and Profile navigation in Arabic RTL and English LTR",
+    "Implemented real Gym search and body-part, muscle, equipment, movement, level, and goal filters",
+    "Implemented exercise details, safety, regression/progression, active workout logging, rest, PR, history, and volume",
+    "Fixed workout load persistence to update on input before set completion",
+    "Runtime-verified Arabic details and workout, English search and filters, persistence after reload, and all 13 section counts/media"
+  ],
+  "catalog": {
+    "exercise_count": 80,
+    "section_count": 13,
+    "offline_demo_assets": 160,
+    "source": "yuhonas/free-exercise-db",
+    "source_commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+    "license": "Unlicense",
+    "catalog_sha256": "c9a12c066277fc362fe752624b5c0c2e4860f0f1c53c9d7fc79109f4c5779ab7"
+  },
+  "tests": {
+    "product": "6/6 PASS",
+    "source_contract_read_only": "5/5 PASS",
+    "backend_read_only": "3/3 PASS",
+    "javascript_syntax": "PASS",
+    "diff_check": "PASS",
+    "github_actions": "NO_ASSOCIATED_PR_TRIGGERED_RUN_RETURNED; CI PASS NOT CLAIMED"
+  },
+  "runtime": {
+    "provider": "AppDeploy QA + authorized cloud browser",
+    "app_id": "thf-fitness-v2-product-qa-690eb6e-lwhy3h",
+    "snapshot_version": "1790930664960",
+    "qa_timestamp": 1790930694667,
+    "status": "ready",
+    "errors": {
+      "frontend": 0,
+      "network": 0,
+      "backend": 0
+    },
+    "verified": [
+      "Arabic ar/rtl Today and details",
+      "Arabic active workout with 880 kg volume",
+      "Workout and PR persistence after full reload",
+      "English en/ltr squat search and barbell/squat filters",
+      "Positive result count and loaded representative image for all 13 sections"
+    ]
+  },
+  "evidence_path": "ReleaseOps/FitnessV2/evidence/PRODUCT_CATALOG_RUNTIME_20261002.md",
+  "blocker": "No Product code blocker. Product PASS remains open because the legacy eight-plan baseline still lacks a structured bilingual program library and extended mobile visual sampling is incomplete. Cross-lane Android, Health Connect, physical-device, signing, and Play gates are explicitly not claimed.",
+  "next_action": "Build a structured bilingual offline program library above the exercise catalog, expose Programs inside Train and Today, add deterministic progression and safety metadata, then run bilingual runtime evidence before considering Product PASS.",
+  "updated_at": "2026-10-02T13:11:32Z"
+}
