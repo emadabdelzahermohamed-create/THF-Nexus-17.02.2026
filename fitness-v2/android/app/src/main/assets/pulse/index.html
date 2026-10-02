@@ -162,6 +162,35 @@
     </section>
   </main>
 
+  <div id="onboardingDialog" class="onboarding-shell hidden" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+    <article class="onboarding-panel">
+      <header class="onboarding-header">
+        <div class="brand-lockup" aria-label="Top Hero Fit"><span class="brand-mark" aria-hidden="true">THF</span><span><b>TOP HERO FIT</b><small data-i18n="onboardingBrand">خطتك تبدأ منك</small></span></div>
+        <button id="onboardingLanguageToggle" class="icon-button" type="button" aria-label="English">EN</button>
+      </header>
+      <div class="onboarding-hero">
+        <span class="pill gold" data-i18n="onboardingStep">إعداد سريع · يعمل أوفلاين</span>
+        <h1 id="onboardingTitle" data-i18n="onboardingTitle">ابنِ خطتك الأولى</h1>
+        <p data-i18n="onboardingIntro">اختر هدفك وخبرتك وما يتوفر لديك. سنضع جلسة واضحة في «اليوم» ويمكنك تعديل كل شيء لاحقًا.</p>
+        <div class="onboarding-benefits" aria-label="مزايا الخطة">
+          <span><b aria-hidden="true">✓</b><i data-i18n="onboardingBenefitOffline">دليل مصور أوفلاين</i></span>
+          <span><b aria-hidden="true">✓</b><i data-i18n="onboardingBenefitSafe">تدرج وتعليمات سلامة</i></span>
+          <span><b aria-hidden="true">✓</b><i data-i18n="onboardingBenefitFlexible">تعديل الخطة في أي وقت</i></span>
+        </div>
+      </div>
+      <form id="onboardingForm" class="onboarding-form">
+        <div class="onboarding-fields">
+          <label><span data-i18n="goal">الهدف</span><select id="onboardingGoal" name="goal"><option value="general_fitness" data-i18n="goalFitness">لياقة عامة</option><option value="muscle_gain" data-i18n="goalMuscle">بناء العضلات</option><option value="strength" data-i18n="goalStrength">القوة</option><option value="endurance" data-i18n="goalEndurance">التحمل</option><option value="mobility" data-i18n="goalMobility">الحركة والاستشفاء</option></select></label>
+          <label><span data-i18n="level">المستوى</span><select id="onboardingLevel" name="level"><option value="beginner" data-i18n="beginner">مبتدئ</option><option value="intermediate" data-i18n="intermediate">متوسط</option><option value="expert" data-i18n="advanced">متقدم</option></select></label>
+          <label class="days-field"><span data-i18n="daysPerWeek">أيام التدريب أسبوعيًا</span><input id="onboardingDays" name="days" type="range" min="2" max="6" value="3"><output id="onboardingDaysOutput">3</output></label>
+        </div>
+        <fieldset><legend data-i18n="availableEquipment">المعدات المتاحة</legend><div id="onboardingEquipmentChoices" class="choice-grid"></div></fieldset>
+        <p class="onboarding-privacy"><span aria-hidden="true">●</span><span data-i18n="onboardingPrivacy">يُحفظ هذا الاختيار على جهازك أولًا. لا يلزم حساب للبدء.</span></p>
+        <button class="button primary large full" type="submit" data-i18n="createMyPlan">أنشئ خطتي وابدأ</button>
+      </form>
+    </article>
+  </div>
+
   <nav id="primaryNav" class="primary-nav" aria-label="التنقل الرئيسي">
     <button class="active" data-screen="todayScreen" type="button"><span aria-hidden="true">⌂</span><b data-i18n="navToday">اليوم</b></button>
     <button data-screen="trainScreen" type="button"><span aria-hidden="true">◇</span><b data-i18n="navTrain">تدريب</b></button>

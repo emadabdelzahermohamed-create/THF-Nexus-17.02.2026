@@ -23,6 +23,8 @@
   };
   Object.assign(COPY.ar, {startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة'});
   Object.assign(COPY.en, {startSession:'Start session',saveNext:'Save and continue',finishSession:'Finish and save session',exerciseOf:'Exercise {current} of {total}',nextExercise:'Exercise saved. Next: {name}',sessionComplete:'Session complete and saved.',signInSync:'Sign in to sync',syncConnected:'Sync connected',syncConnecting:'Connecting account',offlineReady:'Offline ready',syncUnavailable:'Sync not configured'});
+  Object.assign(COPY.ar, {onboardingBrand:'خطتك تبدأ منك',onboardingStep:'إعداد سريع · يعمل أوفلاين',onboardingTitle:'ابنِ خطتك الأولى',onboardingIntro:'اختر هدفك وخبرتك وما يتوفر لديك. سنضع جلسة واضحة في «اليوم» ويمكنك تعديل كل شيء لاحقًا.',onboardingBenefitOffline:'دليل مصور أوفلاين',onboardingBenefitSafe:'تدرج وتعليمات سلامة',onboardingBenefitFlexible:'تعديل الخطة في أي وقت',onboardingPrivacy:'يُحفظ هذا الاختيار على جهازك أولًا. لا يلزم حساب للبدء.',createMyPlan:'أنشئ خطتي وابدأ',planReady:'خطتك جاهزة. ابدأ من جلسة اليوم.'});
+  Object.assign(COPY.en, {onboardingBrand:'Your plan starts with you',onboardingStep:'Quick setup · works offline',onboardingTitle:'Build your first plan',onboardingIntro:'Choose your goal, experience and available equipment. We will put one clear session in Today, and you can change everything later.',onboardingBenefitOffline:'Offline visual guidance',onboardingBenefitSafe:'Safe progression and cues',onboardingBenefitFlexible:'Change your plan anytime',onboardingPrivacy:'Your choices are saved on this device first. No account is required to begin.',createMyPlan:'Create my plan and start',planReady:'Your plan is ready. Start with Today.'});
 
   const SECTION_ORDER = ['gym','home','running','cycling','football','swimming','yoga','calisthenics','boxing','hiit','mobility','recovery','team_sports'];
   const state = {
@@ -37,7 +39,8 @@
     restRemaining: 0,
     restTick: null,
     demoFrame: 0,
-    clearArmedUntil: 0
+    clearArmedUntil: 0,
+    onboardingDraft: null
   };
   const t = key => COPY[state.lang][key] || COPY.en[key] || key;
 
@@ -62,10 +65,12 @@
     document.documentElement.lang = state.lang; document.documentElement.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
     $('languageToggle').textContent = state.lang === 'ar' ? 'EN' : 'ع';
     $('languageToggle').setAttribute('aria-label', state.lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية');
+    $('onboardingLanguageToggle').textContent = state.lang === 'ar' ? 'EN' : 'ع';
+    $('onboardingLanguageToggle').setAttribute('aria-label', state.lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية');
     document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(node => { node.placeholder = t(node.dataset.i18nPlaceholder); });
     $('primaryNav').setAttribute('aria-label', state.lang === 'ar' ? 'التنقل الرئيسي' : 'Primary navigation');
-    renderTrainMode(); renderSections(); renderProgramSections(); populateFilters(); renderExercises(); renderPrograms(); renderToday(); renderProgress(); renderProfile(); renderNativeStatus();
+    renderTrainMode(); renderSections(); renderProgramSections(); populateFilters(); renderExercises(); renderPrograms(); renderToday(); renderProgress(); renderProfile(); renderOnboarding(); renderNativeStatus();
     if (state.selected) renderDetail(state.selected);
     if (state.selectedProgram) renderProgramDetail(state.selectedProgram);
     if (state.active) renderActiveWorkout();
@@ -326,11 +331,26 @@
   }
   function renderHealthSnapshot(data){$('healthSteps').textContent=Number(data.steps||0).toLocaleString(locale());$('healthSessions').textContent=Number(data.exerciseSessions||0).toLocaleString(locale());$('healthDistance').textContent=(Number(data.distanceMeters||0)/1000).toFixed(1);$('healthCalories').textContent=Math.round(Number(data.activeCaloriesKcal||0)).toLocaleString(locale());$('healthSources').innerHTML=(data.origins||[]).map(origin=>`<span class="tag">${escapeHtml(origin)}</span>`).join('');$('healthEmpty').textContent=(data.steps||data.exerciseSessions||data.distanceMeters||data.activeCaloriesKcal)?(state.lang==='ar'?'تم تحديث ملخص آخر 7 أيام.':'The last 7 days are up to date.'):(state.lang==='ar'?'الاتصال ناجح ولا توجد بيانات في آخر 7 أيام.':'Connected; no data in the last 7 days.');renderHealthStatus({...currentHealth(),lastSync:data.lastSync});}
 
-  function renderProfile(){const profile=parse(store.getItem('pulse.v2.profile'),{goal:'general_fitness',level:'beginner',days:3,equipment:['body only']});$('profileGoal').value=profile.goal;$('profileLevel').value=profile.level;$('profileDays').value=profile.days;$('profileDaysOutput').textContent=profile.days;const equipment=[['body only',state.lang==='ar'?'وزن الجسم':'Bodyweight'],['dumbbell',state.lang==='ar'?'دمبل':'Dumbbells'],['barbell',state.lang==='ar'?'بار وأوزان':'Barbell'],['cable',state.lang==='ar'?'كيبل':'Cable'],['machine',state.lang==='ar'?'أجهزة':'Machines'],['kettlebells',state.lang==='ar'?'كيتل بيل':'Kettlebells'],['bands',state.lang==='ar'?'مطاط مقاومة':'Bands']];$('equipmentChoices').innerHTML=equipment.map(([id,label])=>`<label class="choice"><input type="checkbox" value="${escapeHtml(id)}" ${profile.equipment.includes(id)?'checked':''}><span>${escapeHtml(label)}</span></label>`).join('');}
+  function defaultProfile(){return{goal:'general_fitness',level:'beginner',days:3,equipment:['body only']};}
+  function equipmentOptions(){return[['body only',state.lang==='ar'?'وزن الجسم':'Bodyweight'],['dumbbell',state.lang==='ar'?'دمبل':'Dumbbells'],['barbell',state.lang==='ar'?'بار وأوزان':'Barbell'],['cable',state.lang==='ar'?'كيبل':'Cable'],['machine',state.lang==='ar'?'أجهزة':'Machines'],['kettlebells',state.lang==='ar'?'كيتل بيل':'Kettlebells'],['bands',state.lang==='ar'?'مطاط مقاومة':'Bands']];}
+  function renderEquipmentChoices(node,selected){node.innerHTML=equipmentOptions().map(([id,label])=>`<label class="choice"><input type="checkbox" value="${escapeHtml(id)}" ${selected.includes(id)?'checked':''}><span>${escapeHtml(label)}</span></label>`).join('');}
+  function renderProfile(){const profile=parse(store.getItem('pulse.v2.profile'),defaultProfile());$('profileGoal').value=profile.goal;$('profileLevel').value=profile.level;$('profileDays').value=profile.days;$('profileDaysOutput').textContent=profile.days;renderEquipmentChoices($('equipmentChoices'),profile.equipment);}
   function saveProfile(event){event.preventDefault();const profile={goal:$('profileGoal').value,level:$('profileLevel').value,days:Number($('profileDays').value),equipment:[...$('equipmentChoices').querySelectorAll('input:checked')].map(input=>input.value)};if(!profile.equipment.length)profile.equipment=['body only'];store.setItem('pulse.v2.profile',JSON.stringify(profile));store.removeItem('pulse.v2.program');$('profileSaved').classList.remove('hidden');setTimeout(()=>$('profileSaved').classList.add('hidden'),2500);renderToday();}
 
+  function readOnboardingDraft(){const draft=state.onboardingDraft||parse(store.getItem('pulse.v2.profile'),defaultProfile());return{...defaultProfile(),...draft,equipment:Array.isArray(draft.equipment)&&draft.equipment.length?draft.equipment:['body only']};}
+  function renderOnboarding(){const draft=readOnboardingDraft();$('onboardingGoal').value=draft.goal;$('onboardingLevel').value=draft.level;$('onboardingDays').value=draft.days;$('onboardingDaysOutput').textContent=draft.days;renderEquipmentChoices($('onboardingEquipmentChoices'),draft.equipment);}
+  function captureOnboardingDraft(){state.onboardingDraft={goal:$('onboardingGoal').value,level:$('onboardingLevel').value,days:Number($('onboardingDays').value),equipment:[...$('onboardingEquipmentChoices').querySelectorAll('input:checked')].map(input=>input.value)};$('onboardingDaysOutput').textContent=state.onboardingDraft.days;}
+  function openOnboarding(){renderOnboarding();$('onboardingDialog').classList.remove('hidden');document.body.classList.add('onboarding-open');setTimeout(()=>$('onboardingGoal').focus(),0);}
+  function closeOnboarding(){$('onboardingDialog').classList.add('hidden');document.body.classList.remove('onboarding-open');state.onboardingDraft=null;}
+  function completeOnboarding(event){event.preventDefault();captureOnboardingDraft();const profile=readOnboardingDraft();if(!profile.equipment.length)profile.equipment=['body only'];store.setItem('pulse.v2.profile',JSON.stringify(profile));store.removeItem('pulse.v2.program');closeOnboarding();renderProfile();renderToday();showScreen('todayScreen');toast(t('planReady'));}
+  function toggleLanguage(){state.lang=state.lang==='ar'?'en':'ar';store.setItem('pulse.v2.lang',state.lang);applyLanguage();}
+
   function bind(){
-    $('languageToggle').addEventListener('click',()=>{state.lang=state.lang==='ar'?'en':'ar';store.setItem('pulse.v2.lang',state.lang);applyLanguage();});
+    $('languageToggle').addEventListener('click',toggleLanguage);
+    $('onboardingLanguageToggle').addEventListener('click',()=>{captureOnboardingDraft();toggleLanguage();});
+    $('onboardingForm').addEventListener('submit',completeOnboarding);
+    ['onboardingGoal','onboardingLevel','onboardingDays'].forEach(id=>$(id).addEventListener('input',captureOnboardingDraft));
+    $('onboardingEquipmentChoices').addEventListener('change',captureOnboardingDraft);
     document.querySelectorAll('#primaryNav button').forEach(button=>button.addEventListener('click',()=>showScreen(button.dataset.screen)));
     document.querySelectorAll('#trainModeTabs button').forEach(button=>button.addEventListener('click',()=>{state.trainMode=button.dataset.mode;store.setItem('pulse.v2.trainMode',state.trainMode);renderTrainMode();}));
     $('exerciseSearch').addEventListener('input',renderExercises);$('clearSearch').addEventListener('click',()=>{$('exerciseSearch').value='';renderExercises();});
@@ -351,6 +371,8 @@
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
   }
 
+  const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
   bind(); applyLanguage(); renderHealthStatus();
+  if (shouldOnboard) openOnboarding();
   if (state.active && activeExercise()) { renderActiveWorkout(); showScreen('activeWorkoutScreen', false); }
 })();

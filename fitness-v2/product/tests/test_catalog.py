@@ -173,6 +173,28 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertIn('aria-controls="programsPane"', html)
         self.assertIn('aria-controls="exerciseLibraryPane"', html)
 
+    def test_first_run_onboarding_creates_the_training_profile(self):
+        html = (PULSE / "index.html").read_text()
+        script = (PULSE / "app.js").read_text()
+        styles = (PULSE / "styles.css").read_text()
+        for marker in (
+            'id="onboardingDialog"', 'id="onboardingForm"', 'id="onboardingGoal"',
+            'id="onboardingLevel"', 'id="onboardingDays"',
+            'id="onboardingEquipmentChoices"', 'id="onboardingLanguageToggle"',
+        ):
+            self.assertIn(marker, html)
+        for handler in (
+            "renderOnboarding", "captureOnboardingDraft", "openOnboarding",
+            "completeOnboarding", "toggleLanguage",
+        ):
+            self.assertIn(f"function {handler}", script)
+        self.assertIn("!store.getItem('pulse.v2.profile') && !state.active", script)
+        self.assertIn("store.setItem('pulse.v2.profile'", script)
+        self.assertIn("showScreen('todayScreen')", script)
+        self.assertNotIn('id="skipOnboarding"', html)
+        self.assertIn(".onboarding-shell", styles)
+        self.assertIn(".onboarding-benefits", styles)
+
 
 if __name__ == "__main__":
     unittest.main()
