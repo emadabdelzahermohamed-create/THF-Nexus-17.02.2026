@@ -1,0 +1,82 @@
+{
+  "lane": "android-health-release",
+  "branch": "release/fitness-v2-rebuild-20261002",
+  "result": "PROGRESS",
+  "active_task": "P0_SIGN_BIND_INSTALL_AND_PHYSICALLY_VERIFY_VERSION_51002",
+  "candidate_sha": "0aa8336c18e09037457d6e30745fedaffa47d581",
+  "identity": {
+    "package_id": "com.topherofit.thf.pulse",
+    "version_code": 51002,
+    "version_name_debug": "5.0.0-v2-alpha2-debug",
+    "min_sdk": 26,
+    "compile_sdk": 36,
+    "target_sdk": 36,
+    "architecture": "BYTECODE_ONLY_NO_NATIVE_ABI_SPLIT"
+  },
+  "health_connect": {
+    "source_contract": "PASS",
+    "screen_discoverable": true,
+    "pre_permission_rationale_localized": true,
+    "connection_status_last_sync_revoke_empty_error_states": true,
+    "stable_client_record_ids_and_versioned_queue": true,
+    "read_permissions": [
+      "android.permission.health.READ_STEPS",
+      "android.permission.health.READ_EXERCISE",
+      "android.permission.health.READ_DISTANCE",
+      "android.permission.health.READ_ACTIVE_CALORIES_BURNED"
+    ],
+    "write_permissions": [
+      "android.permission.health.WRITE_EXERCISE"
+    ],
+    "heart_rate_requested": false,
+    "physical_device": "NOT_RUN",
+    "samsung_origin": "NOT_RUN"
+  },
+  "package_gate": {
+    "workflow_run_id": 37050254091,
+    "workflow_run_number": 9,
+    "workflow_url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/37050254091",
+    "source_backend_job_id": 110981592612,
+    "android_job_id": 110981592351,
+    "result": "PASS",
+    "artifact_id": 11246003209,
+    "artifact_name": "fitness-v2-51002-package-gate",
+    "artifact_digest": "sha256:2f789efae1bd7fecbb79ee3b7bf4def5193e8d673ca861377aff7769ca008fda",
+    "artifact_expires_at": "2026-10-16T18:53:53Z",
+    "debug_apk_sha256": "168f4e269176fbfe07c4e13bb7aad0e394face57776ec6f6e5c06e712b5d74da",
+    "release_aab_sha256": "86d7a54e4d3ba358f6a38fa82a2b3d8e82afc091d0e1a229257cac67ca8696d7",
+    "debug_apk_bytes": 14772846,
+    "release_aab_bytes": 13629532,
+    "android_unit_tests": "4/4 PASS",
+    "source_contract_tests": "8/8 PASS",
+    "backend_tests": "8/8 PASS",
+    "lint": "0 errors, 2 GradleDependency warnings",
+    "cleartext": false,
+    "backup_and_device_transfer": "ALL_APP_DATA_EXCLUDED",
+    "offline_exercises": 80,
+    "offline_programs": 26,
+    "offline_demo_images": 160,
+    "stage16a_entries": 0,
+    "debuggable": true,
+    "production_signing": "NOT_RUN_MISSING_ALL_FOUR_EXISTING_SECRETS",
+    "backend_endpoint": "NOT_CONFIGURED"
+  },
+  "completed_items": [
+    "Built API 36 debug APK and release AAB from the exact candidate SHA",
+    "Verified package identity, versionCode, compile/target SDK, launch activity and least-privilege Health permissions",
+    "Bundled 80 exercises, 26 programs and 160 offline demo images with no Stage16A payload",
+    "Added offline/version-aware local history, Health and backend queues with corrupt-state recovery",
+    "Added resume-time permission refresh and pending Health/backend queue handling",
+    "Blocked WebView network loads and cleartext traffic",
+    "Added Arabic and English Health permission rationale resources and fail-closed backup/device-transfer rules",
+    "Reduced Android lint from 20 warnings to two dependency-update notices"
+  ],
+  "blockers": [
+    "The exact release AAB is unsigned because all four existing upload-signing secrets were unavailable to the workflow.",
+    "The persistent V2 backend endpoint is not deployed or bound into this candidate.",
+    "No Android emulator or physical phone was available, so install, launch, background/resume, offline workout and Health Connect runtime gates remain open.",
+    "Samsung Health-originated activity and Play Internal were not tested for versionCode 51002."
+  ],
+  "next_action": "Deploy and bind the authenticated V2 backend, make the existing upload-signing secrets available to the protected workflow, rebuild one signed versionCode 51002 AAB, then run exact-artifact install/core-workout/offline/background-resume/Health Connect/Samsung-origin QA on a physical Android phone before Play Internal.",
+  "updated_at": "2026-10-02T18:54:58Z"
+}

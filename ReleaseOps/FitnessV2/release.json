@@ -1,0 +1,44 @@
+{
+  "project": "Top Hero Fit Fitness V2 Rebuild",
+  "branch": "release/fitness-v2-rebuild-20261002",
+  "run_result": "PROGRESS",
+  "phase": "ANDROID_PACKAGE_GATE_PASS_UNSIGNED",
+  "canonical_candidate_sha": "0aa8336c18e09037457d6e30745fedaffa47d581",
+  "candidate_version_code": 51002,
+  "candidate_package_id": "com.topherofit.thf.pulse",
+  "workflow_run_id": 37050254091,
+  "workflow_run_number": 9,
+  "artifact_id": 11246003209,
+  "artifact_digest": "sha256:2f789efae1bd7fecbb79ee3b7bf4def5193e8d673ca861377aff7769ca008fda",
+  "gates": {
+    "backend_unit_security": "PASS_SOURCE_ONLY",
+    "android_source_contract": "PASS",
+    "android_build_package": "PASS",
+    "android_lint": "PASS_0_ERRORS_2_DEPENDENCY_WARNINGS",
+    "offline_payload": "PASS_80_EXERCISES_26_PROGRAMS_160_IMAGES_NO_STAGE16A",
+    "backend_live_https_auth": "BLOCKED_NOT_DEPLOYED",
+    "production_signing": "BLOCKED_MISSING_EXISTING_UPLOAD_SECRETS",
+    "emulator_runtime": "NOT_RUN_NO_EMULATOR",
+    "physical_phone": "NOT_RUN",
+    "health_connect_physical": "NOT_RUN",
+    "samsung_health_origin": "NOT_RUN",
+    "play_internal_51002": "NOT_RUN",
+    "exact_play_candidate_verification": "NOT_RUN"
+  },
+  "product_lane_read_only": {
+    "state": "PROGRESS",
+    "source_state_commit": "64f3c632d274ad2db266d705ef71a998537c99d4",
+    "packaged_exercises": 80,
+    "packaged_programs": 26,
+    "packaged_offline_demo_images": 160
+  },
+  "blockers": [
+    "Persistent authenticated V2 backend deployment and Android endpoint binding remain open.",
+    "AppDeploy backend deployment was blocked by the daily free-tier credit minimum until 2026-10-03T00:00:00Z.",
+    "The existing four upload-signing secrets were not available to GitHub Actions, so the AAB is not a production candidate.",
+    "Physical phone, Health Connect, Samsung-origin and Play Internal evidence does not exist for versionCode 51002."
+  ],
+  "next_action": "Retry the authorized free AppDeploy backend deployment after its UTC reset, validate authenticated V2 JSON contracts, bind the exact Android build, then sign and physically test versionCode 51002 before any Play upload.",
+  "evidence_path": "ReleaseOps/FitnessV2/evidence/PLATFORM_HEALTH_ANDROID_20261002.md",
+  "updated_at": "2026-10-02T18:54:58Z"
+}

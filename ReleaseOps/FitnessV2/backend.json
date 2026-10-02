@@ -1,0 +1,45 @@
+{
+  "lane": "backend-data-integration",
+  "branch": "release/fitness-v2-rebuild-20261002",
+  "result": "PROGRESS",
+  "active_task": "P0_DEPLOY_AUTHENTICATED_V2_API_AND_BIND_EXACT_ANDROID_CANDIDATE",
+  "candidate_sha": "0aa8336c18e09037457d6e30745fedaffa47d581",
+  "backend_source_checkpoint": "ea99b454a8ebefd0ca6cd1d34c16c05ac2bfd21d",
+  "completed_items": [
+    "Added a fail-closed HTTPS WSGI API with short-lived issuer/audience-bound HS256 bearer verification, rotated key ids, expiry and session revocation checks",
+    "Added authenticated per-account workout history and progress summary contracts",
+    "Added stable client record versioning, idempotency conflict detection, provenance validation and server-side deduplication",
+    "Added sets, reps, load, rest, RPE, RIR, personal-record and volume persistence",
+    "Added server-authoritative competition claim comparison against stored workout facts",
+    "Rejected client-supplied account identity and rejected unknown workout fields",
+    "Documented the production runtime variables with no development key or insecure endpoint fallback"
+  ],
+  "tests": {
+    "local_backend_unit_security": "8/8 PASS",
+    "local_python_compile": "PASS",
+    "local_secret_placeholder_cleartext_scan": "PASS_NO_MATCHES",
+    "github_workflow": "PASS",
+    "github_run_id": 37050254091,
+    "github_run_number": 9,
+    "github_job_id": 110981592612,
+    "github_job_name": "source-and-backend"
+  },
+  "runtime": {
+    "deployed": false,
+    "production_endpoint": null,
+    "android_binding": "NOT_CONFIGURED",
+    "appdeploy_app_id": "thf-fitness-pulse-ul26f1",
+    "appdeploy_live_status": "READY",
+    "appdeploy_v2_contract_probe": "FAIL_HTML_SPA_RESPONSE_NOT_JSON_API",
+    "appdeploy_deploy_attempt": "BLOCKED_DAILY_FREE_TIER_CREDIT_LIMIT",
+    "appdeploy_retry_after": "2026-10-03T00:00:00Z"
+  },
+  "blockers": [
+    "The V2 API source is tested but is not deployed to a persistent HTTPS runtime, so no authenticated production sync claim is made.",
+    "The existing AppDeploy origin returns the SPA HTML for /v2/workouts:sync and cannot be bound as the V2 API endpoint.",
+    "AppDeploy paused new deployments because fewer than 14 free daily credits remained; its reported reset is 2026-10-03T00:00:00Z.",
+    "Production auth issuer, audience, key ring and durable database configuration have not been provisioned to a V2 runtime."
+  ],
+  "next_action": "After the free deployment quota resets, deploy a backend-only V2 route on the existing authorized persistent runtime (or another authorized persistent HTTPS host), configure its production auth and durable store, run authenticated sync/history/progress/competition probes, then set THF_FITNESS_V2_BASE_URL and rebuild the exact Android candidate.",
+  "updated_at": "2026-10-02T18:54:58Z"
+}
