@@ -17,7 +17,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("compileSdk 36", gradle)
         self.assertIn("targetSdk 36", gradle)
         version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
-        self.assertGreaterEqual(version, 51001)
+        self.assertGreaterEqual(version, 51002)
 
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
@@ -67,6 +67,35 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertTrue(any(item["name"] == "Idempotency-Key" and item["required"] for item in sync["parameters"]))
         required = set(contract["components"]["schemas"]["WorkoutSession"]["required"])
         self.assertTrue({"clientRecordId", "clientRecordVersion", "source", "sets"} <= required)
+        backend_source = (ROOT / "fitness-v2" / "backend" / "api.py").read_text()
+        auth_source = (ROOT / "fitness-v2" / "backend" / "auth.py").read_text()
+        for marker in (
+            "require_https", "HTTP_IDEMPOTENCY_KEY", "revoked_sessions",
+            "HmacAccessTokenVerifier", "THF_AUTH_KEYS_JSON",
+        ):
+            self.assertIn(marker, backend_source + auth_source)
+        self.assertNotIn('keys={"development"', backend_source + auth_source)
+
+    def test_android_local_state_recovers_from_corrupt_preferences(self):
+        source = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        self.assertIn("private fun jsonArrayPreference", source)
+        self.assertIn("prefs.edit().remove(key).apply()", source)
+        self.assertNotIn('JSONArray(prefs.getString(PENDING_HEALTH', source)
+        self.assertNotIn('JSONArray(prefs.getString(SUMMARIES', source)
+
+    def test_android_backend_sync_is_https_queued_and_session_scoped(self):
+        source = "\n".join(
+            p.read_text()
+            for p in (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse").glob("*.kt")
+        )
+        for marker in (
+            "HttpsURLConnection", "Idempotency-Key", '"THF_ANDROID"',
+            '"com.topherofit.thf.pulse"', "pending_backend_workouts",
+            "setBackendAccessToken", "backendAccessToken = null",
+        ):
+            self.assertIn(marker, source)
+        self.assertIn("blockNetworkLoads = true", source)
+        self.assertNotIn("putString(\"backend_access_token\"", source)
 
 
 if __name__ == "__main__":

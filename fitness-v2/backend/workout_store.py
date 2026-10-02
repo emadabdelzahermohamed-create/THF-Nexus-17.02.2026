@@ -9,12 +9,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import math
 import sqlite3
 from typing import Iterable
 
 
 class WorkoutValidationError(ValueError):
     pass
+
+
+class WorkoutConflictError(ValueError):
+    """The same stable record/version was reused for different workout facts."""
 
 
 @dataclass(frozen=True)
@@ -97,37 +102,67 @@ class WorkoutStore:
     def validate(cls, user_id: str, session: WorkoutSession) -> None:
         if not user_id or len(user_id) > 128:
             raise WorkoutValidationError("verified user_id is required")
-        if not 8 <= len(session.client_record_id) <= 120:
+        if not 8 <= len(session.client_record_id) <= 120 or any(character.isspace() for character in session.client_record_id):
             raise WorkoutValidationError("invalid client_record_id")
         if session.client_record_version < 1:
             raise WorkoutValidationError("client_record_version must be positive")
         if session.source not in {"THF_ANDROID", "THF_WEB", "HEALTH_CONNECT"}:
             raise WorkoutValidationError("unsupported provenance source")
-        if cls._parse_time(session.ended_at) <= cls._parse_time(session.started_at):
+        if not isinstance(session.sport, str) or not 1 <= len(session.sport) <= 80:
+            raise WorkoutValidationError("invalid sport")
+        if session.exercise_session_type < 0:
+            raise WorkoutValidationError("invalid exercise_session_type")
+        if session.provenance_package is not None and not 1 <= len(session.provenance_package) <= 200:
+            raise WorkoutValidationError("invalid provenance_package")
+        if session.source == "THF_ANDROID" and session.provenance_package != "com.topherofit.thf.pulse":
+            raise WorkoutValidationError("Android provenance package does not match THF Fitness")
+        started_at = cls._parse_time(session.started_at)
+        ended_at = cls._parse_time(session.ended_at)
+        if ended_at <= started_at:
             raise WorkoutValidationError("ended_at must be after started_at")
+        if (ended_at - started_at).total_seconds() > 48 * 60 * 60:
+            raise WorkoutValidationError("workout duration exceeds 48 hours")
+        if len(session.sets) > 1000:
+            raise WorkoutValidationError("too many workout sets")
         seen: set[tuple[str, int]] = set()
         for item in session.sets:
             key = (item.exercise_id, item.ordinal)
             if key in seen:
                 raise WorkoutValidationError("duplicate exercise set ordinal")
             seen.add(key)
-            if not item.exercise_id or item.ordinal < 1 or item.reps < 0 or item.load_kg < 0 or item.rest_seconds < 0:
+            if (
+                not 1 <= len(item.exercise_id) <= 120
+                or item.ordinal < 1
+                or item.reps < 0
+                or item.reps > 10000
+                or not math.isfinite(item.load_kg)
+                or item.load_kg < 0
+                or item.load_kg > 100000
+                or item.rest_seconds < 0
+                or item.rest_seconds > 86400
+            ):
                 raise WorkoutValidationError("invalid set values")
             if item.set_type not in {"warmup", "working", "drop", "failure"}:
                 raise WorkoutValidationError("invalid set type")
-            if item.rpe is not None and not 0 <= item.rpe <= 10:
+            if item.rpe is not None and (not math.isfinite(item.rpe) or not 0 <= item.rpe <= 10):
                 raise WorkoutValidationError("RPE must be between 0 and 10")
-            if item.rir is not None and not 0 <= item.rir <= 10:
+            if item.rir is not None and (not math.isfinite(item.rir) or not 0 <= item.rir <= 10):
                 raise WorkoutValidationError("RIR must be between 0 and 10")
 
     def sync(self, user_id: str, session: WorkoutSession) -> str:
         """Insert or version-upsert a session; return inserted/updated/duplicate/stale."""
         self.validate(user_id, session)
         existing = self.db.execute(
-            "SELECT id, client_record_version FROM workout_sessions WHERE user_id=? AND client_record_id=?",
+            """SELECT id, client_record_version, started_at, ended_at, sport,
+                      exercise_session_type, source, provenance_package
+                 FROM workout_sessions WHERE user_id=? AND client_record_id=?""",
             (user_id, session.client_record_id),
         ).fetchone()
         if existing and existing["client_record_version"] == session.client_record_version:
+            if not self._matches_existing(existing, session):
+                raise WorkoutConflictError(
+                    "client_record_id/version already exists with different workout facts"
+                )
             return "duplicate"
         if existing and existing["client_record_version"] > session.client_record_version:
             return "stale"
@@ -172,14 +207,98 @@ class WorkoutStore:
             )
         return outcome
 
+    def _matches_existing(self, existing: sqlite3.Row, session: WorkoutSession) -> bool:
+        if (
+            existing["started_at"] != session.started_at
+            or existing["ended_at"] != session.ended_at
+            or existing["sport"] != session.sport
+            or existing["exercise_session_type"] != session.exercise_session_type
+            or existing["source"] != session.source
+            or existing["provenance_package"] != session.provenance_package
+        ):
+            return False
+        stored = self.db.execute(
+            """SELECT exercise_id, ordinal, set_type, reps, load_kg, rest_seconds, rpe, rir
+                 FROM workout_sets WHERE session_id=? ORDER BY exercise_id, ordinal""",
+            (existing["id"],),
+        ).fetchall()
+        expected = sorted(
+            (
+                item.exercise_id,
+                item.ordinal,
+                item.set_type,
+                item.reps,
+                item.load_kg,
+                item.rest_seconds,
+                item.rpe,
+                item.rir,
+            )
+            for item in session.sets
+        )
+        actual = [
+            (
+                item["exercise_id"],
+                item["ordinal"],
+                item["set_type"],
+                item["reps"],
+                item["load_kg"],
+                item["rest_seconds"],
+                item["rpe"],
+                item["rir"],
+            )
+            for item in stored
+        ]
+        return actual == expected
+
     def history(self, user_id: str, limit: int = 50) -> list[dict]:
-        rows = self.db.execute(
-            """SELECT s.*, COALESCE(SUM(CASE WHEN ws.set_type != 'warmup' THEN ws.reps * ws.load_kg ELSE 0 END), 0) AS volume_kg
-               FROM workout_sessions s LEFT JOIN workout_sets ws ON ws.session_id=s.id
-               WHERE s.user_id=? GROUP BY s.id ORDER BY s.started_at DESC LIMIT ?""",
+        sessions = self.db.execute(
+            """SELECT id, client_record_id, client_record_version, started_at, ended_at,
+                      sport, exercise_session_type, source, provenance_package, received_at
+               FROM workout_sessions WHERE user_id=? ORDER BY started_at DESC LIMIT ?""",
             (user_id, min(max(limit, 1), 200)),
         ).fetchall()
-        return [dict(row) for row in rows]
+        if not sessions:
+            return []
+        placeholders = ",".join("?" for _ in sessions)
+        set_rows = self.db.execute(
+            f"""SELECT session_id, exercise_id, ordinal, set_type, reps, load_kg,
+                       rest_seconds, rpe, rir FROM workout_sets
+                 WHERE session_id IN ({placeholders}) ORDER BY session_id, exercise_id, ordinal""",
+            tuple(row["id"] for row in sessions),
+        ).fetchall()
+        grouped: dict[int, list[dict]] = {row["id"]: [] for row in sessions}
+        for item in set_rows:
+            grouped[item["session_id"]].append(
+                {
+                    "exerciseId": item["exercise_id"],
+                    "ordinal": item["ordinal"],
+                    "setType": item["set_type"],
+                    "reps": item["reps"],
+                    "loadKg": item["load_kg"],
+                    "restSeconds": item["rest_seconds"],
+                    "rpe": item["rpe"],
+                    "rir": item["rir"],
+                }
+            )
+        result = []
+        for row in sessions:
+            sets = grouped[row["id"]]
+            result.append(
+                {
+                    "clientRecordId": row["client_record_id"],
+                    "clientRecordVersion": row["client_record_version"],
+                    "startedAt": row["started_at"],
+                    "endedAt": row["ended_at"],
+                    "sport": row["sport"],
+                    "exerciseSessionType": row["exercise_session_type"],
+                    "source": row["source"],
+                    "provenancePackage": row["provenance_package"],
+                    "receivedAt": row["received_at"],
+                    "volumeKg": sum(item["reps"] * item["loadKg"] for item in sets if item["setType"] != "warmup"),
+                    "sets": sets,
+                }
+            )
+        return result
 
     def progress_summary(self, user_id: str) -> dict:
         totals = self.db.execute(
@@ -196,11 +315,16 @@ class WorkoutStore:
         ).fetchall()
         return {
             "workouts": totals["workouts"],
-            "volume_kg": totals["volume_kg"],
-            "personal_records": [dict(row) for row in prs],
+            "volumeKg": totals["volume_kg"],
+            "personalRecords": [
+                {"exerciseId": row["exercise_id"], "maxLoadKg": row["max_load_kg"]}
+                for row in prs
+            ],
         }
 
     def verify_competition_claim(self, user_id: str, client_record_id: str, claimed_volume_kg: float) -> dict:
+        if not 8 <= len(client_record_id) <= 120 or not math.isfinite(claimed_volume_kg) or claimed_volume_kg < 0:
+            raise WorkoutValidationError("invalid competition claim")
         row = self.db.execute(
             """SELECT COALESCE(SUM(CASE WHEN ws.set_type != 'warmup' THEN ws.reps * ws.load_kg ELSE 0 END), 0) AS volume_kg
                FROM workout_sessions s LEFT JOIN workout_sets ws ON ws.session_id=s.id
@@ -211,5 +335,10 @@ class WorkoutStore:
             return {"accepted": False, "reason": "WORKOUT_NOT_FOUND"}
         authoritative = float(row["volume_kg"])
         if abs(authoritative - float(claimed_volume_kg)) > 0.01:
-            return {"accepted": False, "reason": "CLAIM_MISMATCH", "authoritative_volume_kg": authoritative}
-        return {"accepted": True, "reason": "VERIFIED", "authoritative_volume_kg": authoritative}
+            return {"accepted": False, "reason": "CLAIM_MISMATCH", "authoritativeVolumeKg": authoritative}
+        return {
+            "accepted": True,
+            "reason": "SERVER_RECORD_MATCH",
+            "authoritativeVolumeKg": authoritative,
+            "verificationLevel": "SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED",
+        }

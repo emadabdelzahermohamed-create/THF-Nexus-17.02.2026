@@ -38,18 +38,26 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     companion object {
         private const val PREFS = "thf_fitness_v2_local"
         private const val PENDING_HEALTH = "pending_health_workouts"
+        private const val PENDING_BACKEND = "pending_backend_workouts"
         private const val SUMMARIES = "workout_summaries"
+        private const val MAX_SUMMARY_BYTES = 256 * 1024
+        private const val MAX_LOCAL_SUMMARIES = 120
     }
 
     private lateinit var web: WebView
     private lateinit var prefs: SharedPreferences
     private lateinit var healthRepository: HealthConnectRepository
+    private lateinit var backendRepository: BackendSyncRepository
     private var sensorManager: SensorManager? = null
     private var stepSensor: Sensor? = null
     private var absoluteSteps = -1f
     private var sessionBaseline = -1f
     private var tts: TextToSpeech? = null
     private val healthFlushRunning = AtomicBoolean(false)
+    private val backendFlushRunning = AtomicBoolean(false)
+
+    @Volatile
+    private var backendAccessToken: String? = null
 
     @Volatile
     private var cachedHealthState = HealthConnectionState("CHECKING", false, emptySet(), HealthConnectRepository.REQUIRED_PERMISSIONS)
@@ -81,6 +89,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         super.onCreate(state)
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         healthRepository = HealthConnectRepository(this)
+        backendRepository = BackendSyncRepository(BuildConfig.THF_BASE_URL)
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         stepSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
         tts = TextToSpeech(this) { status ->
@@ -100,6 +109,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             domStorageEnabled = true
             allowFileAccess = true
             allowContentAccess = false
+            blockNetworkLoads = true
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             mediaPlaybackRequiresUserGesture = false
             @Suppress("DEPRECATION")
@@ -123,6 +133,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 refreshHealthState()
                 dispatch("thf:health-status", healthStatusJson())
                 if (cachedHealthState.connected) flushPendingHealth()
+                if (isOnline()) flushPendingBackend()
             }
         }
     }
@@ -178,6 +189,53 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             .getOrElse { HealthConnectionState(healthRepository.availability(), false, emptySet(), HealthConnectRepository.REQUIRED_PERMISSIONS) }
     }
 
+    private fun jsonArrayPreference(key: String): JSONArray = runCatching {
+        JSONArray(prefs.getString(key, "[]") ?: "[]")
+    }.getOrElse {
+        prefs.edit().remove(key).apply()
+        JSONArray()
+    }
+
+    /**
+     * Version-aware local upsert used by both the offline history and the Health queue.
+     * Replaying the same stable id/version is a no-op; a higher version replaces the
+     * previous record and an older version cannot roll local facts back.
+     */
+    private fun upsertLocalRecord(key: String, item: JSONObject, maxEntries: Int): String {
+        val id = item.optString("clientRecordId")
+        require(id.matches(Regex("[A-Za-z0-9._:-]{8,120}"))) { "invalid clientRecordId" }
+        val incomingVersion = item.optLong("recordVersion", 1L)
+        require(incomingVersion in 1L..1_000_000L) { "invalid recordVersion" }
+
+        val current = jsonArrayPreference(key)
+        val next = JSONArray()
+        var outcome = "inserted"
+        var matched = false
+        for (index in 0 until current.length()) {
+            val existing = current.optJSONObject(index) ?: continue
+            if (existing.optString("clientRecordId") != id) {
+                next.put(existing)
+                continue
+            }
+            if (matched) continue
+            matched = true
+            val existingVersion = existing.optLong("recordVersion", 1L)
+            outcome = when {
+                incomingVersion < existingVersion -> "stale"
+                incomingVersion == existingVersion -> "duplicate"
+                else -> "updated"
+            }
+            next.put(if (outcome == "updated") item else existing)
+        }
+        if (outcome == "inserted") next.put(item)
+
+        val trimmed = JSONArray()
+        val start = maxOf(0, next.length() - maxEntries)
+        for (index in start until next.length()) trimmed.put(next.get(index))
+        prefs.edit().putString(key, trimmed.toString()).apply()
+        return outcome
+    }
+
     private fun healthStatusJson(): JSONObject = JSONObject()
         .put("availability", cachedHealthState.availability)
         .put("connected", cachedHealthState.connected)
@@ -186,7 +244,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         .put("missingPermissions", JSONArray(cachedHealthState.missingPermissions.sorted()))
         .put("lastSync", prefs.getString("health_last_sync", ""))
         .put("lastError", prefs.getString("health_last_error", ""))
-        .put("pendingWrites", JSONArray(prefs.getString(PENDING_HEALTH, "[]")).length())
+        .put("pendingWrites", jsonArrayPreference(PENDING_HEALTH).length())
 
     private fun dispatch(name: String, payload: JSONObject) {
         if (!::web.isInitialized) return
@@ -243,49 +301,125 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             }
     }
 
-    private fun enqueueSummaryForHealth(item: JSONObject) {
-        val pending = JSONArray(prefs.getString(PENDING_HEALTH, "[]"))
-        val id = item.getString("clientRecordId")
-        for (index in 0 until pending.length()) {
-            if (pending.getJSONObject(index).optString("clientRecordId") == id) return
-        }
-        pending.put(item)
-        prefs.edit().putString(PENDING_HEALTH, pending.toString()).apply()
-    }
+    private fun enqueueSummaryForHealth(item: JSONObject): String =
+        upsertLocalRecord(PENDING_HEALTH, item, MAX_LOCAL_SUMMARIES)
+
+    private fun enqueueSummaryForBackend(item: JSONObject): String =
+        upsertLocalRecord(PENDING_BACKEND, item, MAX_LOCAL_SUMMARIES)
 
     private suspend fun flushPendingHealth() {
         if (!healthFlushRunning.compareAndSet(false, true)) return
         try {
             refreshHealthState()
             if (!cachedHealthState.connected) return
-            val pending = JSONArray(prefs.getString(PENDING_HEALTH, "[]"))
+            val pending = jsonArrayPreference(PENDING_HEALTH)
             val remaining = JSONArray()
             var written = 0
+            var firstError: String? = null
             for (index in 0 until pending.length()) {
-                val item = pending.getJSONObject(index)
-                val startMillis = item.optLong("startedAtMs", item.optLong("savedAt") - item.optLong("durationMin", 1) * 60_000L)
-                val endMillis = item.optLong("endedAtMs", item.optLong("savedAt", System.currentTimeMillis()))
-                val workout = WorkoutForHealth(
-                    clientRecordId = item.getString("clientRecordId"),
-                    clientRecordVersion = item.optLong("recordVersion", 1L),
-                    exerciseId = item.optString("id", "other"),
-                    sport = item.optString("sport", item.optString("id", "other")),
-                    title = item.optString("exercise", "THF workout"),
-                    startTime = Instant.ofEpochMilli(startMillis),
-                    endTime = Instant.ofEpochMilli(maxOf(startMillis + 1_000L, endMillis)),
-                    notes = "THF Fitness V2 · reps=${item.optInt("reps", 0)}",
-                )
-                runCatching { withContext(Dispatchers.IO) { healthRepository.writeWorkout(workout) } }
+                val item = pending.optJSONObject(index)
+                if (item == null) {
+                    firstError = firstError ?: "Invalid queued workout"
+                    continue
+                }
+                runCatching {
+                    val startMillis = item.optLong(
+                        "startedAtMs",
+                        item.optLong("savedAt") - item.optLong("durationMin", 1) * 60_000L,
+                    )
+                    val endMillis = item.optLong("endedAtMs", item.optLong("savedAt", System.currentTimeMillis()))
+                    require(startMillis > 0 && endMillis > startMillis) { "Invalid queued workout time" }
+                    val workout = WorkoutForHealth(
+                        clientRecordId = item.getString("clientRecordId"),
+                        clientRecordVersion = item.optLong("recordVersion", 1L),
+                        exerciseId = item.optString("id", "other"),
+                        sport = item.optString("sport", item.optString("id", "other")),
+                        title = item.optString("exercise", "THF workout"),
+                        startTime = Instant.ofEpochMilli(startMillis),
+                        endTime = Instant.ofEpochMilli(endMillis),
+                        notes = "THF Fitness V2 · reps=${item.optInt("reps", 0)}",
+                    )
+                    withContext(Dispatchers.IO) { healthRepository.writeWorkout(workout) }
+                }
                     .onSuccess { written += 1 }
-                    .onFailure { remaining.put(item) }
+                    .onFailure { error ->
+                        remaining.put(item)
+                        firstError = firstError ?: (error.message ?: error.javaClass.simpleName)
+                    }
             }
-            prefs.edit().putString(PENDING_HEALTH, remaining.toString()).apply()
+            prefs.edit()
+                .putString(PENDING_HEALTH, remaining.toString())
+                .also { editor ->
+                    if (firstError == null) editor.remove("health_last_error")
+                    else editor.putString("health_last_error", firstError)
+                }
+                .apply()
             dispatch(
                 "thf:health-write",
-                JSONObject().put("written", written).put("pending", remaining.length()),
+                JSONObject()
+                    .put("written", written)
+                    .put("pending", remaining.length())
+                    .put("lastError", firstError ?: ""),
             )
+            if (firstError != null) {
+                dispatch("thf:health-error", healthStatusJson().put("message", firstError))
+            }
         } finally {
             healthFlushRunning.set(false)
+        }
+    }
+
+    private suspend fun flushPendingBackend() {
+        if (!backendFlushRunning.compareAndSet(false, true)) return
+        try {
+            val token = backendAccessToken ?: return
+            if (!backendRepository.configured || !isOnline()) return
+            val pending = jsonArrayPreference(PENDING_BACKEND)
+            val remaining = JSONArray()
+            var synced = 0
+            var firstError: String? = null
+            for (index in 0 until pending.length()) {
+                val item = pending.optJSONObject(index)
+                if (item == null) {
+                    firstError = firstError ?: "Invalid queued backend workout"
+                    continue
+                }
+                runCatching {
+                    withContext(Dispatchers.IO) { backendRepository.sync(token, item) }
+                }.onSuccess {
+                    synced += 1
+                }.onFailure { error ->
+                    remaining.put(item)
+                    firstError = firstError ?: (error.message ?: error.javaClass.simpleName)
+                    if (error is BackendSyncException && (error.statusCode == 401 || error.statusCode == 403)) {
+                        backendAccessToken = null
+                    }
+                }
+                if (backendAccessToken == null) {
+                    for (remainingIndex in index + 1 until pending.length()) {
+                        pending.optJSONObject(remainingIndex)?.let { remaining.put(it) }
+                    }
+                    break
+                }
+            }
+            prefs.edit()
+                .putString(PENDING_BACKEND, remaining.toString())
+                .putString("backend_last_sync", if (synced > 0) Instant.now().toString() else prefs.getString("backend_last_sync", ""))
+                .also { editor ->
+                    if (firstError == null) editor.remove("backend_last_error")
+                    else editor.putString("backend_last_error", firstError)
+                }
+                .apply()
+            dispatch(
+                "thf:backend-sync",
+                JSONObject()
+                    .put("synced", synced)
+                    .put("pending", remaining.length())
+                    .put("authenticated", backendAccessToken != null)
+                    .put("lastError", firstError ?: ""),
+            )
+        } finally {
+            backendFlushRunning.set(false)
         }
     }
 
@@ -296,7 +430,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             .put("version", BuildConfig.VERSION_NAME)
             .put("package", BuildConfig.APPLICATION_ID)
             .put("online", isOnline())
-            .put("syncConfigured", validPersistentHttps(BuildConfig.THF_BASE_URL))
+            .put("syncConfigured", validPersistentHttps(BuildConfig.THF_BASE_URL) && backendRepository.configured)
+            .put("syncAuthenticated", backendAccessToken != null)
+            .put("backendPending", jsonArrayPreference(PENDING_BACKEND).length())
+            .put("backendLastSync", prefs.getString("backend_last_sync", ""))
+            .put("backendLastError", prefs.getString("backend_last_error", ""))
             .put("stepSensorAvailable", stepSensor != null)
             .put("activityPermission", hasActivityPermission())
             .put("sessionSteps", sessionSteps())
@@ -312,12 +450,37 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         @JavascriptInterface
         fun syncHealth() = this@MainActivity.syncHealth()
 
+        /** Receives an existing short-lived account token; it is never persisted. */
+        @JavascriptInterface
+        fun setBackendAccessToken(value: String?): String = runCatching {
+            backendAccessToken = backendRepository.validateAccessToken(value.orEmpty())
+            lifecycleScope.launch { flushPendingBackend() }
+            JSONObject().put("accepted", true).put("persisted", false).toString()
+        }.getOrElse {
+            backendAccessToken = null
+            JSONObject().put("accepted", false).put("error", it.javaClass.simpleName).toString()
+        }
+
+        @JavascriptInterface
+        fun clearBackendAccessToken() {
+            backendAccessToken = null
+        }
+
         @JavascriptInterface
         fun openHealthSettings() {
             runOnUiThread {
                 runCatching { startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)) }
                     .onFailure {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.apps.healthdata")))
+                        runCatching {
+                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.apps.healthdata")))
+                        }.onFailure {
+                            startActivity(
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata"),
+                                ),
+                            )
+                        }
                     }
             }
         }
@@ -355,29 +518,50 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
         @JavascriptInterface
         fun saveSummary(json: String?): String = runCatching {
-            var summaries = JSONArray(prefs.getString(SUMMARIES, "[]"))
-            val item = JSONObject(json ?: "{}")
+            require(json != null && json.toByteArray(Charsets.UTF_8).size <= MAX_SUMMARY_BYTES) {
+                "invalid workout summary size"
+            }
+            val item = JSONObject(json)
             val now = System.currentTimeMillis()
             val start = item.optLong("startedAtMs", now - item.optLong("durationMin", 1L) * 60_000L)
+            val end = item.optLong("endedAtMs", now)
+            require(start > 0 && end > start && end - start <= 48L * 60L * 60L * 1_000L) {
+                "invalid workout summary time"
+            }
+            require((item.optJSONArray("sets")?.length() ?: 0) <= 1000) { "too many workout sets" }
             val clientId = WorkoutIdentity.stableClientRecordId(item.optString("clientRecordId"), start, item.optString("id", "other"))
             item.put("clientRecordId", clientId)
             item.put("recordVersion", maxOf(1L, item.optLong("recordVersion", 1L)))
             item.put("savedAt", now)
-            if (!item.has("endedAtMs")) item.put("endedAtMs", now)
-            summaries.put(item)
-            if (summaries.length() > 120) {
-                val trimmed = JSONArray()
-                for (index in summaries.length() - 120 until summaries.length()) trimmed.put(summaries.get(index))
-                summaries = trimmed
+            item.put("endedAtMs", end)
+            val localOutcome = upsertLocalRecord(SUMMARIES, item, MAX_LOCAL_SUMMARIES)
+            val healthOutcome = if (localOutcome == "inserted" || localOutcome == "updated") {
+                enqueueSummaryForHealth(item)
+            } else {
+                localOutcome
             }
-            prefs.edit().putString(SUMMARIES, summaries.toString()).apply()
-            enqueueSummaryForHealth(item)
-            lifecycleScope.launch { flushPendingHealth() }
-            JSONObject().put("saved", true).put("clientRecordId", clientId).put("healthQueued", true).toString()
+            val backendOutcome = if (localOutcome == "inserted" || localOutcome == "updated") {
+                enqueueSummaryForBackend(item)
+            } else {
+                localOutcome
+            }
+            if (healthOutcome == "inserted" || healthOutcome == "updated") {
+                lifecycleScope.launch { flushPendingHealth() }
+            }
+            if (backendOutcome == "inserted" || backendOutcome == "updated") {
+                lifecycleScope.launch { flushPendingBackend() }
+            }
+            JSONObject()
+                .put("saved", localOutcome != "stale")
+                .put("result", localOutcome)
+                .put("clientRecordId", clientId)
+                .put("healthQueued", healthOutcome == "inserted" || healthOutcome == "updated")
+                .put("backendQueued", backendOutcome == "inserted" || backendOutcome == "updated")
+                .toString()
         }.getOrElse { JSONObject().put("saved", false).put("error", it.javaClass.simpleName).toString() }
 
         @JavascriptInterface
-        fun readSummaries(): String = prefs.getString(SUMMARIES, "[]") ?: "[]"
+        fun readSummaries(): String = jsonArrayPreference(SUMMARIES).toString()
 
         @JavascriptInterface
         fun setPref(key: String?, value: String?) {
