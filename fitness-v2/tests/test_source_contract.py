@@ -17,7 +17,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("compileSdk 36", gradle)
         self.assertIn("targetSdk 36", gradle)
         version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
-        self.assertGreaterEqual(version, 51002)
+        self.assertGreaterEqual(version, 51003)
 
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
@@ -63,7 +63,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
     def test_backend_contract_is_authenticated_and_idempotent(self):
         contract = json.loads((ROOT / "fitness-v2" / "backend" / "openapi.json").read_text())
         self.assertEqual([{"BearerAuth": []}], contract["security"])
-        sync = contract["paths"]["/v2/workouts:sync"]["post"]
+        sync = contract["paths"]["/api/v2/workouts/sync"]["post"]
         self.assertTrue(any(item["name"] == "Idempotency-Key" and item["required"] for item in sync["parameters"]))
         required = set(contract["components"]["schemas"]["WorkoutSession"]["required"])
         self.assertTrue({"clientRecordId", "clientRecordVersion", "source", "sets"} <= required)
@@ -91,11 +91,59 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         for marker in (
             "HttpsURLConnection", "Idempotency-Key", '"THF_ANDROID"',
             '"com.topherofit.thf.pulse"', "pending_backend_workouts",
-            "setBackendAccessToken", "backendAccessToken = null",
+            "requestBackendSignIn", "backendAccessToken = null",
+            "AccountAuthRepository", "AccountAuthContract",
         ):
             self.assertIn(marker, source)
         self.assertIn("blockNetworkLoads = true", source)
         self.assertNotIn("putString(\"backend_access_token\"", source)
+        self.assertNotIn("setBackendAccessToken", source)
+
+    def test_android_account_handoff_uses_external_browser_pkce_and_exact_callback(self):
+        manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
+        application = manifest.getroot().find("application")
+        main_activity = next(
+            node for node in application.findall("activity")
+            if node.attrib[ANDROID_NS + "name"] == ".MainActivity"
+        )
+        self.assertEqual("singleTask", main_activity.attrib[ANDROID_NS + "launchMode"])
+        manifest_text = (ANDROID / "app" / "src" / "main" / "AndroidManifest.xml").read_text()
+        for marker in (
+            'android:scheme="topherofit"', 'android:host="auth"', 'android:pathPrefix="/v2/complete"',
+            'android:autoVerify="true"', 'android:host="thf-fitness-pulse-ul26f1.v2.appdeploy.ai"',
+            'android:pathPrefix="/android/auth/v2/complete"',
+        ):
+            self.assertIn(marker, manifest_text)
+
+        source = "\n".join(
+            p.read_text()
+            for p in (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse").glob("*.kt")
+        )
+        for marker in (
+            "Intent.ACTION_VIEW", "CATEGORY_BROWSABLE", "code_challenge_method=S256",
+            "MessageDigest.getInstance(\"SHA-256\")", "FLOW_TTL_MILLIS",
+            "/api/v2/auth/android/sessions", "remove(AUTH_PKCE_VERIFIER)",
+        ):
+            self.assertIn(marker, source)
+        self.assertNotIn("addJavascriptInterface", (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "AccountAuthRepository.kt").read_text())
+
+    def test_appdeploy_account_bridge_is_pkce_bound_user_scoped_and_hash_only(self):
+        routes = (ROOT / "fitness-v2" / "appdeploy" / "android_v2_routes.ts").read_text()
+        bridge = (ROOT / "fitness-v2" / "appdeploy" / "native_auth_bridge.tsx").read_text()
+        for marker in (
+            "requireAuth()", "context.user!.userId", "codeChallenge",
+            "timingSafeEqual", "tokenHash", "ticketHash", "SESSION_TTL_MS",
+            "fitnessV2AndroidRoutes", "androidUser(context.event)",
+        ):
+            self.assertIn(marker, routes)
+        for marker in (
+            "auth.signIn", "api.post('/api/v2/auth/android/tickets'",
+            "topherofit://auth/v2/complete", "code_challenge_method",
+            "Continue to sign in", "AndroidAuthBridgeScreen",
+        ):
+            self.assertIn(marker, bridge)
+        self.assertNotIn("accessToken:", routes)
+        self.assertNotIn("refreshToken", routes + bridge)
 
     def test_android_backup_rotation_and_health_rationale_are_release_safe(self):
         manifest_path = ANDROID / "app" / "src" / "main" / "AndroidManifest.xml"

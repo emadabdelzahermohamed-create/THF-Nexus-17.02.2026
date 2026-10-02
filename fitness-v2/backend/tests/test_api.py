@@ -89,30 +89,30 @@ class FitnessApiTest(unittest.TestCase):
         return captured["status"], json.loads(b"".join(result)), captured["headers"]
 
     def test_requires_https_and_authenticated_unexpired_session(self):
-        self.assertEqual("426 Upgrade Required", self.request("/v2/workouts", bearer=token(), scheme="http")[0])
-        unauthorized = self.request("/v2/workouts")
+        self.assertEqual("426 Upgrade Required", self.request("/api/v2/workouts", bearer=token(), scheme="http")[0])
+        unauthorized = self.request("/api/v2/workouts")
         self.assertEqual("401 Unauthorized", unauthorized[0])
         self.assertEqual({"error": "UNAUTHORIZED"}, unauthorized[1])
-        self.assertEqual("401 Unauthorized", self.request("/v2/workouts", bearer=token(expires=NOW - 100))[0])
-        self.assertEqual("401 Unauthorized", self.request("/v2/workouts", bearer=token(key=b"x" * 32))[0])
-        self.assertEqual("401 Unauthorized", self.request("/v2/workouts", bearer=token(kid="unknown"))[0])
-        self.assertEqual("401 Unauthorized", self.request("/v2/workouts", bearer=token(nbf="invalid"))[0])
+        self.assertEqual("401 Unauthorized", self.request("/api/v2/workouts", bearer=token(expires=NOW - 100))[0])
+        self.assertEqual("401 Unauthorized", self.request("/api/v2/workouts", bearer=token(key=b"x" * 32))[0])
+        self.assertEqual("401 Unauthorized", self.request("/api/v2/workouts", bearer=token(kid="unknown"))[0])
+        self.assertEqual("401 Unauthorized", self.request("/api/v2/workouts", bearer=token(nbf="invalid"))[0])
         self.assertEqual("DENY", unauthorized[2]["X-Frame-Options"])
         self.assertIn("max-age=31536000", unauthorized[2]["Strict-Transport-Security"])
         self.api.store.db.execute(
             "INSERT INTO revoked_sessions(user_id,session_id) VALUES(?,?)", ("user-1", "session-0001"),
         )
-        self.assertEqual("401 Unauthorized", self.request("/v2/workouts", bearer=token())[0])
+        self.assertEqual("401 Unauthorized", self.request("/api/v2/workouts", bearer=token())[0])
 
     def test_idempotency_is_stable_and_conflicts_fail_closed(self):
         first = self.request(
-            "/v2/workouts:sync", "POST", workout(), token(), "request-0001",
+            "/api/v2/workouts/sync", "POST", workout(), token(), "request-0001",
         )
         second = self.request(
-            "/v2/workouts:sync", "POST", workout(), token(), "request-0001",
+            "/api/v2/workouts/sync", "POST", workout(), token(), "request-0001",
         )
         conflict = self.request(
-            "/v2/workouts:sync", "POST", workout(load=60), token(), "request-0001",
+            "/api/v2/workouts/sync", "POST", workout(load=60), token(), "request-0001",
         )
         self.assertEqual("200 OK", first[0])
         self.assertEqual(first[:2], second[:2])
@@ -120,16 +120,16 @@ class FitnessApiTest(unittest.TestCase):
         self.assertEqual("409 Conflict", conflict[0])
 
         record_conflict = self.request(
-            "/v2/workouts:sync", "POST", workout(load=60), token(), "request-0002",
+            "/api/v2/workouts/sync", "POST", workout(load=60), token(), "request-0002",
         )
         self.assertEqual("409 Conflict", record_conflict[0])
         self.assertEqual("RECORD_VERSION_CONFLICT", record_conflict[1]["error"])
 
     def test_account_history_and_progress_are_isolated(self):
-        self.request("/v2/workouts:sync", "POST", workout(), token("user-1"), "request-0001")
-        history = self.request("/v2/workouts", bearer=token("user-1"))
-        other = self.request("/v2/workouts", bearer=token("user-2", "session-0002"))
-        progress = self.request("/v2/progress/summary", bearer=token("user-1"))
+        self.request("/api/v2/workouts/sync", "POST", workout(), token("user-1"), "request-0001")
+        history = self.request("/api/v2/workouts", bearer=token("user-1"))
+        other = self.request("/api/v2/workouts", bearer=token("user-2", "session-0002"))
+        progress = self.request("/api/v2/progress/summary", bearer=token("user-1"))
         self.assertEqual(1, len(history[1]["items"]))
         self.assertEqual("thf-workout-http-0001", history[1]["items"][0]["clientRecordId"])
         self.assertEqual(1, len(history[1]["items"][0]["sets"]))
@@ -142,19 +142,19 @@ class FitnessApiTest(unittest.TestCase):
         body = workout()
         body["userId"] = "victim"
         status, response, _headers = self.request(
-            "/v2/workouts:sync", "POST", body, token("attacker"), "request-0002",
+            "/api/v2/workouts/sync", "POST", body, token("attacker"), "request-0002",
         )
         self.assertEqual("422 Unprocessable Entity", status)
         self.assertEqual("INVALID_REQUEST", response["error"])
-        self.assertEqual("401 Unauthorized", self.request("/v2/workouts", bearer=token(user="bad user"))[0])
-        self.assertEqual("401 Unauthorized", self.request("/v2/workouts", bearer=token(session="bad session"))[0])
+        self.assertEqual("401 Unauthorized", self.request("/api/v2/workouts", bearer=token(user="bad user"))[0])
+        self.assertEqual("401 Unauthorized", self.request("/api/v2/workouts", bearer=token(session="bad session"))[0])
 
     def test_history_limit_and_competition_contract_fail_closed(self):
         # QUERY_STRING is supplied separately by the WSGI server; exercise it directly.
         raw = b""
         captured = {}
         environ = {
-            "PATH_INFO": "/v2/workouts",
+            "PATH_INFO": "/api/v2/workouts",
             "REQUEST_METHOD": "GET",
             "QUERY_STRING": "limit=201",
             "wsgi.url_scheme": "https",
@@ -167,7 +167,7 @@ class FitnessApiTest(unittest.TestCase):
         self.assertEqual("422 Unprocessable Entity", captured["status"])
         self.assertEqual("INVALID_REQUEST", json.loads(b"".join(response))["error"])
         invalid = self.request(
-            "/v2/competitions/autumn/submissions",
+            "/api/v2/competitions/autumn/submissions",
             "POST",
             {"workoutClientRecordId": "missing", "claimedMetric": 0, "userId": "victim"},
             token(),

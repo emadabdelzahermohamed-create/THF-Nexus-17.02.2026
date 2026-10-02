@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         private const val PENDING_HEALTH = "pending_health_workouts"
         private const val PENDING_BACKEND = "pending_backend_workouts"
         private const val SUMMARIES = "workout_summaries"
+        private const val AUTH_PKCE_VERIFIER = "account_auth_pkce_verifier"
+        private const val AUTH_STARTED_AT = "account_auth_started_at"
         private const val MAX_SUMMARY_BYTES = 256 * 1024
         private const val MAX_LOCAL_SUMMARIES = 120
     }
@@ -49,6 +51,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var prefs: SharedPreferences
     private lateinit var healthRepository: HealthConnectRepository
     private lateinit var backendRepository: BackendSyncRepository
+    private lateinit var accountAuthRepository: AccountAuthRepository
     private var sensorManager: SensorManager? = null
     private var stepSensor: Sensor? = null
     private var absoluteSteps = -1f
@@ -56,6 +59,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var tts: TextToSpeech? = null
     private val healthFlushRunning = AtomicBoolean(false)
     private val backendFlushRunning = AtomicBoolean(false)
+    private val accountExchangeRunning = AtomicBoolean(false)
 
     @Volatile
     private var backendAccessToken: String? = null
@@ -91,6 +95,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         healthRepository = HealthConnectRepository(this)
         backendRepository = BackendSyncRepository(BuildConfig.THF_BASE_URL)
+        accountAuthRepository = AccountAuthRepository(BuildConfig.THF_BASE_URL)
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         stepSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
         tts = TextToSpeech(this) { status ->
@@ -99,7 +104,14 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         configureWebView()
         setContentView(web)
         web.loadUrl("file:///android_asset/pulse/index.html")
+        handleAccountCallback(intent)
         lifecycleScope.launch { refreshHealthState() }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleAccountCallback(intent)
     }
 
     @Suppress("SetJavaScriptEnabled")
@@ -175,19 +187,93 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     }
 
     private fun validPersistentHttps(value: String?): Boolean {
-        if (value.isNullOrBlank()) return false
-        return runCatching {
-            val uri = value.trim().toUri()
-            val host = uri.host.orEmpty().lowercase()
-            val blocked = setOf("trycloudflare.com", "ngrok-free.app", "ngrok.io", "localhost", "127.0.0.1", ".local")
-            uri.scheme.equals("https", true) && host.isNotBlank() && uri.userInfo == null &&
-                blocked.none { host == it || host.endsWith(".$it") }
-        }.getOrDefault(false)
+        return value != null && AccountAuthContract.persistentHttpsBase(value) != null
     }
 
     private suspend fun refreshHealthState() {
         cachedHealthState = runCatching { healthRepository.connectionState() }
             .getOrElse { HealthConnectionState(healthRepository.availability(), false, emptySet(), HealthConnectRepository.REQUIRED_PERMISSIONS) }
+    }
+
+    private fun requestBackendSignIn() {
+        if (!backendRepository.configured || !accountAuthRepository.configured) {
+            dispatch(
+                "thf:backend-auth",
+                JSONObject().put("authenticated", false).put("error", "Production sync endpoint is not configured"),
+            )
+            return
+        }
+        val request = runCatching { AccountAuthContract.newRequest(BuildConfig.THF_ACCOUNT_URL) }
+            .getOrElse { error ->
+                dispatch(
+                    "thf:backend-auth",
+                    JSONObject().put("authenticated", false).put("error", error.message ?: "Account URL is not configured"),
+                )
+                return
+            }
+        prefs.edit {
+            putString(AUTH_PKCE_VERIFIER, request.verifier)
+            putLong(AUTH_STARTED_AT, System.currentTimeMillis())
+        }
+        val browser = Intent(Intent.ACTION_VIEW, request.startUrl.toUri()).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
+        runCatching { startActivity(browser) }
+            .onSuccess {
+                dispatch("thf:backend-auth", JSONObject().put("authenticated", false).put("pending", true))
+            }
+            .onFailure { error ->
+                clearPendingAccountAuth()
+                dispatch(
+                    "thf:backend-auth",
+                    JSONObject().put("authenticated", false).put("error", error.message ?: "No HTTPS browser is available"),
+                )
+            }
+    }
+
+    private fun handleAccountCallback(callbackIntent: Intent?) {
+        val callback = callbackIntent?.data?.toString() ?: return
+        callbackIntent.data = null
+        val ticket = AccountAuthContract.callbackTicket(callback)
+        val verifier = prefs.getString(AUTH_PKCE_VERIFIER, null)
+        val startedAt = prefs.getLong(AUTH_STARTED_AT, 0L)
+        val fresh = startedAt > 0L && System.currentTimeMillis() - startedAt in 0..AccountAuthContract.FLOW_TTL_MILLIS
+        if (ticket == null || !fresh || !AccountAuthContract.validVerifier(verifier)) {
+            clearPendingAccountAuth()
+            dispatch(
+                "thf:backend-auth",
+                JSONObject().put("authenticated", false).put("error", "Invalid or expired account hand-off"),
+            )
+            return
+        }
+        if (!accountExchangeRunning.compareAndSet(false, true)) return
+        lifecycleScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) { accountAuthRepository.consume(ticket, verifier.orEmpty()) }
+            }.onSuccess { token ->
+                backendAccessToken = backendRepository.validateAccessToken(token)
+                prefs.edit { remove("backend_last_error") }
+                dispatch(
+                    "thf:backend-auth",
+                    JSONObject().put("authenticated", true).put("persisted", false),
+                )
+                flushPendingBackend()
+            }.onFailure { error ->
+                backendAccessToken = null
+                val message = error.message ?: error.javaClass.simpleName
+                prefs.edit { putString("backend_last_error", message) }
+                dispatch(
+                    "thf:backend-auth",
+                    JSONObject().put("authenticated", false).put("error", message),
+                )
+            }
+            clearPendingAccountAuth()
+            accountExchangeRunning.set(false)
+        }
+    }
+
+    private fun clearPendingAccountAuth() {
+        prefs.edit { remove(AUTH_PKCE_VERIFIER); remove(AUTH_STARTED_AT) }
     }
 
     private fun jsonArrayPreference(key: String): JSONArray = runCatching {
@@ -395,6 +481,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                     firstError = firstError ?: (error.message ?: error.javaClass.simpleName)
                     if (error is BackendSyncException && (error.statusCode == 401 || error.statusCode == 403)) {
                         backendAccessToken = null
+                        dispatch(
+                            "thf:backend-auth",
+                            JSONObject().put("authenticated", false).put("error", "Account session expired"),
+                        )
                     }
                 }
                 if (backendAccessToken == null) {
@@ -431,7 +521,9 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             .put("package", BuildConfig.APPLICATION_ID)
             .put("online", isOnline())
             .put("syncConfigured", validPersistentHttps(BuildConfig.THF_BASE_URL) && backendRepository.configured)
+            .put("accountAuthConfigured", validPersistentHttps(BuildConfig.THF_ACCOUNT_URL) && accountAuthRepository.configured)
             .put("syncAuthenticated", backendAccessToken != null)
+            .put("accountAuthPending", accountExchangeRunning.get() || prefs.contains(AUTH_PKCE_VERIFIER))
             .put("backendPending", jsonArrayPreference(PENDING_BACKEND).length())
             .put("backendLastSync", prefs.getString("backend_last_sync", ""))
             .put("backendLastError", prefs.getString("backend_last_error", ""))
@@ -450,20 +542,13 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         @JavascriptInterface
         fun syncHealth() = this@MainActivity.syncHealth()
 
-        /** Receives an existing short-lived account token; it is never persisted. */
         @JavascriptInterface
-        fun setBackendAccessToken(value: String?): String = runCatching {
-            backendAccessToken = backendRepository.validateAccessToken(value.orEmpty())
-            lifecycleScope.launch { flushPendingBackend() }
-            JSONObject().put("accepted", true).put("persisted", false).toString()
-        }.getOrElse {
-            backendAccessToken = null
-            JSONObject().put("accepted", false).put("error", it.javaClass.simpleName).toString()
-        }
+        fun requestBackendSignIn() = runOnUiThread { this@MainActivity.requestBackendSignIn() }
 
         @JavascriptInterface
         fun clearBackendAccessToken() {
             backendAccessToken = null
+            dispatch("thf:backend-auth", JSONObject().put("authenticated", false).put("signedOut", true))
         }
 
         @JavascriptInterface

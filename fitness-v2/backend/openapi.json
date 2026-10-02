@@ -7,7 +7,7 @@
   "servers": [{"url": "https://api.topherofit.com"}],
   "security": [{"BearerAuth": []}],
   "paths": {
-    "/v2/workouts:sync": {
+    "/api/v2/workouts/sync": {
       "post": {
         "operationId": "syncWorkout",
         "summary": "Idempotently insert or version-update an authenticated user's workout",
@@ -23,20 +23,20 @@
         }
       }
     },
-    "/v2/workouts": {
+    "/api/v2/workouts": {
       "get": {
         "operationId": "listWorkoutHistory",
         "parameters": [{"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50}}],
         "responses": {"200": {"description": "Authenticated user's workout history", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/WorkoutHistory"}}}}, "401": {"description": "Missing or invalid session"}}
       }
     },
-    "/v2/progress/summary": {
+    "/api/v2/progress/summary": {
       "get": {
         "operationId": "getProgressSummary",
         "responses": {"200": {"description": "Server-computed volume and personal records", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProgressSummary"}}}}, "401": {"description": "Missing or invalid session"}}
       }
     },
-    "/v2/competitions/{competitionId}/submissions": {
+    "/api/v2/competitions/{competitionId}/submissions": {
       "post": {
         "operationId": "submitCompetitionEvidence",
         "summary": "Verify a competition claim against server-stored workout facts",

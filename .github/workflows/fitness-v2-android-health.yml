@@ -61,8 +61,10 @@ jobs:
           value = urlparse(sys.argv[1])
           if value.scheme != "https" or not value.hostname or value.username or value.password or value.fragment:
               raise SystemExit("THF_FITNESS_V2_BASE_URL must be a persistent credential-free HTTPS URL")
-          if value.hostname in {"localhost", "127.0.0.1", "::1"} or value.hostname.endswith(".local"):
-              raise SystemExit("THF_FITNESS_V2_BASE_URL cannot be local")
+          host = value.hostname.lower()
+          blocked = ("localhost", "127.0.0.1", "::1", "trycloudflare.com", "ngrok-free.app", "ngrok.io")
+          if value.port not in (None, 443) or host.endswith(".local") or any(host == item or host.endswith("." + item) for item in blocked):
+              raise SystemExit("THF_FITNESS_V2_BASE_URL must be a persistent default-port production host")
           PY
             args+=("-PTHF_BASE_URL=$THF_FITNESS_V2_BASE_URL")
             echo 'BACKEND_ENDPOINT=CONFIGURED_HTTPS' | tee fitness-v2/evidence/backend-binding-status.txt
@@ -110,7 +112,7 @@ jobs:
           "$AAPT" dump badging "$APK" | tee fitness-v2/evidence/badging.txt
           "$AAPT" dump permissions "$APK" | tee fitness-v2/evidence/permissions.txt
           unzip -l "$APK" | tee fitness-v2/evidence/payload.txt
-          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51002'" fitness-v2/evidence/badging.txt
+          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51003'" fitness-v2/evidence/badging.txt
           grep -F "targetSdkVersion:'36'" fitness-v2/evidence/badging.txt
           ! grep -E 'READ_HEART_RATE|READ_SLEEP|READ_WEIGHT|READ_BODY_FAT' fitness-v2/evidence/permissions.txt
           test "$(unzip -Z1 "$APK" | grep -c '^assets/pulse/media/free-exercise-db/.*/[01]\.jpg$')" -eq 160
@@ -126,11 +128,11 @@ jobs:
           PHYSICAL_PHONE=NOT_RUN
           HEALTH_CONNECT_PHYSICAL=NOT_RUN
           SAMSUNG_HEALTH_ORIGIN=NOT_RUN
-          PLAY_INTERNAL=NOT_RUN_FOR_VERSION_51002
+          PLAY_INTERNAL=NOT_RUN_FOR_VERSION_51003
           EOF
       - uses: actions/upload-artifact@v4
         with:
-          name: fitness-v2-51002-package-gate
+          name: fitness-v2-51003-package-gate
           if-no-files-found: error
           retention-days: 14
           path: |

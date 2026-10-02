@@ -28,7 +28,7 @@ from workout_store import (
 
 
 MAX_BODY_BYTES = 512 * 1024
-COMPETITION_PATH = re.compile(r"^/v2/competitions/([^/]+)/submissions$")
+COMPETITION_PATH = re.compile(r"^/api/v2/competitions/([^/]+)/submissions$")
 
 
 class IdempotencyConflict(ValueError):
@@ -190,7 +190,7 @@ class FitnessApi:
                 return self._response(start_response, "200 OK", {"status": "ok"})
             principal = self.verifier.verify_authorization(environ.get("HTTP_AUTHORIZATION"))
 
-            if path == "/v2/workouts:sync" and method == "POST":
+            if path == "/api/v2/workouts/sync" and method == "POST":
                 raw, payload = self._read_json(environ)
                 session = self._session(payload)
                 key = environ.get("HTTP_IDEMPOTENCY_KEY", "")
@@ -206,7 +206,7 @@ class FitnessApi:
 
                 response = self._cached_or_store(principal.user_id, path, key, digest, sync)
                 return self._response(start_response, "200 OK", response)
-            if path == "/v2/workouts" and method == "GET":
+            if path == "/api/v2/workouts" and method == "GET":
                 query = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=False)
                 try:
                     limit = int(query.get("limit", ["50"])[0])
@@ -217,7 +217,7 @@ class FitnessApi:
                 with self._store_lock:
                     items = self.store.history(principal.user_id, limit)
                 return self._response(start_response, "200 OK", {"items": items})
-            if path == "/v2/progress/summary" and method == "GET":
+            if path == "/api/v2/progress/summary" and method == "GET":
                 with self._store_lock:
                     summary = self.store.progress_summary(principal.user_id)
                 return self._response(start_response, "200 OK", summary)

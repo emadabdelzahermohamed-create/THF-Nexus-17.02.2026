@@ -34,11 +34,7 @@ class BackendSyncRepository(baseUrl: String) {
     val configured: Boolean get() = endpoint != null
 
     fun validateAccessToken(value: String): String {
-        val token = value.trim()
-        require(token.length in 32..8192 && token.count { it == '.' } == 2 && token.none { it.isWhitespace() }) {
-            "invalid short-lived access token"
-        }
-        return token
+        return AccountAuthContract.validAccessToken(value)
     }
 
     fun workoutPayload(summary: JSONObject): JSONObject {
@@ -160,15 +156,7 @@ class BackendSyncRepository(baseUrl: String) {
     }
 
     private fun parseEndpoint(value: String): URL? = runCatching {
-        val clean = value.trim().trimEnd('/')
-        if (clean.isBlank()) return@runCatching null
-        val base = URL(clean)
-        require(base.protocol.equals("https", ignoreCase = true))
-        require(base.host.isNotBlank() && base.userInfo == null && base.query == null && base.ref == null)
-        require(
-            base.host.lowercase() !in setOf("localhost", "127.0.0.1", "::1") &&
-                !base.host.lowercase().endsWith(".local"),
-        )
-        URL("$clean/v2/workouts:sync")
+        val clean = AccountAuthContract.persistentHttpsBase(value)?.trimEnd('/') ?: return@runCatching null
+        URL("$clean/api/v2/workouts/sync")
     }.getOrNull()
 }

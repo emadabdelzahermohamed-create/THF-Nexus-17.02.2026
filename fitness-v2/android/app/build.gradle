@@ -10,10 +10,12 @@ android {
         applicationId 'com.topherofit.thf.pulse'
         minSdk 26
         targetSdk 36
-        versionCode 51002
-        versionName '5.0.0-v2-alpha2'
+        versionCode 51003
+        versionName '5.0.0-v2-alpha3'
         def baseUrl = project.findProperty('THF_BASE_URL') ?: ''
+        def accountUrl = project.findProperty('THF_ACCOUNT_URL') ?: 'https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/'
         buildConfigField 'String', 'THF_BASE_URL', '"' + baseUrl.replace('\\','\\\\').replace('"','\\"') + '"'
+        buildConfigField 'String', 'THF_ACCOUNT_URL', '"' + accountUrl.replace('\\','\\\\').replace('"','\\"') + '"'
         buildConfigField 'String', 'THF_APP_SLUG', '"pulse"'
     }
     buildFeatures { buildConfig true }
