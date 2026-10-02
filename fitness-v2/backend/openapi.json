@@ -1,0 +1,99 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Top Hero Fit Fitness V2 API",
+    "version": "0.1.0"
+  },
+  "servers": [{"url": "https://api.topherofit.com"}],
+  "security": [{"BearerAuth": []}],
+  "paths": {
+    "/v2/workouts:sync": {
+      "post": {
+        "operationId": "syncWorkout",
+        "summary": "Idempotently insert or version-update an authenticated user's workout",
+        "parameters": [
+          {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string", "minLength": 8, "maxLength": 120}}
+        ],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/WorkoutSession"}}}},
+        "responses": {
+          "200": {"description": "Inserted, updated, duplicate, or stale", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SyncResult"}}}},
+          "401": {"description": "Missing or invalid session"},
+          "409": {"description": "Idempotency key conflicts with a different payload"},
+          "422": {"description": "Invalid workout contract"}
+        }
+      }
+    },
+    "/v2/workouts": {
+      "get": {
+        "operationId": "listWorkoutHistory",
+        "parameters": [{"name": "cursor", "in": "query", "schema": {"type": "string"}}],
+        "responses": {"200": {"description": "Authenticated user's workout history"}, "401": {"description": "Missing or invalid session"}}
+      }
+    },
+    "/v2/progress/summary": {
+      "get": {
+        "operationId": "getProgressSummary",
+        "responses": {"200": {"description": "Server-computed volume and personal records"}, "401": {"description": "Missing or invalid session"}}
+      }
+    },
+    "/v2/competitions/{competitionId}/submissions": {
+      "post": {
+        "operationId": "submitCompetitionEvidence",
+        "summary": "Verify a competition claim against server-stored workout facts",
+        "parameters": [{"name": "competitionId", "in": "path", "required": true, "schema": {"type": "string"}}],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"type": "object", "required": ["workoutClientRecordId", "claimedMetric"], "properties": {"workoutClientRecordId": {"type": "string"}, "claimedMetric": {"type": "number"}}}}}
+        },
+        "responses": {"200": {"description": "Server-authoritative accepted/rejected result"}, "401": {"description": "Missing or invalid session"}}
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "short-lived access token"}
+    },
+    "schemas": {
+      "WorkoutSet": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["exerciseId", "ordinal", "setType", "reps", "loadKg", "restSeconds"],
+        "properties": {
+          "exerciseId": {"type": "string", "minLength": 1},
+          "ordinal": {"type": "integer", "minimum": 1},
+          "setType": {"enum": ["warmup", "working", "drop", "failure"]},
+          "reps": {"type": "integer", "minimum": 0},
+          "loadKg": {"type": "number", "minimum": 0},
+          "restSeconds": {"type": "integer", "minimum": 0},
+          "rpe": {"type": ["number", "null"], "minimum": 0, "maximum": 10},
+          "rir": {"type": ["number", "null"], "minimum": 0, "maximum": 10}
+        }
+      },
+      "WorkoutSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["clientRecordId", "clientRecordVersion", "startedAt", "endedAt", "sport", "exerciseSessionType", "source", "sets"],
+        "properties": {
+          "clientRecordId": {"type": "string", "minLength": 8, "maxLength": 120},
+          "clientRecordVersion": {"type": "integer", "minimum": 1},
+          "startedAt": {"type": "string", "format": "date-time"},
+          "endedAt": {"type": "string", "format": "date-time"},
+          "sport": {"type": "string"},
+          "exerciseSessionType": {"type": "integer"},
+          "source": {"enum": ["THF_ANDROID", "THF_WEB", "HEALTH_CONNECT"]},
+          "provenancePackage": {"type": ["string", "null"]},
+          "sets": {"type": "array", "items": {"$ref": "#/components/schemas/WorkoutSet"}}
+        }
+      },
+      "SyncResult": {
+        "type": "object",
+        "required": ["result", "clientRecordId", "serverRevision"],
+        "properties": {
+          "result": {"enum": ["inserted", "updated", "duplicate", "stale"]},
+          "clientRecordId": {"type": "string"},
+          "serverRevision": {"type": "integer"}
+        }
+      }
+    }
+  }
+}

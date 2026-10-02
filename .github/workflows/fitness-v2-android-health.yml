@@ -1,0 +1,73 @@
+name: Fitness V2 Android Health Gate
+
+on:
+  push:
+    branches: [release/fitness-v2-rebuild-20261002]
+    paths:
+      - 'fitness-v2/**'
+      - '.github/workflows/fitness-v2-android-health.yml'
+      - 'ReleaseOps/FitnessV2/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fitness-v2-android-health-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-and-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Android and backend source contracts
+        run: |
+          python fitness-v2/tests/test_source_contract.py
+          python -m unittest discover -s fitness-v2/backend/tests -v
+
+  android-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Install API 36 SDK
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Unit, lint, APK and unsigned AAB
+        run: |
+          gradle --no-daemon -p fitness-v2/android \
+            :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease
+      - name: Inspect exact debug package
+        run: |
+          mkdir -p fitness-v2/evidence
+          APK=fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          sha256sum "$APK" | tee fitness-v2/evidence/app-debug.sha256
+          "$AAPT" dump badging "$APK" | tee fitness-v2/evidence/badging.txt
+          "$AAPT" dump permissions "$APK" | tee fitness-v2/evidence/permissions.txt
+          unzip -l "$APK" | tee fitness-v2/evidence/payload.txt
+          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51001'" fitness-v2/evidence/badging.txt
+          grep -F "targetSdkVersion:'36'" fitness-v2/evidence/badging.txt
+          ! grep -E 'READ_HEART_RATE|READ_SLEEP|READ_WEIGHT|READ_BODY_FAT' fitness-v2/evidence/permissions.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fitness-v2-51001-unsigned-gate
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
+            fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
+            fitness-v2/android/app/build/reports/
+            fitness-v2/evidence/

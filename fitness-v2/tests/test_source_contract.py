@@ -1,0 +1,73 @@
+import json
+from pathlib import Path
+import re
+import unittest
+import xml.etree.ElementTree as ET
+
+
+ROOT = Path(__file__).resolve().parents[2]
+ANDROID = ROOT / "fitness-v2" / "android"
+ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
+
+
+class FitnessV2SourceContractTest(unittest.TestCase):
+    def test_android_identity_api_level_and_noncolliding_version(self):
+        gradle = (ANDROID / "app" / "build.gradle").read_text()
+        self.assertIn("applicationId 'com.topherofit.thf.pulse'", gradle)
+        self.assertIn("compileSdk 36", gradle)
+        self.assertIn("targetSdk 36", gradle)
+        version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
+        self.assertGreaterEqual(version, 51001)
+
+    def test_health_permissions_are_exactly_the_data_used(self):
+        manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
+        health = {
+            node.attrib[ANDROID_NS + "name"]
+            for node in manifest.getroot().findall("uses-permission")
+            if node.attrib[ANDROID_NS + "name"].startswith("android.permission.health.")
+        }
+        self.assertEqual(
+            {
+                "android.permission.health.READ_STEPS",
+                "android.permission.health.READ_EXERCISE",
+                "android.permission.health.WRITE_EXERCISE",
+                "android.permission.health.READ_DISTANCE",
+                "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+            },
+            health,
+        )
+
+    def test_health_flow_is_user_visible_and_fail_closed(self):
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        for marker in (
+            'id="healthScreen"', 'id="healthConnectBtn"', 'id="healthSyncBtn"',
+            'id="healthLastSync"', 'id="healthError"', "Samsung Health",
+            "معرّف ثابت", "لا نطلب نبض القلب",
+        ):
+            self.assertIn(marker, html)
+        self.assertNotIn("Stage16A", html)
+
+    def test_native_health_uses_stable_ids_provenance_and_revoke_checks(self):
+        source = "\n".join(
+            p.read_text()
+            for p in (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse").glob("*.kt")
+        )
+        for marker in (
+            "clientRecordId", "clientRecordVersion", "dataOrigin.packageName",
+            "getGrantedPermissions", "onResume", "ActiveCaloriesBurnedRecord",
+            "EXERCISE_TYPE_SOCCER", "EXERCISE_TYPE_SWIMMING_OPEN_WATER",
+        ):
+            self.assertIn(marker, source)
+        self.assertNotIn("HeartRateRecord", source)
+
+    def test_backend_contract_is_authenticated_and_idempotent(self):
+        contract = json.loads((ROOT / "fitness-v2" / "backend" / "openapi.json").read_text())
+        self.assertEqual([{"BearerAuth": []}], contract["security"])
+        sync = contract["paths"]["/v2/workouts:sync"]["post"]
+        self.assertTrue(any(item["name"] == "Idempotency-Key" and item["required"] for item in sync["parameters"]))
+        required = set(contract["components"]["schemas"]["WorkoutSession"]["required"])
+        self.assertTrue({"clientRecordId", "clientRecordVersion", "source", "sets"} <= required)
+
+
+if __name__ == "__main__":
+    unittest.main()

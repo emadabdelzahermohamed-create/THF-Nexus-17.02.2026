@@ -1,0 +1,38 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.topherofit.thf.pulse'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.topherofit.thf.pulse'
+        minSdk 26
+        targetSdk 36
+        versionCode 51001
+        versionName '5.0.0-v2-alpha1'
+        def baseUrl = project.findProperty('THF_BASE_URL') ?: ''
+        buildConfigField 'String', 'THF_BASE_URL', '"' + baseUrl.replace('\\','\\\\').replace('"','\\"') + '"'
+        buildConfigField 'String', 'THF_APP_SLUG', '"pulse"'
+    }
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+    testOptions { unitTests.returnDefaultValues = true }
+    buildTypes {
+        debug { versionNameSuffix '-debug' }
+        release { minifyEnabled false; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' }
+    }
+}
+
+dependencies {
+    implementation 'androidx.activity:activity-ktx:1.10.1'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.9.1'
+    implementation 'androidx.health.connect:connect-client:1.1.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+    testImplementation 'junit:junit:4.13.2'
+}
