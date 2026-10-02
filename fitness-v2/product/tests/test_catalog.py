@@ -102,6 +102,12 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertNotRegex(combined, r"(?i)stage16a")
         self.assertNotRegex(combined, r"https?://")
 
+    def test_workout_inputs_persist_before_set_completion(self):
+        script = (PULSE / "app.js").read_text()
+        self.assertIn("input.addEventListener('input'", script)
+        self.assertNotIn("input.addEventListener('change'", script)
+        self.assertIn("persistActive();", script)
+
 
 if __name__ == "__main__":
     unittest.main()

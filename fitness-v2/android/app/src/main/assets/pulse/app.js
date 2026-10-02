@@ -171,7 +171,10 @@
     const done = state.active.sets.filter(set=>set.complete).length; $('setProgressTitle').textContent = t('setProgress').replace('{done}',done).replace('{total}',state.active.sets.length); $('sessionVolume').textContent = `${Math.round(sessionVolume())} kg`;
     $('setRows').innerHTML = state.active.sets.map((set,index)=>`<div class="set-row${set.complete?' complete':''}" data-index="${index}"><span class="set-number"><b>${index+1}</b>${escapeHtml(t(set.type))}</span><input class="set-input" data-field="load" inputmode="decimal" type="number" min="0" step="0.5" value="${Number(set.load)||0}" ${item.tracking.load?'':'disabled'} aria-label="${escapeHtml(t('load'))}"><input class="set-input" data-field="reps" inputmode="numeric" type="number" min="0" max="999" value="${Number(set.reps)||0}" aria-label="${escapeHtml(t('reps'))}"><input class="set-input" data-field="rpe" inputmode="decimal" type="number" min="1" max="10" step="0.5" value="${Number(set.rpe)||7}" aria-label="RPE"><input class="set-input" data-field="rir" inputmode="numeric" type="number" min="0" max="10" value="${Number(set.rir)||0}" ${item.tracking.rir?'':'disabled'} aria-label="RIR"><button class="set-complete" type="button" aria-label="${escapeHtml(t('completed'))}">${set.complete?'✓':'○'}</button></div>`).join('');
     $('setRows').querySelectorAll('.set-row').forEach(row => {
-      row.querySelectorAll('input').forEach(input => input.addEventListener('change', () => { state.active.sets[Number(row.dataset.index)][input.dataset.field]=Number(input.value)||0; persistActive(); renderActiveWorkout(); }));
+      row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => {
+        state.active.sets[Number(row.dataset.index)][input.dataset.field]=Number(input.value)||0;
+        persistActive();
+      }));
       row.querySelector('button').addEventListener('click', () => completeSet(Number(row.dataset.index)));
     });
   }
