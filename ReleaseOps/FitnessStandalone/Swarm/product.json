@@ -3,7 +3,7 @@
   "phase": "FITNESS",
   "status": "ACTIVE",
   "result": "PROGRESS",
-  "active_task": "P0_PREMIUM_SESSION_AND_DASHBOARD_VISUAL_CLOSURE",
+  "active_task": "P0_PREMIUM_BILINGUAL_MOBILE_VISUAL_CAPTURE_CLOSURE",
   "acceptance": [
     "Premium dashboard/onboarding/session hierarchy",
     "Arabic RTL + English LTR mobile evidence",
@@ -23,15 +23,22 @@
     "Restored the production root to normal authentication and captured zero-error mobile/web regression proof",
     "Independently revalidated the exact Arabic onboarding and English dashboard mobile/web screenshot bytes, dimensions, hashes, RTL/LTR direction, hierarchy, and fixture boundary",
     "Narrowed a Product-specific mobile navigation gap: the 390 px tab rail overflows as designed but lacks localized navigation semantics, active-tab announcement, scroll snapping, and an explicit edge affordance",
-    "Prepared an exact Product-only AppDeploy patch for localized nav semantics, active-page announcement, RTL/LTR mobile scroll snapping, visible focus, compact overflow affordance, and a dedicated 390 px bilingual QA case; it is staged but deliberately not claimed deployed"
+    "Prepared an exact Product-only AppDeploy patch for localized nav semantics, active-page announcement, RTL/LTR mobile scroll snapping, visible focus, compact overflow affordance, and a dedicated 390 px bilingual QA case; it is staged but deliberately not claimed deployed",
+    "Deployed the prepared Product mobile tab-rail patch in AppDeploy v64 (1790568313260) with localized navigation landmarks, aria-current page semantics, RTL/LTR scroll snapping, visible focus and a persistent overflow affordance",
+    "Verified v67 retains the Product navigation contract after the Motion and WebGL-guard deployments",
+    "Exercised Arabic RTL onboarding, dashboard and active-workout fixtures without credentials or protected writes",
+    "Exercised English LTR onboarding, dashboard and active-workout fixtures without credentials or protected writes",
+    "Activated distant Competitions sections in both Arabic and English and observed aria-current change from absent to page plus the destination content becoming visible",
+    "Confirmed the active-workout UI remains usable and localized when WebGL is unavailable instead of collapsing to a blank page",
+    "Recorded the current zero-error production snapshot and kept final Product visual PASS open pending full mobile screenshot/video coverage with GPU-rendered Stage16A"
   ],
   "appdeploy": {
     "app_id": "thf-fitness-pulse-ul26f1",
-    "snapshot_version": "1790500694233",
-    "qa_timestamp": 1790500707991,
-    "mobile_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790500731642/mobile.png",
+    "snapshot_version": "1790910310382",
+    "qa_timestamp": 1790910489722,
+    "mobile_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790910512577/mobile.png",
     "mobile_sha256": "3b1ac322eb9f4026d833fae8fa268561fb6e8fec1cd5afdd5cce1ed96598817c",
-    "web_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790500731642/web.png",
+    "web_screenshot": "https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790910512577/web.png",
     "web_sha256": "ba19c001464503006ba6fee5c56dfa92d7ad5bcf7df7ce46560ddc7e1abf5c8e",
     "errors": {
       "frontend": 0,
@@ -52,32 +59,103 @@
         "qa_timestamp": 1790500022494,
         "mobile_sha256": "86e123649cdcaf5906a1730d490f24a677dd7a844b09fc073a1a2b090196ef6e",
         "web_sha256": "9cc3a4abfc853a62630889728be1fb44f7ddc6c7fc4cbdfe3541566592a0abda"
+      },
+      {
+        "scene": "onboarding-ar",
+        "snapshot_version": "1790910310382",
+        "runtime": "authorized-cloud-browser",
+        "lang": "ar",
+        "dir": "rtl",
+        "region_visible": true,
+        "interaction_result": "PASS"
+      },
+      {
+        "scene": "onboarding-en",
+        "snapshot_version": "1790910310382",
+        "runtime": "authorized-cloud-browser",
+        "lang": "en",
+        "dir": "ltr",
+        "region_visible": true,
+        "interaction_result": "PASS"
+      },
+      {
+        "scene": "dashboard-ar",
+        "snapshot_version": "1790910310382",
+        "runtime": "authorized-cloud-browser",
+        "lang": "ar",
+        "dir": "rtl",
+        "navigation": "Competitions",
+        "aria_current_after": "page",
+        "destination_visible": true,
+        "interaction_result": "PASS"
+      },
+      {
+        "scene": "dashboard-en",
+        "snapshot_version": "1790910310382",
+        "runtime": "authorized-cloud-browser",
+        "lang": "en",
+        "dir": "ltr",
+        "navigation": "Competitions",
+        "aria_current_after": "page",
+        "destination_visible": true,
+        "interaction_result": "PASS"
+      },
+      {
+        "scene": "workout-ar",
+        "snapshot_version": "1790910310382",
+        "runtime": "authorized-cloud-browser",
+        "lang": "ar",
+        "dir": "rtl",
+        "active_workout": true,
+        "stage16a_gpu": "FAIL_CLOSED_NO_WEBGL",
+        "interaction_result": "PRODUCT_UI_PASS"
+      },
+      {
+        "scene": "workout-en",
+        "snapshot_version": "1790910310382",
+        "runtime": "authorized-cloud-browser",
+        "lang": "en",
+        "dir": "ltr",
+        "active_workout": true,
+        "stage16a_gpu": "FAIL_CLOSED_NO_WEBGL",
+        "interaction_result": "PRODUCT_UI_PASS"
       }
     ],
     "deployment_credit_block": {
       "code": "CREDITS_USAGE_LIMIT_REACHED",
       "retry_after": "2026-09-28T00:00:00.000Z",
-      "source_unchanged": true,
-      "production_version": "1790500694233",
-      "preflight_result": "get_deploy_instructions rejected before source generation",
-      "minimum_required_credits": 14
-    }
+      "resolved": true,
+      "resolved_by_version": "1790568313260"
+    },
+    "navigation_patch_version": "1790568313260",
+    "motion_capture_version": "1790568519318",
+    "webgl_guard_version": "1790568670855",
+    "exercise_blend_version": "1790910310382"
   },
   "evidence": {
-    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_MOBILE_VISUAL_AUDIT_20260927.md",
-    "commit_sha": "9ef4b2fe14573579778fe343fbac8f253c701833",
+    "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_BILINGUAL_RUNTIME_NAV_20261002.md",
+    "commit_sha": "482fadac282751e06976ff4f296ddf49674aefa5",
+    "deployed_patch": {
+      "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_MOBILE_TAB_RAIL_PATCH_20260927.patch",
+      "commit_sha": "c6d1dead5d8ed119faa76bd3fd2bc15ee277ea0a",
+      "appdeploy_version": "1790568313260"
+    },
     "previous": {
-      "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_VISUAL_QA_FIXTURE_20260927.md",
-      "commit_sha": "bccd7fc744a2de2146d016dc758f774a9cb71a35"
+      "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_MOBILE_VISUAL_AUDIT_20260927.md",
+      "commit_sha": "9ef4b2fe14573579778fe343fbac8f253c701833",
+      "previous": {
+        "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_VISUAL_QA_FIXTURE_20260927.md",
+        "commit_sha": "bccd7fc744a2de2146d016dc758f774a9cb71a35"
+      }
     }
   },
-  "blocker": "APPDEPLOY_GET_DEPLOY_INSTRUCTIONS_FAILS_CLOSED_WITH_CREDITS_USAGE_LIMIT_REACHED_UNTIL_2026-09-28T00:00:00Z; production v63 is unchanged; the safe mobile tab-rail accessibility/discoverability patch cannot be deployed or runtime-captured before reset, and bilingual active-workout plus reciprocal EN-onboarding/AR-dashboard interaction evidence remains open",
-  "next_action": "After the documented UTC reset, apply staged patch c6d1dead5d8ed119faa76bd3fd2bc15ee277ea0a to AppDeploy v63, run its dedicated 390 px AR/EN rail QA plus existing sanity/fixture tests, then capture EN onboarding, AR dashboard, AR workout and EN workout and one real navigation path; keep Product PASS fail-closed until those images and interactions are inspected.",
+  "blocker": "The former AppDeploy credit blocker is resolved and the mobile navigation patch is deployed/runtime-interactive. Final Product visual PASS remains open because the complete mobile screenshot/video matrix for Arabic and English onboarding, dashboard and active workout has not been persisted, and the active-workout Stage16A surface still lacks GPU-rendered evidence from the Motion lane.",
+  "next_action": "Capture and persist the remaining 390 px Arabic/English onboarding, dashboard and active-workout screenshots/video on v67 in a GPU/WebGL-capable runtime; inspect composition, overflow affordance, focus/current-page state and Stage16A integration, then mark Product PASS only if the full bilingual matrix succeeds.",
   "no_progress_rule": "If no commit/deploy/evidence is produced, write BLOCKED with exact tool/permission/dependency cause.",
-  "updated_at": "2026-09-27T14:16:20.846Z",
+  "updated_at": "2026-10-02T03:14:12.219Z",
   "visual_review": {
     "evidence_type": "RUNTIME_SCREENSHOT_INSPECTION",
-    "evidence_commit_sha": "9ef4b2fe14573579778fe343fbac8f253c701833",
+    "evidence_commit_sha": "482fadac282751e06976ff4f296ddf49674aefa5",
     "inspected": [
       {
         "scene": "onboarding-ar",
@@ -94,8 +172,16 @@
         "web_sha256": "9cc3a4abfc853a62630889728be1fb44f7ddc6c7fc4cbdfe3541566592a0abda"
       }
     ],
-    "new_finding": "MOBILE_TAB_RAIL_DISCOVERABILITY_AND_A11Y_REMAIN_OPEN_IN_RTL_AND_LTR",
-    "visual_pass": false
+    "new_finding": "MOBILE_TAB_RAIL_SOURCE_AND_RUNTIME_SEMANTICS_RESOLVED; FULL_BILINGUAL_MOBILE_SCREENSHOT_VIDEO_SET_REMAINS_OPEN",
+    "visual_pass": false,
+    "runtime_interactions": {
+      "onboarding_ar": "PASS",
+      "onboarding_en": "PASS",
+      "dashboard_ar_competitions": "PASS",
+      "dashboard_en_competitions": "PASS",
+      "workout_ar": "PRODUCT_UI_PASS_MOTION_GPU_OPEN",
+      "workout_en": "PRODUCT_UI_PASS_MOTION_GPU_OPEN"
+    }
   },
   "prepared_patch": {
     "path": "ReleaseOps/FitnessStandalone/Swarm/evidence/PRODUCT_MOBILE_TAB_RAIL_PATCH_20260927.patch",
@@ -106,8 +192,21 @@
       "tests/tests.json"
     ],
     "ownership": "PRODUCT_ONLY",
-    "source_applied": false,
-    "runtime_validated": false,
-    "blocked_by": "CREDITS_USAGE_LIMIT_REACHED_UNTIL_2026-09-28T00:00:00Z"
+    "source_applied": true,
+    "runtime_validated": true,
+    "blocked_by": null,
+    "appdeploy_version": "1790568313260",
+    "retained_in_production_version": "1790910310382"
+  },
+  "provider": {
+    "primary": "AppDeploy",
+    "production_version": "1790910310382",
+    "runtime_browser": "authorized-cloud-browser"
+  },
+  "fallback": {
+    "gateway_file": "/home/gamalammulazim_gmail_com/AUTH_FALLBACK_GATEWAYS.md",
+    "gateway_file_status": "MISSING_AFTER_EXACT_PATH_WORKSPACE_AND_REPOSITORY_SEARCH",
+    "paid_services_used": false,
+    "new_secrets_used": false
   }
 }
