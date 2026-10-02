@@ -97,6 +97,42 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("blockNetworkLoads = true", source)
         self.assertNotIn("putString(\"backend_access_token\"", source)
 
+    def test_android_backup_rotation_and_health_rationale_are_release_safe(self):
+        manifest_path = ANDROID / "app" / "src" / "main" / "AndroidManifest.xml"
+        manifest = ET.parse(manifest_path)
+        application = manifest.getroot().find("application")
+        self.assertEqual("false", application.attrib[ANDROID_NS + "allowBackup"])
+        self.assertEqual("@xml/backup_rules", application.attrib[ANDROID_NS + "fullBackupContent"])
+        self.assertEqual("@xml/data_extraction_rules", application.attrib[ANDROID_NS + "dataExtractionRules"])
+        main_activity = next(
+            node
+            for node in application.findall("activity")
+            if node.attrib[ANDROID_NS + "name"] == ".MainActivity"
+        )
+        self.assertNotIn(ANDROID_NS + "screenOrientation", main_activity.attrib)
+
+        for path in (
+            ANDROID / "app" / "src" / "main" / "res" / "xml" / "backup_rules.xml",
+            ANDROID / "app" / "src" / "main" / "res" / "xml" / "data_extraction_rules.xml",
+            ANDROID / "app" / "src" / "main" / "res" / "values" / "strings.xml",
+            ANDROID / "app" / "src" / "main" / "res" / "values-ar" / "strings.xml",
+        ):
+            ET.parse(path)
+
+        rationale = (
+            ANDROID
+            / "app"
+            / "src"
+            / "main"
+            / "java"
+            / "com"
+            / "topherofit"
+            / "thf"
+            / "pulse"
+            / "HealthPermissionsRationaleActivity.kt"
+        ).read_text()
+        self.assertIn("R.string.health_permissions_rationale", rationale)
+
 
 if __name__ == "__main__":
     unittest.main()
