@@ -42,5 +42,5 @@
     "The packaged V2 offline client does not yet acquire a production account access token; it exposes a non-persistent native token handoff boundary, but the current Product JavaScript does not invoke it."
   ],
   "next_action": "After the free deployment quota resets, deploy a backend-only V2 route on the existing authorized persistent runtime (or another authorized persistent HTTPS host), configure its production auth and durable store, implement and test a secure account-token handoff into the Android bridge, run authenticated sync/history/progress/competition probes, then set THF_FITNESS_V2_BASE_URL and rebuild the exact Android candidate.",
-  "updated_at": "2026-10-02T18:54:58Z"
+  "updated_at": "2026-10-02T18:58:48Z"
 }

@@ -80,5 +80,5 @@
     "Samsung Health-originated activity and Play Internal were not tested for versionCode 51002."
   ],
   "next_action": "Deploy and bind the authenticated V2 backend, complete a secure tested production account-token handoff to the existing non-persistent Android bridge, make the existing upload-signing secrets available to the protected workflow, publish and verify Digital Asset Links for the actual signing certificate, rebuild one signed versionCode 51002 AAB, then run exact-artifact install/core-workout/offline/background-resume/Health Connect/Samsung-origin QA on a physical Android phone before Play Internal.",
-  "updated_at": "2026-10-02T18:54:58Z"
+  "updated_at": "2026-10-02T18:58:48Z"
 }
