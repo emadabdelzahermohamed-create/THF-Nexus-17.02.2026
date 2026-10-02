@@ -34,7 +34,7 @@ class AccountAuthRepository(baseUrl: String) {
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Cache-Control", "no-store")
-            fixedLengthStreamingMode(payload.size)
+            setFixedLengthStreamingMode(payload.size)
         }
         return try {
             connection.outputStream.use { it.write(payload) }
