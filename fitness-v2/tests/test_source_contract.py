@@ -79,7 +79,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
     def test_android_local_state_recovers_from_corrupt_preferences(self):
         source = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
         self.assertIn("private fun jsonArrayPreference", source)
-        self.assertIn("prefs.edit().remove(key).apply()", source)
+        self.assertIn("prefs.edit { remove(key) }", source)
         self.assertNotIn('JSONArray(prefs.getString(PENDING_HEALTH', source)
         self.assertNotIn('JSONArray(prefs.getString(SUMMARIES', source)
 

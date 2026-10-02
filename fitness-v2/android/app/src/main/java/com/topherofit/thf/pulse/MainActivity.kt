@@ -11,7 +11,6 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -22,6 +21,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.lifecycleScope
@@ -176,7 +177,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private fun validPersistentHttps(value: String?): Boolean {
         if (value.isNullOrBlank()) return false
         return runCatching {
-            val uri = Uri.parse(value.trim())
+            val uri = value.trim().toUri()
             val host = uri.host.orEmpty().lowercase()
             val blocked = setOf("trycloudflare.com", "ngrok-free.app", "ngrok.io", "localhost", "127.0.0.1", ".local")
             uri.scheme.equals("https", true) && host.isNotBlank() && uri.userInfo == null &&
@@ -192,7 +193,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private fun jsonArrayPreference(key: String): JSONArray = runCatching {
         JSONArray(prefs.getString(key, "[]") ?: "[]")
     }.getOrElse {
-        prefs.edit().remove(key).apply()
+        prefs.edit { remove(key) }
         JSONArray()
     }
 
@@ -232,7 +233,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         val trimmed = JSONArray()
         val start = maxOf(0, next.length() - maxEntries)
         for (index in start until next.length()) trimmed.put(next.get(index))
-        prefs.edit().putString(key, trimmed.toString()).apply()
+        prefs.edit { putString(key, trimmed.toString()) }
         return outcome
     }
 
@@ -280,7 +281,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         runCatching { withContext(Dispatchers.IO) { healthRepository.readRecent() } }
             .onSuccess { snapshot ->
                 val now = Instant.now().toString()
-                prefs.edit().putString("health_last_sync", now).remove("health_last_error").apply()
+                prefs.edit {
+                    putString("health_last_sync", now)
+                    remove("health_last_error")
+                }
                 dispatch(
                     "thf:health-sync",
                     JSONObject()
@@ -296,7 +300,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             }
             .onFailure { error ->
                 val message = error.message ?: error.javaClass.simpleName
-                prefs.edit().putString("health_last_error", message).apply()
+                prefs.edit { putString("health_last_error", message) }
                 dispatch("thf:health-error", healthStatusJson().put("message", message))
             }
     }
@@ -347,13 +351,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                         firstError = firstError ?: (error.message ?: error.javaClass.simpleName)
                     }
             }
-            prefs.edit()
-                .putString(PENDING_HEALTH, remaining.toString())
-                .also { editor ->
-                    if (firstError == null) editor.remove("health_last_error")
-                    else editor.putString("health_last_error", firstError)
-                }
-                .apply()
+            prefs.edit {
+                putString(PENDING_HEALTH, remaining.toString())
+                if (firstError == null) remove("health_last_error")
+                else putString("health_last_error", firstError)
+            }
             dispatch(
                 "thf:health-write",
                 JSONObject()
@@ -402,14 +404,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                     break
                 }
             }
-            prefs.edit()
-                .putString(PENDING_BACKEND, remaining.toString())
-                .putString("backend_last_sync", if (synced > 0) Instant.now().toString() else prefs.getString("backend_last_sync", ""))
-                .also { editor ->
-                    if (firstError == null) editor.remove("backend_last_error")
-                    else editor.putString("backend_last_error", firstError)
-                }
-                .apply()
+            prefs.edit {
+                putString(PENDING_BACKEND, remaining.toString())
+                putString("backend_last_sync", if (synced > 0) Instant.now().toString() else prefs.getString("backend_last_sync", ""))
+                if (firstError == null) remove("backend_last_error")
+                else putString("backend_last_error", firstError)
+            }
             dispatch(
                 "thf:backend-sync",
                 JSONObject()
@@ -472,12 +472,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 runCatching { startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)) }
                     .onFailure {
                         runCatching {
-                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.apps.healthdata")))
+                            startActivity(Intent(Intent.ACTION_VIEW, "market://details?id=com.google.android.apps.healthdata".toUri()))
                         }.onFailure {
                             startActivity(
                                 Intent(
                                     Intent.ACTION_VIEW,
-                                    Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata"),
+                                    "https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata".toUri(),
                                 ),
                             )
                         }
@@ -497,7 +497,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         @JavascriptInterface
         fun beginStepSession() {
             sessionBaseline = if (absoluteSteps >= 0) absoluteSteps else -1f
-            prefs.edit().putFloat("step_baseline", sessionBaseline).apply()
+            prefs.edit { putFloat("step_baseline", sessionBaseline) }
         }
 
         @JavascriptInterface
@@ -565,7 +565,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
         @JavascriptInterface
         fun setPref(key: String?, value: String?) {
-            if (key != null) prefs.edit().putString("web_$key", value.orEmpty()).apply()
+            if (key != null) prefs.edit { putString("web_$key", value.orEmpty()) }
         }
 
         @JavascriptInterface
