@@ -2,17 +2,22 @@
   "lane": "product-content",
   "branch": "release/fitness-v2-rebuild-20261002",
   "result": "PROGRESS",
-  "active_task": "P0_REPLACE_LEGACY_8_PLAN_BASELINE_WITH_STRUCTURED_BILINGUAL_PROGRAMS",
-  "source_commit": "690eb6e6e6a1f3d4e76549fc1d708fbbc7f7df6f",
-  "evidence_commit": "64f3c632d274ad2db266d705ef71a998537c99d4",
+  "active_task": "P1_EXPAND_THIN_SPORT_COVERAGE_WITH_LICENSED_DEMOS",
+  "source_commit": "aa824fd896e71af77bd9b1dc07b5d5f6ce621ef8",
+  "evidence_commit": "f761683f356937dc4b9a5436470aee838d130115",
   "completed_items": [
     "Removed Stage16A references from the production Product HTML/CSS/JavaScript path",
     "Replaced the 18-exercise baseline with 80 bilingual exercises in 13 populated sections",
     "Bundled 160 hash-verified offline demonstration frames with per-item public-domain provenance",
     "Implemented Today, Train, Progress, Health, and Profile navigation in Arabic RTL and English LTR",
     "Implemented real Gym search and body-part, muscle, equipment, movement, level, and goal filters",
+    "Implemented 26 structured bilingual offline programs across all 13 sections with real sessions, prescriptions, progression, safety, and provenance",
+    "Implemented first-run Arabic/English onboarding for goal, level, schedule, and available equipment with a concrete Today action",
     "Implemented exercise details, safety, regression/progression, active workout logging, rest, PR, history, and volume",
     "Fixed workout load persistence to update on input before set completion",
+    "Replaced the horizontally scrolling mobile set table with labeled two-column one-handed cards and a full-width completion target",
+    "Removed the hidden navigation height from active-workout sticky save and rest controls",
+    "Runtime-verified Arabic and English mobile workout logging at 388x842 with zero document overflow, 240 kg persisted volume, and a 293x44 completion target",
     "Runtime-verified Arabic details and workout, English search and filters, persistence after reload, and all 13 section counts/media"
   ],
   "catalog": {
@@ -24,19 +29,25 @@
     "license": "Unlicense",
     "catalog_sha256": "c9a12c066277fc362fe752624b5c0c2e4860f0f1c53c9d7fc79109f4c5779ab7"
   },
+  "programs": {
+    "program_count": 26,
+    "section_count": 13,
+    "source": "THF-owned editorial composition over the pinned public-domain exercise catalog",
+    "programs_sha256": "8f7425ff8181ca31f7da60250570198853098e95bbacb5f0a3884b2d7ed53efa"
+  },
   "tests": {
-    "product": "6/6 PASS",
-    "source_contract_read_only": "5/5 PASS",
-    "backend_read_only": "3/3 PASS",
+    "product": "11/11 PASS",
+    "source_contract_read_only": "PASS_IN_GITHUB_ACTIONS_RUN_37092403671",
+    "backend_read_only": "PASS_IN_GITHUB_ACTIONS_RUN_37092403671",
     "javascript_syntax": "PASS",
     "diff_check": "PASS",
-    "github_actions": "NO_ASSOCIATED_PR_TRIGGERED_RUN_RETURNED; CI PASS NOT CLAIMED"
+    "github_actions": "PASS_RUN_37092403671_JOBS_111115323542_111115323614_ARTIFACT_11262691469"
   },
   "runtime": {
-    "provider": "AppDeploy QA + authorized cloud browser",
+    "provider": "AppDeploy QA + authorized managed cloud browser",
     "app_id": "thf-fitness-v2-product-qa-690eb6e-lwhy3h",
-    "snapshot_version": "1790930664960",
-    "qa_timestamp": 1790930694667,
+    "snapshot_version": "1790996999779",
+    "qa_timestamp": 1790997025015,
     "status": "ready",
     "errors": {
       "frontend": 0,
@@ -44,6 +55,11 @@
       "backend": 0
     },
     "verified": [
+      "Arabic onboarding created a local training profile and a concrete Today program action",
+      "Arabic ar/rtl and English en/ltr active workout at 388x842 with zero document overflow",
+      "Visible Load/Reps/RPE/RIR labels and a 293x44 completion target on mobile",
+      "20 kg x 12 reps produced and persisted 240 kg session volume",
+      "Active-workout sticky action bottom offset reduced from the hidden navigation reservation to 5 px",
       "Arabic ar/rtl Today and details",
       "Arabic active workout with 880 kg volume",
       "Workout and PR persistence after full reload",
@@ -52,7 +68,7 @@
     ]
   },
   "evidence_path": "ReleaseOps/FitnessV2/evidence/PRODUCT_CATALOG_RUNTIME_20261002.md",
-  "blocker": "No Product code blocker. Product PASS remains open because the legacy eight-plan baseline still lacks a structured bilingual program library and extended mobile visual sampling is incomplete. Cross-lane Android, Health Connect, physical-device, signing, and Play gates are explicitly not claimed.",
-  "next_action": "Build a structured bilingual offline program library above the exercise catalog, expose Programs inside Train and Today, add deterministic progression and safety metadata, then run bilingual runtime evidence before considering Product PASS.",
-  "updated_at": "2026-10-02T13:11:32Z"
+  "blocker": "No immediate Product code blocker. Product remains PROGRESS because Cycling, Football, Swimming, Boxing, Recovery, and Racket/Team sections still have only two exercises each; a larger curated public-domain selection and broader bilingual visual sampling are required before Product PASS. Android, Health Connect, physical-device, signing, and Play gates remain outside Product ownership and are not claimed.",
+  "next_action": "Expand each thin sport section to at least six clear, license-compatible exercises with complete AR/EN contract and offline media, regenerate hashes and programs as needed, then runtime-sample the new sections in Arabic RTL and English LTR without weakening the existing quality gates.",
+  "updated_at": "2026-10-03T03:14:50Z"
 }
