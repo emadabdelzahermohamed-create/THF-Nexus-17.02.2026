@@ -24,11 +24,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - name: Product, Android and backend source contracts
         run: |
           python -m unittest discover -s fitness-v2/product/tests -v
           python fitness-v2/tests/test_source_contract.py
           python -m unittest discover -s fitness-v2/backend/tests -v
+      - name: Typecheck AppDeploy V2 route overlay
+        run: npm exec --yes --package=typescript@5.9.3 -- tsc -p fitness-v2/appdeploy/tsconfig.routes.json
 
   android-build:
     runs-on: ubuntu-latest

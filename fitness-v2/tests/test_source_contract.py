@@ -158,6 +158,8 @@ class FitnessV2SourceContractTest(unittest.TestCase):
     def test_appdeploy_v2_account_deletion_covers_dynamic_and_legacy_data(self):
         routes = (ROOT / "fitness-v2" / "appdeploy" / "android_v2_routes.ts").read_text()
         readme = (ROOT / "fitness-v2" / "appdeploy" / "README.md").read_text()
+        workflow = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
+        typecheck = (ROOT / "fitness-v2" / "appdeploy" / "tsconfig.routes.json").read_text()
         for marker in (
             "export async function deleteFitnessV2UserData",
             "resourceTable(userId)",
@@ -173,6 +175,9 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             self.assertIn(marker, routes)
         self.assertIn("DELETE /api/account", readme)
         self.assertIn("deleteFitnessV2UserData", readme)
+        self.assertIn("Typecheck AppDeploy V2 route overlay", workflow)
+        self.assertIn("typescript@5.9.3", workflow)
+        self.assertIn("android_v2_routes.ts", typecheck)
         self.assertNotIn("const competitionTable = 'fitness_v2_competition_submissions'", routes)
 
     def test_android_backup_rotation_and_health_rationale_are_release_safe(self):

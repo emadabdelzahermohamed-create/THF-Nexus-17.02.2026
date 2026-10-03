@@ -80,6 +80,8 @@ type DeletionCount = {
   done: boolean;
 };
 
+type ListedRecord<T> = Omit<T, 'id'> & { id: string };
+
 export type FitnessV2DeletionResult = {
   done: boolean;
   workoutHistory: DeletionCount;
@@ -116,7 +118,7 @@ const competitionTable = (userId: string) => `fitness_v2_competitions_${userScop
 const resourceTable = (userId: string) => `fitness_v2_resources_${userScope(userId)}`;
 const deletionStateTable = (userId: string) => `fitness_v2_deletion_${userScope(userId)}`;
 
-async function singleRecord<T>(table: string): Promise<(T & { id: string }) | null> {
+async function singleRecord<T>(table: string): Promise<ListedRecord<T> | null> {
   const page = await db.list<T>(table, { limit: 1 });
   return page.items[0] || null;
 }
