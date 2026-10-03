@@ -358,6 +358,29 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         lifecycleScope.launch { syncHealthInternal() }
     }
 
+    private fun openAccountResource(relativePath: String) {
+        val base = AccountAuthContract.persistentHttpsBase(BuildConfig.THF_ACCOUNT_URL)
+        if (base == null || relativePath !in setOf("privacy.html", "account-deletion.html")) {
+            dispatch(
+                "thf:account-resource",
+                JSONObject().put("opened", false).put("error", "Approved account URL is not configured"),
+            )
+            return
+        }
+        runOnUiThread {
+            runCatching {
+                val intent = Intent(Intent.ACTION_VIEW, "$base$relativePath".toUri())
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                startActivity(intent)
+            }.onFailure { cause ->
+                dispatch(
+                    "thf:account-resource",
+                    JSONObject().put("opened", false).put("error", cause.message ?: "Unable to open account resource"),
+                )
+            }
+        }
+    }
+
     private suspend fun syncHealthInternal() {
         refreshHealthState()
         if (!cachedHealthState.connected) {
@@ -544,6 +567,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
         @JavascriptInterface
         fun requestBackendSignIn() = runOnUiThread { this@MainActivity.requestBackendSignIn() }
+
+        @JavascriptInterface
+        fun openPrivacyPolicy() = this@MainActivity.openAccountResource("privacy.html")
+
+        @JavascriptInterface
+        fun openAccountDeletion() = this@MainActivity.openAccountResource("account-deletion.html")
 
         @JavascriptInterface
         fun clearBackendAccessToken() {

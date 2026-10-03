@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 ANDROID = ROOT / "fitness-v2" / "android"
+APPDEPLOY_PUBLIC = ROOT / "fitness-v2" / "appdeploy" / "public"
 ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
 
 
@@ -209,6 +210,36 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             / "HealthPermissionsRationaleActivity.kt"
         ).read_text()
         self.assertIn("R.string.health_permissions_rationale", rationale)
+
+    def test_android_exposes_privacy_and_account_deletion_paths(self):
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        script = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        activity = (
+            ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt"
+        ).read_text()
+        for marker in ('id="privacyPolicyBtn"', 'id="accountDeletionBtn"'):
+            self.assertIn(marker, html)
+        for marker in ("openPrivacyPolicy", "openAccountDeletion", "privacy.html", "account-deletion.html"):
+            self.assertIn(marker, script + activity)
+        self.assertIn("Intent.CATEGORY_BROWSABLE", activity)
+        self.assertIn("AccountAuthContract.persistentHttpsBase", activity)
+
+        privacy = (APPDEPLOY_PUBLIC / "privacy.html").read_text()
+        deletion = (APPDEPLOY_PUBLIC / "account-deletion.html").read_text()
+        for marker in (
+            "Health Connect summary values",
+            "does not sell personal data",
+            "does not include an advertising SDK",
+            "external identity-provider account",
+        ):
+            self.assertIn(marker, privacy)
+        for marker in (
+            "Delete THF Fitness account data",
+            "V2 workout history",
+            "synchronization/idempotency records",
+            "does not delete your Google, Apple, X, email-provider, or shared AppDeploy identity",
+        ):
+            self.assertIn(marker, deletion)
 
 
 if __name__ == "__main__":
