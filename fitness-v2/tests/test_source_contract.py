@@ -154,6 +154,26 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertNotIn("accessToken:", routes)
         self.assertNotIn("refreshToken", routes + bridge)
 
+    def test_appdeploy_v2_account_deletion_covers_dynamic_and_legacy_data(self):
+        routes = (ROOT / "fitness-v2" / "appdeploy" / "android_v2_routes.ts").read_text()
+        readme = (ROOT / "fitness-v2" / "appdeploy" / "README.md").read_text()
+        for marker in (
+            "export async function deleteFitnessV2UserData",
+            "resourceTable(userId)",
+            "deleteWorkoutHistory(userId)",
+            "deleteTrackedResources(userId)",
+            "deleteLegacySharedData(userId)",
+            "LEGACY_TICKET_TABLE",
+            "LEGACY_SESSION_TABLE",
+            "LEGACY_COMPETITION_TABLE",
+            "fitness_v2_deletion_",
+            "nextToken",
+        ):
+            self.assertIn(marker, routes)
+        self.assertIn("DELETE /api/account", readme)
+        self.assertIn("deleteFitnessV2UserData", readme)
+        self.assertNotIn("const competitionTable = 'fitness_v2_competition_submissions'", routes)
+
     def test_android_backup_rotation_and_health_rationale_are_release_safe(self):
         manifest_path = ANDROID / "app" / "src" / "main" / "AndroidManifest.xml"
         manifest = ET.parse(manifest_path)
