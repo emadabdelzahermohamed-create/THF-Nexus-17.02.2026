@@ -41,3 +41,38 @@ The active-workout inputs listened only for `change`. Runtime testing reproduced
 ## Fail-closed boundary
 
 This is Product `PROGRESS`, not V2 visual closure. The legacy eight-plan baseline still needs replacement by a structured bilingual program library, and broader mobile visual sampling remains open. Android packaging, physical device, Health Connect, signing, and Play remain owned by the Platform lane and are not claimed here.
+
+## 2026-10-03 Product UX continuation
+
+### User-visible source
+
+- Product source checkpoint: `aa824fd896e71af77bd9b1dc07b5d5f6ce621ef8`.
+- First-run onboarding now captures goal, experience level, two-to-six training days, and available equipment in Arabic or English, stores the profile locally, and replaces the generic Today card with one concrete program action.
+- The production path now exposes 26 structured bilingual offline programs above the 80-exercise catalog; every program has real sessions, exercise references, progression, safety, prescription, and provenance metadata.
+- The mobile active-workout logger now renders each set as a two-column card with visible Load/Reps/RPE/RIR labels and a full-width completion target. It no longer depends on a 520 px horizontal table.
+- Entered load, reps, RPE, and RIR remain durable before completion. The hidden primary navigation no longer leaves its 76 px bottom reservation under the sticky save/rest controls.
+
+### Automated gates
+
+- Local Product tests: `11/11 PASS`.
+- JavaScript syntax: `PASS`.
+- `git diff --check`: `PASS`.
+- Previous exact onboarding candidate `4053c8d2fd96ea87ebd64371a57de17fd34012bb`: GitHub Actions run `37071113582` / run number `12`, source job `111050519670` and Android job `111050519376`: `PASS`; artifact `11254333671`, digest `sha256:5f8716570cfe695d8cb57fdf2f80f3853f0523fd7400036df94a723f380c8512`.
+- Current source `aa824fd896e71af77bd9b1dc07b5d5f6ce621ef8`: GitHub Actions run `37092403671` / run number `13`, source job `111115323542` and Android job `111115323614`: `PASS`; artifact `11262691469`, digest `sha256:ccf9a917b9f603b3efd9aab0e21d027c9418215b23cdc871149eeca87a469c4e`.
+
+### Managed-browser runtime evidence
+
+- AppDeploy QA app: `thf-fitness-v2-product-qa-690eb6e-lwhy3h`.
+- Final tested snapshot: `1790996999779`; QA timestamp `1790997025015`.
+- Status: `ready`; frontend/network/backend errors: `0/0/0`.
+- QA screenshot pair: `https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-v2-product-qa-690eb6e-lwhy3h/1790997029278/mobile.png` and `https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-v2-product-qa-690eb6e-lwhy3h/1790997029278/web.png`.
+- The QA wrapper constrains the real app iframe to `390x844`; the measured inner runtime was `388x842` with a `373 px` content width after the scrollbar.
+- Arabic `ar/rtl` and English `en/ltr` both measured document overflow `0 px`, logger width/scrollWidth `355/353 px`, and set-card width/scrollWidth `319/317 px`.
+- The visible completion target measured `293x44 px`; all four field labels were visible in both languages.
+- A real interactive set entry of `20 kg x 12 reps`, RPE `7`, RIR `3` produced `240 kg`, persisted through reload, and displayed `2 of 2 complete` / `2 من 2 مكتملة`.
+- With `body.workout-active`, the sticky workout action computed to `bottom: 5px` instead of reserving the hidden navigation height.
+- Browser QA verdict for this task: `4/5`. The one-handed logger and bilingual responsive behavior are evidence-backed; physical Android touch/keyboard ergonomics remain a separate Platform/device gate.
+
+### Updated fail-closed boundary
+
+The former eight-plan and broad mobile-sampling blockers are resolved in source, managed-browser QA, and the terminal current-source workflow. Product remains `PROGRESS`, not whole-product or release PASS, until broader real-device visual acceptance is reconciled with the Platform lane. Android packaging, Health Connect, signing, physical-device, and Play evidence remain outside Product ownership and are not claimed here.
