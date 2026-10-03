@@ -30,14 +30,14 @@ class ProductCatalogTest(unittest.TestCase):
         cls.programs_manifest = json.loads(PROGRAMS_MANIFEST_PATH.read_text())
 
     def test_catalog_is_large_and_every_required_section_is_real(self):
-        self.assertEqual(80, len(self.catalog))
+        self.assertEqual(112, len(self.catalog))
         expected = {
             "gym", "home", "running", "cycling", "football", "swimming", "yoga",
             "calisthenics", "boxing", "hiit", "mobility", "recovery", "team_sports",
         }
         counts = self.manifest["sectionCounts"]
         self.assertEqual(expected, set(counts))
-        self.assertTrue(all(counts[section] >= 2 for section in expected))
+        self.assertTrue(all(counts[section] >= 6 for section in expected))
         self.assertGreaterEqual(counts["gym"], 36)
 
     def test_every_exercise_has_bilingual_contract_and_tracking_metadata(self):
@@ -45,9 +45,12 @@ class ProductCatalogTest(unittest.TestCase):
             "name", "setup", "breathing", "commonMistakes", "regression", "progression", "safety",
         )
         identifiers = set()
+        source_identifiers = set()
         for item in self.catalog:
             self.assertNotIn(item["id"], identifiers)
             identifiers.add(item["id"])
+            self.assertNotIn(item["sourceItemId"], source_identifiers)
+            source_identifiers.add(item["sourceItemId"])
             for field in bilingual:
                 self.assertTrue(item[field]["ar"], f"{item['id']} missing {field}.ar")
                 self.assertTrue(item[field]["en"], f"{item['id']} missing {field}.en")
@@ -62,6 +65,10 @@ class ProductCatalogTest(unittest.TestCase):
             self.assertIn("sets", item["prescription"])
             self.assertIn("restSeconds", item["prescription"])
             self.assertEqual({"load", "rpe", "rir", "volume"}, set(item["tracking"]))
+            self.assertEqual(
+                f"exercises/{item['sourceItemId']}.json",
+                item["provenance"]["sourcePath"],
+            )
 
     def test_every_demo_is_two_frame_offline_and_hash_verified(self):
         asset_count = 0
@@ -75,7 +82,7 @@ class ProductCatalogTest(unittest.TestCase):
                 self.assertTrue(asset.is_file(), relative)
                 self.assertEqual(hashes[relative], sha256(asset))
                 asset_count += 1
-        self.assertEqual(160, asset_count)
+        self.assertEqual(224, asset_count)
         self.assertEqual(asset_count, self.manifest["offlineDemoAssets"])
 
     def test_provenance_is_pinned_to_public_domain_source(self):
@@ -102,6 +109,8 @@ class ProductCatalogTest(unittest.TestCase):
             "openDetail", "startExercise", "completeSet", "finishWorkout", "saveProfile", "renderProgress",
         ):
             self.assertIn(f"function {handler}", script)
+        self.assertIn("${EXERCISES.length} documented exercises", script)
+        self.assertIn("112 تمرينًا موثقًا", html)
         combined = html + script + (PULSE / "styles.css").read_text()
         self.assertNotRegex(combined, r"(?i)stage16a")
         self.assertNotRegex(combined, r"https?://")

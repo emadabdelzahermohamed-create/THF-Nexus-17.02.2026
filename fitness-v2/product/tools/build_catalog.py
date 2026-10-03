@@ -19,7 +19,7 @@ import subprocess
 SOURCE_REPOSITORY = "https://github.com/yuhonas/free-exercise-db"
 SOURCE_LICENSE = "Unlicense"
 SOURCE_LICENSE_URL = "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md"
-IMPORTED_AT = "2026-10-02"
+IMPORTED_AT = "2026-10-03"
 
 # id, Arabic name, product section, goal override (optional)
 SELECTION = [
@@ -78,28 +78,60 @@ SELECTION = [
     ("Trail_Running_Walking", "جري أو مشي على المسار", "running", "endurance"),
     ("Jogging_Treadmill", "هرولة على جهاز الجري", "running", "endurance"),
     ("Walking_Treadmill", "مشي على جهاز الجري", "running", "general_fitness"),
+    ("Running_Treadmill", "جري على جهاز الجري", "running", "endurance"),
+    ("Prowler_Sprint", "عدو دفع الزلاجة", "running", "speed"),
+    ("Runners_Stretch", "إطالة العدّائين", "running", "mobility"),
     ("Linear_Acceleration_Wall_Drill", "تسارع خطي أمام الحائط", "football", "speed"),
     ("Box_Skip", "خطوات سريعة على الصندوق", "football", "agility"),
+    ("Front_Cone_Hops_or_hurdle_hops", "قفز أمامي فوق الأقماع", "football", "agility"),
+    ("Lateral_Cone_Hops", "قفز جانبي فوق الأقماع", "football", "agility"),
+    ("Single-Cone_Sprint_Drill", "تدريب العدو حول قمع واحد", "football", "speed"),
+    ("Side_Hop-Sprint", "قفز جانبي ثم انطلاق", "football", "speed"),
     ("Bicycling", "ركوب الدراجة", "cycling", "endurance"),
     ("Bicycling_Stationary", "دراجة ثابتة", "cycling", "endurance"),
+    ("Recumbent_Bike", "دراجة ثابتة بمقعد خلفي", "cycling", "endurance"),
+    ("Barbell_Step_Ups", "صعود الصندوق بالبار للدراجات", "cycling", "strength"),
+    ("Platform_Hamstring_Slides", "انزلاق خلفية الفخذ للدراجات", "cycling", "strength"),
+    ("Standing_Dumbbell_Calf_Raise", "رفع السمانة بالدمبل للدراجات", "cycling", "strength"),
     ("Rowing_Stationary", "تجديف ثابت", "hiit", "endurance"),
     ("Fast_Skipping", "نط حبل سريع", "boxing", "conditioning"),
     ("Medicine_Ball_Full_Twist", "دوران كامل بالكرة الطبية", "boxing", "power"),
+    ("Heavy_Bag_Thrust", "دفع الكيس الثقيل", "boxing", "power"),
+    ("Side_to_Side_Box_Shuffle", "خطوات جانبية سريعة للملاكمة", "boxing", "agility"),
+    ("Pallof_Press_With_Rotation", "ضغط بالوف مع الدوران", "boxing", "core"),
+    ("One-Arm_Medicine_Ball_Slam", "رمي الكرة الطبية بذراع واحدة", "boxing", "power"),
     ("Flutter_Kicks", "رفرفة الرجلين للسباحة", "swimming", "conditioning"),
     ("Full_Range-Of-Motion_Lat_Pulldown", "سحب لات بمدى كامل", "swimming", "strength"),
+    ("Straight-Arm_Dumbbell_Pullover", "سحب دمبل بذراعين ممدودتين للسباحة", "swimming", "strength"),
+    ("External_Rotation_with_Band", "دوران خارجي بالمطاط للسباحة", "swimming", "strength"),
+    ("One_Arm_Lat_Pulldown", "سحب لات بذراع واحدة للسباحة", "swimming", "strength"),
+    ("Dumbbell_Scaption", "رفع سكابشن بالدمبل للسباحة", "swimming", "strength"),
     ("Childs_Pose", "وضعية الطفل", "yoga", "mobility"),
     ("Cat_Stretch", "تمدد القطة", "yoga", "mobility"),
     ("Pelvic_Tilt_Into_Bridge", "إمالة الحوض إلى الجسر", "yoga", "mobility"),
     ("Downward_Facing_Balance", "توازن الوجه لأسفل", "yoga", "balance"),
+    ("Dancers_Stretch", "إطالة الراقص", "yoga", "mobility"),
+    ("Spinal_Stretch", "إطالة العمود الفقري", "yoga", "mobility"),
     ("90_90_Hamstring", "تمدد خلفية الفخذ 90/90", "mobility", "mobility"),
     ("Standing_Gastrocnemius_Calf_Stretch", "تمدد السمانة واقفًا", "mobility", "mobility"),
+    ("Ankle_Circles", "دوائر الكاحل", "mobility", "mobility"),
+    ("Standing_Hip_Circles", "دوائر الحوض واقفًا", "mobility", "mobility"),
+    ("Worlds_Greatest_Stretch", "الإطالة الشاملة", "mobility", "mobility"),
     ("Hamstring-SMR", "تحرير خلفية الفخذ بالفوم رول", "recovery", "recovery"),
     ("Calves-SMR", "تحرير السمانة بالفوم رول", "recovery", "recovery"),
+    ("Latissimus_Dorsi-SMR", "تحرير عضلات الظهر العريضة بالفوم رول", "recovery", "recovery"),
+    ("Quadriceps-SMR", "تحرير أمامية الفخذ بالفوم رول", "recovery", "recovery"),
+    ("Piriformis-SMR", "تحرير العضلة الكمثرية بالفوم رول", "recovery", "recovery"),
+    ("Iliotibial_Tract-SMR", "تحرير الشريط الحرقفي بالفوم رول", "recovery", "recovery"),
     ("Front_Box_Jump", "قفز أمامي على الصندوق", "hiit", "power"),
     ("Freehand_Jump_Squat", "سكوات قفز", "hiit", "conditioning"),
     ("Elliptical_Trainer", "جهاز إليبتيكال", "hiit", "endurance"),
     ("Medicine_Ball_Chest_Pass", "تمرير الكرة الطبية من الصدر", "team_sports", "power"),
     ("Step-up_with_Knee_Raise", "صعود مع رفع الركبة", "team_sports", "balance"),
+    ("Catch_and_Overhead_Throw", "التقاط ورمي الكرة من أعلى", "team_sports", "power"),
+    ("Medicine_Ball_Scoop_Throw", "رمي الكرة الطبية من أسفل", "team_sports", "power"),
+    ("Lateral_Bound", "وثب جانبي", "team_sports", "agility"),
+    ("Single-Leg_Lateral_Hop", "قفز جانبي بساق واحدة", "team_sports", "balance"),
     ("Overhead_Slam", "رمي الكرة الطبية من أعلى", "hiit", "power"),
     ("Scapular_Pull-Up", "عقلة لوح الكتف", "calisthenics", "skill"),
     ("Parallel_Bar_Dip", "متوازي على عارضتين", "calisthenics", "strength"),
@@ -146,6 +178,24 @@ PATTERN_AR = {
     "vertical_push": "دفع رأسي", "horizontal_pull": "سحب أفقي", "vertical_pull": "سحب رأسي",
     "isolation": "عزل عضلي", "core": "مقاومة حركة الجذع", "locomotion": "انتقال هوائي",
     "jump": "قفز وهبوط", "mobility": "حركة وإطالة", "recovery": "تحرير عضلي",
+}
+
+PATTERN_OVERRIDES = {
+    "Prowler_Sprint": "locomotion",
+    "Front_Cone_Hops_or_hurdle_hops": "jump",
+    "Lateral_Cone_Hops": "jump",
+    "Single-Cone_Sprint_Drill": "locomotion",
+    "Side_Hop-Sprint": "jump",
+    "Platform_Hamstring_Slides": "hinge",
+    "Heavy_Bag_Thrust": "horizontal_push",
+    "Side_to_Side_Box_Shuffle": "locomotion",
+    "Pallof_Press_With_Rotation": "core",
+    "One-Arm_Medicine_Ball_Slam": "jump",
+    "Straight-Arm_Dumbbell_Pullover": "vertical_pull",
+    "Catch_and_Overhead_Throw": "vertical_push",
+    "Medicine_Ball_Scoop_Throw": "hinge",
+    "Lateral_Bound": "jump",
+    "Single-Leg_Lateral_Hop": "jump",
 }
 
 FAMILY = {
@@ -284,6 +334,8 @@ def sha256(path: Path) -> str:
 
 
 def pattern_for(item: dict) -> str:
+    if item["id"] in PATTERN_OVERRIDES:
+        return PATTERN_OVERRIDES[item["id"]]
     value = f"{item['id']} {item['name']} {item.get('category', '')}".lower()
     if "smr" in value or item.get("equipment") == "foam roll":
         return "recovery"

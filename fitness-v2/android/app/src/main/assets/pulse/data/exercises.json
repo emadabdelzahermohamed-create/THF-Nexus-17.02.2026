@@ -140,7 +140,7 @@
       "sourcePath": "exercises/Fast_Skipping.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Fast_Skipping/0.jpg",
@@ -149,6 +149,156 @@
         {
           "path": "media/free-exercise-db/Fast_Skipping/1.jpg",
           "sha256": "786fa72df87075a801d9f6c735c31dc4581f3394e5fcb02ad23f4719da18ceac"
+        }
+      ]
+    }
+  },
+  {
+    "id": "heavy-bag-thrust",
+    "sourceItemId": "Heavy_Bag_Thrust",
+    "name": {
+      "en": "Heavy Bag Thrust",
+      "ar": "دفع الكيس الثقيل"
+    },
+    "section": {
+      "id": "boxing",
+      "en": "Boxing & martial arts",
+      "ar": "الملاكمة والفنون القتالية"
+    },
+    "sport": "boxing",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "chest"
+        ],
+        "ar": [
+          "الصدر"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abdominals",
+          "shoulders",
+          "triceps"
+        ],
+        "ar": [
+          "البطن",
+          "الكتف",
+          "الترايسبس"
+        ]
+      }
+    },
+    "bodyPart": "chest",
+    "equipment": {
+      "id": "other",
+      "en": "other",
+      "ar": "معدات بسيطة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "horizontal_push",
+      "en": "Horizontal Push",
+      "ar": "دفع أفقي"
+    },
+    "goal": {
+      "id": "power",
+      "en": "Power",
+      "ar": "القوة الانفجارية"
+    },
+    "setup": {
+      "en": "Set the shoulder blades, keep wrists stacked, and establish a stable base before pressing.",
+      "ar": "ثبّت لوحي الكتف، اجعل الرسغ فوق المرفق، وثبّت قاعدة الجسم قبل الدفع."
+    },
+    "steps": {
+      "en": [
+        "Utilize a heavy bag for this exercise. Assume an upright stance next to the bag, with your feet staggered, fairly wide apart. Place your hand on the bag at about chest height. This will be your starting position.",
+        "Begin by twisting at the waist, pushing the bag forward as hard as possible. Perform this move quickly, pushing the bag away from your body.",
+        "Receive the bag as it swings back by reversing these steps."
+      ],
+      "ar": [
+        "اخفض الحمل أو الجسم بتحكم حتى مدى مريح.",
+        "أبقِ الساعد ثابتًا والكتف بعيدًا عن الأذن.",
+        "ادفع بسلاسة مع الحفاظ على الجذع ثابتًا."
+      ]
+    },
+    "breathing": {
+      "en": "Inhale during the controlled descent; exhale as you press.",
+      "ar": "خذ شهيقًا أثناء النزول وازفر مع الدفع."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Elbows flaring excessively",
+        "Bouncing at the bottom",
+        "Losing wrist alignment"
+      ],
+      "ar": [
+        "فتح المرفقين أكثر من اللازم",
+        "الارتداد في الأسفل",
+        "انحراف الرسغ"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Heavy_Bag_Thrust/0.jpg",
+        "media/free-exercise-db/Heavy_Bag_Thrust/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Heavy Bag Thrust",
+        "ar": "وضعا البداية والنهاية لتمرين دفع الكيس الثقيل"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Heavy_Bag_Thrust.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Heavy_Bag_Thrust/0.jpg",
+          "sha256": "c4877c60326d85fbebd1ebe0157d8a5917b45ebefe20c372b47aeecedf833833"
+        },
+        {
+          "path": "media/free-exercise-db/Heavy_Bag_Thrust/1.jpg",
+          "sha256": "38ab7cb618c84324d56a5a5080401ee97c2a303179f6878070081d18d542c08c"
         }
       ]
     }
@@ -287,7 +437,7 @@
       "sourcePath": "exercises/Medicine_Ball_Full_Twist.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Medicine_Ball_Full_Twist/0.jpg",
@@ -296,6 +446,459 @@
         {
           "path": "media/free-exercise-db/Medicine_Ball_Full_Twist/1.jpg",
           "sha256": "2df6d7ef3bca592b971ac3d9568e7c5d50dd25d5d85abfd0f9d6e0acb6810a8c"
+        }
+      ]
+    }
+  },
+  {
+    "id": "one-arm-medicine-ball-slam",
+    "sourceItemId": "One-Arm_Medicine_Ball_Slam",
+    "name": {
+      "en": "One-Arm Medicine Ball Slam",
+      "ar": "رمي الكرة الطبية بذراع واحدة"
+    },
+    "section": {
+      "id": "boxing",
+      "en": "Boxing & martial arts",
+      "ar": "الملاكمة والفنون القتالية"
+    },
+    "sport": "boxing",
+    "category": "strength",
+    "muscles": {
+      "primary": {
+        "en": [
+          "abdominals"
+        ],
+        "ar": [
+          "البطن"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "lats",
+          "shoulders"
+        ],
+        "ar": [
+          "الظهر العريض",
+          "الكتف"
+        ]
+      }
+    },
+    "bodyPart": "abdominals",
+    "equipment": {
+      "id": "medicine ball",
+      "en": "medicine ball",
+      "ar": "كرة طبية"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "jump",
+      "en": "Jump",
+      "ar": "قفز وهبوط"
+    },
+    "goal": {
+      "id": "power",
+      "en": "Power",
+      "ar": "القوة الانفجارية"
+    },
+    "setup": {
+      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
+      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+    },
+    "steps": {
+      "en": [
+        "Start in a standing position with a staggered, athletic stance. Hold a medicine ball in one hand, on the same side as your back leg. This will be your starting position.",
+        "Begin by winding the arm, raising the medicine ball above your head. As you do so, extend through the hips, knees, and ankles to load up for the slam.",
+        "At peak extension, flex the shoulders, spine, and hips to throw the ball hard into the ground directly in front of you.",
+        "Catch the ball on the bounce and continue for the desired number of repetitions."
+      ],
+      "ar": [
+        "حمّل الورك والركبتين بسرعة متحكم فيها.",
+        "ادفع الأرض وحافظ على اتجاه الركبتين.",
+        "اهبط بهدوء واثبت قبل التكرار التالي."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale on takeoff and reset the breath after each stable landing.",
+      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "5–8",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "explosive / انفجاري",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Knees collapsing inward",
+        "Loud rigid landing",
+        "Repeating before balance returns"
+      ],
+      "ar": [
+        "انهيار الركبتين للداخل",
+        "هبوط صلب وصاخب",
+        "التكرار قبل استعادة التوازن"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/One-Arm_Medicine_Ball_Slam/0.jpg",
+        "media/free-exercise-db/One-Arm_Medicine_Ball_Slam/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for One-Arm Medicine Ball Slam",
+        "ar": "وضعا البداية والنهاية لتمرين رمي الكرة الطبية بذراع واحدة"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/One-Arm_Medicine_Ball_Slam.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/One-Arm_Medicine_Ball_Slam/0.jpg",
+          "sha256": "1e71b13b1713c3160a11a362b22e16a312890179346cff572f75b4f0a4bde43a"
+        },
+        {
+          "path": "media/free-exercise-db/One-Arm_Medicine_Ball_Slam/1.jpg",
+          "sha256": "498e6704e9b3c0b915d5f5e0e7f67da48f9244ca5059f95afbfd48da9d287a40"
+        }
+      ]
+    }
+  },
+  {
+    "id": "pallof-press-with-rotation",
+    "sourceItemId": "Pallof_Press_With_Rotation",
+    "name": {
+      "en": "Pallof Press With Rotation",
+      "ar": "ضغط بالوف مع الدوران"
+    },
+    "section": {
+      "id": "boxing",
+      "en": "Boxing & martial arts",
+      "ar": "الملاكمة والفنون القتالية"
+    },
+    "sport": "boxing",
+    "category": "strength",
+    "muscles": {
+      "primary": {
+        "en": [
+          "abdominals"
+        ],
+        "ar": [
+          "البطن"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "chest",
+          "shoulders",
+          "triceps"
+        ],
+        "ar": [
+          "الصدر",
+          "الكتف",
+          "الترايسبس"
+        ]
+      }
+    },
+    "bodyPart": "abdominals",
+    "equipment": {
+      "id": "cable",
+      "en": "cable",
+      "ar": "كيبل"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "core",
+      "en": "Core",
+      "ar": "مقاومة حركة الجذع"
+    },
+    "goal": {
+      "id": "core",
+      "en": "Core",
+      "ar": "ثبات الجذع"
+    },
+    "setup": {
+      "en": "Stack ribs over pelvis, brace gently, and choose a range that preserves spinal control.",
+      "ar": "ضع القفص الصدري فوق الحوض، شد البطن برفق، واختر مدى يحافظ على ثبات العمود الفقري."
+    },
+    "steps": {
+      "en": [
+        "Connect a standard handle to a tower, and position the cable to shoulder height.",
+        "With your side to the cable, grab the handle with one hand and step away from the tower. You should be approximately arm's length away from the pulley, with the tension of the weight on the cable. Align outstretched arm with cable.",
+        "With your feet positioned hip-width apart, pull the cable into your chest and grab the handle with your other hand. Both hands should be on the handle at this time.",
+        "Facing forward, press the cable away from your chest. You core should be tight and engaged.",
+        "Keeping your hips straight, twist your torso away from the pulley until you get a full quarter rotation.",
+        "Maintain your rigid stance and straight arms. Return to the neutral position in a slow and controlled manner. Your arms should be extended in front of you."
+      ],
+      "ar": [
+        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
+        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
+        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+      ]
+    },
+    "breathing": {
+      "en": "Keep breathing; exhale during the hardest phase without losing the brace.",
+      "ar": "استمر في التنفس وازفر في أصعب مرحلة من دون فقدان ثبات الجذع."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Holding the breath",
+        "Pulling the neck",
+        "Arching the lower back"
+      ],
+      "ar": [
+        "حبس النفس",
+        "شد الرقبة",
+        "تقويس أسفل الظهر"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Pallof_Press_With_Rotation/0.jpg",
+        "media/free-exercise-db/Pallof_Press_With_Rotation/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Pallof Press With Rotation",
+        "ar": "وضعا البداية والنهاية لتمرين ضغط بالوف مع الدوران"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Pallof_Press_With_Rotation.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Pallof_Press_With_Rotation/0.jpg",
+          "sha256": "a1872b96de307a987bc9a56aa3705b52bcebb1729536863e62bd7254d31e5321"
+        },
+        {
+          "path": "media/free-exercise-db/Pallof_Press_With_Rotation/1.jpg",
+          "sha256": "05abef18c6f0a398c9911471231a730a57d8dc81201b6dc68d10455ad5f77a41"
+        }
+      ]
+    }
+  },
+  {
+    "id": "side-to-side-box-shuffle",
+    "sourceItemId": "Side_to_Side_Box_Shuffle",
+    "name": {
+      "en": "Side to Side Box Shuffle",
+      "ar": "خطوات جانبية سريعة للملاكمة"
+    },
+    "section": {
+      "id": "boxing",
+      "en": "Boxing & martial arts",
+      "ar": "الملاكمة والفنون القتالية"
+    },
+    "sport": "boxing",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "quadriceps"
+        ],
+        "ar": [
+          "أمامية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abductors",
+          "adductors",
+          "calves",
+          "hamstrings"
+        ],
+        "ar": [
+          "مبعدات الفخذ",
+          "مقربات الفخذ",
+          "السمانة",
+          "خلفية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "quadriceps",
+    "equipment": {
+      "id": "other",
+      "en": "other",
+      "ar": "معدات بسيطة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "locomotion",
+      "en": "Locomotion",
+      "ar": "انتقال هوائي"
+    },
+    "goal": {
+      "id": "agility",
+      "en": "Agility",
+      "ar": "الرشاقة"
+    },
+    "setup": {
+      "en": "Start at an easy pace, use stable footwear or equipment, and keep the route clear.",
+      "ar": "ابدأ بإيقاع سهل، استخدم حذاءً أو جهازًا ثابتًا، وتأكد من خلو المسار."
+    },
+    "steps": {
+      "en": [
+        "Stand to one side of the box with your left foot resting on the middle of it.",
+        "To begin, jump up and over to the other side of the box, landing with your right foot on top of the box and your left foot on the floor. Swing your arms to aid your movement.",
+        "Continue shuffling back and forth across the box."
+      ],
+      "ar": [
+        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
+        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
+        "اخفض السرعة تدريجيًا قبل التوقف."
+      ]
+    },
+    "breathing": {
+      "en": "Use rhythmic breathing and reduce intensity if breathing becomes uncontrolled.",
+      "ar": "تنفس بإيقاع منتظم وخفّض الشدة إذا فقدت التحكم في التنفس."
+    },
+    "prescription": {
+      "sets": 1,
+      "reps": null,
+      "durationSeconds": 1200,
+      "restSeconds": 0,
+      "tempo": "RPE 5–7",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Starting too fast",
+        "Overstriding",
+        "Stopping abruptly"
+      ],
+      "ar": [
+        "البدء بسرعة كبيرة",
+        "إطالة الخطوة أكثر من اللازم",
+        "التوقف المفاجئ"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Side_to_Side_Box_Shuffle/0.jpg",
+        "media/free-exercise-db/Side_to_Side_Box_Shuffle/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Side to Side Box Shuffle",
+        "ar": "وضعا البداية والنهاية لتمرين خطوات جانبية سريعة للملاكمة"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Side_to_Side_Box_Shuffle.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Side_to_Side_Box_Shuffle/0.jpg",
+          "sha256": "2765cab122ea5ad7377146e204e3b984b71edfb26a7f8ab36d8ee04f8c62d552"
+        },
+        {
+          "path": "media/free-exercise-db/Side_to_Side_Box_Shuffle/1.jpg",
+          "sha256": "30cecbc51b49840797ebf81b65388f1d4c62a4957cf5aa09b701ebcfe4235e94"
         }
       ]
     }
@@ -436,7 +1039,7 @@
       "sourcePath": "exercises/Dips_-_Triceps_Version.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Dips_-_Triceps_Version/0.jpg",
@@ -584,7 +1187,7 @@
       "sourcePath": "exercises/Handstand_Push-Ups.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Handstand_Push-Ups/0.jpg",
@@ -727,7 +1330,7 @@
       "sourcePath": "exercises/Hanging_Leg_Raise.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Hanging_Leg_Raise/0.jpg",
@@ -876,7 +1479,7 @@
       "sourcePath": "exercises/Parallel_Bar_Dip.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Parallel_Bar_Dip/0.jpg",
@@ -1026,7 +1629,7 @@
       "sourcePath": "exercises/Pullups.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Pullups/0.jpg",
@@ -1174,7 +1777,7 @@
       "sourcePath": "exercises/Scapular_Pull-Up.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Scapular_Pull-Up/0.jpg",
@@ -1183,6 +1786,159 @@
         {
           "path": "media/free-exercise-db/Scapular_Pull-Up/1.jpg",
           "sha256": "eec694838b147d03e52e2b507def487374eb95c814bfb897b41fc4ffc0eb2901"
+        }
+      ]
+    }
+  },
+  {
+    "id": "barbell-step-ups",
+    "sourceItemId": "Barbell_Step_Ups",
+    "name": {
+      "en": "Barbell Step Ups",
+      "ar": "صعود الصندوق بالبار للدراجات"
+    },
+    "section": {
+      "id": "cycling",
+      "en": "Cycling",
+      "ar": "الدراجات"
+    },
+    "sport": "cycling",
+    "category": "strength",
+    "muscles": {
+      "primary": {
+        "en": [
+          "quadriceps"
+        ],
+        "ar": [
+          "أمامية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "calves",
+          "glutes",
+          "hamstrings",
+          "quadriceps"
+        ],
+        "ar": [
+          "السمانة",
+          "الألوية",
+          "خلفية الفخذ",
+          "أمامية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "quadriceps",
+    "equipment": {
+      "id": "barbell",
+      "en": "barbell",
+      "ar": "بار وأوزان"
+    },
+    "level": {
+      "id": "intermediate",
+      "en": "Intermediate",
+      "ar": "متوسط"
+    },
+    "movement": {
+      "id": "squat",
+      "en": "Squat",
+      "ar": "سكوات/دفع سفلي"
+    },
+    "goal": {
+      "id": "strength",
+      "en": "Strength",
+      "ar": "القوة"
+    },
+    "setup": {
+      "en": "Set the feet securely, brace the trunk, and align knees with toes before loading the descent.",
+      "ar": "ثبّت القدمين، شد الجذع، واجعل الركبتين في اتجاه أصابع القدم قبل النزول."
+    },
+    "steps": {
+      "en": [
+        "Stand up straight while holding a barbell placed on the back of your shoulders (slightly below the neck) and stand upright behind an elevated platform (such as the one used for spotting behind a flat bench). This is your starting position.",
+        "Place the right foot on the elevated platform. Step on the platform by extending the hip and the knee of your right leg. Use the heel mainly to lift the rest of your body up and place the foot of the left leg on the platform as well. Breathe out as you execute the force required to come up.",
+        "Step down with the left leg by flexing the hip and knee of the right leg as you inhale. Return to the original standing position by placing the right foot of to next to the left foot on the initial position.",
+        "Repeat with the right leg for the recommended amount of repetitions and then perform with the left leg."
+      ],
+      "ar": [
+        "انزل بالحوض بتحكم مع بقاء القدم كاملة على الأرض.",
+        "حافظ على ثبات الجذع وتتبع الركبة لاتجاه القدم.",
+        "ادفع الأرض واصعد من دون قفل الركبتين بعنف."
+      ]
+    },
+    "breathing": {
+      "en": "Inhale and brace before descending; exhale through the effort.",
+      "ar": "خذ شهيقًا وثبّت الجذع قبل النزول، وازفر أثناء الصعود."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Knees collapsing inward",
+        "Heels lifting",
+        "Losing trunk control"
+      ],
+      "ar": [
+        "انهيار الركبتين للداخل",
+        "ارتفاع الكعبين",
+        "فقدان ثبات الجذع"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Barbell_Step_Ups/0.jpg",
+        "media/free-exercise-db/Barbell_Step_Ups/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Barbell Step Ups",
+        "ar": "وضعا البداية والنهاية لتمرين صعود الصندوق بالبار للدراجات"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Barbell_Step_Ups.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Barbell_Step_Ups/0.jpg",
+          "sha256": "aea3ae14b4b6d5c24d12db9750d1d3be11f210c0b53c29ca339044c4974d3f36"
+        },
+        {
+          "path": "media/free-exercise-db/Barbell_Step_Ups/1.jpg",
+          "sha256": "630057ccd90a8e7b8fd59b29d52fcf1338f361e520da8eb97aae915c96374ffc"
         }
       ]
     }
@@ -1321,7 +2077,7 @@
       "sourcePath": "exercises/Bicycling.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Bicycling/0.jpg",
@@ -1469,7 +2225,7 @@
       "sourcePath": "exercises/Bicycling_Stationary.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Bicycling_Stationary/0.jpg",
@@ -1478,6 +2234,445 @@
         {
           "path": "media/free-exercise-db/Bicycling_Stationary/1.jpg",
           "sha256": "390a6508a8ffd71998cf184f0b9d6a218630069f343b5678781608ddfe304faa"
+        }
+      ]
+    }
+  },
+  {
+    "id": "platform-hamstring-slides",
+    "sourceItemId": "Platform_Hamstring_Slides",
+    "name": {
+      "en": "Platform Hamstring Slides",
+      "ar": "انزلاق خلفية الفخذ للدراجات"
+    },
+    "section": {
+      "id": "cycling",
+      "en": "Cycling",
+      "ar": "الدراجات"
+    },
+    "sport": "cycling",
+    "category": "strength",
+    "muscles": {
+      "primary": {
+        "en": [
+          "hamstrings"
+        ],
+        "ar": [
+          "خلفية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "glutes"
+        ],
+        "ar": [
+          "الألوية"
+        ]
+      }
+    },
+    "bodyPart": "hamstrings",
+    "equipment": {
+      "id": "other",
+      "en": "other",
+      "ar": "معدات بسيطة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "hinge",
+      "en": "Hinge",
+      "ar": "مفصل الورك"
+    },
+    "goal": {
+      "id": "strength",
+      "en": "Strength",
+      "ar": "القوة"
+    },
+    "setup": {
+      "en": "Brace the trunk, soften the knees, and keep the load close before moving the hips back.",
+      "ar": "شد الجذع، اثن الركبتين قليلًا، وأبقِ الحمل قريبًا قبل دفع الحوض للخلف."
+    },
+    "steps": {
+      "en": [
+        "For this movement a wooden floor or similar is needed. Lay on your back with your legs extended. Place a gym towel or a light weight underneath your heel. This will be your starting position.",
+        "Begin the movement by flexing the knee, keeping your other leg straight.",
+        "Continue bringing the heel closer to you, sliding it on the floor.",
+        "At full knee flexion, reverse the movement to return to the starting position."
+      ],
+      "ar": [
+        "ادفع الحوض للخلف مع ظهر محايد.",
+        "توقف قبل أن تفقد ثبات الجذع أو موضع الحمل.",
+        "اضغط بالأقدام ومد الحوض للعودة دون فرط تقوس الظهر."
+      ]
+    },
+    "breathing": {
+      "en": "Brace on the way down and exhale after passing the hardest point.",
+      "ar": "ثبّت النفس أثناء النزول وازفر بعد تجاوز أصعب نقطة."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Rounding the back",
+        "Load drifting away",
+        "Hyperextending at lockout"
+      ],
+      "ar": [
+        "تقويس الظهر",
+        "ابتعاد الحمل عن الجسم",
+        "فرط مد أسفل الظهر في النهاية"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Platform_Hamstring_Slides/0.jpg",
+        "media/free-exercise-db/Platform_Hamstring_Slides/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Platform Hamstring Slides",
+        "ar": "وضعا البداية والنهاية لتمرين انزلاق خلفية الفخذ للدراجات"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Platform_Hamstring_Slides.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Platform_Hamstring_Slides/0.jpg",
+          "sha256": "637ac2e7575fc3134303054789f1696212cde90f163aaeaf8c0fe8e39250acd2"
+        },
+        {
+          "path": "media/free-exercise-db/Platform_Hamstring_Slides/1.jpg",
+          "sha256": "883d5f30c5d7da7adfb710d4145c760f54614e2c63b45895074960acb31a21b8"
+        }
+      ]
+    }
+  },
+  {
+    "id": "recumbent-bike",
+    "sourceItemId": "Recumbent_Bike",
+    "name": {
+      "en": "Recumbent Bike",
+      "ar": "دراجة ثابتة بمقعد خلفي"
+    },
+    "section": {
+      "id": "cycling",
+      "en": "Cycling",
+      "ar": "الدراجات"
+    },
+    "sport": "cycling",
+    "category": "cardio",
+    "muscles": {
+      "primary": {
+        "en": [
+          "quadriceps"
+        ],
+        "ar": [
+          "أمامية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "calves",
+          "glutes",
+          "hamstrings"
+        ],
+        "ar": [
+          "السمانة",
+          "الألوية",
+          "خلفية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "quadriceps",
+    "equipment": {
+      "id": "machine",
+      "en": "machine",
+      "ar": "جهاز مقاومة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "locomotion",
+      "en": "Locomotion",
+      "ar": "انتقال هوائي"
+    },
+    "goal": {
+      "id": "endurance",
+      "en": "Endurance",
+      "ar": "التحمل"
+    },
+    "setup": {
+      "en": "Start at an easy pace, use stable footwear or equipment, and keep the route clear.",
+      "ar": "ابدأ بإيقاع سهل، استخدم حذاءً أو جهازًا ثابتًا، وتأكد من خلو المسار."
+    },
+    "steps": {
+      "en": [
+        "To begin, seat yourself on the bike and adjust the seat to your height.",
+        "Select the desired option from the menu. You may have to start pedaling to turn it on. You can use the manual setting, or you can select a program to use. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. The level of resistance can be changed throughout the workout. The handles can be used to monitor your heart rate to help you stay at an appropriate intensity.",
+        "Recumbent bikes offer convenience, cardiovascular benefits, and have less impact than other activities. A 150 lb person will burn about 230 calories cycling at a moderate rate for 30 minutes, compared to 450 calories or more running."
+      ],
+      "ar": [
+        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
+        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
+        "اخفض السرعة تدريجيًا قبل التوقف."
+      ]
+    },
+    "breathing": {
+      "en": "Use rhythmic breathing and reduce intensity if breathing becomes uncontrolled.",
+      "ar": "تنفس بإيقاع منتظم وخفّض الشدة إذا فقدت التحكم في التنفس."
+    },
+    "prescription": {
+      "sets": 1,
+      "reps": null,
+      "durationSeconds": 1200,
+      "restSeconds": 0,
+      "tempo": "RPE 5–7",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Starting too fast",
+        "Overstriding",
+        "Stopping abruptly"
+      ],
+      "ar": [
+        "البدء بسرعة كبيرة",
+        "إطالة الخطوة أكثر من اللازم",
+        "التوقف المفاجئ"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Recumbent_Bike/0.jpg",
+        "media/free-exercise-db/Recumbent_Bike/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Recumbent Bike",
+        "ar": "وضعا البداية والنهاية لتمرين دراجة ثابتة بمقعد خلفي"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Recumbent_Bike.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Recumbent_Bike/0.jpg",
+          "sha256": "0502a0b15dde6ea44085e5ade6921e7056c3c822c617afda23709b5dba588bb1"
+        },
+        {
+          "path": "media/free-exercise-db/Recumbent_Bike/1.jpg",
+          "sha256": "dc365ea3ccc5743db6cc76ec1b7dc63c02ff3dc7ced4c8caf3f9ec0b3dddee20"
+        }
+      ]
+    }
+  },
+  {
+    "id": "standing-dumbbell-calf-raise",
+    "sourceItemId": "Standing_Dumbbell_Calf_Raise",
+    "name": {
+      "en": "Standing Dumbbell Calf Raise",
+      "ar": "رفع السمانة بالدمبل للدراجات"
+    },
+    "section": {
+      "id": "cycling",
+      "en": "Cycling",
+      "ar": "الدراجات"
+    },
+    "sport": "cycling",
+    "category": "strength",
+    "muscles": {
+      "primary": {
+        "en": [
+          "calves"
+        ],
+        "ar": [
+          "السمانة"
+        ]
+      },
+      "secondary": {
+        "en": [],
+        "ar": []
+      }
+    },
+    "bodyPart": "calves",
+    "equipment": {
+      "id": "dumbbell",
+      "en": "dumbbell",
+      "ar": "دمبل"
+    },
+    "level": {
+      "id": "intermediate",
+      "en": "Intermediate",
+      "ar": "متوسط"
+    },
+    "movement": {
+      "id": "isolation",
+      "en": "Isolation",
+      "ar": "عزل عضلي"
+    },
+    "goal": {
+      "id": "strength",
+      "en": "Strength",
+      "ar": "القوة"
+    },
+    "setup": {
+      "en": "Choose a controllable load, stabilize the nearby joints, and align the working joint.",
+      "ar": "اختر حملًا يمكن التحكم فيه، ثبّت المفاصل القريبة، واضبط محاذاة المفصل العامل."
+    },
+    "steps": {
+      "en": [
+        "Stand with your torso upright holding two dumbbells in your hands by your sides. Place the ball of the foot on a sturdy and stable wooden board (that is around 2-3 inches tall) while your heels extend off and touch the floor. This will be your starting position.",
+        "With the toes pointing either straight (to hit all parts equally), inwards (for emphasis on the outer head) or outwards (for emphasis on the inner head), raise the heels off the floor as you exhale by contracting the calves. Hold the top contraction for a second.",
+        "As you inhale, go back to the starting position by slowly lowering the heels.",
+        "Repeat for the recommended amount of times."
+      ],
+      "ar": [
+        "حرّك المفصل المستهدف فقط قدر الإمكان.",
+        "توقف لحظة عند الانقباض من دون دفع أو رمي الحمل.",
+        "عد ببطء وحافظ على شد العضلة."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale during the lift or extension; inhale on the controlled return.",
+      "ar": "ازفر أثناء الرفع أو المد وخذ شهيقًا أثناء العودة."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Using momentum",
+        "Moving adjacent joints",
+        "Choosing excessive load"
+      ],
+      "ar": [
+        "استخدام الزخم",
+        "تحريك مفاصل غير مستهدفة",
+        "اختيار حمل زائد"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Standing_Dumbbell_Calf_Raise/0.jpg",
+        "media/free-exercise-db/Standing_Dumbbell_Calf_Raise/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Standing Dumbbell Calf Raise",
+        "ar": "وضعا البداية والنهاية لتمرين رفع السمانة بالدمبل للدراجات"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Standing_Dumbbell_Calf_Raise.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Standing_Dumbbell_Calf_Raise/0.jpg",
+          "sha256": "5e120471e335e58248af0202c3720a6f7c7f822566c785d0e43122d17da94aa7"
+        },
+        {
+          "path": "media/free-exercise-db/Standing_Dumbbell_Calf_Raise/1.jpg",
+          "sha256": "9102c567e60b12ce944e4ce3177caad918a13ca0fe1c1be15f099f89369aa100"
         }
       ]
     }
@@ -1625,7 +2820,7 @@
       "sourcePath": "exercises/Box_Skip.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Box_Skip/0.jpg",
@@ -1634,6 +2829,317 @@
         {
           "path": "media/free-exercise-db/Box_Skip/1.jpg",
           "sha256": "1af5a794d99d756d8a6ccc8c013d03a088bad2bf5dd12e688cd27c135ea63f1f"
+        }
+      ]
+    }
+  },
+  {
+    "id": "front-cone-hops-or-hurdle-hops",
+    "sourceItemId": "Front_Cone_Hops_or_hurdle_hops",
+    "name": {
+      "en": "Front Cone Hops (or hurdle hops)",
+      "ar": "قفز أمامي فوق الأقماع"
+    },
+    "section": {
+      "id": "football",
+      "en": "Football",
+      "ar": "كرة القدم"
+    },
+    "sport": "football",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "quadriceps"
+        ],
+        "ar": [
+          "أمامية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abductors",
+          "adductors",
+          "calves",
+          "glutes",
+          "hamstrings"
+        ],
+        "ar": [
+          "مبعدات الفخذ",
+          "مقربات الفخذ",
+          "السمانة",
+          "الألوية",
+          "خلفية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "quadriceps",
+    "equipment": {
+      "id": "other",
+      "en": "other",
+      "ar": "معدات بسيطة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "jump",
+      "en": "Jump",
+      "ar": "قفز وهبوط"
+    },
+    "goal": {
+      "id": "agility",
+      "en": "Agility",
+      "ar": "الرشاقة"
+    },
+    "setup": {
+      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
+      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+    },
+    "steps": {
+      "en": [
+        "Set up a row of cones or other small barriers, placing them a few feet apart.",
+        "Stand in front of the first cone with your feet shoulder width apart. This will be your starting position.",
+        "Begin by jumping with both feet over the first cone, swinging both arms as you jump.",
+        "Absorb the impact of landing by bending the knees, rebounding out of the first leap by jumping over the next cone.",
+        "Continue until you have jumped over all of the cones."
+      ],
+      "ar": [
+        "حمّل الورك والركبتين بسرعة متحكم فيها.",
+        "ادفع الأرض وحافظ على اتجاه الركبتين.",
+        "اهبط بهدوء واثبت قبل التكرار التالي."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale on takeoff and reset the breath after each stable landing.",
+      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "5–8",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "explosive / انفجاري",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Knees collapsing inward",
+        "Loud rigid landing",
+        "Repeating before balance returns"
+      ],
+      "ar": [
+        "انهيار الركبتين للداخل",
+        "هبوط صلب وصاخب",
+        "التكرار قبل استعادة التوازن"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Front_Cone_Hops_or_hurdle_hops/0.jpg",
+        "media/free-exercise-db/Front_Cone_Hops_or_hurdle_hops/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Front Cone Hops (or hurdle hops)",
+        "ar": "وضعا البداية والنهاية لتمرين قفز أمامي فوق الأقماع"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Front_Cone_Hops_or_hurdle_hops.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Front_Cone_Hops_or_hurdle_hops/0.jpg",
+          "sha256": "4418215681ed1b5824aa89042d2a768b72b9a541b78b442e6448fd0535402209"
+        },
+        {
+          "path": "media/free-exercise-db/Front_Cone_Hops_or_hurdle_hops/1.jpg",
+          "sha256": "dc33221ef92e836a9381cee894e138a6089a57d026197dea19689c07164e38e1"
+        }
+      ]
+    }
+  },
+  {
+    "id": "lateral-cone-hops",
+    "sourceItemId": "Lateral_Cone_Hops",
+    "name": {
+      "en": "Lateral Cone Hops",
+      "ar": "قفز جانبي فوق الأقماع"
+    },
+    "section": {
+      "id": "football",
+      "en": "Football",
+      "ar": "كرة القدم"
+    },
+    "sport": "football",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "adductors"
+        ],
+        "ar": [
+          "مقربات الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abductors",
+          "calves",
+          "glutes",
+          "hamstrings",
+          "quadriceps"
+        ],
+        "ar": [
+          "مبعدات الفخذ",
+          "السمانة",
+          "الألوية",
+          "خلفية الفخذ",
+          "أمامية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "adductors",
+    "equipment": {
+      "id": "other",
+      "en": "other",
+      "ar": "معدات بسيطة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "jump",
+      "en": "Jump",
+      "ar": "قفز وهبوط"
+    },
+    "goal": {
+      "id": "agility",
+      "en": "Agility",
+      "ar": "الرشاقة"
+    },
+    "setup": {
+      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
+      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+    },
+    "steps": {
+      "en": [
+        "Position a number of cones in a row several feet apart.",
+        "Stand next to the end of the cones, facing 90 degrees to the direction of travel. This will be your starting position.",
+        "Begin the jump by dipping with the knees to initiate a stretch reflex, and immediately reverse direction to push off the ground, jumping up and sideways over the cone.",
+        "Use your legs to absorb impact upon landing, and rebound into the next jump, continuing down the row of cones."
+      ],
+      "ar": [
+        "حمّل الورك والركبتين بسرعة متحكم فيها.",
+        "ادفع الأرض وحافظ على اتجاه الركبتين.",
+        "اهبط بهدوء واثبت قبل التكرار التالي."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale on takeoff and reset the breath after each stable landing.",
+      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "5–8",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "explosive / انفجاري",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Knees collapsing inward",
+        "Loud rigid landing",
+        "Repeating before balance returns"
+      ],
+      "ar": [
+        "انهيار الركبتين للداخل",
+        "هبوط صلب وصاخب",
+        "التكرار قبل استعادة التوازن"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Lateral_Cone_Hops/0.jpg",
+        "media/free-exercise-db/Lateral_Cone_Hops/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Lateral Cone Hops",
+        "ar": "وضعا البداية والنهاية لتمرين قفز جانبي فوق الأقماع"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Lateral_Cone_Hops.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Lateral_Cone_Hops/0.jpg",
+          "sha256": "15a49473d4ac15fcc23d8fb11f3dd63d98c2954d900d74fe0d81664919001f95"
+        },
+        {
+          "path": "media/free-exercise-db/Lateral_Cone_Hops/1.jpg",
+          "sha256": "561495d3477f9c7c3d8f8422cc734adbc8f9776bca8ef21df6dae4886d44f772"
         }
       ]
     }
@@ -1776,7 +3282,7 @@
       "sourcePath": "exercises/Linear_Acceleration_Wall_Drill.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Linear_Acceleration_Wall_Drill/0.jpg",
@@ -1785,6 +3291,307 @@
         {
           "path": "media/free-exercise-db/Linear_Acceleration_Wall_Drill/1.jpg",
           "sha256": "b8504bd29be2d076dd2b6ad437da4e9d6430bf7753d10ad0cfcb45314c36f8a8"
+        }
+      ]
+    }
+  },
+  {
+    "id": "side-hop-sprint",
+    "sourceItemId": "Side_Hop-Sprint",
+    "name": {
+      "en": "Side Hop-Sprint",
+      "ar": "قفز جانبي ثم انطلاق"
+    },
+    "section": {
+      "id": "football",
+      "en": "Football",
+      "ar": "كرة القدم"
+    },
+    "sport": "football",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "quadriceps"
+        ],
+        "ar": [
+          "أمامية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abductors",
+          "adductors",
+          "calves",
+          "hamstrings"
+        ],
+        "ar": [
+          "مبعدات الفخذ",
+          "مقربات الفخذ",
+          "السمانة",
+          "خلفية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "quadriceps",
+    "equipment": {
+      "id": "other",
+      "en": "other",
+      "ar": "معدات بسيطة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "jump",
+      "en": "Jump",
+      "ar": "قفز وهبوط"
+    },
+    "goal": {
+      "id": "speed",
+      "en": "Speed",
+      "ar": "السرعة"
+    },
+    "setup": {
+      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
+      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+    },
+    "steps": {
+      "en": [
+        "Stand to the side of a cone or hurdle.",
+        "Begin this drill by hopping sideways over the obstacle, rebounding out of your landing to hop back to where you started.",
+        "Hop for a prescribed number or repetitions as quickly as possible, and finish this drill by sprinting a short distance upon landing the last hop."
+      ],
+      "ar": [
+        "حمّل الورك والركبتين بسرعة متحكم فيها.",
+        "ادفع الأرض وحافظ على اتجاه الركبتين.",
+        "اهبط بهدوء واثبت قبل التكرار التالي."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale on takeoff and reset the breath after each stable landing.",
+      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "5–8",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "explosive / انفجاري",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Knees collapsing inward",
+        "Loud rigid landing",
+        "Repeating before balance returns"
+      ],
+      "ar": [
+        "انهيار الركبتين للداخل",
+        "هبوط صلب وصاخب",
+        "التكرار قبل استعادة التوازن"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Side_Hop-Sprint/0.jpg",
+        "media/free-exercise-db/Side_Hop-Sprint/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Side Hop-Sprint",
+        "ar": "وضعا البداية والنهاية لتمرين قفز جانبي ثم انطلاق"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Side_Hop-Sprint.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Side_Hop-Sprint/0.jpg",
+          "sha256": "0f9cebd33a774206a078ffe3e204a6896562e36c9609542e3f58cfcac06acf1b"
+        },
+        {
+          "path": "media/free-exercise-db/Side_Hop-Sprint/1.jpg",
+          "sha256": "069965182432bf1c5e67a51dc15de7068e556edf4f6632ce8907f433fe1015e5"
+        }
+      ]
+    }
+  },
+  {
+    "id": "single-cone-sprint-drill",
+    "sourceItemId": "Single-Cone_Sprint_Drill",
+    "name": {
+      "en": "Single-Cone Sprint Drill",
+      "ar": "تدريب العدو حول قمع واحد"
+    },
+    "section": {
+      "id": "football",
+      "en": "Football",
+      "ar": "كرة القدم"
+    },
+    "sport": "football",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "quadriceps"
+        ],
+        "ar": [
+          "أمامية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "calves",
+          "glutes",
+          "hamstrings"
+        ],
+        "ar": [
+          "السمانة",
+          "الألوية",
+          "خلفية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "quadriceps",
+    "equipment": {
+      "id": "other",
+      "en": "other",
+      "ar": "معدات بسيطة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "locomotion",
+      "en": "Locomotion",
+      "ar": "انتقال هوائي"
+    },
+    "goal": {
+      "id": "speed",
+      "en": "Speed",
+      "ar": "السرعة"
+    },
+    "setup": {
+      "en": "Start at an easy pace, use stable footwear or equipment, and keep the route clear.",
+      "ar": "ابدأ بإيقاع سهل، استخدم حذاءً أو جهازًا ثابتًا، وتأكد من خلو المسار."
+    },
+    "steps": {
+      "en": [
+        "This drill teaches quick foot action. You need a single cone. Begin standing next to the cone with one arm back and one arm forward.",
+        "Chop the feet as quickly as possible, blocking with the arms. Circle the cone, keep your knees up, with violent foot action.",
+        "Rest after three trips around the cone."
+      ],
+      "ar": [
+        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
+        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
+        "اخفض السرعة تدريجيًا قبل التوقف."
+      ]
+    },
+    "breathing": {
+      "en": "Use rhythmic breathing and reduce intensity if breathing becomes uncontrolled.",
+      "ar": "تنفس بإيقاع منتظم وخفّض الشدة إذا فقدت التحكم في التنفس."
+    },
+    "prescription": {
+      "sets": 1,
+      "reps": null,
+      "durationSeconds": 1200,
+      "restSeconds": 0,
+      "tempo": "RPE 5–7",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Starting too fast",
+        "Overstriding",
+        "Stopping abruptly"
+      ],
+      "ar": [
+        "البدء بسرعة كبيرة",
+        "إطالة الخطوة أكثر من اللازم",
+        "التوقف المفاجئ"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Single-Cone_Sprint_Drill/0.jpg",
+        "media/free-exercise-db/Single-Cone_Sprint_Drill/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Single-Cone Sprint Drill",
+        "ar": "وضعا البداية والنهاية لتمرين تدريب العدو حول قمع واحد"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Single-Cone_Sprint_Drill.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Single-Cone_Sprint_Drill/0.jpg",
+          "sha256": "9c2fb9a8aa04e7e07b8444d7891191cabba748ad707109212e05dd88be8ba99c"
+        },
+        {
+          "path": "media/free-exercise-db/Single-Cone_Sprint_Drill/1.jpg",
+          "sha256": "a18374e489d89752bde8b5f07733262a075f35466411cc5005b3282fdfef5d44"
         }
       ]
     }
@@ -1926,7 +3733,7 @@
       "sourcePath": "exercises/Barbell_Bench_Press_-_Medium_Grip.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
@@ -2088,7 +3895,7 @@
       "sourcePath": "exercises/Barbell_Deadlift.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Barbell_Deadlift/0.jpg",
@@ -2236,7 +4043,7 @@
       "sourcePath": "exercises/Barbell_Hip_Thrust.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Barbell_Hip_Thrust/0.jpg",
@@ -2386,7 +4193,7 @@
       "sourcePath": "exercises/Barbell_Shoulder_Press.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Barbell_Shoulder_Press/0.jpg",
@@ -2541,7 +4348,7 @@
       "sourcePath": "exercises/Barbell_Squat.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Barbell_Squat/0.jpg",
@@ -2692,7 +4499,7 @@
       "sourcePath": "exercises/Bent_Over_Barbell_Row.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Bent_Over_Barbell_Row/0.jpg",
@@ -2840,7 +4647,7 @@
       "sourcePath": "exercises/Cable_Crossover.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Cable_Crossover/0.jpg",
@@ -2993,7 +4800,7 @@
       "sourcePath": "exercises/Close-Grip_Front_Lat_Pulldown.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Close-Grip_Front_Lat_Pulldown/0.jpg",
@@ -3143,7 +4950,7 @@
       "sourcePath": "exercises/Dip_Machine.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Dip_Machine/0.jpg",
@@ -3293,7 +5100,7 @@
       "sourcePath": "exercises/Dumbbell_Bench_Press.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Dumbbell_Bench_Press/0.jpg",
@@ -3440,7 +5247,7 @@
       "sourcePath": "exercises/Dumbbell_Bicep_Curl.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Dumbbell_Bicep_Curl/0.jpg",
@@ -3589,7 +5396,7 @@
       "sourcePath": "exercises/Dumbbell_Shoulder_Press.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Dumbbell_Shoulder_Press/0.jpg",
@@ -3740,7 +5547,7 @@
       "sourcePath": "exercises/Dumbbell_Step_Ups.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Dumbbell_Step_Ups/0.jpg",
@@ -3884,7 +5691,7 @@
       "sourcePath": "exercises/Face_Pull.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Face_Pull/0.jpg",
@@ -4037,7 +5844,7 @@
       "sourcePath": "exercises/Front_Barbell_Squat.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Front_Barbell_Squat/0.jpg",
@@ -4189,7 +5996,7 @@
       "sourcePath": "exercises/Goblet_Squat.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Goblet_Squat/0.jpg",
@@ -4333,7 +6140,7 @@
       "sourcePath": "exercises/Hammer_Curls.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Hammer_Curls/0.jpg",
@@ -4484,7 +6291,7 @@
       "sourcePath": "exercises/Incline_Dumbbell_Press.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Incline_Dumbbell_Press/0.jpg",
@@ -4632,7 +6439,7 @@
       "sourcePath": "exercises/Kettlebell_One-Legged_Deadlift.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Kettlebell_One-Legged_Deadlift/0.jpg",
@@ -4775,7 +6582,7 @@
       "sourcePath": "exercises/Lateral_Raise_-_With_Bands.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Lateral_Raise_-_With_Bands/0.jpg",
@@ -4918,7 +6725,7 @@
       "sourcePath": "exercises/Leg_Extensions.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Leg_Extensions/0.jpg",
@@ -5070,7 +6877,7 @@
       "sourcePath": "exercises/Leg_Press.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Leg_Press/0.jpg",
@@ -5217,7 +7024,7 @@
       "sourcePath": "exercises/Leverage_High_Row.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Leverage_High_Row/0.jpg",
@@ -5360,7 +7167,7 @@
       "sourcePath": "exercises/Lying_Leg_Curls.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Lying_Leg_Curls/0.jpg",
@@ -5511,7 +7318,7 @@
       "sourcePath": "exercises/Machine_Bench_Press.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Machine_Bench_Press/0.jpg",
@@ -5664,7 +7471,7 @@
       "sourcePath": "exercises/One-Arm_Dumbbell_Row.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/One-Arm_Dumbbell_Row/0.jpg",
@@ -5816,7 +7623,7 @@
       "sourcePath": "exercises/One-Arm_Kettlebell_Swings.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/One-Arm_Kettlebell_Swings/0.jpg",
@@ -5969,7 +7776,7 @@
       "sourcePath": "exercises/Pallof_Press.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Pallof_Press/0.jpg",
@@ -6121,7 +7928,7 @@
       "sourcePath": "exercises/Romanian_Deadlift.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Romanian_Deadlift/0.jpg",
@@ -6273,7 +8080,7 @@
       "sourcePath": "exercises/Seated_Cable_Rows.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Seated_Cable_Rows/0.jpg",
@@ -6416,7 +8223,7 @@
       "sourcePath": "exercises/Side_Lateral_Raise.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Side_Lateral_Raise/0.jpg",
@@ -6566,7 +8373,7 @@
       "sourcePath": "exercises/Smith_Machine_Bench_Press.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Smith_Machine_Bench_Press/0.jpg",
@@ -6721,7 +8528,7 @@
       "sourcePath": "exercises/Smith_Machine_Squat.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Smith_Machine_Squat/0.jpg",
@@ -6865,7 +8672,7 @@
       "sourcePath": "exercises/Standing_Calf_Raises.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Standing_Calf_Raises/0.jpg",
@@ -7008,7 +8815,7 @@
       "sourcePath": "exercises/Tricep_Dumbbell_Kickback.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Tricep_Dumbbell_Kickback/0.jpg",
@@ -7152,7 +8959,7 @@
       "sourcePath": "exercises/Triceps_Pushdown_-_Rope_Attachment.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Triceps_Pushdown_-_Rope_Attachment/0.jpg",
@@ -7300,7 +9107,7 @@
       "sourcePath": "exercises/Elliptical_Trainer.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Elliptical_Trainer/0.jpg",
@@ -7453,7 +9260,7 @@
       "sourcePath": "exercises/Freehand_Jump_Squat.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Freehand_Jump_Squat/0.jpg",
@@ -7608,7 +9415,7 @@
       "sourcePath": "exercises/Front_Box_Jump.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Front_Box_Jump/0.jpg",
@@ -7757,7 +9564,7 @@
       "sourcePath": "exercises/Mountain_Climbers.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Mountain_Climbers/0.jpg",
@@ -7900,7 +9707,7 @@
       "sourcePath": "exercises/Overhead_Slam.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Overhead_Slam/0.jpg",
@@ -8055,7 +9862,7 @@
       "sourcePath": "exercises/Rowing_Stationary.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Rowing_Stationary/0.jpg",
@@ -8200,7 +10007,7 @@
       "sourcePath": "exercises/Air_Bike.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Air_Bike/0.jpg",
@@ -8348,7 +10155,7 @@
       "sourcePath": "exercises/Bodyweight_Squat.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Bodyweight_Squat/0.jpg",
@@ -8498,7 +10305,7 @@
       "sourcePath": "exercises/Bodyweight_Walking_Lunge.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Bodyweight_Walking_Lunge/0.jpg",
@@ -8643,7 +10450,7 @@
       "sourcePath": "exercises/Crunches.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Crunches/0.jpg",
@@ -8784,7 +10591,7 @@
       "sourcePath": "exercises/Plank.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Plank/0.jpg",
@@ -8933,7 +10740,7 @@
       "sourcePath": "exercises/Pushups.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Pushups/0.jpg",
@@ -9081,7 +10888,7 @@
       "sourcePath": "exercises/Russian_Twist.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Russian_Twist/0.jpg",
@@ -9227,7 +11034,7 @@
       "sourcePath": "exercises/Side_Bridge.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Side_Bridge/0.jpg",
@@ -9374,7 +11181,7 @@
       "sourcePath": "exercises/Single_Leg_Glute_Bridge.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Single_Leg_Glute_Bridge/0.jpg",
@@ -9522,7 +11329,7 @@
       "sourcePath": "exercises/Superman.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Superman/0.jpg",
@@ -9668,7 +11475,7 @@
       "sourcePath": "exercises/90_90_Hamstring.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/90_90_Hamstring/0.jpg",
@@ -9677,6 +11484,147 @@
         {
           "path": "media/free-exercise-db/90_90_Hamstring/1.jpg",
           "sha256": "ba6d23d002865c7a5b524f58abcd5e530aa6ac0b6de4bde5aafe2ac903c44575"
+        }
+      ]
+    }
+  },
+  {
+    "id": "ankle-circles",
+    "sourceItemId": "Ankle_Circles",
+    "name": {
+      "en": "Ankle Circles",
+      "ar": "دوائر الكاحل"
+    },
+    "section": {
+      "id": "mobility",
+      "en": "Mobility & stretching",
+      "ar": "الحركة والإطالة"
+    },
+    "sport": "mobility",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "calves"
+        ],
+        "ar": [
+          "السمانة"
+        ]
+      },
+      "secondary": {
+        "en": [],
+        "ar": []
+      }
+    },
+    "bodyPart": "calves",
+    "equipment": {
+      "id": "body only",
+      "en": "body only",
+      "ar": "بدون معدات"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "حركة وإطالة"
+    },
+    "goal": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "الحركة"
+    },
+    "setup": {
+      "en": "Move into a supported, pain-free position and keep the breath relaxed.",
+      "ar": "اتخذ وضعًا مدعومًا وخاليًا من الألم وحافظ على تنفس هادئ."
+    },
+    "steps": {
+      "en": [
+        "Use a sturdy object like a squat rack to hold yourself.",
+        "Lift the right leg in the air (just around 2 inches from the floor) and perform a circular motion with the big toe. Pretend that you are drawing a big circle with it. One circle equals 1 repetition. Breathe normally as you perform the movement.",
+        "When you are done with the right foot, then repeat with the left leg."
+      ],
+      "ar": [
+        "ادخل المدى ببطء حتى شد خفيف لا ألم.",
+        "حافظ على الوضع والتنفس من دون ارتداد.",
+        "اخرج من الوضع تدريجيًا وكرر على الجهة الأخرى عند الحاجة."
+      ]
+    },
+    "breathing": {
+      "en": "Use slow nasal breathing and relax further on each exhale.",
+      "ar": "استخدم تنفسًا أنفيًا بطيئًا واسترخِ أكثر مع كل زفير."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Bouncing",
+        "Forcing painful range",
+        "Holding the breath"
+      ],
+      "ar": [
+        "الارتداد",
+        "إجبار الجسم على مدى مؤلم",
+        "حبس النفس"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Ankle_Circles/0.jpg",
+        "media/free-exercise-db/Ankle_Circles/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Ankle Circles",
+        "ar": "وضعا البداية والنهاية لتمرين دوائر الكاحل"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Ankle_Circles.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Ankle_Circles/0.jpg",
+          "sha256": "d105df85fe7714b3e45f3dab7eaa7b2261de90c6a9a9c510965d08dc6f26f8b4"
+        },
+        {
+          "path": "media/free-exercise-db/Ankle_Circles/1.jpg",
+          "sha256": "11548a0cd9584ae952dcfcca5b3dcb485e472b256db832d98acd9e0a70356531"
         }
       ]
     }
@@ -9811,7 +11759,7 @@
       "sourcePath": "exercises/Inchworm.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Inchworm/0.jpg",
@@ -9956,7 +11904,7 @@
       "sourcePath": "exercises/Standing_Gastrocnemius_Calf_Stretch.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Standing_Gastrocnemius_Calf_Stretch/0.jpg",
@@ -9965,6 +11913,301 @@
         {
           "path": "media/free-exercise-db/Standing_Gastrocnemius_Calf_Stretch/1.jpg",
           "sha256": "0f551f1b277978e273478818963d3e562c97b53f885880933b94adeb04ef3b00"
+        }
+      ]
+    }
+  },
+  {
+    "id": "standing-hip-circles",
+    "sourceItemId": "Standing_Hip_Circles",
+    "name": {
+      "en": "Standing Hip Circles",
+      "ar": "دوائر الحوض واقفًا"
+    },
+    "section": {
+      "id": "mobility",
+      "en": "Mobility & stretching",
+      "ar": "الحركة والإطالة"
+    },
+    "sport": "mobility",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "abductors"
+        ],
+        "ar": [
+          "مبعدات الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "adductors"
+        ],
+        "ar": [
+          "مقربات الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "abductors",
+    "equipment": {
+      "id": "body only",
+      "en": "body only",
+      "ar": "وزن الجسم"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "حركة وإطالة"
+    },
+    "goal": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "الحركة"
+    },
+    "setup": {
+      "en": "Move into a supported, pain-free position and keep the breath relaxed.",
+      "ar": "اتخذ وضعًا مدعومًا وخاليًا من الألم وحافظ على تنفس هادئ."
+    },
+    "steps": {
+      "en": [
+        "Begin standing on one leg, holding to a vertical support.",
+        "Raise the unsupported knee to 90 degrees. This will be your starting position.",
+        "Open the hip as far as possible, attempting to make a big circle with your knee.",
+        "Perform this movement slowly for a number of repetitions, and repeat on the other side."
+      ],
+      "ar": [
+        "ادخل المدى ببطء حتى شد خفيف لا ألم.",
+        "حافظ على الوضع والتنفس من دون ارتداد.",
+        "اخرج من الوضع تدريجيًا وكرر على الجهة الأخرى عند الحاجة."
+      ]
+    },
+    "breathing": {
+      "en": "Use slow nasal breathing and relax further on each exhale.",
+      "ar": "استخدم تنفسًا أنفيًا بطيئًا واسترخِ أكثر مع كل زفير."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Bouncing",
+        "Forcing painful range",
+        "Holding the breath"
+      ],
+      "ar": [
+        "الارتداد",
+        "إجبار الجسم على مدى مؤلم",
+        "حبس النفس"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Standing_Hip_Circles/0.jpg",
+        "media/free-exercise-db/Standing_Hip_Circles/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Standing Hip Circles",
+        "ar": "وضعا البداية والنهاية لتمرين دوائر الحوض واقفًا"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Standing_Hip_Circles.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Standing_Hip_Circles/0.jpg",
+          "sha256": "57ced2e9cf5d45a1f09908b3d55cd05da9a5b41f5ca5fa54d7f45d19ecb110a7"
+        },
+        {
+          "path": "media/free-exercise-db/Standing_Hip_Circles/1.jpg",
+          "sha256": "b4aced722e4385ada1ff785503304267070c71aad69da9c3d70bfca8c5237e72"
+        }
+      ]
+    }
+  },
+  {
+    "id": "worlds-greatest-stretch",
+    "sourceItemId": "Worlds_Greatest_Stretch",
+    "name": {
+      "en": "World's Greatest Stretch",
+      "ar": "الإطالة الشاملة"
+    },
+    "section": {
+      "id": "mobility",
+      "en": "Mobility & stretching",
+      "ar": "الحركة والإطالة"
+    },
+    "sport": "mobility",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "hamstrings"
+        ],
+        "ar": [
+          "خلفية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "calves",
+          "glutes",
+          "quadriceps"
+        ],
+        "ar": [
+          "السمانة",
+          "الألوية",
+          "أمامية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "hamstrings",
+    "equipment": {
+      "id": "body only",
+      "en": "body only",
+      "ar": "بدون معدات"
+    },
+    "level": {
+      "id": "intermediate",
+      "en": "Intermediate",
+      "ar": "متوسط"
+    },
+    "movement": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "حركة وإطالة"
+    },
+    "goal": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "الحركة"
+    },
+    "setup": {
+      "en": "Move into a supported, pain-free position and keep the breath relaxed.",
+      "ar": "اتخذ وضعًا مدعومًا وخاليًا من الألم وحافظ على تنفس هادئ."
+    },
+    "steps": {
+      "en": [
+        "This is a three-part stretch. Begin by lunging forward, with your front foot flat on the ground and on the toes of your back foot. With your knees bent, squat down until your knee is almost touching the ground. Keep your torso erect, and hold this position for 10-20 seconds.",
+        "Now, place the arm on the same side as your front leg on the ground, with the elbow next to the foot. Your other hand should be placed on the ground, parallel to your lead leg, to help support you during this portion of the stretch.",
+        "After 10-20 seconds, place your hands on either side of your front foot. Raise the toes of the front foot off of the ground, and straighten your leg. You may need to reposition your rear leg to do so. Hold for 10-20 seconds, and then repeat the entire sequence for the other side."
+      ],
+      "ar": [
+        "ادخل المدى ببطء حتى شد خفيف لا ألم.",
+        "حافظ على الوضع والتنفس من دون ارتداد.",
+        "اخرج من الوضع تدريجيًا وكرر على الجهة الأخرى عند الحاجة."
+      ]
+    },
+    "breathing": {
+      "en": "Use slow nasal breathing and relax further on each exhale.",
+      "ar": "استخدم تنفسًا أنفيًا بطيئًا واسترخِ أكثر مع كل زفير."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Bouncing",
+        "Forcing painful range",
+        "Holding the breath"
+      ],
+      "ar": [
+        "الارتداد",
+        "إجبار الجسم على مدى مؤلم",
+        "حبس النفس"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Worlds_Greatest_Stretch/0.jpg",
+        "media/free-exercise-db/Worlds_Greatest_Stretch/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for World's Greatest Stretch",
+        "ar": "وضعا البداية والنهاية لتمرين الإطالة الشاملة"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Worlds_Greatest_Stretch.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Worlds_Greatest_Stretch/0.jpg",
+          "sha256": "95093f97e2f60a8f43b09bca6562213631255ca0b20d53475255950767b1bddf"
+        },
+        {
+          "path": "media/free-exercise-db/Worlds_Greatest_Stretch/1.jpg",
+          "sha256": "f2fa7c362fc035db2653f93242bdef332ec3ada0a8614e8084d63178426112cd"
         }
       ]
     }
@@ -10096,7 +12339,7 @@
       "sourcePath": "exercises/Calves-SMR.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Calves-SMR/0.jpg",
@@ -10237,7 +12480,7 @@
       "sourcePath": "exercises/Hamstring-SMR.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Hamstring-SMR/0.jpg",
@@ -10246,6 +12489,567 @@
         {
           "path": "media/free-exercise-db/Hamstring-SMR/1.jpg",
           "sha256": "0387c3858674e95352693961c90abc3f1f03fe764ac41fe61febf03c951a35b0"
+        }
+      ]
+    }
+  },
+  {
+    "id": "iliotibial-tract-smr",
+    "sourceItemId": "Iliotibial_Tract-SMR",
+    "name": {
+      "en": "Iliotibial Tract-SMR",
+      "ar": "تحرير الشريط الحرقفي بالفوم رول"
+    },
+    "section": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "الاستشفاء"
+    },
+    "sport": "recovery",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "abductors"
+        ],
+        "ar": [
+          "مبعدات الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [],
+        "ar": []
+      }
+    },
+    "bodyPart": "abductors",
+    "equipment": {
+      "id": "foam roll",
+      "en": "foam roll",
+      "ar": "فوم رول"
+    },
+    "level": {
+      "id": "intermediate",
+      "en": "Intermediate",
+      "ar": "متوسط"
+    },
+    "movement": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "تحرير عضلي"
+    },
+    "goal": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "الاستشفاء"
+    },
+    "setup": {
+      "en": "Position the roller under the target tissue, supporting body weight with hands or the other leg.",
+      "ar": "ضع الفوم رول أسفل النسيج المستهدف وادعم وزن الجسم باليدين أو الساق الأخرى."
+    },
+    "steps": {
+      "en": [
+        "Lay on your side, with the bottom leg placed onto a foam roller between the hip and the knee. The other leg can be crossed in front of you.",
+        "Place as much of your weight as is tolerable onto your bottom leg; there is no need to keep your bottom leg in contact with the ground. Be sure to relax the muscles of the leg you are stretching.",
+        "Roll your leg over the foam from you hip to your knee, pausing for 10-30 seconds at points of tension. Repeat with the opposite leg."
+      ],
+      "ar": [
+        "تحرك ببطء على مساحة صغيرة.",
+        "توقف فوق المنطقة المشدودة وتنفس من دون ضغط حاد.",
+        "خفف الوزن فور ظهور تنميل أو ألم عصبي."
+      ]
+    },
+    "breathing": {
+      "en": "Breathe slowly and reduce pressure on each uncomfortable point.",
+      "ar": "تنفس ببطء وخفف الضغط عند كل نقطة غير مريحة."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Rolling too fast",
+        "Pressing directly on a joint",
+        "Ignoring numbness"
+      ],
+      "ar": [
+        "الدحرجة بسرعة",
+        "الضغط مباشرة على المفصل",
+        "تجاهل التنميل"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Iliotibial_Tract-SMR/0.jpg",
+        "media/free-exercise-db/Iliotibial_Tract-SMR/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Iliotibial Tract-SMR",
+        "ar": "وضعا البداية والنهاية لتمرين تحرير الشريط الحرقفي بالفوم رول"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Iliotibial_Tract-SMR.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Iliotibial_Tract-SMR/0.jpg",
+          "sha256": "f62acdc57b96de0ebdd1ca3634300860788ba96eba1c4578980590e7d1cbbed0"
+        },
+        {
+          "path": "media/free-exercise-db/Iliotibial_Tract-SMR/1.jpg",
+          "sha256": "b187140dc41f02f52b72c7559bc931fc247a18c7e00e45bab16c363fd2c21986"
+        }
+      ]
+    }
+  },
+  {
+    "id": "latissimus-dorsi-smr",
+    "sourceItemId": "Latissimus_Dorsi-SMR",
+    "name": {
+      "en": "Latissimus Dorsi-SMR",
+      "ar": "تحرير عضلات الظهر العريضة بالفوم رول"
+    },
+    "section": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "الاستشفاء"
+    },
+    "sport": "recovery",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "lats"
+        ],
+        "ar": [
+          "الظهر العريض"
+        ]
+      },
+      "secondary": {
+        "en": [],
+        "ar": []
+      }
+    },
+    "bodyPart": "lats",
+    "equipment": {
+      "id": "foam roll",
+      "en": "foam roll",
+      "ar": "فوم رول"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "تحرير عضلي"
+    },
+    "goal": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "الاستشفاء"
+    },
+    "setup": {
+      "en": "Position the roller under the target tissue, supporting body weight with hands or the other leg.",
+      "ar": "ضع الفوم رول أسفل النسيج المستهدف وادعم وزن الجسم باليدين أو الساق الأخرى."
+    },
+    "steps": {
+      "en": [
+        "While lying on the floor, place a foam roll under your back and to one side, just behind your arm pit. This will be your starting position.",
+        "Keep the arm of the side being stretched behind and to the side of you as you shift your weight onto your lats, keeping your upper body off of the ground. Hold for 10-30 seconds, and switch sides."
+      ],
+      "ar": [
+        "تحرك ببطء على مساحة صغيرة.",
+        "توقف فوق المنطقة المشدودة وتنفس من دون ضغط حاد.",
+        "خفف الوزن فور ظهور تنميل أو ألم عصبي."
+      ]
+    },
+    "breathing": {
+      "en": "Breathe slowly and reduce pressure on each uncomfortable point.",
+      "ar": "تنفس ببطء وخفف الضغط عند كل نقطة غير مريحة."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Rolling too fast",
+        "Pressing directly on a joint",
+        "Ignoring numbness"
+      ],
+      "ar": [
+        "الدحرجة بسرعة",
+        "الضغط مباشرة على المفصل",
+        "تجاهل التنميل"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Latissimus_Dorsi-SMR/0.jpg",
+        "media/free-exercise-db/Latissimus_Dorsi-SMR/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Latissimus Dorsi-SMR",
+        "ar": "وضعا البداية والنهاية لتمرين تحرير عضلات الظهر العريضة بالفوم رول"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Latissimus_Dorsi-SMR.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Latissimus_Dorsi-SMR/0.jpg",
+          "sha256": "c77f7249936c8ddd97850841c6b8168b6be38b2cafd1c160b9df46a1b78f2eae"
+        },
+        {
+          "path": "media/free-exercise-db/Latissimus_Dorsi-SMR/1.jpg",
+          "sha256": "9240c8f891701ce0fb86b90da27b898b855f305b583e27f4202884bfb7bd8578"
+        }
+      ]
+    }
+  },
+  {
+    "id": "piriformis-smr",
+    "sourceItemId": "Piriformis-SMR",
+    "name": {
+      "en": "Piriformis-SMR",
+      "ar": "تحرير العضلة الكمثرية بالفوم رول"
+    },
+    "section": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "الاستشفاء"
+    },
+    "sport": "recovery",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "glutes"
+        ],
+        "ar": [
+          "الألوية"
+        ]
+      },
+      "secondary": {
+        "en": [],
+        "ar": []
+      }
+    },
+    "bodyPart": "glutes",
+    "equipment": {
+      "id": "foam roll",
+      "en": "foam roll",
+      "ar": "فوم رول"
+    },
+    "level": {
+      "id": "intermediate",
+      "en": "Intermediate",
+      "ar": "متوسط"
+    },
+    "movement": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "تحرير عضلي"
+    },
+    "goal": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "الاستشفاء"
+    },
+    "setup": {
+      "en": "Position the roller under the target tissue, supporting body weight with hands or the other leg.",
+      "ar": "ضع الفوم رول أسفل النسيج المستهدف وادعم وزن الجسم باليدين أو الساق الأخرى."
+    },
+    "steps": {
+      "en": [
+        "Sit with your buttocks on top of a foam roll. Bend your knees, and then cross one leg so that the ankle is over the knee. This will be your starting position.",
+        "Shift your weight to the side of the crossed leg, rolling over the buttocks until you feel tension in your upper glute. You may assist the stretch by using one hand to pull the bent knee towards your chest. Hold this position for 10-30 seconds, and then switch sides."
+      ],
+      "ar": [
+        "تحرك ببطء على مساحة صغيرة.",
+        "توقف فوق المنطقة المشدودة وتنفس من دون ضغط حاد.",
+        "خفف الوزن فور ظهور تنميل أو ألم عصبي."
+      ]
+    },
+    "breathing": {
+      "en": "Breathe slowly and reduce pressure on each uncomfortable point.",
+      "ar": "تنفس ببطء وخفف الضغط عند كل نقطة غير مريحة."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Rolling too fast",
+        "Pressing directly on a joint",
+        "Ignoring numbness"
+      ],
+      "ar": [
+        "الدحرجة بسرعة",
+        "الضغط مباشرة على المفصل",
+        "تجاهل التنميل"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Piriformis-SMR/0.jpg",
+        "media/free-exercise-db/Piriformis-SMR/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Piriformis-SMR",
+        "ar": "وضعا البداية والنهاية لتمرين تحرير العضلة الكمثرية بالفوم رول"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Piriformis-SMR.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Piriformis-SMR/0.jpg",
+          "sha256": "479408e75643faa0d38f88e9907547ceae31b03dde765347f13a783ea0bb0535"
+        },
+        {
+          "path": "media/free-exercise-db/Piriformis-SMR/1.jpg",
+          "sha256": "233bc870aee21242bcba6554ff44a50c08814faafcd84c5f791ae0b28d2ce0b6"
+        }
+      ]
+    }
+  },
+  {
+    "id": "quadriceps-smr",
+    "sourceItemId": "Quadriceps-SMR",
+    "name": {
+      "en": "Quadriceps-SMR",
+      "ar": "تحرير أمامية الفخذ بالفوم رول"
+    },
+    "section": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "الاستشفاء"
+    },
+    "sport": "recovery",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "quadriceps"
+        ],
+        "ar": [
+          "أمامية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [],
+        "ar": []
+      }
+    },
+    "bodyPart": "quadriceps",
+    "equipment": {
+      "id": "foam roll",
+      "en": "foam roll",
+      "ar": "فوم رول"
+    },
+    "level": {
+      "id": "intermediate",
+      "en": "Intermediate",
+      "ar": "متوسط"
+    },
+    "movement": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "تحرير عضلي"
+    },
+    "goal": {
+      "id": "recovery",
+      "en": "Recovery",
+      "ar": "الاستشفاء"
+    },
+    "setup": {
+      "en": "Position the roller under the target tissue, supporting body weight with hands or the other leg.",
+      "ar": "ضع الفوم رول أسفل النسيج المستهدف وادعم وزن الجسم باليدين أو الساق الأخرى."
+    },
+    "steps": {
+      "en": [
+        "Lay facedown on the floor with your weight supported by your hands or forearms. Place a foam roll underneath one leg on the quadriceps, and keep the foot off of the ground. Make sure to relax the leg as much as possible. This will be your starting position.",
+        "Shifting as much weight onto the leg to be stretched as is tolerable, roll over the foam from above the knee to below the hip, holding points of tension for 10-30 seconds. Switch sides."
+      ],
+      "ar": [
+        "تحرك ببطء على مساحة صغيرة.",
+        "توقف فوق المنطقة المشدودة وتنفس من دون ضغط حاد.",
+        "خفف الوزن فور ظهور تنميل أو ألم عصبي."
+      ]
+    },
+    "breathing": {
+      "en": "Breathe slowly and reduce pressure on each uncomfortable point.",
+      "ar": "تنفس ببطء وخفف الضغط عند كل نقطة غير مريحة."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Rolling too fast",
+        "Pressing directly on a joint",
+        "Ignoring numbness"
+      ],
+      "ar": [
+        "الدحرجة بسرعة",
+        "الضغط مباشرة على المفصل",
+        "تجاهل التنميل"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Quadriceps-SMR/0.jpg",
+        "media/free-exercise-db/Quadriceps-SMR/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Quadriceps-SMR",
+        "ar": "وضعا البداية والنهاية لتمرين تحرير أمامية الفخذ بالفوم رول"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Quadriceps-SMR.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Quadriceps-SMR/0.jpg",
+          "sha256": "e7458161de6c3538f73a7cde81c8171903410ace4de5907ebd187266c1236a5b"
+        },
+        {
+          "path": "media/free-exercise-db/Quadriceps-SMR/1.jpg",
+          "sha256": "004650b51a02f726aac9bbc082f837c281323f6b5780fc9be3e5aeb5ffb67b88"
         }
       ]
     }
@@ -10383,7 +13187,7 @@
       "sourcePath": "exercises/Jogging_Treadmill.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Jogging_Treadmill/0.jpg",
@@ -10392,6 +13196,452 @@
         {
           "path": "media/free-exercise-db/Jogging_Treadmill/1.jpg",
           "sha256": "343ea1ba4fdd6798e941b2be42517534222be99915c3c596ed13a2f278c11645"
+        }
+      ]
+    }
+  },
+  {
+    "id": "prowler-sprint",
+    "sourceItemId": "Prowler_Sprint",
+    "name": {
+      "en": "Prowler Sprint",
+      "ar": "عدو دفع الزلاجة"
+    },
+    "section": {
+      "id": "running",
+      "en": "Running & walking",
+      "ar": "الجري والمشي"
+    },
+    "sport": "running",
+    "category": "cardio",
+    "muscles": {
+      "primary": {
+        "en": [
+          "hamstrings"
+        ],
+        "ar": [
+          "خلفية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "calves",
+          "chest",
+          "glutes",
+          "quadriceps",
+          "shoulders"
+        ],
+        "ar": [
+          "السمانة",
+          "الصدر",
+          "الألوية",
+          "أمامية الفخذ",
+          "الكتف"
+        ]
+      }
+    },
+    "bodyPart": "hamstrings",
+    "equipment": {
+      "id": "other",
+      "en": "other",
+      "ar": "معدات بسيطة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "locomotion",
+      "en": "Locomotion",
+      "ar": "انتقال هوائي"
+    },
+    "goal": {
+      "id": "speed",
+      "en": "Speed",
+      "ar": "السرعة"
+    },
+    "setup": {
+      "en": "Start at an easy pace, use stable footwear or equipment, and keep the route clear.",
+      "ar": "ابدأ بإيقاع سهل، استخدم حذاءً أو جهازًا ثابتًا، وتأكد من خلو المسار."
+    },
+    "steps": {
+      "en": [
+        "Place your sled on an appropriate surface, loaded to a suitable weight. The sled should provide enough resistance to require effort, but not so heavy that you are significantly slowed down.",
+        "You may use the upright or the low handles for this exercise. Place your hands on the handles with your arms extended, leaning into the implement.",
+        "With good posture, drive through the ground with alternating, short steps. Move as fast as you can for a short distance."
+      ],
+      "ar": [
+        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
+        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
+        "اخفض السرعة تدريجيًا قبل التوقف."
+      ]
+    },
+    "breathing": {
+      "en": "Use rhythmic breathing and reduce intensity if breathing becomes uncontrolled.",
+      "ar": "تنفس بإيقاع منتظم وخفّض الشدة إذا فقدت التحكم في التنفس."
+    },
+    "prescription": {
+      "sets": 1,
+      "reps": null,
+      "durationSeconds": 1200,
+      "restSeconds": 0,
+      "tempo": "RPE 5–7",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Starting too fast",
+        "Overstriding",
+        "Stopping abruptly"
+      ],
+      "ar": [
+        "البدء بسرعة كبيرة",
+        "إطالة الخطوة أكثر من اللازم",
+        "التوقف المفاجئ"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Prowler_Sprint/0.jpg",
+        "media/free-exercise-db/Prowler_Sprint/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Prowler Sprint",
+        "ar": "وضعا البداية والنهاية لتمرين عدو دفع الزلاجة"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Prowler_Sprint.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Prowler_Sprint/0.jpg",
+          "sha256": "33abdf5cff9e01fe480b7f7ec08ffa2be7f40f23a5571ffc1dd69231d19fdc8f"
+        },
+        {
+          "path": "media/free-exercise-db/Prowler_Sprint/1.jpg",
+          "sha256": "95af9ec3c23541142ba0cf1ab3cd34fd37c0744c08051828c33b69fa73cc0340"
+        }
+      ]
+    }
+  },
+  {
+    "id": "runners-stretch",
+    "sourceItemId": "Runners_Stretch",
+    "name": {
+      "en": "Runner's Stretch",
+      "ar": "إطالة العدّائين"
+    },
+    "section": {
+      "id": "running",
+      "en": "Running & walking",
+      "ar": "الجري والمشي"
+    },
+    "sport": "running",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "hamstrings"
+        ],
+        "ar": [
+          "خلفية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "calves"
+        ],
+        "ar": [
+          "السمانة"
+        ]
+      }
+    },
+    "bodyPart": "hamstrings",
+    "equipment": {
+      "id": "body only",
+      "en": "body only",
+      "ar": "بدون معدات"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "حركة وإطالة"
+    },
+    "goal": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "الحركة"
+    },
+    "setup": {
+      "en": "Move into a supported, pain-free position and keep the breath relaxed.",
+      "ar": "اتخذ وضعًا مدعومًا وخاليًا من الألم وحافظ على تنفس هادئ."
+    },
+    "steps": {
+      "en": [
+        "It's easiest to get into this stretch if you start standing up, put one leg behind you, and slowly lower your torso down to the floor.",
+        "Keep the front heel on the floor (if it lifts up, scoot your other leg further back).",
+        "Place your hands on either side of your front leg. To get more out of this stretch, push your butt up toward the ceiling, and then gradually lower it back toward the floor. You'll Stretch the hip flexor of the back leg and the hamstring and buttocks of the front."
+      ],
+      "ar": [
+        "ادخل المدى ببطء حتى شد خفيف لا ألم.",
+        "حافظ على الوضع والتنفس من دون ارتداد.",
+        "اخرج من الوضع تدريجيًا وكرر على الجهة الأخرى عند الحاجة."
+      ]
+    },
+    "breathing": {
+      "en": "Use slow nasal breathing and relax further on each exhale.",
+      "ar": "استخدم تنفسًا أنفيًا بطيئًا واسترخِ أكثر مع كل زفير."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Bouncing",
+        "Forcing painful range",
+        "Holding the breath"
+      ],
+      "ar": [
+        "الارتداد",
+        "إجبار الجسم على مدى مؤلم",
+        "حبس النفس"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Runners_Stretch/0.jpg",
+        "media/free-exercise-db/Runners_Stretch/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Runner's Stretch",
+        "ar": "وضعا البداية والنهاية لتمرين إطالة العدّائين"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Runners_Stretch.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Runners_Stretch/0.jpg",
+          "sha256": "36569123b4ed9d2444e6ab4d2cce3e17760c6fc4120eb96ff1eee04194e7056c"
+        },
+        {
+          "path": "media/free-exercise-db/Runners_Stretch/1.jpg",
+          "sha256": "fecb616332016d5bd8a5717ada72eb74f61404ca2ab9a4cdca5e635ce7981d3b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "running-treadmill",
+    "sourceItemId": "Running_Treadmill",
+    "name": {
+      "en": "Running, Treadmill",
+      "ar": "جري على جهاز الجري"
+    },
+    "section": {
+      "id": "running",
+      "en": "Running & walking",
+      "ar": "الجري والمشي"
+    },
+    "sport": "running",
+    "category": "cardio",
+    "muscles": {
+      "primary": {
+        "en": [
+          "quadriceps"
+        ],
+        "ar": [
+          "أمامية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "calves",
+          "glutes",
+          "hamstrings"
+        ],
+        "ar": [
+          "السمانة",
+          "الألوية",
+          "خلفية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "quadriceps",
+    "equipment": {
+      "id": "machine",
+      "en": "machine",
+      "ar": "جهاز مقاومة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "locomotion",
+      "en": "Locomotion",
+      "ar": "انتقال هوائي"
+    },
+    "goal": {
+      "id": "endurance",
+      "en": "Endurance",
+      "ar": "التحمل"
+    },
+    "setup": {
+      "en": "Start at an easy pace, use stable footwear or equipment, and keep the route clear.",
+      "ar": "ابدأ بإيقاع سهل، استخدم حذاءً أو جهازًا ثابتًا، وتأكد من خلو المسار."
+    },
+    "steps": {
+      "en": [
+        "To begin, step onto the treadmill and select the desired option from the menu. Most treadmills have a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Elevation can be adjusted to change the intensity of the workout.",
+        "Treadmills offer convenience, cardiovascular benefits, and usually have less impact than running outside. A 150 lb person will burn over 450 calories running 8 miles per hour for 30 minutes. Maintain proper posture as you run, and only hold onto the handles when necessary, such as when dismounting or checking your heart rate."
+      ],
+      "ar": [
+        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
+        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
+        "اخفض السرعة تدريجيًا قبل التوقف."
+      ]
+    },
+    "breathing": {
+      "en": "Use rhythmic breathing and reduce intensity if breathing becomes uncontrolled.",
+      "ar": "تنفس بإيقاع منتظم وخفّض الشدة إذا فقدت التحكم في التنفس."
+    },
+    "prescription": {
+      "sets": 1,
+      "reps": null,
+      "durationSeconds": 1200,
+      "restSeconds": 0,
+      "tempo": "RPE 5–7",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Starting too fast",
+        "Overstriding",
+        "Stopping abruptly"
+      ],
+      "ar": [
+        "البدء بسرعة كبيرة",
+        "إطالة الخطوة أكثر من اللازم",
+        "التوقف المفاجئ"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Running_Treadmill/0.jpg",
+        "media/free-exercise-db/Running_Treadmill/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Running, Treadmill",
+        "ar": "وضعا البداية والنهاية لتمرين جري على جهاز الجري"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Running_Treadmill.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Running_Treadmill/0.jpg",
+          "sha256": "78ed92c9f2eea25c1675288343d1a1ba145f447b02e5d5c1dfc80ab052419fc1"
+        },
+        {
+          "path": "media/free-exercise-db/Running_Treadmill/1.jpg",
+          "sha256": "483ff85287fa9b591a5367b1bc1067ff8563105be88bd5a23bb0b4ed9d5de832"
         }
       ]
     }
@@ -10531,7 +13781,7 @@
       "sourcePath": "exercises/Trail_Running_Walking.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Trail_Running_Walking/0.jpg",
@@ -10679,7 +13929,7 @@
       "sourcePath": "exercises/Walking_Treadmill.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Walking_Treadmill/0.jpg",
@@ -10688,6 +13938,296 @@
         {
           "path": "media/free-exercise-db/Walking_Treadmill/1.jpg",
           "sha256": "5b811c65e89b0eec47ae5006ad711b84c11e61fdbaac98334574cebe5855b025"
+        }
+      ]
+    }
+  },
+  {
+    "id": "dumbbell-scaption",
+    "sourceItemId": "Dumbbell_Scaption",
+    "name": {
+      "en": "Dumbbell Scaption",
+      "ar": "رفع سكابشن بالدمبل للسباحة"
+    },
+    "section": {
+      "id": "swimming",
+      "en": "Swimming",
+      "ar": "السباحة"
+    },
+    "sport": "swimming",
+    "category": "strength",
+    "muscles": {
+      "primary": {
+        "en": [
+          "shoulders"
+        ],
+        "ar": [
+          "الكتف"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "traps"
+        ],
+        "ar": [
+          "الترابيس"
+        ]
+      }
+    },
+    "bodyPart": "shoulders",
+    "equipment": {
+      "id": "dumbbell",
+      "en": "dumbbell",
+      "ar": "دمبل"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "isolation",
+      "en": "Isolation",
+      "ar": "عزل عضلي"
+    },
+    "goal": {
+      "id": "strength",
+      "en": "Strength",
+      "ar": "القوة"
+    },
+    "setup": {
+      "en": "Choose a controllable load, stabilize the nearby joints, and align the working joint.",
+      "ar": "اختر حملًا يمكن التحكم فيه، ثبّت المفاصل القريبة، واضبط محاذاة المفصل العامل."
+    },
+    "steps": {
+      "en": [
+        "This corrective exercise strengthens the muscles that stabilize your shoulder blade. Hold a light weight in each hand, hanging at your sides. Your thumbs should pointing up.",
+        "Begin the movement raising your arms out in front of you, about 30 degrees off center. Your arms should be fully extended as you perform the movement.",
+        "Continue until your arms are parallel to the ground, and then return to the starting position."
+      ],
+      "ar": [
+        "حرّك المفصل المستهدف فقط قدر الإمكان.",
+        "توقف لحظة عند الانقباض من دون دفع أو رمي الحمل.",
+        "عد ببطء وحافظ على شد العضلة."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale during the lift or extension; inhale on the controlled return.",
+      "ar": "ازفر أثناء الرفع أو المد وخذ شهيقًا أثناء العودة."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Using momentum",
+        "Moving adjacent joints",
+        "Choosing excessive load"
+      ],
+      "ar": [
+        "استخدام الزخم",
+        "تحريك مفاصل غير مستهدفة",
+        "اختيار حمل زائد"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Dumbbell_Scaption/0.jpg",
+        "media/free-exercise-db/Dumbbell_Scaption/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Dumbbell Scaption",
+        "ar": "وضعا البداية والنهاية لتمرين رفع سكابشن بالدمبل للسباحة"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Dumbbell_Scaption.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Dumbbell_Scaption/0.jpg",
+          "sha256": "38f97aa4f4ca62bba0f072fd7c4e6695705c8b5c0079a6bf28dba3bf4446fed1"
+        },
+        {
+          "path": "media/free-exercise-db/Dumbbell_Scaption/1.jpg",
+          "sha256": "5203eab981041875b83ee241397e65a0eb8f6f421ddbaeae9b40fae1cd0aff9d"
+        }
+      ]
+    }
+  },
+  {
+    "id": "external-rotation-with-band",
+    "sourceItemId": "External_Rotation_with_Band",
+    "name": {
+      "en": "External Rotation with Band",
+      "ar": "دوران خارجي بالمطاط للسباحة"
+    },
+    "section": {
+      "id": "swimming",
+      "en": "Swimming",
+      "ar": "السباحة"
+    },
+    "sport": "swimming",
+    "category": "strength",
+    "muscles": {
+      "primary": {
+        "en": [
+          "shoulders"
+        ],
+        "ar": [
+          "الكتف"
+        ]
+      },
+      "secondary": {
+        "en": [],
+        "ar": []
+      }
+    },
+    "bodyPart": "shoulders",
+    "equipment": {
+      "id": "bands",
+      "en": "bands",
+      "ar": "مطاط مقاومة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "isolation",
+      "en": "Isolation",
+      "ar": "عزل عضلي"
+    },
+    "goal": {
+      "id": "strength",
+      "en": "Strength",
+      "ar": "القوة"
+    },
+    "setup": {
+      "en": "Choose a controllable load, stabilize the nearby joints, and align the working joint.",
+      "ar": "اختر حملًا يمكن التحكم فيه، ثبّت المفاصل القريبة، واضبط محاذاة المفصل العامل."
+    },
+    "steps": {
+      "en": [
+        "Choke the band around a post. The band should be at the same height as your elbow. Stand with your left side to the band a couple of feet away.",
+        "Grasp the end of the band with your right hand, and keep your elbow pressed firmly to your side. We recommend you hold a pad or foam roll in place with your elbow to keep it firmly in position.",
+        "With your upper arm in position, your elbow should be flexed to 90 degrees with your hand reaching across the front of your torso. This will be your starting position.",
+        "Execute the movement by rotating your arm in a backhand motion, keeping your elbow in place.",
+        "Continue as far as you are able, pause, and then return to the starting position."
+      ],
+      "ar": [
+        "حرّك المفصل المستهدف فقط قدر الإمكان.",
+        "توقف لحظة عند الانقباض من دون دفع أو رمي الحمل.",
+        "عد ببطء وحافظ على شد العضلة."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale during the lift or extension; inhale on the controlled return.",
+      "ar": "ازفر أثناء الرفع أو المد وخذ شهيقًا أثناء العودة."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Using momentum",
+        "Moving adjacent joints",
+        "Choosing excessive load"
+      ],
+      "ar": [
+        "استخدام الزخم",
+        "تحريك مفاصل غير مستهدفة",
+        "اختيار حمل زائد"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/External_Rotation_with_Band/0.jpg",
+        "media/free-exercise-db/External_Rotation_with_Band/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for External Rotation with Band",
+        "ar": "وضعا البداية والنهاية لتمرين دوران خارجي بالمطاط للسباحة"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/External_Rotation_with_Band.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/External_Rotation_with_Band/0.jpg",
+          "sha256": "589c583de4a9adce9c8e20016ec769f2fd0311c22c931c32d5f2c9ba1d7ae206"
+        },
+        {
+          "path": "media/free-exercise-db/External_Rotation_with_Band/1.jpg",
+          "sha256": "178f43dbaa162bb26bbb5e2a62b5780792a4746d281b31c136a4a07d6c004cb9"
         }
       ]
     }
@@ -10827,7 +14367,7 @@
       "sourcePath": "exercises/Flutter_Kicks.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Flutter_Kicks/0.jpg",
@@ -10976,7 +14516,7 @@
       "sourcePath": "exercises/Full_Range-Of-Motion_Lat_Pulldown.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Full_Range-Of-Motion_Lat_Pulldown/0.jpg",
@@ -10985,6 +14525,614 @@
         {
           "path": "media/free-exercise-db/Full_Range-Of-Motion_Lat_Pulldown/1.jpg",
           "sha256": "336027b9b01bcd45d58a4802e36deed5568acabd4c443557e1bbe057df1e8a70"
+        }
+      ]
+    }
+  },
+  {
+    "id": "one-arm-lat-pulldown",
+    "sourceItemId": "One_Arm_Lat_Pulldown",
+    "name": {
+      "en": "One Arm Lat Pulldown",
+      "ar": "سحب لات بذراع واحدة للسباحة"
+    },
+    "section": {
+      "id": "swimming",
+      "en": "Swimming",
+      "ar": "السباحة"
+    },
+    "sport": "swimming",
+    "category": "strength",
+    "muscles": {
+      "primary": {
+        "en": [
+          "lats"
+        ],
+        "ar": [
+          "الظهر العريض"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "biceps",
+          "middle back"
+        ],
+        "ar": [
+          "البايسبس",
+          "منتصف الظهر"
+        ]
+      }
+    },
+    "bodyPart": "lats",
+    "equipment": {
+      "id": "cable",
+      "en": "cable",
+      "ar": "كيبل"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "vertical_pull",
+      "en": "Vertical Pull",
+      "ar": "سحب رأسي"
+    },
+    "goal": {
+      "id": "strength",
+      "en": "Strength",
+      "ar": "القوة"
+    },
+    "setup": {
+      "en": "Take a secure grip, brace the trunk, and depress the shoulders before pulling.",
+      "ar": "أمسك بثبات، شد الجذع، وأنزل الكتفين قبل بدء السحب."
+    },
+    "steps": {
+      "en": [
+        "Select an appropriate weight and adjust the knee pad to help keep you down. Grasp the handle with a pronated grip. This will be your starting position.",
+        "Pull the handle down, squeezing your elbow to your side as you flex the elbow.",
+        "Pause at the bottom of the motion, and then slowly return the handle to the starting position.",
+        "For multiple repetitions, avoid completely returning the weight to keep tension on the muscles being worked."
+      ],
+      "ar": [
+        "ابدأ الحركة من لوح الكتف ثم اسحب بالمرفقين.",
+        "تجنب التأرجح وحافظ على الصدر مرفوعًا طبيعيًا.",
+        "عد إلى المد الكامل بتحكم ومن دون ترك المفصل يسقط."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale while pulling; inhale as the arms return overhead.",
+      "ar": "ازفر أثناء السحب وخذ شهيقًا عند عودة الذراعين لأعلى."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Swinging",
+        "Pulling behind the neck",
+        "Losing shoulder control"
+      ],
+      "ar": [
+        "التأرجح",
+        "السحب خلف الرقبة",
+        "فقدان التحكم في الكتف"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/One_Arm_Lat_Pulldown/0.jpg",
+        "media/free-exercise-db/One_Arm_Lat_Pulldown/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for One Arm Lat Pulldown",
+        "ar": "وضعا البداية والنهاية لتمرين سحب لات بذراع واحدة للسباحة"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/One_Arm_Lat_Pulldown.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/One_Arm_Lat_Pulldown/0.jpg",
+          "sha256": "54c9f1e1aa19eae6aa244893c6994d64ce123d0b45f2bdd4059f5a80651e1f67"
+        },
+        {
+          "path": "media/free-exercise-db/One_Arm_Lat_Pulldown/1.jpg",
+          "sha256": "3c51cffec74f3e5eb15080ff10711d0fe5ae92cd8f5b2c22ae65bb79334a1655"
+        }
+      ]
+    }
+  },
+  {
+    "id": "straight-arm-dumbbell-pullover",
+    "sourceItemId": "Straight-Arm_Dumbbell_Pullover",
+    "name": {
+      "en": "Straight-Arm Dumbbell Pullover",
+      "ar": "سحب دمبل بذراعين ممدودتين للسباحة"
+    },
+    "section": {
+      "id": "swimming",
+      "en": "Swimming",
+      "ar": "السباحة"
+    },
+    "sport": "swimming",
+    "category": "strength",
+    "muscles": {
+      "primary": {
+        "en": [
+          "chest"
+        ],
+        "ar": [
+          "الصدر"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "lats",
+          "shoulders",
+          "triceps"
+        ],
+        "ar": [
+          "الظهر العريض",
+          "الكتف",
+          "الترايسبس"
+        ]
+      }
+    },
+    "bodyPart": "chest",
+    "equipment": {
+      "id": "dumbbell",
+      "en": "dumbbell",
+      "ar": "دمبل"
+    },
+    "level": {
+      "id": "intermediate",
+      "en": "Intermediate",
+      "ar": "متوسط"
+    },
+    "movement": {
+      "id": "vertical_pull",
+      "en": "Vertical Pull",
+      "ar": "سحب رأسي"
+    },
+    "goal": {
+      "id": "strength",
+      "en": "Strength",
+      "ar": "القوة"
+    },
+    "setup": {
+      "en": "Take a secure grip, brace the trunk, and depress the shoulders before pulling.",
+      "ar": "أمسك بثبات، شد الجذع، وأنزل الكتفين قبل بدء السحب."
+    },
+    "steps": {
+      "en": [
+        "Place a dumbbell standing up on a flat bench.",
+        "Ensuring that the dumbbell stays securely placed at the top of the bench, lie perpendicular to the bench (torso across it as in forming a cross) with only your shoulders lying on the surface. Hips should be below the bench and legs bent with feet firmly on the floor. The head will be off the bench as well.",
+        "Grasp the dumbbell with both hands and hold it straight over your chest at arms length. Both palms should be pressing against the underside one of the sides of the dumbbell. This will be your starting position. Caution: Always ensure that the dumbbell used for this exercise is secure. Using a dumbbell with loose plates can result in the dumbbell falling apart and falling on your face.",
+        "While keeping your arms straight, lower the weight slowly in an arc behind your head while breathing in until you feel a stretch on the chest.",
+        "At that point, bring the dumbbell back to the starting position using the arc through which the weight was lowered and exhale as you perform this movement.",
+        "Hold the weight on the initial position for a second and repeat the motion for the prescribed number of repetitions."
+      ],
+      "ar": [
+        "ابدأ الحركة من لوح الكتف ثم اسحب بالمرفقين.",
+        "تجنب التأرجح وحافظ على الصدر مرفوعًا طبيعيًا.",
+        "عد إلى المد الكامل بتحكم ومن دون ترك المفصل يسقط."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale while pulling; inhale as the arms return overhead.",
+      "ar": "ازفر أثناء السحب وخذ شهيقًا عند عودة الذراعين لأعلى."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Swinging",
+        "Pulling behind the neck",
+        "Losing shoulder control"
+      ],
+      "ar": [
+        "التأرجح",
+        "السحب خلف الرقبة",
+        "فقدان التحكم في الكتف"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Straight-Arm_Dumbbell_Pullover/0.jpg",
+        "media/free-exercise-db/Straight-Arm_Dumbbell_Pullover/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Straight-Arm Dumbbell Pullover",
+        "ar": "وضعا البداية والنهاية لتمرين سحب دمبل بذراعين ممدودتين للسباحة"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Straight-Arm_Dumbbell_Pullover.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Straight-Arm_Dumbbell_Pullover/0.jpg",
+          "sha256": "dc47dbb75ee344369b90d81dd3b9db164f48603746141743550430a51ce15df3"
+        },
+        {
+          "path": "media/free-exercise-db/Straight-Arm_Dumbbell_Pullover/1.jpg",
+          "sha256": "36c717ae69a47a96b042c890bdd2fd8c32c5bea68a5988d109ac7ba5d7a51566"
+        }
+      ]
+    }
+  },
+  {
+    "id": "catch-and-overhead-throw",
+    "sourceItemId": "Catch_and_Overhead_Throw",
+    "name": {
+      "en": "Catch and Overhead Throw",
+      "ar": "التقاط ورمي الكرة من أعلى"
+    },
+    "section": {
+      "id": "team_sports",
+      "en": "Racket & team conditioning",
+      "ar": "إعداد رياضات المضرب والفرق"
+    },
+    "sport": "team_sports",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "lats"
+        ],
+        "ar": [
+          "الظهر العريض"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abdominals",
+          "chest",
+          "shoulders"
+        ],
+        "ar": [
+          "البطن",
+          "الصدر",
+          "الكتف"
+        ]
+      }
+    },
+    "bodyPart": "lats",
+    "equipment": {
+      "id": "medicine ball",
+      "en": "medicine ball",
+      "ar": "كرة طبية"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "vertical_push",
+      "en": "Vertical Push",
+      "ar": "دفع رأسي"
+    },
+    "goal": {
+      "id": "power",
+      "en": "Power",
+      "ar": "القوة الانفجارية"
+    },
+    "setup": {
+      "en": "Brace ribs over pelvis and start with forearms vertical and shoulders controlled.",
+      "ar": "ثبّت القفص الصدري فوق الحوض وابدأ بساعدين رأسيين وكتفين متحكم فيهما."
+    },
+    "steps": {
+      "en": [
+        "Begin standing while facing a wall or a partner.",
+        "Using both hands, position the ball behind your head, stretching as much as possible, and forcefully throw the ball forward.",
+        "Ensure that you follow your throw through, being prepared to receive your rebound from your throw. If you are throwing against the wall, make sure that you stand close enough to the wall to receive the rebound, and aim a little higher than you would with a partner."
+      ],
+      "ar": [
+        "ادفع الحمل لأعلى في مسار مريح.",
+        "لا ترفع الكتفين نحو الأذنين ولا تقوس أسفل الظهر.",
+        "اخفض الحمل ببطء إلى وضع البداية."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale while pressing overhead; inhale on the return.",
+      "ar": "ازفر أثناء الدفع لأعلى وخذ شهيقًا عند العودة."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Arching the lower back",
+        "Shrugging",
+        "Pressing unevenly"
+      ],
+      "ar": [
+        "تقويس أسفل الظهر",
+        "رفع الكتفين",
+        "الدفع بشكل غير متساوٍ"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Catch_and_Overhead_Throw/0.jpg",
+        "media/free-exercise-db/Catch_and_Overhead_Throw/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Catch and Overhead Throw",
+        "ar": "وضعا البداية والنهاية لتمرين التقاط ورمي الكرة من أعلى"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Catch_and_Overhead_Throw.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Catch_and_Overhead_Throw/0.jpg",
+          "sha256": "ba909d223bcfac19ce11b1ec07e831b906a16a3c60a59530fcb88fe5152bc430"
+        },
+        {
+          "path": "media/free-exercise-db/Catch_and_Overhead_Throw/1.jpg",
+          "sha256": "58a8d0ed416caa3b53b4a7485ea14c68a592dbad6bea6ac072af720fb3706c91"
+        }
+      ]
+    }
+  },
+  {
+    "id": "lateral-bound",
+    "sourceItemId": "Lateral_Bound",
+    "name": {
+      "en": "Lateral Bound",
+      "ar": "وثب جانبي"
+    },
+    "section": {
+      "id": "team_sports",
+      "en": "Racket & team conditioning",
+      "ar": "إعداد رياضات المضرب والفرق"
+    },
+    "sport": "team_sports",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "adductors"
+        ],
+        "ar": [
+          "مقربات الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abductors",
+          "calves",
+          "glutes",
+          "hamstrings",
+          "quadriceps"
+        ],
+        "ar": [
+          "مبعدات الفخذ",
+          "السمانة",
+          "الألوية",
+          "خلفية الفخذ",
+          "أمامية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "adductors",
+    "equipment": {
+      "id": "body only",
+      "en": "body only",
+      "ar": "وزن الجسم"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "jump",
+      "en": "Jump",
+      "ar": "قفز وهبوط"
+    },
+    "goal": {
+      "id": "agility",
+      "en": "Agility",
+      "ar": "الرشاقة"
+    },
+    "setup": {
+      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
+      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+    },
+    "steps": {
+      "en": [
+        "Assume a half squat position facing 90 degrees from your direction of travel. This will be your starting position.",
+        "Allow your lead leg to do a countermovement inward as you shift your weight to the outside leg.",
+        "Immediately push off and extend, attempting to bound to the side as far as possible.",
+        "Upon landing, immediately push off in the opposite direction, returning to your original start position.",
+        "Continue back and forth for several repetitions."
+      ],
+      "ar": [
+        "حمّل الورك والركبتين بسرعة متحكم فيها.",
+        "ادفع الأرض وحافظ على اتجاه الركبتين.",
+        "اهبط بهدوء واثبت قبل التكرار التالي."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale on takeoff and reset the breath after each stable landing.",
+      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "5–8",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "explosive / انفجاري",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Knees collapsing inward",
+        "Loud rigid landing",
+        "Repeating before balance returns"
+      ],
+      "ar": [
+        "انهيار الركبتين للداخل",
+        "هبوط صلب وصاخب",
+        "التكرار قبل استعادة التوازن"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Lateral_Bound/0.jpg",
+        "media/free-exercise-db/Lateral_Bound/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Lateral Bound",
+        "ar": "وضعا البداية والنهاية لتمرين وثب جانبي"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Lateral_Bound.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Lateral_Bound/0.jpg",
+          "sha256": "0cfa2c12cae9bf09b005a8c68dae109060495e8c8ddca53f229cc0b973b3d653"
+        },
+        {
+          "path": "media/free-exercise-db/Lateral_Bound/1.jpg",
+          "sha256": "aed75d51ea6b9ebc85bd4517fb85a94df26a276ddd617f491c56d8d40c5b0110"
         }
       ]
     }
@@ -11126,7 +15274,7 @@
       "sourcePath": "exercises/Medicine_Ball_Chest_Pass.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Medicine_Ball_Chest_Pass/0.jpg",
@@ -11135,6 +15283,309 @@
         {
           "path": "media/free-exercise-db/Medicine_Ball_Chest_Pass/1.jpg",
           "sha256": "566654af5a25fd68636b5d273d91f10f1d42f08aeef6f7ca565d10ee77f53b5e"
+        }
+      ]
+    }
+  },
+  {
+    "id": "medicine-ball-scoop-throw",
+    "sourceItemId": "Medicine_Ball_Scoop_Throw",
+    "name": {
+      "en": "Medicine Ball Scoop Throw",
+      "ar": "رمي الكرة الطبية من أسفل"
+    },
+    "section": {
+      "id": "team_sports",
+      "en": "Racket & team conditioning",
+      "ar": "إعداد رياضات المضرب والفرق"
+    },
+    "sport": "team_sports",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "shoulders"
+        ],
+        "ar": [
+          "الكتف"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abdominals",
+          "hamstrings",
+          "quadriceps"
+        ],
+        "ar": [
+          "البطن",
+          "خلفية الفخذ",
+          "أمامية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "shoulders",
+    "equipment": {
+      "id": "medicine ball",
+      "en": "medicine ball",
+      "ar": "كرة طبية"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "hinge",
+      "en": "Hinge",
+      "ar": "مفصل الورك"
+    },
+    "goal": {
+      "id": "power",
+      "en": "Power",
+      "ar": "القوة الانفجارية"
+    },
+    "setup": {
+      "en": "Brace the trunk, soften the knees, and keep the load close before moving the hips back.",
+      "ar": "شد الجذع، اثن الركبتين قليلًا، وأبقِ الحمل قريبًا قبل دفع الحوض للخلف."
+    },
+    "steps": {
+      "en": [
+        "Assume a semisquat stance with a medicine ball in your hands. Your arms should hang so the ball is near your feet.",
+        "Begin by thrusting the hips forward as you extend through the legs, jumping up.",
+        "As you do, swing your arms up and over your head, keeping them extended, releasing the ball at the peak of your movement. The goal is to throw the ball the greatest distance behind you."
+      ],
+      "ar": [
+        "ادفع الحوض للخلف مع ظهر محايد.",
+        "توقف قبل أن تفقد ثبات الجذع أو موضع الحمل.",
+        "اضغط بالأقدام ومد الحوض للعودة دون فرط تقوس الظهر."
+      ]
+    },
+    "breathing": {
+      "en": "Brace on the way down and exhale after passing the hardest point.",
+      "ar": "ثبّت النفس أثناء النزول وازفر بعد تجاوز أصعب نقطة."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Rounding the back",
+        "Load drifting away",
+        "Hyperextending at lockout"
+      ],
+      "ar": [
+        "تقويس الظهر",
+        "ابتعاد الحمل عن الجسم",
+        "فرط مد أسفل الظهر في النهاية"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Medicine_Ball_Scoop_Throw/0.jpg",
+        "media/free-exercise-db/Medicine_Ball_Scoop_Throw/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Medicine Ball Scoop Throw",
+        "ar": "وضعا البداية والنهاية لتمرين رمي الكرة الطبية من أسفل"
+      }
+    },
+    "tracking": {
+      "load": true,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Medicine_Ball_Scoop_Throw.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Medicine_Ball_Scoop_Throw/0.jpg",
+          "sha256": "711f2456b8678ffb3b0e89e1163d1f02ee598a2c366c9cd5db5b945c8d43e61f"
+        },
+        {
+          "path": "media/free-exercise-db/Medicine_Ball_Scoop_Throw/1.jpg",
+          "sha256": "daefa5812e1d247bc309499821e45ad0821a4f27aaf682116a5a1de0b9838398"
+        }
+      ]
+    }
+  },
+  {
+    "id": "single-leg-lateral-hop",
+    "sourceItemId": "Single-Leg_Lateral_Hop",
+    "name": {
+      "en": "Single-Leg Lateral Hop",
+      "ar": "قفز جانبي بساق واحدة"
+    },
+    "section": {
+      "id": "team_sports",
+      "en": "Racket & team conditioning",
+      "ar": "إعداد رياضات المضرب والفرق"
+    },
+    "sport": "team_sports",
+    "category": "plyometrics",
+    "muscles": {
+      "primary": {
+        "en": [
+          "quadriceps"
+        ],
+        "ar": [
+          "أمامية الفخذ"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abductors",
+          "adductors",
+          "calves",
+          "hamstrings"
+        ],
+        "ar": [
+          "مبعدات الفخذ",
+          "مقربات الفخذ",
+          "السمانة",
+          "خلفية الفخذ"
+        ]
+      }
+    },
+    "bodyPart": "quadriceps",
+    "equipment": {
+      "id": "other",
+      "en": "other",
+      "ar": "معدات بسيطة"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "jump",
+      "en": "Jump",
+      "ar": "قفز وهبوط"
+    },
+    "goal": {
+      "id": "balance",
+      "en": "Balance",
+      "ar": "التوازن"
+    },
+    "setup": {
+      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
+      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+    },
+    "steps": {
+      "en": [
+        "Stand to the side of a cone or hurdle. To get into the start position, stand on one leg with your knee slightly bent.",
+        "To begin, execute a counterjump to hop sideways over the cone.",
+        "Land on your jumping leg, and immediately rebound out of it by jumping back to the start position.",
+        "Continue hopping back and forth."
+      ],
+      "ar": [
+        "حمّل الورك والركبتين بسرعة متحكم فيها.",
+        "ادفع الأرض وحافظ على اتجاه الركبتين.",
+        "اهبط بهدوء واثبت قبل التكرار التالي."
+      ]
+    },
+    "breathing": {
+      "en": "Exhale on takeoff and reset the breath after each stable landing.",
+      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+    },
+    "prescription": {
+      "sets": 3,
+      "reps": "5–8",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "explosive / انفجاري",
+      "setTypes": [
+        "warmup",
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Knees collapsing inward",
+        "Loud rigid landing",
+        "Repeating before balance returns"
+      ],
+      "ar": [
+        "انهيار الركبتين للداخل",
+        "هبوط صلب وصاخب",
+        "التكرار قبل استعادة التوازن"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Single-Leg_Lateral_Hop/0.jpg",
+        "media/free-exercise-db/Single-Leg_Lateral_Hop/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Single-Leg Lateral Hop",
+        "ar": "وضعا البداية والنهاية لتمرين قفز جانبي بساق واحدة"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": true,
+      "volume": true
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Single-Leg_Lateral_Hop.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Single-Leg_Lateral_Hop/0.jpg",
+          "sha256": "060efd603cc3d8468124a23874bc07c6e57c066243e1840eedbfac70851cc15b"
+        },
+        {
+          "path": "media/free-exercise-db/Single-Leg_Lateral_Hop/1.jpg",
+          "sha256": "a4166f0696748e28d8a0ebf986b5b0386db99731e0c09594df4b888e77cc1645"
         }
       ]
     }
@@ -11274,7 +15725,7 @@
       "sourcePath": "exercises/Step-up_with_Knee_Raise.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Step-up_with_Knee_Raise/0.jpg",
@@ -11421,7 +15872,7 @@
       "sourcePath": "exercises/Cat_Stretch.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Cat_Stretch/0.jpg",
@@ -11568,7 +16019,7 @@
       "sourcePath": "exercises/Childs_Pose.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Childs_Pose/0.jpg",
@@ -11577,6 +16028,154 @@
         {
           "path": "media/free-exercise-db/Childs_Pose/1.jpg",
           "sha256": "88e74c578129c5eda3e3ec2563afec214759a31c12f7f09d6956040ffb89e91d"
+        }
+      ]
+    }
+  },
+  {
+    "id": "dancers-stretch",
+    "sourceItemId": "Dancers_Stretch",
+    "name": {
+      "en": "Dancer's Stretch",
+      "ar": "إطالة الراقص"
+    },
+    "section": {
+      "id": "yoga",
+      "en": "Yoga & Pilates",
+      "ar": "اليوجا والبيلاتس"
+    },
+    "sport": "yoga",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "lower back"
+        ],
+        "ar": [
+          "أسفل الظهر"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "abductors",
+          "glutes"
+        ],
+        "ar": [
+          "مبعدات الفخذ",
+          "الألوية"
+        ]
+      }
+    },
+    "bodyPart": "lower back",
+    "equipment": {
+      "id": "body only",
+      "en": "body only",
+      "ar": "بدون معدات"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "حركة وإطالة"
+    },
+    "goal": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "الحركة"
+    },
+    "setup": {
+      "en": "Move into a supported, pain-free position and keep the breath relaxed.",
+      "ar": "اتخذ وضعًا مدعومًا وخاليًا من الألم وحافظ على تنفس هادئ."
+    },
+    "steps": {
+      "en": [
+        "Sit up on the floor.",
+        "Cross your right leg over your left, keeping the knee bent. Your left leg is straight and down on the floor.",
+        "Place your left arm on your right leg and your right hand on the floor.",
+        "Rotate your upper body to the right, and hold for 10-20 seconds. Switch sides."
+      ],
+      "ar": [
+        "ادخل المدى ببطء حتى شد خفيف لا ألم.",
+        "حافظ على الوضع والتنفس من دون ارتداد.",
+        "اخرج من الوضع تدريجيًا وكرر على الجهة الأخرى عند الحاجة."
+      ]
+    },
+    "breathing": {
+      "en": "Use slow nasal breathing and relax further on each exhale.",
+      "ar": "استخدم تنفسًا أنفيًا بطيئًا واسترخِ أكثر مع كل زفير."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Bouncing",
+        "Forcing painful range",
+        "Holding the breath"
+      ],
+      "ar": [
+        "الارتداد",
+        "إجبار الجسم على مدى مؤلم",
+        "حبس النفس"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Dancers_Stretch/0.jpg",
+        "media/free-exercise-db/Dancers_Stretch/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Dancer's Stretch",
+        "ar": "وضعا البداية والنهاية لتمرين إطالة الراقص"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Dancers_Stretch.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Dancers_Stretch/0.jpg",
+          "sha256": "41b0e8ae136dd709529a33df10e56fc63a3acfa49c6160e8f77e8be46e714df1"
+        },
+        {
+          "path": "media/free-exercise-db/Dancers_Stretch/1.jpg",
+          "sha256": "76648920ec05e5407f07ff8ac7fa3946304fc87743265faf5f21808cee6e5f0f"
         }
       ]
     }
@@ -11715,7 +16314,7 @@
       "sourcePath": "exercises/Downward_Facing_Balance.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Downward_Facing_Balance/0.jpg",
@@ -11856,7 +16455,7 @@
       "sourcePath": "exercises/Pelvic_Tilt_Into_Bridge.json",
       "license": "Unlicense",
       "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
-      "importedAt": "2026-10-02",
+      "importedAt": "2026-10-03",
       "assetHashes": [
         {
           "path": "media/free-exercise-db/Pelvic_Tilt_Into_Bridge/0.jpg",
@@ -11865,6 +16464,158 @@
         {
           "path": "media/free-exercise-db/Pelvic_Tilt_Into_Bridge/1.jpg",
           "sha256": "24ee9b466045d8f93260e0e5bb8686d8f0d55546e5175cba07fd710fe4ec40c5"
+        }
+      ]
+    }
+  },
+  {
+    "id": "spinal-stretch",
+    "sourceItemId": "Spinal_Stretch",
+    "name": {
+      "en": "Spinal Stretch",
+      "ar": "إطالة العمود الفقري"
+    },
+    "section": {
+      "id": "yoga",
+      "en": "Yoga & Pilates",
+      "ar": "اليوجا والبيلاتس"
+    },
+    "sport": "yoga",
+    "category": "stretching",
+    "muscles": {
+      "primary": {
+        "en": [
+          "middle back"
+        ],
+        "ar": [
+          "منتصف الظهر"
+        ]
+      },
+      "secondary": {
+        "en": [
+          "lats",
+          "lower back",
+          "neck",
+          "traps"
+        ],
+        "ar": [
+          "الظهر العريض",
+          "أسفل الظهر",
+          "الرقبة",
+          "الترابيس"
+        ]
+      }
+    },
+    "bodyPart": "middle back",
+    "equipment": {
+      "id": "body only",
+      "en": "body only",
+      "ar": "بدون معدات"
+    },
+    "level": {
+      "id": "beginner",
+      "en": "Beginner",
+      "ar": "مبتدئ"
+    },
+    "movement": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "حركة وإطالة"
+    },
+    "goal": {
+      "id": "mobility",
+      "en": "Mobility",
+      "ar": "الحركة"
+    },
+    "setup": {
+      "en": "Move into a supported, pain-free position and keep the breath relaxed.",
+      "ar": "اتخذ وضعًا مدعومًا وخاليًا من الألم وحافظ على تنفس هادئ."
+    },
+    "steps": {
+      "en": [
+        "Sit in a chair so your back is straight and your feet planted on the floor.",
+        "Interlace your fingers behind your head, elbows out and your chin down.",
+        "Twist your upper body to one side about 3 times as far as you can. Then lean forward and twist your torso to reach your elbow to the floor on the inside of your knee.",
+        "Return to upright position and then repeat for your other side."
+      ],
+      "ar": [
+        "ادخل المدى ببطء حتى شد خفيف لا ألم.",
+        "حافظ على الوضع والتنفس من دون ارتداد.",
+        "اخرج من الوضع تدريجيًا وكرر على الجهة الأخرى عند الحاجة."
+      ]
+    },
+    "breathing": {
+      "en": "Use slow nasal breathing and relax further on each exhale.",
+      "ar": "استخدم تنفسًا أنفيًا بطيئًا واسترخِ أكثر مع كل زفير."
+    },
+    "prescription": {
+      "sets": 2,
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 20,
+      "tempo": "slow / بطيء",
+      "setTypes": [
+        "working"
+      ]
+    },
+    "commonMistakes": {
+      "en": [
+        "Bouncing",
+        "Forcing painful range",
+        "Holding the breath"
+      ],
+      "ar": [
+        "الارتداد",
+        "إجبار الجسم على مدى مؤلم",
+        "حبس النفس"
+      ]
+    },
+    "regression": {
+      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
+      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+    },
+    "progression": {
+      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
+      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+    },
+    "safety": {
+      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
+      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+    },
+    "demo": {
+      "type": "two_frame_image_sequence",
+      "assets": [
+        "media/free-exercise-db/Spinal_Stretch/0.jpg",
+        "media/free-exercise-db/Spinal_Stretch/1.jpg"
+      ],
+      "offline": true,
+      "alt": {
+        "en": "Start and finish positions for Spinal Stretch",
+        "ar": "وضعا البداية والنهاية لتمرين إطالة العمود الفقري"
+      }
+    },
+    "tracking": {
+      "load": false,
+      "rpe": true,
+      "rir": false,
+      "volume": false
+    },
+    "provenance": {
+      "source": "free-exercise-db",
+      "repository": "https://github.com/yuhonas/free-exercise-db",
+      "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+      "sourcePath": "exercises/Spinal_Stretch.json",
+      "license": "Unlicense",
+      "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+      "importedAt": "2026-10-03",
+      "assetHashes": [
+        {
+          "path": "media/free-exercise-db/Spinal_Stretch/0.jpg",
+          "sha256": "3e6524b7b9bcfa6ea03aa38556f9362c99a97c884eafea96ed27f4c646ac6d40"
+        },
+        {
+          "path": "media/free-exercise-db/Spinal_Stretch/1.jpg",
+          "sha256": "3911ec0d232082abfaf80fd5593f2d7c5617ea2193eba508e9866057303fe7a9"
         }
       ]
     }

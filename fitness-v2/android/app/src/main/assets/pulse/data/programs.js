@@ -1147,12 +1147,17 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "وزن الجسم"
+        "ar": "بدون معدات"
       },
       {
         "id": "machine",
         "en": "machine",
         "ar": "جهاز مقاومة"
+      },
+      {
+        "id": "other",
+        "en": "other",
+        "ar": "معدات بسيطة"
       }
     ],
     "safety": {
@@ -1214,7 +1219,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -1224,7 +1229,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "ankle-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -1254,12 +1259,22 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "trail-running-walking",
+            "exerciseId": "prowler-sprint",
             "role": "working",
             "sets": 2,
             "reps": null,
             "durationSeconds": 1200,
             "restSeconds": 60,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "runners-stretch",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           },
@@ -1274,22 +1289,12 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
             "sets": 2,
             "reps": null,
             "durationSeconds": 30,
             "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "air-bike",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -1304,17 +1309,17 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 32,
         "exercises": [
           {
-            "exerciseId": "walking-treadmill",
+            "exerciseId": "runners-stretch",
             "role": "warmup",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 5,
             "targetRir": 4
           },
           {
-            "exerciseId": "jogging-treadmill",
+            "exerciseId": "running-treadmill",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -1334,22 +1339,22 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "air-bike",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "bodyweight-squat",
+            "exerciseId": "ankle-circles",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -1396,12 +1401,17 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "وزن الجسم"
+        "ar": "بدون معدات"
       },
       {
         "id": "machine",
         "en": "machine",
         "ar": "جهاز مقاومة"
+      },
+      {
+        "id": "other",
+        "en": "other",
+        "ar": "معدات بسيطة"
       }
     ],
     "safety": {
@@ -1453,7 +1463,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "trail-running-walking",
+            "exerciseId": "prowler-sprint",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -1463,7 +1473,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -1473,12 +1483,12 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "air-bike",
+            "exerciseId": "ankle-circles",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -1493,7 +1503,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 42,
         "exercises": [
           {
-            "exerciseId": "trail-running-walking",
+            "exerciseId": "prowler-sprint",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -1503,7 +1513,17 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "walking-treadmill",
+            "exerciseId": "runners-stretch",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "running-treadmill",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -1513,32 +1533,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "jogging-treadmill",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "air-bike",
+            "exerciseId": "ankle-circles",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "bodyweight-squat",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -1553,7 +1563,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 42,
         "exercises": [
           {
-            "exerciseId": "jogging-treadmill",
+            "exerciseId": "running-treadmill",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -1583,22 +1593,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "bodyweight-squat",
+            "exerciseId": "ankle-circles",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "bodyweight-walking-lunge",
+            "exerciseId": "inchworm",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -1633,7 +1643,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "trail-running-walking",
+            "exerciseId": "prowler-sprint",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -1643,22 +1653,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "bodyweight-walking-lunge",
+            "exerciseId": "inchworm",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "crunches",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -1703,9 +1713,19 @@ window.THF_PROGRAMS = [
     "estimatedSessionMinutes": 38,
     "equipment": [
       {
+        "id": "barbell",
+        "en": "barbell",
+        "ar": "بار وأوزان"
+      },
+      {
         "id": "body only",
         "en": "body only",
-        "ar": "وزن الجسم"
+        "ar": "بدون معدات"
+      },
+      {
+        "id": "dumbbell",
+        "en": "dumbbell",
+        "ar": "دمبل"
       },
       {
         "id": "machine",
@@ -1747,14 +1767,24 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 38,
         "exercises": [
           {
-            "exerciseId": "bicycling",
+            "exerciseId": "barbell-step-ups",
             "role": "warmup",
+            "sets": 2,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 5,
+            "targetRir": 4
+          },
+          {
+            "exerciseId": "bicycling",
+            "role": "working",
             "sets": 2,
             "reps": null,
             "durationSeconds": 1200,
             "restSeconds": 60,
-            "targetRpe": 5,
-            "targetRir": 4
+            "targetRpe": 7,
+            "targetRir": 3
           },
           {
             "exerciseId": "bicycling-stationary",
@@ -1767,32 +1797,22 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "bodyweight-squat",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "bodyweight-walking-lunge",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "crunches",
+            "exerciseId": "ankle-circles",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -1807,7 +1827,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 38,
         "exercises": [
           {
-            "exerciseId": "bicycling",
+            "exerciseId": "bicycling-stationary",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -1817,27 +1837,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "bicycling-stationary",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "bodyweight-walking-lunge",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "crunches",
+            "exerciseId": "platform-hamstring-slides",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -1847,12 +1847,32 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "plank",
+            "exerciseId": "recumbent-bike",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 1200,
+            "restSeconds": 60,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "ankle-circles",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "inchworm",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -1867,7 +1887,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 38,
         "exercises": [
           {
-            "exerciseId": "bicycling",
+            "exerciseId": "recumbent-bike",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -1877,42 +1897,42 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "bicycling-stationary",
+            "exerciseId": "standing-dumbbell-calf-raise",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "barbell-step-ups",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "inchworm",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "crunches",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "plank",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "pushups",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -1957,9 +1977,19 @@ window.THF_PROGRAMS = [
     "estimatedSessionMinutes": 45,
     "equipment": [
       {
+        "id": "barbell",
+        "en": "barbell",
+        "ar": "بار وأوزان"
+      },
+      {
         "id": "body only",
         "en": "body only",
-        "ar": "وزن الجسم"
+        "ar": "بدون معدات"
+      },
+      {
+        "id": "dumbbell",
+        "en": "dumbbell",
+        "ar": "دمبل"
       },
       {
         "id": "machine",
@@ -2001,7 +2031,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 45,
         "exercises": [
           {
-            "exerciseId": "bicycling-stationary",
+            "exerciseId": "bicycling",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -2011,7 +2041,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "bicycling",
+            "exerciseId": "bicycling-stationary",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -2021,32 +2051,32 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "bodyweight-walking-lunge",
+            "exerciseId": "platform-hamstring-slides",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "ankle-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "crunches",
+            "exerciseId": "inchworm",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "plank",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -2061,17 +2091,17 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 45,
         "exercises": [
           {
-            "exerciseId": "bicycling-stationary",
+            "exerciseId": "platform-hamstring-slides",
             "role": "warmup",
             "sets": 2,
-            "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 5,
             "targetRir": 4
           },
           {
-            "exerciseId": "bicycling",
+            "exerciseId": "recumbent-bike",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -2081,7 +2111,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "crunches",
+            "exerciseId": "standing-dumbbell-calf-raise",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -2091,22 +2121,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "plank",
+            "exerciseId": "inchworm",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "pushups",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -2121,14 +2151,24 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 45,
         "exercises": [
           {
-            "exerciseId": "bicycling-stationary",
+            "exerciseId": "standing-dumbbell-calf-raise",
             "role": "warmup",
             "sets": 2,
-            "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 5,
             "targetRir": 4
+          },
+          {
+            "exerciseId": "barbell-step-ups",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
           },
           {
             "exerciseId": "bicycling",
@@ -2141,32 +2181,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "plank",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "pushups",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "russian-twist",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -2181,7 +2211,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 45,
         "exercises": [
           {
-            "exerciseId": "bicycling-stationary",
+            "exerciseId": "bicycling",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -2191,7 +2221,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "bicycling",
+            "exerciseId": "bicycling-stationary",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -2201,7 +2231,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "pushups",
+            "exerciseId": "platform-hamstring-slides",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -2211,22 +2241,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "russian-twist",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "side-bridge",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -2273,7 +2303,17 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "وزن الجسم"
+        "ar": "بدون معدات"
+      },
+      {
+        "id": "machine",
+        "en": "machine",
+        "ar": "جهاز مقاومة"
+      },
+      {
+        "id": "medicine ball",
+        "en": "medicine ball",
+        "ar": "كرة طبية"
       },
       {
         "id": "other",
@@ -2310,7 +2350,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 36,
         "exercises": [
           {
-            "exerciseId": "box-skip",
+            "exerciseId": "lateral-cone-hops",
             "role": "warmup",
             "sets": 2,
             "reps": "5–8",
@@ -2330,32 +2370,32 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "side-hop-sprint",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "front-box-jump",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "mountain-climbers",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -2370,7 +2410,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 36,
         "exercises": [
           {
-            "exerciseId": "box-skip",
+            "exerciseId": "side-hop-sprint",
             "role": "warmup",
             "sets": 2,
             "reps": "5–8",
@@ -2380,7 +2420,17 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "linear-acceleration-wall-drill",
+            "exerciseId": "single-cone-sprint-drill",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 1200,
+            "restSeconds": 60,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "box-skip",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -2390,30 +2440,20 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "inchworm",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "air-bike",
+            "exerciseId": "mountain-climbers",
             "role": "working",
             "sets": 3,
-            "reps": "8–12",
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "overhead-slam",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 7,
@@ -2440,7 +2480,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "linear-acceleration-wall-drill",
+            "exerciseId": "front-cone-hops-or-hurdle-hops",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -2450,32 +2490,32 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "lateral-cone-hops",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "overhead-slam",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "rowing-stationary",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "air-bike",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "bodyweight-squat",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "durationSeconds": 1200,
+            "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -2522,7 +2562,17 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "وزن الجسم"
+        "ar": "بدون معدات"
+      },
+      {
+        "id": "machine",
+        "en": "machine",
+        "ar": "جهاز مقاومة"
+      },
+      {
+        "id": "medicine ball",
+        "en": "medicine ball",
+        "ar": "كرة طبية"
       },
       {
         "id": "other",
@@ -2569,7 +2619,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "box-skip",
+            "exerciseId": "side-hop-sprint",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -2579,30 +2629,30 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "single-cone-sprint-drill",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "durationSeconds": 1200,
+            "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "air-bike",
+            "exerciseId": "mountain-climbers",
             "role": "working",
             "sets": 3,
-            "reps": "8–12",
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "overhead-slam",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 8,
@@ -2619,12 +2669,12 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 45,
         "exercises": [
           {
-            "exerciseId": "linear-acceleration-wall-drill",
+            "exerciseId": "single-cone-sprint-drill",
             "role": "warmup",
             "sets": 2,
-            "reps": "5–8",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "reps": null,
+            "durationSeconds": 1200,
+            "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
           },
@@ -2639,32 +2689,32 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "front-cone-hops-or-hurdle-hops",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "overhead-slam",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "rowing-stationary",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "air-bike",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "bodyweight-squat",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "durationSeconds": 1200,
+            "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -2679,7 +2729,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 45,
         "exercises": [
           {
-            "exerciseId": "linear-acceleration-wall-drill",
+            "exerciseId": "front-cone-hops-or-hurdle-hops",
             "role": "warmup",
             "sets": 2,
             "reps": "5–8",
@@ -2689,7 +2739,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "box-skip",
+            "exerciseId": "lateral-cone-hops",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -2699,32 +2749,32 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "air-bike",
+            "exerciseId": "linear-acceleration-wall-drill",
             "role": "working",
             "sets": 3,
-            "reps": "8–12",
+            "reps": "5–8",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "bodyweight-squat",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "bodyweight-walking-lunge",
+            "exerciseId": "rowing-stationary",
             "role": "working",
             "sets": 2,
             "reps": null,
             "durationSeconds": 1200,
             "restSeconds": 60,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "90-90-hamstring",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -2749,7 +2799,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "box-skip",
+            "exerciseId": "side-hop-sprint",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -2759,17 +2809,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "bodyweight-squat",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "bodyweight-walking-lunge",
+            "exerciseId": "single-cone-sprint-drill",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -2779,12 +2819,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "crunches",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "ankle-circles",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -2829,6 +2879,16 @@ window.THF_PROGRAMS = [
     "estimatedSessionMinutes": 35,
     "equipment": [
       {
+        "id": "bands",
+        "en": "bands",
+        "ar": "مطاط مقاومة"
+      },
+      {
+        "id": "barbell",
+        "en": "barbell",
+        "ar": "بار وأوزان"
+      },
+      {
         "id": "body only",
         "en": "body only",
         "ar": "وزن الجسم"
@@ -2842,11 +2902,6 @@ window.THF_PROGRAMS = [
         "id": "dumbbell",
         "en": "dumbbell",
         "ar": "دمبل"
-      },
-      {
-        "id": "machine",
-        "en": "machine",
-        "ar": "جهاز مقاومة"
       }
     ],
     "safety": {
@@ -2878,7 +2933,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 35,
         "exercises": [
           {
-            "exerciseId": "flutter-kicks",
+            "exerciseId": "one-arm-lat-pulldown",
             "role": "warmup",
             "sets": 2,
             "reps": "8–12",
@@ -2888,7 +2943,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "full-range-of-motion-lat-pulldown",
+            "exerciseId": "straight-arm-dumbbell-pullover",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -2898,7 +2953,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "dip-machine",
+            "exerciseId": "dumbbell-scaption",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -2908,7 +2963,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "dumbbell-bench-press",
+            "exerciseId": "barbell-squat",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -2918,7 +2973,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "dumbbell-bicep-curl",
+            "exerciseId": "bent-over-barbell-row",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -2938,7 +2993,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 35,
         "exercises": [
           {
-            "exerciseId": "flutter-kicks",
+            "exerciseId": "dumbbell-scaption",
             "role": "warmup",
             "sets": 2,
             "reps": "8–12",
@@ -2948,7 +3003,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "full-range-of-motion-lat-pulldown",
+            "exerciseId": "external-rotation-with-band",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -2958,7 +3013,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "dumbbell-bench-press",
+            "exerciseId": "flutter-kicks",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -2968,7 +3023,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "dumbbell-bicep-curl",
+            "exerciseId": "bent-over-barbell-row",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -2978,7 +3033,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "dumbbell-shoulder-press",
+            "exerciseId": "cable-crossover",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3018,7 +3073,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "dumbbell-bicep-curl",
+            "exerciseId": "one-arm-lat-pulldown",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3028,7 +3083,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "dumbbell-shoulder-press",
+            "exerciseId": "cable-crossover",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3038,7 +3093,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "dumbbell-step-ups",
+            "exerciseId": "close-grip-front-lat-pulldown",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3088,6 +3143,16 @@ window.THF_PROGRAMS = [
     "estimatedSessionMinutes": 44,
     "equipment": [
       {
+        "id": "bands",
+        "en": "bands",
+        "ar": "مطاط مقاومة"
+      },
+      {
+        "id": "barbell",
+        "en": "barbell",
+        "ar": "بار وأوزان"
+      },
+      {
         "id": "body only",
         "en": "body only",
         "ar": "وزن الجسم"
@@ -3101,6 +3166,11 @@ window.THF_PROGRAMS = [
         "id": "dumbbell",
         "en": "dumbbell",
         "ar": "دمبل"
+      },
+      {
+        "id": "machine",
+        "en": "machine",
+        "ar": "جهاز مقاومة"
       }
     ],
     "safety": {
@@ -3132,7 +3202,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 44,
         "exercises": [
           {
-            "exerciseId": "full-range-of-motion-lat-pulldown",
+            "exerciseId": "straight-arm-dumbbell-pullover",
             "role": "warmup",
             "sets": 2,
             "reps": "8–12",
@@ -3142,7 +3212,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "flutter-kicks",
+            "exerciseId": "dumbbell-scaption",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3152,7 +3222,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "dumbbell-bench-press",
+            "exerciseId": "external-rotation-with-band",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3162,7 +3232,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "dumbbell-bicep-curl",
+            "exerciseId": "bent-over-barbell-row",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3172,7 +3242,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "dumbbell-shoulder-press",
+            "exerciseId": "cable-crossover",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3192,7 +3262,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 44,
         "exercises": [
           {
-            "exerciseId": "full-range-of-motion-lat-pulldown",
+            "exerciseId": "external-rotation-with-band",
             "role": "warmup",
             "sets": 2,
             "reps": "8–12",
@@ -3212,7 +3282,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "dumbbell-bicep-curl",
+            "exerciseId": "full-range-of-motion-lat-pulldown",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3222,7 +3292,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "dumbbell-shoulder-press",
+            "exerciseId": "cable-crossover",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3232,7 +3302,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "dumbbell-step-ups",
+            "exerciseId": "close-grip-front-lat-pulldown",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3262,7 +3332,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "flutter-kicks",
+            "exerciseId": "one-arm-lat-pulldown",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3272,7 +3342,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "dumbbell-shoulder-press",
+            "exerciseId": "straight-arm-dumbbell-pullover",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3282,7 +3352,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "dumbbell-step-ups",
+            "exerciseId": "close-grip-front-lat-pulldown",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3292,7 +3362,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "face-pull",
+            "exerciseId": "dip-machine",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -3350,6 +3420,11 @@ window.THF_PROGRAMS = [
         "id": "exercise ball",
         "en": "exercise ball",
         "ar": "كرة تمرين"
+      },
+      {
+        "id": "foam roll",
+        "en": "foam roll",
+        "ar": "فوم رول"
       }
     ],
     "safety": {
@@ -3401,17 +3476,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "dancers-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3421,7 +3486,17 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "calves-smr",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "hamstring-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3441,14 +3516,24 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 28,
         "exercises": [
           {
-            "exerciseId": "downward-facing-balance",
+            "exerciseId": "dancers-stretch",
             "role": "warmup",
             "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 5,
+            "targetRir": 4
+          },
+          {
+            "exerciseId": "downward-facing-balance",
+            "role": "working",
+            "sets": 3,
             "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
-            "targetRpe": 5,
-            "targetRir": 4
+            "targetRpe": 7,
+            "targetRir": 3
           },
           {
             "exerciseId": "pelvic-tilt-into-bridge",
@@ -3461,7 +3546,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "cat-stretch",
+            "exerciseId": "hamstring-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3471,17 +3556,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "90-90-hamstring",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "inchworm",
+            "exerciseId": "iliotibial-tract-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3501,7 +3576,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 28,
         "exercises": [
           {
-            "exerciseId": "cat-stretch",
+            "exerciseId": "pelvic-tilt-into-bridge",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -3511,7 +3586,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "spinal-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3521,17 +3596,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "inchworm",
+            "exerciseId": "cat-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3541,7 +3606,17 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "iliotibial-tract-smr",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "latissimus-dorsi-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3645,6 +3720,16 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
+            "exerciseId": "dancers-stretch",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
             "exerciseId": "downward-facing-balance",
             "role": "working",
             "sets": 3,
@@ -3655,7 +3740,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "hamstring-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3665,17 +3750,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "90-90-hamstring",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "inchworm",
+            "exerciseId": "iliotibial-tract-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3695,17 +3770,17 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 34,
         "exercises": [
           {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "downward-facing-balance",
             "role": "warmup",
             "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 5,
             "targetRir": 4
           },
           {
-            "exerciseId": "cat-stretch",
+            "exerciseId": "pelvic-tilt-into-bridge",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3715,7 +3790,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "spinal-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3725,7 +3800,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "iliotibial-tract-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3735,7 +3810,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "latissimus-dorsi-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3755,67 +3830,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 34,
         "exercises": [
           {
-            "exerciseId": "childs-pose",
-            "role": "warmup",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "pelvic-tilt-into-bridge",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "calves-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          }
-        ]
-      },
-      {
-        "id": "yoga-balance-flow-session-4",
-        "name": {
-          "en": "Strength and repeatability",
-          "ar": "القوة وتكرار الأداء"
-        },
-        "estimatedMinutes": 34,
-        "exercises": [
-          {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "spinal-stretch",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -3845,7 +3860,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "latissimus-dorsi-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3855,7 +3870,67 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "piriformis-smr",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
+          }
+        ]
+      },
+      {
+        "id": "yoga-balance-flow-session-4",
+        "name": {
+          "en": "Strength and repeatability",
+          "ar": "القوة وتكرار الأداء"
+        },
+        "estimatedMinutes": 34,
+        "exercises": [
+          {
+            "exerciseId": "childs-pose",
+            "role": "warmup",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 5,
+            "targetRir": 4
+          },
+          {
+            "exerciseId": "dancers-stretch",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "downward-facing-balance",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "piriformis-smr",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "quadriceps-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -3907,7 +3982,7 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "وزن الجسم"
+        "ar": "بدون معدات"
       },
       {
         "id": "other",
@@ -4104,7 +4179,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "ankle-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -4156,7 +4231,7 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "وزن الجسم"
+        "ar": "بدون معدات"
       },
       {
         "id": "other",
@@ -4293,7 +4368,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "ankle-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -4343,7 +4418,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "ankle-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -4353,7 +4428,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "inchworm",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -4403,7 +4478,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "inchworm",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -4413,12 +4488,12 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "dips---triceps-version",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -4465,12 +4540,22 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "بدون معدات"
+        "ar": "وزن الجسم"
+      },
+      {
+        "id": "cable",
+        "en": "cable",
+        "ar": "كيبل"
       },
       {
         "id": "medicine ball",
         "en": "medicine ball",
         "ar": "كرة طبية"
+      },
+      {
+        "id": "other",
+        "en": "other",
+        "ar": "معدات بسيطة"
       }
     ],
     "safety": {
@@ -4502,17 +4587,37 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 34,
         "exercises": [
           {
-            "exerciseId": "fast-skipping",
+            "exerciseId": "pallof-press-with-rotation",
             "role": "warmup",
             "sets": 2,
-            "reps": "5–8",
+            "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 5,
             "targetRir": 4
           },
           {
-            "exerciseId": "medicine-ball-full-twist",
+            "exerciseId": "side-to-side-box-shuffle",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 1200,
+            "restSeconds": 60,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "fast-skipping",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "plank",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -4522,32 +4627,12 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "single-leg-glute-bridge",
+            "exerciseId": "pushups",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "superman",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "90-90-hamstring",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -4572,6 +4657,16 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
+            "exerciseId": "heavy-bag-thrust",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
             "exerciseId": "medicine-ball-full-twist",
             "role": "working",
             "sets": 3,
@@ -4582,32 +4677,22 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "superman",
+            "exerciseId": "pushups",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "russian-twist",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "inchworm",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -4622,17 +4707,27 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 34,
         "exercises": [
           {
-            "exerciseId": "fast-skipping",
+            "exerciseId": "medicine-ball-full-twist",
             "role": "warmup",
             "sets": 2,
-            "reps": "5–8",
+            "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 5,
             "targetRir": 4
           },
           {
-            "exerciseId": "medicine-ball-full-twist",
+            "exerciseId": "one-arm-medicine-ball-slam",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "pallof-press-with-rotation",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -4642,32 +4737,22 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "russian-twist",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "side-bridge",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -4717,14 +4802,19 @@ window.THF_PROGRAMS = [
         "ar": "وزن الجسم"
       },
       {
-        "id": "machine",
-        "en": "machine",
-        "ar": "جهاز مقاومة"
+        "id": "cable",
+        "en": "cable",
+        "ar": "كيبل"
       },
       {
         "id": "medicine ball",
         "en": "medicine ball",
         "ar": "كرة طبية"
+      },
+      {
+        "id": "other",
+        "en": "other",
+        "ar": "معدات بسيطة"
       }
     ],
     "safety": {
@@ -4756,12 +4846,12 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 42,
         "exercises": [
           {
-            "exerciseId": "medicine-ball-full-twist",
+            "exerciseId": "side-to-side-box-shuffle",
             "role": "warmup",
             "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "reps": null,
+            "durationSeconds": 1200,
+            "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
           },
@@ -4776,32 +4866,32 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "superman",
+            "exerciseId": "heavy-bag-thrust",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "pushups",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "russian-twist",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -4816,7 +4906,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 42,
         "exercises": [
           {
-            "exerciseId": "medicine-ball-full-twist",
+            "exerciseId": "heavy-bag-thrust",
             "role": "warmup",
             "sets": 2,
             "reps": "8–12",
@@ -4826,7 +4916,17 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "fast-skipping",
+            "exerciseId": "medicine-ball-full-twist",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "one-arm-medicine-ball-slam",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -4836,32 +4936,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "russian-twist",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "side-bridge",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -4876,52 +4966,52 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 42,
         "exercises": [
           {
-            "exerciseId": "medicine-ball-full-twist",
+            "exerciseId": "one-arm-medicine-ball-slam",
             "role": "warmup",
             "sets": 2,
-            "reps": "8–12",
+            "reps": "5–8",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 5,
             "targetRir": 4
           },
           {
-            "exerciseId": "fast-skipping",
+            "exerciseId": "pallof-press-with-rotation",
             "role": "working",
             "sets": 3,
-            "reps": "5–8",
+            "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "inchworm",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "elliptical-trainer",
+            "exerciseId": "side-to-side-box-shuffle",
             "role": "working",
             "sets": 2,
             "reps": null,
             "durationSeconds": 1200,
             "restSeconds": 60,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "side-bridge",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "single-leg-glute-bridge",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -4936,12 +5026,12 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 42,
         "exercises": [
           {
-            "exerciseId": "medicine-ball-full-twist",
+            "exerciseId": "side-to-side-box-shuffle",
             "role": "warmup",
             "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "reps": null,
+            "durationSeconds": 1200,
+            "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
           },
@@ -4956,32 +5046,32 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "heavy-bag-thrust",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "single-leg-glute-bridge",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "superman",
             "role": "working",
             "sets": 2,
             "reps": null,
             "durationSeconds": 30,
             "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "elliptical-trainer",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "freehand-jump-squat",
-            "role": "working",
-            "sets": 3,
-            "reps": "5–8",
-            "durationSeconds": null,
-            "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -5028,12 +5118,7 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "وزن الجسم"
-      },
-      {
-        "id": "foam roll",
-        "en": "foam roll",
-        "ar": "فوم رول"
+        "ar": "بدون معدات"
       },
       {
         "id": "machine",
@@ -5110,7 +5195,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "inchworm",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5120,7 +5205,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5170,7 +5255,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5180,7 +5265,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5230,7 +5315,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5240,12 +5325,12 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "freehand-jump-squat",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "5–8",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -5374,7 +5459,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5384,7 +5469,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5434,7 +5519,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5444,12 +5529,12 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "elliptical-trainer",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -5494,22 +5579,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "front-box-jump",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "5–8",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "mountain-climbers",
+            "exerciseId": "calves-smr",
             "role": "working",
-            "sets": 3,
-            "reps": "5–8",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -5554,22 +5639,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "overhead-slam",
+            "exerciseId": "calves-smr",
             "role": "working",
-            "sets": 3,
-            "reps": "5–8",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "rowing-stationary",
+            "exerciseId": "hamstring-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -5617,16 +5702,6 @@ window.THF_PROGRAMS = [
         "id": "body only",
         "en": "body only",
         "ar": "بدون معدات"
-      },
-      {
-        "id": "exercise ball",
-        "en": "exercise ball",
-        "ar": "كرة تمرين"
-      },
-      {
-        "id": "foam roll",
-        "en": "foam roll",
-        "ar": "فوم رول"
       }
     ],
     "safety": {
@@ -5658,7 +5733,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 18,
         "exercises": [
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "inchworm",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -5668,7 +5743,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5678,7 +5753,17 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "standing-hip-circles",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5689,16 +5774,6 @@ window.THF_PROGRAMS = [
           },
           {
             "exerciseId": "cat-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "childs-pose",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5718,7 +5793,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 18,
         "exercises": [
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "standing-hip-circles",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -5728,7 +5803,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5748,7 +5823,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "cat-stretch",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5758,7 +5833,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "cat-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5788,6 +5863,16 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
+            "exerciseId": "ankle-circles",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
             "exerciseId": "inchworm",
             "role": "working",
             "sets": 2,
@@ -5798,7 +5883,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5808,22 +5893,12 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
             "durationSeconds": 30,
             "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -5838,7 +5913,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 18,
         "exercises": [
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "inchworm",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -5848,7 +5923,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5858,7 +5933,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5868,17 +5943,17 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "downward-facing-balance",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "cat-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5898,7 +5973,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 18,
         "exercises": [
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "standing-hip-circles",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -5908,7 +5983,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5928,7 +6003,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "cat-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5938,7 +6013,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "childs-pose",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -5991,16 +6066,6 @@ window.THF_PROGRAMS = [
         "id": "body only",
         "en": "body only",
         "ar": "بدون معدات"
-      },
-      {
-        "id": "exercise ball",
-        "en": "exercise ball",
-        "ar": "كرة تمرين"
-      },
-      {
-        "id": "foam roll",
-        "en": "foam roll",
-        "ar": "فوم رول"
       }
     ],
     "safety": {
@@ -6032,7 +6097,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 26,
         "exercises": [
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6042,7 +6107,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6052,7 +6117,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6092,7 +6157,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 26,
         "exercises": [
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6112,7 +6177,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "ankle-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6122,7 +6187,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6132,12 +6197,12 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "downward-facing-balance",
+            "exerciseId": "cat-stretch",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -6152,7 +6217,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 26,
         "exercises": [
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "ankle-circles",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6160,6 +6225,16 @@ window.THF_PROGRAMS = [
             "restSeconds": 30,
             "targetRpe": 5,
             "targetRir": 4
+          },
+          {
+            "exerciseId": "inchworm",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -6172,7 +6247,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6182,17 +6257,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "cat-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6212,7 +6277,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 26,
         "exercises": [
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6222,7 +6287,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6232,7 +6297,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "worlds-greatest-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6242,7 +6307,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "cat-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6252,7 +6317,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "childs-pose",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6307,11 +6372,6 @@ window.THF_PROGRAMS = [
         "ar": "وزن الجسم"
       },
       {
-        "id": "exercise ball",
-        "en": "exercise ball",
-        "ar": "كرة تمرين"
-      },
-      {
         "id": "foam roll",
         "en": "foam roll",
         "ar": "فوم رول"
@@ -6346,7 +6406,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 20,
         "exercises": [
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "piriformis-smr",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6356,7 +6416,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "quadriceps-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6366,7 +6426,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "calves-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6376,7 +6436,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "cat-stretch",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6386,7 +6446,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "ankle-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6426,7 +6486,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "cat-stretch",
+            "exerciseId": "iliotibial-tract-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6436,7 +6496,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "quadriceps-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6446,12 +6506,12 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "downward-facing-balance",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -6466,7 +6526,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 20,
         "exercises": [
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "iliotibial-tract-smr",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6476,7 +6536,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "latissimus-dorsi-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6486,7 +6546,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "piriformis-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6496,17 +6556,17 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "downward-facing-balance",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "ankle-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6526,7 +6586,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 20,
         "exercises": [
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "piriformis-smr",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6536,7 +6596,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "quadriceps-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6546,17 +6606,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "calves-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6566,7 +6616,17 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "ankle-circles",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "inchworm",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6618,12 +6678,7 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "بدون معدات"
-      },
-      {
-        "id": "exercise ball",
-        "en": "exercise ball",
-        "ar": "كرة تمرين"
+        "ar": "وزن الجسم"
       },
       {
         "id": "foam roll",
@@ -6660,7 +6715,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 24,
         "exercises": [
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "quadriceps-smr",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6680,7 +6735,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "cat-stretch",
+            "exerciseId": "hamstring-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6690,7 +6745,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6700,12 +6755,12 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "downward-facing-balance",
+            "exerciseId": "ankle-circles",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -6730,7 +6785,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "iliotibial-tract-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6740,7 +6795,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "childs-pose",
+            "exerciseId": "latissimus-dorsi-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6750,17 +6805,17 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "downward-facing-balance",
+            "exerciseId": "90-90-hamstring",
             "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "ankle-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6780,7 +6835,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 24,
         "exercises": [
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "latissimus-dorsi-smr",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6790,7 +6845,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "piriformis-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6800,17 +6855,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "pelvic-tilt-into-bridge",
+            "exerciseId": "quadriceps-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6820,7 +6865,17 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "ankle-circles",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "inchworm",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6840,7 +6895,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 24,
         "exercises": [
           {
-            "exerciseId": "hamstring-smr",
+            "exerciseId": "quadriceps-smr",
             "role": "warmup",
             "sets": 2,
             "reps": null,
@@ -6860,17 +6915,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "pelvic-tilt-into-bridge",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "90-90-hamstring",
+            "exerciseId": "hamstring-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6881,6 +6926,16 @@ window.THF_PROGRAMS = [
           },
           {
             "exerciseId": "inchworm",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "standing-gastrocnemius-calf-stretch",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6910,7 +6965,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "calves-smr",
+            "exerciseId": "iliotibial-tract-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6920,17 +6975,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "90-90-hamstring",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "inchworm",
+            "exerciseId": "latissimus-dorsi-smr",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6941,6 +6986,16 @@ window.THF_PROGRAMS = [
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "role": "working",
+            "sets": 2,
+            "reps": null,
+            "durationSeconds": 30,
+            "restSeconds": 30,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "standing-hip-circles",
             "role": "working",
             "sets": 2,
             "reps": null,
@@ -6992,12 +7047,7 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "بدون معدات"
-      },
-      {
-        "id": "machine",
-        "en": "machine",
-        "ar": "جهاز مقاومة"
+        "ar": "وزن الجسم"
       },
       {
         "id": "medicine ball",
@@ -7039,7 +7089,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 34,
         "exercises": [
           {
-            "exerciseId": "medicine-ball-chest-pass",
+            "exerciseId": "catch-and-overhead-throw",
             "role": "warmup",
             "sets": 2,
             "reps": "8–12",
@@ -7049,7 +7099,17 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "step-up-with-knee-raise",
+            "exerciseId": "lateral-bound",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "medicine-ball-chest-pass",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -7059,27 +7119,17 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "inchworm",
+            "exerciseId": "medicine-ball-scoop-throw",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "box-skip",
+            "exerciseId": "single-leg-lateral-hop",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -7109,7 +7159,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "step-up-with-knee-raise",
+            "exerciseId": "medicine-ball-scoop-throw",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -7119,17 +7169,7 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "box-skip",
+            "exerciseId": "single-leg-lateral-hop",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -7139,10 +7179,20 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "linear-acceleration-wall-drill",
+            "exerciseId": "lateral-bound",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 7,
+            "targetRir": 3
+          },
+          {
+            "exerciseId": "step-up-with-knee-raise",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 7,
@@ -7159,10 +7209,10 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 34,
         "exercises": [
           {
-            "exerciseId": "medicine-ball-chest-pass",
+            "exerciseId": "single-leg-lateral-hop",
             "role": "warmup",
             "sets": 2,
-            "reps": "8–12",
+            "reps": "5–8",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 5,
@@ -7179,32 +7229,32 @@ window.THF_PROGRAMS = [
             "targetRir": 3
           },
           {
-            "exerciseId": "box-skip",
+            "exerciseId": "catch-and-overhead-throw",
             "role": "working",
             "sets": 3,
-            "reps": "5–8",
+            "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "linear-acceleration-wall-drill",
+            "exerciseId": "medicine-ball-chest-pass",
             "role": "working",
             "sets": 3,
-            "reps": "5–8",
+            "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           },
           {
-            "exerciseId": "elliptical-trainer",
+            "exerciseId": "medicine-ball-scoop-throw",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 7,
             "targetRir": 3
           }
@@ -7251,12 +7301,7 @@ window.THF_PROGRAMS = [
       {
         "id": "body only",
         "en": "body only",
-        "ar": "بدون معدات"
-      },
-      {
-        "id": "machine",
-        "en": "machine",
-        "ar": "جهاز مقاومة"
+        "ar": "وزن الجسم"
       },
       {
         "id": "medicine ball",
@@ -7298,10 +7343,10 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 38,
         "exercises": [
           {
-            "exerciseId": "step-up-with-knee-raise",
+            "exerciseId": "lateral-bound",
             "role": "warmup",
             "sets": 2,
-            "reps": "8–12",
+            "reps": "5–8",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 5,
@@ -7318,17 +7363,17 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "standing-gastrocnemius-calf-stretch",
+            "exerciseId": "medicine-ball-scoop-throw",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "box-skip",
+            "exerciseId": "single-leg-lateral-hop",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -7338,10 +7383,10 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "linear-acceleration-wall-drill",
+            "exerciseId": "step-up-with-knee-raise",
             "role": "working",
             "sets": 3,
-            "reps": "5–8",
+            "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 8,
@@ -7358,7 +7403,7 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 38,
         "exercises": [
           {
-            "exerciseId": "step-up-with-knee-raise",
+            "exerciseId": "medicine-ball-scoop-throw",
             "role": "warmup",
             "sets": 2,
             "reps": "8–12",
@@ -7366,6 +7411,26 @@ window.THF_PROGRAMS = [
             "restSeconds": 90,
             "targetRpe": 5,
             "targetRir": 4
+          },
+          {
+            "exerciseId": "single-leg-lateral-hop",
+            "role": "working",
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "step-up-with-knee-raise",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
           },
           {
             "exerciseId": "medicine-ball-chest-pass",
@@ -7384,26 +7449,6 @@ window.THF_PROGRAMS = [
             "reps": "5–8",
             "durationSeconds": null,
             "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "linear-acceleration-wall-drill",
-            "role": "working",
-            "sets": 3,
-            "reps": "5–8",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "elliptical-trainer",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -7428,7 +7473,7 @@ window.THF_PROGRAMS = [
             "targetRir": 4
           },
           {
-            "exerciseId": "medicine-ball-chest-pass",
+            "exerciseId": "catch-and-overhead-throw",
             "role": "working",
             "sets": 3,
             "reps": "8–12",
@@ -7438,7 +7483,7 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "box-skip",
+            "exerciseId": "lateral-bound",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -7448,22 +7493,22 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "linear-acceleration-wall-drill",
+            "exerciseId": "medicine-ball-scoop-throw",
             "role": "working",
             "sets": 3,
-            "reps": "5–8",
+            "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           },
           {
-            "exerciseId": "elliptical-trainer",
+            "exerciseId": "single-leg-lateral-hop",
             "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
+            "sets": 3,
+            "reps": "5–8",
+            "durationSeconds": null,
+            "restSeconds": 90,
             "targetRpe": 8,
             "targetRir": 2
           }
@@ -7478,10 +7523,10 @@ window.THF_PROGRAMS = [
         "estimatedMinutes": 38,
         "exercises": [
           {
-            "exerciseId": "step-up-with-knee-raise",
+            "exerciseId": "lateral-bound",
             "role": "warmup",
             "sets": 2,
-            "reps": "8–12",
+            "reps": "5–8",
             "durationSeconds": null,
             "restSeconds": 90,
             "targetRpe": 5,
@@ -7498,7 +7543,17 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "box-skip",
+            "exerciseId": "medicine-ball-scoop-throw",
+            "role": "working",
+            "sets": 3,
+            "reps": "8–12",
+            "durationSeconds": null,
+            "restSeconds": 90,
+            "targetRpe": 8,
+            "targetRir": 2
+          },
+          {
+            "exerciseId": "single-leg-lateral-hop",
             "role": "working",
             "sets": 3,
             "reps": "5–8",
@@ -7508,22 +7563,12 @@ window.THF_PROGRAMS = [
             "targetRir": 2
           },
           {
-            "exerciseId": "linear-acceleration-wall-drill",
+            "exerciseId": "step-up-with-knee-raise",
             "role": "working",
             "sets": 3,
-            "reps": "5–8",
+            "reps": "8–12",
             "durationSeconds": null,
             "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "elliptical-trainer",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 1200,
-            "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
           }
