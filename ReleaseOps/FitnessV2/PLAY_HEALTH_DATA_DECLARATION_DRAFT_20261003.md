@@ -1,7 +1,9 @@
 # Fitness V2 Play Health and Data Safety draft — not submitted
 
-Status: **DRAFT / owner review required / no Play claim**  
-Candidate: `22c11488f8b1fad28631c55df0a18a7815fbec03`  
+Status: **DRAFT / owner review required / no Play claim**
+
+Candidate: `d79c9c621dab30748e0779bd5a5fc35e385593d5`
+
 Package/version: `com.topherofit.thf.pulse` / `51003`
 
 This draft maps the exact candidate behavior to the Play Console forms. It is not

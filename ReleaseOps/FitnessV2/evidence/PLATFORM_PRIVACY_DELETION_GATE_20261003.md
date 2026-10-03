@@ -4,7 +4,7 @@
 
 - Branch: `release/fitness-v2-rebuild-20261002`
 - Backend deletion checkpoint: `d246e494ad2c0b1841449a0455e9fccd4ab3fc08`
-- Exact Android/package candidate: `22c11488f8b1fad28631c55df0a18a7815fbec03`
+- Exact Android/package candidate: `d79c9c621dab30748e0779bd5a5fc35e385593d5`
 - Live AppDeploy app: `thf-fitness-pulse-ul26f1`
 - Live snapshot: `v69` / `1790998671035` — ready, but older than both checkpoints
 - API gateway: `https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/`
@@ -18,11 +18,16 @@ indexes, Android tickets/sessions, idempotency records and competition submissio
 README defines the authenticated `DELETE /api/account` integration point and explicitly
 does not represent app-data deletion as deleting the external identity-provider account.
 
-Candidate `22c11488` adds visible Arabic/English Profile actions for Privacy policy and
+Checkpoint `22c11488` adds visible Arabic/English Profile actions for Privacy policy and
 Delete account data. Native code validates the persistent HTTPS account base, allowlists
 only `privacy.html` and `account-deletion.html`, and opens the system browser with a
 browsable intent. Public source pages disclose on-device Health Connect processing,
 optional HTTPS workout sync, retention/deletion scope and the external identity limit.
+
+Candidate `d79c9c62` adds a pinned TypeScript 5.9.3 strict/no-emit gate using a local
+contract snapshot derived from the connected AppDeploy SDK database/router reference. It
+also aligns the single-record helper with the SDK's `Omit<T, 'id'> & { id: string }`
+return type, so the deploy overlay is compiled rather than accepted by marker tests alone.
 
 ## Tests and CI
 
@@ -41,13 +46,19 @@ optional HTTPS workout sync, retention/deletion scope and the external identity 
   - artifact `11276240179`, `fitness-v2-51003-package-gate`
   - digest `sha256:edf92f9885fcce43d0374126972243f618b5208c69720dc420726fb8da67f8c8`
   - expiry `2026-10-17T14:00:58Z`
+- Run 17 (`37145448540`) on exact candidate `d79c9c62`: PASS
+  - source/backend job `111268310806`, including TypeScript 5.9.3 strict/no-emit: PASS
+  - Android job `111268310629`
+  - artifact `11281913738`, `fitness-v2-51003-package-gate`
+  - digest `sha256:96f96c53460e2bd52fbbf877f759f78a4d3362d0bc62873882b3f200201b90f0`
+  - expiry `2026-10-17T18:49:00Z`
 - Android unit tests: `7/7 PASS`
 - Lint: `0 errors`, two dependency-update warnings
 
 ## Exact package evidence
 
 - Debug APK: 14,787,102 bytes,
-  SHA-256 `90eca150aca03ec86b110b581a23a2961c53c2e706c6e0d8af0e0a95b3e45071`
+  SHA-256 `8fa3d49ba45201b6d8efee55f7ff4724756e9a3b2ce99e2287044226083aaa9b`
 - Release AAB: 13,638,076 bytes,
   SHA-256 `e1a7df202581a4660edeef2e324cc608f85bdba595f2fb3f26b61e223656fff0`
 - Package/version: `com.topherofit.thf.pulse` / `51003`
@@ -78,7 +89,7 @@ Connect, Samsung-origin or Play Internal evidence.
 
 ## Next gate
 
-After quota reset, deploy exact candidate `22c11488`, verify privacy/deletion and a full
+After quota reset, deploy exact candidate `d79c9c62`, verify privacy/deletion and a full
 disposable-account PKCE/sync/idempotency/history/progress/deletion roundtrip, then sign one
 exact 51003 AAB with the existing upload key. Publish certificate-correct DAL, complete
 the prepared Play declarations, and run physical Health Connect/Samsung-origin QA before
