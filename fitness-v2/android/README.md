@@ -8,10 +8,13 @@ locally before any optional Health Connect write.
 Completed workouts are also queued for the shared V2 backend. The native HTTPS client
 uses the same stable record/version contract as Health Connect, rejects redirects, and
 accepts only a short-lived account access token supplied at runtime. Tokens are held in
-memory only and are never written to preferences. Until the canonical account flow
-completes the external-browser, PKCE-bound, single-use ticket flow (and `THF_BASE_URL`
-is an approved persistent HTTPS endpoint), the
-queue remains local and the app reports sync as unconfigured/unauthenticated.
+memory only and are never written to preferences. The branded web origin starts the
+external-browser, PKCE-bound, single-use ticket flow; native API traffic uses the
+separate AppDeploy gateway at
+`https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/`. An approved
+`THF_BASE_URL` Gradle property may override that endpoint, but the build rejects
+cleartext, credential-bearing, preview-tunnel, and non-default-port URLs. Without an
+authenticated ticket exchange, the queue remains local and sync stays fail-closed.
 
 Health Connect V2 currently requests only the data displayed or written:
 

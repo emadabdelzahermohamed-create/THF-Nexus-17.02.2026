@@ -84,6 +84,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertNotIn('JSONArray(prefs.getString(SUMMARIES', source)
 
     def test_android_backend_sync_is_https_queued_and_session_scoped(self):
+        gradle = (ANDROID / "app" / "build.gradle").read_text()
         source = "\n".join(
             p.read_text()
             for p in (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse").glob("*.kt")
@@ -98,6 +99,14 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("blockNetworkLoads = true", source)
         self.assertNotIn("putString(\"backend_access_token\"", source)
         self.assertNotIn("setBackendAccessToken", source)
+        self.assertIn(
+            "https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/",
+            gradle,
+        )
+        self.assertNotRegex(
+            gradle,
+            r"def baseUrl\s*=.*https://thf-fitness-pulse-ul26f1\.v2\.appdeploy\.ai",
+        )
 
     def test_android_account_handoff_uses_external_browser_pkce_and_exact_callback(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")

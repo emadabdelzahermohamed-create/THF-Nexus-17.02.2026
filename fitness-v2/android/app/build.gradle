@@ -12,7 +12,10 @@ android {
         targetSdk 36
         versionCode 51003
         versionName '5.0.0-v2-alpha3'
-        def baseUrl = project.findProperty('THF_BASE_URL') ?: ''
+        // AppDeploy serves the SPA from the public app origin, while native clients
+        // must call the credential-free API gateway directly. Keep the account URL
+        // separate so the browser sign-in still starts on the branded web origin.
+        def baseUrl = project.findProperty('THF_BASE_URL') ?: 'https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/'
         def accountUrl = project.findProperty('THF_ACCOUNT_URL') ?: 'https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/'
         buildConfigField 'String', 'THF_BASE_URL', '"' + baseUrl.replace('\\','\\\\').replace('"','\\"') + '"'
         buildConfigField 'String', 'THF_ACCOUNT_URL', '"' + accountUrl.replace('\\','\\\\').replace('"','\\"') + '"'

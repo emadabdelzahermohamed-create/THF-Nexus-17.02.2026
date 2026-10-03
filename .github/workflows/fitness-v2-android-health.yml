@@ -53,9 +53,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p fitness-v2/evidence
-          args=()
-          if [[ -n "$THF_FITNESS_V2_BASE_URL" ]]; then
-            python - "$THF_FITNESS_V2_BASE_URL" <<'PY'
+          API_BASE="${THF_FITNESS_V2_BASE_URL:-https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/}"
+          python - "$API_BASE" <<'PY'
           import sys
           from urllib.parse import urlparse
           value = urlparse(sys.argv[1])
@@ -66,12 +65,8 @@ jobs:
           if value.port not in (None, 443) or host.endswith(".local") or any(host == item or host.endswith("." + item) for item in blocked):
               raise SystemExit("THF_FITNESS_V2_BASE_URL must be a persistent default-port production host")
           PY
-            args+=("-PTHF_BASE_URL=$THF_FITNESS_V2_BASE_URL")
-            echo 'BACKEND_ENDPOINT=CONFIGURED_HTTPS' | tee fitness-v2/evidence/backend-binding-status.txt
-          else
-            echo 'BACKEND_ENDPOINT=NOT_CONFIGURED' | tee fitness-v2/evidence/backend-binding-status.txt
-          fi
-          gradle --no-daemon -p fitness-v2/android "${args[@]}" \
+          echo "BACKEND_ENDPOINT=CONFIGURED_HTTPS:$API_BASE" | tee fitness-v2/evidence/backend-binding-status.txt
+          gradle --no-daemon -p fitness-v2/android "-PTHF_BASE_URL=$API_BASE" \
             :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease
       - name: Sign release AAB when the existing Play upload key is available
         shell: bash
