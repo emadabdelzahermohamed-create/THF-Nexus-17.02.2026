@@ -195,6 +195,17 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertIn(".onboarding-shell", styles)
         self.assertIn(".onboarding-benefits", styles)
 
+    def test_mobile_set_logger_uses_labeled_one_handed_cards(self):
+        script = (PULSE / "app.js").read_text()
+        styles = (PULSE / "styles.css").read_text()
+        self.assertEqual(4, script.count('class="set-field"'))
+        self.assertIn(".set-table-head{display:none}", styles)
+        self.assertIn(".set-row{grid-template-columns:1fr 1fr;min-width:0", styles)
+        self.assertIn(".set-complete{grid-column:1/-1;width:100%;height:44px", styles)
+        self.assertIn(".set-logger{overflow:visible}", styles)
+        self.assertIn("document.body.classList.toggle('workout-active'", script)
+        self.assertIn(".workout-active .workout-actions{bottom:calc(5px + env(safe-area-inset-bottom))}", styles)
+
 
 if __name__ == "__main__":
     unittest.main()
