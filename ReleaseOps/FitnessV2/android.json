@@ -2,12 +2,12 @@
   "lane": "android-health-release",
   "branch": "release/fitness-v2-rebuild-20261002",
   "result": "PROGRESS",
-  "active_task": "P0_SIGN_BIND_INSTALL_AND_PHYSICALLY_VERIFY_VERSION_51002",
-  "candidate_sha": "0aa8336c18e09037457d6e30745fedaffa47d581",
+  "active_task": "P0_SIGN_INSTALL_AND_PHYSICALLY_VERIFY_VERSION_51003",
+  "candidate_sha": "89937707206d5beebcfe7c6230290775c6cfa0a8",
   "identity": {
     "package_id": "com.topherofit.thf.pulse",
-    "version_code": 51002,
-    "version_name_debug": "5.0.0-v2-alpha2-debug",
+    "version_code": 51003,
+    "version_name_debug": "5.0.0-v2-alpha3-debug",
     "min_sdk": 26,
     "compile_sdk": 36,
     "target_sdk": 36,
@@ -33,22 +33,22 @@
     "samsung_origin": "NOT_RUN"
   },
   "package_gate": {
-    "workflow_run_id": 37050254091,
-    "workflow_run_number": 9,
-    "workflow_url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/37050254091",
-    "source_backend_job_id": 110981592612,
-    "android_job_id": 110981592351,
+    "workflow_run_id": 37126932766,
+    "workflow_run_number": 14,
+    "workflow_url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/37126932766",
+    "source_backend_job_id": 111214013531,
+    "android_job_id": 111214013405,
     "result": "PASS",
-    "artifact_id": 11246003209,
-    "artifact_name": "fitness-v2-51002-package-gate",
-    "artifact_digest": "sha256:2f789efae1bd7fecbb79ee3b7bf4def5193e8d673ca861377aff7769ca008fda",
-    "artifact_expires_at": "2026-10-16T18:53:53Z",
-    "debug_apk_sha256": "168f4e269176fbfe07c4e13bb7aad0e394face57776ec6f6e5c06e712b5d74da",
-    "release_aab_sha256": "86d7a54e4d3ba358f6a38fa82a2b3d8e82afc091d0e1a229257cac67ca8696d7",
-    "debug_apk_bytes": 14772846,
-    "release_aab_bytes": 13629532,
-    "android_unit_tests": "4/4 PASS",
-    "source_contract_tests": "8/8 PASS",
+    "artifact_id": 11274802669,
+    "artifact_name": "fitness-v2-51003-package-gate",
+    "artifact_digest": "sha256:49a244b2640897e752083d48fbf02010ee84a49b75c71693068256c4d07e9e3d",
+    "artifact_expires_at": "2026-10-17T13:42:28Z",
+    "debug_apk_sha256": "6abb60bb8f2b50096ab933e7db24dd3bb15d93f05a5d981f42e8b909a813a705",
+    "release_aab_sha256": "d45c6486bd45e0de988864c2b996db488ed0a911add63c9ae1aaf20f5d484b3d",
+    "debug_apk_bytes": 14785850,
+    "release_aab_bytes": 13637483,
+    "android_unit_tests": "7/7 PASS",
+    "source_contract_tests": "10/10 PASS",
     "backend_tests": "8/8 PASS",
     "lint": "0 errors, 2 GradleDependency warnings",
     "cleartext": false,
@@ -59,7 +59,9 @@
     "stage16a_entries": 0,
     "debuggable": true,
     "production_signing": "NOT_RUN_MISSING_ALL_FOUR_EXISTING_SECRETS",
-    "backend_endpoint": "NOT_CONFIGURED"
+    "backend_endpoint": "CONFIGURED_HTTPS_API_GATEWAY",
+    "backend_endpoint_value": "https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/",
+    "backend_endpoint_embedded_in_dex": true
   },
   "completed_items": [
     "Built API 36 debug APK and release AAB from the exact candidate SHA",
@@ -69,16 +71,17 @@
     "Added resume-time permission refresh and pending Health/backend queue handling",
     "Blocked WebView network loads and cleartext traffic",
     "Added Arabic and English Health permission rationale resources and fail-closed backup/device-transfer rules",
-    "Reduced Android lint from 20 warnings to two dependency-update notices"
+    "Reduced Android lint from 20 warnings to two dependency-update notices",
+    "Implemented the external-browser PKCE account handoff without storing browser cookies or native access tokens",
+    "Bound versionCode 51003 to the live AppDeploy V2 API gateway and verified the exact endpoint is embedded in the built APK"
   ],
   "blockers": [
     "The exact release AAB is unsigned because all four existing upload-signing secrets were unavailable to the workflow.",
-    "The persistent V2 backend endpoint is not deployed or bound into this candidate.",
-    "The packaged Product JavaScript does not acquire a production access token or call the non-persistent setBackendAccessToken bridge, so authenticated Android sync is not reachable yet.",
     "Digital Asset Links cannot be finalized until the V2 production origin and the actual release signing certificate fingerprint are fixed.",
+    "The browser connection screen and fail-closed live API routes are verified, but a complete authenticated ticket exchange and workout sync has not been run with a disposable non-privileged QA identity.",
     "No Android emulator or physical phone was available, so install, launch, background/resume, offline workout and Health Connect runtime gates remain open.",
-    "Samsung Health-originated activity and Play Internal were not tested for versionCode 51002."
+    "Samsung Health-originated activity and Play Internal were not tested for versionCode 51003."
   ],
-  "next_action": "Deploy and bind the authenticated V2 backend, complete a secure tested production account-token handoff to the existing non-persistent Android bridge, make the existing upload-signing secrets available to the protected workflow, publish and verify Digital Asset Links for the actual signing certificate, rebuild one signed versionCode 51002 AAB, then run exact-artifact install/core-workout/offline/background-resume/Health Connect/Samsung-origin QA on a physical Android phone before Play Internal.",
-  "updated_at": "2026-10-02T18:58:48Z"
+  "next_action": "Make the existing four upload-signing secrets available to the protected workflow, publish certificate-correct Digital Asset Links, rebuild one signed versionCode 51003 AAB from candidate 89937707206d5beebcfe7c6230290775c6cfa0a8, then run exact-artifact install/core-workout/offline/background-resume/Health Connect/Samsung-origin QA on a physical Android phone before Play Internal.",
+  "updated_at": "2026-10-03T13:44:24Z"
 }

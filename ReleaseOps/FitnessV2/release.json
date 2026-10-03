@@ -2,21 +2,22 @@
   "project": "Top Hero Fit Fitness V2 Rebuild",
   "branch": "release/fitness-v2-rebuild-20261002",
   "run_result": "PROGRESS",
-  "phase": "ANDROID_PACKAGE_GATE_PASS_UNSIGNED",
-  "canonical_candidate_sha": "0aa8336c18e09037457d6e30745fedaffa47d581",
-  "candidate_version_code": 51002,
+  "phase": "ANDROID_PACKAGE_GATE_PASS_BACKEND_BOUND_UNSIGNED",
+  "canonical_candidate_sha": "89937707206d5beebcfe7c6230290775c6cfa0a8",
+  "candidate_version_code": 51003,
   "candidate_package_id": "com.topherofit.thf.pulse",
-  "workflow_run_id": 37050254091,
-  "workflow_run_number": 9,
-  "artifact_id": 11246003209,
-  "artifact_digest": "sha256:2f789efae1bd7fecbb79ee3b7bf4def5193e8d673ca861377aff7769ca008fda",
+  "workflow_run_id": 37126932766,
+  "workflow_run_number": 14,
+  "artifact_id": 11274802669,
+  "artifact_digest": "sha256:49a244b2640897e752083d48fbf02010ee84a49b75c71693068256c4d07e9e3d",
   "gates": {
     "backend_unit_security": "PASS_SOURCE_ONLY",
     "android_source_contract": "PASS",
     "android_build_package": "PASS",
     "android_lint": "PASS_0_ERRORS_2_DEPENDENCY_WARNINGS",
     "offline_payload": "PASS_80_EXERCISES_26_PROGRAMS_160_IMAGES_NO_STAGE16A",
-    "backend_live_https_auth": "BLOCKED_NOT_DEPLOYED",
+    "backend_live_https_auth": "PARTIAL_PASS_PUBLIC_HEALTHCHECK_AND_FAIL_CLOSED_UNAUTH_AUTHENTICATED_ROUNDTRIP_NOT_RUN",
+    "android_backend_binding": "PASS_EXACT_API_GATEWAY_EMBEDDED_IN_VERSION_51003_APK",
     "production_signing": "BLOCKED_MISSING_EXISTING_UPLOAD_SECRETS",
     "digital_asset_links": "NOT_RUN_WAITING_FOR_V2_ORIGIN_AND_RELEASE_CERTIFICATE",
     "emulator_runtime": "NOT_RUN_NO_EMULATOR",
@@ -24,25 +25,23 @@
     "health_connect_physical": "NOT_RUN",
     "samsung_health_origin": "NOT_RUN",
     "play_data_safety_health_apps_declaration": "NOT_RUN_FOR_V2_HEALTH_PERMISSIONS",
-    "play_internal_51002": "NOT_RUN",
+    "play_internal_51003": "NOT_RUN",
     "exact_play_candidate_verification": "NOT_RUN"
   },
   "product_lane_read_only": {
     "state": "PROGRESS",
-    "source_state_commit": "64f3c632d274ad2db266d705ef71a998537c99d4",
+    "source_state_commit": "fc037ff620c0a8dd1549baf04b09aacbeb1c6c93",
     "packaged_exercises": 80,
     "packaged_programs": 26,
     "packaged_offline_demo_images": 160
   },
   "blockers": [
-    "Persistent authenticated V2 backend deployment and Android endpoint binding remain open.",
-    "AppDeploy backend deployment was blocked by the daily free-tier credit minimum until 2026-10-03T00:00:00Z.",
-    "A production account-token acquisition/handoff path is not implemented in the packaged V2 client, so cross-platform authenticated sync is not reachable.",
+    "The live V2 API and Android gateway binding are verified, but a complete authenticated PKCE ticket plus sync/history/progress roundtrip remains unproven with a disposable non-privileged QA identity.",
     "The existing four upload-signing secrets were not available to GitHub Actions, so the AAB is not a production candidate.",
     "Digital Asset Links and the V2-specific Play Data Safety/Health apps declarations have no exact-candidate evidence.",
-    "Physical phone, Health Connect, Samsung-origin and Play Internal evidence does not exist for versionCode 51002."
+    "Physical phone, Health Connect, Samsung-origin and Play Internal evidence does not exist for versionCode 51003."
   ],
-  "next_action": "Retry the authorized free AppDeploy backend deployment after its UTC reset, validate authenticated V2 JSON contracts, complete the secure production account-token handoff, bind and sign the exact Android build, publish certificate-correct Digital Asset Links, complete the V2 Health Play declarations, then physically test versionCode 51002 before any Play upload.",
-  "evidence_path": "ReleaseOps/FitnessV2/evidence/PLATFORM_HEALTH_ANDROID_20261002.md",
-  "updated_at": "2026-10-02T18:58:48Z"
+  "next_action": "Complete one non-privileged authenticated PKCE/sync roundtrip, provide the existing upload-signing secrets to the protected workflow, publish certificate-correct Digital Asset Links, complete the V2 Health Play declarations, then physically test the exact signed versionCode 51003 artifact before any Play upload.",
+  "evidence_path": "ReleaseOps/FitnessV2/evidence/PLATFORM_HEALTH_ANDROID_GATEWAY_BINDING_20261003.md",
+  "updated_at": "2026-10-03T13:44:24Z"
 }

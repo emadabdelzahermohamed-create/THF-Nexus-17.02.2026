@@ -2,9 +2,9 @@
   "lane": "backend-data-integration",
   "branch": "release/fitness-v2-rebuild-20261002",
   "result": "PROGRESS",
-  "active_task": "P0_DEPLOY_AUTHENTICATED_V2_API_AND_BIND_EXACT_ANDROID_CANDIDATE",
-  "candidate_sha": "0aa8336c18e09037457d6e30745fedaffa47d581",
-  "backend_source_checkpoint": "ea99b454a8ebefd0ca6cd1d34c16c05ac2bfd21d",
+  "active_task": "P0_COMPLETE_AUTHENTICATED_ACCOUNT_SYNC_AND_SIGN_EXACT_51003",
+  "candidate_sha": "89937707206d5beebcfe7c6230290775c6cfa0a8",
+  "backend_source_checkpoint": "2b375966ea7f102e09eb57a3b6c35e25dd456c8a",
   "completed_items": [
     "Added a fail-closed HTTPS WSGI API with short-lived issuer/audience-bound HS256 bearer verification, rotated key ids, expiry and session revocation checks",
     "Added authenticated per-account workout history and progress summary contracts",
@@ -12,35 +12,36 @@
     "Added sets, reps, load, rest, RPE, RIR, personal-record and volume persistence",
     "Added server-authoritative competition claim comparison against stored workout facts",
     "Rejected client-supplied account identity and rejected unknown workout fields",
-    "Documented the production runtime variables with no development key or insecure endpoint fallback"
+    "Documented the production runtime variables with no development key or insecure endpoint fallback",
+    "Deployed the PKCE-bound single-use Android ticket exchange and authenticated V2 workout routes in AppDeploy v69 snapshot 1790998671035",
+    "Verified the live API gateway healthcheck and fail-closed unauthenticated workout, progress, sync, ticket and invalid-session responses",
+    "Bound Android versionCode 51003 to the credential-free AppDeploy API gateway while keeping browser account login on the branded web origin"
   ],
   "tests": {
     "local_backend_unit_security": "8/8 PASS",
     "local_python_compile": "PASS",
     "local_secret_placeholder_cleartext_scan": "PASS_NO_MATCHES",
     "github_workflow": "PASS",
-    "github_run_id": 37050254091,
-    "github_run_number": 9,
-    "github_job_id": 110981592612,
+    "github_run_id": 37126932766,
+    "github_run_number": 14,
+    "github_job_id": 111214013531,
     "github_job_name": "source-and-backend"
   },
   "runtime": {
-    "deployed": false,
-    "production_endpoint": null,
-    "android_binding": "NOT_CONFIGURED",
+    "deployed": true,
+    "production_endpoint": "https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/",
+    "android_binding": "CONFIGURED_IN_VERSION_51003_CANDIDATE",
     "appdeploy_app_id": "thf-fitness-pulse-ul26f1",
+    "appdeploy_snapshot_version": "1790998671035",
     "appdeploy_live_status": "READY",
-    "appdeploy_v2_contract_probe": "FAIL_HTML_SPA_RESPONSE_NOT_JSON_API",
-    "appdeploy_deploy_attempt": "BLOCKED_DAILY_FREE_TIER_CREDIT_LIMIT",
-    "appdeploy_retry_after": "2026-10-03T00:00:00Z"
+    "live_contract_probe": "PASS_HEALTHCHECK_200_JSON_WORKOUTS_PROGRESS_SYNC_401_UNAUTHORIZED_TICKETS_401_UNAUTHORIZED_INVALID_SESSION_400",
+    "authenticated_roundtrip": "NOT_RUN_NO_NON_PRIVILEGED_QA_IDENTITY_IN_SCHEDULED_RUN"
   },
   "blockers": [
-    "The V2 API source is tested but is not deployed to a persistent HTTPS runtime, so no authenticated production sync claim is made.",
-    "The existing AppDeploy origin returns the SPA HTML for /v2/workouts:sync and cannot be bound as the V2 API endpoint.",
-    "AppDeploy paused new deployments because fewer than 14 free daily credits remained; its reported reset is 2026-10-03T00:00:00Z.",
-    "Production auth issuer, audience, key ring and durable database configuration have not been provisioned to a V2 runtime.",
-    "The packaged V2 offline client does not yet acquire a production account access token; it exposes a non-persistent native token handoff boundary, but the current Product JavaScript does not invoke it."
+    "The live public and fail-closed API contracts are verified, but an authenticated browser-ticket exchange plus workout sync/history/progress roundtrip has not been executed with a disposable non-privileged QA identity.",
+    "The exact release AAB remains unsigned because all four existing upload-signing secrets are unavailable to the protected workflow.",
+    "Physical-device Health Connect, Samsung-origin and exact-artifact Android runtime evidence remains open."
   ],
-  "next_action": "After the free deployment quota resets, deploy a backend-only V2 route on the existing authorized persistent runtime (or another authorized persistent HTTPS host), configure its production auth and durable store, implement and test a secure account-token handoff into the Android bridge, run authenticated sync/history/progress/competition probes, then set THF_FITNESS_V2_BASE_URL and rebuild the exact Android candidate.",
-  "updated_at": "2026-10-02T18:58:48Z"
+  "next_action": "Use a disposable non-privileged AppDeploy QA identity to complete one PKCE ticket exchange, sync one versioned workout twice, verify conflict isolation plus history/progress/competition output, then retain that exact live origin while the Android release lane signs and physically verifies candidate 89937707206d5beebcfe7c6230290775c6cfa0a8.",
+  "updated_at": "2026-10-03T13:44:24Z"
 }
