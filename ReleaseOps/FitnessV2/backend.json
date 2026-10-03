@@ -2,9 +2,9 @@
   "lane": "backend-data-integration",
   "branch": "release/fitness-v2-rebuild-20261002",
   "result": "PROGRESS",
-  "active_task": "P0_COMPLETE_AUTHENTICATED_ACCOUNT_SYNC_AND_SIGN_EXACT_51003",
-  "candidate_sha": "89937707206d5beebcfe7c6230290775c6cfa0a8",
-  "backend_source_checkpoint": "2b375966ea7f102e09eb57a3b6c35e25dd456c8a",
+  "active_task": "P0_DEPLOY_V2_DELETION_AND_COMPLETE_AUTHENTICATED_ROUNDTRIP",
+  "candidate_sha": "22c11488f8b1fad28631c55df0a18a7815fbec03",
+  "backend_source_checkpoint": "d246e494ad2c0b1841449a0455e9fccd4ab3fc08",
   "completed_items": [
     "Added a fail-closed HTTPS WSGI API with short-lived issuer/audience-bound HS256 bearer verification, rotated key ids, expiry and session revocation checks",
     "Added authenticated per-account workout history and progress summary contracts",
@@ -12,19 +12,23 @@
     "Added sets, reps, load, rest, RPE, RIR, personal-record and volume persistence",
     "Added server-authoritative competition claim comparison against stored workout facts",
     "Rejected client-supplied account identity and rejected unknown workout fields",
-    "Documented the production runtime variables with no development key or insecure endpoint fallback",
-    "Deployed the PKCE-bound single-use Android ticket exchange and authenticated V2 workout routes in AppDeploy v69 snapshot 1790998671035",
+    "Documented production runtime variables with no development key or insecure endpoint fallback",
     "Verified the live API gateway healthcheck and fail-closed unauthenticated workout, progress, sync, ticket and invalid-session responses",
-    "Bound Android versionCode 51003 to the credential-free AppDeploy API gateway while keeping browser account login on the branded web origin"
+    "Bound Android versionCode 51003 to the credential-free AppDeploy API gateway while keeping browser account login on the branded web origin",
+    "Reconciled the AppDeploy V2 source with hashed per-user resource tables, tracked idempotency/session/ticket indexes and bounded app-data deletion",
+    "Added an authenticated DELETE /api/account integration contract that removes V2 history, indexes, sessions, tickets, idempotency records and competition submissions without claiming external identity deletion"
   ],
   "tests": {
     "local_backend_unit_security": "8/8 PASS",
+    "local_product_read_only": "11/11 PASS",
+    "local_source_contract": "12/12 PASS",
     "local_python_compile": "PASS",
-    "local_secret_placeholder_cleartext_scan": "PASS_NO_MATCHES",
+    "local_javascript_syntax": "PASS",
+    "local_secret_cleartext_stage16a_diff_scans": "PASS_NO_RUNTIME_MATCHES",
     "github_workflow": "PASS",
-    "github_run_id": 37126932766,
-    "github_run_number": 14,
-    "github_job_id": 111214013531,
+    "github_run_id": 37128008075,
+    "github_run_number": 16,
+    "github_job_id": 111217207660,
     "github_job_name": "source-and-backend"
   },
   "runtime": {
@@ -35,13 +39,17 @@
     "appdeploy_snapshot_version": "1790998671035",
     "appdeploy_live_status": "READY",
     "live_contract_probe": "PASS_HEALTHCHECK_200_JSON_WORKOUTS_PROGRESS_SYNC_401_UNAUTHORIZED_TICKETS_401_UNAUTHORIZED_INVALID_SESSION_400",
-    "authenticated_roundtrip": "NOT_RUN_NO_NON_PRIVILEGED_QA_IDENTITY_IN_SCHEDULED_RUN"
+    "candidate_deletion_patch_deployed": false,
+    "candidate_privacy_pages_deployed": false,
+    "deployment_quota_reset_at": "2026-10-04T00:00:00Z",
+    "authenticated_roundtrip": "NOT_RUN_NO_DISPOSABLE_NON_PRIVILEGED_QA_SESSION"
   },
   "blockers": [
-    "The live public and fail-closed API contracts are verified, but an authenticated browser-ticket exchange plus workout sync/history/progress roundtrip has not been executed with a disposable non-privileged QA identity.",
+    "The live AppDeploy v69 snapshot predates candidate d246e494 account-data deletion; deployment is blocked by CREDITS_USAGE_LIMIT_REACHED until 2026-10-04T00:00:00Z.",
+    "A complete authenticated browser-ticket exchange plus workout sync/history/progress/deletion roundtrip has not been executed with a disposable non-privileged QA identity.",
     "The exact release AAB remains unsigned because all four existing upload-signing secrets are unavailable to the protected workflow.",
     "Physical-device Health Connect, Samsung-origin and exact-artifact Android runtime evidence remains open."
   ],
-  "next_action": "Use a disposable non-privileged AppDeploy QA identity to complete one PKCE ticket exchange, sync one versioned workout twice, verify conflict isolation plus history/progress/competition output, then retain that exact live origin while the Android release lane signs and physically verifies candidate 89937707206d5beebcfe7c6230290775c6cfa0a8.",
-  "updated_at": "2026-10-03T13:44:24Z"
+  "next_action": "After the AppDeploy quota resets, deploy exact candidate 22c11488f8b1fad28631c55df0a18a7815fbec03, then use a disposable non-privileged account to verify PKCE exchange, versioned workout sync/idempotency/history/progress and bounded account-data deletion before signing or Play actions.",
+  "updated_at": "2026-10-03T18:35:44Z"
 }
