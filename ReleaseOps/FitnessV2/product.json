@@ -2,13 +2,13 @@
   "lane": "product-content",
   "branch": "release/fitness-v2-rebuild-20261002",
   "result": "PROGRESS",
-  "active_task": "P1_EXPAND_THIN_SPORT_COVERAGE_WITH_LICENSED_DEMOS",
-  "source_commit": "aa824fd896e71af77bd9b1dc07b5d5f6ce621ef8",
-  "evidence_commit": "f761683f356937dc4b9a5436470aee838d130115",
+  "active_task": "P1_RUNTIME_SAMPLE_EXPANDED_CATALOG_AND_MEDIA",
+  "source_commit": "ac1498d0e7da0cb4a493737876fafd3ab8bf66be",
+  "evidence_commit": "97a12e03e767a8857fb7bc8ffc0dd911000bcb87",
   "completed_items": [
     "Removed Stage16A references from the production Product HTML/CSS/JavaScript path",
-    "Replaced the 18-exercise baseline with 80 bilingual exercises in 13 populated sections",
-    "Bundled 160 hash-verified offline demonstration frames with per-item public-domain provenance",
+    "Replaced the 18-exercise baseline with 112 bilingual exercises in 13 populated sections",
+    "Bundled 224 hash-verified offline demonstration frames with per-item public-domain provenance",
     "Implemented Today, Train, Progress, Health, and Profile navigation in Arabic RTL and English LTR",
     "Implemented real Gym search and body-part, muscle, equipment, movement, level, and goal filters",
     "Implemented 26 structured bilingual offline programs across all 13 sections with real sessions, prescriptions, progression, safety, and provenance",
@@ -18,36 +18,40 @@
     "Replaced the horizontally scrolling mobile set table with labeled two-column one-handed cards and a full-width completion target",
     "Removed the hidden navigation height from active-workout sticky save and rest controls",
     "Runtime-verified Arabic and English mobile workout logging at 388x842 with zero document overflow, 240 kg persisted volume, and a 293x44 completion target",
-    "Runtime-verified Arabic details and workout, English search and filters, persistence after reload, and all 13 section counts/media"
+    "Runtime-verified Arabic details and workout, English search and filters, persistence after reload, and all 13 section counts/media",
+    "Expanded every formerly thin sport section to at least six real exercises with complete AR/EN contracts and offline start/finish media",
+    "Rejected a mismatched Wind Sprints visual during the 64-frame contact-sheet audit and replaced it with the correct licensed Prowler Sprint source",
+    "Localized accessible names for training tabs, section rails, search controls, charts, onboarding benefits, and modal close controls",
+    "Runtime-verified the exact 112-exercise catalog and localized AR/EN accessible names in the isolated Product QA app"
   ],
   "catalog": {
-    "exercise_count": 80,
+    "exercise_count": 112,
     "section_count": 13,
-    "offline_demo_assets": 160,
+    "offline_demo_assets": 224,
     "source": "yuhonas/free-exercise-db",
     "source_commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
     "license": "Unlicense",
-    "catalog_sha256": "c9a12c066277fc362fe752624b5c0c2e4860f0f1c53c9d7fc79109f4c5779ab7"
+    "catalog_sha256": "2dd7d0e67fdcbb9899825f84b49bee0026808b1ecb7cd16d2eb7c9b75b3c5914"
   },
   "programs": {
     "program_count": 26,
     "section_count": 13,
     "source": "THF-owned editorial composition over the pinned public-domain exercise catalog",
-    "programs_sha256": "8f7425ff8181ca31f7da60250570198853098e95bbacb5f0a3884b2d7ed53efa"
+    "programs_sha256": "246d82384809e2adb6b444b6da89c71ee1dda38cce09e28df840bec3b76cad3b"
   },
   "tests": {
-    "product": "11/11 PASS",
-    "source_contract_read_only": "PASS_IN_GITHUB_ACTIONS_RUN_37092403671",
-    "backend_read_only": "PASS_IN_GITHUB_ACTIONS_RUN_37092403671",
+    "product": "12/12 PASS",
+    "source_contract_read_only": "12/12_PASS_IN_GITHUB_ACTIONS_RUN_37163629596_JOB_111322001291",
+    "backend_read_only": "8/8_PASS_IN_GITHUB_ACTIONS_RUN_37163629596_JOB_111322001291",
     "javascript_syntax": "PASS",
     "diff_check": "PASS",
-    "github_actions": "PASS_RUN_37092403671_JOBS_111115323542_111115323614_ARTIFACT_11262691469"
+    "github_actions": "SOURCE_PASS_RUN_37163629596_JOB_111322001291;_ANDROID_BUILD_STEPS_PASS_BUT_PACKAGE_INSPECTION_FAIL_JOB_111322001417_STALE_160_ASSET_ASSERTION_NO_ARTIFACT"
   },
   "runtime": {
     "provider": "AppDeploy QA + authorized managed cloud browser",
     "app_id": "thf-fitness-v2-product-qa-690eb6e-lwhy3h",
-    "snapshot_version": "1790996999779",
-    "qa_timestamp": 1790997025015,
+    "snapshot_version": "1791072522792",
+    "qa_timestamp": 1791072547070,
     "status": "ready",
     "errors": {
       "frontend": 0,
@@ -64,11 +68,15 @@
       "Arabic active workout with 880 kg volume",
       "Workout and PR persistence after full reload",
       "English en/ltr squat search and barbell/squat filters",
-      "Positive result count and loaded representative image for all 13 sections"
+      "Positive result count and loaded representative image for all 13 sections",
+      "English en/ltr exposed 26 programs, 112 documented exercises, fully localized training/search/section/close accessible names, and section counts 36/10/6 across all 13 sections",
+      "Arabic ar/rtl exposed 26 programs, 112 documented exercises, localized controls, and the same section counts",
+      "Recumbent Bike / دراجة ثابتة بمقعد خلفي loaded both offline frames and the complete bilingual setup, technique, breathing, prescription, mistakes, regression, progression, safety, and provenance contract",
+      "Final QA snapshot was ready with zero frontend, network, or backend errors"
     ]
   },
-  "evidence_path": "ReleaseOps/FitnessV2/evidence/PRODUCT_CATALOG_RUNTIME_20261002.md",
-  "blocker": "No immediate Product code blocker. Product remains PROGRESS because Cycling, Football, Swimming, Boxing, Recovery, and Racket/Team sections still have only two exercises each; a larger curated public-domain selection and broader bilingual visual sampling are required before Product PASS. Android, Health Connect, physical-device, signing, and Play gates remain outside Product ownership and are not claimed.",
-  "next_action": "Expand each thin sport section to at least six clear, license-compatible exercises with complete AR/EN contract and offline media, regenerate hashes and programs as needed, then runtime-sample the new sections in Arabic RTL and English LTR without weakening the existing quality gates.",
-  "updated_at": "2026-10-03T03:14:50Z"
+  "evidence_path": "ReleaseOps/FitnessV2/evidence/PRODUCT_SPORT_COVERAGE_RUNTIME_20261004.md",
+  "blocker": "The former thin-section Product blocker is resolved. Product remains PROGRESS pending broader mobile visual sampling/editorial review across the 32 newly added exercises. Platform-owned GitHub Actions run 37163629596 built successfully but exact-package inspection still hard-codes 160 demo images and therefore rejects the correct 224-image candidate; artifact upload was skipped. Android, Health Connect, physical-device, signing, and Play gates remain outside Product ownership and are not claimed.",
+  "next_action": "Runtime-sample additional newly added exercises across Arabic RTL and English LTR mobile layouts and continue media/editorial review; coordinate read-only with the Platform lane to replace the stale 160-image workflow invariant with the catalog-derived 224 count and rerun the exact candidate.",
+  "updated_at": "2026-10-04T00:09:51Z"
 }
