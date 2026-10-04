@@ -115,8 +115,10 @@ jobs:
           grep -F "package: name='com.topherofit.thf.pulse' versionCode='51003'" fitness-v2/evidence/badging.txt
           grep -F "targetSdkVersion:'36'" fitness-v2/evidence/badging.txt
           ! grep -E 'READ_HEART_RATE|READ_SLEEP|READ_WEIGHT|READ_BODY_FAT' fitness-v2/evidence/permissions.txt
-          test "$(unzip -Z1 "$APK" | grep -c '^assets/pulse/media/free-exercise-db/.*/[01]\.jpg$')" -eq 160
-          ! unzip -Z1 "$APK" | grep -qi 'stage16a'
+          python fitness-v2/scripts/verify_offline_payload.py \
+            --apk "$APK" \
+            --catalog fitness-v2/android/app/src/main/assets/pulse/data/exercises.js \
+            --evidence fitness-v2/evidence/offline-payload.json
           if unzip -Z1 "$APK" | grep -q '^lib/'; then
             echo 'ARCHITECTURE=HAS_NATIVE_LIBS_REQUIRES_ABI_AUDIT' | tee fitness-v2/evidence/architecture-status.txt
             exit 42

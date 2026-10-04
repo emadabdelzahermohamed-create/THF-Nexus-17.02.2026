@@ -1,7 +1,10 @@
 import json
+import importlib.util
 from pathlib import Path
 import re
+import tempfile
 import unittest
+import zipfile
 import xml.etree.ElementTree as ET
 
 
@@ -12,6 +15,36 @@ ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
 
 
 class FitnessV2SourceContractTest(unittest.TestCase):
+    def test_android_package_gate_derives_offline_payload_from_catalog(self):
+        workflow = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
+        verifier_path = ROOT / "fitness-v2" / "scripts" / "verify_offline_payload.py"
+        verifier_source = verifier_path.read_text()
+        self.assertIn("verify_offline_payload.py", workflow)
+        self.assertNotIn("-eq 160", workflow)
+        for marker in (
+            "catalog_matches_source",
+            "missing_assets",
+            "unexpected_assets",
+            "stage16a",
+        ):
+            self.assertIn(marker, verifier_source)
+
+        spec = importlib.util.spec_from_file_location("verify_offline_payload", verifier_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        catalog_path = ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "data" / "exercises.js"
+        catalog_bytes = catalog_path.read_bytes()
+        expected = module.referenced_demo_assets(module.load_catalog(catalog_bytes))
+        with tempfile.TemporaryDirectory() as temporary:
+            apk_path = Path(temporary) / "candidate.apk"
+            with zipfile.ZipFile(apk_path, "w") as apk:
+                apk.writestr(module.CATALOG_ENTRY, catalog_bytes)
+                for asset in expected:
+                    apk.writestr(module.APK_MEDIA_PREFIX + asset, b"fixture")
+            report = module.verify(apk_path, catalog_path)
+        self.assertEqual(len(expected), report["packaged_demo_assets"])
+        self.assertEqual(len(module.load_catalog(catalog_bytes)), report["exercise_count"])
+
     def test_android_identity_api_level_and_noncolliding_version(self):
         gradle = (ANDROID / "app" / "build.gradle").read_text()
         self.assertIn("applicationId 'com.topherofit.thf.pulse'", gradle)
