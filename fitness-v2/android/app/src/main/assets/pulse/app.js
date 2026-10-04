@@ -29,6 +29,8 @@
   Object.assign(COPY.en, {onboardingBrand:'Your plan starts with you',onboardingStep:'Quick setup · works offline',onboardingTitle:'Build your first plan',onboardingIntro:'Choose your goal, experience and available equipment. We will put one clear session in Today, and you can change everything later.',onboardingBenefitOffline:'Offline visual guidance',onboardingBenefitSafe:'Safe progression and cues',onboardingBenefitFlexible:'Change your plan anytime',onboardingPrivacy:'Your choices are saved on this device first. No account is required to begin.',createMyPlan:'Create my plan and start',planReady:'Your plan is ready. Start with Today.'});
   Object.assign(COPY.ar, {accountPrivacyHint:'تستطيع مراجعة السياسة وبدء حذف بيانات حساب THF Fitness من المتصفح الآمن.',privacyPolicy:'سياسة الخصوصية',accountDeletion:'حذف بيانات الحساب',accountResourceAndroidOnly:'هذا الرابط متاح داخل تطبيق Android.'});
   Object.assign(COPY.en, {accountPrivacyHint:'Review the policy or start deleting your THF Fitness account data in the secure browser.',privacyPolicy:'Privacy policy',accountDeletion:'Delete account data',accountResourceAndroidOnly:'This link is available in the Android app.'});
+  Object.assign(COPY.ar, {readinessToday:'جاهزية اليوم',todaySummary:'ملخص اليوم',trainContentType:'نوع محتوى التدريب',programSections:'أقسام البرامج',clearSearch:'مسح البحث',trainingSections:'أقسام التدريب',volumeChartLabel:'مخطط حجم التدريب',onboardingBenefitsLabel:'مزايا الخطة',close:'إغلاق'});
+  Object.assign(COPY.en, {readinessToday:"Today's readiness",todaySummary:"Today's summary",trainContentType:'Training content type',programSections:'Program sections',clearSearch:'Clear search',trainingSections:'Training sections',volumeChartLabel:'Training volume chart',onboardingBenefitsLabel:'Plan benefits',close:'Close'});
 
   const SECTION_ORDER = ['gym','home','running','cycling','football','swimming','yoga','calisthenics','boxing','hiit','mobility','recovery','team_sports'];
   const state = {
@@ -74,6 +76,7 @@
     $('onboardingLanguageToggle').setAttribute('aria-label', state.lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية');
     document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(node => { node.placeholder = t(node.dataset.i18nPlaceholder); });
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(node => { node.setAttribute('aria-label', t(node.dataset.i18nAriaLabel)); });
     $('primaryNav').setAttribute('aria-label', state.lang === 'ar' ? 'التنقل الرئيسي' : 'Primary navigation');
     renderTrainMode(); renderSections(); renderProgramSections(); populateFilters(); renderExercises(); renderPrograms(); renderToday(); renderProgress(); renderProfile(); renderOnboarding(); renderNativeStatus();
     if (state.selected) renderDetail(state.selected);

@@ -215,6 +215,20 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertIn("document.body.classList.toggle('workout-active'", script)
         self.assertIn(".workout-active .workout-actions{bottom:calc(5px + env(safe-area-inset-bottom))}", styles)
 
+    def test_accessible_names_follow_arabic_and_english_language_switches(self):
+        html = (PULSE / "index.html").read_text()
+        script = (PULSE / "app.js").read_text()
+        expected = {
+            "readinessToday", "todaySummary", "trainContentType", "programSections",
+            "clearSearch", "trainingSections", "voiceGuidance", "volumeChartLabel",
+            "onboardingBenefitsLabel", "close",
+        }
+        bound = set(re.findall(r'data-i18n-aria-label="([^"]+)"', html))
+        self.assertEqual(expected, bound)
+        self.assertIn("document.querySelectorAll('[data-i18n-aria-label]')", script)
+        for key in expected:
+            self.assertRegex(script, r"(?:^|[,{])" + re.escape(key) + r":")
+
 
 if __name__ == "__main__":
     unittest.main()

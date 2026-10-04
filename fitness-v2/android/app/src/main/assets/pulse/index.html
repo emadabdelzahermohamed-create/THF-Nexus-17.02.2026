@@ -39,13 +39,13 @@
           <p id="todayWorkoutMeta" class="muted">5 حركات · 28 دقيقة · مستوى مبتدئ</p>
           <button id="startTodayBtn" class="button primary large" type="button" data-i18n="startWorkout">ابدأ التمرين</button>
         </div>
-        <div class="readiness" aria-label="جاهزية اليوم">
+        <div class="readiness" aria-label="جاهزية اليوم" data-i18n-aria-label="readinessToday">
           <svg viewBox="0 0 120 120" role="img"><circle cx="60" cy="60" r="48"/><circle id="readinessRing" class="ring" cx="60" cy="60" r="48"/></svg>
           <strong id="readinessValue">82</strong><small data-i18n="readiness">جاهزية</small>
         </div>
       </article>
 
-      <div class="metric-grid" aria-label="ملخص اليوم">
+      <div class="metric-grid" aria-label="ملخص اليوم" data-i18n-aria-label="todaySummary">
         <article class="metric"><span data-i18n="sessions">جلسات</span><strong id="todaySessions">0</strong><small data-i18n="today">اليوم</small></article>
         <article class="metric"><span data-i18n="minutes">دقائق</span><strong id="todayMinutes">0</strong><small data-i18n="today">اليوم</small></article>
         <article class="metric"><span data-i18n="volume">الحجم</span><strong id="todayVolume">0</strong><small>kg</small></article>
@@ -63,7 +63,7 @@
       <div class="section-heading">
         <div><p class="eyebrow" data-i18n="trainEyebrow">26 برنامجًا · 112 تمرينًا موثقًا</p><h1 id="trainTitle" data-i18n="trainTitle">اختر خطتك وتدرّب بوضوح</h1></div>
       </div>
-      <div id="trainModeTabs" class="mode-tabs" role="tablist" aria-label="نوع محتوى التدريب">
+      <div id="trainModeTabs" class="mode-tabs" role="tablist" aria-label="نوع محتوى التدريب" data-i18n-aria-label="trainContentType">
         <button id="programsTab" type="button" role="tab" data-mode="programs" aria-controls="programsPane" aria-selected="true" tabindex="0" data-i18n="programs">البرامج</button>
         <button id="exercisesTab" type="button" role="tab" data-mode="exercises" aria-controls="exerciseLibraryPane" aria-selected="false" tabindex="-1" data-i18n="exerciseLibrary">مكتبة التمارين</button>
       </div>
@@ -73,7 +73,7 @@
           <div><p class="eyebrow" data-i18n="programLibrary">برامج أوفلاين منظمة</p><h2 data-i18n="programTitle">ابدأ بمسار واضح وتدرّج آمن</h2><p class="muted" data-i18n="programHint">كل برنامج يحدد الأسابيع والجلسات والتمارين وRPE وRIR ومعيار التدرج.</p></div>
           <div class="gym-count"><strong id="programCount">26</strong><span data-i18n="programs">برنامج</span></div>
         </article>
-        <div id="programSectionRail" class="section-rail" role="tablist" aria-label="أقسام البرامج"></div>
+        <div id="programSectionRail" class="section-rail" role="tablist" aria-label="أقسام البرامج" data-i18n-aria-label="programSections"></div>
         <div id="programGrid" class="program-grid" aria-live="polite"></div>
         <div id="emptyPrograms" class="empty-state hidden"><span aria-hidden="true">◇</span><h3 data-i18n="noPrograms">لا توجد برامج في هذا القسم</h3></div>
       </div>
@@ -83,10 +83,10 @@
           <span aria-hidden="true">⌕</span>
           <span class="sr-only" data-i18n="searchLabel">ابحث في التمارين</span>
           <input id="exerciseSearch" type="search" autocomplete="off" data-i18n-placeholder="searchPlaceholder" placeholder="اسم التمرين أو العضلة أو المعدة">
-          <button id="clearSearch" type="button" aria-label="مسح البحث">×</button>
+          <button id="clearSearch" type="button" aria-label="مسح البحث" data-i18n-aria-label="clearSearch">×</button>
         </label>
 
-        <div id="sectionRail" class="section-rail" role="tablist" aria-label="أقسام التدريب"></div>
+        <div id="sectionRail" class="section-rail" role="tablist" aria-label="أقسام التدريب" data-i18n-aria-label="trainingSections"></div>
 
         <article id="gymIntro" class="gym-intro">
           <div><p class="eyebrow" data-i18n="gymLibrary">مكتبة الجيم</p><h2 data-i18n="gymTitle">ابنِ جلستك حسب جسمك ومعداتك</h2><p class="muted" data-i18n="gymHint">فلترة حقيقية للعضلة والمعدة ونمط الحركة والمستوى والهدف.</p></div>
@@ -116,7 +116,7 @@
         <div class="demo-stage"><img id="activeDemoImage" alt=""><span id="activeDemoPhase" class="phase-label">البداية</span><button id="toggleDemoFrame" class="frame-toggle" type="button" data-i18n="toggleFrame">بدّل الوضع</button></div>
         <div class="demo-copy"><span id="activeSection" class="pill gold"></span><h1 id="activeExerciseName"></h1><p id="activeExerciseCue" class="muted"></p><div id="activeMuscles" class="tag-row"></div></div>
       </article>
-      <article class="surface technique-card"><div class="card-heading"><h2 data-i18n="technique">طريقة الأداء</h2><button id="speakCue" class="icon-button" type="button" aria-label="دليل صوتي">◉</button></div><ol id="activeSteps"></ol><p id="activeBreathing" class="breathing-cue"></p></article>
+      <article class="surface technique-card"><div class="card-heading"><h2 data-i18n="technique">طريقة الأداء</h2><button id="speakCue" class="icon-button" type="button" aria-label="دليل صوتي" data-i18n-aria-label="voiceGuidance">◉</button></div><ol id="activeSteps"></ol><p id="activeBreathing" class="breathing-cue"></p></article>
       <article class="surface set-logger">
         <div class="card-heading"><div><p class="eyebrow" data-i18n="sessionLog">سجل الجلسة</p><h2 id="setProgressTitle">المجموعة 1 من 4</h2></div><strong id="sessionVolume">0 kg</strong></div>
         <div class="set-table-head"><span data-i18n="set">المجموعة</span><span data-i18n="load">الحمل</span><span data-i18n="reps">العدات</span><span>RPE</span><span>RIR</span><span></span></div>
@@ -136,7 +136,7 @@
         <article class="metric"><span data-i18n="personalRecords">أرقام شخصية</span><strong id="prCount">0</strong></article>
         <article class="metric"><span data-i18n="activeMinutes">دقائق نشطة</span><strong id="activeMinutes">0</strong></article>
       </div>
-      <article class="surface"><div class="card-heading"><h2 data-i18n="volumeTrend">حجم آخر 7 جلسات</h2><span class="pill" data-i18n="localData">محلي</span></div><div id="volumeChart" class="volume-chart" aria-label="مخطط حجم التدريب"></div></article>
+      <article class="surface"><div class="card-heading"><h2 data-i18n="volumeTrend">حجم آخر 7 جلسات</h2><span class="pill" data-i18n="localData">محلي</span></div><div id="volumeChart" class="volume-chart" aria-label="مخطط حجم التدريب" data-i18n-aria-label="volumeChartLabel"></div></article>
       <article class="surface"><div class="card-heading"><h2 data-i18n="recentHistory">السجل الأخير</h2><button id="clearHistoryBtn" class="text-button danger" type="button" data-i18n="clearHistory">مسح السجل</button></div><div id="historyList" class="history-list"></div></article>
     </section>
 
@@ -172,7 +172,7 @@
         <span class="pill gold" data-i18n="onboardingStep">إعداد سريع · يعمل أوفلاين</span>
         <h1 id="onboardingTitle" data-i18n="onboardingTitle">ابنِ خطتك الأولى</h1>
         <p data-i18n="onboardingIntro">اختر هدفك وخبرتك وما يتوفر لديك. سنضع جلسة واضحة في «اليوم» ويمكنك تعديل كل شيء لاحقًا.</p>
-        <div class="onboarding-benefits" aria-label="مزايا الخطة">
+        <div class="onboarding-benefits" aria-label="مزايا الخطة" data-i18n-aria-label="onboardingBenefitsLabel">
           <span><b aria-hidden="true">✓</b><i data-i18n="onboardingBenefitOffline">دليل مصور أوفلاين</i></span>
           <span><b aria-hidden="true">✓</b><i data-i18n="onboardingBenefitSafe">تدرج وتعليمات سلامة</i></span>
           <span><b aria-hidden="true">✓</b><i data-i18n="onboardingBenefitFlexible">تعديل الخطة في أي وقت</i></span>
@@ -200,20 +200,20 @@
   </nav>
 
   <div id="exerciseDetail" class="detail-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="detailName">
-    <button id="closeDetail" class="sheet-backdrop" type="button" aria-label="إغلاق"></button>
+    <button id="closeDetail" class="sheet-backdrop" type="button" aria-label="إغلاق" data-i18n-aria-label="close"></button>
     <article class="sheet-panel">
       <div class="sheet-handle" aria-hidden="true"></div>
-      <button id="detailCloseButton" class="sheet-close" type="button" aria-label="إغلاق">×</button>
+      <button id="detailCloseButton" class="sheet-close" type="button" aria-label="إغلاق" data-i18n-aria-label="close">×</button>
       <div id="detailDemo" class="detail-demo"></div>
       <div class="detail-body"><div id="detailBadges" class="tag-row"></div><h1 id="detailName"></h1><p id="detailMeta" class="muted"></p><div id="detailMuscles" class="tag-row"></div><button id="startExerciseBtn" class="button primary full large" type="button" data-i18n="startThisExercise">ابدأ هذا التمرين</button><div id="detailContent"></div><details class="source-details"><summary data-i18n="sourceLicense">المصدر والترخيص</summary><p id="detailSource" class="small muted"></p></details></div>
     </article>
   </div>
 
   <div id="programDetail" class="detail-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="programDetailName">
-    <button id="closeProgramDetail" class="sheet-backdrop" type="button" aria-label="إغلاق"></button>
+    <button id="closeProgramDetail" class="sheet-backdrop" type="button" aria-label="إغلاق" data-i18n-aria-label="close"></button>
     <article class="sheet-panel program-sheet">
       <div class="sheet-handle" aria-hidden="true"></div>
-      <button id="programDetailCloseButton" class="sheet-close" type="button" aria-label="إغلاق">×</button>
+      <button id="programDetailCloseButton" class="sheet-close" type="button" aria-label="إغلاق" data-i18n-aria-label="close">×</button>
       <div class="program-hero"><span id="programDetailSection" class="pill gold"></span><h1 id="programDetailName"></h1><p id="programDetailSummary" class="muted"></p><div id="programDetailMeta" class="tag-row"></div></div>
       <div class="detail-body"><button id="useProgramBtn" class="button primary full large" type="button" data-i18n="useProgram">استخدم هذا البرنامج</button><div id="programSessions"></div><section class="detail-section"><h3 data-i18n="progression">التدرج</h3><ol id="programProgression"></ol></section><section class="detail-section safety-card"><h3 data-i18n="safety">السلامة أولًا</h3><p id="programSafety"></p></section><details class="source-details"><summary data-i18n="sourceLicense">المصدر والترخيص</summary><p id="programSource" class="small muted"></p></details></div>
     </article>
