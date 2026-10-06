@@ -11,22 +11,22 @@
   },
   "providers": [
     {"id":"gpt-integrator","state":"READY","roles":["architecture","review","integration","release"]},
-    {"id":"jules","state":"PENDING_RUNTIME_VERIFICATION","roles":["bounded-code","issue-fix","feature-implementation"]},
-    {"id":"gemini-cli","state":"COOLDOWN","reason":"429_FREE_TIER_DAILY_QUOTA_AFTER_VALID_AUTH_AND_RUNTIME_CALL","retry_after":"2026-10-06T23:59:59Z","roles":["bounded-code","review","tests","triage","multimodal-analysis"]},
+    {"id":"jules","state":"ACTIVE","verification":"google-labs-jules[bot] accepted issue #42 and created Jules task 15736632606118603090","roles":["bounded-code","issue-fix","feature-implementation"]},
+    {"id":"gemini-cli","state":"COOLDOWN","verification":"GEMINI_API_KEY accepted by runtime health probe and Gemini worker reached generation API","reason":"429_FREE_TIER_DAILY_QUOTA_AFTER_VALID_AUTH_AND_RUNTIME_CALL","retry_after":"2026-10-06T23:59:59Z","roles":["bounded-code","review","tests","triage","multimodal-analysis"]},
     {"id":"replit","state":"READY","roles":["web-admin","ops-dashboard","prototype"]},
-    {"id":"groq","state":"PENDING_RUNTIME_VERIFICATION","roles":["fast-code","review","reasoning"]},
-    {"id":"openrouter-free","state":"PENDING_RUNTIME_VERIFICATION","roles":["general-fallback","reasoning","code"]},
+    {"id":"groq","state":"READY","verification":"authenticated inference succeeded in AI Swarm Provider Health run #2","roles":["fast-code","review","reasoning"]},
+    {"id":"openrouter-free","state":"READY","verification":"authenticated openrouter/free inference succeeded in AI Swarm Provider Health run #2","roles":["general-fallback","reasoning","code"]},
     {"id":"huggingface","state":"READY_OAUTH","roles":["open-models","jobs","research"]},
     {"id":"context7","state":"READY","roles":["current-docs","api-accuracy"]},
     {"id":"local-runner","state":"READY","verification":"Desktop Commander device cs-973169170814-default online; FFmpeg 7.0.2 user-space and Pillow verified","roles":["no-quota-code","build","tests","conversion","open-models"]}
   ],
   "routing": {
-    "bounded_code": ["jules","gemini-cli","groq","openrouter-free","local-runner"],
-    "architecture": ["gpt-integrator","gemini-cli","openrouter-free","local-runner"],
-    "review": ["gpt-integrator","gemini-cli","groq","openrouter-free","local-runner"],
-    "web_admin": ["replit","jules","gemini-cli","local-runner"],
-    "docs_tests_migrations": ["gemini-cli","jules","groq","openrouter-free","local-runner"],
-    "visual_motion_analysis": ["gpt-integrator","gemini-cli","huggingface","local-runner"],
+    "bounded_code": ["jules","groq","openrouter-free","local-runner","gemini-cli"],
+    "architecture": ["gpt-integrator","openrouter-free","local-runner","gemini-cli"],
+    "review": ["gpt-integrator","groq","openrouter-free","local-runner","gemini-cli"],
+    "web_admin": ["replit","jules","openrouter-free","local-runner","gemini-cli"],
+    "docs_tests_migrations": ["jules","groq","openrouter-free","local-runner","gemini-cli"],
+    "visual_motion_analysis": ["gpt-integrator","jules","huggingface","local-runner","gemini-cli"],
     "build_test_package": ["github-actions","local-runner","huggingface"]
   },
   "failure_policy": {
