@@ -12,13 +12,13 @@
   "providers": [
     {"id":"gpt-integrator","state":"READY","roles":["architecture","review","integration","release"]},
     {"id":"jules","state":"PENDING_RUNTIME_VERIFICATION","roles":["bounded-code","issue-fix","feature-implementation"]},
-    {"id":"gemini-cli","state":"PENDING_RUNTIME_VERIFICATION","roles":["bounded-code","review","tests","triage","multimodal-analysis"]},
+    {"id":"gemini-cli","state":"COOLDOWN","reason":"429_FREE_TIER_DAILY_QUOTA_AFTER_VALID_AUTH_AND_RUNTIME_CALL","retry_after":"2026-10-06T23:59:59Z","roles":["bounded-code","review","tests","triage","multimodal-analysis"]},
     {"id":"replit","state":"READY","roles":["web-admin","ops-dashboard","prototype"]},
     {"id":"groq","state":"PENDING_RUNTIME_VERIFICATION","roles":["fast-code","review","reasoning"]},
     {"id":"openrouter-free","state":"PENDING_RUNTIME_VERIFICATION","roles":["general-fallback","reasoning","code"]},
     {"id":"huggingface","state":"READY_OAUTH","roles":["open-models","jobs","research"]},
     {"id":"context7","state":"READY","roles":["current-docs","api-accuracy"]},
-    {"id":"local-runner","state":"OFFLINE_VERIFIED","roles":["no-quota-code","build","tests","conversion","open-models"]}
+    {"id":"local-runner","state":"READY","verification":"Desktop Commander device cs-973169170814-default online; FFmpeg 7.0.2 user-space and Pillow verified","roles":["no-quota-code","build","tests","conversion","open-models"]}
   ],
   "routing": {
     "bounded_code": ["jules","gemini-cli","groq","openrouter-free","local-runner"],
