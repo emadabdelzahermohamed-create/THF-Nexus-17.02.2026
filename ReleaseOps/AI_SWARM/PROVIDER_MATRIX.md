@@ -13,55 +13,38 @@ Keep the 10-day launch program moving even when one provider hits a quota, outag
 - Do not send every task to every model. Route by specialization to avoid duplicated cost and conflicting edits.
 
 ## Current connected lanes
-| Provider | Status | Best use | Fallback role |
+| Provider | Verified status | Best use | Fallback role |
 |---|---|---|---|
 | GitHub | CONNECTED | source of truth, issues, PRs, Actions, evidence | mandatory coordination bus |
-| ChatGPT / GPT Integrator | CONNECTED | architecture, review, merge, release decisions | final integration authority |
-| Replit | CONNECTED | operational dashboards, web/admin prototypes and isolated web work | web/admin fallback |
+| ChatGPT / GPT Integrator | READY | architecture, review, merge, release decisions | final integration authority |
+| Google Jules | ACTIVE | bounded GitHub implementation and issue fixes | primary autonomous coding worker |
+| Gemini CLI | AUTHENTICATED / COOLDOWN | coding, review, tests, multimodal analysis | resumes after quota reset; never blocks launch |
+| Groq | READY | fast bounded code/reasoning/review | low-latency API fallback |
+| OpenRouter Free | READY | general reasoning/code fallback through zero-price router | cross-provider emergency fallback |
+| Replit | READY | operational dashboards, web/admin prototypes and isolated web work | web/admin fallback |
 | Superpowers | CONNECTED | TDD, debugging, planning, code-review discipline | quality/process guard |
-| Hugging Face | AUTHENTICATED OAuth, non-Pro | open-source model discovery and remote Jobs where free/available | open-source/compute fallback |
-| Context7 | CONNECTING/OPTIONAL | current library/API documentation | accuracy fallback for changing APIs |
-| Desktop Commander `thf-wave-builder` | OFFLINE at matrix creation | self-hosted/local deterministic builds and local-model fallback | strongest no-quota fallback once online |
+| Hugging Face | READY OAuth, non-Pro | open-source model discovery and available jobs/research | open-source fallback |
+| Context7 | READY | current library/API documentation | API-accuracy fallback |
+| Desktop Commander local runner | READY | deterministic builds/tests/media conversion; FFmpeg/Pillow verified | strongest no-model-quota execution fallback while device is online |
 
-## External provider lanes to authorize
-### Tier A — direct GitHub agents
-1. **Google Jules** — primary autonomous coding worker for bounded GitHub issues/PRs.
-   - Owner action: sign in and connect only the THF repo(s) needed.
-   - No paid subscription is part of the routing contract.
-2. **Gemini CLI GitHub Action** — issue/PR assistant, reviewer, test writer, isolated coding worker.
-   - Owner action: create a Google AI Studio API key and store it as GitHub secret `GEMINI_API_KEY`.
-   - Never paste the key into chat or Git.
-3. **Replit** — already connected; use only for isolated operational/web surfaces unless explicitly assigned a product branch.
+## Runtime evidence
+- Jules: applying the `jules` label to issue #42 was accepted by `google-labs-jules[bot]`, which created an active Jules task.
+- Gemini: repository secret authentication is valid and the worker reached the Gemini generation API. The latest bounded WAVE run then exhausted the free-tier daily model quota, so its correct state is `COOLDOWN`, not authentication failure.
+- Groq: the provider-health workflow performed a real authenticated chat inference successfully.
+- OpenRouter Free: the provider-health workflow performed a real `openrouter/free` inference successfully.
+- Local runner: Desktop Commander reports `cs-973169170814-default` online; FFmpeg 7.0.2 user-space and Pillow are verified.
 
-### Tier B — free API fallbacks
-4. **Groq Free Plan** — fast code/reasoning fallback for bounded generation/review jobs.
-   - Owner action: create API key; store as `GROQ_API_KEY` in GitHub/runner secret store only.
-5. **OpenRouter Free Router** — multi-model emergency fallback; route only to zero-price models.
-   - Owner action: create API key; store as `OPENROUTER_API_KEY`.
-   - Free route is rate-limited; never treat it as the only provider.
-6. **Hugging Face OAuth/Jobs** — already authenticated for read/jobs; use public/open-weight models and free/available CPU/GPU resources where allowed.
-
-### Tier C — local/open-source fallback
-7. **Self-hosted runner / Ollama or compatible OpenAI-style server** on an authorized machine/VPS.
-   - No recurring model quota.
-   - Use for deterministic code review, smaller coding models, embeddings, asset metadata, conversion scripts, tests and build orchestration.
-   - Heavy visual generation only when compatible GPU exists; otherwise route visual jobs to a free external lane.
-
-## Not part of the automatic zero-cost pool
-- Claude/Anthropic direct API is optional only. Do not make it a release dependency because direct API usage can require billing/paid entitlement.
-- Any provider requiring a credit card, paid plan, auto-top-up, or subscription remains disabled unless the owner explicitly approves it.
-
-## Task routing
+## Routing while Gemini is cooling down
 | Task class | Primary | Fallback 1 | Fallback 2 | Last-resort no-quota path |
 |---|---|---|---|---|
-| Architecture / cross-project integration | GPT Integrator | Gemini | OpenRouter free reasoning model | local open-weight model + human/GPT review |
-| Bounded code implementation | Jules | Gemini CLI | Groq | local coder model |
-| PR review / regression analysis | GPT Integrator | Gemini CLI | Groq/OpenRouter | local coder/reasoner |
-| Web/admin prototype | Replit | Gemini/Jules | local web toolchain | manual deterministic implementation |
-| Animation orchestration / asset pipeline code | Motion lane + GPT | Gemini multimodal where available | HF/open models | Blender/FFmpeg/scripts locally |
-| Documentation / migrations / repetitive tests | Gemini/Jules | Groq | OpenRouter free | local model/scripts |
-| Current API/library docs | Context7 | official web docs | repository docs | pinned dependency docs |
-| Build/test/package | GitHub Actions | self-hosted runner | HF CPU Job where suitable | authorized local machine |
+| Architecture / cross-project integration | GPT Integrator | OpenRouter Free | local deterministic analysis | Gemini after cooldown |
+| Bounded code implementation | Jules | Groq | OpenRouter Free | local runner |
+| PR review / regression analysis | GPT Integrator | Groq | OpenRouter Free | local runner |
+| Web/admin prototype | Replit | Jules | OpenRouter Free | local web toolchain |
+| Animation orchestration / asset pipeline code | Motion lane + Jules/GPT | Hugging Face/open models | local FFmpeg/Pillow | Gemini after cooldown |
+| Documentation / migrations / repetitive tests | Jules | Groq | OpenRouter Free | local scripts |
+| Current API/library docs | Context7 | official docs | repository docs | pinned dependency docs |
+| Build/test/package | GitHub Actions | local runner | Hugging Face where suitable | deterministic local tooling |
 
 ## Quota-aware state machine
 `READY -> ACTIVE -> RATE_LIMITED -> COOLDOWN -> READY`
@@ -69,7 +52,7 @@ Keep the 10-day launch program moving even when one provider hits a quota, outag
 On `429`, quota exhaustion, or provider outage:
 1. persist provider + task + timestamp + exact error;
 2. do not retry in a tight loop;
-3. move the task to the next compatible provider;
+3. move the task to the next compatible READY provider;
 4. preserve the same Git base SHA and acceptance criteria;
 5. resume the exhausted provider only after cooldown/reset;
 6. deduplicate by task ID + base SHA so two providers never implement the same task simultaneously.
