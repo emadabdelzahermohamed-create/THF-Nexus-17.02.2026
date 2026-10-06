@@ -1,0 +1,121 @@
+name: THF Vault Signal Phone Resources V2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/thf_apps_phone_resources_v1.py
+      - .github/workflows/thf-vault-signal-phone-resources-v2.yml
+      - ReleaseOps/scripts/build_vault_signal_api36_candidates.sh
+      - ReleaseOps/scripts/nativeize_vault_signal_candidate.py
+      - ReleaseOps/scripts/package_authoritative_android_source_v2.py
+      - ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh
+      - ReleaseOps/scripts/patch_vault_signal_compiled_icon_gate_v1.sh
+      - ReleaseOps/scripts/patch_vault_signal_canonical_icon_anchor_v1.sh
+  push:
+    branches: [main]
+    paths:
+      - tools/thf_apps_phone_resources_v1.py
+      - .github/workflows/thf-vault-signal-phone-resources-v2.yml
+  workflow_dispatch:
+
+concurrency:
+  group: thf-apps-exclusive-builder
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
+jobs:
+  vault-signal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with: {persist-credentials: false}
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Stage tools
+        run: |
+          set -Eeuo pipefail
+          for f in tools/thf_apps_phone_resources_v1.py ReleaseOps/validators/validate_mobile_real_function_source.py ReleaseOps/scripts/build_vault_signal_api36_candidates.sh ReleaseOps/scripts/nativeize_vault_signal_candidate.py ReleaseOps/scripts/package_authoritative_android_source_v2.py ReleaseOps/scripts/build_vault_signal_canonical_native_v2.sh ReleaseOps/scripts/patch_vault_signal_compiled_icon_gate_v1.sh ReleaseOps/scripts/patch_vault_signal_canonical_icon_anchor_v1.sh; do
+            gcloud compute scp --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" "$f" "$GCP_BUILDER:/tmp/$(basename "$f")"
+          done
+      - name: Rebuild exact canonical authorities then resource candidates
+        run: |
+          cat > /tmp/vs-v2.sh <<'REMOTE'
+          set -Eeuo pipefail
+          H="$HOME"
+          SDK="$H/thf-builder-rc16-build/android-sdk"
+          GBIN="$H/thf-builder-rc16-build/cache/gradle-dist-8.13/gradle-8.13/bin/gradle"
+          AAPT="$SDK/build-tools/36.0.0/aapt"
+          test -x "$GBIN"; test -x "$AAPT"
+          "$GBIN" --stop >/dev/null 2>&1 || true
+          sleep 2
+          chmod +x /tmp/build_vault_signal_canonical_native_v2.sh /tmp/patch_vault_signal_compiled_icon_gate_v1.sh /tmp/patch_vault_signal_canonical_icon_anchor_v1.sh
+          /tmp/patch_vault_signal_compiled_icon_gate_v1.sh /tmp/build_vault_signal_api36_candidates.sh
+          /tmp/patch_vault_signal_canonical_icon_anchor_v1.sh /tmp/build_vault_signal_canonical_native_v2.sh
+          /tmp/build_vault_signal_canonical_native_v2.sh
+          OUT="$H/thf-vault-signal-phone-resources-v2"; rm -rf "$OUT"; mkdir -p "$OUT/out" "$OUT/work" "$OUT/candidates"
+          cat > "$OUT/matrix.tsv" <<'EOF'
+          vault	THF Wallet	com.topherofit.thf.vault	052e2c55c6066c15eee63528218b8eab9711bec9de71335c67c7e1692a5b5432
+          signal	THF Publisher	com.topherofit.thf.signal	f78890c3bf036d80a568ec39baac4a665d6092b9bbc8c4f080f2651785c1a275
+          EOF
+          printf 'app\tname\tpackage\tinput_source_sha256\tcandidate_source_sha256\tapk_sha256\n' > "$OUT/out/results.tsv"
+          while IFS=$'\t' read -r app name pkg expected; do
+            src=$(find "$H/thf-vault-signal-canonical-native-v2/$app/out" -maxdepth 1 -type f -name '*CANONICAL-NATIVE-SOURCE-V2.zip' -print -quit)
+            test -s "$src"; test "$(sha256sum "$src" | awk '{print $1}')" = "$expected"
+            mkdir -p "$OUT/work/$app"; unzip -q "$src" -d "$OUT/work/$app"
+            build=$(find "$OUT/work/$app" -type f \( -path '*/android/app/build.gradle' -o -path '*/android/app/build.gradle.kts' \) | head -1); test -n "$build"
+            root=$(dirname "$(dirname "$(dirname "$build")")")
+            python3 /tmp/thf_apps_phone_resources_v1.py --root "$root" --app "$app" --package "$pkg" --name "$name" --report "$OUT/out/$app.resources.json"
+            python3 /tmp/validate_mobile_real_function_source.py "$root" --package "$pkg" --json-out "$OUT/out/$app.source-gate.json" > "$OUT/out/$app.source-gate.stdout.txt"
+            grep -q '"source_gate": "PASS"' "$OUT/out/$app.source-gate.json"
+            python3 - "$root" "$OUT/candidates/THF_${app^^}_PHONE_RESOURCES_V2_SOURCE.zip" <<'PY'
+          import pathlib,sys,zipfile
+          root=pathlib.Path(sys.argv[1]); target=pathlib.Path(sys.argv[2]); excluded={'.gradle','build','.git','node_modules','__pycache__','.pytest_cache'}
+          fs=[p for p in root.rglob('*') if p.is_file() and p.name!='local.properties' and not any(x in excluded for x in p.relative_to(root).parts) and p.suffix.lower() not in {'.jks','.keystore','.p12','.pem','.key'}]
+          with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+            for p in sorted(fs,key=lambda x:x.relative_to(root).as_posix()):
+              i=zipfile.ZipInfo(p.relative_to(root).as_posix(),(2020,1,1,0,0,0)); i.compress_type=zipfile.ZIP_DEFLATED; i.external_attr=0o100644<<16; z.writestr(i,p.read_bytes())
+          assert zipfile.ZipFile(target).testzip() is None
+          PY
+            csha=$(sha256sum "$OUT/candidates/THF_${app^^}_PHONE_RESOURCES_V2_SOURCE.zip" | awk '{print $1}')
+            printf 'sdk.dir=%s\n' "$SDK" > "$root/android/local.properties"
+            env ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" GRADLE_USER_HOME="$OUT/gradle-home/$app" "$GBIN" --no-daemon -p "$root/android" clean assembleRelease > "$OUT/out/$app.gradle.log" 2>&1
+            apk=$(find "$root/android" -type f -path '*/build/outputs/apk/release/*.apk' | head -1); test -s "$apk"
+            outapk="$OUT/candidates/THF_${app^^}_PHONE_RESOURCES_V2_UNSIGNED.apk"; cp "$apk" "$outapk"
+            badge=$($AAPT dump badging "$outapk"); grep -q "package: name='$pkg'" <<<"$badge"; grep -q "targetSdkVersion:'36'" <<<"$badge"
+            printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$app" "$name" "$pkg" "$expected" "$csha" "$(sha256sum "$outapk"|awk '{print $1}')" >> "$OUT/out/results.tsv"
+          done < "$OUT/matrix.tsv"
+          python3 - "$OUT" <<'PY'
+          import csv,json,pathlib,sys
+          o=pathlib.Path(sys.argv[1]); rows=list(csv.DictReader(open(o/'out/results.tsv'),delimiter='\t')); assert len(rows)==2
+          json.dump({'schema':'thf-vault-signal-phone-resources-v2','rows':rows,'canonical_rehydration_exact_sha':'PASS','private_rbac_contract':'PRESERVED_CI_CONTRACT_DEPLOYED_RBAC_NOT_PROVEN','physical_device_pass':False,'final_or_play_ready':False},open(o/'out/summary.json','w'),indent=2)
+          print('VAULT_SIGNAL_PHONE_RESOURCES_V2=PASS')
+          PY
+          REMOTE
+          gcloud compute scp --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" /tmp/vs-v2.sh "$GCP_BUILDER:/tmp/vs-v2.sh"
+          gcloud compute ssh "$GCP_BUILDER" --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --ssh-key-expire-after=55m --command='bash /tmp/vs-v2.sh'
+          rm -rf out-vs && mkdir out-vs
+          gcloud compute scp --quiet --recurse --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" "$GCP_BUILDER:~/thf-vault-signal-phone-resources-v2/out" out-vs/
+          gcloud compute scp --quiet --recurse --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" "$GCP_BUILDER:~/thf-vault-signal-phone-resources-v2/candidates" out-vs/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: THF-VAULT-SIGNAL-PHONE-RESOURCES-V2
+          path: out-vs/
+          retention-days: 14
+          compression-level: 0
