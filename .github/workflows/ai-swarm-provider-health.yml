@@ -51,23 +51,32 @@ jobs:
               https://api.groq.com/openai/v1/models \
               -H "Authorization: Bearer ${GROQ_API_KEY}" || true)
             if [[ "$gcode" == "200" ]]; then
-              model=$(jq -r '[.data[].id | select(test("llama";"i")) | select(test("guard|whisper";"i")|not)][0] // .data[0].id // empty' /tmp/groq-models.json)
-              if [[ -n "$model" ]]; then
-                payload=$(jq -cn --arg m "$model" '{model:$m,messages:[{role:"user",content:"Reply with OK only."}],max_tokens:2,temperature:0}')
+              mapfile -t candidates < <(jq -r '
+                [.data[].id
+                  | select(test("whisper|guard|tts|embedding|compound";"i")|not)
+                  | select(test("llama|qwen|gemma|mixtral";"i"))][0:3][]' /tmp/groq-models.json)
+              ready=0; limited=0; tried=0
+              for model in "${candidates[@]}"; do
+                [[ -n "$model" ]] || continue
+                tried=$((tried+1))
+                payload=$(jq -cn --arg m "$model" '{model:$m,messages:[{role:"user",content:"Reply OK."}],max_completion_tokens:8}')
                 icode=$(curl -sS -o /tmp/groq-chat.json -w '%{http_code}' \
                   https://api.groq.com/openai/v1/chat/completions \
                   -H "Authorization: Bearer ${GROQ_API_KEY}" \
                   -H 'Content-Type: application/json' \
                   --data "$payload" || true)
-                if [[ "$icode" == "200" ]]; then
-                  add_result "groq" "READY" "Authenticated inference succeeded on a current chat model."
-                elif [[ "$icode" == "429" ]]; then
-                  add_result "groq" "RATE_LIMITED" "Authentication succeeded; inference quota/rate limit active."
-                else
-                  add_result "groq" "INFERENCE_ERROR" "model list succeeded; chat HTTP ${icode}"
-                fi
+                if [[ "$icode" == "200" ]]; then ready=1; break; fi
+                if [[ "$icode" == "429" ]]; then limited=1; break; fi
+              done
+              if [[ $ready -eq 1 ]]; then
+                add_result "groq" "READY" "Authenticated inference succeeded on a currently advertised compatible chat model."
+              elif [[ $limited -eq 1 ]]; then
+                add_result "groq" "RATE_LIMITED" "Authentication succeeded; inference quota/rate limit active."
+              elif [[ $tried -eq 0 ]]; then
+                add_result "groq" "AUTH_OK" "Authenticated model listing succeeded; no compatible chat model discovered."
               else
-                add_result "groq" "AUTH_OK" "Authenticated model listing succeeded; no compatible chat model selected."
+                err=$(jq -r '.error.message // "unknown 4xx/5xx"' /tmp/groq-chat.json 2>/dev/null | tr '\n' ' ' | cut -c1-160)
+                add_result "groq" "INFERENCE_ERROR" "Authenticated model listing succeeded; compatible probes failed: ${err}"
               fi
             elif [[ "$gcode" == "429" ]]; then
               add_result "groq" "RATE_LIMITED" "Provider reachable; rate limit active."
