@@ -1,0 +1,54 @@
+name: THF Fitness VM Readiness Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-fitness-vm-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google with WIF
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: project-b5e10d7e-8ce8-4aa4-a15
+
+      - name: Confirm VM identity without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute instances describe thf-wave-builder             --zone=europe-west1-b             --project=project-b5e10d7e-8ce8-4aa4-a15             --format='yaml(name,status,zone,machineType,networkInterfaces.networkIP)'
+
+      - name: Read-only IAP OS Login probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute ssh thf-wave-builder             --zone=europe-west1-b             --project=project-b5e10d7e-8ce8-4aa4-a15             --tunnel-through-iap             --quiet             --command='set -eu; echo FITNESS_VM_PROBE_PASS; id; printf "HOME=%s\n" "$HOME"; python3 --version; (cloudflared --version || true); (docker --version || true); df -h "$HOME"; ss -lnt | head -n 40'
+
+      - name: Record scope
+        shell: bash
+        run: |
+          printf '%s\n'             'probe_scope=read_only'             'wave_paths_accessed=no'             'target_vm=thf-wave-builder'             'target_zone=europe-west1-b' > fitness-vm-probe.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thf-fitness-vm-readiness
+          path: fitness-vm-probe.txt
+          retention-days: 7

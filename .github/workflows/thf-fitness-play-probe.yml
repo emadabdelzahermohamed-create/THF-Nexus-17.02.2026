@@ -1,0 +1,72 @@
+name: THF Fitness Google Play Access Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/thf-fitness-play-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  play-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google with existing WIF
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Probe Android Publisher access without upload or commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PY'
+          import json
+          import google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.errors import HttpError
+
+          package = "com.topherofit.thf.pulse"
+          creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/androidpublisher"])
+          api = build("androidpublisher", "v3", credentials=creds, cache_discovery=False)
+          result = {"package": package, "wif": True, "upload_attempted": False, "commit_attempted": False}
+          try:
+              edit = api.edits().insert(packageName=package, body={}).execute()
+              edit_id = edit["id"]
+              result.update({"package_visible": True, "edit_insert": "PASS"})
+              api.edits().delete(packageName=package, editId=edit_id).execute()
+              result["edit_cleanup"] = "PASS"
+          except HttpError as exc:
+              result.update({
+                  "package_visible": False if exc.resp.status == 404 else None,
+                  "http_status": exc.resp.status,
+                  "error": str(exc)[:1000],
+              })
+          print(json.dumps(result, indent=2))
+          with open("fitness-play-probe.json", "w") as fh:
+              json.dump(result, fh, indent=2)
+          if result.get("edit_insert") != "PASS":
+              raise SystemExit(2)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-fitness-play-access-probe
+          path: fitness-play-probe.json
+          if-no-files-found: ignore
+          retention-days: 7
