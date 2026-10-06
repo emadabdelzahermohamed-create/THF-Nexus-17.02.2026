@@ -11,14 +11,14 @@
   },
   "providers": [
     {"id":"gpt-integrator","state":"READY","roles":["architecture","review","integration","release"]},
-    {"id":"jules","state":"PENDING_OWNER_AUTH","roles":["bounded-code","issue-fix","feature-implementation"]},
-    {"id":"gemini-cli","state":"PENDING_API_KEY","roles":["bounded-code","review","tests","triage","multimodal-analysis"]},
+    {"id":"jules","state":"PENDING_RUNTIME_VERIFICATION","roles":["bounded-code","issue-fix","feature-implementation"]},
+    {"id":"gemini-cli","state":"PENDING_RUNTIME_VERIFICATION","roles":["bounded-code","review","tests","triage","multimodal-analysis"]},
     {"id":"replit","state":"READY","roles":["web-admin","ops-dashboard","prototype"]},
-    {"id":"groq","state":"PENDING_API_KEY","roles":["fast-code","review","reasoning"]},
-    {"id":"openrouter-free","state":"PENDING_API_KEY","roles":["general-fallback","reasoning","code"]},
+    {"id":"groq","state":"PENDING_RUNTIME_VERIFICATION","roles":["fast-code","review","reasoning"]},
+    {"id":"openrouter-free","state":"PENDING_RUNTIME_VERIFICATION","roles":["general-fallback","reasoning","code"]},
     {"id":"huggingface","state":"READY_OAUTH","roles":["open-models","jobs","research"]},
-    {"id":"context7","state":"PENDING_CONNECTION","roles":["current-docs","api-accuracy"]},
-    {"id":"local-runner","state":"OFFLINE","roles":["no-quota-code","build","tests","conversion","open-models"]}
+    {"id":"context7","state":"READY","roles":["current-docs","api-accuracy"]},
+    {"id":"local-runner","state":"OFFLINE_VERIFIED","roles":["no-quota-code","build","tests","conversion","open-models"]}
   ],
   "routing": {
     "bounded_code": ["jules","gemini-cli","groq","openrouter-free","local-runner"],
