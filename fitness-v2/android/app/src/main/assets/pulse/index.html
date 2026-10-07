@@ -113,7 +113,7 @@
     <section id="activeWorkoutScreen" class="screen workout-screen" aria-labelledby="activeExerciseName">
       <button id="exitWorkoutBtn" class="back-button" type="button"><span aria-hidden="true">‹</span><span data-i18n="backToLibrary">العودة للمكتبة</span></button>
       <article class="active-demo">
-        <div class="demo-stage"><img id="activeDemoImage" alt=""><span id="activeDemoPhase" class="phase-label">البداية</span><button id="toggleDemoFrame" class="frame-toggle" type="button" data-i18n="toggleFrame">بدّل الوضع</button></div>
+        <div class="demo-stage"><video id="activeDemoVideo" class="hidden" autoplay muted loop playsinline preload="auto"></video><img id="activeDemoImage" alt=""><span id="activeDemoPhase" class="phase-label">دليل الحركة</span></div>
         <div class="demo-copy"><span id="activeSection" class="pill gold"></span><h1 id="activeExerciseName"></h1><p id="activeExerciseCue" class="muted"></p><div id="activeMuscles" class="tag-row"></div></div>
       </article>
       <article class="surface technique-card"><div class="card-heading"><h2 data-i18n="technique">طريقة الأداء</h2><button id="speakCue" class="icon-button" type="button" aria-label="دليل صوتي" data-i18n-aria-label="voiceGuidance">◉</button></div><ol id="activeSteps"></ol><p id="activeBreathing" class="breathing-cue"></p></article>
@@ -230,6 +230,7 @@
   <div id="toast" class="toast hidden" role="status"></div>
   <script src="./data/exercises.js"></script>
   <script src="./data/programs.js"></script>
+  <script src="./data/motion-manifest.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

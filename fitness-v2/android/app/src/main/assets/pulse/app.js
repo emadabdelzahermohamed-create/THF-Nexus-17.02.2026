@@ -3,6 +3,7 @@
   const N = window.PulseNative || null;
   const EXERCISES = Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
   const PROGRAMS = Array.isArray(window.THF_PROGRAMS) ? window.THF_PROGRAMS : [];
+  const motionManifest = window.THF_MOTION_MANIFEST || {};
   const $ = id => document.getElementById(id);
   const store = (() => {
     try { localStorage.setItem('__thf_probe', '1'); localStorage.removeItem('__thf_probe'); return localStorage; }
@@ -63,6 +64,9 @@
     });
     $('primaryNav').classList.toggle('hidden', id === 'activeWorkoutScreen');
     document.body.classList.toggle('workout-active', id === 'activeWorkoutScreen');
+    const demoVideo = $('activeDemoVideo');
+    if (id === 'activeWorkoutScreen' && !demoVideo.classList.contains('hidden')) demoVideo.play().catch(() => {});
+    else demoVideo.pause();
     window.scrollTo({top: 0, behavior: 'smooth'});
     if (id === 'progressScreen') renderProgress();
     if (id === 'healthScreen') renderHealthStatus();
@@ -259,11 +263,34 @@
   function completedVolume(sets) { return (sets||[]).filter(set=>set.complete).reduce((sum,set)=>sum + Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0); }
   function sessionVolume() { return completedVolume(state.active?.sets) + (state.active?.programEntries||[]).reduce((sum,entry)=>sum+completedVolume(entry.sets),0); }
   function persistActive() { store.setItem('pulse.v2.active', JSON.stringify(state.active)); }
+  function renderActiveMotion(item) {
+    const video = $('activeDemoVideo');
+    const image = $('activeDemoImage');
+    const motion = motionManifest[item.id];
+    if (motion?.asset) {
+      const nextSource = './' + motion.asset;
+      if (video.getAttribute('src') !== nextSource) video.setAttribute('src', nextSource);
+      video.setAttribute('aria-label', item.demo.alt[state.lang]);
+      video.classList.remove('hidden');
+      image.classList.add('hidden');
+      $('activeDemoPhase').textContent = state.lang === 'ar' ? 'حركة كاملة تلقائية' : 'Automatic full movement';
+      if (!document.hidden) video.play().catch(() => {});
+      return;
+    }
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    video.classList.add('hidden');
+    image.classList.remove('hidden');
+    image.src = './' + item.demo.assets[0];
+    image.alt = item.demo.alt[state.lang];
+    $('activeDemoPhase').textContent = state.lang === 'ar' ? 'صور مرجعية — الحركة قيد الإضافة' : 'Reference images — motion pending';
+  }
   function renderActiveWorkout() {
     const item = activeExercise(); if (!item) { state.active=null; store.removeItem('pulse.v2.active'); return; }
-    $('activeDemoImage').src = './' + item.demo.assets[state.demoFrame % item.demo.assets.length]; $('activeDemoImage').alt = item.demo.alt[state.lang];
+    renderActiveMotion(item);
     const program=PROGRAMS.find(value=>value.id===state.active.programId);const programSession=program?.sessions.find(value=>value.id===state.active.programSessionId);const programIndex=Number(state.active.programExerciseIndex)||0;
-    $('activeDemoPhase').textContent = t(state.demoFrame ? 'finish' : 'start'); $('activeSection').textContent = programSession?`${local(program.section)} · ${t('exerciseOf').replace('{current}',programIndex+1).replace('{total}',programSession.exercises.length)}`:local(item.section); $('activeExerciseName').textContent = local(item.name);
+    $('activeSection').textContent = programSession?`${local(program.section)} · ${t('exerciseOf').replace('{current}',programIndex+1).replace('{total}',programSession.exercises.length)}`:local(item.section); $('activeExerciseName').textContent = local(item.name);
     $('activeExerciseCue').textContent = local(item.setup); $('activeMuscles').innerHTML = item.muscles.primary[state.lang].map(value=>`<span class="tag">${escapeHtml(value)}</span>`).join('');
     $('activeSteps').innerHTML = item.steps[state.lang].map(step=>`<li>${escapeHtml(step)}</li>`).join(''); $('activeBreathing').textContent = local(item.breathing); $('activeSafety').textContent = local(item.safety);
     const done = state.active.sets.filter(set=>set.complete).length; $('setProgressTitle').textContent = t('setProgress').replace('{done}',done).replace('{total}',state.active.sets.length); $('sessionVolume').textContent = `${Math.round(sessionVolume())} kg`;
@@ -381,7 +408,6 @@
     $('closeDetail').addEventListener('click',closeDetail);$('detailCloseButton').addEventListener('click',closeDetail);$('startExerciseBtn').addEventListener('click',()=>startExercise(state.selected));
     $('closeProgramDetail').addEventListener('click',closeProgramDetail);$('programDetailCloseButton').addEventListener('click',closeProgramDetail);$('useProgramBtn').addEventListener('click',()=>useProgram($('useProgramBtn').dataset.program));
     $('startTodayBtn').addEventListener('click',()=>{const button=$('startTodayBtn');if(button.dataset.program&&button.dataset.session){startProgramSession(button.dataset.program,button.dataset.session);return;}const item=EXERCISES.find(exercise=>exercise.id===button.dataset.exercise);if(item)startExercise(item);});
-    $('toggleDemoFrame').addEventListener('click',()=>{state.demoFrame=(state.demoFrame+1)%activeExercise().demo.assets.length;renderActiveWorkout();});
     $('addSetBtn').addEventListener('click',addSet);$('finishWorkoutBtn').addEventListener('click',finishWorkout);$('skipRest').addEventListener('click',stopRest);$('exitWorkoutBtn').addEventListener('click',()=>{persistActive();showScreen('trainScreen');});
     $('speakCue').addEventListener('click',()=>{const item=activeExercise();const text=[local(item.name),...item.steps[state.lang]].join('. ');try{if(N)N.speak(text,state.lang==='ar'?'ar-EG':'en-US');else if('speechSynthesis'in window){const utterance=new SpeechSynthesisUtterance(text);utterance.lang=state.lang==='ar'?'ar-EG':'en-US';speechSynthesis.speak(utterance);}}catch{}});
     $('clearHistoryBtn').addEventListener('click',()=>{const now=Date.now();if(now>state.clearArmedUntil){state.clearArmedUntil=now+3000;toast(t('clearConfirm'));return;}store.removeItem('pulse.v2.history');renderToday();renderProgress();});
@@ -395,6 +421,7 @@
     window.addEventListener('thf:health-status',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-permission',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-sync',event=>renderHealthSnapshot(event.detail));window.addEventListener('thf:health-write',()=>renderHealthStatus());window.addEventListener('thf:health-error',event=>{renderHealthStatus({...currentHealth(),lastError:event.detail?.message||'Health Connect error'});});
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
+    document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});});
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
   }
 

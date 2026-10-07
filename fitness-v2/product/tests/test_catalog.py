@@ -121,6 +121,30 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertNotIn("input.addEventListener('change'", script)
         self.assertIn("persistActive();", script)
 
+    def test_active_workout_uses_verified_automatic_motion_when_available(self):
+        html = (PULSE / "index.html").read_text()
+        script = (PULSE / "app.js").read_text()
+        manifest_path = PULSE / "data" / "motion-manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+
+        self.assertIn('id="activeDemoVideo"', html)
+        self.assertIn("autoplay", html)
+        self.assertIn("muted", html)
+        self.assertIn("loop", html)
+        self.assertIn("playsinline", html)
+        self.assertNotIn('id="toggleDemoFrame"', html)
+        self.assertIn("visibilitychange", script)
+        self.assertIn("motionManifest", script)
+        self.assertIn("video.play()", script)
+
+        squat = manifest["bodyweight-squat"]
+        self.assertEqual("verified_frame_sequence", squat["kind"])
+        self.assertEqual(16, squat["sourceFrameCount"])
+        self.assertEqual(8, squat["fps"])
+        video_path = PULSE / squat["asset"]
+        self.assertTrue(video_path.is_file())
+        self.assertEqual(squat["sha256"], sha256(video_path))
+
     def test_program_library_replaces_legacy_baseline_across_every_section(self):
         expected = {
             "gym", "home", "running", "cycling", "football", "swimming", "yoga",
