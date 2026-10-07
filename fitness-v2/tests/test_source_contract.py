@@ -61,7 +61,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("compileSdk 36", gradle)
         self.assertIn("targetSdk 36", gradle)
         version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
-        self.assertGreaterEqual(version, 51003)
+        self.assertGreaterEqual(version, 51004)
 
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
@@ -291,6 +291,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
 
     def test_android_founding_hero_offer_is_play_billing_only_and_fail_closed(self):
         gradle = (ANDROID / "app" / "build.gradle").read_text()
+        workflow = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
         html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
         script = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
         billing = (
@@ -306,7 +307,12 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             / "FoundingHeroBilling.kt"
         ).read_text()
 
-        self.assertIn("com.android.billingclient:billing-ktx:9.1.0", gradle)
+        self.assertIn("com.android.billingclient:billing:9.1.0", gradle)
+        self.assertNotIn("billing-ktx", gradle)
+        self.assertIn("THF_PLAY_LICENSE_KEY: ${{ vars.THF_PLAY_LICENSE_KEY }}", workflow)
+        self.assertIn('"-PTHF_PLAY_LICENSE_KEY=$PLAY_LICENSE_KEY"', workflow)
+        self.assertIn("FAIL_CLOSED_PUBLIC_LICENSE_KEY_ABSENT", workflow)
+        self.assertNotIn('echo "$PLAY_LICENSE_KEY"', workflow)
         for marker in (
             'id="foundingHeroCard"',
             'id="foundingHeroPurchaseBtn"',

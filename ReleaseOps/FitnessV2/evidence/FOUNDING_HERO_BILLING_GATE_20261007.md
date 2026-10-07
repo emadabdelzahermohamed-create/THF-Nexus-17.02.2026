@@ -14,6 +14,7 @@
 The Android Profile screen now contains one bounded digital offer:
 
 - Google Play one-time product ID: `thf_founding_hero_lifetime`.
+- Android candidate identity: `com.topherofit.thf.pulse`, versionCode `51004`, versionName `5.0.0-v2-alpha4`.
 - Entitlement: a Founding Hero profile badge and gold profile accent.
 - The offer is explicitly cosmetic. It does not restrict exercises or Health Connect, grant competitive advantage, distribute tokens, or promise a financial return.
 - Price is never hard-coded; the UI uses the localized price returned by Google Play.
@@ -21,7 +22,7 @@ The Android Profile screen now contains one bounded digital offer:
 
 ## Safety and lifecycle contract
 
-- Google Play Billing Library `9.1.0`, the current official release documented on 2026-10-07.
+- Google Play Billing Library `9.1.0` Java client, avoiding an unnecessary Kotlin-metadata dependency while retaining the current official API.
 - One active BillingClient, automatic service reconnection, pending one-time purchases, startup/resume ownership reconciliation and connection shutdown.
 - Fresh product-detail query before purchase; no stale price or offer token is persisted.
 - The app grants the cosmetic entitlement only for the exact product, `PURCHASED` state and a valid Play RSA signature.
@@ -45,6 +46,6 @@ This checkpoint does **not** claim a live product, successful payment, revenue, 
 
 1. Build and test the source in GitHub Actions.
 2. Configure the one-time product in Play Console for package `com.topherofit.thf.pulse`.
-3. Inject the app's public Play licensing key as `THF_PLAY_LICENSE_KEY` into the protected signed-build workflow.
+3. Configure the app's public Play licensing key as repository variable `THF_PLAY_LICENSE_KEY`; the protected workflow passes it into the build without logging the value and otherwise records a fail-closed status.
 4. Test purchase, pending, cancel, acknowledge and restore with a Play license tester on the exact signed Internal candidate.
 5. Verify the final product presentation and Data Safety / privacy declarations before production rollout.
