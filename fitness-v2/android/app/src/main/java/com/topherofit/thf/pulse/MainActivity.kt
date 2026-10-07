@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var healthRepository: HealthConnectRepository
     private lateinit var backendRepository: BackendSyncRepository
     private lateinit var accountAuthRepository: AccountAuthRepository
+    private lateinit var foundingHeroBilling: FoundingHeroBilling
     private var sensorManager: SensorManager? = null
     private var stepSensor: Sensor? = null
     private var absoluteSteps = -1f
@@ -66,6 +67,9 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     @Volatile
     private var cachedHealthState = HealthConnectionState("CHECKING", false, emptySet(), HealthConnectRepository.REQUIRED_PERMISSIONS)
+
+    @Volatile
+    private var cachedBillingState = FoundingHeroBillingState(configured = BuildConfig.THF_PLAY_LICENSE_KEY.isNotBlank())
 
     private val activityPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -96,6 +100,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         healthRepository = HealthConnectRepository(this)
         backendRepository = BackendSyncRepository(BuildConfig.THF_BASE_URL)
         accountAuthRepository = AccountAuthRepository(BuildConfig.THF_BASE_URL)
+        foundingHeroBilling = FoundingHeroBilling(this, BuildConfig.THF_PLAY_LICENSE_KEY) { next ->
+            cachedBillingState = next
+            dispatch("thf:billing-status", next.toJson())
+        }
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         stepSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
         tts = TextToSpeech(this) { status ->
@@ -141,6 +149,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         registerStepSensor()
+        if (::foundingHeroBilling.isInitialized) foundingHeroBilling.start()
         if (::healthRepository.isInitialized) {
             lifecycleScope.launch {
                 refreshHealthState()
@@ -159,6 +168,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     override fun onDestroy() {
         tts?.stop()
         tts?.shutdown()
+        if (::foundingHeroBilling.isInitialized) foundingHeroBilling.close()
         web.destroy()
         super.onDestroy()
     }
@@ -332,6 +342,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         .put("lastSync", prefs.getString("health_last_sync", ""))
         .put("lastError", prefs.getString("health_last_error", ""))
         .put("pendingWrites", jsonArrayPreference(PENDING_HEALTH).length())
+
+    private fun billingStatusJson(): JSONObject = cachedBillingState.toJson()
 
     private fun dispatch(name: String, payload: JSONObject) {
         if (!::web.isInitialized) return
@@ -554,10 +566,20 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             .put("activityPermission", hasActivityPermission())
             .put("sessionSteps", sessionSteps())
             .put("health", healthStatusJson())
+            .put("billing", billingStatusJson())
             .toString()
 
         @JavascriptInterface
         fun healthStatus(): String = healthStatusJson().toString()
+
+        @JavascriptInterface
+        fun billingStatus(): String = billingStatusJson().toString()
+
+        @JavascriptInterface
+        fun purchaseFoundingHero() = runOnUiThread { foundingHeroBilling.launchPurchase() }
+
+        @JavascriptInterface
+        fun restoreFoundingHero() = runOnUiThread { foundingHeroBilling.refresh() }
 
         @JavascriptInterface
         fun requestHealthPermissions() = runOnUiThread { this@MainActivity.requestHealthPermissions() }

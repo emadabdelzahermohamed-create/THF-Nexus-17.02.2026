@@ -1,6 +1,6 @@
 # Top Hero Fit Fitness V2 — Android
 
-Offline-first Android source for `com.topherofit.thf.pulse`, API 36, versionCode 51003.
+Offline-first Android source for `com.topherofit.thf.pulse`, API 36, versionCode 51004.
 The packaged workout flow remains usable without a network or Health Connect. Active
 session state is persisted across background/resume, and completed workouts are queued
 locally before any optional Health Connect write.

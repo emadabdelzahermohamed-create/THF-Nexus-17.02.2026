@@ -60,10 +60,12 @@ jobs:
         shell: bash
         env:
           THF_FITNESS_V2_BASE_URL: ${{ vars.THF_FITNESS_V2_BASE_URL }}
+          THF_PLAY_LICENSE_KEY: ${{ vars.THF_PLAY_LICENSE_KEY }}
         run: |
           set -euo pipefail
           mkdir -p fitness-v2/evidence
           API_BASE="${THF_FITNESS_V2_BASE_URL:-https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/}"
+          PLAY_LICENSE_KEY="${THF_PLAY_LICENSE_KEY:-}"
           python - "$API_BASE" <<'PY'
           import sys
           from urllib.parse import urlparse
@@ -76,7 +78,12 @@ jobs:
               raise SystemExit("THF_FITNESS_V2_BASE_URL must be a persistent default-port production host")
           PY
           echo "BACKEND_ENDPOINT=CONFIGURED_HTTPS:$API_BASE" | tee fitness-v2/evidence/backend-binding-status.txt
-          gradle --no-daemon -p fitness-v2/android "-PTHF_BASE_URL=$API_BASE" \
+          if [[ -n "$PLAY_LICENSE_KEY" ]]; then
+            echo 'PLAY_BILLING_CONFIGURATION=PUBLIC_LICENSE_KEY_PRESENT' | tee fitness-v2/evidence/play-billing-configuration.txt
+          else
+            echo 'PLAY_BILLING_CONFIGURATION=FAIL_CLOSED_PUBLIC_LICENSE_KEY_ABSENT' | tee fitness-v2/evidence/play-billing-configuration.txt
+          fi
+          gradle --no-daemon -p fitness-v2/android "-PTHF_BASE_URL=$API_BASE" "-PTHF_PLAY_LICENSE_KEY=$PLAY_LICENSE_KEY" \
             :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease
       - name: Sign release AAB when the existing Play upload key is available
         shell: bash
@@ -117,7 +124,7 @@ jobs:
           "$AAPT" dump badging "$APK" | tee fitness-v2/evidence/badging.txt
           "$AAPT" dump permissions "$APK" | tee fitness-v2/evidence/permissions.txt
           unzip -l "$APK" | tee fitness-v2/evidence/payload.txt
-          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51003'" fitness-v2/evidence/badging.txt
+          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51004'" fitness-v2/evidence/badging.txt
           grep -F "targetSdkVersion:'36'" fitness-v2/evidence/badging.txt
           ! grep -E 'READ_HEART_RATE|READ_SLEEP|READ_WEIGHT|READ_BODY_FAT' fitness-v2/evidence/permissions.txt
           python fitness-v2/scripts/verify_offline_payload.py \
@@ -135,11 +142,11 @@ jobs:
           PHYSICAL_PHONE=NOT_RUN
           HEALTH_CONNECT_PHYSICAL=NOT_RUN
           SAMSUNG_HEALTH_ORIGIN=NOT_RUN
-          PLAY_INTERNAL=NOT_RUN_FOR_VERSION_51003
+          PLAY_INTERNAL=NOT_RUN_FOR_VERSION_51004
           EOF
       - uses: actions/upload-artifact@v4
         with:
-          name: fitness-v2-51003-package-gate
+          name: fitness-v2-51004-package-gate
           if-no-files-found: error
           retention-days: 14
           path: |

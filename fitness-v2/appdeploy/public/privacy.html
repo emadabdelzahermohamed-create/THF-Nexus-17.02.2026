@@ -16,6 +16,8 @@
   <p>Account sign-in and server synchronization are optional. When enabled, completed THF workout records are sent over HTTPS and scoped to the authenticated account. Short-lived Android access tokens are held in memory and are not stored in app preferences.</p>
   <h2>Sharing and sale</h2>
   <p>Data may be processed by infrastructure and identity providers needed to operate the service. THF Fitness does not sell personal data and does not include an advertising SDK in this Android build.</p>
+  <h2>Google Play purchase</h2>
+  <p>The optional Founding Hero cosmetic pack is a one-time digital product processed by Google Play Billing. THF Fitness receives the product identifier, purchase state, signed purchase payload and purchase token needed to verify, restore and acknowledge the entitlement. The app does not receive or store card or bank-account details. The purchase does not unlock health features, competitive advantage, tokens or an investment return.</p>
   <h2>Retention and deletion</h2>
   <p>You can start deleting THF Fitness account data from Profile in the Android app or from Account &amp; privacy in the web app. The bounded deletion flow removes app-owned goals, workout history, Android sessions, synchronization/idempotency records and competition submissions. It may require more than one request for a large account.</p>
   <p>AppDeploy provides the sign-in identity used by this deployment. Its published app SDK does not currently expose a user-identity deletion method, so the THF route deletes app-owned account data and signs the app session out; it does not claim to delete an external identity-provider account.</p>
