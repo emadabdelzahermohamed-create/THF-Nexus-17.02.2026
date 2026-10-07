@@ -15,6 +15,16 @@ ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
 
 
 class FitnessV2SourceContractTest(unittest.TestCase):
+    def test_android_gate_runs_for_release_pull_requests(self):
+        workflow = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
+        trigger_block = workflow.split("permissions:", 1)[0]
+        self.assertIn("pull_request:", trigger_block)
+        self.assertGreaterEqual(
+            trigger_block.count("branches: [release/fitness-v2-rebuild-20261002]"),
+            2,
+        )
+        self.assertGreaterEqual(trigger_block.count("- 'fitness-v2/**'"), 2)
+
     def test_android_package_gate_derives_offline_payload_from_catalog(self):
         workflow = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
         verifier_path = ROOT / "fitness-v2" / "scripts" / "verify_offline_payload.py"

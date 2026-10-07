@@ -6,6 +6,11 @@ on:
     paths:
       - 'fitness-v2/**'
       - '.github/workflows/fitness-v2-android-health.yml'
+  pull_request:
+    branches: [release/fitness-v2-rebuild-20261002]
+    paths:
+      - 'fitness-v2/**'
+      - '.github/workflows/fitness-v2-android-health.yml'
   workflow_dispatch:
 
 permissions:
