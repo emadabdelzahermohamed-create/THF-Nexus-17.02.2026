@@ -158,6 +158,14 @@
         <fieldset><legend data-i18n="availableEquipment">المعدات المتاحة</legend><div id="equipmentChoices" class="choice-grid"></div></fieldset>
         <button class="button primary full" type="submit" data-i18n="savePlan">احفظ وحدّث خطة اليوم</button><p id="profileSaved" class="success-message hidden" role="status" data-i18n="profileSaved">تم حفظ ملفك وتحديث اقتراح اليوم.</p>
       </form>
+      <article id="foundingHeroCard" class="surface founding-hero-card" aria-labelledby="foundingHeroTitle">
+        <div class="card-heading"><div><p class="eyebrow" data-i18n="foundingHeroEyebrow">حزمة تجميلية لمرة واحدة</p><h2 id="foundingHeroTitle" data-i18n="foundingHeroTitle">البطل المؤسس</h2></div><span id="foundingHeroBadge" class="founding-hero-badge hidden" aria-live="polite"><span aria-hidden="true">★</span> <span data-i18n="foundingHeroBadge">Founding Hero</span></span></div>
+        <p data-i18n="foundingHeroBody">شراء رقمي لمرة واحدة يضيف شارة البطل المؤسس ولمسة ذهبية لملفك.</p>
+        <p class="small muted" data-i18n="foundingHeroScope">شارة تجميلية فقط؛ لا تحجب التمارين أو الصحة، ولا تمنح أفضلية تنافسية أو توكنات أو عائدًا ماليًا.</p>
+        <p id="foundingHeroPrice" class="founding-hero-price" aria-live="polite">—</p>
+        <div class="button-row"><button id="foundingHeroPurchaseBtn" class="button primary" type="button" disabled data-i18n="foundingHeroLoading">جارٍ التحقق من Google Play…</button><button id="foundingHeroRestoreBtn" class="button secondary" type="button" data-i18n="foundingHeroRestore">استعادة الشراء</button></div>
+        <p id="foundingHeroStatus" class="small muted" role="status" data-i18n="foundingHeroAndroidOnly">متاح داخل نسخة Android المثبتة من Google Play.</p>
+      </article>
       <article class="surface privacy-card"><h2 data-i18n="privacyOffline">الخصوصية والوضع المحلي</h2><p id="nativeStatus" class="muted"></p><button id="refreshStatus" class="button secondary" type="button" data-i18n="refreshStatus">تحديث الحالة</button><label class="switch-row"><span data-i18n="voiceGuidance">الدليل الصوتي</span><input id="voiceEnabled" type="checkbox" checked></label><label class="switch-row"><span data-i18n="reduceMotion">تقليل الحركة</span><input id="reduceMotion" type="checkbox"></label><p class="small muted" data-i18n="accountPrivacyHint">تستطيع مراجعة السياسة وبدء حذف بيانات حساب THF Fitness من المتصفح الآمن.</p><div class="button-row"><button id="privacyPolicyBtn" class="button secondary" type="button" data-i18n="privacyPolicy">سياسة الخصوصية</button><button id="accountDeletionBtn" class="button secondary" type="button" data-i18n="accountDeletion">حذف بيانات الحساب</button></div></article>
     </section>
   </main>

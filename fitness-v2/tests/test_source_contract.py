@@ -289,6 +289,48 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         ):
             self.assertIn(marker, deletion)
 
+    def test_android_founding_hero_offer_is_play_billing_only_and_fail_closed(self):
+        gradle = (ANDROID / "app" / "build.gradle").read_text()
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        script = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        billing = (
+            ANDROID
+            / "app"
+            / "src"
+            / "main"
+            / "java"
+            / "com"
+            / "topherofit"
+            / "thf"
+            / "pulse"
+            / "FoundingHeroBilling.kt"
+        ).read_text()
+
+        self.assertIn("com.android.billingclient:billing-ktx:9.1.0", gradle)
+        for marker in (
+            'id="foundingHeroCard"',
+            'id="foundingHeroPurchaseBtn"',
+            'id="foundingHeroRestoreBtn"',
+            "شارة تجميلية فقط",
+            "Cosmetic badge only",
+        ):
+            self.assertIn(marker, html + script)
+        for marker in (
+            "thf_founding_hero_lifetime",
+            "enableAutoServiceReconnection",
+            "enableOneTimeProducts",
+            "queryProductDetailsAsync",
+            "queryPurchasesAsync",
+            "acknowledgePurchase",
+            "PurchaseState.PENDING",
+            "signatureVerified",
+        ):
+            self.assertIn(marker, billing)
+        self.assertNotRegex(
+            html + script + billing,
+            r"(?i)(token reward|investment return|guaranteed profit|pay.?to.?win)",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

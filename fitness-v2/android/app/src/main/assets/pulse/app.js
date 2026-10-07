@@ -23,8 +23,8 @@
   };
   COPY.ar.trainEyebrow = `26 برنامجًا · ${EXERCISES.length} تمرينًا موثقًا`;
   COPY.en.trainEyebrow = `26 programs · ${EXERCISES.length} documented exercises`;
-  Object.assign(COPY.ar, {startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة'});
-  Object.assign(COPY.en, {startSession:'Start session',saveNext:'Save and continue',finishSession:'Finish and save session',exerciseOf:'Exercise {current} of {total}',nextExercise:'Exercise saved. Next: {name}',sessionComplete:'Session complete and saved.',signInSync:'Sign in to sync',syncConnected:'Sync connected',syncConnecting:'Connecting account',offlineReady:'Offline ready',syncUnavailable:'Sync not configured'});
+  Object.assign(COPY.ar, {startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة',foundingHeroEyebrow:'حزمة تجميلية لمرة واحدة',foundingHeroTitle:'البطل المؤسس',foundingHeroBadge:'البطل المؤسس',foundingHeroBody:'شراء رقمي لمرة واحدة يضيف شارة البطل المؤسس ولمسة ذهبية لملفك.',foundingHeroScope:'شارة تجميلية فقط؛ لا تحجب التمارين أو الصحة، ولا تمنح أفضلية تنافسية أو توكنات أو عائدًا ماليًا.',foundingHeroLoading:'جارٍ التحقق من Google Play…',foundingHeroBuy:'احصل على الحزمة',foundingHeroRestore:'استعادة الشراء',foundingHeroOwned:'حزمة البطل المؤسس مفعلة على هذا الحساب.',foundingHeroPending:'عملية الشراء معلقة؛ ستتفعل الشارة بعد تأكيد Google Play.',foundingHeroUnavailable:'المنتج غير متاح في هذه النسخة بعد. لم يتم تحصيل أي مبلغ.',foundingHeroConfigure:'يلزم ربط مفتاح الترخيص العام ومنتج Play قبل إتاحة الشراء.',foundingHeroAndroidOnly:'متاح داخل نسخة Android المثبتة من Google Play.',foundingHeroCanceled:'تم إلغاء نافذة الشراء ولم يتم تحصيل مبلغ.'});
+  Object.assign(COPY.en, {startSession:'Start session',saveNext:'Save and continue',finishSession:'Finish and save session',exerciseOf:'Exercise {current} of {total}',nextExercise:'Exercise saved. Next: {name}',sessionComplete:'Session complete and saved.',signInSync:'Sign in to sync',syncConnected:'Sync connected',syncConnecting:'Connecting account',offlineReady:'Offline ready',syncUnavailable:'Sync not configured',foundingHeroEyebrow:'One-time cosmetic pack',foundingHeroTitle:'Founding Hero',foundingHeroBadge:'Founding Hero',foundingHeroBody:'A one-time digital purchase that adds the Founding Hero badge and a gold profile accent.',foundingHeroScope:'Cosmetic badge only; workouts and Health remain free, with no competitive advantage, tokens, or financial return.',foundingHeroLoading:'Checking Google Play…',foundingHeroBuy:'Get the pack',foundingHeroRestore:'Restore purchase',foundingHeroOwned:'The Founding Hero pack is active for this account.',foundingHeroPending:'Purchase pending; the badge activates after Google Play confirms payment.',foundingHeroUnavailable:'This product is not available in this build yet. No charge was made.',foundingHeroConfigure:'Connect the public Play license key and Play product before enabling purchases.',foundingHeroAndroidOnly:'Available in the Android app installed through Google Play.',foundingHeroCanceled:'The purchase sheet was canceled and no charge was made.'});
   Object.assign(COPY.ar, {onboardingBrand:'خطتك تبدأ منك',onboardingStep:'إعداد سريع · يعمل أوفلاين',onboardingTitle:'ابنِ خطتك الأولى',onboardingIntro:'اختر هدفك وخبرتك وما يتوفر لديك. سنضع جلسة واضحة في «اليوم» ويمكنك تعديل كل شيء لاحقًا.',onboardingBenefitOffline:'دليل مصور أوفلاين',onboardingBenefitSafe:'تدرج وتعليمات سلامة',onboardingBenefitFlexible:'تعديل الخطة في أي وقت',onboardingPrivacy:'يُحفظ هذا الاختيار على جهازك أولًا. لا يلزم حساب للبدء.',createMyPlan:'أنشئ خطتي وابدأ',planReady:'خطتك جاهزة. ابدأ من جلسة اليوم.'});
   Object.assign(COPY.en, {onboardingBrand:'Your plan starts with you',onboardingStep:'Quick setup · works offline',onboardingTitle:'Build your first plan',onboardingIntro:'Choose your goal, experience and available equipment. We will put one clear session in Today, and you can change everything later.',onboardingBenefitOffline:'Offline visual guidance',onboardingBenefitSafe:'Safe progression and cues',onboardingBenefitFlexible:'Change your plan anytime',onboardingPrivacy:'Your choices are saved on this device first. No account is required to begin.',createMyPlan:'Create my plan and start',planReady:'Your plan is ready. Start with Today.'});
   Object.assign(COPY.ar, {accountPrivacyHint:'تستطيع مراجعة السياسة وبدء حذف بيانات حساب THF Fitness من المتصفح الآمن.',privacyPolicy:'سياسة الخصوصية',accountDeletion:'حذف بيانات الحساب',accountResourceAndroidOnly:'هذا الرابط متاح داخل تطبيق Android.'});
@@ -78,7 +78,7 @@
     document.querySelectorAll('[data-i18n-placeholder]').forEach(node => { node.placeholder = t(node.dataset.i18nPlaceholder); });
     document.querySelectorAll('[data-i18n-aria-label]').forEach(node => { node.setAttribute('aria-label', t(node.dataset.i18nAriaLabel)); });
     $('primaryNav').setAttribute('aria-label', state.lang === 'ar' ? 'التنقل الرئيسي' : 'Primary navigation');
-    renderTrainMode(); renderSections(); renderProgramSections(); populateFilters(); renderExercises(); renderPrograms(); renderToday(); renderProgress(); renderProfile(); renderOnboarding(); renderNativeStatus();
+    renderTrainMode(); renderSections(); renderProgramSections(); populateFilters(); renderExercises(); renderPrograms(); renderToday(); renderProgress(); renderProfile(); renderOnboarding(); renderNativeStatus(); renderFoundingHero();
     if (state.selected) renderDetail(state.selected);
     if (state.selectedProgram) renderProgramDetail(state.selectedProgram);
     if (state.active) renderActiveWorkout();
@@ -321,6 +321,20 @@
   }
 
   function nativeStatus(){try{return N?parse(N.status(),{}):{mode:'browser_preview',online:navigator.onLine,syncConfigured:false,health:{availability:'BROWSER_PREVIEW',connected:false},sessionSteps:0}}catch{return{mode:'offline',online:false,health:{availability:'ERROR',connected:false},sessionSteps:0}}}
+  function currentBilling(){try{return N&&typeof N.billingStatus==='function'?parse(N.billingStatus(),{}):{configured:false,connected:false,loading:false,available:false,owned:false,pending:false,errorCode:'ANDROID_ONLY'}}catch{return{configured:false,connected:false,loading:false,available:false,owned:false,pending:false,errorCode:'BILLING_ERROR'}}}
+  function renderFoundingHero(value=currentBilling()){
+    const badge=$('foundingHeroBadge'),buy=$('foundingHeroPurchaseBtn'),restore=$('foundingHeroRestoreBtn'),price=$('foundingHeroPrice'),status=$('foundingHeroStatus');
+    if(!badge||!buy||!restore||!price||!status)return;
+    document.body.classList.toggle('founding-hero-owned',Boolean(value.owned));badge.classList.toggle('hidden',!value.owned);
+    restore.disabled=Boolean(!N||value.loading);buy.disabled=true;price.textContent=value.price||'—';
+    if(value.owned){buy.textContent=t('foundingHeroOwned');status.textContent=t('foundingHeroOwned');return;}
+    if(value.pending){buy.textContent=t('foundingHeroPending');status.textContent=t('foundingHeroPending');return;}
+    if(!N){buy.textContent=t('foundingHeroAndroidOnly');status.textContent=t('foundingHeroAndroidOnly');return;}
+    if(!value.configured){buy.textContent=t('foundingHeroUnavailable');status.textContent=t('foundingHeroConfigure');return;}
+    if(value.loading){buy.textContent=t('foundingHeroLoading');status.textContent=t('foundingHeroLoading');return;}
+    if(value.available){buy.disabled=false;buy.textContent=value.price?`${t('foundingHeroBuy')} · ${value.price}`:t('foundingHeroBuy');status.textContent=value.errorCode==='PURCHASE_CANCELED'?t('foundingHeroCanceled'):t('foundingHeroScope');return;}
+    buy.textContent=t('foundingHeroUnavailable');status.textContent=t('foundingHeroUnavailable');
+  }
   function currentHealth(){try{return N?parse(N.healthStatus(),{}):nativeStatus().health}catch{return{availability:'ERROR',connected:false}}}
   function renderNativeStatus(){
     const value=nativeStatus(),chip=$('modeChip');
@@ -374,15 +388,18 @@
     $('profileForm').addEventListener('submit',saveProfile);$('profileDays').addEventListener('input',event=>$('profileDaysOutput').textContent=event.target.value);$('refreshStatus').addEventListener('click',renderNativeStatus);$('reduceMotion').addEventListener('change',event=>document.documentElement.style.setProperty('--motion',event.target.checked?'0':'1'));
     $('privacyPolicyBtn').addEventListener('click',()=>{if(N)N.openPrivacyPolicy();else toast(t('accountResourceAndroidOnly'))});
     $('accountDeletionBtn').addEventListener('click',()=>{if(N)N.openAccountDeletion();else toast(t('accountResourceAndroidOnly'))});
+    $('foundingHeroPurchaseBtn').addEventListener('click',()=>{if(N&&typeof N.purchaseFoundingHero==='function'){N.purchaseFoundingHero();renderFoundingHero({...currentBilling(),loading:true});}else toast(t('foundingHeroAndroidOnly'));});
+    $('foundingHeroRestoreBtn').addEventListener('click',()=>{if(N&&typeof N.restoreFoundingHero==='function'){N.restoreFoundingHero();renderFoundingHero({...currentBilling(),loading:true});}else toast(t('foundingHeroAndroidOnly'));});
     $('modeChip').addEventListener('click',()=>{const value=nativeStatus();if(N&&value.syncConfigured&&value.accountAuthConfigured&&!value.syncAuthenticated){N.requestBackendSignIn();renderNativeStatus();}else if(!N)toast(t('syncUnavailable'));});
     $('healthConnectBtn').addEventListener('click',()=>{if(N)N.requestHealthPermissions();else toast(t('browserHealth'));});$('healthSyncBtn').addEventListener('click',()=>{if(N){N.syncHealth();$('healthEmpty').textContent=state.lang==='ar'?'جاري المزامنة…':'Syncing…';}else toast(t('browserHealth'));});$('healthSettingsBtn').addEventListener('click',()=>{if(N)N.openHealthSettings();else toast(t('browserHealth'));});
     window.addEventListener('thf:health-status',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-permission',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-sync',event=>renderHealthSnapshot(event.detail));window.addEventListener('thf:health-write',()=>renderHealthStatus());window.addEventListener('thf:health-error',event=>{renderHealthStatus({...currentHealth(),lastError:event.detail?.message||'Health Connect error'});});
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});
+    window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
   }
 
   const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
-  bind(); applyLanguage(); renderHealthStatus();
+  bind(); applyLanguage(); renderHealthStatus(); renderFoundingHero();
   if (shouldOnboard) openOnboarding();
   if (state.active && activeExercise()) { renderActiveWorkout(); showScreen('activeWorkoutScreen', false); }
 })();

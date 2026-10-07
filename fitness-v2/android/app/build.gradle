@@ -17,8 +17,12 @@ android {
         // separate so the browser sign-in still starts on the branded web origin.
         def baseUrl = project.findProperty('THF_BASE_URL') ?: 'https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/'
         def accountUrl = project.findProperty('THF_ACCOUNT_URL') ?: 'https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/'
+        // Public Google Play licensing key. Keep empty to fail closed until the
+        // corresponding one-time product is configured for the signed app.
+        def playLicenseKey = project.findProperty('THF_PLAY_LICENSE_KEY') ?: ''
         buildConfigField 'String', 'THF_BASE_URL', '"' + baseUrl.replace('\\','\\\\').replace('"','\\"') + '"'
         buildConfigField 'String', 'THF_ACCOUNT_URL', '"' + accountUrl.replace('\\','\\\\').replace('"','\\"') + '"'
+        buildConfigField 'String', 'THF_PLAY_LICENSE_KEY', '"' + playLicenseKey.replace('\\','\\\\').replace('"','\\"') + '"'
         buildConfigField 'String', 'THF_APP_SLUG', '"pulse"'
     }
     buildFeatures { buildConfig true }
@@ -38,6 +42,7 @@ dependencies {
     implementation 'androidx.activity:activity-ktx:1.10.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.9.1'
     implementation 'androidx.health.connect:connect-client:1.1.0'
+    implementation 'com.android.billingclient:billing-ktx:9.1.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
     testImplementation 'junit:junit:4.13.2'
 }
