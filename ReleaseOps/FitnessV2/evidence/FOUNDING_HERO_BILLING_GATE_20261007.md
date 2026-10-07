@@ -38,7 +38,9 @@ The Android Profile screen now contains one bounded digital offer:
 - Backend unit/security contracts: `8/8` PASS.
 - JavaScript syntax: PASS.
 - `git diff --check`: PASS.
-- Kotlin billing state tests cover catalog/ownership callback ordering, pending fail-closed behavior, unrelated products and signature verification. Android compilation/units await the PR workflow because no local Gradle executable is present in the runner.
+- Kotlin billing state tests cover catalog/ownership callback ordering, pending fail-closed behavior, unrelated products and signature verification.
+- CI run `37638001930` exposed and eliminated the unnecessary Billing KTX/Kotlin metadata mismatch.
+- CI run `37638434976` then passed Kotlin compilation and Android unit tests, and exposed an Activity Result/old transitive Fragment lint violation. The source pins the compatible stable Fragment Java runtime instead of suppressing lint; a fresh workflow run must prove the final package.
 
 ## Fail-closed release truth
 

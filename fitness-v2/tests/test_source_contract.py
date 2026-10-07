@@ -309,6 +309,8 @@ class FitnessV2SourceContractTest(unittest.TestCase):
 
         self.assertIn("com.android.billingclient:billing:9.1.0", gradle)
         self.assertNotIn("billing-ktx", gradle)
+        self.assertIn("androidx.fragment:fragment:1.8.6", gradle)
+        self.assertNotIn("InvalidFragmentVersionForActivityResult", gradle)
         self.assertIn("THF_PLAY_LICENSE_KEY: ${{ vars.THF_PLAY_LICENSE_KEY }}", workflow)
         self.assertIn('"-PTHF_PLAY_LICENSE_KEY=$PLAY_LICENSE_KEY"', workflow)
         self.assertIn("FAIL_CLOSED_PUBLIC_LICENSE_KEY_ABSENT", workflow)
