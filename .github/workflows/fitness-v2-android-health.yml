@@ -1,0 +1,144 @@
+name: Fitness V2 Android Health Gate
+
+on:
+  push:
+    branches: [release/fitness-v2-rebuild-20261002]
+    paths:
+      - 'fitness-v2/**'
+      - '.github/workflows/fitness-v2-android-health.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fitness-v2-android-health-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-and-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Product, Android and backend source contracts
+        run: |
+          python -m unittest discover -s fitness-v2/product/tests -v
+          python fitness-v2/tests/test_source_contract.py
+          python -m unittest discover -s fitness-v2/backend/tests -v
+      - name: Typecheck AppDeploy V2 route overlay
+        run: npm exec --yes --package=typescript@5.9.3 -- tsc -p fitness-v2/appdeploy/tsconfig.routes.json
+
+  android-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Install API 36 SDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Unit, lint, APK and release AAB
+        shell: bash
+        env:
+          THF_FITNESS_V2_BASE_URL: ${{ vars.THF_FITNESS_V2_BASE_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p fitness-v2/evidence
+          API_BASE="${THF_FITNESS_V2_BASE_URL:-https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/}"
+          python - "$API_BASE" <<'PY'
+          import sys
+          from urllib.parse import urlparse
+          value = urlparse(sys.argv[1])
+          if value.scheme != "https" or not value.hostname or value.username or value.password or value.fragment:
+              raise SystemExit("THF_FITNESS_V2_BASE_URL must be a persistent credential-free HTTPS URL")
+          host = value.hostname.lower()
+          blocked = ("localhost", "127.0.0.1", "::1", "trycloudflare.com", "ngrok-free.app", "ngrok.io")
+          if value.port not in (None, 443) or host.endswith(".local") or any(host == item or host.endswith("." + item) for item in blocked):
+              raise SystemExit("THF_FITNESS_V2_BASE_URL must be a persistent default-port production host")
+          PY
+          echo "BACKEND_ENDPOINT=CONFIGURED_HTTPS:$API_BASE" | tee fitness-v2/evidence/backend-binding-status.txt
+          gradle --no-daemon -p fitness-v2/android "-PTHF_BASE_URL=$API_BASE" \
+            :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease
+      - name: Sign release AAB when the existing Play upload key is available
+        shell: bash
+        env:
+          ANDROID_UPLOAD_KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 }}
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p fitness-v2/evidence
+          AAB=fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
+          present=0
+          for value in "$ANDROID_UPLOAD_KEYSTORE_B64" "$ANDROID_UPLOAD_STORE_PASSWORD" "$ANDROID_UPLOAD_KEY_ALIAS" "$ANDROID_UPLOAD_KEY_PASSWORD"; do
+            [[ -n "$value" ]] && present=$((present + 1))
+          done
+          if [[ "$present" -eq 0 ]]; then
+            echo 'PRODUCTION_SIGNING=NOT_RUN_MISSING_ALL_FOUR_EXISTING_SECRETS' | tee fitness-v2/evidence/aab-signing-status.txt
+          elif [[ "$present" -ne 4 ]]; then
+            echo 'Production signing inputs are partially configured; refusing an ambiguous candidate.' >&2
+            exit 41
+          else
+            KEYSTORE="$RUNNER_TEMP/thf-fitness-upload.jks"
+            printf '%s' "$ANDROID_UPLOAD_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+            jarsigner -keystore "$KEYSTORE" -storepass "$ANDROID_UPLOAD_STORE_PASSWORD" \
+              -keypass "$ANDROID_UPLOAD_KEY_PASSWORD" "$AAB" "$ANDROID_UPLOAD_KEY_ALIAS"
+            jarsigner -verify -strict "$AAB" > fitness-v2/evidence/aab-jarsigner.txt
+            rm -f "$KEYSTORE"
+            echo 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' | tee fitness-v2/evidence/aab-signing-status.txt
+          fi
+      - name: Inspect exact debug package
+        run: |
+          mkdir -p fitness-v2/evidence
+          APK=fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
+          AAB=fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          sha256sum "$APK" "$AAB" | tee fitness-v2/evidence/package.sha256
+          "$AAPT" dump badging "$APK" | tee fitness-v2/evidence/badging.txt
+          "$AAPT" dump permissions "$APK" | tee fitness-v2/evidence/permissions.txt
+          unzip -l "$APK" | tee fitness-v2/evidence/payload.txt
+          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51003'" fitness-v2/evidence/badging.txt
+          grep -F "targetSdkVersion:'36'" fitness-v2/evidence/badging.txt
+          ! grep -E 'READ_HEART_RATE|READ_SLEEP|READ_WEIGHT|READ_BODY_FAT' fitness-v2/evidence/permissions.txt
+          python fitness-v2/scripts/verify_offline_payload.py \
+            --apk "$APK" \
+            --catalog fitness-v2/android/app/src/main/assets/pulse/data/exercises.js \
+            --evidence fitness-v2/evidence/offline-payload.json
+          if unzip -Z1 "$APK" | grep -q '^lib/'; then
+            echo 'ARCHITECTURE=HAS_NATIVE_LIBS_REQUIRES_ABI_AUDIT' | tee fitness-v2/evidence/architecture-status.txt
+            exit 42
+          fi
+          echo 'ARCHITECTURE=BYTECODE_ONLY_NO_ABI_SPLIT' | tee fitness-v2/evidence/architecture-status.txt
+          cat > fitness-v2/evidence/release-readiness.txt <<'EOF'
+          SOURCE_BACKEND_TESTS=RUN_BY_SOURCE_JOB
+          ANDROID_PACKAGE_GATE=PASS_IF_JOB_SUCCEEDS
+          PHYSICAL_PHONE=NOT_RUN
+          HEALTH_CONNECT_PHYSICAL=NOT_RUN
+          SAMSUNG_HEALTH_ORIGIN=NOT_RUN
+          PLAY_INTERNAL=NOT_RUN_FOR_VERSION_51003
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fitness-v2-51003-package-gate
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
+            fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
+            fitness-v2/android/app/build/reports/
+            fitness-v2/evidence/

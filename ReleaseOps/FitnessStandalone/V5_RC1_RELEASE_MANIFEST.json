@@ -1,0 +1,46 @@
+{
+  "release": "THF Fitness Standalone V5 RC1",
+  "date": "2026-09-18",
+  "branch": "release/fitness-standalone-v1-20260918",
+  "source": {
+    "drive_file_id": "1B3EqAcVP8W5kzwWRZVU_jfs9DWgPHhQd",
+    "sha256": "1c954707116264326ea11e60c8ba2f07a478783b4b274fbbf436cf61556a3867",
+    "size_bytes": 20147072,
+    "code_only_drive_file_id": "1IM3Tw3UnTDW-Sh4AZJ4yZtdBf28JDvEf",
+    "code_only_sha256": "4459112855acab105ffeb75484bce184788db45ff95786b778a57a740fa2b1a4"
+  },
+  "android": {
+    "application_id": "com.topherofit.thf.pulse",
+    "target_sdk": 36,
+    "version_code": 50000,
+    "version_name": "5.0.0-standalone-rc1"
+  },
+  "auth": {
+    "local_password": true,
+    "google_oidc": true,
+    "microsoft_oidc": true,
+    "android_external_browser": true,
+    "one_time_app_ticket": true,
+    "production_credentials_embedded": false
+  },
+  "avatar": {
+    "lineage": "MPFB/MakeHuman Stage16A UAL1+UAL2",
+    "sha256": "4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f",
+    "size_bytes": 26296432,
+    "joints": 137,
+    "animation_clips": 195,
+    "legacy_identity_avatar_allowed": false
+  },
+  "local_validation": {
+    "python_compile": "PASS",
+    "pytest": "18/18 PASS",
+    "avatar_registry": "PASS"
+  },
+  "not_yet_claimed": [
+    "production OAuth callback",
+    "production Web deployment",
+    "V5 physical Android device runtime",
+    "production-signed AAB",
+    "Google Play Internal upload"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "lib": ["ES2022", "DOM"],
+    "types": []
+  },
+  "files": [
+    "appdeploy-route-contract.d.ts",
+    "android_v2_routes.ts"
+  ]
+}

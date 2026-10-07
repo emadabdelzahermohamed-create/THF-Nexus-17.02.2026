@@ -1,0 +1,90 @@
+{
+  "lane": "android-health-release",
+  "branch": "release/fitness-v2-rebuild-20261002",
+  "result": "PROGRESS",
+  "active_task": "P0_DEPLOY_PRIVACY_SURFACES_THEN_SIGN_AND_PHYSICALLY_VERIFY_51003",
+  "candidate_sha": "d79c9c621dab30748e0779bd5a5fc35e385593d5",
+  "identity": {
+    "package_id": "com.topherofit.thf.pulse",
+    "version_code": 51003,
+    "version_name_debug": "5.0.0-v2-alpha3-debug",
+    "min_sdk": 26,
+    "compile_sdk": 36,
+    "target_sdk": 36,
+    "architecture": "BYTECODE_ONLY_NO_NATIVE_ABI_SPLIT"
+  },
+  "health_connect": {
+    "source_contract": "PASS",
+    "screen_discoverable": true,
+    "pre_permission_rationale_localized": true,
+    "connection_status_last_sync_revoke_empty_error_states": true,
+    "stable_client_record_ids_and_versioned_queue": true,
+    "read_permissions": [
+      "android.permission.health.READ_STEPS",
+      "android.permission.health.READ_EXERCISE",
+      "android.permission.health.READ_DISTANCE",
+      "android.permission.health.READ_ACTIVE_CALORIES_BURNED"
+    ],
+    "write_permissions": [
+      "android.permission.health.WRITE_EXERCISE"
+    ],
+    "heart_rate_requested": false,
+    "physical_device": "NOT_RUN",
+    "samsung_origin": "NOT_RUN"
+  },
+  "package_gate": {
+    "workflow_run_id": 37145448540,
+    "workflow_run_number": 17,
+    "workflow_url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/37145448540",
+    "source_backend_job_id": 111268310806,
+    "android_job_id": 111268310629,
+    "result": "PASS",
+    "artifact_id": 11281913738,
+    "artifact_name": "fitness-v2-51003-package-gate",
+    "artifact_digest": "sha256:96f96c53460e2bd52fbbf877f759f78a4d3362d0bc62873882b3f200201b90f0",
+    "artifact_expires_at": "2026-10-17T18:49:00Z",
+    "debug_apk_sha256": "8fa3d49ba45201b6d8efee55f7ff4724756e9a3b2ce99e2287044226083aaa9b",
+    "release_aab_sha256": "e1a7df202581a4660edeef2e324cc608f85bdba595f2fb3f26b61e223656fff0",
+    "debug_apk_bytes": 14787102,
+    "release_aab_bytes": 13638076,
+    "android_unit_tests": "7/7 PASS",
+    "source_contract_tests": "12/12 PASS",
+    "product_read_only_tests": "11/11 PASS",
+    "backend_tests": "8/8 PASS",
+    "appdeploy_typescript_strict_no_emit": "PASS_TYPESCRIPT_5_9_3",
+    "lint": "0 errors, 2 GradleDependency warnings",
+    "cleartext": false,
+    "backup_and_device_transfer": "ALL_APP_DATA_EXCLUDED",
+    "offline_exercises": 80,
+    "offline_programs": 26,
+    "offline_demo_images": 160,
+    "stage16a_entries": 0,
+    "debuggable": true,
+    "production_signing": "NOT_RUN_MISSING_ALL_FOUR_EXISTING_SECRETS",
+    "backend_endpoint": "CONFIGURED_HTTPS_API_GATEWAY",
+    "backend_endpoint_value": "https://api-v2.appdeploy.ai/app/thf-fitness-pulse-ul26f1/",
+    "privacy_and_deletion_entrypoints": "PASS_SOURCE_AND_PACKAGE_BUILD_LIVE_WEB_UPDATE_PENDING"
+  },
+  "completed_items": [
+    "Built API 36 debug APK and release AAB from the exact candidate SHA",
+    "Verified package identity, versionCode, compile/target SDK, launch activity and least-privilege Health permissions",
+    "Bundled 80 exercises, 26 programs and 160 offline demo images with no Stage16A payload",
+    "Added offline/version-aware local history, Health and backend queues with corrupt-state recovery",
+    "Added resume-time permission refresh and pending Health/backend queue handling",
+    "Blocked WebView network loads and cleartext traffic",
+    "Added Arabic and English Health permission rationale resources and fail-closed backup/device-transfer rules",
+    "Implemented the external-browser PKCE account handoff without storing browser cookies or native access tokens",
+    "Added visible Arabic/English Profile actions for privacy policy and account-data deletion through an allowlisted persistent HTTPS browser boundary",
+    "Added source-ready public privacy and account-deletion pages that disclose on-device Health Connect processing, optional HTTPS workout sync and the external identity-deletion limitation"
+  ],
+  "blockers": [
+    "The exact release AAB is unsigned because all four existing upload-signing secrets were unavailable to the workflow.",
+    "Digital Asset Links returns HTTP 403 and cannot be finalized until the actual release signing certificate fingerprint is available.",
+    "The new privacy/deletion web pages and V2 data-deletion route are source-ready but not live because AppDeploy deployment quota is exhausted until 2026-10-04T00:00:00Z.",
+    "The browser connection screen and fail-closed live API routes are verified, but a complete authenticated ticket exchange, workout sync and deletion roundtrip has not been run with a disposable non-privileged QA identity.",
+    "No adb, emulator, or physical phone was available, so install, launch, background/resume, offline workout and Health Connect runtime gates remain open.",
+    "Samsung Health-originated activity and Play Internal were not tested for versionCode 51003."
+  ],
+  "next_action": "Deploy exact candidate d79c9c621dab30748e0779bd5a5fc35e385593d5 after quota reset, verify privacy/deletion and authenticated sync with a disposable account, then make the existing four upload-signing secrets available, publish certificate-correct Digital Asset Links, build one signed 51003 AAB and run exact-artifact physical Health Connect/Samsung-origin QA before Play Internal.",
+  "updated_at": "2026-10-03T18:50:06Z"
+}

@@ -1,0 +1,29 @@
+THF FITNESS STANDALONE V5 RC1 — LOCAL VALIDATION
+Date: 2026-09-18
+
+PASS
+- Python compile
+- pytest 18/18
+- Local registration/login/logout/api-me
+- OAuth contract fails closed when production credentials are absent
+- Android OAuth bridge implemented: external system browser + one-time app ticket
+- Android targetSdk 36
+- Android applicationId com.topherofit.thf.pulse
+- Android versionCode 50000 / versionName 5.0.0-standalone-rc1
+- Canonical Stage16A avatar SHA-256 verified
+- Canonical avatar: 137 joints / 195 animation clips
+- Embedded animation clips used where semantically mapped; semantic driver retained for unmapped exercises pending visual QA
+
+CANONICAL SOURCE
+- Drive file ID: 1B3EqAcVP8W5kzwWRZVU_jfs9DWgPHhQd
+- Source SHA-256: 1c954707116264326ea11e60c8ba2f07a478783b4b274fbbf436cf61556a3867
+- Source size: 20147072 bytes
+- Avatar SHA-256: 4f556086e1b7149f6c958f1f399f4368f6ad9b76afd3503d6f848eeeb7bea24f
+- Source shared read-only with thf-release-builder service account for reproducible CI
+
+NOT YET CLAIMED
+- Production OAuth live callback
+- Production Web deployment
+- V5 physical Android device runtime
+- Production-signed AAB
+- Google Play Internal upload

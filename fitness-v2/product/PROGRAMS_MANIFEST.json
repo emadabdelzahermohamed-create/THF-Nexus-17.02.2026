@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "programCount": 26,
+  "sectionCounts": {
+    "boxing": 2,
+    "calisthenics": 2,
+    "cycling": 2,
+    "football": 2,
+    "gym": 2,
+    "hiit": 2,
+    "home": 2,
+    "mobility": 2,
+    "recovery": 2,
+    "running": 2,
+    "swimming": 2,
+    "team_sports": 2,
+    "yoga": 2
+  },
+  "programsSha256": "246d82384809e2adb6b444b6da89c71ee1dda38cce09e28df840bec3b76cad3b",
+  "source": {
+    "programMetadata": "Top Hero Fit Fitness V2 editorial composition",
+    "programMetadataLicense": "THF-owned original",
+    "exerciseCatalogRepository": "yuhonas/free-exercise-db",
+    "exerciseCatalogCommit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+    "exerciseCatalogLicense": "Unlicense"
+  }
+}

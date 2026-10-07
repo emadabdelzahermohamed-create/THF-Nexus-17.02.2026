@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Top Hero Fit</string>
+    <string name="health_permissions_rationale">Top Hero Fit and Health Connect\n\nWe read steps, exercise sessions, distance, and active calories only for your activity summary. Completed THF workouts can be written to Health Connect. Heart rate, sleep, and weight are not requested in this version.\n\nYou may deny or revoke any permission later in Health Connect settings. Offline workout logging continues to work.</string>
+</resources>
