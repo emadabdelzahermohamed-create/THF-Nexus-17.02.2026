@@ -137,13 +137,15 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertIn("motionManifest", script)
         self.assertIn("video.play()", script)
 
-        squat = manifest["bodyweight-squat"]
-        self.assertEqual("verified_frame_sequence", squat["kind"])
-        self.assertEqual(16, squat["sourceFrameCount"])
-        self.assertEqual(8, squat["fps"])
-        video_path = PULSE / squat["asset"]
-        self.assertTrue(video_path.is_file())
-        self.assertEqual(squat["sha256"], sha256(video_path))
+        self.assertEqual({"bodyweight-squat", "pushups"}, set(manifest))
+        for exercise_id, motion in manifest.items():
+            with self.subTest(exercise_id=exercise_id):
+                self.assertEqual("verified_frame_sequence", motion["kind"])
+                self.assertEqual(16, motion["sourceFrameCount"])
+                self.assertEqual(8, motion["fps"])
+                video_path = PULSE / motion["asset"]
+                self.assertTrue(video_path.is_file())
+                self.assertEqual(motion["sha256"], sha256(video_path))
 
     def test_program_library_replaces_legacy_baseline_across_every_section(self):
         expected = {
