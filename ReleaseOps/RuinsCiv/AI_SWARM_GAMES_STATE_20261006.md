@@ -1,30 +1,45 @@
-# RuinsCiv — AI Swarm Games State (2026-10-06)
+# RuinsCiv — AI Swarm Games State
 
 ## Canonical execution baseline
-- Lane branch: `agent/gpt-games/ruinsciv-20261006`
 - Base branch: `automation/ruinsciv-android-qa-20260922`
-- Verified base SHA: `4d009d73ce3031266e5658b8c924178c804c1f1b`
-- Base commit states: **source recovery and Android QA provenance gates are green**; QA-only signing boundary is preserved; physical-device evidence remains pending.
-- Engine/package contract: Godot 4.7.2, Android API 36, arm64-v8a, QA package `com.topherofit.ruins.civ.phoneqa`.
+- Exact tested source SHA: `4d009d73ce3031266e5658b8c924178c804c1f1b`
+- Reconciliation merge SHA: `f45fe77aa77c5ce1bfc1f47e72a0f5db4baaa792`
+- Engine/package contract retained: Godot 4.7.2, Android API 36, arm64-v8a, QA package `com.topherofit.ruins.civ.phoneqa`.
+- Source recovery / Android packaging provenance already passed for this exact SHA and MUST NOT be rerun merely because runtime failed.
 
-## Reconciliation versus stale main backlog
-`main:ReleaseOps/RuinsCiv/RUINSCIV_UNIFIED_BACKLOG_V1_20260918.json` predates the 2026-09-22 verified QA/provenance merge. Therefore do **not** repeat P0 source-recovery/provenance work that is already proven green at SHA `4d009d73...`.
+## 2026-10-07 physical Android evidence — release rejection
+The exact QA candidate was installed and opened on a physical Android phone. This converts the previously pending runtime/visual gate into an evidence-backed FAIL while preserving the already-proven packaging PASS.
+
+Observed evidence supplied from the phone:
+- install/boot: PASS;
+- registration/login: FAIL / non-functional;
+- local exploration: renders an effectively empty terrain/sky scene rather than the required populated RuinsCiv social world;
+- player locomotion: FAIL — camera responds but the character does not provide usable player movement;
+- camera UX: FAIL — no acceptable explicit mobile camera/control scheme;
+- avatar/rig: FAIL — visible head/rig instability and unacceptable human visual quality;
+- world/content visibility: FAIL — social world, community presence, farm, fishing and mission loops are not presented as a retention-ready experience.
+
+The candidate is therefore **REJECTED FOR RELEASE**. Do not upload it to Play and do not treat build/package success as gameplay success.
 
 ## Current gates
 | Gate | State | Evidence / boundary |
 |---|---|---|
-| Source recovery / provenance | PASS | verified in base commit `4d009d73...` |
-| Android QA provenance | PASS | verified in base commit `4d009d73...` |
-| Production signing | NOT CLAIMED | QA-only ephemeral signing boundary; no production key access |
-| Physical Android runtime | PENDING | install/boot/touch/camera/movement/GPU/FPS/RAM/thermal evidence required |
-| Visual/avatar runtime | PENDING EVIDENCE | metadata/asset presence alone is not visual PASS |
-| Production / Play | NOT CLAIMED | blocked behind exact-candidate runtime + production signing/release gates |
+| Source recovery / provenance | PASS (retain) | exact SHA `4d009d73...`; do not redo |
+| Android API36 / arm64 QA packaging | PASS (retain) | exact SHA `4d009d73...`; QA-only signing boundary |
+| Physical install / boot | PASS | physical phone evidence 2026-10-07 |
+| Auth usable journey | FAIL | registration/login non-functional |
+| Player locomotion / mobile controls | FAIL | character movement unavailable in observed runtime |
+| Camera UX | FAIL | camera-only interaction is not acceptable gameplay control |
+| Avatar / rig visual | FAIL | unstable/low-quality human presentation |
+| World / retention loop | FAIL | empty world; required social/farm/fishing/mission experience not surfaced |
+| Production / Play | BLOCKED | rejected runtime; no production signing/release claim |
+
+## Product boundary
+RuinsCiv remains the social-world + farm + fishing + missions/community product. Do not import EndCiv combat/LAN requirements as a substitute for repairing RuinsCiv. Do not solve this gate with placeholder geometry, prototype button-only farms, or a speculative second game.
 
 ## P0 next task
-Obtain exact-candidate physical Android runtime evidence for the already-proven QA lineage. Validate install, boot, touch controls, camera, locomotion, representative animation transitions, avatar/world rendering, GPU/FPS/RAM/thermal behavior, background/resume and crash-free core journey. Do not churn versions or rebuild provenance unless the exact candidate/source changes.
+Trace the recovered RC34-or-better `project.godot` and `native/world/WorldMain.gd` composition to determine why packaged world/avatar assets are not instantiated into the tested runtime and why player locomotion/auth surfaces are unusable. Make the smallest evidence-backed RuinsCiv-only correction on an agent branch, then build one new API36/arm64 QA candidate and require physical A/B evidence.
 
-## Visual/motion acceptance
-The candidate must retain the approved modern MPFB/MakeHuman lineage (137+ joints / 195+ clips where applicable), exclude `thf_humanoid_v1..v6` from active export, and provide runtime evidence for clean idle/walk/run/action blending, foot-contact/anti-sliding behavior where supported, usable camera framing, coherent PBR/lighting/shadows/weather, and representative mobile performance. A file inventory is necessary but not sufficient for PASS.
-
-## Blocker policy
-If no authorized physical Android device is reachable, record **PHYSICAL_DEVICE_EVIDENCE_PENDING** once and move to the next independent release-critical game task. Do not weaken the gate and do not substitute emulator/static metadata for phone evidence.
+## Dedup / spend guard
+Task key: `RUINSCIV-PHYSICAL-RUNTIME-FAIL+4d009d73ce3031266e5658b8c924178c804c1f1b`.
+This task is complete as evidence capture. Never repeat it for the same SHA. No billing, purchase, production signing, Play upload, or release/main merge is authorized by this checkpoint.
