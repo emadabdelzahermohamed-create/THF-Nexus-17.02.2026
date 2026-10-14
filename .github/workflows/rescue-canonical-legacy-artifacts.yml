@@ -1,0 +1,152 @@
+name: Rescue Canonical Legacy Artifacts
+on:
+  push:
+    branches: ['rescue/one-day-mobile-20261014']
+    paths:
+      - '.github/workflows/rescue-canonical-legacy-artifacts.yml'
+      - 'ReleaseOps/RESCUE_CANONICAL_TRIGGER.txt'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: rescue-canonical-legacy-artifacts
+  cancel-in-progress: true
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  canonical-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Fetch and SHA-verify canonical source bundles
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p exact evidence
+          cat > specs <<'EOF'
+          Forge THF_Forge_PHONE_FUNDAMENTALS_SRC3.zip 1Fdx6knYWGLAQ7dYnDH5dGu-j8qF32A6E 75c3744af31f16273a174bdac53b9e812613e4d9ef8c2fa260521c7f7c40cbf8
+          Echo THF_Echo_PHONE_FUNDAMENTALS_SRC3.zip 1YnRTB_CSUwd7q6myLKkG2Pi_3qJ_A3Vw 3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9
+          Codex THF_Codex_PHONE_FUNDAMENTALS_SRC3.zip 1wHhUcCZKvUmxIFOkzSFwqc8QDslW2brn 44ff76cca12b6b13febc53e9e0b8748a01949eb07c40b020d76b82f45a094950
+          Vault THF_Vault_PHONE_FUNDAMENTALS_SRC3.zip 1gqG6UVCA4CkpEJpF7fDO5kq2kF-o6cJ7 e33c7c7f1f6d7f913dfe6ca5d674aff2883f7a230c2a323724088c30c4497585
+          Signal THF_Signal_PHONE_FUNDAMENTALS_SRC3.zip 10qPO33KG8lL7KWKmoRO2nxJDZSj4eSw4 3b6ba96076decd62e31a90c60d91a101806d6a6e9be329a58baa55ece82227ef
+          Command THF_Command_PHONE_FUNDAMENTALS_SRC3.zip 1JtABZ7SNGuJ5jKoYc2xlj5f2nSvdBs2y 314a89f33f62d754edc9cc369fcc35b019d6081c6be0dcfbffa0fe5801ce0ffc
+          EOF
+          token=$(gcloud auth print-access-token)
+          : > evidence/source-verification.txt
+          while read -r app name id want; do
+            code=$(curl -sS -L --retry 2 --connect-timeout 15 -o "exact/$name" -w '%{http_code}' -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" || true)
+            echo "$app drive_http=$code" | tee -a evidence/source-verification.txt
+            test "$code" = 200
+            got=$(sha256sum "exact/$name" | awk '{print $1}')
+            echo "$app expected=$want actual=$got" | tee -a evidence/source-verification.txt
+            test "$got" = "$want"
+            unzip -tq "exact/$name" >/dev/null
+          done < specs
+      - name: Build canonical bundles on isolated Android builder
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          REMOTE=/tmp/thf_canonical_rescue
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command="rm -rf $REMOTE && mkdir -p $REMOTE/input $REMOTE/work $REMOTE/out/artifacts"
+          gcloud compute scp exact/*.zip "$GCP_BUILDER:$REMOTE/input/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='bash -s' <<'REMOTE_SCRIPT'
+          set -Eeuo pipefail
+          ROOT=/tmp/thf_canonical_rescue
+          : > "$ROOT/out/build-report.txt"
+          shopt -s nullglob
+          for zip in "$ROOT"/input/*.zip; do
+            name=$(basename "$zip")
+            app=${name#THF_}; app=${app%%_PHONE_*}
+            work="$ROOT/work/$app"
+            out="$ROOT/out/artifacts/$app"
+            mkdir -p "$work" "$out"
+            unzip -q "$zip" -d "$work"
+            echo "=== $app ===" | tee -a "$ROOT/out/build-report.txt"
+            echo "SOURCE_SHA256=$(sha256sum "$zip" | awk '{print $1}')" | tee -a "$ROOT/out/build-report.txt"
+            wrapper=$(find "$work" -type f -name gradlew -print -quit || true)
+            build=$(find "$work" -type f \( -name build.gradle -o -name build.gradle.kts \) -print -quit || true)
+            status=NO_BUILD_ENTRYPOINT
+            if [ -n "$wrapper" ]; then
+              project=$(dirname "$wrapper")
+              cd "$project"
+              chmod +x ./gradlew
+              if ./gradlew --no-daemon test assembleDebug; then status=BUILD_OK; else status=BUILD_FAILED; fi
+            elif [ -n "$build" ] && command -v gradle >/dev/null 2>&1; then
+              project=$(dirname "$build")
+              cd "$project"
+              if gradle --no-daemon test assembleDebug; then status=BUILD_OK; else status=BUILD_FAILED; fi
+            fi
+            find "$work" -type f \( -name '*.apk' -o -name '*.aab' \) -print0 | while IFS= read -r -d '' f; do cp "$f" "$out/$(basename "$f")"; done
+            count=$(find "$out" -type f \( -name '*.apk' -o -name '*.aab' \) | wc -l)
+            echo "STATUS=$status OUTPUTS=$count" | tee -a "$ROOT/out/build-report.txt"
+            find "$out" -type f -maxdepth 1 -print0 | sort -z | xargs -0 -r sha256sum | tee -a "$ROOT/out/build-report.txt"
+          done
+          cd "$ROOT/out"
+          tar -czf canonical-artifacts.tgz artifacts build-report.txt
+          REMOTE_SCRIPT
+          gcloud compute scp "$GCP_BUILDER:$REMOTE/out/canonical-artifacts.tgz" canonical-artifacts.tgz --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          mkdir -p canonical-out
+          tar -xzf canonical-artifacts.tgz -C canonical-out
+          cp canonical-out/build-report.txt evidence/build-report.txt
+      - name: Verify every recovered Android artifact
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -perm -u+x | head -n1 || true)
+          if [[ ! -x "$ANDROID_HOME/build-tools/36.0.0/aapt" ]]; then
+            test -n "$SDKMANAGER"
+            yes | "$SDKMANAGER" --licenses >/dev/null || true
+            "$SDKMANAGER" 'build-tools;36.0.0' 'platform-tools'
+          fi
+          : > evidence/artifact-verification.txt
+          outputs=0
+          while IFS= read -r -d '' file; do
+            outputs=$((outputs+1))
+            sha=$(sha256sum "$file" | awk '{print $1}')
+            case "$file" in
+              *.apk)
+                badging=$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$file")
+                package=$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" <<<"$badging" | head -n1)
+                launcher=$(sed -n "s/^launchable-activity: name='\([^']*\)'.*/\1/p" <<<"$badging" | head -n1)
+                test -n "$package"
+                test -n "$launcher"
+                echo "APK file=$file package=$package launcher=$launcher sha256=$sha" | tee -a evidence/artifact-verification.txt
+                ;;
+              *.aab)
+                unzip -tq "$file" >/dev/null
+                echo "AAB file=$file sha256=$sha" | tee -a evidence/artifact-verification.txt
+                ;;
+            esac
+          done < <(find canonical-out/artifacts -type f \( -name '*.apk' -o -name '*.aab' \) -print0)
+          echo "TOTAL_OUTPUTS=$outputs" | tee -a evidence/artifact-verification.txt
+          test "$outputs" -gt 0
+      - name: Preserve recovered canonical apps
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: THF-canonical-legacy-android-artifacts
+          path: |
+            canonical-out/artifacts/
+            evidence/
+          if-no-files-found: warn
+          retention-days: 30
