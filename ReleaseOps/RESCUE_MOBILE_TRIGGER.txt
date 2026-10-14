@@ -1,0 +1,1 @@
+THF mobile rescue rerun: verify Drive API self-heal, canonical source access, Android builds, launchability, checksums, and preserved 9-APK baseline.
