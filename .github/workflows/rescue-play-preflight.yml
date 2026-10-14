@@ -1,0 +1,110 @@
+name: Rescue Play Authorization Preflight
+on:
+  push:
+    branches: ['rescue/one-day-mobile-20261014']
+    paths:
+      - '.github/workflows/rescue-play-preflight.yml'
+      - 'ReleaseOps/RESCUE_PLAY_PREFLIGHT_TRIGGER.txt'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  play-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+      GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+      GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+      PLAY_DEVELOPER_ID: '5937604320603496856'
+    steps:
+      - uses: actions/checkout@v5
+        with: {persist-credentials: false}
+      - id: cloud-auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Ensure Android Publisher API is enabled
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if ! gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name:androidpublisher.googleapis.com' --format='value(config.name)' | grep -qx 'androidpublisher.googleapis.com'; then
+            gcloud services enable androidpublisher.googleapis.com --project "$GCP_PROJECT_ID"
+          fi
+          gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name:androidpublisher.googleapis.com' --format='value(config.name)' | grep -qx 'androidpublisher.googleapis.com'
+      - id: play-auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+      - name: Read-only Play permission probe
+        shell: bash
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.play-auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$PLAY_ACCESS_TOKEN"
+          code=$(curl -sS --connect-timeout 15 -o play-users.json -w '%{http_code}' \
+            -H "Authorization: Bearer $PLAY_ACCESS_TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/developers/${PLAY_DEVELOPER_ID}/users?pageSize=-1" || true)
+          export PLAY_HTTP_CODE="$code"
+          python3 - <<'PY'
+          import json, os
+          code=os.environ['PLAY_HTTP_CODE']
+          target=os.environ['GCP_SERVICE_ACCOUNT']
+          out=[f'HTTP={code}']
+          try:
+              data=json.load(open('play-users.json','r',encoding='utf-8'))
+          except Exception:
+              data={}
+          if code == '200':
+              users=data.get('users') or []
+              me=next((u for u in users if u.get('email') == target), None)
+              if not me:
+                  out.append('RESULT=SERVICE_ACCOUNT_NOT_REGISTERED_IN_PLAY')
+              else:
+                  perms=set(me.get('developerAccountPermissions') or [])
+                  grants=me.get('grants') or []
+                  track_global=('CAN_MANAGE_TRACK_APKS_GLOBAL' in perms or 'CAN_MANAGE_PERMISSIONS_GLOBAL' in perms)
+                  public_global=('CAN_MANAGE_PUBLIC_APKS_GLOBAL' in perms or 'CAN_MANAGE_PERMISSIONS_GLOBAL' in perms)
+                  track_apps=[]
+                  public_apps=[]
+                  for grant in grants:
+                      gp=set(grant.get('appLevelPermissions') or [])
+                      pkg=grant.get('packageName') or 'DRAFT_APP'
+                      if 'CAN_MANAGE_TRACK_APKS' in gp or 'CAN_MANAGE_PERMISSIONS' in gp: track_apps.append(pkg)
+                      if 'CAN_MANAGE_PUBLIC_APKS' in gp or 'CAN_MANAGE_PERMISSIONS' in gp: public_apps.append(pkg)
+                  out += [
+                      'RESULT=ACCESS_FOUND',
+                      f"ACCESS_STATE={me.get('accessState','UNKNOWN')}",
+                      f'TRACK_GLOBAL={str(track_global).lower()}',
+                      f'PUBLIC_GLOBAL={str(public_global).lower()}',
+                      f'TRACK_APP_GRANTS={len(track_apps)}',
+                      f'PUBLIC_APP_GRANTS={len(public_apps)}',
+                  ]
+                  for pkg in sorted(track_apps): out.append(f'TRACK_APP={pkg}')
+                  for pkg in sorted(public_apps): out.append(f'PUBLIC_APP={pkg}')
+          else:
+              err=data.get('error') or {}
+              out += [
+                  'RESULT=PLAY_API_ACCESS_DENIED_OR_UNAVAILABLE',
+                  f"ERROR_STATUS={err.get('status','UNKNOWN')}",
+                  f"ERROR_CODE={err.get('code',code)}",
+                  f"ERROR_MESSAGE={str(err.get('message',''))[:240]}",
+              ]
+          open('play-preflight.txt','w',encoding='utf-8').write('\n'.join(out)+'\n')
+          print('\n'.join(out))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: THF-play-authorization-preflight
+          path: play-preflight.txt
+          if-no-files-found: warn
+          retention-days: 30
