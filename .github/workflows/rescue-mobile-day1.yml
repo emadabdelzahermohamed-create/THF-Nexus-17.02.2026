@@ -74,11 +74,15 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-java@v5
         with: {distribution: temurin, java-version: '17'}
-      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+      - id: gcp-auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
+          token_format: access_token
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
+          access_token_scopes: |
+            https://www.googleapis.com/auth/cloud-platform
+            https://www.googleapis.com/auth/drive.readonly
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
       - name: Self-heal Google Drive API
@@ -105,8 +109,11 @@ jobs:
           "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
       - name: Fetch exact canonical sources
         shell: bash
+        env:
+          DRIVE_ACCESS_TOKEN: ${{ steps.gcp-auth.outputs.access_token }}
         run: |
           set -Eeuo pipefail
+          test -n "$DRIVE_ACCESS_TOKEN"
           mkdir -p canonical-input canonical-work canonical-out evidence
           cat > specs <<'EOF'
           Forge THF_Forge_PHONE_FUNDAMENTALS_SRC3.zip 1Fdx6knYWGLAQ7dYnDH5dGu-j8qF32A6E 75c3744af31f16273a174bdac53b9e812613e4d9ef8c2fa260521c7f7c40cbf8
@@ -116,10 +123,9 @@ jobs:
           Signal THF_Signal_PHONE_FUNDAMENTALS_SRC3.zip 10qPO33KG8lL7KWKmoRO2nxJDZSj4eSw4 3b6ba96076decd62e31a90c60d91a101806d6a6e9be329a58baa55ece82227ef
           Command THF_Command_PHONE_FUNDAMENTALS_SRC3.zip 1JtABZ7SNGuJ5jKoYc2xlj5f2nSvdBs2y 314a89f33f62d754edc9cc369fcc35b019d6081c6be0dcfbffa0fe5801ce0ffc
           EOF
-          token=$(gcloud auth print-access-token)
           : > evidence/source-verification.txt
           while read -r app name id want; do
-            code=$(curl -sS -L --retry 2 --connect-timeout 15 -o "canonical-input/$name" -w '%{http_code}' -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" || true)
+            code=$(curl -sS -L --retry 2 --connect-timeout 15 -o "canonical-input/$name" -w '%{http_code}' -H "Authorization: Bearer $DRIVE_ACCESS_TOKEN" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" || true)
             got=$(sha256sum "canonical-input/$name" | awk '{print $1}')
             echo "$app http=$code expected=$want actual=$got" | tee -a evidence/source-verification.txt
             if [[ "$code" != 200 ]]; then
