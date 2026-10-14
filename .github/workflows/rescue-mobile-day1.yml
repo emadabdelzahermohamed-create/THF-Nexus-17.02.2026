@@ -66,6 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
+      GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
       GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
       GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
     steps:
@@ -79,6 +80,19 @@ jobs:
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
           access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Self-heal Google Drive API
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name:drive.googleapis.com' --format='value(config.name)' | grep -qx 'drive.googleapis.com'; then
+            echo 'drive_api=ENABLED'
+          else
+            echo 'drive_api=DISABLED; attempting enable'
+            gcloud services enable drive.googleapis.com --project "$GCP_PROJECT_ID"
+            gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name:drive.googleapis.com' --format='value(config.name)' | grep -qx 'drive.googleapis.com'
+            echo 'drive_api=ENABLED_AFTER_REPAIR'
+          fi
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.13'}
       - name: Prove Android build tools
@@ -108,7 +122,11 @@ jobs:
             code=$(curl -sS -L --retry 2 --connect-timeout 15 -o "canonical-input/$name" -w '%{http_code}' -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" || true)
             got=$(sha256sum "canonical-input/$name" | awk '{print $1}')
             echo "$app http=$code expected=$want actual=$got" | tee -a evidence/source-verification.txt
-            test "$code" = 200
+            if [[ "$code" != 200 ]]; then
+              echo "Google Drive response for $app:" >&2
+              cat "canonical-input/$name" >&2 || true
+              exit 41
+            fi
             test "$got" = "$want"
             unzip -tq "canonical-input/$name" >/dev/null
           done < specs
