@@ -1,0 +1,47 @@
+name: Rescue Signing Metadata Preflight
+on:
+  push:
+    branches: ['rescue/one-day-mobile-20261014']
+    paths:
+      - '.github/workflows/rescue-signing-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  signing-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+      GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+      GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+    steps:
+      - uses: actions/checkout@v5
+        with: {persist-credentials: false}
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: List signing-related metadata only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : > signing-preflight.txt
+          echo '[Secret Manager names]' >> signing-preflight.txt
+          gcloud services enable secretmanager.googleapis.com --project "$GCP_PROJECT_ID" >/dev/null 2>&1 || true
+          gcloud secrets list --project "$GCP_PROJECT_ID" --format='value(name)' 2>/dev/null | grep -Ei 'android|play|sign|keystore|upload|jks|thf' >> signing-preflight.txt || true
+          echo '[KMS key metadata]' >> signing-preflight.txt
+          gcloud services enable cloudkms.googleapis.com --project "$GCP_PROJECT_ID" >/dev/null 2>&1 || true
+          for loc in global europe-west1 us-central1; do
+            gcloud kms keyrings list --project "$GCP_PROJECT_ID" --location "$loc" --format='value(name)' 2>/dev/null | grep -Ei 'android|play|sign|keystore|upload|thf' >> signing-preflight.txt || true
+          done
+          if [[ $(wc -l < signing-preflight.txt) -le 2 ]]; then echo 'NO_SIGNING_METADATA_FOUND' >> signing-preflight.txt; fi
+          cat signing-preflight.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THF-signing-metadata-preflight
+          path: signing-preflight.txt
+          retention-days: 30
