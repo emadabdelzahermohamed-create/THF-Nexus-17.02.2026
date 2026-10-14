@@ -1,0 +1,57 @@
+name: Rescue Play Package Probe
+on:
+  push:
+    branches: ['rescue/one-day-mobile-20261014']
+    paths: ['.github/workflows/rescue-play-package-probe.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+      GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+    steps:
+      - uses: actions/checkout@v5
+        with: {persist-credentials: false}
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+      - name: Probe packages with disposable edits
+        shell: bash
+        env:
+          PLAY_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -Eeuo pipefail
+          : > play-package-probe.txt
+          for pkg in \
+            com.topherofit.thf.forge \
+            com.topherofit.thf.echo \
+            com.topherofit.thf.codex \
+            com.topherofit.thf.vault \
+            com.topherofit.thf.signal \
+            com.topherofit.thf.command; do
+            body=$(mktemp)
+            code=$(curl -sS -o "$body" -w '%{http_code}' -X POST -H "Authorization: Bearer $PLAY_TOKEN" -H 'Content-Type: application/json' -d '{}' "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$pkg/edits" || true)
+            if [[ "$code" = 200 ]]; then
+              edit=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("id",""))' "$body")
+              echo "$pkg EXISTS edit=$edit" | tee -a play-package-probe.txt
+              if [[ -n "$edit" ]]; then curl -sS -X DELETE -H "Authorization: Bearer $PLAY_TOKEN" "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$pkg/edits/$edit" >/dev/null || true; fi
+            else
+              msg=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print((d.get("error") or {}).get("message",""))' "$body" 2>/dev/null || true)
+              echo "$pkg HTTP=$code ${msg:0:180}" | tee -a play-package-probe.txt
+            fi
+            rm -f "$body"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THF-play-package-probe
+          path: play-package-probe.txt
+          retention-days: 30
