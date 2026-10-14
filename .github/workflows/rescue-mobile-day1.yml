@@ -1,0 +1,44 @@
+name: One Day Mobile Rescue
+on:
+  push:
+    branches: ['rescue/one-day-mobile-20261014']
+    paths:
+      - 'rescue-mobile/**'
+      - '.github/workflows/rescue-mobile-day1.yml'
+      - 'ReleaseOps/RESCUE_MOBILE_TRIGGER.txt'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+      - name: Install SDK 36
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with: {gradle-version: '8.13'}
+      - name: Unit tests
+        working-directory: rescue-mobile
+        run: gradle --no-daemon :app:testHubDebugUnitTest
+      - name: Build all phone-test APKs
+        working-directory: rescue-mobile
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Verify expected APK count and checksums
+        run: |
+          set -Eeuo pipefail
+          mkdir -p phone-test
+          find rescue-mobile/app/build/outputs/apk -type f -name '*.apk' -exec cp {} phone-test/ \;
+          count=$(find phone-test -maxdepth 1 -name '*.apk' | wc -l)
+          test "$count" -eq 9
+          (cd phone-test && sha256sum *.apk > SHA256SUMS.txt)
+          cat phone-test/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THF-one-day-mobile-rescue-phone-test
+          path: phone-test/
+          retention-days: 30

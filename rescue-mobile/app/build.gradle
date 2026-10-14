@@ -1,0 +1,33 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.topherofit.rescue'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.topherofit.rescue'
+        minSdk 23
+        targetSdk 36
+        versionCode 1
+        versionName '1.0-rescue1'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    flavorDimensions += 'product'
+    productFlavors {
+        hub { dimension 'product'; applicationId 'com.topherofit.thf.core'; buildConfigField 'String','PRODUCT_KEY','"hub"'; resValue 'string','app_name','THF Hub' }
+        fitness { dimension 'product'; applicationId 'com.topherofit.thf.pulse'; buildConfigField 'String','PRODUCT_KEY','"fitness"'; resValue 'string','app_name','THF Fitness' }
+        wave { dimension 'product'; applicationId 'com.topherofit.wave'; buildConfigField 'String','PRODUCT_KEY','"wave"'; resValue 'string','app_name','WAVE MAWJA' }
+        arena { dimension 'product'; applicationId 'com.topherofit.arena'; buildConfigField 'String','PRODUCT_KEY','"arena"'; resValue 'string','app_name','Arena' }
+        ruinsciv { dimension 'product'; applicationId 'com.topherofit.ruinsciv'; buildConfigField 'String','PRODUCT_KEY','"ruinsciv"'; resValue 'string','app_name','RuinsCiv' }
+        endciv { dimension 'product'; applicationId 'com.topherofit.endciv'; buildConfigField 'String','PRODUCT_KEY','"endciv"'; resValue 'string','app_name','EndCiv' }
+        tokenops { dimension 'product'; applicationId 'com.topherofit.tokenops'; buildConfigField 'String','PRODUCT_KEY','"tokenops"'; resValue 'string','app_name','THF TokenOps' }
+        publisher { dimension 'product'; applicationId 'com.topherofit.publisher'; buildConfigField 'String','PRODUCT_KEY','"publisher"'; resValue 'string','app_name','THF Publisher' }
+        vault { dimension 'product'; applicationId 'com.topherofit.thf.vault'; buildConfigField 'String','PRODUCT_KEY','"vault"'; resValue 'string','app_name','THF Vault' }
+    }
+
+    buildFeatures { buildConfig true }
+    testOptions { unitTests.returnDefaultValues = true }
+}
+
+dependencies { testImplementation 'junit:junit:4.13.2' }
