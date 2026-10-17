@@ -3,7 +3,8 @@ set -Eeuo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: fitness_phone_qa.sh --apk PATH [--serial SERIAL] [--expected-sha256 HEX] [--record-seconds N]
+Usage: fitness_phone_qa.sh --apk PATH [--serial SERIAL] [--expected-sha256 HEX]
+       [--record-seconds N] [--monkey-events N] [--instrumentation PACKAGE/RUNNER]
 
 Runs a fail-closed physical-phone QA evidence pass for Top Hero Fit Fitness V2.
 The phone must already be authorized in `adb devices`; this script never pairs a device.
@@ -14,6 +15,8 @@ APK=""
 SERIAL=""
 EXPECTED_SHA=""
 RECORD_SECONDS=30
+MONKEY_EVENTS=50
+INSTRUMENTATION=""
 PACKAGE="com.topherofit.thf.pulse"
 REQUIRED_TARGET_SDK=36
 REQUIRED_ABI="arm64-v8a"
@@ -24,6 +27,8 @@ while (($#)); do
     --serial) SERIAL="${2:?missing --serial value}"; shift 2 ;;
     --expected-sha256) EXPECTED_SHA="${2:?missing --expected-sha256 value}"; shift 2 ;;
     --record-seconds) RECORD_SECONDS="${2:?missing --record-seconds value}"; shift 2 ;;
+    --monkey-events) MONKEY_EVENTS="${2:?missing --monkey-events value}"; shift 2 ;;
+    --instrumentation) INSTRUMENTATION="${2:?missing --instrumentation value}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -32,6 +37,9 @@ done
 [[ -f "$APK" ]] || { echo "APK not found: $APK" >&2; exit 3; }
 [[ "$RECORD_SECONDS" =~ ^[0-9]+$ ]] && (( RECORD_SECONDS >= 5 && RECORD_SECONDS <= 180 )) || {
   echo "--record-seconds must be 5..180" >&2; exit 4;
+}
+[[ "$MONKEY_EVENTS" =~ ^[0-9]+$ ]] && (( MONKEY_EVENTS >= 0 && MONKEY_EVENTS <= 500 )) || {
+  echo "--monkey-events must be 0..500" >&2; exit 4;
 }
 for cmd in adb sha256sum unzip awk sed grep date; do
   command -v "$cmd" >/dev/null || { echo "Missing command: $cmd" >&2; exit 5; }
@@ -102,20 +110,42 @@ grep -Eq 'versionCode=[0-9]+' "$OUT/package.txt" || {
 "${ADB[@]}" shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 | tee "$OUT/launch.txt"
 sleep 5
 "${ADB[@]}" exec-out screencap -p > "$OUT/01_boot.png"
+"${ADB[@]}" shell uiautomator dump /sdcard/thf-fitness-boot.xml >/dev/null
+"${ADB[@]}" pull /sdcard/thf-fitness-boot.xml "$OUT/01_boot_ui.xml" >/dev/null
+"${ADB[@]}" shell rm -f /sdcard/thf-fitness-boot.xml
 "${ADB[@]}" shell dumpsys window windows > "$OUT/window_boot.txt"
 "${ADB[@]}" shell dumpsys activity activities > "$OUT/activity_boot.txt"
+
+if [[ -n "$INSTRUMENTATION" ]]; then
+  "${ADB[@]}" shell am instrument -w "$INSTRUMENTATION" | tee "$OUT/instrumentation.txt"
+  grep -Eq 'OK \([0-9]+ test[s]?\)' "$OUT/instrumentation.txt" || {
+    echo "FAIL: instrumentation did not report an OK result" >&2; exit 14
+  }
+fi
+
+if (( MONKEY_EVENTS > 0 )); then
+  "${ADB[@]}" shell monkey -p "$PACKAGE" --throttle 150 --pct-syskeys 0 "$MONKEY_EVENTS" \
+    | tee "$OUT/monkey.txt"
+  grep -q "Events injected: $MONKEY_EVENTS" "$OUT/monkey.txt" || {
+    echo "FAIL: package-scoped UI smoke test did not complete" >&2; exit 15
+  }
+  "${ADB[@]}" exec-out screencap -p > "$OUT/02_after_ui_smoke.png"
+  "${ADB[@]}" shell uiautomator dump /sdcard/thf-fitness-after-ui.xml >/dev/null
+  "${ADB[@]}" pull /sdcard/thf-fitness-after-ui.xml "$OUT/02_after_ui_smoke.xml" >/dev/null
+  "${ADB[@]}" shell rm -f /sdcard/thf-fitness-after-ui.xml
+fi
 
 "${ADB[@]}" shell input keyevent KEYCODE_HOME
 sleep 2
 "${ADB[@]}" shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 >/dev/null
 sleep 3
-"${ADB[@]}" exec-out screencap -p > "$OUT/02_resume.png"
+"${ADB[@]}" exec-out screencap -p > "$OUT/03_resume.png"
 
 echo "Interact with Fitness now; recording ${RECORD_SECONDS}s for motion/navigation evidence."
 "${ADB[@]}" shell screenrecord --time-limit "$RECORD_SECONDS" /sdcard/thf-fitness-qa.mp4 &
 REC_PID=$!
 wait "$REC_PID" || true
-"${ADB[@]}" pull /sdcard/thf-fitness-qa.mp4 "$OUT/03_interaction.mp4" >/dev/null
+"${ADB[@]}" pull /sdcard/thf-fitness-qa.mp4 "$OUT/04_interaction.mp4" >/dev/null
 "${ADB[@]}" shell rm -f /sdcard/thf-fitness-qa.mp4
 
 "${ADB[@]}" shell pm list packages | grep -E 'healthconnect|com.google.android.apps.healthdata' > "$OUT/health_connect_packages.txt" || true
@@ -136,5 +166,6 @@ echo "PASS_NO_CRASH_ANR=true"
 echo "PASS_PACKAGE=$PACKAGE"
 echo "PASS_TARGET_SDK=$TARGET_SDK"
 echo "PASS_DEVICE_ABI=$REQUIRED_ABI"
+echo "PASS_UI_SMOKE_EVENTS=$MONKEY_EVENTS"
 echo "Evidence: $OUT"
 echo "Manual acceptance still required for login, Health Connect grant/data, exercise anatomy/motion, and purchase/restore."
