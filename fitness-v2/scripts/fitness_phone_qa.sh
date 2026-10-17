@@ -4,7 +4,8 @@ set -Eeuo pipefail
 usage() {
   cat <<'EOF'
 Usage: fitness_phone_qa.sh --apk PATH [--serial SERIAL] [--expected-sha256 HEX]
-       [--record-seconds N] [--monkey-events N] [--instrumentation PACKAGE/RUNNER]
+       [--adb-connect PRIVATE_IP:PORT] [--record-seconds N] [--monkey-events N]
+       [--instrumentation PACKAGE/RUNNER]
 
 Runs a fail-closed physical-phone QA evidence pass for Top Hero Fit Fitness V2.
 The phone must already be authorized in `adb devices`; this script never pairs a device.
@@ -13,6 +14,7 @@ EOF
 
 APK=""
 SERIAL=""
+ADB_CONNECT=""
 EXPECTED_SHA=""
 RECORD_SECONDS=30
 MONKEY_EVENTS=50
@@ -25,6 +27,7 @@ while (($#)); do
   case "$1" in
     --apk) APK="${2:?missing --apk value}"; shift 2 ;;
     --serial) SERIAL="${2:?missing --serial value}"; shift 2 ;;
+    --adb-connect) ADB_CONNECT="${2:?missing --adb-connect value}"; shift 2 ;;
     --expected-sha256) EXPECTED_SHA="${2:?missing --expected-sha256 value}"; shift 2 ;;
     --record-seconds) RECORD_SECONDS="${2:?missing --record-seconds value}"; shift 2 ;;
     --monkey-events) MONKEY_EVENTS="${2:?missing --monkey-events value}"; shift 2 ;;
@@ -44,6 +47,20 @@ done
 for cmd in adb sha256sum unzip awk sed grep date; do
   command -v "$cmd" >/dev/null || { echo "Missing command: $cmd" >&2; exit 5; }
 done
+
+if [[ -n "$ADB_CONNECT" ]]; then
+  [[ "$ADB_CONNECT" =~ ^(10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|192\.168\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3}):([0-9]{1,5})$ ]] || {
+    echo "--adb-connect accepts a private LAN IPv4 address and port only" >&2; exit 5
+  }
+  ADB_PORT="${BASH_REMATCH[3]}"
+  (( ADB_PORT >= 1 && ADB_PORT <= 65535 )) || {
+    echo "--adb-connect port must be 1..65535" >&2; exit 5
+  }
+  adb connect "$ADB_CONNECT" >/dev/null || {
+    echo "Authorized ADB Wireless connection failed" >&2; exit 6
+  }
+  SERIAL="$ADB_CONNECT"
+fi
 
 ADB=(adb)
 [[ -n "$SERIAL" ]] && ADB+=( -s "$SERIAL" )
