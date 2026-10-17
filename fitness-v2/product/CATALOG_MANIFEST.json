@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-03",
+  "exerciseCount": 112,
+  "sectionCounts": {
+    "boxing": 6,
+    "calisthenics": 6,
+    "cycling": 6,
+    "football": 6,
+    "gym": 36,
+    "hiit": 6,
+    "home": 10,
+    "mobility": 6,
+    "recovery": 6,
+    "running": 6,
+    "swimming": 6,
+    "team_sports": 6,
+    "yoga": 6
+  },
+  "offlineDemoAssets": 224,
+  "source": {
+    "repository": "https://github.com/yuhonas/free-exercise-db",
+    "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+    "license": "Unlicense",
+    "licenseUrl": "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md",
+    "licenseSha256": "6b0382b16279f26ff69014300541967a356a666eb0b91b422f6862f6b7dad17e",
+    "datasetSha256": "5bb747e3fc658f095a60dcbf6d53c96627acdcc6ffb6fffde86f7e26995d40bf"
+  },
+  "catalogSha256": "2dd7d0e67fdcbb9899825f84b49bee0026808b1ecb7cd16d2eb7c9b75b3c5914"
+}

@@ -1,0 +1,52 @@
+diff --git a/src/App.tsx b/src/App.tsx
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@
+-      <nav className="tabs">
++      <nav className="tabs" aria-label={rtl ? 'أقسام التطبيق' : 'App sections'}>
+         {(Object.keys(labels[lang]) as Tab[]).map(key => (
+-          <button key={key} className={tab === key ? 'tab active' : 'tab'} onClick={() => setTab(key)}>
++          <button key={key} className={tab === key ? 'tab active' : 'tab'} aria-current={tab === key ? 'page' : undefined} onClick={() => setTab(key)}>
+             {labels[lang][key]}
+           </button>
+         ))}
+       </nav>
+diff --git a/src/index.css b/src/index.css
+--- a/src/index.css
++++ b/src/index.css
+@@
+-.tabs { display:flex; gap:8px; overflow-x:auto; padding:12px 0 18px; position:sticky; top:0; z-index:5; backdrop-filter:blur(14px); }
+-.tab { white-space:nowrap; background:#091b2a; }
++.tabs { display:flex; gap:8px; overflow-x:auto; padding:12px 0 18px; position:sticky; top:0; z-index:5; backdrop-filter:blur(14px); scroll-snap-type:x proximity; scroll-padding-inline:12px; overscroll-behavior-inline:contain; scrollbar-width:thin; scrollbar-color:#55e6b6 rgba(9,27,42,.55); -webkit-overflow-scrolling:touch; }
++.tabs::-webkit-scrollbar{height:4px}.tabs::-webkit-scrollbar-track{background:rgba(9,27,42,.55);border-radius:999px}.tabs::-webkit-scrollbar-thumb{background:#55e6b6;border-radius:999px}
++.tab { white-space:nowrap; background:#091b2a; flex:0 0 auto; scroll-snap-align:start; }
++.tab:focus-visible { outline:3px solid #7dd3fc; outline-offset:2px; }
+@@
++@media(max-width:820px){.tabs{padding-inline:14px;margin-inline:-14px;mask-image:linear-gradient(to right,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%);-webkit-mask-image:linear-gradient(to right,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}}
+diff --git a/tests/tests.json b/tests/tests.json
+--- a/tests/tests.json
++++ b/tests/tests.json
+@@
+   {
++    "name": "Navigate the bilingual mobile section rail",
++    "viewport": "mobile",
++    "covers": [
++      "Arabic RTL tab overflow",
++      "English LTR tab overflow",
++      "localized navigation label",
++      "active-page announcement",
++      "touch scroll snapping",
++      "keyboard focus visibility",
++      "overflow affordance"
++    ],
++    "description": "Verifies the dense primary section rail remains discoverable and accessible at 390 px in both directions without changing the information architecture.",
++    "steps": [
++      "Open the dashboard at 390 px in Arabic and inspect the tab rail",
++      "Swipe through the full rail in the RTL direction and activate a distant section",
++      "Confirm the active item is announced as the current page and snaps fully into view",
++      "Switch to English, repeat in LTR, then keyboard-focus every tab"
++    ],
++    "expected": "The localized navigation landmark is announced, the current page is exposed, every tab can be reached by touch and keyboard in RTL and LTR, focus remains visible, snap alignment prevents half-hidden selected items, and the compact overflow affordance does not cover labels."
++  },
++  {
+     "name": "Preserve canonical avatar contract and fail closed",
