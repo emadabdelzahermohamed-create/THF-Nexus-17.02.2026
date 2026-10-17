@@ -1,0 +1,46 @@
+name: THF Vault API36 exact candidate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'AndroidApps/Vault/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Expand provenance-locked source
+        run: mkdir -p AndroidApps/Vault && unzip -q Sources/THF-VAULT-API36-SOURCE-V3.zip -d AndroidApps/Vault
+      - name: Contract tests
+        working-directory: AndroidApps/Vault
+        run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Build exact unsigned release APK and AAB
+        working-directory: AndroidApps/Vault
+        run: gradle --no-daemon clean assembleRelease bundleRelease
+      - name: Record SHA-256 and package contract
+        working-directory: AndroidApps/Vault
+        run: |
+          mkdir -p release-out
+          cp app/build/outputs/apk/release/app-release-unsigned.apk release-out/THF-VAULT-API36-UNSIGNED.apk
+          cp app/build/outputs/bundle/release/app-release.aab release-out/THF-VAULT-API36-UNSIGNED.aab
+          sha256sum release-out/* | tee release-out/SHA256SUMS.txt
+          grep -q "applicationId 'com.topherofit.thf.vault'" app/build.gradle
+          grep -q 'targetSdk 36' app/build.gradle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THF-Vault-API36-exact-unsigned-candidate
+          path: AndroidApps/Vault/release-out/*
+          if-no-files-found: error
+          retention-days: 14
