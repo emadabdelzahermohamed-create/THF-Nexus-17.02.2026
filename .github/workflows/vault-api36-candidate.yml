@@ -2,6 +2,9 @@ name: THF Vault API36 exact candidate
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'agent/codex/apps-release/20261017'
   pull_request:
     paths:
       - 'AndroidApps/Vault/**'
