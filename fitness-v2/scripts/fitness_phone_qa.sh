@@ -134,6 +134,12 @@ sleep 5
 "${ADB[@]}" shell rm -f /sdcard/thf-fitness-boot.xml
 "${ADB[@]}" shell dumpsys window windows > "$OUT/window_boot.txt"
 "${ADB[@]}" shell dumpsys activity activities > "$OUT/activity_boot.txt"
+[[ -s "$OUT/01_boot.png" ]] || {
+  echo "FAIL: boot screenshot is empty" >&2; exit 17
+}
+grep -q "$PACKAGE" "$OUT/window_boot.txt" || {
+  echo "FAIL: Fitness is not the visible window after launch" >&2; exit 17
+}
 
 if [[ -n "$INSTRUMENTATION" ]]; then
   "${ADB[@]}" shell am instrument -w "$INSTRUMENTATION" | tee "$OUT/instrumentation.txt"
@@ -159,13 +165,25 @@ sleep 2
 "${ADB[@]}" shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 >/dev/null
 sleep 3
 "${ADB[@]}" exec-out screencap -p > "$OUT/03_resume.png"
+"${ADB[@]}" shell dumpsys window windows > "$OUT/window_resume.txt"
+[[ -s "$OUT/03_resume.png" ]] || {
+  echo "FAIL: resume screenshot is empty" >&2; exit 18
+}
+grep -q "$PACKAGE" "$OUT/window_resume.txt" || {
+  echo "FAIL: Fitness is not the visible window after resume" >&2; exit 18
+}
 
 echo "Interact with Fitness now; recording ${RECORD_SECONDS}s for motion/navigation evidence."
+"${ADB[@]}" shell dumpsys gfxinfo "$PACKAGE" reset >/dev/null 2>&1 || true
 "${ADB[@]}" shell screenrecord --time-limit "$RECORD_SECONDS" /sdcard/thf-fitness-qa.mp4 &
 REC_PID=$!
 wait "$REC_PID" || true
 "${ADB[@]}" pull /sdcard/thf-fitness-qa.mp4 "$OUT/04_interaction.mp4" >/dev/null
 "${ADB[@]}" shell rm -f /sdcard/thf-fitness-qa.mp4
+[[ -s "$OUT/04_interaction.mp4" ]] || {
+  echo "FAIL: motion/navigation screen recording is empty" >&2; exit 19
+}
+"${ADB[@]}" shell dumpsys gfxinfo "$PACKAGE" framestats > "$OUT/motion_framestats.txt" || true
 
 "${ADB[@]}" shell pm list packages | grep -Ei 'healthconnect|healthdata' > "$OUT/health_connect_packages.txt" || true
 "${ADB[@]}" shell dumpsys -l | grep -i health > "$OUT/health_connect_services.txt" || true
