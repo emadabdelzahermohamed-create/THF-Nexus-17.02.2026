@@ -5,7 +5,7 @@ usage() {
   cat <<'EOF'
 Usage: fitness_phone_qa.sh --apk PATH [--serial SERIAL] [--expected-sha256 HEX]
        [--adb-connect PRIVATE_IP:PORT] [--record-seconds N] [--monkey-events N]
-       [--instrumentation PACKAGE/RUNNER]
+       [--instrumentation PACKAGE/RUNNER] [--require-health-connect]
 
 Runs a fail-closed physical-phone QA evidence pass for Top Hero Fit Fitness V2.
 The phone must already be authorized in `adb devices`; this script never pairs a device.
@@ -19,6 +19,7 @@ EXPECTED_SHA=""
 RECORD_SECONDS=30
 MONKEY_EVENTS=50
 INSTRUMENTATION=""
+REQUIRE_HEALTH_CONNECT=false
 PACKAGE="com.topherofit.thf.pulse"
 REQUIRED_TARGET_SDK=36
 REQUIRED_ABI="arm64-v8a"
@@ -32,6 +33,7 @@ while (($#)); do
     --record-seconds) RECORD_SECONDS="${2:?missing --record-seconds value}"; shift 2 ;;
     --monkey-events) MONKEY_EVENTS="${2:?missing --monkey-events value}"; shift 2 ;;
     --instrumentation) INSTRUMENTATION="${2:?missing --instrumentation value}"; shift 2 ;;
+    --require-health-connect) REQUIRE_HEALTH_CONNECT=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -165,7 +167,24 @@ wait "$REC_PID" || true
 "${ADB[@]}" pull /sdcard/thf-fitness-qa.mp4 "$OUT/04_interaction.mp4" >/dev/null
 "${ADB[@]}" shell rm -f /sdcard/thf-fitness-qa.mp4
 
-"${ADB[@]}" shell pm list packages | grep -E 'healthconnect|com.google.android.apps.healthdata' > "$OUT/health_connect_packages.txt" || true
+"${ADB[@]}" shell pm list packages | grep -Ei 'healthconnect|healthdata' > "$OUT/health_connect_packages.txt" || true
+"${ADB[@]}" shell dumpsys -l | grep -i health > "$OUT/health_connect_services.txt" || true
+"${ADB[@]}" shell cmd package resolve-activity --brief \
+  -a android.health.connect.action.HEALTH_HOME_SETTINGS \
+  > "$OUT/health_connect_settings_activity.txt" 2>&1 || true
+"${ADB[@]}" shell dumpsys package "$PACKAGE" \
+  | sed -n '/runtime permissions:/,/^[^ ]/p' \
+  > "$OUT/runtime_permissions.txt" || true
+"${ADB[@]}" shell appops get "$PACKAGE" > "$OUT/appops.txt" 2>&1 || true
+
+HEALTH_CONNECT_PRESENT=false
+if [[ -s "$OUT/health_connect_packages.txt" || -s "$OUT/health_connect_services.txt" ]]; then
+  HEALTH_CONNECT_PRESENT=true
+fi
+if $REQUIRE_HEALTH_CONNECT && ! $HEALTH_CONNECT_PRESENT; then
+  echo "FAIL: Health Connect provider/service is unavailable on the connected phone" >&2
+  exit 16
+fi
 "${ADB[@]}" shell dumpsys meminfo "$PACKAGE" > "$OUT/meminfo.txt" || true
 "${ADB[@]}" shell dumpsys gfxinfo "$PACKAGE" > "$OUT/gfxinfo.txt" || true
 "${ADB[@]}" shell dumpsys thermalservice > "$OUT/thermal.txt" || true
@@ -184,5 +203,6 @@ echo "PASS_PACKAGE=$PACKAGE"
 echo "PASS_TARGET_SDK=$TARGET_SDK"
 echo "PASS_DEVICE_ABI=$REQUIRED_ABI"
 echo "PASS_UI_SMOKE_EVENTS=$MONKEY_EVENTS"
+echo "HEALTH_CONNECT_PROVIDER_PRESENT=$HEALTH_CONNECT_PRESENT"
 echo "Evidence: $OUT"
-echo "Manual acceptance still required for login, Health Connect grant/data, exercise anatomy/motion, and purchase/restore."
+echo "Manual acceptance still required for login, Health Connect grant/data flow, exercise anatomy/motion, and purchase/restore."
