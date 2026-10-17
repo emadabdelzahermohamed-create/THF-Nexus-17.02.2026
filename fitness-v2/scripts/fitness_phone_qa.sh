@@ -15,6 +15,8 @@ SERIAL=""
 EXPECTED_SHA=""
 RECORD_SECONDS=30
 PACKAGE="com.topherofit.thf.pulse"
+REQUIRED_TARGET_SDK=36
+REQUIRED_ABI="arm64-v8a"
 
 while (($#)); do
   case "$1" in
@@ -60,14 +62,22 @@ exec > >(tee "$OUT/harness.log") 2>&1
 echo "candidate_sha256=$APK_SHA"
 echo "package=$PACKAGE"
 "${ADB[@]}" get-state | grep -Fxq device
-"${ADB[@]}" shell getprop ro.build.version.sdk | tee "$OUT/device_api.txt"
-"${ADB[@]}" shell getprop ro.product.cpu.abilist | tee "$OUT/device_abis.txt"
+DEVICE_API="$("${ADB[@]}" shell getprop ro.build.version.sdk | tr -d '\r')"
+DEVICE_ABIS="$("${ADB[@]}" shell getprop ro.product.cpu.abilist | tr -d '\r')"
+printf '%s\n' "$DEVICE_API" | tee "$OUT/device_api.txt"
+printf '%s\n' "$DEVICE_ABIS" | tee "$OUT/device_abis.txt"
+grep -Eq "(^|,)${REQUIRED_ABI}(,|$)" "$OUT/device_abis.txt" || {
+  echo "FAIL: connected device does not advertise ${REQUIRED_ABI}" >&2; exit 9
+}
 "${ADB[@]}" shell getprop ro.product.manufacturer | tee "$OUT/device_manufacturer.txt"
 "${ADB[@]}" shell getprop ro.product.model | tee "$OUT/device_model.txt"
 
 unzip -l "$APK" > "$OUT/apk_entries.txt"
 if unzip -l "$APK" | grep -Eq 'lib/[^/]+/'; then
   unzip -l "$APK" | awk '/lib\/[[:alnum:]_-]+\// {print $4}' | sort -u > "$OUT/apk_native_libs.txt"
+  grep -q "lib/${REQUIRED_ABI}/" "$OUT/apk_native_libs.txt" || {
+    echo "FAIL: APK has native libraries but no ${REQUIRED_ABI} payload" >&2; exit 10
+  }
 else
   echo "bytecode_only=true" > "$OUT/apk_native_libs.txt"
 fi
@@ -75,8 +85,18 @@ fi
 "${ADB[@]}" logcat -c
 "${ADB[@]}" install -r "$APK" | tee "$OUT/install.txt"
 "${ADB[@]}" shell pm path "$PACKAGE" | tee "$OUT/installed_path.txt"
+grep -q '^package:' "$OUT/installed_path.txt" || {
+  echo "FAIL: expected package was not installed: $PACKAGE" >&2; exit 11
+}
 "${ADB[@]}" shell dumpsys package "$PACKAGE" > "$OUT/package.txt"
 grep -E 'versionCode=|versionName=|targetSdk=' "$OUT/package.txt" > "$OUT/package_identity.txt" || true
+TARGET_SDK="$(grep -Eo 'targetSdk=[0-9]+' "$OUT/package.txt" | head -n1 | cut -d= -f2 || true)"
+[[ "$TARGET_SDK" == "$REQUIRED_TARGET_SDK" ]] || {
+  echo "FAIL: targetSdk=$TARGET_SDK; required $REQUIRED_TARGET_SDK" >&2; exit 12
+}
+grep -Eq 'versionCode=[0-9]+' "$OUT/package.txt" || {
+  echo "FAIL: installed package has no readable versionCode" >&2; exit 13
+}
 
 "${ADB[@]}" shell am force-stop "$PACKAGE"
 "${ADB[@]}" shell monkey -p "$PACKAGE" -c android.intent.category.LAUNCHER 1 | tee "$OUT/launch.txt"
@@ -113,5 +133,8 @@ fi
 
 (cd "$OUT" && sha256sum ./* > SHA256SUMS)
 echo "PASS_NO_CRASH_ANR=true"
+echo "PASS_PACKAGE=$PACKAGE"
+echo "PASS_TARGET_SDK=$TARGET_SDK"
+echo "PASS_DEVICE_ABI=$REQUIRED_ABI"
 echo "Evidence: $OUT"
 echo "Manual acceptance still required for login, Health Connect grant/data, exercise anatomy/motion, and purchase/restore."
