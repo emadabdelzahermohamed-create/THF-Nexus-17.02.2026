@@ -1,35 +1,44 @@
 name: THF Apps V3 Exact Ingest Build
-on:
+
+'on':
   push:
-    branches: [main]
-    paths: ['.github/workflows/thf-apps-v3-ingest-build.yml']
-  workflow_dispatch:
+    branches:
+      - main
+    paths:
+      - .github/workflows/thf-apps-v3-ingest-build.yml
+  workflow_dispatch: {}
+
 permissions:
   contents: read
   id-token: write
+
 concurrency:
   group: thf-apps-v3-exact-ingest-build
   cancel-in-progress: true
+
 env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
   GCP_ZONE: europe-west1-b
   GCP_BUILDER: thf-wave-builder
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+
 jobs:
   ingest-build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-        with: {persist-credentials: false}
+        with:
+          persist-credentials: false
       - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
         with:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
           access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
-        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
       - name: Prove Apps V3 authority
         run: python ReleaseOps/validate_thf_apps_phone_authority_v3.py
       - name: Fetch exact staged bytes with authenticated Drive API and verify SHA
