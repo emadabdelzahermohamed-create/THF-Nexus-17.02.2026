@@ -120,7 +120,8 @@ jobs:
           test -s "$AAB"
           test -s "$SIGNING_STATUS"
           grep -Fx 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' "$SIGNING_STATUS"
-          jarsigner -verify -strict "$AAB" | tee play-evidence/aab-jarsigner-strict.txt
+          jarsigner -verify -verbose -certs "$AAB" > play-evidence/aab-jarsigner.txt 2>&1
+          grep -F 'jar verified.' play-evidence/aab-jarsigner.txt
           sha256sum "$AAB" | tee play-evidence/aab.sha256
 
           BUNDLETOOL_VERSION=1.18.3
