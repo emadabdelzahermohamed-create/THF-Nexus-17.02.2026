@@ -44,6 +44,7 @@ jobs:
           create_credentials_file: true
 
       - name: Set up gcloud for Fitness signing Secret Manager access
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish_internal' }}
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
@@ -131,8 +132,8 @@ jobs:
 
           status="$(tr -d '\r\n' < "$SIGNING_STATUS")"
           signing_provenance='UNKNOWN'
-          if [[ "$status" == 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' ]]; then
-            signing_provenance='PRE_SIGNED_CANDIDATE'
+          if [[ "$status" == 'PRODUCTION_SIGNING=PASS_PLAY_BOUND_FITNESS_UPLOAD_KEY' || "$status" == 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' ]]; then
+            signing_provenance="PRE_SIGNED_CANDIDATE:${status#PRODUCTION_SIGNING=}"
           elif [[ "$status" == 'PRODUCTION_SIGNING=NOT_RUN_MISSING_ALL_FOUR_EXISTING_SECRETS' ]]; then
             # The only unsigned fallback allowed is the exact, previously validated 51004
             # candidate from run 39089308617. Pin both run ID and pre-sign SHA256 so this
