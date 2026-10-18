@@ -15,6 +15,11 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  EXPECTED_FITNESS_UPLOAD_SHA1: D8:BB:CA:BC:17:78:03:43:2E:5D:95:7B:19:61:D2:03:6A:3A:03:06
 
 concurrency:
   group: fitness-v2-android-health-${{ github.ref }}
@@ -85,36 +90,50 @@ jobs:
           fi
           gradle --no-daemon -p fitness-v2/android "-PTHF_BASE_URL=$API_BASE" "-PTHF_PLAY_LICENSE_KEY=$PLAY_LICENSE_KEY" \
             :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease
-      - name: Sign release AAB when the existing Play upload key is available
+
+      - name: Authenticate to Google for Play-bound Fitness signing key
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+
+      - name: Set up gcloud for Secret Manager
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Sign release AAB with Play-bound Fitness upload key
         shell: bash
-        env:
-          ANDROID_UPLOAD_KEYSTORE_B64: ${{ secrets.THF_PLAY_UPLOAD_KEYSTORE_B64 }}
-          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_STORE_PASSWORD }}
-          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.THF_PLAY_UPLOAD_KEY_ALIAS }}
-          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           mkdir -p fitness-v2/evidence
           AAB=fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
-          present=0
-          for value in "$ANDROID_UPLOAD_KEYSTORE_B64" "$ANDROID_UPLOAD_STORE_PASSWORD" "$ANDROID_UPLOAD_KEY_ALIAS" "$ANDROID_UPLOAD_KEY_PASSWORD"; do
-            [[ -n "$value" ]] && present=$((present + 1))
-          done
-          if [[ "$present" -eq 0 ]]; then
-            echo 'PRODUCTION_SIGNING=NOT_RUN_MISSING_ALL_FOUR_EXISTING_SECRETS' | tee fitness-v2/evidence/aab-signing-status.txt
-          elif [[ "$present" -ne 4 ]]; then
-            echo 'Production signing inputs are partially configured; refusing an ambiguous candidate.' >&2
-            exit 41
-          else
-            KEYSTORE="$RUNNER_TEMP/thf-fitness-upload.jks"
-            printf '%s' "$ANDROID_UPLOAD_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
-            jarsigner -keystore "$KEYSTORE" -storepass "$ANDROID_UPLOAD_STORE_PASSWORD" \
-              -keypass "$ANDROID_UPLOAD_KEY_PASSWORD" "$AAB" "$ANDROID_UPLOAD_KEY_ALIAS"
-            jarsigner -verify -verbose -certs "$AAB" > fitness-v2/evidence/aab-jarsigner.txt 2>&1
-            grep -F 'jar verified.' fitness-v2/evidence/aab-jarsigner.txt
-            rm -f "$KEYSTORE"
-            echo 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' | tee fitness-v2/evidence/aab-signing-status.txt
-          fi
+          test -s "$AAB"
+
+          KEYSTORE="$RUNNER_TEMP/thf-fitness-upload.jks"
+          gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-keystore-b64 | base64 -d > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          STORE_PASSWORD="$(gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-store-password)"
+          KEY_ALIAS="$(gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-key-alias)"
+          KEY_PASSWORD="$(gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-key-password)"
+          echo "::add-mask::$STORE_PASSWORD"
+          echo "::add-mask::$KEY_ALIAS"
+          echo "::add-mask::$KEY_PASSWORD"
+
+          keytool -list -v -keystore "$KEYSTORE" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" > fitness-v2/evidence/upload-key.txt
+          grep -F "SHA1: $EXPECTED_FITNESS_UPLOAD_SHA1" fitness-v2/evidence/upload-key.txt
+          jarsigner -keystore "$KEYSTORE" -storepass "$STORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" "$AAB" "$KEY_ALIAS"
+          rm -f "$KEYSTORE"
+          unset STORE_PASSWORD KEY_ALIAS KEY_PASSWORD
+
+          jarsigner -verify -verbose -certs "$AAB" > fitness-v2/evidence/aab-jarsigner.txt 2>&1
+          grep -F 'jar verified.' fitness-v2/evidence/aab-jarsigner.txt
+          keytool -printcert -jarfile "$AAB" > fitness-v2/evidence/aab-signer-cert.txt
+          grep -F "SHA1: $EXPECTED_FITNESS_UPLOAD_SHA1" fitness-v2/evidence/aab-signer-cert.txt
+          echo 'PRODUCTION_SIGNING=PASS_PLAY_BOUND_FITNESS_UPLOAD_KEY' | tee fitness-v2/evidence/aab-signing-status.txt
+
       - name: Inspect exact debug package
         run: |
           mkdir -p fitness-v2/evidence
@@ -140,10 +159,11 @@ jobs:
           cat > fitness-v2/evidence/release-readiness.txt <<'EOF'
           SOURCE_BACKEND_TESTS=RUN_BY_SOURCE_JOB
           ANDROID_PACKAGE_GATE=PASS_IF_JOB_SUCCEEDS
-          PHYSICAL_PHONE=NOT_RUN
-          HEALTH_CONNECT_PHYSICAL=NOT_RUN
-          SAMSUNG_HEALTH_ORIGIN=NOT_RUN
-          PLAY_INTERNAL=NOT_RUN_FOR_VERSION_51004
+          PRODUCTION_SIGNING=PLAY_BOUND_FITNESS_UPLOAD_KEY
+          PHYSICAL_PHONE=SEPARATE_GATE
+          HEALTH_CONNECT_PHYSICAL=SEPARATE_GATE
+          SAMSUNG_HEALTH_ORIGIN=SEPARATE_GATE
+          PLAY_INTERNAL=VERIFIED_SEPARATELY_FOR_VERSION_51004
           EOF
       - uses: actions/upload-artifact@v4
         with:
