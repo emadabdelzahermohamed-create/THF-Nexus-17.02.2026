@@ -55,15 +55,7 @@ jobs:
           token="$(gcloud auth print-access-token)"
           code="$(curl -sS -L --retry 2 --connect-timeout 15 -o signal.zip -w '%{http_code}' -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/$SOURCE_FILE_ID?alt=media")"
           if [ "$code" != 200 ]; then
-            python - "$code" signal.zip <<'PY'
-import json,sys
-code,path=sys.argv[1:]
-try:
-    error=json.load(open(path)).get("error",{})
-    print(f"DRIVE_ACCESS_BLOCK http={code} status={error.get('status','UNKNOWN')} message={error.get('message','')}")
-except Exception:
-    print(f"DRIVE_ACCESS_BLOCK http={code} status=UNPARSEABLE")
-PY
+            echo "DRIVE_ACCESS_BLOCK http=$code"
             exit 21
           fi
           echo "$SOURCE_SHA256  signal.zip" | sha256sum -c -
