@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">توب هيرو فيت</string>
+    <string name="health_permissions_rationale">Top Hero Fit وHealth Connect\n\nنقرأ الخطوات وجلسات التمرين والمسافة والسعرات النشطة فقط لعرض ملخص نشاطك. نكتب جلسات THF التي تُكملها كي تظهر في التطبيقات المتوافقة. لا نطلب نبض القلب أو النوم أو الوزن في هذا الإصدار.\n\nيمكنك رفض أي إذن أو سحبه لاحقًا من إعدادات Health Connect. سيظل تسجيل التمرين المحلي يعمل دون اتصال.</string>
+</resources>
