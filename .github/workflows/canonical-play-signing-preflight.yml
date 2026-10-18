@@ -1,0 +1,108 @@
+name: Canonical Android Play signing preflight
+
+on:
+  push:
+    branches:
+      - 'agent/codex/play-signing-preflight/**'
+    paths:
+      - '.github/workflows/canonical-play-signing-preflight.yml'
+  pull_request:
+    branches:
+      - apps-phone-fundamentals-v3-20260915
+    paths:
+      - '.github/workflows/canonical-play-signing-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  CORE_ARTIFACT_ID: '12137350022'
+  CORE_AAB_SHA256: e71625911d2c06eb0d084f6ed094fcd142f093fcfbb2bf2b13b59a4221760e6e
+  ECHO_ARTIFACT_ID: '12134229651'
+  ECHO_AAB_SHA256: 5b7aba41268174d8d5ed0bd233483600ecaeaa3efeb0af61298d90829e56e6ce
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UPLOAD_KEYSTORE_B64: ${{ secrets.THF_PLAY_UPLOAD_KEYSTORE_B64 }}
+      UPLOAD_KEY_ALIAS: ${{ secrets.THF_PLAY_UPLOAD_KEY_ALIAS }}
+      UPLOAD_STORE_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_STORE_PASSWORD }}
+      UPLOAD_KEY_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - name: Lock exact unsigned candidates
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p input/core input/echo release
+          for spec in "core:$CORE_ARTIFACT_ID" "echo:$ECHO_ARTIFACT_ID"; do
+            app="${spec%%:*}"
+            id="${spec##*:}"
+            curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}/zip" -o "${app}.zip"
+            unzip -q "${app}.zip" -d "input/${app}"
+          done
+          CORE_AAB="$(find input/core -name '*.aab' | head -n1)"
+          ECHO_AAB="$(find input/echo -name '*.aab' | head -n1)"
+          test -s "$CORE_AAB" && test -s "$ECHO_AAB"
+          echo "$CORE_AAB_SHA256  $CORE_AAB" | sha256sum -c -
+          echo "$ECHO_AAB_SHA256  $ECHO_AAB" | sha256sum -c -
+          cp "$CORE_AAB" release/THF-Core-6.2.2-rc6-api36-unsigned.aab
+          cp "$ECHO_AAB" release/THF-Community-2.1.1-phone3-api36-unsigned.aab
+          jarsigner -verify release/THF-Core-6.2.2-rc6-api36-unsigned.aab > release/CORE_UNSIGNED_STATE.txt 2>&1 || true
+          jarsigner -verify release/THF-Community-2.1.1-phone3-api36-unsigned.aab > release/ECHO_UNSIGNED_STATE.txt 2>&1 || true
+          grep -F 'jar is unsigned' release/CORE_UNSIGNED_STATE.txt
+          grep -F 'jar is unsigned' release/ECHO_UNSIGNED_STATE.txt
+      - name: Sign when authorized upload-key secrets exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$UPLOAD_KEYSTORE_B64" ] || missing+=(THF_PLAY_UPLOAD_KEYSTORE_B64)
+          [ -n "$UPLOAD_KEY_ALIAS" ] || missing+=(THF_PLAY_UPLOAD_KEY_ALIAS)
+          [ -n "$UPLOAD_STORE_PASSWORD" ] || missing+=(THF_PLAY_UPLOAD_STORE_PASSWORD)
+          [ -n "$UPLOAD_KEY_PASSWORD" ] || missing+=(THF_PLAY_UPLOAD_KEY_PASSWORD)
+          if [ "${#missing[@]}" -ne 0 ]; then
+            {
+              echo 'production_signing=BLOCKED_MISSING_REPOSITORY_SECRETS'
+              printf 'missing=%s\n' "$(IFS=,; echo "${missing[*]}")"
+              echo 'core_aab_sha256='${CORE_AAB_SHA256}
+              echo 'echo_aab_sha256='${ECHO_AAB_SHA256}
+              echo 'play_upload_performed=false'
+              echo 'phone_pass=false'
+              echo 'play_pass=false'
+            } > release/SIGNING_PREFLIGHT.txt
+            exit 0
+          fi
+          printf '%s' "$UPLOAD_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/thf-play-upload.jks"
+          chmod 600 "$RUNNER_TEMP/thf-play-upload.jks"
+          for app in Core Community; do
+            unsigned="$(find release -name "THF-${app}-*-unsigned.aab" | head -n1)"
+            signed="${unsigned%-unsigned.aab}-play-upload-signed.aab"
+            jarsigner -keystore "$RUNNER_TEMP/thf-play-upload.jks" -storepass "$UPLOAD_STORE_PASSWORD" \
+              -keypass "$UPLOAD_KEY_PASSWORD" -signedjar "$signed" "$unsigned" "$UPLOAD_KEY_ALIAS"
+            jarsigner -verify -strict -verbose -certs "$signed" > "release/${app^^}_SIGNED_VERIFY.txt"
+          done
+          rm -f "$RUNNER_TEMP/thf-play-upload.jks"
+          sha256sum release/*-play-upload-signed.aab | tee release/SIGNED_SHA256SUMS.txt
+          {
+            echo 'production_signing=PASS'
+            echo 'play_upload_performed=false'
+            echo 'phone_pass=false'
+            echo 'play_pass=false'
+          } > release/SIGNING_PREFLIGHT.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canonical-android-play-signing-preflight
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
