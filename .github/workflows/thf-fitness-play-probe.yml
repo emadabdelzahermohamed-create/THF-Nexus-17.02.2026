@@ -29,7 +29,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Probe Android Publisher access without upload or commit
+      - name: Probe Android Publisher access and existing track versions without upload or commit
         shell: bash
         run: |
           set -euo pipefail
@@ -44,22 +44,48 @@ jobs:
           creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/androidpublisher"])
           api = build("androidpublisher", "v3", credentials=creds, cache_discovery=False)
           result = {"package": package, "wif": True, "upload_attempted": False, "commit_attempted": False}
+          edit_id = None
           try:
               edit = api.edits().insert(packageName=package, body={}).execute()
               edit_id = edit["id"]
               result.update({"package_visible": True, "edit_insert": "PASS"})
-              api.edits().delete(packageName=package, editId=edit_id).execute()
-              result["edit_cleanup"] = "PASS"
+              track_response = api.edits().tracks().list(packageName=package, editId=edit_id).execute()
+              tracks = []
+              all_versions = set()
+              for track in track_response.get("tracks", []):
+                  releases = []
+                  for release in track.get("releases", []) or []:
+                      versions = [str(v) for v in (release.get("versionCodes", []) or [])]
+                      all_versions.update(versions)
+                      releases.append({
+                          "name": release.get("name"),
+                          "status": release.get("status"),
+                          "versionCodes": versions,
+                      })
+                  if releases:
+                      tracks.append({"track": track.get("track"), "releases": releases})
+              result["tracks_with_releases"] = tracks
+              result["existing_version_codes"] = sorted(all_versions, key=lambda x: int(x))
+              result["version_51004_already_present"] = "51004" in all_versions
+              result["track_list"] = "PASS"
           except HttpError as exc:
               result.update({
                   "package_visible": False if exc.resp.status == 404 else None,
                   "http_status": exc.resp.status,
                   "error": str(exc)[:1000],
               })
+          finally:
+              if edit_id:
+                  try:
+                      api.edits().delete(packageName=package, editId=edit_id).execute()
+                      result["edit_cleanup"] = "PASS"
+                  except Exception as exc:
+                      result["edit_cleanup"] = "FAIL"
+                      result["cleanup_error"] = str(exc)[:500]
           print(json.dumps(result, indent=2))
           with open("fitness-play-probe.json", "w") as fh:
               json.dump(result, fh, indent=2)
-          if result.get("edit_insert") != "PASS":
+          if result.get("edit_insert") != "PASS" or result.get("track_list") != "PASS" or result.get("edit_cleanup") != "PASS":
               raise SystemExit(2)
           PY
 
