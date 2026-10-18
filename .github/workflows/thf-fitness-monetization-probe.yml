@@ -1,0 +1,70 @@
+name: THF Fitness Monetization Probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google with existing WIF
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect one-time product configuration read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PY'
+          import json
+          import google.auth
+          from googleapiclient.discovery import build
+
+          package = 'com.topherofit.thf.pulse'
+          target_product = 'thf_founding_hero_lifetime'
+          creds, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          api = build('androidpublisher', 'v3', credentials=creds, cache_discovery=False)
+          result = {'package': package, 'targetProductId': target_product}
+          try:
+              response = api.monetization().onetimeproducts().list(packageName=package).execute()
+              items = response.get('oneTimeProducts', []) or []
+              simplified = []
+              for item in items:
+                  simplified.append({
+                      'productId': item.get('productId'),
+                      'purchaseOptionIds': [o.get('purchaseOptionId') for o in (item.get('purchaseOptions') or [])],
+                  })
+              ids = sorted(x.get('productId') for x in items if x.get('productId'))
+              result.update({
+                  'api': 'PASS',
+                  'productIds': ids,
+                  'targetPresent': target_product in ids,
+                  'products': simplified,
+              })
+          except Exception as exc:
+              result.update({'api': 'FAIL', 'error': str(exc)[:1500]})
+          print(json.dumps(result, indent=2))
+          with open('fitness-monetization-probe.json', 'w') as fh:
+              json.dump(result, fh, indent=2)
+          if result.get('api') != 'PASS':
+              raise SystemExit(2)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-fitness-monetization-probe
+          path: fitness-monetization-probe.json
+          if-no-files-found: ignore
+          retention-days: 7
