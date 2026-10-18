@@ -1,0 +1,119 @@
+name: Core API 36 exact candidate
+
+on:
+  push:
+    branches:
+      - 'agent/codex/core-api36-release/**'
+    paths:
+      - '.github/workflows/core-api36-release.yml'
+  pull_request:
+    branches:
+      - apps-phone-fundamentals-v3-20260915
+    paths:
+      - '.github/workflows/core-api36-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  SOURCE_SHA256: 6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Build exact Core APK and AAB on authorized builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud compute ssh "$GCP_BUILDER" --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --ssh-key-expire-after=30m --command='bash -s' <<'REMOTE'
+          set -euo pipefail
+          SRC="$HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip"
+          EXPECTED="6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a"
+          ROOT="$HOME/thf-core-api36-exact"
+          SDK="$HOME/thf-builder-rc16-build/android-sdk"
+          CACHE="$HOME/thf-builder-rc16-build/cache"
+          test -f "$SRC"
+          echo "$EXPECTED  $SRC" | sha256sum -c -
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/work" "$ROOT/out" "$ROOT/gradle-home"
+          unzip -q "$SRC" -d "$ROOT/work"
+          PROJ="$ROOT/work/android"
+          test -f "$PROJ/app/build.gradle"
+          export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" GRADLE_USER_HOME="$ROOT/gradle-home"
+          printf 'sdk.dir=%s\n' "$SDK" > "$PROJ/local.properties"
+          unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
+          GRADLE="$CACHE/gradle-dist-8.11.1/gradle-8.11.1/bin/gradle"
+          test -x "$GRADLE"
+          "$GRADLE" -p "$PROJ" --no-daemon clean test :app:assembleRelease :app:bundleRelease
+          APK="$(find "$PROJ/app/build/outputs/apk/release" -name '*.apk' | head -n1)"
+          AAB="$(find "$PROJ/app/build/outputs/bundle/release" -name '*.aab' | head -n1)"
+          test -s "$APK" && test -s "$AAB"
+          BT="$SDK/build-tools/36.0.0"
+          PASS="$(openssl rand -hex 24)"
+          KS="$(mktemp -u "$ROOT/core-qa-XXXXXX.jks")"
+          keytool -genkeypair -keystore "$KS" -storepass "$PASS" -keypass "$PASS" -alias coreqa -keyalg RSA -keysize 3072 -validity 30 -dname "CN=THF Core Ephemeral QA,O=Top Hero Fit" >/dev/null
+          "$BT/apksigner" sign --ks "$KS" --ks-pass "pass:$PASS" --key-pass "pass:$PASS" --out "$ROOT/out/THF-Core-6.2.2-rc6-api36-phone-test.apk" "$APK"
+          cp "$AAB" "$ROOT/out/THF-Core-6.2.2-rc6-api36-unsigned.aab"
+          rm -f "$KS"
+          "$BT/apksigner" verify --verbose --print-certs "$ROOT/out/"*.apk | tee "$ROOT/out/APK_SIGNATURE.txt"
+          "$BT/aapt2" dump badging "$ROOT/out/"*.apk | tee "$ROOT/out/APK_BADGING.txt"
+          grep -F "package: name='com.topherofit.thf.core' versionCode='62200'" "$ROOT/out/APK_BADGING.txt"
+          grep -F "targetSdkVersion:'36'" "$ROOT/out/APK_BADGING.txt"
+          grep -q '^launchable-activity:' "$ROOT/out/APK_BADGING.txt"
+          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" "$ROOT/out/APK_SIGNATURE.txt"
+          grep -F "Verified using v3 scheme (APK Signature Scheme v3): true" "$ROOT/out/APK_SIGNATURE.txt"
+          jarsigner -verify "$ROOT/out/"*.aab > "$ROOT/out/AAB_SIGNATURE_STATE.txt" 2>&1 || true
+          grep -F "jar is unsigned" "$ROOT/out/AAB_SIGNATURE_STATE.txt"
+          sha256sum "$ROOT/out/"*.apk "$ROOT/out/"*.aab | tee "$ROOT/out/SHA256SUMS.txt"
+          cat > "$ROOT/out/RELEASE_TRUTH.txt" <<EOF
+          product=THF Core
+          package=com.topherofit.thf.core
+          versionCode=62200
+          versionName=6.2.2-rc6
+          targetSdk=36
+          source_sha256=$EXPECTED
+          qa_apk_signed=true
+          aab_production_signed=false
+          play_ready=false
+          phone_pass=false
+          play_pass=false
+          rollback=uninstall com.topherofit.thf.core
+          EOF
+          echo "$EXPECTED  $SRC" | sha256sum -c -
+          REMOTE
+      - name: Retrieve exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          gcloud compute scp --recurse "$GCP_BUILDER:~/thf-core-api36-exact/out/*" release/ --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE"
+          grep -F 'package=com.topherofit.thf.core' release/RELEASE_TRUTH.txt
+          grep -F 'play_ready=false' release/RELEASE_TRUTH.txt
+          test -s release/THF-Core-6.2.2-rc6-api36-phone-test.apk
+          test -s release/THF-Core-6.2.2-rc6-api36-unsigned.aab
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thf-core-6.2.2-rc6-api36-phone-test
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
