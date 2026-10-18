@@ -1,0 +1,129 @@
+name: Echo API 36 phone-test candidate
+
+on:
+  push:
+    branches:
+      - 'agent/codex/echo-release/**'
+    paths:
+      - '.github/workflows/echo-api36-release.yml'
+  pull_request:
+    branches:
+      - apps-phone-fundamentals-v3-20260915
+    paths:
+      - '.github/workflows/echo-api36-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  DRIVE_FILE_ID: 1YnRTB_CSUwd7q6myLKkG2Pi_3qJ_A3Vw
+  SOURCE_SHA256: 3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Acquire exact authorized private source
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN="$(gcloud auth print-access-token)"
+          HTTP="$(curl -sS -L -o echo.zip -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "https://www.googleapis.com/drive/v3/files/$DRIVE_FILE_ID?alt=media")"
+          if [ "$HTTP" != 200 ] || ! echo "$SOURCE_SHA256  echo.zip" | sha256sum -c -; then
+            rm -f echo.zip
+            echo "Drive exact-source retrieval unavailable (HTTP $HTTP); checking prior GitHub-proven exact source."
+            if git show origin/agent/codex/echo-release/20261017:Sources/THF_Echo_PHONE_FUNDAMENTALS_SRC3.zip > echo.zip 2>/dev/null && echo "$SOURCE_SHA256  echo.zip" | sha256sum -c -; then
+              echo "EXACT_SOURCE_FOUND=github:agent/codex/echo-release/20261017"
+            else
+              rm -f echo.zip
+              echo "GitHub exact source unavailable; checking authorized builder cache."
+              gcloud compute ssh "$GCP_BUILDER" --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --ssh-key-expire-after=30m --command='bash -s' <<'REMOTE'
+          set -euo pipefail
+          target=/tmp/THF_Echo_PHONE_FUNDAMENTALS_SRC3.zip
+          rm -f "$target"
+          while IFS= read -r -d '' candidate; do
+            [ "$(sha256sum "$candidate" | awk '{print $1}')" = "3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9" ] || continue
+            cp "$candidate" "$target"
+            echo "EXACT_SOURCE_FOUND=$candidate"
+            exit 0
+          done < <(find "$HOME" -type f -name '*.zip' -size -500M -print0 2>/dev/null)
+          echo "EXACT_SOURCE_SHA_NOT_FOUND" >&2
+          exit 44
+          REMOTE
+              gcloud compute scp --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" "$GCP_BUILDER:/tmp/THF_Echo_PHONE_FUNDAMENTALS_SRC3.zip" echo.zip
+            fi
+          fi
+          echo "$SOURCE_SHA256  echo.zip" | sha256sum -c -
+          unzip -tq echo.zip
+          mkdir -p build/echo
+          unzip -q echo.zip -d build/echo
+          ANDROID_DIR="$(find build/echo -type f -path '*/android/settings.gradle' -printf '%h\n' | head -n1)"
+          test -n "$ANDROID_DIR"
+          echo "ANDROID_DIR=$ANDROID_DIR" >> "$GITHUB_ENV"
+      - name: Build release APK and AAB
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle -p "$ANDROID_DIR" --no-daemon clean test assembleRelease bundleRelease
+      - name: Sign QA APK and enforce package gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find "$ANDROID_DIR/app/build/outputs/apk/release" -name '*.apk' | head -n1)"
+          AAB="$(find "$ANDROID_DIR/app/build/outputs/bundle/release" -name '*.aab' | head -n1)"
+          test -s "$APK" && test -s "$AAB"
+          mkdir -p release
+          PASS="$(openssl rand -hex 24)"
+          QA_KEYSTORE="$(mktemp -u "$RUNNER_TEMP/echo-qa-XXXXXX.jks")"
+          keytool -genkeypair -keystore "$QA_KEYSTORE" -storepass "$PASS" -keypass "$PASS" -alias echoqa -keyalg RSA -keysize 3072 -validity 30 -dname "CN=THF Echo Ephemeral QA,O=Top Hero Fit"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$QA_KEYSTORE" --ks-pass "pass:$PASS" --key-pass "pass:$PASS" --out release/THF-Market-2.1.1-phone3-api36-phone-test.apk "$APK"
+          cp "$AAB" release/THF-Market-2.1.1-phone3-api36-unsigned.aab
+          rm -f "$QA_KEYSTORE"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs release/*.apk | tee release/APK_SIGNATURE.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging release/*.apk | tee release/APK_BADGING.txt
+          grep -F "package: name='com.topherofit.thf.echo' versionCode='21102' versionName='2.1.1-phone3'" release/APK_BADGING.txt
+          grep -F "targetSdkVersion:'36'" release/APK_BADGING.txt
+          grep -q '^launchable-activity:' release/APK_BADGING.txt
+          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" release/APK_SIGNATURE.txt
+          grep -F "Verified using v3 scheme (APK Signature Scheme v3): true" release/APK_SIGNATURE.txt
+          sha256sum release/*.apk release/*.aab | tee release/SHA256SUMS.txt
+          {
+            echo "production_signed=false"
+            echo "phone_test_signed=true"
+            echo "launcher_exposed=true"
+            echo "identity_authority=thf.shared.integration.v4"
+            echo "rollback=uninstall com.topherofit.thf.echo"
+          } > release/RELEASE_TRUTH.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thf-market-2.1.1-phone3-api36-phone-test
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
