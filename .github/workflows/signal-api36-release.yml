@@ -22,7 +22,9 @@ permissions:
 env:
   GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
   GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
-  SOURCE_FILE_ID: 10qPO33KG8lL7KWKmoRO2nxJDZSj4eSw4
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
   SOURCE_SHA256: 3b6ba96076decd62e31a90c60d91a101806d6a6e9be329a58baa55ece82227ef
 
 jobs:
@@ -37,7 +39,7 @@ jobs:
         with:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
         with:
           project_id: project-b5e10d7e-8ce8-4aa4-a15
@@ -48,16 +50,24 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      - name: Fetch and verify exact private source
+      - name: Recover exact private source from authorized builder cache
         shell: bash
         run: |
           set -euo pipefail
-          token="$(gcloud auth print-access-token)"
-          code="$(curl -sS -L --retry 2 --connect-timeout 15 -o signal.zip -w '%{http_code}' -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/$SOURCE_FILE_ID?alt=media")"
-          if [ "$code" != 200 ]; then
-            echo "DRIVE_ACCESS_BLOCK http=$code"
-            exit 21
-          fi
+          gcloud compute ssh "$GCP_BUILDER" --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --ssh-key-expire-after=30m --command='bash -s' <<'REMOTE'
+          set -euo pipefail
+          target=/tmp/THF_Signal_PHONE_FUNDAMENTALS_SRC3.zip
+          rm -f "$target"
+          while IFS= read -r -d '' candidate; do
+            [ "$(sha256sum "$candidate" | awk '{print $1}')" = "3b6ba96076decd62e31a90c60d91a101806d6a6e9be329a58baa55ece82227ef" ] || continue
+            cp "$candidate" "$target"
+            echo "EXACT_SOURCE_FOUND=$candidate"
+            exit 0
+          done < <(find "$HOME" -type f -name '*.zip' -size -500M -print0 2>/dev/null)
+          echo "EXACT_SOURCE_SHA_NOT_FOUND" >&2
+          exit 44
+          REMOTE
+          gcloud compute scp --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" "$GCP_BUILDER:/tmp/THF_Signal_PHONE_FUNDAMENTALS_SRC3.zip" signal.zip
           echo "$SOURCE_SHA256  signal.zip" | sha256sum -c -
           unzip -tq signal.zip
           mkdir -p build/signal
