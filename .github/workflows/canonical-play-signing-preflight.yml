@@ -61,6 +61,22 @@ jobs:
           jarsigner -verify release/THF-Community-2.1.1-phone3-api36-unsigned.aab > release/ECHO_UNSIGNED_STATE.txt 2>&1 || true
           grep -F 'jar is unsigned' release/CORE_UNSIGNED_STATE.txt
           grep -F 'jar is unsigned' release/ECHO_UNSIGNED_STATE.txt
+      - name: Validate bundles with pinned official bundletool
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUNDLETOOL_VERSION=1.18.3
+          BUNDLETOOL_SHA256=a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
+          curl -fsSL "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" -o "$RUNNER_TEMP/bundletool.jar"
+          echo "$BUNDLETOOL_SHA256  $RUNNER_TEMP/bundletool.jar" | sha256sum -c -
+          java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle=release/THF-Core-6.2.2-rc6-api36-unsigned.aab | tee release/CORE_BUNDLETOOL_VALIDATE.txt
+          java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle=release/THF-Community-2.1.1-phone3-api36-unsigned.aab | tee release/ECHO_BUNDLETOOL_VALIDATE.txt
+          {
+            echo "bundletool_version=$BUNDLETOOL_VERSION"
+            echo "bundletool_sha256=$BUNDLETOOL_SHA256"
+            echo "core_bundle_structure=PASS"
+            echo "echo_bundle_structure=PASS"
+          } > release/BUNDLETOOL_GATE.txt
       - name: Sign when authorized upload-key secrets exist
         shell: bash
         run: |
