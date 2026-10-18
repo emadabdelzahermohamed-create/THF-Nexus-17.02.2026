@@ -104,12 +104,16 @@ jobs:
               raise SystemExit(2)
           PY
 
-      - name: Download and validate exact signed Fitness 51004 candidate
+      - name: Download, sign when pinned legacy candidate is unsigned, and validate Fitness 51004
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish_internal' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          UPLOAD_KEYSTORE_B64: ${{ secrets.THF_PLAY_UPLOAD_KEYSTORE_B64 }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.THF_PLAY_UPLOAD_KEY_ALIAS }}
+          UPLOAD_STORE_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           test -n "$SOURCE_RUN_ID"
@@ -119,7 +123,35 @@ jobs:
           SIGNING_STATUS="$(find candidate -type f -name aab-signing-status.txt | head -n1)"
           test -s "$AAB"
           test -s "$SIGNING_STATUS"
-          grep -Fx 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' "$SIGNING_STATUS"
+
+          status="$(tr -d '\r\n' < "$SIGNING_STATUS")"
+          signing_provenance='UNKNOWN'
+          if [[ "$status" == 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' ]]; then
+            signing_provenance='PRE_SIGNED_BY_CANONICAL_UPLOAD_KEY'
+          elif [[ "$status" == 'PRODUCTION_SIGNING=NOT_RUN_MISSING_ALL_FOUR_EXISTING_SECRETS' ]]; then
+            # The only unsigned fallback allowed is the exact, previously validated 51004
+            # candidate from run 39089308617. Pin both run ID and pre-sign SHA256 so this
+            # cannot silently sign a different artifact.
+            [[ "$SOURCE_RUN_ID" == '39089308617' ]]
+            EXPECTED_UNSIGNED_SHA256='39d3a14dc49ec74cfb3499197993737225d29cfba8ed4368825c2cf03171b303'
+            echo "$EXPECTED_UNSIGNED_SHA256  $AAB" | sha256sum -c -
+            jarsigner -verify "$AAB" > play-evidence/pre-sign-state.txt 2>&1 || true
+            grep -F 'jar is unsigned.' play-evidence/pre-sign-state.txt
+            for value in "$UPLOAD_KEYSTORE_B64" "$UPLOAD_KEY_ALIAS" "$UPLOAD_STORE_PASSWORD" "$UPLOAD_KEY_PASSWORD"; do
+              test -n "$value"
+            done
+            KEYSTORE="$RUNNER_TEMP/thf-fitness-upload.jks"
+            printf '%s' "$UPLOAD_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+            chmod 600 "$KEYSTORE"
+            jarsigner -keystore "$KEYSTORE" -storepass "$UPLOAD_STORE_PASSWORD" \
+              -keypass "$UPLOAD_KEY_PASSWORD" "$AAB" "$UPLOAD_KEY_ALIAS"
+            rm -f "$KEYSTORE"
+            signing_provenance='SIGNED_IN_GATE_FROM_PINNED_UNSIGNED_RUN_39089308617'
+          else
+            echo "Unexpected signing status: $status" >&2
+            exit 43
+          fi
+
           jarsigner -verify -verbose -certs "$AAB" > play-evidence/aab-jarsigner.txt 2>&1
           grep -F 'jar verified.' play-evidence/aab-jarsigner.txt
           sha256sum "$AAB" | tee play-evidence/aab.sha256
@@ -149,10 +181,13 @@ jobs:
               raise SystemExit(f'unexpected targetSdk: {target_sdk}')
           PY
           printf 'AAB_PATH=%s\n' "$AAB" >> "$GITHUB_ENV"
-          echo 'candidate_package=com.topherofit.thf.pulse' > play-evidence/candidate-gate.txt
-          echo 'candidate_versionCode=51004' >> play-evidence/candidate-gate.txt
-          echo 'candidate_targetSdk=36' >> play-evidence/candidate-gate.txt
-          echo 'production_signing=PASS' >> play-evidence/candidate-gate.txt
+          {
+            echo 'candidate_package=com.topherofit.thf.pulse'
+            echo 'candidate_versionCode=51004'
+            echo 'candidate_targetSdk=36'
+            echo "production_signing=$signing_provenance"
+            echo "source_run_id=$SOURCE_RUN_ID"
+          } > play-evidence/candidate-gate.txt
 
       - name: Publish validated Fitness 51004 to Google Play Internal
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish_internal' }}
