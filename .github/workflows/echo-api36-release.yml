@@ -106,6 +106,9 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$QA_KEYSTORE" --ks-pass "pass:$PASS" --key-pass "pass:$PASS" --out release/THF-Community-2.1.1-phone3-api36-phone-test.apk "$APK"
           cp "$AAB" release/THF-Community-2.1.1-phone3-api36-unsigned.aab
           rm -f "$QA_KEYSTORE"
+          # Play handoff must never mistake this intentionally unsigned bundle for a production-ready upload.
+          jarsigner -verify release/THF-Community-2.1.1-phone3-api36-unsigned.aab > release/AAB_SIGNATURE_STATE.txt 2>&1 || true
+          grep -F "jar is unsigned" release/AAB_SIGNATURE_STATE.txt
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs release/*.apk | tee release/APK_SIGNATURE.txt
           "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging release/*.apk | tee release/APK_BADGING.txt
           grep -F "package: name='com.topherofit.thf.echo' versionCode='21102' versionName='2.1.1-phone3'" release/APK_BADGING.txt
@@ -121,6 +124,20 @@ jobs:
             echo "identity_authority=thf.shared.integration.v4"
             echo "rollback=uninstall com.topherofit.thf.echo"
           } > release/RELEASE_TRUTH.txt
+          {
+            echo "product=THF Community"
+            echo "package=com.topherofit.thf.echo"
+            echo "versionCode=21102"
+            echo "versionName=2.1.1-phone3"
+            echo "targetSdk=36"
+            echo "source_sha256=$SOURCE_SHA256"
+            echo "aab_production_signed=false"
+            echo "play_ready=false"
+            echo "release_blocker=sign AAB with the existing Play App Signing upload key, then verify the signed bundle before Internal testing upload"
+            echo "rollback=uninstall com.topherofit.thf.echo"
+            echo "phone_pass=false"
+            echo "play_pass=false"
+          } > release/PLAY_HANDOFF.txt
       - uses: actions/upload-artifact@v4
         with:
           name: thf-community-2.1.1-phone3-api36-phone-test
