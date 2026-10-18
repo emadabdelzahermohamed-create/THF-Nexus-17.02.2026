@@ -1,6 +1,10 @@
 name: THF Fitness Monetization Probe
 
 on:
+  push:
+    branches: [fitness/motion-runtime-api36-gate-20261018]
+    paths:
+      - '.github/workflows/thf-fitness-monetization-probe.yml'
   workflow_dispatch:
 
 permissions:
