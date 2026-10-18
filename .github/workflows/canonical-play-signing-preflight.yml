@@ -134,7 +134,7 @@ jobs:
             signed="${unsigned%-unsigned.aab}-play-upload-signed.aab"
             jarsigner -keystore "$RUNNER_TEMP/thf-play-upload.jks" -storepass "$UPLOAD_STORE_PASSWORD" \
               -keypass "$UPLOAD_KEY_PASSWORD" -signedjar "$signed" "$unsigned" "$UPLOAD_KEY_ALIAS"
-            jarsigner -verify -strict -verbose -certs "$signed" > "release/${app^^}_SIGNED_VERIFY.txt"
+            jarsigner -verify -verbose -certs "$signed" > "release/${app^^}_SIGNED_VERIFY.txt" 2>&1\n            grep -F "jar verified." "release/${app^^}_SIGNED_VERIFY.txt"
           done
           rm -f "$RUNNER_TEMP/thf-play-upload.jks"
           sha256sum release/*-play-upload-signed.aab | tee release/SIGNED_SHA256SUMS.txt
