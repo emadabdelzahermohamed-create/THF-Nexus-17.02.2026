@@ -1,0 +1,98 @@
+name: Signal API 36 private phone-test candidate
+
+on:
+  push:
+    branches:
+      - 'agent/codex/signal-release/**'
+    paths:
+      - '.github/workflows/signal-api36-release.yml'
+      - 'ReleaseOps/THF_SIGNAL_API36_CANDIDATE.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  SOURCE_FILE_ID: 10qPO33KG8lL7KWKmoRO2nxJDZSj4eSw4
+  SOURCE_SHA256: 3b6ba96076decd62e31a90c60d91a101806d6a6e9be329a58baa55ece82227ef
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: \${{ env.GCP_WIF_PROVIDER }}
+          service_account: \${{ env.GCP_SERVICE_ACCOUNT }}
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Fetch and verify exact private source
+        shell: bash
+        run: |
+          set -euo pipefail
+          token="$(gcloud auth print-access-token)"
+          code="$(curl -sS -L --retry 2 --connect-timeout 15 -o signal.zip -w '%{http_code}' -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/$SOURCE_FILE_ID?alt=media")"
+          test "$code" = 200
+          echo "$SOURCE_SHA256  signal.zip" | sha256sum -c -
+          unzip -tq signal.zip
+          mkdir -p build/signal
+          unzip -q signal.zip -d build/signal
+          ANDROID_DIR="$(find build/signal -type f -path '*/android/settings.gradle' -printf '%h\n' | head -n1)"
+          test -n "$ANDROID_DIR"
+          echo "ANDROID_DIR=$ANDROID_DIR" >> "$GITHUB_ENV"
+      - name: Build release APK and AAB
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle -p "$ANDROID_DIR" --no-daemon clean test assembleRelease bundleRelease
+      - name: Sign QA APK and enforce private package gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find "$ANDROID_DIR/app/build/outputs/apk/release" -name '*.apk' | head -n1)"
+          AAB="$(find "$ANDROID_DIR/app/build/outputs/bundle/release" -name '*.aab' | head -n1)"
+          test -s "$APK" && test -s "$AAB"
+          mkdir -p release
+          PASS="$(openssl rand -hex 24)"
+          QA_KEYSTORE="$(mktemp -u "$RUNNER_TEMP/signal-qa-XXXXXX.jks")"
+          keytool -genkeypair -keystore "$QA_KEYSTORE" -storepass "$PASS" -keypass "$PASS" -alias signalqa -keyalg RSA -keysize 3072 -validity 30 -dname "CN=THF Signal Ephemeral QA,O=Top Hero Fit"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$QA_KEYSTORE" --ks-pass "pass:$PASS" --key-pass "pass:$PASS" --out release/THF-Signal-1.2.0-apps-rc4-api36-phone-test.apk "$APK"
+          cp "$AAB" release/THF-Signal-1.2.0-apps-rc4-api36-unsigned.aab
+          rm -f "$QA_KEYSTORE"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs release/*.apk | tee release/APK_SIGNATURE.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging release/*.apk | tee release/APK_BADGING.txt
+          grep -F "package: name='com.topherofit.thf.signal' versionCode='12002' versionName='1.2.0-apps-rc4'" release/APK_BADGING.txt
+          grep -F "targetSdkVersion:'36'" release/APK_BADGING.txt
+          if grep -q '^launchable-activity:' release/APK_BADGING.txt; then
+            echo "FAIL: private Signal APK unexpectedly exposes a launcher activity" >&2
+            exit 31
+          fi
+          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" release/APK_SIGNATURE.txt
+          grep -F "Verified using v3 scheme (APK Signature Scheme v3): true" release/APK_SIGNATURE.txt
+          sha256sum release/*.apk release/*.aab | tee release/SHA256SUMS.txt
+          {
+            echo "production_signed=false"
+            echo "phone_test_signed=true"
+            echo "launcher_exposed=false"
+            echo "entry_boundary=THF Pass signature/role handoff"
+            echo "rollback=uninstall com.topherofit.thf.signal"
+          } > release/RELEASE_TRUTH.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thf-signal-1.2.0-apps-rc4-api36-private-phone-test
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
