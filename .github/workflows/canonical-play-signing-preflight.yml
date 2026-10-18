@@ -71,6 +71,35 @@ jobs:
           echo "$BUNDLETOOL_SHA256  $RUNNER_TEMP/bundletool.jar" | sha256sum -c -
           java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle=release/THF-Core-6.2.2-rc6-api36-unsigned.aab | tee release/CORE_BUNDLETOOL_VALIDATE.txt
           java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle=release/THF-Community-2.1.1-phone3-api36-unsigned.aab | tee release/ECHO_BUNDLETOOL_VALIDATE.txt
+          java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle=release/THF-Core-6.2.2-rc6-api36-unsigned.aab --module=base > release/CORE_MANIFEST.xml
+          java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle=release/THF-Community-2.1.1-phone3-api36-unsigned.aab --module=base > release/ECHO_MANIFEST.xml
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          android = "{http://schemas.android.com/apk/res/android}"
+          rows = []
+          for app in ("CORE", "ECHO"):
+              root = ET.parse(Path("release") / f"{app}_MANIFEST.xml").getroot()
+              uses_sdk = root.find("uses-sdk")
+              permissions = sorted({
+                  node.attrib.get(android + "name", "")
+                  for node in root.findall("uses-permission")
+                  if node.attrib.get(android + "name")
+              })
+              rows.extend([
+                  f"{app.lower()}_package={root.attrib.get('package', '')}",
+                  f"{app.lower()}_versionCode={root.attrib.get(android + 'versionCode', '')}",
+                  f"{app.lower()}_versionName={root.attrib.get(android + 'versionName', '')}",
+                  f"{app.lower()}_minSdk={uses_sdk.attrib.get(android + 'minSdkVersion', '') if uses_sdk is not None else ''}",
+                  f"{app.lower()}_targetSdk={uses_sdk.attrib.get(android + 'targetSdkVersion', '') if uses_sdk is not None else ''}",
+                  f"{app.lower()}_permissions={','.join(permissions) if permissions else 'NONE'}",
+              ])
+          Path("release/PLAY_MANIFEST_FACTS.txt").write_text("\n".join(rows) + "\n")
+          PY
+          grep -F 'core_package=com.topherofit.thf.core' release/PLAY_MANIFEST_FACTS.txt
+          grep -F 'core_targetSdk=36' release/PLAY_MANIFEST_FACTS.txt
+          grep -F 'echo_package=com.topherofit.thf.echo' release/PLAY_MANIFEST_FACTS.txt
+          grep -F 'echo_targetSdk=36' release/PLAY_MANIFEST_FACTS.txt
           {
             echo "bundletool_version=$BUNDLETOOL_VERSION"
             echo "bundletool_sha256=$BUNDLETOOL_SHA256"
