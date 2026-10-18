@@ -25,6 +25,10 @@ permissions:
   actions: read
   id-token: write
 
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  EXPECTED_FITNESS_UPLOAD_SHA1: D8:BB:CA:BC:17:78:03:43:2E:5D:95:7B:19:61:D2:03:6A:3A:03:06
+
 jobs:
   play-gate:
     runs-on: ubuntu-latest
@@ -38,6 +42,11 @@ jobs:
           workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
           service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
           create_credentials_file: true
+
+      - name: Set up gcloud for Fitness signing Secret Manager access
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
 
       - uses: actions/setup-python@v5
         with:
@@ -104,16 +113,12 @@ jobs:
               raise SystemExit(2)
           PY
 
-      - name: Download, sign when pinned legacy candidate is unsigned, and validate Fitness 51004
+      - name: Download, sign with Play-bound Fitness key when needed, and validate Fitness 51004
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish_internal' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
-          UPLOAD_KEYSTORE_B64: ${{ secrets.THF_PLAY_UPLOAD_KEYSTORE_B64 }}
-          UPLOAD_KEY_ALIAS: ${{ secrets.THF_PLAY_UPLOAD_KEY_ALIAS }}
-          UPLOAD_STORE_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_STORE_PASSWORD }}
-          UPLOAD_KEY_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           test -n "$SOURCE_RUN_ID"
@@ -127,7 +132,7 @@ jobs:
           status="$(tr -d '\r\n' < "$SIGNING_STATUS")"
           signing_provenance='UNKNOWN'
           if [[ "$status" == 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' ]]; then
-            signing_provenance='PRE_SIGNED_BY_CANONICAL_UPLOAD_KEY'
+            signing_provenance='PRE_SIGNED_CANDIDATE'
           elif [[ "$status" == 'PRODUCTION_SIGNING=NOT_RUN_MISSING_ALL_FOUR_EXISTING_SECRETS' ]]; then
             # The only unsigned fallback allowed is the exact, previously validated 51004
             # candidate from run 39089308617. Pin both run ID and pre-sign SHA256 so this
@@ -137,16 +142,23 @@ jobs:
             echo "$EXPECTED_UNSIGNED_SHA256  $AAB" | sha256sum -c -
             jarsigner -verify "$AAB" > play-evidence/pre-sign-state.txt 2>&1 || true
             grep -F 'jar is unsigned.' play-evidence/pre-sign-state.txt
-            for value in "$UPLOAD_KEYSTORE_B64" "$UPLOAD_KEY_ALIAS" "$UPLOAD_STORE_PASSWORD" "$UPLOAD_KEY_PASSWORD"; do
-              test -n "$value"
-            done
+
             KEYSTORE="$RUNNER_TEMP/thf-fitness-upload.jks"
-            printf '%s' "$UPLOAD_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+            gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-keystore-b64 | base64 -d > "$KEYSTORE"
             chmod 600 "$KEYSTORE"
-            jarsigner -keystore "$KEYSTORE" -storepass "$UPLOAD_STORE_PASSWORD" \
-              -keypass "$UPLOAD_KEY_PASSWORD" "$AAB" "$UPLOAD_KEY_ALIAS"
+            STORE_PASSWORD="$(gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-store-password)"
+            KEY_ALIAS="$(gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-key-alias)"
+            KEY_PASSWORD="$(gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-key-password)"
+            echo "::add-mask::$STORE_PASSWORD"
+            echo "::add-mask::$KEY_ALIAS"
+            echo "::add-mask::$KEY_PASSWORD"
+            keytool -list -v -keystore "$KEYSTORE" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" > play-evidence/upload-key.txt
+            grep -F "SHA1: $EXPECTED_FITNESS_UPLOAD_SHA1" play-evidence/upload-key.txt
+            jarsigner -keystore "$KEYSTORE" -storepass "$STORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" "$AAB" "$KEY_ALIAS"
             rm -f "$KEYSTORE"
-            signing_provenance='SIGNED_IN_GATE_FROM_PINNED_UNSIGNED_RUN_39089308617'
+            unset STORE_PASSWORD KEY_ALIAS KEY_PASSWORD
+            signing_provenance='SIGNED_IN_GATE_FROM_PINNED_UNSIGNED_RUN_39089308617_WITH_PLAY_BOUND_FITNESS_KEY'
           else
             echo "Unexpected signing status: $status" >&2
             exit 43
@@ -154,6 +166,8 @@ jobs:
 
           jarsigner -verify -verbose -certs "$AAB" > play-evidence/aab-jarsigner.txt 2>&1
           grep -F 'jar verified.' play-evidence/aab-jarsigner.txt
+          keytool -printcert -jarfile "$AAB" > play-evidence/aab-signer-cert.txt
+          grep -F "SHA1: $EXPECTED_FITNESS_UPLOAD_SHA1" play-evidence/aab-signer-cert.txt
           sha256sum "$AAB" | tee play-evidence/aab.sha256
 
           BUNDLETOOL_VERSION=1.18.3
@@ -186,6 +200,7 @@ jobs:
             echo 'candidate_versionCode=51004'
             echo 'candidate_targetSdk=36'
             echo "production_signing=$signing_provenance"
+            echo "expected_upload_sha1=$EXPECTED_FITNESS_UPLOAD_SHA1"
             echo "source_run_id=$SOURCE_RUN_ID"
           } > play-evidence/candidate-gate.txt
 
