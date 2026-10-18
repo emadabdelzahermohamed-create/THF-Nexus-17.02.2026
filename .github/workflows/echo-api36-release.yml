@@ -103,8 +103,8 @@ jobs:
           PASS="$(openssl rand -hex 24)"
           QA_KEYSTORE="$(mktemp -u "$RUNNER_TEMP/echo-qa-XXXXXX.jks")"
           keytool -genkeypair -keystore "$QA_KEYSTORE" -storepass "$PASS" -keypass "$PASS" -alias echoqa -keyalg RSA -keysize 3072 -validity 30 -dname "CN=THF Echo Ephemeral QA,O=Top Hero Fit"
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$QA_KEYSTORE" --ks-pass "pass:$PASS" --key-pass "pass:$PASS" --out release/THF-Market-2.1.1-phone3-api36-phone-test.apk "$APK"
-          cp "$AAB" release/THF-Market-2.1.1-phone3-api36-unsigned.aab
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign --ks "$QA_KEYSTORE" --ks-pass "pass:$PASS" --key-pass "pass:$PASS" --out release/THF-Community-2.1.1-phone3-api36-phone-test.apk "$APK"
+          cp "$AAB" release/THF-Community-2.1.1-phone3-api36-unsigned.aab
           rm -f "$QA_KEYSTORE"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs release/*.apk | tee release/APK_SIGNATURE.txt
           "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging release/*.apk | tee release/APK_BADGING.txt
@@ -123,7 +123,7 @@ jobs:
           } > release/RELEASE_TRUTH.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: thf-market-2.1.1-phone3-api36-phone-test
+          name: thf-community-2.1.1-phone3-api36-phone-test
           path: release/
           if-no-files-found: error
           retention-days: 30
