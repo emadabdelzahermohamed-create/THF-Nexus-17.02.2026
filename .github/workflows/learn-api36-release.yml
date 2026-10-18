@@ -56,14 +56,14 @@ jobs:
           set -euo pipefail
           TOKEN="$(gcloud auth print-access-token)"
           HTTP="$(curl -sS -L -o codex.zip -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "https://www.googleapis.com/drive/v3/files/$DRIVE_FILE_ID?alt=media")"
-          if [ "$HTTP" != 200 ] || ! codex "$SOURCE_SHA256  codex.zip" | sha256sum -c -; then
+          if [ "$HTTP" != 200 ] || ! echo "$SOURCE_SHA256  codex.zip" | sha256sum -c -; then
             rm -f codex.zip
-            codex "Drive exact-source retrieval unavailable (HTTP $HTTP); checking prior GitHub-proven exact source."
-            if git show origin/agent/codex/learn-release/20261017:Sources/THF_Codex_PHONE_FUNDAMENTALS_SRC3.zip > codex.zip 2>/dev/null && codex "$SOURCE_SHA256  codex.zip" | sha256sum -c -; then
-              codex "EXACT_SOURCE_FOUND=github:agent/codex/learn-release/20261017"
+            echo "Drive exact-source retrieval unavailable (HTTP $HTTP); checking prior GitHub-proven exact source."
+            if git show origin/agent/codex/learn-release/20261017:Sources/THF_Codex_PHONE_FUNDAMENTALS_SRC3.zip > codex.zip 2>/dev/null && echo "$SOURCE_SHA256  codex.zip" | sha256sum -c -; then
+              echo "EXACT_SOURCE_FOUND=github:agent/codex/learn-release/20261017"
             else
               rm -f codex.zip
-              codex "GitHub exact source unavailable; checking authorized builder cache."
+              echo "GitHub exact source unavailable; checking authorized builder cache."
               gcloud compute ssh "$GCP_BUILDER" --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --ssh-key-expire-after=30m --command='bash -s' <<'REMOTE'
           set -euo pipefail
           target=/tmp/THF_Codex_PHONE_FUNDAMENTALS_SRC3.zip
@@ -71,22 +71,22 @@ jobs:
           while IFS= read -r -d '' candidate; do
             [ "$(sha256sum "$candidate" | awk '{print $1}')" = "44ff76cca12b6b13febc53e9e0b8748a01949eb07c40b020d76b82f45a094950" ] || continue
             cp "$candidate" "$target"
-            codex "EXACT_SOURCE_FOUND=$candidate"
+            echo "EXACT_SOURCE_FOUND=$candidate"
             exit 0
           done < <(find "$HOME" -type f -name '*.zip' -size -500M -print0 2>/dev/null)
-          codex "EXACT_SOURCE_SHA_NOT_FOUND" >&2
+          echo "EXACT_SOURCE_SHA_NOT_FOUND" >&2
           exit 44
           REMOTE
               gcloud compute scp --quiet --tunnel-through-iap --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" "$GCP_BUILDER:/tmp/THF_Codex_PHONE_FUNDAMENTALS_SRC3.zip" codex.zip
             fi
           fi
-          codex "$SOURCE_SHA256  codex.zip" | sha256sum -c -
+          echo "$SOURCE_SHA256  codex.zip" | sha256sum -c -
           unzip -tq codex.zip
           mkdir -p build/codex
           unzip -q codex.zip -d build/codex
           ANDROID_DIR="$(find build/codex -type f -path '*/android/settings.gradle' -printf '%h\n' | head -n1)"
           test -n "$ANDROID_DIR"
-          codex "ANDROID_DIR=$ANDROID_DIR" >> "$GITHUB_ENV"
+          echo "ANDROID_DIR=$ANDROID_DIR" >> "$GITHUB_ENV"
       - name: Build release APK and AAB
         shell: bash
         run: |
@@ -115,11 +115,11 @@ jobs:
           grep -F "Verified using v3 scheme (APK Signature Scheme v3): true" release/APK_SIGNATURE.txt
           sha256sum release/*.apk release/*.aab | tee release/SHA256SUMS.txt
           {
-            codex "production_signed=false"
-            codex "phone_test_signed=true"
-            codex "launcher_exposed=true"
-            codex "identity_authority=thf.shared.integration.v4"
-            codex "rollback=uninstall com.topherofit.thf.codex"
+            echo "production_signed=false"
+            echo "phone_test_signed=true"
+            echo "launcher_exposed=true"
+            echo "identity_authority=thf.shared.integration.v4"
+            echo "rollback=uninstall com.topherofit.thf.codex"
           } > release/RELEASE_TRUTH.txt
       - uses: actions/upload-artifact@v4
         with:
