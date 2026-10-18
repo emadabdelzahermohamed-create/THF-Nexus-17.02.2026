@@ -1,9 +1,9 @@
 name: Spark RC4 API 36 release candidate
 
 on:
-  push:
+  pull_request:
     branches:
-      - 'agent/codex/spark-release/**'
+      - main
     paths:
       - '.github/workflows/spark-api36-release.yml'
   workflow_dispatch:
