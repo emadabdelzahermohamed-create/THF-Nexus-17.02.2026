@@ -1,4 +1,4 @@
-name: THF Fitness Monetization Probe
+name: THF Fitness Play Configuration Probe
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Inspect one-time product configuration read-only
+      - name: Inspect monetization and Internal tester configuration read-only
         shell: bash
         run: |
           set -euo pipefail
@@ -41,6 +41,7 @@ jobs:
           creds, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
           api = build('androidpublisher', 'v3', credentials=creds, cache_discovery=False)
           result = {'package': package, 'targetProductId': target_product}
+
           try:
               response = api.monetization().onetimeproducts().list(packageName=package).execute()
               items = response.get('oneTimeProducts', []) or []
@@ -52,23 +53,43 @@ jobs:
                   })
               ids = sorted(x.get('productId') for x in items if x.get('productId'))
               result.update({
-                  'api': 'PASS',
+                  'monetizationApi': 'PASS',
                   'productIds': ids,
                   'targetPresent': target_product in ids,
                   'products': simplified,
               })
           except Exception as exc:
-              result.update({'api': 'FAIL', 'error': str(exc)[:1500]})
+              result.update({'monetizationApi': 'FAIL', 'monetizationError': str(exc)[:1500]})
+
+          edit_id = None
+          try:
+              edit_id = api.edits().insert(packageName=package, body={}).execute()['id']
+              testers = api.edits().testers().get(packageName=package, editId=edit_id, track='internal').execute()
+              result.update({
+                  'internalTestersApi': 'PASS',
+                  'googleGroups': testers.get('googleGroups', []) or [],
+              })
+          except Exception as exc:
+              result.update({'internalTestersApi': 'FAIL', 'internalTestersError': str(exc)[:1500]})
+          finally:
+              if edit_id:
+                  try:
+                      api.edits().delete(packageName=package, editId=edit_id).execute()
+                      result['editCleanup'] = 'PASS'
+                  except Exception as exc:
+                      result['editCleanup'] = 'FAIL'
+                      result['editCleanupError'] = str(exc)[:1000]
+
           print(json.dumps(result, indent=2))
-          with open('fitness-monetization-probe.json', 'w') as fh:
+          with open('fitness-play-configuration-probe.json', 'w') as fh:
               json.dump(result, fh, indent=2)
-          if result.get('api') != 'PASS':
+          if result.get('monetizationApi') != 'PASS' or result.get('internalTestersApi') != 'PASS' or result.get('editCleanup') != 'PASS':
               raise SystemExit(2)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: thf-fitness-monetization-probe
-          path: fitness-monetization-probe.json
+          name: thf-fitness-play-configuration-probe
+          path: fitness-play-configuration-probe.json
           if-no-files-found: ignore
           retention-days: 7
