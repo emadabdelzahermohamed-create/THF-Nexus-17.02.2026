@@ -74,6 +74,7 @@ jobs:
           # Phone-test signing only. The keystore and random password exist only
           # for this workflow run and are deleted before artifact upload.
           QA_KEYSTORE="$(mktemp "$RUNNER_TEMP/thf-spark-qa.XXXXXX.jks")"
+          rm -f "$QA_KEYSTORE"
           QA_PASS="$(openssl rand -hex 24)"
           echo "::add-mask::$QA_PASS"
           keytool -genkeypair -noprompt \
