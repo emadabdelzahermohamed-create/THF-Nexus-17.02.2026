@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">THF Phone Bridge</string>
+    <string name="service_description">Temporary owner-authorized accessibility bridge for THF physical QA. It does not bypass device authentication and should be disabled after testing.</string>
+</resources>
