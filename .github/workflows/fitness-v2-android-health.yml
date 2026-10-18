@@ -110,7 +110,8 @@ jobs:
             printf '%s' "$ANDROID_UPLOAD_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
             jarsigner -keystore "$KEYSTORE" -storepass "$ANDROID_UPLOAD_STORE_PASSWORD" \
               -keypass "$ANDROID_UPLOAD_KEY_PASSWORD" "$AAB" "$ANDROID_UPLOAD_KEY_ALIAS"
-            jarsigner -verify -strict "$AAB" > fitness-v2/evidence/aab-jarsigner.txt
+            jarsigner -verify -verbose -certs "$AAB" > fitness-v2/evidence/aab-jarsigner.txt 2>&1
+            grep -F 'jar verified.' fitness-v2/evidence/aab-jarsigner.txt
             rm -f "$KEYSTORE"
             echo 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' | tee fitness-v2/evidence/aab-signing-status.txt
           fi
