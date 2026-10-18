@@ -74,7 +74,29 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging release/*.apk | tee release/APK_BADGING.txt
           grep -F "package: name='com.topherofit.thf.spark'" release/APK_BADGING.txt
           grep -F "targetSdkVersion:'36'" release/APK_BADGING.txt
-          printf 'SOURCE_SHA256=%s\nPHYSICAL_PHONE_PASS=FALSE\nPLAY_READY=FALSE\n' "$SOURCE_SHA256" > release/TRUTH_BOUNDARY.txt
+
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs \
+            release/THF-Spark-RC4-api36.apk | tee release/APK_SIGNING.txt
+          if grep -qi 'Android Debug' release/APK_SIGNING.txt; then
+            APK_PRODUCTION_SIGNED=FALSE
+          else
+            APK_PRODUCTION_SIGNED=UNVERIFIED
+          fi
+          if jarsigner -verify -verbose -certs release/THF-Spark-RC4-api36.aab \
+              > release/AAB_SIGNING.txt 2>&1; then
+            AAB_SIGNATURE_VALID=TRUE
+          else
+            AAB_SIGNATURE_VALID=FALSE
+          fi
+
+          cat > release/ROLLBACK.txt <<'EOF'
+          Keep the immediately previous signed release and its SHA-256.
+          Prefer Play staged rollout halt/rollback. Direct APK downgrade is not guaranteed;
+          uninstalling can erase app data and therefore requires an explicit owner decision.
+          EOF
+          printf 'SOURCE_SHA256=%s\nAPK_PRODUCTION_SIGNED=%s\nAAB_SIGNATURE_VALID=%s\nPHYSICAL_PHONE_PASS=FALSE\nPLAY_READY=FALSE\n' \
+            "$SOURCE_SHA256" "$APK_PRODUCTION_SIGNED" "$AAB_SIGNATURE_VALID" \
+            > release/TRUTH_BOUNDARY.txt
       - uses: actions/upload-artifact@v4
         with:
           name: thf-spark-rc4-api36
