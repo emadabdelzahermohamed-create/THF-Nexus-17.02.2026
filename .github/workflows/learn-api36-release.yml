@@ -3,14 +3,14 @@ name: Codex API 36 phone-test candidate
 on:
   push:
     branches:
-      - 'agent/codex/codex-release/**'
+      - 'agent/codex/learn-release/**'
     paths:
-      - '.github/workflows/codex-api36-release.yml'
+      - '.github/workflows/learn-api36-release.yml'
   pull_request:
     branches:
       - apps-phone-fundamentals-v3-20260915
     paths:
-      - '.github/workflows/codex-api36-release.yml'
+      - '.github/workflows/learn-api36-release.yml'
   workflow_dispatch:
 
 permissions:
@@ -59,8 +59,8 @@ jobs:
           if [ "$HTTP" != 200 ] || ! codex "$SOURCE_SHA256  codex.zip" | sha256sum -c -; then
             rm -f codex.zip
             codex "Drive exact-source retrieval unavailable (HTTP $HTTP); checking prior GitHub-proven exact source."
-            if git show origin/agent/codex/codex-release/20261017:Sources/THF_Codex_PHONE_FUNDAMENTALS_SRC3.zip > codex.zip 2>/dev/null && codex "$SOURCE_SHA256  codex.zip" | sha256sum -c -; then
-              codex "EXACT_SOURCE_FOUND=github:agent/codex/codex-release/20261017"
+            if git show origin/agent/codex/learn-release/20261017:Sources/THF_Codex_PHONE_FUNDAMENTALS_SRC3.zip > codex.zip 2>/dev/null && codex "$SOURCE_SHA256  codex.zip" | sha256sum -c -; then
+              codex "EXACT_SOURCE_FOUND=github:agent/codex/learn-release/20261017"
             else
               rm -f codex.zip
               codex "GitHub exact source unavailable; checking authorized builder cache."
