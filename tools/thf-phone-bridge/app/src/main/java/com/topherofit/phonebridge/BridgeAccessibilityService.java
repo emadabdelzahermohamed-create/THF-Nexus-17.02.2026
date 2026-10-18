@@ -143,7 +143,7 @@ public final class BridgeAccessibilityService extends AccessibilityService {
     }
 
     private JSONObject nodeToJson(AccessibilityNodeInfo node, int[] count, int depth) throws Exception {
-        if (node == null || count[0] >= 350 || depth >= 40) return JSONObject.NULL;
+        if (node == null || count[0] >= 350 || depth >= 40) return new JSONObject().put("truncated", true);
         count[0]++;
         Rect bounds = new Rect();
         node.getBoundsInScreen(bounds);
