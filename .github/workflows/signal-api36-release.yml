@@ -7,6 +7,12 @@ on:
     paths:
       - '.github/workflows/signal-api36-release.yml'
       - 'ReleaseOps/THF_SIGNAL_API36_CANDIDATE.md'
+  pull_request:
+    branches:
+      - apps-phone-fundamentals-v3-20260915
+    paths:
+      - '.github/workflows/signal-api36-release.yml'
+      - 'ReleaseOps/THF_SIGNAL_API36_CANDIDATE.md'
   workflow_dispatch:
 
 permissions:
