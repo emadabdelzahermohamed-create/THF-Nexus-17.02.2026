@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Verify Internal track versions after upload
+      - name: Verify Internal releases and tester groups
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check google-api-python-client google-auth
@@ -41,15 +41,26 @@ jobs:
               edit_id = api.edits().insert(packageName=package, body={}).execute()["id"]
               try:
                   track = api.edits().tracks().get(packageName=package, editId=edit_id, track="internal").execute()
-                  releases = []
-                  versions = set()
+                  releases, versions = [], set()
                   for release in track.get("releases", []) or []:
                       codes = [str(v) for v in (release.get("versionCodes") or [])]
                       versions.update(codes)
                       releases.append({"name": release.get("name"), "status": release.get("status"), "versionCodes": codes})
+                  testers = api.edits().testers().get(packageName=package, editId=edit_id, track="internal").execute()
+                  groups = testers.get("googleGroups", []) or []
                   present = wanted in versions
                   failed = failed or not present
-                  out["packages"].append({"package": package, "expectedVersionCode": wanted, "internalVersionPresent": present, "internalReleases": releases, "trackRead": "PASS"})
+                  out["packages"].append({
+                      "package": package,
+                      "expectedVersionCode": wanted,
+                      "internalVersionPresent": present,
+                      "internalReleases": releases,
+                      "testerGoogleGroups": groups,
+                      "testerGroupConfigured": bool(groups),
+                      "optInUrl": "https://play.google.com/apps/testing/" + package,
+                      "trackRead": "PASS",
+                      "testersRead": "PASS",
+                  })
               finally:
                   api.edits().delete(packageName=package, editId=edit_id).execute()
           with open("core-community-play-probe.json", "w") as fh:
