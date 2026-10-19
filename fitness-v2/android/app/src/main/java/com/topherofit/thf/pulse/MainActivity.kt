@@ -148,6 +148,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
+        if (::prefs.isInitialized) clearExpiredPendingAccountAuth()
         registerStepSensor()
         if (::foundingHeroBilling.isInitialized) foundingHeroBilling.start()
         if (::healthRepository.isInitialized) {
@@ -280,6 +281,17 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             clearPendingAccountAuth()
             accountExchangeRunning.set(false)
         }
+    }
+
+    private fun hasFreshPendingAccountAuth(nowMillis: Long = System.currentTimeMillis()): Boolean {
+        val verifier = prefs.getString(AUTH_PKCE_VERIFIER, null)
+        val startedAt = prefs.getLong(AUTH_STARTED_AT, 0L)
+        return AccountAuthContract.validVerifier(verifier) && AccountAuthContract.flowIsFresh(startedAt, nowMillis)
+    }
+
+    private fun clearExpiredPendingAccountAuth() {
+        val hasPendingState = prefs.contains(AUTH_PKCE_VERIFIER) || prefs.contains(AUTH_STARTED_AT)
+        if (hasPendingState && !hasFreshPendingAccountAuth()) clearPendingAccountAuth()
     }
 
     private fun clearPendingAccountAuth() {
@@ -558,7 +570,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             .put("syncConfigured", validPersistentHttps(BuildConfig.THF_BASE_URL) && backendRepository.configured)
             .put("accountAuthConfigured", validPersistentHttps(BuildConfig.THF_ACCOUNT_URL) && accountAuthRepository.configured)
             .put("syncAuthenticated", backendAccessToken != null)
-            .put("accountAuthPending", accountExchangeRunning.get() || prefs.contains(AUTH_PKCE_VERIFIER))
+            .put("accountAuthPending", accountExchangeRunning.get() || hasFreshPendingAccountAuth())
             .put("backendPending", jsonArrayPreference(PENDING_BACKEND).length())
             .put("backendLastSync", prefs.getString("backend_last_sync", ""))
             .put("backendLastError", prefs.getString("backend_last_error", ""))

@@ -180,6 +180,14 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             self.assertIn(marker, source)
         self.assertNotIn("addJavascriptInterface", (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "AccountAuthRepository.kt").read_text())
 
+    def test_android_stale_account_handoff_does_not_lock_sign_in(self):
+        contract = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "AccountAuthContract.kt").read_text()
+        main = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        self.assertIn("fun flowIsFresh", contract)
+        self.assertIn("private fun hasFreshPendingAccountAuth", main)
+        self.assertIn("AccountAuthContract.flowIsFresh", main)
+        self.assertNotIn('accountExchangeRunning.get() || prefs.contains(AUTH_PKCE_VERIFIER)', main)
+
     def test_appdeploy_account_bridge_is_pkce_bound_user_scoped_and_hash_only(self):
         routes = (ROOT / "fitness-v2" / "appdeploy" / "android_v2_routes.ts").read_text()
         bridge = (ROOT / "fitness-v2" / "appdeploy" / "native_auth_bridge.tsx").read_text()

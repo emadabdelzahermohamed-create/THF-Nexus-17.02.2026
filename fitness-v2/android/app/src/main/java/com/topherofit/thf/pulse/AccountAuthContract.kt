@@ -70,6 +70,9 @@ object AccountAuthContract {
             ?.takeIf(::validTicket)
     }.getOrNull()
 
+    fun flowIsFresh(startedAtMillis: Long, nowMillis: Long = System.currentTimeMillis()): Boolean =
+        startedAtMillis > 0L && nowMillis >= startedAtMillis && nowMillis - startedAtMillis <= FLOW_TTL_MILLIS
+
     fun validVerifier(value: String?): Boolean =
         value != null && value.length in 43..128 && value.all { it.isLetterOrDigit() || it in "-._~" }
 
