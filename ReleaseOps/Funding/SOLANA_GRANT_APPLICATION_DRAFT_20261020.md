@@ -42,7 +42,7 @@ The reusable verification layer is intended to let Solana consumer applications 
 
 ## Current evidence required before submit
 - Public website/demo URL: PENDING CURRENT VERIFIED URL
-- Grant-safe public repository/component URL: PENDING
+- Grant-safe public repository/component: CREATED in `ReleaseOps/ProofOfWorkout/` (spec + JSON schema); public URL still requires the repository/branch to be publicly reachable and verified
 - Android build/test evidence: PENDING CURRENT LINK
 - Devnet explorer transaction: PENDING
 - On-chain project addresses: MUST RE-VERIFY IMMEDIATELY BEFORE SUBMISSION

@@ -20,3 +20,10 @@ Reject mismatched grants early. Prefer one strong Solana Foundation application 
 - Superteam Japan Foundation Grants: up to 10k USDG, Japan-only -> REJECT.
 - Superteam Poland Foundation Grants: up to 10k USDG, Poland-only -> REJECT.
 - Superteam global directory currently lists regional chapters but no Egypt chapter in the returned official directory; do not invent Egypt eligibility. Continue global-listing filter and Foundation direct route.
+
+## Fresh check — 2026-10-20 02:2x Africa/Cairo
+- Superteam global Glass Surfers Dev Tooling Grants: INACTIVE. Historical terms were up to 5k USDC, global, open-source/dev-tool focused; useful fit signal for the reusable Proof-of-Workout primitive but not currently actionable.
+- Superteam Japan Foundation grants: applications paused and Japan-only; REJECT eligibility.
+- Superteam Turkey Foundation grants: applications paused and Turkey-only; REJECT eligibility.
+- Superteam Earn remains active globally for bounties/projects/grants; continue filtering for Global/Africa/Egypt rather than assuming regional eligibility.
+- Colosseum: no newly verified open THF-eligible window surfaced in this check; retain account readiness and monitor official state.

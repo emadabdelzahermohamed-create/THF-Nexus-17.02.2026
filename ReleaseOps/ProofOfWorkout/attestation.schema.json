@@ -1,0 +1,26 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://topherofit.example/spec/proof-of-workout-attestation-v0.1.json",
+  "title":"THF Proof-of-Workout Attestation v0.1",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["spec_version","session_id","challenge_nonce_hash","subject_pseudonym_hash","activity_type","started_at","ended_at","evidence_digest","integrity_class","verification_score","verifier_policy_version","verifier_key_id","issued_at","expires_at","attestation_digest"],
+  "properties":{
+    "spec_version":{"const":"0.1"},
+    "session_id":{"type":"string","minLength":16,"maxLength":128},
+    "challenge_nonce_hash":{"$ref":"#/$defs/sha256"},
+    "subject_pseudonym_hash":{"$ref":"#/$defs/sha256"},
+    "activity_type":{"enum":["walk","run","squat","push_up","plank"]},
+    "started_at":{"type":"string","format":"date-time"},
+    "ended_at":{"type":"string","format":"date-time"},
+    "evidence_digest":{"$ref":"#/$defs/sha256"},
+    "integrity_class":{"enum":["REJECTED","PERSONAL_LOG","VERIFIED_ACTIVITY","HIGH_VALUE_REVIEW"]},
+    "verification_score":{"type":"integer","minimum":0,"maximum":1000},
+    "verifier_policy_version":{"type":"string","minLength":1,"maxLength":64},
+    "verifier_key_id":{"type":"string","minLength":1,"maxLength":128},
+    "issued_at":{"type":"string","format":"date-time"},
+    "expires_at":{"type":"string","format":"date-time"},
+    "attestation_digest":{"$ref":"#/$defs/sha256"}
+  },
+  "$defs":{"sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}}
+}
