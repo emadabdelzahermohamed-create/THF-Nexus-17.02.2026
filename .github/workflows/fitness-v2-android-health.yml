@@ -144,7 +144,7 @@ jobs:
           "$AAPT" dump badging "$APK" | tee fitness-v2/evidence/badging.txt
           "$AAPT" dump permissions "$APK" | tee fitness-v2/evidence/permissions.txt
           unzip -l "$APK" | tee fitness-v2/evidence/payload.txt
-          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51004'" fitness-v2/evidence/badging.txt
+          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51005'" fitness-v2/evidence/badging.txt
           grep -F "targetSdkVersion:'36'" fitness-v2/evidence/badging.txt
           ! grep -E 'READ_HEART_RATE|READ_SLEEP|READ_WEIGHT|READ_BODY_FAT' fitness-v2/evidence/permissions.txt
           python fitness-v2/scripts/verify_offline_payload.py \
@@ -163,11 +163,11 @@ jobs:
           PHYSICAL_PHONE=SEPARATE_GATE
           HEALTH_CONNECT_PHYSICAL=SEPARATE_GATE
           SAMSUNG_HEALTH_ORIGIN=SEPARATE_GATE
-          PLAY_INTERNAL=VERIFIED_SEPARATELY_FOR_VERSION_51004
+          PLAY_INTERNAL=VERIFIED_SEPARATELY_FOR_VERSION_51005
           EOF
       - uses: actions/upload-artifact@v4
         with:
-          name: fitness-v2-51004-package-gate
+          name: fitness-v2-51005-package-gate
           if-no-files-found: error
           retention-days: 14
           path: |
