@@ -13,3 +13,10 @@
 
 ## No-waste rule
 Reject mismatched grants early. Prefer one strong Solana Foundation application and a grant-safe public Proof-of-Workout component over many low-fit submissions. Record every rejected opportunity with the exact disqualifier so later runs do not re-research it.
+
+## 2026-10-20 01:xx EET refresh
+- Superteam India `Redesign Your Favourite App on Solana`: 1,500 USDC total, ~4 days remaining at refresh; India-only -> REJECT.
+- Superteam Poland `HackYeah`: 3,000 USDG total, ~11 days remaining at refresh; Poland-only -> REJECT. Its working-devnet/public-repo/deck requirements are useful as a readiness benchmark only.
+- Superteam Japan Foundation Grants: up to 10k USDG, Japan-only -> REJECT.
+- Superteam Poland Foundation Grants: up to 10k USDG, Poland-only -> REJECT.
+- Superteam global directory currently lists regional chapters but no Egypt chapter in the returned official directory; do not invent Egypt eligibility. Continue global-listing filter and Foundation direct route.
