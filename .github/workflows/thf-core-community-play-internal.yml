@@ -1,0 +1,97 @@
+name: THF Core Community Play Internal Upload
+on:
+  push:
+    branches: [agent/codex/play-signing-preflight/20261018]
+    paths: [.github/workflows/thf-core-community-play-internal.yml]
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - name: Download pinned signed AAB artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir candidate
+          gh run download 39154387800 -R "$GITHUB_REPOSITORY" -n canonical-android-play-signing-preflight -D candidate
+          echo '403d43827392d998da39595451f7b530fe2329dbfe0bfa8257f6f4f56c4b3dbe  candidate/THF-Core-6.2.2-rc6-api36-play-upload-signed.aab' | sha256sum -c -
+          echo '80745195730db29058f11530e512cf1e68aa635524de3e5e90275c2daca836f0  candidate/THF-Community-2.1.1-phone3-api36-play-upload-signed.aab' | sha256sum -c -
+          grep -F 'core_versionCode=62200' candidate/PLAY_MANIFEST_FACTS.txt
+          grep -F 'core_targetSdk=36' candidate/PLAY_MANIFEST_FACTS.txt
+          grep -F 'echo_versionCode=21102' candidate/PLAY_MANIFEST_FACTS.txt
+          grep -F 'echo_targetSdk=36' candidate/PLAY_MANIFEST_FACTS.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Upload exact candidates to Internal track
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PY'
+          import json, os
+          import google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+
+          apps = [
+            ("com.topherofit.thf.core", "62200", "candidate/THF-Core-6.2.2-rc6-api36-play-upload-signed.aab", "THF Core 6.2.2-rc6 API36"),
+            ("com.topherofit.thf.echo", "21102", "candidate/THF-Community-2.1.1-phone3-api36-play-upload-signed.aab", "THF Community 2.1.1-phone3 API36"),
+          ]
+          creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/androidpublisher"])
+          api = build("androidpublisher", "v3", credentials=creds, cache_discovery=False)
+          results, failed = [], False
+          for package, expected, aab, release_name in apps:
+              item, edit_id = {"package": package, "expectedVersionCode": expected, "track": "internal"}, None
+              try:
+                  edit_id = api.edits().insert(packageName=package, body={}).execute()["id"]
+                  tracks = api.edits().tracks().list(packageName=package, editId=edit_id).execute().get("tracks", [])
+                  existing = sorted({str(v) for t in tracks for r in (t.get("releases") or []) for v in (r.get("versionCodes") or [])}, key=int)
+                  item["existingVersionCodes"] = existing
+                  if expected in existing:
+                      item.update({"upload": "SKIP_ALREADY_PRESENT", "commit": "NOT_NEEDED"})
+                      api.edits().delete(packageName=package, editId=edit_id).execute()
+                      item["editCleanup"] = "PASS"
+                      edit_id = None
+                  else:
+                      uploaded = api.edits().bundles().upload(packageName=package, editId=edit_id, media_body=MediaFileUpload(aab, mimetype="application/octet-stream", resumable=True)).execute()
+                      actual = str(uploaded["versionCode"])
+                      if actual != expected:
+                          raise RuntimeError(f"unexpected uploaded versionCode {actual}")
+                      api.edits().tracks().update(packageName=package, editId=edit_id, track="internal", body={"track":"internal","releases":[{"name":release_name,"status":"completed","versionCodes":[expected]}]}).execute()
+                      commit = api.edits().commit(packageName=package, editId=edit_id).execute()
+                      edit_id = None
+                      item.update({"upload": "PASS", "uploadedVersionCode": actual, "trackUpdate": "PASS", "commit": "PASS", "commitId": commit.get("id")})
+              except Exception as exc:
+                  failed = True
+                  item.update({"result": "FAIL", "error": str(exc)[:1200]})
+                  if edit_id:
+                      try:
+                          api.edits().delete(packageName=package, editId=edit_id).execute()
+                          item["editCleanup"] = "PASS"
+                      except Exception as cleanup:
+                          item.update({"editCleanup": "FAIL", "cleanupError": str(cleanup)[:400]})
+              results.append(item)
+          report = {"sourceRunId": 39154387800, "artifactId": 12146302686, "artifactDigest": "sha256:ef8d79d9fb5888344c5839cb2a75644732c2d79e4c510e552fbbdbcd222ba933", "results": results}
+          with open("core-community-play-internal.json", "w") as fh:
+              json.dump(report, fh, indent=2)
+          print(json.dumps(report, indent=2))
+          if failed:
+              raise SystemExit(2)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-core-community-play-internal-evidence
+          path: core-community-play-internal.json
+          retention-days: 30
