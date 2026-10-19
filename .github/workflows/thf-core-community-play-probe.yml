@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Probe package visibility and tracks without upload
+      - name: Verify Internal track versions after upload
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check google-api-python-client google-auth
@@ -28,31 +28,34 @@ jobs:
           import json
           import google.auth
           from googleapiclient.discovery import build
-          from googleapiclient.errors import HttpError
-          packages = ["com.topherofit.thf.core", "com.topherofit.thf.echo"]
+
+          expected = {
+              "com.topherofit.thf.core": "62200",
+              "com.topherofit.thf.echo": "21102",
+          }
           creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/androidpublisher"])
           api = build("androidpublisher", "v3", credentials=creds, cache_discovery=False)
           out = {"wif": "PASS", "uploadAttempted": False, "commitAttempted": False, "packages": []}
-          for package in packages:
-              item, edit_id = {"package": package}, None
+          failed = False
+          for package, wanted in expected.items():
+              edit_id = api.edits().insert(packageName=package, body={}).execute()["id"]
               try:
-                  edit_id = api.edits().insert(packageName=package, body={}).execute()["id"]
-                  tracks = api.edits().tracks().list(packageName=package, editId=edit_id).execute().get("tracks", [])
-                  item.update({"visible": True, "editInsert": "PASS", "trackList": "PASS", "tracks": [t.get("track") for t in tracks]})
-              except HttpError as exc:
-                  item.update({"visible": False if exc.resp.status == 404 else None, "httpStatus": exc.resp.status, "error": str(exc)[:600]})
+                  track = api.edits().tracks().get(packageName=package, editId=edit_id, track="internal").execute()
+                  releases = []
+                  versions = set()
+                  for release in track.get("releases", []) or []:
+                      codes = [str(v) for v in (release.get("versionCodes") or [])]
+                      versions.update(codes)
+                      releases.append({"name": release.get("name"), "status": release.get("status"), "versionCodes": codes})
+                  present = wanted in versions
+                  failed = failed or not present
+                  out["packages"].append({"package": package, "expectedVersionCode": wanted, "internalVersionPresent": present, "internalReleases": releases, "trackRead": "PASS"})
               finally:
-                  if edit_id:
-                      try:
-                          api.edits().delete(packageName=package, editId=edit_id).execute()
-                          item["editCleanup"] = "PASS"
-                      except Exception as exc:
-                          item.update({"editCleanup": "FAIL", "cleanupError": str(exc)[:400]})
-              out["packages"].append(item)
+                  api.edits().delete(packageName=package, editId=edit_id).execute()
           with open("core-community-play-probe.json", "w") as fh:
               json.dump(out, fh, indent=2)
           print(json.dumps(out, indent=2))
-          if any(x.get("editInsert") != "PASS" or x.get("trackList") != "PASS" or x.get("editCleanup") != "PASS" for x in out["packages"]):
+          if failed:
               raise SystemExit(2)
           PY
       - uses: actions/upload-artifact@v4
@@ -60,4 +63,4 @@ jobs:
         with:
           name: thf-core-community-play-probe
           path: core-community-play-probe.json
-          retention-days: 14
+          retention-days: 30
