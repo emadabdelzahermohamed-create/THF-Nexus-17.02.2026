@@ -16,7 +16,7 @@ on:
           - probe
           - publish_internal
       source_run_id:
-        description: 'GitHub Actions run containing fitness-v2-51004-package-gate (required for publish_internal)'
+        description: 'GitHub Actions run containing fitness-v2-51005-package-gate (required for publish_internal)'
         required: false
         type: string
 
@@ -91,7 +91,7 @@ jobs:
                       tracks.append({"track": track.get("track"), "releases": releases})
               result["tracks_with_releases"] = tracks
               result["existing_version_codes"] = sorted(all_versions, key=lambda x: int(x))
-              result["version_51004_already_present"] = "51004" in all_versions
+              result["version_51005_already_present"] = "51005" in all_versions
               result["track_list"] = "PASS"
           except HttpError as exc:
               result.update({
@@ -114,7 +114,7 @@ jobs:
               raise SystemExit(2)
           PY
 
-      - name: Download, sign with Play-bound Fitness key when needed, and validate Fitness 51004
+      - name: Download, sign with Play-bound Fitness key when needed, and validate Fitness 51005
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish_internal' }}
         shell: bash
         env:
@@ -124,7 +124,7 @@ jobs:
           set -euo pipefail
           test -n "$SOURCE_RUN_ID"
           mkdir -p candidate play-evidence
-          gh run download "$SOURCE_RUN_ID" -R "$GITHUB_REPOSITORY" -n fitness-v2-51004-package-gate -D candidate
+          gh run download "$SOURCE_RUN_ID" -R "$GITHUB_REPOSITORY" -n fitness-v2-51005-package-gate -D candidate
           AAB="$(find candidate -type f -path '*/bundle/release/app-release.aab' | head -n1)"
           SIGNING_STATUS="$(find candidate -type f -name aab-signing-status.txt | head -n1)"
           test -s "$AAB"
@@ -134,32 +134,6 @@ jobs:
           signing_provenance='UNKNOWN'
           if [[ "$status" == 'PRODUCTION_SIGNING=PASS_PLAY_BOUND_FITNESS_UPLOAD_KEY' || "$status" == 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' ]]; then
             signing_provenance="PRE_SIGNED_CANDIDATE:${status#PRODUCTION_SIGNING=}"
-          elif [[ "$status" == 'PRODUCTION_SIGNING=NOT_RUN_MISSING_ALL_FOUR_EXISTING_SECRETS' ]]; then
-            # The only unsigned fallback allowed is the exact, previously validated 51004
-            # candidate from run 39089308617. Pin both run ID and pre-sign SHA256 so this
-            # cannot silently sign a different artifact.
-            [[ "$SOURCE_RUN_ID" == '39089308617' ]]
-            EXPECTED_UNSIGNED_SHA256='39d3a14dc49ec74cfb3499197993737225d29cfba8ed4368825c2cf03171b303'
-            echo "$EXPECTED_UNSIGNED_SHA256  $AAB" | sha256sum -c -
-            jarsigner -verify "$AAB" > play-evidence/pre-sign-state.txt 2>&1 || true
-            grep -F 'jar is unsigned.' play-evidence/pre-sign-state.txt
-
-            KEYSTORE="$RUNNER_TEMP/thf-fitness-upload.jks"
-            gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-keystore-b64 | base64 -d > "$KEYSTORE"
-            chmod 600 "$KEYSTORE"
-            STORE_PASSWORD="$(gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-store-password)"
-            KEY_ALIAS="$(gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-key-alias)"
-            KEY_PASSWORD="$(gcloud secrets versions access latest --project "$GCP_PROJECT_ID" --secret thf-fitness-upload-key-password)"
-            echo "::add-mask::$STORE_PASSWORD"
-            echo "::add-mask::$KEY_ALIAS"
-            echo "::add-mask::$KEY_PASSWORD"
-            keytool -list -v -keystore "$KEYSTORE" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" > play-evidence/upload-key.txt
-            grep -F "SHA1: $EXPECTED_FITNESS_UPLOAD_SHA1" play-evidence/upload-key.txt
-            jarsigner -keystore "$KEYSTORE" -storepass "$STORE_PASSWORD" \
-              -keypass "$KEY_PASSWORD" "$AAB" "$KEY_ALIAS"
-            rm -f "$KEYSTORE"
-            unset STORE_PASSWORD KEY_ALIAS KEY_PASSWORD
-            signing_provenance='SIGNED_IN_GATE_FROM_PINNED_UNSIGNED_RUN_39089308617_WITH_PLAY_BOUND_FITNESS_KEY'
           else
             echo "Unexpected signing status: $status" >&2
             exit 43
@@ -190,7 +164,7 @@ jobs:
           print(f'targetSdk={target_sdk}')
           if package != 'com.topherofit.thf.pulse':
               raise SystemExit(f'unexpected package: {package}')
-          if version_code != '51004':
+          if version_code != '51005':
               raise SystemExit(f'unexpected versionCode: {version_code}')
           if target_sdk != '36':
               raise SystemExit(f'unexpected targetSdk: {target_sdk}')
@@ -198,14 +172,14 @@ jobs:
           printf 'AAB_PATH=%s\n' "$AAB" >> "$GITHUB_ENV"
           {
             echo 'candidate_package=com.topherofit.thf.pulse'
-            echo 'candidate_versionCode=51004'
+            echo 'candidate_versionCode=51005'
             echo 'candidate_targetSdk=36'
             echo "production_signing=$signing_provenance"
             echo "expected_upload_sha1=$EXPECTED_FITNESS_UPLOAD_SHA1"
             echo "source_run_id=$SOURCE_RUN_ID"
           } > play-evidence/candidate-gate.txt
 
-      - name: Publish validated Fitness 51004 to Google Play Internal
+      - name: Publish validated Fitness 51005 to Google Play Internal
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish_internal' }}
         shell: bash
         run: |
@@ -221,7 +195,7 @@ jobs:
           from googleapiclient.http import MediaFileUpload
 
           package = 'com.topherofit.thf.pulse'
-          expected_version = '51004'
+          expected_version = '51005'
           track_name = 'internal'
           aab = os.environ['AAB_PATH']
           creds, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
@@ -271,7 +245,7 @@ jobs:
                       body={'releases': [{
                           'versionCodes': [uploaded_version],
                           'status': 'completed',
-                          'name': 'THF Fitness 51004 Internal',
+                          'name': 'THF Fitness 51005 Internal',
                       }]},
                   ).execute()
                   result['commit_attempted'] = True
