@@ -1,0 +1,198 @@
+name: Core and Community production endpoint candidates
+
+on:
+  push:
+    branches:
+      - 'agent/codex/play-signing-preflight/**'
+    paths:
+      - '.github/workflows/core-community-production-endpoint-candidates.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_REGION: europe-west1
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+  SERVICE_NAME: thf-core-production
+  CORE_SOURCE_SHA256: 6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a
+  ECHO_DRIVE_FILE_ID: 1YnRTB_CSUwd7q6myLKkG2Pi_3qJ_A3Vw
+  ECHO_SOURCE_SHA256: 3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      UPLOAD_KEYSTORE_B64: ${{ secrets.THF_PLAY_UPLOAD_KEYSTORE_B64 }}
+      UPLOAD_KEY_ALIAS: ${{ secrets.THF_PLAY_UPLOAD_KEY_ALIAS }}
+      UPLOAD_STORE_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_STORE_PASSWORD }}
+      UPLOAD_KEY_PASSWORD: ${{ secrets.THF_PLAY_UPLOAD_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - id: auth
+        uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Acquire exact authoritative sources
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -rf work release && mkdir -p work/core work/echo release
+          gcloud compute scp "$GCP_BUILDER:~/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip" work/core.zip \
+            --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          echo "$CORE_SOURCE_SHA256  work/core.zip" | sha256sum -c -
+          code=$(curl -sSLo work/echo.zip -w '%{http_code}' -H "Authorization: Bearer $ACCESS_TOKEN" \
+            "https://www.googleapis.com/drive/v3/files/$ECHO_DRIVE_FILE_ID?alt=media&supportsAllDrives=true")
+          test "$code" = 200
+          echo "$ECHO_SOURCE_SHA256  work/echo.zip" | sha256sum -c -
+          unzip -tq work/core.zip
+          unzip -tq work/echo.zip
+          unzip -q work/core.zip -d work/core
+          unzip -q work/echo.zip -d work/echo
+
+      - name: Deploy authoritative persistent credential-free HTTPS service
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CORE_ROOT=$(find work/core -type f -name requirements.txt -printf '%h\n' | head -1)
+          test -n "$CORE_ROOT"
+          cat > "$CORE_ROOT/Dockerfile" <<'EOF'
+          FROM python:3.12-slim
+          WORKDIR /app
+          COPY requirements.txt ./
+          RUN pip install --no-cache-dir -r requirements.txt
+          COPY . .
+          ENV PYTHONPATH=/app/src THF_HOST=0.0.0.0 THF_PORT=8080
+          EXPOSE 8080
+          CMD ["python","scripts/run.py"]
+          EOF
+          gcloud run deploy "$SERVICE_NAME" --source "$CORE_ROOT" --region "$GCP_REGION" --platform managed \
+            --allow-unauthenticated --port 8080 \
+            --set-env-vars THF_HOST=0.0.0.0,THF_PORT=8080,PYTHONPATH=/app/src --quiet
+          URL=$(gcloud run services describe "$SERVICE_NAME" --region "$GCP_REGION" --format='value(status.url)')
+          python - "$URL" <<'PY'
+          import re,sys
+          u=sys.argv[1].strip()
+          bad=re.compile(r'(?i)(trycloudflare|localhost|127\.0\.0\.1|0\.0\.0\.0|example\.|placeholder|changeme|your[-_.]?(api|host|url))')
+          assert u.startswith('https://') and not bad.search(u), 'endpoint gate failed'
+          PY
+          for i in $(seq 1 30); do
+            code=$(curl -sS -o release/health.json -w '%{http_code}' --max-time 15 "$URL/health" || true)
+            [ "$code" = 200 ] && break
+            sleep 2
+          done
+          test "$(python -c 'import json; print(json.load(open("release/health.json")).get("ok"))')" = True
+          printf '%s' "$URL" > release/PRODUCTION_ENDPOINT.txt
+          echo "PRODUCTION_ENDPOINT_CLASS=GCP_CLOUD_RUN_MANAGED" > release/ENDPOINT_GATE.txt
+          echo "HTTPS=PASS" >> release/ENDPOINT_GATE.txt
+          echo "NON_PLACEHOLDER=PASS" >> release/ENDPOINT_GATE.txt
+          echo "HEALTH=PASS" >> release/ENDPOINT_GATE.txt
+
+      - name: Build bound targetSdk 36 APK and AAB candidates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          URL=$(cat release/PRODUCTION_ENDPOINT.txt)
+          CORE_ANDROID=$(find work/core -type f -path '*/android/settings.gradle' -printf '%h\n' | head -1)
+          ECHO_ANDROID=$(find work/echo -type f -path '*/android/settings.gradle' -printf '%h\n' | head -1)
+          test -n "$CORE_ANDROID" && test -n "$ECHO_ANDROID"
+          python - "$CORE_ANDROID/app/build.gradle" "$ECHO_ANDROID/app/build.gradle" <<'PY'
+          from pathlib import Path
+          import re,sys
+          specs=[(sys.argv[1],62201,'6.2.2-prod1'),(sys.argv[2],21103,'2.1.1-prod1')]
+          for path,code,name in specs:
+              p=Path(path); s=p.read_text()
+              s,n1=re.subn(r'versionCode\s+\d+',f'versionCode {code}',s,count=1)
+              s,n2=re.subn(r"versionName\s+['\"][^'\"]+['\"]",f"versionName '{name}'",s,count=1)
+              assert n1==1 and n2==1
+              p.write_text(s)
+          PY
+          for spec in "core:$CORE_ANDROID:com.topherofit.thf.core:62201:6.2.2-prod1" "community:$ECHO_ANDROID:com.topherofit.thf.echo:21103:2.1.1-prod1"; do
+            IFS=: read -r app android pkg code name <<<"$spec"
+            printf 'sdk.dir=%s\n' "$ANDROID_HOME" > "$android/local.properties"
+            gradle -p "$android" --no-daemon clean test assembleRelease bundleRelease \
+              -PTHF_BASE_URL="$URL" -PTHF_PASS_URL="$URL" >"release/$app.gradle.log" 2>&1
+            cfg=$(find "$android" -type f -path '*/build/generated/source/buildConfig/release/*/BuildConfig.java' | head -1)
+            test -n "$cfg"
+            python ReleaseOps/validators/validate_generated_endpoint_binding.py "$cfg" \
+              --json-out "release/$app.endpoint-binding.json" --require-pass >/dev/null
+            grep -Fq "$URL" "$cfg"
+            apk=$(find "$android/app/build/outputs/apk/release" -name '*.apk' | head -1)
+            aab=$(find "$android/app/build/outputs/bundle/release" -name '*.aab' | head -1)
+            test -s "$apk" && test -s "$aab"
+            cp "$apk" "release/THF-$app-$name-api36-unsigned.apk"
+            cp "$aab" "release/THF-$app-$name-api36-unsigned.aab"
+            found=0
+            while read -r dex; do
+              if unzip -p "$apk" "$dex" | strings | grep -Fq "$URL"; then found=1; break; fi
+            done < <(zipinfo -1 "$apk" 'classes*.dex')
+            test "$found" = 1
+          done
+
+      - name: Sign exact candidates and verify structure
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for v in UPLOAD_KEYSTORE_B64 UPLOAD_KEY_ALIAS UPLOAD_STORE_PASSWORD UPLOAD_KEY_PASSWORD; do
+            test -n "${!v}"
+          done
+          printf '%s' "$UPLOAD_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          chmod 600 "$RUNNER_TEMP/upload.jks"
+          BUNDLETOOL_VERSION=1.18.3
+          BUNDLETOOL_SHA256=a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
+          curl -fsSL "https://github.com/google/bundletool/releases/download/$BUNDLETOOL_VERSION/bundletool-all-$BUNDLETOOL_VERSION.jar" -o "$RUNNER_TEMP/bundletool.jar"
+          echo "$BUNDLETOOL_SHA256  $RUNNER_TEMP/bundletool.jar" | sha256sum -c -
+          for app in core community; do
+            unsigned=$(find release -name "THF-$app-*-unsigned.aab" | head -1)
+            signed=${unsigned%-unsigned.aab}-play-upload-signed.aab
+            jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass "$UPLOAD_STORE_PASSWORD" -keypass "$UPLOAD_KEY_PASSWORD" \
+              -signedjar "$signed" "$unsigned" "$UPLOAD_KEY_ALIAS"
+            jarsigner -verify -verbose -certs "$signed" > "release/$app.jarsigner.txt" 2>&1
+            grep -Fq 'jar verified.' "release/$app.jarsigner.txt"
+            java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle="$signed"
+            java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle="$signed" --module=base > "release/$app.manifest.xml"
+          done
+          grep -q 'package="com.topherofit.thf.core"' release/core.manifest.xml
+          grep -q 'android:versionCode="62201"' release/core.manifest.xml
+          grep -q 'android:targetSdkVersion="36"' release/core.manifest.xml
+          grep -q 'package="com.topherofit.thf.echo"' release/community.manifest.xml
+          grep -q 'android:versionCode="21103"' release/community.manifest.xml
+          grep -q 'android:targetSdkVersion="36"' release/community.manifest.xml
+          rm -f "$RUNNER_TEMP/upload.jks"
+          sha256sum release/*-play-upload-signed.aab release/*-unsigned.apk > release/SHA256SUMS.txt
+          printf '%s\n' \
+            'ENDPOINT_BINDING=PASS' 'ENDPOINT_HEALTH=PASS' 'TARGET_SDK_36=PASS' \
+            'PRODUCTION_SIGNING=PASS' 'PLAY_UPLOAD_PERFORMED=FALSE' \
+            'PHONE_PASS=FALSE' 'PLAY_PASS=FALSE' > release/RELEASE_TRUTH.txt
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: core-community-production-endpoint-candidates
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
