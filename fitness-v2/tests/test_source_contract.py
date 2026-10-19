@@ -192,7 +192,8 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         for marker in (
             "auth.signIn", "api.post('/api/v2/auth/android/tickets'",
             "topherofit://auth/v2/complete", "code_challenge_method",
-            "Continue to sign in", "AndroidAuthBridgeScreen",
+            "Continue to sign in", "Return to the Top Hero Fit app",
+            "AndroidAuthBridgeScreen",
         ):
             self.assertIn(marker, bridge)
         self.assertNotIn("accessToken:", routes)
