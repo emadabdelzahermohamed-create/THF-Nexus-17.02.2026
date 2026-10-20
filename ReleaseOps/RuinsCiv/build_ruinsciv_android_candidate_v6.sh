@@ -33,6 +33,13 @@ export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"; export PATH="$SDK/platform-t
 "$SDKMANAGER" --sdk_root="$SDK" platform-tools 'platforms;android-36' 'build-tools;36.0.0'
 [[ -f "$SDK/platforms/android-36/android.jar" && -x "$SDK/platform-tools/adb" && -d "$SDK/build-tools/36.0.0" ]] || exit 68
 printf 'android_sdk=%s\nandroid_jar=%s\nbuild_tools=36.0.0\n' "$SDK" "$SDK/platforms/android-36/android.jar" | tee "$OUT/android_toolchain.txt"
+# Isolate Godot editor settings from stale machine-global CI state. On Linux Godot honors XDG_CONFIG_HOME;
+# a fresh config makes the Android exporter initialize its Java/SDK paths from JAVA_HOME/ANDROID_HOME.
+GODOT_XDG_CONFIG="$TOOLS/xdg-config-v6"
+rm -rf "$GODOT_XDG_CONFIG"
+mkdir -p "$GODOT_XDG_CONFIG"
+export XDG_CONFIG_HOME="$GODOT_XDG_CONFIG"
+printf 'xdg_config_home=%s\n' "$XDG_CONFIG_HOME" | tee "$OUT/godot_config_home.txt"
 # Use the canonical preset name already present in RC34. Allow an explicit override, but never assume a generic "Android" preset.
 PRESET="${RUINSCIV_ANDROID_PRESET:-}"
 if [[ -z "$PRESET" ]]; then PRESET="$(awk -F'=' '/^name=/{gsub(/^"|"$/, "", $2); print $2; exit}' "$DST/export_presets.cfg")"; fi
