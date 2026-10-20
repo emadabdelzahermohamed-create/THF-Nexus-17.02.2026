@@ -22,9 +22,10 @@ if [[ -z "$GODOT" ]]; then
  GODOT="$BIN"
 fi
 "$GODOT" --version | tee "$OUT/godot_version.txt"; grep -q '^4\.7\.2' "$OUT/godot_version.txt" || exit 62
-if [[ ! -f "$TEMPLATES/android_debug.apk" || ! -f "$TEMPLATES/android_release.apk" ]]; then TPZ="$TOOLS/export_templates.tpz"; TMP="$TOOLS/templates-unpack"; rm -rf "$TMP"; mkdir -p "$TMP" "$TEMPLATES"; curl -fL --retry 3 --connect-timeout 20 -o "$TPZ" "https://github.com/godotengine/godot/releases/download/$GODOT_TAG/Godot_v${GODOT_TAG}_export_templates.tpz"; unzip -o "$TPZ" -d "$TMP"; cp -a "$TMP/templates/." "$TEMPLATES/"; fi
-[[ -f "$TEMPLATES/android_debug.apk" ]] || exit 66
-JAVA_BIN="${JAVA_HOME:+$JAVA_HOME/bin/java}"; [[ -x "$JAVA_BIN" ]] || JAVA_BIN="$(command -v java || true)"; [[ -n "$JAVA_BIN" ]] || exit 67; "$JAVA_BIN" -version 2>&1 | tee "$OUT/java_version.txt"
+if [[ ! -f "$TEMPLATES/android_debug.apk" || ! -f "$TEMPLATES/android_release.apk" || ! -f "$TEMPLATES/android_source.zip" ]]; then TPZ="$TOOLS/export_templates.tpz"; TMP="$TOOLS/templates-unpack"; rm -rf "$TMP"; mkdir -p "$TMP" "$TEMPLATES"; curl -fL --retry 3 --connect-timeout 20 -o "$TPZ" "https://github.com/godotengine/godot/releases/download/$GODOT_TAG/Godot_v${GODOT_TAG}_export_templates.tpz"; unzip -o "$TPZ" -d "$TMP"; cp -a "$TMP/templates/." "$TEMPLATES/"; fi
+[[ -f "$TEMPLATES/android_debug.apk" && -f "$TEMPLATES/android_source.zip" ]] || exit 66
+JAVA_BIN="${JAVA_HOME:+$JAVA_HOME/bin/java}"; [[ -x "$JAVA_BIN" ]] || JAVA_BIN="$(command -v java || true)"; [[ -n "$JAVA_BIN" ]] || exit 67
+JAVA_BIN="$(readlink -f "$JAVA_BIN")"; export JAVA_HOME="${JAVA_HOME:-$(dirname "$(dirname "$JAVA_BIN")")}"; export PATH="$JAVA_HOME/bin:$PATH"; "$JAVA_BIN" -version 2>&1 | tee "$OUT/java_version.txt"; printf 'java_home=%s\n' "$JAVA_HOME" | tee "$OUT/java_home.txt"
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"; SDKMANAGER=""
 for s in "$SDK/cmdline-tools/latest/bin/sdkmanager" "$SDK/cmdline-tools/bin/sdkmanager"; do [[ -x "$s" ]] && { SDKMANAGER="$s"; break; }; done
 if [[ -z "$SDKMANAGER" ]]; then CMDROOT="$HOME/.cache/thf-android-cmdline-tools"; mkdir -p "$CMDROOT" "$SDK/cmdline-tools"; CTZIP="$CMDROOT/commandlinetools-linux.zip"; curl -fL --retry 3 --connect-timeout 20 -o "$CTZIP" "https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip"; rm -rf "$CMDROOT/unpack" "$SDK/cmdline-tools/latest"; mkdir -p "$CMDROOT/unpack" "$SDK/cmdline-tools/latest"; unzip -q -o "$CTZIP" -d "$CMDROOT/unpack"; cp -a "$CMDROOT/unpack/cmdline-tools/." "$SDK/cmdline-tools/latest/"; SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"; fi
@@ -38,7 +39,9 @@ if [[ -z "$PRESET" ]]; then PRESET="$(awk -F'=' '/^name=/{gsub(/^"|"$/, "", $2);
 [[ -n "$PRESET" ]] || { echo BLOCKER_ANDROID_EXPORT_PRESET_NOT_FOUND; exit 72; }
 printf 'preset=%s\n' "$PRESET" | tee "$OUT/export_preset.txt"
 "$GODOT" --headless --path "$DST" --editor --quit-after 2
-"$GODOT" --headless --path "$DST" --export-debug "$PRESET" "$APK"
+INSTALL_BUILD_TEMPLATE=()
+if [[ ! -f "$DST/android/build/gradlew" ]]; then INSTALL_BUILD_TEMPLATE=(--install-android-build-template); fi
+"$GODOT" --headless --path "$DST" "${INSTALL_BUILD_TEMPLATE[@]}" --export-debug "$PRESET" "$APK"
 [[ -s "$APK" ]] || exit 63
 sha256sum "$APK" | tee "$OUT/SHA256SUMS.txt"; SIZE=$(stat -c %s "$APK"); VC=$(grep -E '^version/code=' "$DST/export_presets.cfg" | head -1 | cut -d= -f2- | tr -d '"' || true); VN=$(grep -E '^version/name=' "$DST/export_presets.cfg" | head -1 | cut -d= -f2- | tr -d '"' || true); SRC=$(git -C "$DST" rev-parse HEAD 2>/dev/null || printf UNKNOWN)
 cat > "$OUT/CANDIDATE.txt" <<EOF
