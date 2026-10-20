@@ -46,7 +46,7 @@ The reusable verification layer is intended to let Solana consumer applications 
 - Android build/test evidence: PENDING CURRENT LINK
 - Devnet explorer transaction: PENDING
 - On-chain project addresses: MUST RE-VERIFY IMMEDIATELY BEFORE SUBMISSION
-- Per-milestone budget: PENDING COSTING
+- Per-milestone budget: SCENARIO MODEL CREATED; final rate basis still PENDING evidence
 - Legal/privacy review: PENDING
 
 ## Form-field routing

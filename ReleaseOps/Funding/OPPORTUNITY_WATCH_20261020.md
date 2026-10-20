@@ -32,3 +32,9 @@ Reject mismatched grants early. Prefer one strong Solana Foundation application 
 - Solana Foundation official site remains active; current specific RFP found: Multi-Validator Staking UI, $35,000 paid on completion. Scope mismatch with THF Proof-of-Workout; do not divert product.
 - Superteam Earn remains active. Vaultline audit grants are global but require participation in the recent Colosseum Hackathon; THF is not eligible for this round. Glass Surfers Dev Tooling grant is currently inactive.
 - No newly verified Global/Africa/Egypt grant matching THF Proof-of-Workout was found in this refresh. Continue watch; do not fabricate regional eligibility.
+
+## 2026-10-20 05:20 EEST refresh
+- Solana Foundation official funding page remains rolling and explicitly supports milestone grants, milestone convertible grants, and RFPs; application review is stated at about one week before deeper SME review where warranted.
+- Current official Multi-Validator Staking UI RFP remains $35,000 and out of scope for THF Proof-of-Workout; do not pivot product to chase it.
+- Colosseum official blog shows Crypto World’s Fair submissions closed Oct 12, 2026; no evidence in this refresh of a newly opened THF-eligible submission window.
+- No newly verified Global/Africa/Egypt grant was found in this refresh that should supersede the rolling Solana Foundation application.
