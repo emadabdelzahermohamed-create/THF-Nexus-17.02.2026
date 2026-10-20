@@ -9,14 +9,25 @@ exec > >(tee "$OUT/build_trace.log") 2>&1
 trap 'rc=$?; printf "RUINSCIV_V6_FAIL rc=%s line=%s command=%q\n" "$rc" "$LINENO" "$BASH_COMMAND" | tee "$OUT/build_failure.txt"; exit "$rc"' ERR
 [[ -f "$DST/project.godot" ]]
 [[ -f "$DST/export_presets.cfg" ]]
-# Public candidate identity; never ship the phoneqa suffix.
 sed -Ei 's#^(package/unique_name|package/name)="[^"]*"#\1="'"$PACKAGE"'"#' "$DST/export_presets.cfg"
-# Prefer installed Godot 4.7.2 binary; deterministic failure if unavailable.
 GODOT="${GODOT_BIN:-}"
 if [[ -z "$GODOT" ]]; then
   for x in godot4.7.2 godot-4.7.2 godot4 godot; do command -v "$x" >/dev/null 2>&1 && { GODOT="$(command -v "$x")"; break; }; done
 fi
-[[ -n "$GODOT" ]] || { echo 'BLOCKER_GODOT_4_7_2_BINARY_NOT_FOUND'; exit 61; }
+if [[ -z "$GODOT" ]]; then
+  TOOLS="$HOME/.cache/thf-godot-4.7.2"
+  mkdir -p "$TOOLS"
+  ZIP="$TOOLS/godot.zip"
+  BIN="$TOOLS/Godot_v4.7.2-stable_linux.x86_64"
+  if [[ ! -x "$BIN" ]]; then
+    command -v curl >/dev/null 2>&1 || { echo BLOCKER_CURL_NOT_FOUND; exit 64; }
+    command -v unzip >/dev/null 2>&1 || { echo BLOCKER_UNZIP_NOT_FOUND; exit 65; }
+    curl -fL --retry 3 --connect-timeout 20 -o "$ZIP" "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip"
+    unzip -o "$ZIP" -d "$TOOLS"
+    chmod +x "$BIN"
+  fi
+  GODOT="$BIN"
+fi
 "$GODOT" --version | tee "$OUT/godot_version.txt"
 grep -q '^4\.7\.2' "$OUT/godot_version.txt" || { echo 'BLOCKER_GODOT_VERSION_NOT_4_7_2'; exit 62; }
 PRESET="${RUINSCIV_ANDROID_PRESET:-Android}"
