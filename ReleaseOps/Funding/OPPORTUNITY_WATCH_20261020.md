@@ -27,3 +27,8 @@ Reject mismatched grants early. Prefer one strong Solana Foundation application 
 - Superteam Turkey Foundation grants: applications paused and Turkey-only; REJECT eligibility.
 - Superteam Earn remains active globally for bounties/projects/grants; continue filtering for Global/Africa/Egypt rather than assuming regional eligibility.
 - Colosseum: no newly verified open THF-eligible window surfaced in this check; retain account readiness and monitor official state.
+
+## 2026-10-20 04:23 EET refresh
+- Solana Foundation official site remains active; current specific RFP found: Multi-Validator Staking UI, $35,000 paid on completion. Scope mismatch with THF Proof-of-Workout; do not divert product.
+- Superteam Earn remains active. Vaultline audit grants are global but require participation in the recent Colosseum Hackathon; THF is not eligible for this round. Glass Surfers Dev Tooling grant is currently inactive.
+- No newly verified Global/Africa/Egypt grant matching THF Proof-of-Workout was found in this refresh. Continue watch; do not fabricate regional eligibility.
