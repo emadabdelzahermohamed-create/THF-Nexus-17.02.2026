@@ -1,0 +1,57 @@
+name: RuinsCiv Android Candidate V6
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/RuinsCiv/build_ruinsciv_android_candidate_v6.sh'
+      - '.github/workflows/ruinsciv-android-candidate-v6.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with: {persist-credentials: false}
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Copy export helper
+        run: gcloud compute scp ReleaseOps/RuinsCiv/build_ruinsciv_android_candidate_v6.sh "$GCP_BUILDER:/tmp/build_ruinsciv_android_candidate_v6.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Export exact Android candidate
+        id: remote
+        shell: bash
+        run: |
+          set +e
+          gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='chmod +x /tmp/build_ruinsciv_android_candidate_v6.sh; bash -x /tmp/build_ruinsciv_android_candidate_v6.sh'
+          rc=$?
+          set -e
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Collect APK and deterministic evidence
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/v6"
+          gcloud compute scp --recurse "$GCP_BUILDER:ruinsciv-build-evidence-v6" "$RUNNER_TEMP/v6/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet || true
+          find "$RUNNER_TEMP/v6" -type f -maxdepth 3 -print
+          cat "$RUNNER_TEMP/v6/ruinsciv-build-evidence-v6/CANDIDATE.txt" 2>/dev/null || true
+          cat "$RUNNER_TEMP/v6/ruinsciv-build-evidence-v6/build_failure.txt" 2>/dev/null || true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ruinsciv-android-v6-${{ github.run_id }}
+          path: ${{ runner.temp }}/v6
+          if-no-files-found: error
+          retention-days: 14
+      - name: Enforce export
+        run: test '${{ steps.remote.outputs.rc }}' = '0'
