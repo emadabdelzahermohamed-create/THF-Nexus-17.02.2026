@@ -359,5 +359,30 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         )
 
 
+    def test_health_sync_rate_limit_is_single_flight_and_recovers_ui(self):
+        activity = (
+            ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt"
+        ).read_text()
+        gate_path = (
+            ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "HealthSyncGate.kt"
+        )
+        gate = gate_path.read_text() if gate_path.exists() else ""
+        script = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        for marker in (
+            "HealthSyncGate",
+            "healthSyncGate.tryStart",
+            "healthSyncGate.finish",
+            "RATE_LIMITED",
+        ):
+            self.assertIn(marker, activity + gate)
+        for marker in (
+            "function setHealthSyncBusy",
+            "function renderHealthError",
+            "setHealthSyncBusy(false",
+            "retryAfterMs",
+        ):
+            self.assertIn(marker, script)
+
+
 if __name__ == "__main__":
     unittest.main()
