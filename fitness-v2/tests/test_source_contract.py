@@ -409,5 +409,24 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             self.assertIn(marker, activity)
 
 
+    def test_workout_ui_uses_native_motion_session_and_surfaces_evidence(self):
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        for marker in (
+            "beginMotionSession",
+            "motionSnapshot",
+            "endMotionSession",
+            "measurementSource",
+            "motionEvidence",
+            "motionLiveSteps",
+            "motionDetectorEvents",
+            "motionConfidence",
+        ):
+            self.assertIn(marker, app + html)
+        self.assertNotIn("N?.beginStepSession?.()", app)
+        self.assertIn('id="motionEvidencePanel"', html)
+        self.assertIn('id="motionSourceBadge"', html)
+
+
 if __name__ == "__main__":
     unittest.main()
