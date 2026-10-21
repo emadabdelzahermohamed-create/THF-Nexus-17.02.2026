@@ -707,6 +707,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         @JavascriptInterface
         fun beginStepSession() {
             sessionBaseline = if (absoluteSteps >= 0) absoluteSteps else -1f
+            detectorSteps = 0L
+            motionSamples = 0L
+            accelEnergy = 0.0
+            gyroEnergy = 0.0
             prefs.edit { putFloat("step_baseline", sessionBaseline) }
         }
 
@@ -714,6 +718,34 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         fun sessionSteps(): Int {
             val baseline = if (sessionBaseline >= 0) sessionBaseline else prefs.getFloat("step_baseline", -1f)
             return if (absoluteSteps < 0 || baseline < 0) 0 else maxOf(0, (absoluteSteps - baseline).toInt())
+        }
+
+        @JavascriptInterface
+        fun motionEvidence(): String {
+            val counterSteps = sessionSteps()
+            val samples = motionSamples.coerceAtLeast(1L)
+            val accelRms = kotlin.math.sqrt(accelEnergy / samples)
+            val gyroRms = kotlin.math.sqrt(gyroEnergy / samples)
+            val detectorDelta = detectorSteps.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+            val crossSourceOk = counterSteps == 0 || detectorDelta == 0 || kotlin.math.abs(counterSteps - detectorDelta) <= maxOf(3, counterSteps / 4)
+            val moving = counterSteps > 0 || detectorDelta > 0 || accelRms > 10.2
+            val confidence = when {
+                counterSteps > 0 && detectorDelta > 0 && crossSourceOk -> 0.95
+                counterSteps > 0 && accelRms > 10.2 -> 0.82
+                detectorDelta > 0 && accelRms > 10.2 -> 0.75
+                moving -> 0.45
+                else -> 0.10
+            }
+            return JSONObject()
+                .put("counterSteps", counterSteps)
+                .put("detectorSteps", detectorDelta)
+                .put("motionSamples", motionSamples)
+                .put("accelRms", accelRms)
+                .put("gyroRms", gyroRms)
+                .put("crossSourceOk", crossSourceOk)
+                .put("moving", moving)
+                .put("confidence", confidence)
+                .toString()
         }
 
         @JavascriptInterface
