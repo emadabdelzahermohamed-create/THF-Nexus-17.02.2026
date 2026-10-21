@@ -55,6 +55,13 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var foundingHeroBilling: FoundingHeroBilling
     private var sensorManager: SensorManager? = null
     private var stepSensor: Sensor? = null
+    private var stepDetector: Sensor? = null
+    private var accelerometer: Sensor? = null
+    private var gyroscope: Sensor? = null
+    private var motionSamples = 0L
+    private var accelEnergy = 0.0
+    private var gyroEnergy = 0.0
+    private var detectorSteps = 0L
     private var absoluteSteps = -1f
     private var sessionBaseline = -1f
     private var tts: TextToSpeech? = null
@@ -107,6 +114,9 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         stepSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        stepDetector = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+        accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        gyroscope = sensorManager?.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) tts?.language = Locale("ar", "EG")
         }
@@ -178,6 +188,9 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private fun registerStepSensor() {
         if (stepSensor != null && hasActivityPermission()) {
             sensorManager?.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
+            stepDetector?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
+            accelerometer?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+            gyroscope?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
         }
     }
 
@@ -185,7 +198,14 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         Build.VERSION.SDK_INT < 29 || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
 
     override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type == Sensor.TYPE_STEP_COUNTER && event.values.isNotEmpty()) absoluteSteps = event.values[0]
+        when (event.sensor.type) {
+            Sensor.TYPE_STEP_COUNTER -> if (event.values.isNotEmpty()) absoluteSteps = event.values[0]
+            Sensor.TYPE_STEP_DETECTOR -> if (event.values.firstOrNull() == 1f) detectorSteps++
+            Sensor.TYPE_ACCELEROMETER -> {
+                accelEnergy += event.values.take(3).sumOf { (it * it).toDouble() }; motionSamples++
+            }
+            Sensor.TYPE_GYROSCOPE -> gyroEnergy += event.values.take(3).sumOf { (it * it).toDouble() }
+        }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
