@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Read-only probe or publish the validated Fitness candidate to Play Internal'
+        description: 'Read-only probe or publish validated Fitness 51006 to Play Internal'
         required: true
         default: probe
         type: choice
@@ -16,7 +16,7 @@ on:
           - probe
           - publish_internal
       source_run_id:
-        description: 'GitHub Actions run containing fitness-v2-51005-package-gate (required for publish_internal)'
+        description: 'GitHub Actions run containing fitness-v2-51006-package-gate (required for publish_internal)'
         required: false
         type: string
 
@@ -32,28 +32,19 @@ env:
 jobs:
   play-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-
       - name: Authenticate to Google with existing WIF
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
           service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
           create_credentials_file: true
-
-      - name: Set up gcloud for Fitness signing Secret Manager access
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish_internal' }}
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Probe Android Publisher access and existing track versions without upload or commit
+      - name: Probe current Android Publisher state
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode == 'probe' }}
         shell: bash
         run: |
@@ -63,88 +54,52 @@ jobs:
           import json
           import google.auth
           from googleapiclient.discovery import build
-          from googleapiclient.errors import HttpError
-
-          package = "com.topherofit.thf.pulse"
-          creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/androidpublisher"])
-          api = build("androidpublisher", "v3", credentials=creds, cache_discovery=False)
-          result = {"package": package, "wif": True, "upload_attempted": False, "commit_attempted": False}
-          edit_id = None
+          package='com.topherofit.thf.pulse'
+          expected='51006'
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          edit=api.edits().insert(packageName=package,body={}).execute()['id']
+          out={'package':package,'expectedVersionCode':expected,'tracks':[]}
           try:
-              edit = api.edits().insert(packageName=package, body={}).execute()
-              edit_id = edit["id"]
-              result.update({"package_visible": True, "edit_insert": "PASS"})
-              track_response = api.edits().tracks().list(packageName=package, editId=edit_id).execute()
-              tracks = []
-              all_versions = set()
-              for track in track_response.get("tracks", []):
-                  releases = []
-                  for release in track.get("releases", []) or []:
-                      versions = [str(v) for v in (release.get("versionCodes", []) or [])]
-                      all_versions.update(versions)
-                      releases.append({
-                          "name": release.get("name"),
-                          "status": release.get("status"),
-                          "versionCodes": versions,
-                      })
-                  if releases:
-                      tracks.append({"track": track.get("track"), "releases": releases})
-              result["tracks_with_releases"] = tracks
-              result["existing_version_codes"] = sorted(all_versions, key=lambda x: int(x))
-              result["version_51005_already_present"] = "51005" in all_versions
-              result["track_list"] = "PASS"
-          except HttpError as exc:
-              result.update({
-                  "package_visible": False if exc.resp.status == 404 else None,
-                  "http_status": exc.resp.status,
-                  "error": str(exc)[:1000],
-              })
+            tracks=api.edits().tracks().list(packageName=package,editId=edit).execute().get('tracks',[]) or []
+            versions=set()
+            for track in tracks:
+              releases=[]
+              for r in track.get('releases',[]) or []:
+                codes=[str(v) for v in (r.get('versionCodes',[]) or [])]
+                versions.update(codes)
+                releases.append({'name':r.get('name'),'status':r.get('status'),'versionCodes':codes})
+              if releases: out['tracks'].append({'track':track.get('track'),'releases':releases})
+            out['existingVersionCodes']=sorted(versions,key=int)
+            out['version_51006_already_present']=expected in versions
           finally:
-              if edit_id:
-                  try:
-                      api.edits().delete(packageName=package, editId=edit_id).execute()
-                      result["edit_cleanup"] = "PASS"
-                  except Exception as exc:
-                      result["edit_cleanup"] = "FAIL"
-                      result["cleanup_error"] = str(exc)[:500]
-          print(json.dumps(result, indent=2))
-          with open("fitness-play-probe.json", "w") as fh:
-              json.dump(result, fh, indent=2)
-          if result.get("edit_insert") != "PASS" or result.get("track_list") != "PASS" or result.get("edit_cleanup") != "PASS":
-              raise SystemExit(2)
+            api.edits().delete(packageName=package,editId=edit).execute()
+          print(json.dumps(out,indent=2))
+          with open('fitness-play-probe.json','w') as f: json.dump(out,f,indent=2)
           PY
-
-      - name: Download, sign with Play-bound Fitness key when needed, and validate Fitness 51005
+      - name: Download and validate exact Fitness 51006 artifact
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish_internal' }}
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        shell: bash
         run: |
           set -euo pipefail
           test -n "$SOURCE_RUN_ID"
           mkdir -p candidate play-evidence
-          gh run download "$SOURCE_RUN_ID" -R "$GITHUB_REPOSITORY" -n fitness-v2-51005-package-gate -D candidate
+          gh run download "$SOURCE_RUN_ID" -R "$GITHUB_REPOSITORY" -n fitness-v2-51006-package-gate -D candidate
           AAB="$(find candidate -type f -path '*/bundle/release/app-release.aab' | head -n1)"
           SIGNING_STATUS="$(find candidate -type f -name aab-signing-status.txt | head -n1)"
-          test -s "$AAB"
-          test -s "$SIGNING_STATUS"
-
-          status="$(tr -d '\r\n' < "$SIGNING_STATUS")"
-          signing_provenance='UNKNOWN'
-          if [[ "$status" == 'PRODUCTION_SIGNING=PASS_PLAY_BOUND_FITNESS_UPLOAD_KEY' || "$status" == 'PRODUCTION_SIGNING=PASS_EXISTING_UPLOAD_KEY' ]]; then
-            signing_provenance="PRE_SIGNED_CANDIDATE:${status#PRODUCTION_SIGNING=}"
-          else
-            echo "Unexpected signing status: $status" >&2
-            exit 43
-          fi
-
+          BADGING="$(find candidate -type f -name badging.txt | head -n1)"
+          test -s "$AAB"; test -s "$SIGNING_STATUS"; test -s "$BADGING"
+          grep -F "versionCode='51006'" "$BADGING"
+          grep -F "targetSdkVersion:'36'" "$BADGING"
+          grep -Eq '^PRODUCTION_SIGNING=PASS_(PLAY_BOUND_FITNESS_UPLOAD_KEY|EXISTING_UPLOAD_KEY)$' "$SIGNING_STATUS"
           jarsigner -verify -verbose -certs "$AAB" > play-evidence/aab-jarsigner.txt 2>&1
           grep -F 'jar verified.' play-evidence/aab-jarsigner.txt
           keytool -printcert -jarfile "$AAB" > play-evidence/aab-signer-cert.txt
           grep -F "SHA1: $EXPECTED_FITNESS_UPLOAD_SHA1" play-evidence/aab-signer-cert.txt
           sha256sum "$AAB" | tee play-evidence/aab.sha256
-
           BUNDLETOOL_VERSION=1.18.3
           BUNDLETOOL_SHA256=a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
           curl -fsSL "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" -o "$RUNNER_TEMP/bundletool.jar"
@@ -153,33 +108,13 @@ jobs:
           java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle="$AAB" --module=base > play-evidence/manifest.xml
           python - <<'PY'
           import xml.etree.ElementTree as ET
-          root = ET.parse('play-evidence/manifest.xml').getroot()
-          android = '{http://schemas.android.com/apk/res/android}'
-          package = root.attrib.get('package')
-          version_code = root.attrib.get(android + 'versionCode')
-          uses_sdk = root.find('uses-sdk')
-          target_sdk = uses_sdk.attrib.get(android + 'targetSdkVersion') if uses_sdk is not None else None
-          print(f'package={package}')
-          print(f'versionCode={version_code}')
-          print(f'targetSdk={target_sdk}')
-          if package != 'com.topherofit.thf.pulse':
-              raise SystemExit(f'unexpected package: {package}')
-          if version_code != '51005':
-              raise SystemExit(f'unexpected versionCode: {version_code}')
-          if target_sdk != '36':
-              raise SystemExit(f'unexpected targetSdk: {target_sdk}')
+          root=ET.parse('play-evidence/manifest.xml').getroot(); a='{http://schemas.android.com/apk/res/android}'
+          package=root.attrib.get('package'); vc=root.attrib.get(a+'versionCode'); uses=root.find('uses-sdk'); target=uses.attrib.get(a+'targetSdkVersion') if uses is not None else None
+          if package!='com.topherofit.thf.pulse' or vc!='51006' or target!='36': raise SystemExit(f'identity mismatch package={package} vc={vc} target={target}')
           PY
-          printf 'AAB_PATH=%s\n' "$AAB" >> "$GITHUB_ENV"
-          {
-            echo 'candidate_package=com.topherofit.thf.pulse'
-            echo 'candidate_versionCode=51005'
-            echo 'candidate_targetSdk=36'
-            echo "production_signing=$signing_provenance"
-            echo "expected_upload_sha1=$EXPECTED_FITNESS_UPLOAD_SHA1"
-            echo "source_run_id=$SOURCE_RUN_ID"
-          } > play-evidence/candidate-gate.txt
-
-      - name: Publish validated Fitness 51005 to Google Play Internal
+          echo "AAB_PATH=$AAB" >> "$GITHUB_ENV"
+          printf 'candidate_package=com.topherofit.thf.pulse\ncandidate_versionCode=51006\ncandidate_targetSdk=36\nsource_run_id=%s\n' "$SOURCE_RUN_ID" > play-evidence/candidate-gate.txt
+      - name: Publish validated Fitness 51006 to Google Play Internal
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'publish_internal' }}
         shell: bash
         run: |
@@ -187,93 +122,43 @@ jobs:
           test -s "$AAB_PATH"
           python -m pip install --disable-pip-version-check google-api-python-client google-auth
           python - <<'PY'
-          import json
-          import os
+          import json,os
           import google.auth
           from googleapiclient.discovery import build
-          from googleapiclient.errors import HttpError
           from googleapiclient.http import MediaFileUpload
-
-          package = 'com.topherofit.thf.pulse'
-          expected_version = '51005'
-          track_name = 'internal'
-          aab = os.environ['AAB_PATH']
-          creds, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
-          api = build('androidpublisher', 'v3', credentials=creds, cache_discovery=False)
-          result = {
-              'package': package,
-              'expected_versionCode': expected_version,
-              'track': track_name,
-              'aab': aab,
-              'upload_attempted': False,
-              'commit_attempted': False,
-              'committed': False,
-          }
-          edit_id = None
+          package='com.topherofit.thf.pulse'; expected_version='51006'; track_name='internal'; aab=os.environ['AAB_PATH']
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          result={'package':package,'expected_versionCode':expected_version,'track':track_name,'committed':False}
+          edit=None
           try:
-              edit_id = api.edits().insert(packageName=package, body={}).execute()['id']
-              tracks = api.edits().tracks().list(packageName=package, editId=edit_id).execute().get('tracks', [])
-              all_versions = set()
-              internal_has_expected = False
-              for track in tracks:
-                  for release in track.get('releases', []) or []:
-                      versions = {str(v) for v in (release.get('versionCodes', []) or [])}
-                      all_versions.update(versions)
-                      if track.get('track') == track_name and expected_version in versions:
-                          internal_has_expected = True
-              if internal_has_expected:
-                  result.update({'already_published': True, 'committed': True, 'versionCode': expected_version})
-                  api.edits().delete(packageName=package, editId=edit_id).execute()
-                  edit_id = None
-              elif expected_version in all_versions:
-                  raise RuntimeError(f'versionCode {expected_version} already exists on another Play track; refusing duplicate upload')
-              else:
-                  result['upload_attempted'] = True
-                  bundle = api.edits().bundles().upload(
-                      packageName=package,
-                      editId=edit_id,
-                      media_body=MediaFileUpload(aab, mimetype='application/octet-stream', resumable=True),
-                  ).execute()
-                  uploaded_version = str(bundle['versionCode'])
-                  result['versionCode'] = uploaded_version
-                  if uploaded_version != expected_version:
-                      raise RuntimeError(f'uploaded versionCode {uploaded_version} != expected {expected_version}')
-                  api.edits().tracks().update(
-                      packageName=package,
-                      editId=edit_id,
-                      track=track_name,
-                      body={'releases': [{
-                          'versionCodes': [uploaded_version],
-                          'status': 'completed',
-                          'name': 'THF Fitness 51005 Internal',
-                      }]},
-                  ).execute()
-                  result['commit_attempted'] = True
-                  api.edits().commit(packageName=package, editId=edit_id).execute()
-                  edit_id = None
-                  result['committed'] = True
-          except Exception as exc:
-              result['error'] = str(exc)[:2000]
-              if isinstance(exc, HttpError):
-                  result['http_status'] = exc.resp.status
-              if edit_id:
-                  try:
-                      api.edits().delete(packageName=package, editId=edit_id).execute()
-                      result['failed_edit_cleanup'] = 'PASS'
-                  except Exception as cleanup_exc:
-                      result['failed_edit_cleanup'] = 'FAIL'
-                      result['cleanup_error'] = str(cleanup_exc)[:500]
-              print(json.dumps(result, indent=2))
-              with open('play-evidence/PLAY_INTERNAL_UPLOAD.json', 'w') as fh:
-                  json.dump(result, fh, indent=2)
-              raise
-          print(json.dumps(result, indent=2))
-          with open('play-evidence/PLAY_INTERNAL_UPLOAD.json', 'w') as fh:
-              json.dump(result, fh, indent=2)
-          if not result.get('committed'):
-              raise SystemExit(3)
+            edit=api.edits().insert(packageName=package,body={}).execute()['id']
+            tracks=api.edits().tracks().list(packageName=package,editId=edit).execute().get('tracks',[]) or []
+            all_versions=set(); internal_has=False
+            for t in tracks:
+              for r in t.get('releases',[]) or []:
+                codes={str(v) for v in (r.get('versionCodes',[]) or [])}; all_versions.update(codes)
+                if t.get('track')==track_name and expected_version in codes: internal_has=True
+            if internal_has:
+              result.update({'already_published':True,'versionCode':expected_version,'committed':True})
+              api.edits().delete(packageName=package,editId=edit).execute(); edit=None
+            elif expected_version in all_versions:
+              raise RuntimeError(f'versionCode {expected_version} exists on another track')
+            else:
+              bundle=api.edits().bundles().upload(packageName=package,editId=edit,media_body=MediaFileUpload(aab,mimetype='application/octet-stream',resumable=True)).execute()
+              uploaded=str(bundle['versionCode'])
+              if uploaded!=expected_version: raise RuntimeError(f'uploaded {uploaded} != {expected_version}')
+              api.edits().tracks().update(packageName=package,editId=edit,track=track_name,body={'releases':[{'versionCodes':[uploaded],'status':'completed','name':'THF Fitness 51006 Internal'}]}).execute()
+              api.edits().commit(packageName=package,editId=edit).execute(); edit=None
+              result.update({'versionCode':uploaded,'committed':True})
+          finally:
+            if edit:
+              try: api.edits().delete(packageName=package,editId=edit).execute()
+              except Exception: pass
+          print(json.dumps(result,indent=2))
+          with open('play-evidence/PLAY_INTERNAL_UPLOAD.json','w') as f: json.dump(result,f,indent=2)
+          if not result.get('committed'): raise SystemExit(3)
           PY
-
       - uses: actions/upload-artifact@v4
         if: always()
         with:
