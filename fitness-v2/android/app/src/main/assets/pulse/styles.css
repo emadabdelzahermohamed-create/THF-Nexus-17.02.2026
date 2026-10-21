@@ -14,3 +14,12 @@
 .founding-hero-card:after{content:"";position:absolute;z-index:0;width:170px;height:170px;inset-inline-end:-75px;bottom:-105px;border-radius:50%;background:#e8c46920;filter:blur(18px);pointer-events:none}
 .founding-hero-card>*{position:relative;z-index:1}.founding-hero-card h2{margin:0}.founding-hero-price{margin:8px 0;color:var(--gold);font-size:24px;font-weight:1000}.founding-hero-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid #d2b766;border-radius:999px;background:#302713;color:#ffe6a0;font-size:11px;font-weight:1000;box-shadow:0 8px 24px #cba8492f}.founding-hero-owned .brand-mark{box-shadow:0 0 0 2px #ffe39a,0 10px 30px #d7ad4a66}.founding-hero-owned #profileTitle{color:#ffe39a}
 .button:disabled{cursor:not-allowed;opacity:.62;transform:none}
+
+/* Sensor-first workout evidence */
+.motion-evidence{overflow:hidden}
+.motion-evidence .card-heading{align-items:center;gap:12px}
+.motion-evidence-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.motion-evidence-grid>div{padding:12px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);display:grid;gap:4px}
+.motion-evidence-grid span{font-size:.78rem;color:var(--muted,#9fb0b8)}
+.motion-evidence-grid strong{font-size:1.45rem;font-variant-numeric:tabular-nums}
+@media(max-width:520px){.motion-evidence-grid{grid-template-columns:1fr 1fr}.motion-evidence-grid>div:last-child{grid-column:1/-1}}

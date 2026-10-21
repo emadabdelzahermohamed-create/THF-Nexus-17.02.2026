@@ -32,6 +32,8 @@
   Object.assign(COPY.en, {accountPrivacyHint:'Review the policy or start deleting your THF Fitness account data in the secure browser.',privacyPolicy:'Privacy policy',accountDeletion:'Delete account data',accountResourceAndroidOnly:'This link is available in the Android app.'});
   Object.assign(COPY.ar, {readinessToday:'جاهزية اليوم',todaySummary:'ملخص اليوم',trainContentType:'نوع محتوى التدريب',programSections:'أقسام البرامج',clearSearch:'مسح البحث',trainingSections:'أقسام التدريب',volumeChartLabel:'مخطط حجم التدريب',onboardingBenefitsLabel:'مزايا الخطة',close:'إغلاق'});
   Object.assign(COPY.en, {readinessToday:"Today's readiness",todaySummary:"Today's summary",trainContentType:'Training content type',programSections:'Program sections',clearSearch:'Clear search',trainingSections:'Training sections',volumeChartLabel:'Training volume chart',onboardingBenefitsLabel:'Plan benefits',close:'Close'});
+  Object.assign(COPY.ar, {sensorEvidence:'قياس الحركة',sensorVerified:'حساسات الهاتف',sensorWaiting:'بانتظار بيانات الحركة',stepsLive:'الخطوات',detectorEvents:'نبضات الخطوة',confidence:'الثقة',sensorSamples:'عينات الحركة',manualUnverified:'يدوي / غير موثق'});
+  Object.assign(COPY.en, {sensorEvidence:'Motion evidence',sensorVerified:'Phone sensors',sensorWaiting:'Waiting for motion data',stepsLive:'Steps',detectorEvents:'Step events',confidence:'Confidence',sensorSamples:'Motion samples',manualUnverified:'Manual / unverified'});
 
   const SECTION_ORDER = ['gym','home','running','cycling','football','swimming','yoga','calisthenics','boxing','hiit','mobility','recovery','team_sports'];
   const state = {
@@ -47,7 +49,9 @@
     restTick: null,
     demoFrame: 0,
     clearArmedUntil: 0,
-    onboardingDraft: null
+    onboardingDraft: null,
+    motionPoll: null,
+    motionEvidence: null
   };
   const t = key => COPY[state.lang][key] || COPY.en[key] || key;
 
@@ -248,16 +252,48 @@
     return Array.from({length:Math.max(1,Number(reference.sets)||1)},()=>({type:reference.role==='warmup'?'warmup':'working',load:0,reps,rpe:reference.targetRpe,rir:reference.targetRir,restSeconds:reference.restSeconds||60,durationSeconds:reference.durationSeconds||null,complete:false}));
   }
   function makeClientId() { return 'thf-v2-' + (globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`); }
+  function beginNativeMotionSession(sessionId) {
+    if (!N || typeof N.beginMotionSession !== 'function') return {active:false,error:'ANDROID_ONLY'};
+    try { return parse(N.beginMotionSession(sessionId), {active:false}); } catch { return {active:false,error:'MOTION_START_FAILED'}; }
+  }
+  function readMotionSnapshot() {
+    if (!N || typeof N.motionSnapshot !== 'function') return {available:false};
+    try { return parse(N.motionSnapshot(), {available:false}); } catch { return {available:false}; }
+  }
+  function endNativeMotionSession() {
+    if (!N || typeof N.endMotionSession !== 'function') return {available:false};
+    try { return parse(N.endMotionSession(), {available:false}); } catch { return {available:false}; }
+  }
+  function renderMotionEvidence(evidence=readMotionSnapshot()) {
+    state.motionEvidence=evidence;
+    const panel=$('motionEvidencePanel'); if(!panel)return evidence;
+    const available=Boolean(evidence?.available);
+    const source=$('motionSourceBadge');
+    source.textContent=available?t('sensorVerified'):t('sensorWaiting');
+    source.classList.toggle('gold',available);
+    $('motionLiveSteps').textContent=String(Number(evidence?.stepDelta||0));
+    $('motionDetectorEvents').textContent=String(Number(evidence?.stepDetectorCount||0));
+    $('motionConfidence').textContent=`${Math.round(Math.max(0,Math.min(1,Number(evidence?.localConfidence||0)))*100)}%`;
+    const samples=Number(evidence?.accelerometerSampleCount||0)+Number(evidence?.gyroscopeSampleCount||0);
+    $('motionSensorDetail').textContent=available?`${t('sensorSamples')}: ${samples} · accel ${Number(evidence?.accelerometerSampleCount||0)} · gyro ${Number(evidence?.gyroscopeSampleCount||0)}`:t('sensorWaiting');
+    return evidence;
+  }
+  function startMotionPolling() {
+    stopMotionPolling();
+    renderMotionEvidence();
+    state.motionPoll=setInterval(()=>{if(state.active)renderMotionEvidence();},1000);
+  }
+  function stopMotionPolling() { if(state.motionPoll){clearInterval(state.motionPoll);state.motionPoll=null;} }
   function startExercise(item) {
     state.active = {clientRecordId:makeClientId(),exerciseId:item.id,startedAt:Date.now(),sets:makeSets(item)}; state.demoFrame=0;
-    store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false);
-    try { N?.beginStepSession?.(); } catch {}
+    store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail();
+    beginNativeMotionSession(state.active.clientRecordId); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false);
   }
   function startProgramSession(programId,sessionId) {
     const program=PROGRAMS.find(value=>value.id===programId);const sessionIndex=program?.sessions.findIndex(value=>value.id===sessionId)??-1;const session=program?.sessions[sessionIndex];const reference=session?.exercises[0];const item=reference?exerciseFor(reference):null;if(!program||!session||!item)return;
     const now=Date.now();store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex,selectedAt:new Date(now).toISOString()}));
     state.active={clientRecordId:makeClientId(),exerciseId:item.id,startedAt:now,sets:makeProgramSets(reference,item),programId:program.id,programSessionId:session.id,programSessionIndex:sessionIndex,programExerciseIndex:0,programStartedAt:now,programEntries:[]};state.demoFrame=0;
-    persistActive();closeProgramDetail();closeDetail();renderActiveWorkout();showScreen('activeWorkoutScreen',false);try{N?.beginStepSession?.();}catch{}
+    persistActive();closeProgramDetail();closeDetail();beginNativeMotionSession(state.active.clientRecordId);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);
   }
   function activeExercise() { return EXERCISES.find(item => item.id === state.active?.exerciseId); }
   function completedVolume(sets) { return (sets||[]).filter(set=>set.complete).reduce((sum,set)=>sum + Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0); }
@@ -293,6 +329,7 @@
     $('activeSection').textContent = programSession?`${local(program.section)} · ${t('exerciseOf').replace('{current}',programIndex+1).replace('{total}',programSession.exercises.length)}`:local(item.section); $('activeExerciseName').textContent = local(item.name);
     $('activeExerciseCue').textContent = local(item.setup); $('activeMuscles').innerHTML = item.muscles.primary[state.lang].map(value=>`<span class="tag">${escapeHtml(value)}</span>`).join('');
     $('activeSteps').innerHTML = item.steps[state.lang].map(step=>`<li>${escapeHtml(step)}</li>`).join(''); $('activeBreathing').textContent = local(item.breathing); $('activeSafety').textContent = local(item.safety);
+    renderMotionEvidence(state.motionEvidence||readMotionSnapshot());
     const done = state.active.sets.filter(set=>set.complete).length; $('setProgressTitle').textContent = t('setProgress').replace('{done}',done).replace('{total}',state.active.sets.length); $('sessionVolume').textContent = `${Math.round(sessionVolume())} kg`;
     $('finishWorkoutBtn').textContent=programSession?(programIndex<programSession.exercises.length-1?t('saveNext'):t('finishSession')):t('finishWorkout');
     $('setRows').innerHTML = state.active.sets.map((set,index)=>`<div class="set-row${set.complete?' complete':''}" data-index="${index}"><span class="set-number"><b>${index+1}</b>${escapeHtml(t(set.type))}</span><label class="set-field"><span>${escapeHtml(t('load'))}</span><input class="set-input" data-field="load" inputmode="decimal" type="number" min="0" step="0.5" value="${Number(set.load)||0}" ${item.tracking.load?'':'disabled'} aria-label="${escapeHtml(t('load'))}"></label><label class="set-field"><span>${escapeHtml(t('reps'))}</span><input class="set-input" data-field="reps" inputmode="numeric" type="number" min="0" max="999" value="${Number(set.reps)||0}" aria-label="${escapeHtml(t('reps'))}"></label><label class="set-field"><span>RPE</span><input class="set-input" data-field="rpe" inputmode="decimal" type="number" min="1" max="10" step="0.5" value="${Number(set.rpe)||7}" aria-label="RPE"></label><label class="set-field"><span>RIR</span><input class="set-input" data-field="rir" inputmode="numeric" type="number" min="0" max="10" value="${Number(set.rir)||0}" ${item.tracking.rir?'':'disabled'} aria-label="RIR"></label><button class="set-complete" type="button" aria-label="${escapeHtml(t('completed'))}">${set.complete?'✓':'○'}</button></div>`).join('');
@@ -317,7 +354,9 @@
     const program=PROGRAMS.find(value=>value.id===state.active.programId);const programSession=program?.sessions.find(value=>value.id===state.active.programSessionId);const programIndex=Number(state.active.programExerciseIndex)||0;
     if(program&&programSession&&programIndex<programSession.exercises.length-1){const nextIndex=programIndex+1;const reference=programSession.exercises[nextIndex];const next=exerciseFor(reference);if(next){state.active={...state.active,exerciseId:next.id,startedAt:now,sets:makeProgramSets(reference,next),programExerciseIndex:nextIndex,programEntries:entries};state.demoFrame=0;stopRest();persistActive();renderActiveWorkout();toast(t('nextExercise').replace('{name}',local(next.name)));window.scrollTo({top:0,behavior:'smooth'});return;}}
     const allSets=entries.flatMap(entry=>entry.sets);const completedSets=allSets.filter(set=>set.complete);const volume=Math.round(completedSets.reduce((sum,set)=>sum+Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0));const title=program&&programSession?programSession.name:item.name;const startedAt=state.active.programStartedAt||state.active.startedAt;
-    const summary={clientRecordId:state.active.clientRecordId,recordVersion:1,exercise:local(title),exerciseName:title,id:program?.id||item.id,sport:program?.section?.id||item.sport,programId:program?.id||null,programSessionId:programSession?.id||null,startedAtMs:startedAt,endedAtMs:now,date:new Date(now).toISOString(),durationMin:Math.max(1,Math.round((now-startedAt)/60000)),reps:completedSets.reduce((sum,set)=>sum+(Number(set.reps)||0),0),volumeKg:volume,sets:allSets,completed:true,steps:nativeStatus().sessionSteps||0};
+    const motionEvidence=endNativeMotionSession();stopMotionPolling();
+    const measurementSource=motionEvidence?.available&&motionEvidence.sessionId===state.active.clientRecordId?'SENSOR':'MANUAL_OR_UNVERIFIED';
+    const summary={clientRecordId:state.active.clientRecordId,recordVersion:1,exercise:local(title),exerciseName:title,id:program?.id||item.id,sport:program?.section?.id||item.sport,programId:program?.id||null,programSessionId:programSession?.id||null,startedAtMs:startedAt,endedAtMs:now,date:new Date(now).toISOString(),durationMin:Math.max(1,Math.round((now-startedAt)/60000)),reps:completedSets.reduce((sum,set)=>sum+(Number(set.reps)||0),0),volumeKg:volume,sets:allSets,completed:true,steps:Number(motionEvidence?.stepDelta||0),motionEvidence,measurementSource};
     const history=parse(store.getItem('pulse.v2.history'),[]).filter(entry=>entry.clientRecordId!==summary.clientRecordId);history.push(summary);store.setItem('pulse.v2.history',JSON.stringify(history.slice(-200)));
     try { N?.saveSummary?.(JSON.stringify(summary)); } catch {}
     if(program&&programSession){const nextSession=(Number(state.active.programSessionIndex)+1)%program.sessions.length;store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex:nextSession,selectedAt:new Date().toISOString()}));}
@@ -344,7 +383,7 @@
     const entries=history(), totalVolume=entries.reduce((sum,e)=>sum+(e.volumeKg||0),0), prs=new Map();entries.forEach(entry=>(entry.sets||[]).forEach(set=>{const key=set.exerciseId||entry.id,load=Number(set.load)||0;if(load>(prs.get(key)||0))prs.set(key,load);}));
     $('totalWorkouts').textContent=entries.length;$('totalVolume').textContent=Math.round(totalVolume).toLocaleString(locale());$('prCount').textContent=[...prs.values()].filter(Boolean).length;$('activeMinutes').textContent=entries.reduce((sum,e)=>sum+(e.durationMin||0),0);
     const recent=entries.slice(-7),max=Math.max(1,...recent.map(e=>e.volumeKg||0));$('volumeChart').innerHTML=recent.length?recent.map(e=>`<i class="volume-bar" style="height:${Math.max(8,(e.volumeKg||0)/max*100)}%"><span>${Math.round(e.volumeKg||0)}</span></i>`).join(''):`<p class="muted">${escapeHtml(t('emptyHistory'))}</p>`;
-    $('historyList').innerHTML=entries.length?entries.slice().reverse().slice(0,20).map(entry=>`<article class="history-item"><div><h3>${escapeHtml(entry.exerciseName?.[state.lang]||entry.exercise||entry.id)}</h3><p class="small muted">${new Date(entry.date).toLocaleString(locale())} · ${entry.durationMin||0} ${escapeHtml(t('min'))} · ${entry.sets?.filter(set=>set.complete).length||0} ${escapeHtml(t('setsLabel'))}</p></div><strong>${Math.round(entry.volumeKg||0)} kg</strong></article>`).join(''):`<p class="muted">${escapeHtml(t('emptyHistory'))}</p>`;
+    $('historyList').innerHTML=entries.length?entries.slice().reverse().slice(0,20).map(entry=>`<article class="history-item"><div><h3>${escapeHtml(entry.exerciseName?.[state.lang]||entry.exercise||entry.id)}</h3><p class="small muted">${new Date(entry.date).toLocaleString(locale())} · ${entry.durationMin||0} ${escapeHtml(t('min'))} · ${entry.sets?.filter(set=>set.complete).length||0} ${escapeHtml(t('setsLabel'))}</p><span class="pill ${entry.measurementSource==='SENSOR'?'gold':''}">${escapeHtml(entry.measurementSource==='SENSOR'?t('sensorVerified'):t('manualUnverified'))}</span></div><strong>${Math.round(entry.volumeKg||0)} kg</strong></article>`).join(''):`<p class="muted">${escapeHtml(t('emptyHistory'))}</p>`;
   }
 
   function nativeStatus(){try{return N?parse(N.status(),{}):{mode:'browser_preview',online:navigator.onLine,syncConfigured:false,health:{availability:'BROWSER_PREVIEW',connected:false},sessionSteps:0}}catch{return{mode:'offline',online:false,health:{availability:'ERROR',connected:false},sessionSteps:0}}}
@@ -432,5 +471,5 @@
   const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
   bind(); applyLanguage(); renderHealthStatus(); renderFoundingHero();
   if (shouldOnboard) openOnboarding();
-  if (state.active && activeExercise()) { renderActiveWorkout(); showScreen('activeWorkoutScreen', false); }
+  if (state.active && activeExercise()) { beginNativeMotionSession(state.active.clientRecordId); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false); }
 })();
