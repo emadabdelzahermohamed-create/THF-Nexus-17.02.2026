@@ -116,13 +116,31 @@ class MotionFeatureAccumulator {
         val detectorSignal = (stepDetectorCount.coerceAtMost(20) / 20.0).coerceIn(0.0, 1.0)
         val inertialSignal = ((accelStats.variance() / 12.0) + (gyroStats.variance() / 1.5)).coerceIn(0.0, 1.0)
         val confidence = (0.45 * motionFraction + 0.20 * inertialSignal + 0.20 * stepSignal + 0.15 * detectorSignal).coerceIn(0.0, 1.0)
+        val durationMinutes = activeDurationMs.coerceAtLeast(1L) / 60_000.0
+        val cadence = max(stepDelta, stepDetectorCount) / durationMinutes
+        val hasSteps = stepDelta > 0 || stepDetectorCount > 0
+        val activity = when {
+            !hasSteps && motionFraction < 0.08 && inertialSignal < 0.12 -> DetectedActivity.STATIONARY
+            hasSteps && cadence >= 130.0 && motionFraction >= 0.20 -> DetectedActivity.RUNNING
+            hasSteps && cadence in 35.0..129.999 && motionFraction >= 0.08 -> DetectedActivity.WALKING
+            motionFraction >= 0.15 || inertialSignal >= 0.25 -> DetectedActivity.ACTIVE
+            else -> DetectedActivity.UNKNOWN
+        }
+        val sourceAgreement = listOf(stepSignal, detectorSignal, motionFraction, inertialSignal)
+            .count { it >= 0.08 } / 4.0
+        val activityConfidence = when (activity) {
+            DetectedActivity.STATIONARY -> (1.0 - confidence).coerceIn(0.0, 1.0)
+            DetectedActivity.UNKNOWN -> (confidence * 0.35).coerceIn(0.0, 1.0)
+            else -> (0.65 * confidence + 0.35 * sourceAgreement).coerceIn(0.0, 1.0)
+        }
 
         val canonical = listOf(
             sessionId, startedAtWallMs, endedAtWallMs, totalNanos / NANOS_PER_MS, activeDurationMs,
             stepDelta, stepDetectorCount, counterResetCount, accelStats.count, gyroStats.count,
             "%.6f".format(java.util.Locale.ROOT, accelStats.mean), "%.6f".format(java.util.Locale.ROOT, accelStats.variance()),
             "%.6f".format(java.util.Locale.ROOT, gyroStats.mean), "%.6f".format(java.util.Locale.ROOT, gyroStats.variance()),
-            activeMotionMs, interruptions / NANOS_PER_MS
+            activeMotionMs, interruptions / NANOS_PER_MS, activity.name,
+            "%.6f".format(java.util.Locale.ROOT, activityConfidence)
         ).joinToString("|")
 
         return MotionEvidence(
@@ -147,6 +165,8 @@ class MotionFeatureAccumulator {
             interruptionMs = interruptions / NANOS_PER_MS,
             capabilities = capabilities,
             localConfidence = confidence,
+            detectedActivity = activity,
+            activityConfidence = activityConfidence,
             evidenceDigest = sha256(canonical),
         )
     }

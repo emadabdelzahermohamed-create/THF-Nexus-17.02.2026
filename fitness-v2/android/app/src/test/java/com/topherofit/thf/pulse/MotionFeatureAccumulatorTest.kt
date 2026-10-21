@@ -91,4 +91,34 @@ class MotionFeatureAccumulatorTest {
         assertEquals(2_000L, e.interruptionMs)
         assertEquals(3_000L, e.activeDurationMs)
     }
+    @Test fun walkingTraceIsAutomaticallyClassifiedFromSensorEvidence() {
+        val a = MotionFeatureAccumulator()
+        a.start("walk-auto-0001", 1_000L, 1_000_000_000L, caps)
+        a.acceptStepCounter(100f, 1_010_000_000L)
+        repeat(60) { i ->
+            val t = 1_100_000_000L + i * 500_000_000L
+            a.acceptStepCounter(101f + i, t)
+            a.acceptStepDetector(t + 1L)
+            val swing = if (i % 2 == 0) 2.0f else -2.0f
+            a.acceptAccelerometer(swing, 1.0f, 9.81f + swing, t)
+            a.acceptGyroscope(0.25f, 0.15f, 0.1f, t)
+        }
+        val e = a.snapshot(32_000L, 32_000_000_000L)
+        assertEquals(DetectedActivity.WALKING, e.detectedActivity)
+        assertTrue(e.activityConfidence > 0.35)
+    }
+
+    @Test fun stationaryTraceIsAutomaticallyClassified() {
+        val a = MotionFeatureAccumulator()
+        a.start("still-auto-001", 1_000L, 1_000_000_000L, caps)
+        repeat(30) { i ->
+            val t = 1_100_000_000L + i * 100_000_000L
+            a.acceptAccelerometer(0f, 0f, 9.81f, t)
+            a.acceptGyroscope(0f, 0f, 0f, t)
+        }
+        val e = a.snapshot(5_000L, 5_000_000_000L)
+        assertEquals(DetectedActivity.STATIONARY, e.detectedActivity)
+        assertTrue(e.activityConfidence > 0.70)
+    }
+
 }

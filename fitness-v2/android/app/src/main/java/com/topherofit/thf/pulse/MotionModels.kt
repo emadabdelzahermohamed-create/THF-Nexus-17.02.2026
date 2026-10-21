@@ -10,6 +10,8 @@ data class SensorCapabilities(
 
 enum class MotionSensorType { STEP_COUNTER, STEP_DETECTOR, ACCELEROMETER, GYROSCOPE }
 
+enum class DetectedActivity { STATIONARY, WALKING, RUNNING, ACTIVE, UNKNOWN }
+
 data class MotionEvidence(
     val sessionId: String,
     val startedAtWallMs: Long,
@@ -32,5 +34,7 @@ data class MotionEvidence(
     val interruptionMs: Long,
     val capabilities: SensorCapabilities,
     val localConfidence: Double,
+    val detectedActivity: DetectedActivity,
+    val activityConfidence: Double,
     val evidenceDigest: String,
 )

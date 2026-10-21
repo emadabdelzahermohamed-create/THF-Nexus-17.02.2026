@@ -375,6 +375,8 @@ class MainActivity : ComponentActivity() {
         .put("stationaryFraction", evidence.stationaryFraction)
         .put("interruptionMs", evidence.interruptionMs)
         .put("localConfidence", evidence.localConfidence)
+        .put("detectedActivity", evidence.detectedActivity.name)
+        .put("activityConfidence", evidence.activityConfidence)
         .put("evidenceDigest", evidence.evidenceDigest)
         .put("capabilities", motionCapabilitiesJson(evidence.capabilities))
 
