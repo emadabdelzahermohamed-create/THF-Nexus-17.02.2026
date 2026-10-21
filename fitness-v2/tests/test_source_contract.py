@@ -68,7 +68,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         play_gate = (ROOT / ".github" / "workflows" / "thf-fitness-play-probe.yml").read_text()
         self.assertIn("fitness-v2-51006-package-gate", android_gate)
         self.assertIn("fitness-v2-51006-package-gate", play_gate)
-        self.assertIn("expected_version = '51006'", play_gate)
+        self.assertRegex(play_gate, r"expected_version\s*=\s*[\"\']51006[\"\']")
         self.assertIn("THF Fitness 51006 Internal", play_gate)
         self.assertNotIn("39089308617", play_gate)
         self.assertNotIn("EXPECTED_UNSIGNED_SHA256", play_gate)
