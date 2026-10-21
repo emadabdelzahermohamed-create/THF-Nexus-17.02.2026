@@ -1,0 +1,79 @@
+name: THF Play Portfolio Inventory
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inventory known THF Play packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PY'
+          import json
+          import google.auth
+          from googleapiclient.discovery import build
+          packages=[
+            'com.topherofit.thf.pulse',
+            'com.topherofit.thf.core',
+            'com.topherofit.thf.forge',
+            'com.topherofit.thf.echo',
+            'com.topherofit.thf.codex',
+            'com.topherofit.thf.spark',
+            'com.topherofit.thf.rush',
+            'com.topherofit.thf.vault',
+            'com.topherofit.thf.signal',
+            'com.topherofit.thf.command',
+            'com.topherofit.thf.terra',
+            'com.topherofit.thf.rift',
+          ]
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          report=[]
+          for package in packages:
+            row={'package':package,'accessible':False,'tracks':[],'listings':[]}
+            edit=None
+            try:
+              edit=api.edits().insert(packageName=package,body={}).execute()['id']
+              row['accessible']=True
+              tracks=api.edits().tracks().list(packageName=package,editId=edit).execute().get('tracks',[]) or []
+              for t in tracks:
+                releases=[]
+                for r in t.get('releases',[]) or []:
+                  releases.append({'name':r.get('name'),'status':r.get('status'),'versionCodes':r.get('versionCodes',[])})
+                if releases: row['tracks'].append({'track':t.get('track'),'releases':releases})
+              listings=api.edits().listings().list(packageName=package,editId=edit).execute().get('listings',[]) or []
+              row['listings']=[{'language':x.get('language'),'title':x.get('title'),'short':bool(x.get('shortDescription')),'full':bool(x.get('fullDescription'))} for x in listings]
+            except Exception as e:
+              row['error']=str(e)
+            finally:
+              if edit:
+                try: api.edits().delete(packageName=package,editId=edit).execute()
+                except Exception: pass
+            report.append(row)
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          with open('thf-play-portfolio-inventory.json','w') as f: json.dump(report,f,ensure_ascii=False,indent=2)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thf-play-portfolio-inventory
+          path: thf-play-portfolio-inventory.json
+          if-no-files-found: error
+          retention-days: 14
