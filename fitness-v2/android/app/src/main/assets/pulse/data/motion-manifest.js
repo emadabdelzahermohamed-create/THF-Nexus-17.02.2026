@@ -19,21 +19,15 @@ window.THF_MOTION_MANIFEST = {
 
 /*
  * Offline reference-motion fallback.
- *
- * The two entries above remain the only biomechanically reviewed full-motion
- * clips. For every other exercise that ships with >=2 audited offline reference
- * frames, this adapter cycles those frames automatically while the workout is
- * active. It deliberately does not label the result as a verified animation:
- * the phase copy says "automatic reference sequence" and the full-motion
- * manifest remains the source of truth for reviewed clips.
- *
- * This removes the old tap-to-change-pose interaction without inventing
+ * Reviewed full-motion media above always wins. Other exercises with >=2
+ * audited local reference frames cycle automatically without inventing
  * intermediate anatomy. Reduced-motion users keep a static first frame.
  */
 (() => {
   'use strict';
   const FRAME_MS = 850;
   let timer = null;
+  let observer = null;
   let activeExerciseId = null;
   let frameIndex = 0;
 
@@ -42,25 +36,33 @@ window.THF_MOTION_MANIFEST = {
   const currentExercise = () => exercises().find(item => item.id === activeExerciseId);
   const reduceMotion = () => {
     const control = byId('reduceMotion');
-    return Boolean(control?.checked) || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    return Boolean(control?.checked) || Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
   };
 
   function inferActiveExercise() {
+    const explicitId = byId('activeWorkoutScreen')?.dataset?.exerciseId;
+    if (explicitId) {
+      const exact = exercises().find(item => item.id === explicitId);
+      if (exact) return exact;
+    }
     const name = byId('activeExerciseName')?.textContent?.trim();
     if (!name) return null;
     return exercises().find(item => [item?.name?.ar, item?.name?.en].includes(name)) || null;
   }
 
-  function stop() {
+  function stop({resetExercise = false} = {}) {
     if (timer) window.clearInterval(timer);
     timer = null;
     frameIndex = 0;
+    if (resetExercise) activeExerciseId = null;
   }
 
   function renderFrame(item) {
     const image = byId('activeDemoImage');
     if (!image || !Array.isArray(item?.demo?.assets) || item.demo.assets.length < 2) return;
-    image.src = './' + item.demo.assets[frameIndex % item.demo.assets.length];
+    const nextSrc = './' + item.demo.assets[frameIndex % item.demo.assets.length];
+    // Avoid redundant WebView image work on the API31 Samsung lane.
+    if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
     image.alt = item?.demo?.alt?.[document.documentElement.lang === 'ar' ? 'ar' : 'en'] || '';
     const phase = byId('activeDemoPhase');
     if (phase) phase.textContent = document.documentElement.lang === 'ar'
@@ -72,10 +74,10 @@ window.THF_MOTION_MANIFEST = {
     stop();
     activeExerciseId = item.id;
     renderFrame(item);
-    if (reduceMotion()) return;
+    if (reduceMotion() || document.hidden) return;
     timer = window.setInterval(() => {
       const latest = currentExercise();
-      if (!latest || document.hidden) return;
+      if (!latest || document.hidden || reduceMotion()) return;
       frameIndex = (frameIndex + 1) % latest.demo.assets.length;
       renderFrame(latest);
     }, FRAME_MS);
@@ -85,21 +87,50 @@ window.THF_MOTION_MANIFEST = {
     const screen = byId('activeWorkoutScreen');
     const image = byId('activeDemoImage');
     const video = byId('activeDemoVideo');
-    if (!screen?.classList.contains('active') || !image || !video) { stop(); activeExerciseId = null; return; }
-    // A reviewed full-motion clip always wins over the reference-frame fallback.
-    if (!video.classList.contains('hidden')) { stop(); return; }
+    if (!screen?.classList.contains('active') || !image || !video) {
+      stop({resetExercise: true});
+      return;
+    }
+    if (!video.classList.contains('hidden')) {
+      stop({resetExercise: true});
+      return;
+    }
     const item = inferActiveExercise();
-    if (!item || !Array.isArray(item.demo?.assets) || item.demo.assets.length < 2) { stop(); return; }
+    if (!item || !Array.isArray(item.demo?.assets) || item.demo.assets.length < 2) {
+      stop({resetExercise: true});
+      return;
+    }
+    if (reduceMotion()) {
+      if (item.id !== activeExerciseId) {
+        activeExerciseId = item.id;
+        frameIndex = 0;
+      }
+      if (timer) stop();
+      renderFrame(item);
+      return;
+    }
+    if (document.hidden) {
+      if (timer) stop();
+      return;
+    }
     if (item.id !== activeExerciseId || !timer) start(item);
   }
 
   window.addEventListener('load', () => {
     const root = byId('activeWorkoutScreen');
     if (!root) return;
-    const observer = new MutationObserver(reconcile);
-    observer.observe(root, {subtree:true, childList:true, attributes:true, characterData:true, attributeFilter:['class','src']});
+    observer = new MutationObserver(reconcile);
+    observer.observe(root, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+      // Frame src changes are renderer output, not state inputs. Observing them wakes
+      // reconcile on every animation frame and creates avoidable WebView main-thread work.
+      attributeFilter: ['class', 'data-exercise-id']
+    });
     byId('reduceMotion')?.addEventListener('change', reconcile);
     document.addEventListener('visibilitychange', reconcile);
     reconcile();
-  }, {once:true});
+  }, {once: true});
 })();

@@ -1,0 +1,78 @@
+name: THF Fitness Universal Phone QA
+
+on:
+  push:
+    branches:
+      - fitness/motion-runtime-api36-gate-20261018
+    paths:
+      - '.github/workflows/thf-fitness-universal-phone-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+jobs:
+  build-universal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: project-b5e10d7e-8ce8-4aa4-a15
+      - name: Download exact Fitness 51004 release bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p candidate out evidence
+          gh run download 39170862115 -R "$GITHUB_REPOSITORY" -n fitness-v2-51004-package-gate -D candidate
+          AAB="$(find candidate -type f -path '*/bundle/release/app-release.aab' | head -n1)"
+          test -s "$AAB"
+          echo "AAB=$AAB" >> "$GITHUB_ENV"
+          sha256sum "$AAB" | tee evidence/source-aab.sha256
+      - name: Build signed universal APK from exact bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEYSTORE="$RUNNER_TEMP/thf-fitness-upload.jks"
+          gcloud secrets versions access latest --project project-b5e10d7e-8ce8-4aa4-a15 --secret thf-fitness-upload-keystore-b64 | base64 -d > "$KEYSTORE"
+          STORE_PASSWORD="$(gcloud secrets versions access latest --project project-b5e10d7e-8ce8-4aa4-a15 --secret thf-fitness-upload-store-password)"
+          KEY_ALIAS="$(gcloud secrets versions access latest --project project-b5e10d7e-8ce8-4aa4-a15 --secret thf-fitness-upload-key-alias)"
+          KEY_PASSWORD="$(gcloud secrets versions access latest --project project-b5e10d7e-8ce8-4aa4-a15 --secret thf-fitness-upload-key-password)"
+          echo "::add-mask::$STORE_PASSWORD"
+          echo "::add-mask::$KEY_ALIAS"
+          echo "::add-mask::$KEY_PASSWORD"
+          curl -fsSL https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar -o "$RUNNER_TEMP/bundletool.jar"
+          echo 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29  '"$RUNNER_TEMP/bundletool.jar" | sha256sum -c -
+          java -jar "$RUNNER_TEMP/bundletool.jar" build-apks \
+            --bundle="$AAB" \
+            --output=out/fitness-51004-universal.apks \
+            --mode=universal \
+            --ks="$KEYSTORE" \
+            --ks-pass="pass:$STORE_PASSWORD" \
+            --ks-key-alias="$KEY_ALIAS" \
+            --key-pass="pass:$KEY_PASSWORD"
+          unzip -p out/fitness-51004-universal.apks universal.apk > out/THF-Fitness-51004-universal.apk
+          rm -f "$KEYSTORE"
+          unset STORE_PASSWORD KEY_ALIAS KEY_PASSWORD
+          test -s out/THF-Fitness-51004-universal.apk
+          sha256sum out/THF-Fitness-51004-universal.apk | tee evidence/universal-apk.sha256
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs out/THF-Fitness-51004-universal.apk | tee evidence/apksigner.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging out/THF-Fitness-51004-universal.apk | head -n 20 | tee evidence/badging.txt
+          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51004'" evidence/badging.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thf-fitness-51004-universal-phone-qa
+          path: |
+            out/THF-Fitness-51004-universal.apk
+            evidence/
+          retention-days: 14

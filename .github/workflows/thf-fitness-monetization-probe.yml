@@ -1,0 +1,95 @@
+name: THF Fitness Play Configuration Probe
+
+on:
+  push:
+    branches: [fitness/motion-runtime-api36-gate-20261018]
+    paths:
+      - '.github/workflows/thf-fitness-monetization-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google with existing WIF
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect monetization and Internal tester configuration read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PY'
+          import json
+          import google.auth
+          from googleapiclient.discovery import build
+
+          package = 'com.topherofit.thf.pulse'
+          target_product = 'thf_founding_hero_lifetime'
+          creds, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          api = build('androidpublisher', 'v3', credentials=creds, cache_discovery=False)
+          result = {'package': package, 'targetProductId': target_product}
+
+          try:
+              response = api.monetization().onetimeproducts().list(packageName=package).execute()
+              items = response.get('oneTimeProducts', []) or []
+              simplified = []
+              for item in items:
+                  simplified.append({
+                      'productId': item.get('productId'),
+                      'purchaseOptionIds': [o.get('purchaseOptionId') for o in (item.get('purchaseOptions') or [])],
+                  })
+              ids = sorted(x.get('productId') for x in items if x.get('productId'))
+              result.update({
+                  'monetizationApi': 'PASS',
+                  'productIds': ids,
+                  'targetPresent': target_product in ids,
+                  'products': simplified,
+              })
+          except Exception as exc:
+              result.update({'monetizationApi': 'FAIL', 'monetizationError': str(exc)[:1500]})
+
+          edit_id = None
+          try:
+              edit_id = api.edits().insert(packageName=package, body={}).execute()['id']
+              testers = api.edits().testers().get(packageName=package, editId=edit_id, track='internal').execute()
+              result.update({
+                  'internalTestersApi': 'PASS',
+                  'googleGroups': testers.get('googleGroups', []) or [],
+              })
+          except Exception as exc:
+              result.update({'internalTestersApi': 'FAIL', 'internalTestersError': str(exc)[:1500]})
+          finally:
+              if edit_id:
+                  try:
+                      api.edits().delete(packageName=package, editId=edit_id).execute()
+                      result['editCleanup'] = 'PASS'
+                  except Exception as exc:
+                      result['editCleanup'] = 'FAIL'
+                      result['editCleanupError'] = str(exc)[:1000]
+
+          print(json.dumps(result, indent=2))
+          with open('fitness-play-configuration-probe.json', 'w') as fh:
+              json.dump(result, fh, indent=2)
+          if result.get('monetizationApi') != 'PASS' or result.get('internalTestersApi') != 'PASS' or result.get('editCleanup') != 'PASS':
+              raise SystemExit(2)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-fitness-play-configuration-probe
+          path: fitness-play-configuration-probe.json
+          if-no-files-found: ignore
+          retention-days: 7

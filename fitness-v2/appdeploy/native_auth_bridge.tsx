@@ -22,8 +22,9 @@ export function readAndroidAuthRequest(search = window.location.search): Android
  */
 export function AndroidAuthBridgeScreen() {
   const request = useMemo(() => readAndroidAuthRequest(), []);
-  const [status, setStatus] = useState<'ready' | 'working' | 'error'>('ready');
+  const [status, setStatus] = useState<'ready' | 'working' | 'handoff' | 'error'>('ready');
   const [message, setMessage] = useState('');
+  const [handoffUrl, setHandoffUrl] = useState('');
   const arabic = navigator.language.toLowerCase().startsWith('ar');
   if (!request) return null;
 
@@ -39,7 +40,10 @@ export function AndroidAuthBridgeScreen() {
       });
       const ticket = String(response.data?.ticket || '');
       if (!/^[A-Za-z0-9_-]{32,256}$/.test(ticket)) throw new Error('Invalid Android account ticket');
-      window.location.replace(`${ANDROID_REDIRECT}?ticket=${encodeURIComponent(ticket)}`);
+      const callbackUrl = `${ANDROID_REDIRECT}?ticket=${encodeURIComponent(ticket)}`;
+      setHandoffUrl(callbackUrl);
+      setStatus('handoff');
+      window.setTimeout(() => window.location.replace(callbackUrl), 0);
     } catch (cause) {
       setStatus('error');
       setMessage(cause instanceof Error ? cause.message : 'Account connection failed');
@@ -52,9 +56,18 @@ export function AndroidAuthBridgeScreen() {
         <p style={{ color:'#f0ce7b', fontWeight:900, letterSpacing:1 }}>TOP HERO FIT</p>
         <h1>{arabic ? 'اربط حسابك بالتطبيق' : 'Connect your app account'}</h1>
         <p style={{ color:'#b8c9cf', lineHeight:1.7 }}>{arabic ? 'سجّل الدخول من المتصفح الآمن. سيعود التطبيق بتذكرة قصيرة أحادية الاستخدام؛ لا تُرسل كلمة المرور أو ملفات الارتباط إلى التطبيق.' : 'Sign in in this secure browser. The app receives a short-lived, single-use ticket—never your password or browser cookies.'}</p>
-        <button type="button" onClick={continueToAccount} disabled={status === 'working'} style={{ width:'100%', minHeight:52, border:0, borderRadius:14, background:'#f0ce7b', color:'#09141a', fontWeight:900, fontSize:16 }}>
-          {status === 'working' ? (arabic ? 'جارٍ الربط…' : 'Connecting…') : (arabic ? 'متابعة إلى تسجيل الدخول' : 'Continue to sign in')}
-        </button>
+        {status === 'handoff' && handoffUrl ? (
+          <>
+            <a href={handoffUrl} style={{ width:'100%', minHeight:52, borderRadius:14, background:'#f0ce7b', color:'#09141a', fontWeight:900, fontSize:16, display:'grid', placeItems:'center', textDecoration:'none' }}>
+              {arabic ? 'العودة إلى تطبيق Top Hero Fit' : 'Return to the Top Hero Fit app'}
+            </a>
+            <p style={{ color:'#b8c9cf', lineHeight:1.7, marginBottom:0 }}>{arabic ? 'إذا لم يفتح التطبيق تلقائيًا، اضغط الزر أعلاه لإكمال الربط.' : 'If the app did not open automatically, tap the button above to finish connecting.'}</p>
+          </>
+        ) : (
+          <button type="button" onClick={continueToAccount} disabled={status === 'working'} style={{ width:'100%', minHeight:52, border:0, borderRadius:14, background:'#f0ce7b', color:'#09141a', fontWeight:900, fontSize:16 }}>
+            {status === 'working' ? (arabic ? 'جارٍ الربط…' : 'Connecting…') : (arabic ? 'متابعة إلى تسجيل الدخول' : 'Continue to sign in')}
+          </button>
+        )}
         {status === 'error' && <p role="alert" style={{ color:'#ff8d87' }}>{message}</p>}
       </section>
     </main>

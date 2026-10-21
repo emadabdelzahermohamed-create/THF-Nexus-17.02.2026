@@ -65,6 +65,24 @@ echo HTTPS_STAGING_ENDPOINT_HEALTH=PASS
 unzip -q "$SRC" -d "$WORK"
 PROJ="$WORK/android"
 test -f "$PROJ/app/build.gradle"
+# This physical-phone QA build must coexist with the installed Core release.
+# Rewrite only packaging/version identity; Java/Kotlin namespace and source stay canonical.
+python3 - "$PROJ/app/build.gradle" <<'PYAPP'
+from pathlib import Path
+import re, sys
+p=Path(sys.argv[1])
+s=p.read_text()
+s,n=re.subn(r"applicationId\s+['\"]com\.topherofit\.thf\.core['\"]", "applicationId 'com.topherofit.thf.core.debug'", s, count=1)
+assert n == 1, 'canonical Core applicationId not found exactly once'
+s,n=re.subn(r"versionCode\s+\d+", "versionCode 62203", s, count=1)
+assert n == 1, 'Core versionCode not found exactly once'
+s,n=re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '6.2.2-rc6-phoneqa3'", s, count=1)
+assert n == 1, 'Core versionName not found exactly once'
+p.write_text(s)
+PYAPP
+grep -Fq "applicationId 'com.topherofit.thf.core.debug'" "$PROJ/app/build.gradle"
+grep -Fq "versionCode 62203" "$PROJ/app/build.gradle"
+grep -Fq "versionName '6.2.2-rc6-phoneqa3'" "$PROJ/app/build.gradle"
 export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" GRADLE_USER_HOME="$ROOT/gradle-home"
 printf 'sdk.dir=%s\n' "$SDK" > "$PROJ/local.properties"
 unset THF_KEYSTORE_PATH THF_KEY_ALIAS THF_KEYSTORE_PASSWORD THF_KEY_PASSWORD
@@ -88,15 +106,16 @@ if [ ! -f "$KS" ]; then
   keytool -genkeypair -noprompt -keystore "$KS" -storepass android -alias androiddebugkey -keypass android \
     -dname 'CN=Android Debug,O=THF Runtime QA,C=US' -keyalg RSA -keysize 2048 -validity 3650 >/dev/null 2>&1
 fi
-FINAL="$OUT/THF-Core-RC6-RUNTIME-CONFIGURED-STAGING.apk"
+FINAL="$OUT/THF-Core-RC6-RUNTIME-CONFIGURED-PHONE-QA3.apk"
 "$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --out "$FINAL" "$TMP"
 "$APKSIGNER" verify --verbose "$FINAL" >"$OUT/apksigner.txt" 2>&1
 "$ZIPALIGN" -c -p 4 "$FINAL"
 BADGING="$($AAPT dump badging "$FINAL")"
 printf '%s\n' "$BADGING" > "$OUT/badging.txt"
-grep -q "package: name='com.topherofit.thf.core'" <<<"$BADGING"
+grep -q "package: name='com.topherofit.thf.core.debug'" <<<"$BADGING"
+grep -q "versionCode='62203'" <<<"$BADGING"
 grep -q "targetSdkVersion:'36'" <<<"$BADGING"
 unzip -p "$FINAL" classes.dex | strings | grep -F "$PUB" >/dev/null
 APK_SHA="$(sha256sum "$FINAL" | awk '{print $1}')"
 test "$(sha256sum "$SRC" | awk '{print $1}')" = "$EXPECTED"
-printf 'status=PASS\ncanonical_sha256=%s\napk_sha256=%s\nservice_url_embedded=true\nservice_url_scheme=https\nservice_health=PASS\nendpoint_class=cloudflare_quick_staging\npackage=com.topherofit.thf.core\ntarget_sdk=36\nproduction_signing=false\nproduction_cutover=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' "$EXPECTED" "$APK_SHA" | tee "$OUT/TRUTH.txt"
+printf 'status=PASS\ncanonical_sha256=%s\napk_sha256=%s\nservice_url_embedded=true\nservice_url_scheme=https\nservice_health=PASS\nendpoint_class=cloudflare_quick_staging\npackage=com.topherofit.thf.core.debug\nversion_code=62203\nversion_name=6.2.2-rc6-phoneqa3\ntarget_sdk=36\nproduction_signing=false\nproduction_cutover=false\ncanonical_archive_mutated=false\nwave_untouched=true\n' "$EXPECTED" "$APK_SHA" | tee "$OUT/TRUTH.txt"

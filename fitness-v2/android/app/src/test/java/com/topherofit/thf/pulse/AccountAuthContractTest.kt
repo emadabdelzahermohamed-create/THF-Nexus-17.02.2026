@@ -28,6 +28,16 @@ class AccountAuthContractTest {
     }
 
     @Test
+    fun pendingFlowFreshnessExpiresAtTtlAndRejectsClockRollback() {
+        val startedAt = 1_000_000L
+        assertTrue(AccountAuthContract.flowIsFresh(startedAt, startedAt))
+        assertTrue(AccountAuthContract.flowIsFresh(startedAt, startedAt + AccountAuthContract.FLOW_TTL_MILLIS))
+        assertFalse(AccountAuthContract.flowIsFresh(startedAt, startedAt + AccountAuthContract.FLOW_TTL_MILLIS + 1L))
+        assertFalse(AccountAuthContract.flowIsFresh(0L, startedAt))
+        assertFalse(AccountAuthContract.flowIsFresh(startedAt + 1L, startedAt))
+    }
+
+    @Test
     fun callbackAcceptsOnlyExactAppRouteAndOpaqueTicket() {
         val ticket = "A".repeat(43)
         assertEquals(ticket, AccountAuthContract.callbackTicket("topherofit://auth/v2/complete?ticket=$ticket"))

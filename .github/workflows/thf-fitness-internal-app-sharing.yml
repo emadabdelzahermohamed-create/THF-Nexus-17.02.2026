@@ -1,0 +1,81 @@
+name: THF Fitness Internal App Sharing
+
+on:
+  push:
+    branches:
+      - fitness/motion-runtime-api36-gate-20261018
+    paths:
+      - '.github/workflows/thf-fitness-internal-app-sharing.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+jobs:
+  share:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to Google with existing WIF
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download pinned Fitness 51004 AAB
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p candidate
+          gh run download 39170862115 -R "$GITHUB_REPOSITORY" -n fitness-v2-51004-package-gate -D candidate
+          AAB="$(find candidate -type f -path '*/bundle/release/app-release.aab' | head -n1)"
+          test -s "$AAB"
+          echo "AAB_PATH=$AAB" >> "$GITHUB_ENV"
+          sha256sum "$AAB"
+      - name: Upload to Play Internal App Sharing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PY'
+          import json, os
+          import google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+
+          package = 'com.topherofit.thf.pulse'
+          aab = os.environ['AAB_PATH']
+          creds, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          api = build('androidpublisher', 'v3', credentials=creds, cache_discovery=False)
+          result = api.internalappsharingartifacts().uploadbundle(
+              packageName=package,
+              media_body=MediaFileUpload(aab, mimetype='application/octet-stream', resumable=True),
+          ).execute()
+          out = {
+              'package': package,
+              'sourceRunId': 39170862115,
+              'downloadUrl': result.get('downloadUrl'),
+              'certificateFingerprint': result.get('certificateFingerprint'),
+              'sha256': result.get('sha256'),
+          }
+          print(json.dumps(out, indent=2))
+          if not out['downloadUrl']:
+              raise SystemExit('Internal App Sharing upload did not return a download URL')
+          with open('fitness-internal-app-sharing.json', 'w') as fh:
+              json.dump(out, fh, indent=2)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-fitness-internal-app-sharing
+          path: fitness-internal-app-sharing.json
+          if-no-files-found: ignore
+          retention-days: 14

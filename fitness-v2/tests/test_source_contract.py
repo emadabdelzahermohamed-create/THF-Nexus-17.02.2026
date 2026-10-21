@@ -61,7 +61,17 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("compileSdk 36", gradle)
         self.assertIn("targetSdk 36", gradle)
         version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
-        self.assertGreaterEqual(version, 51004)
+        self.assertGreaterEqual(version, 51005)
+
+    def test_fitness_play_gate_targets_current_51005_candidate(self):
+        android_gate = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
+        play_gate = (ROOT / ".github" / "workflows" / "thf-fitness-play-probe.yml").read_text()
+        self.assertIn("fitness-v2-51005-package-gate", android_gate)
+        self.assertIn("fitness-v2-51005-package-gate", play_gate)
+        self.assertIn("expected_version = '51005'", play_gate)
+        self.assertIn("THF Fitness 51005 Internal", play_gate)
+        self.assertNotIn("39089308617", play_gate)
+        self.assertNotIn("EXPECTED_UNSIGNED_SHA256", play_gate)
 
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
@@ -180,6 +190,14 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             self.assertIn(marker, source)
         self.assertNotIn("addJavascriptInterface", (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "AccountAuthRepository.kt").read_text())
 
+    def test_android_stale_account_handoff_does_not_lock_sign_in(self):
+        contract = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "AccountAuthContract.kt").read_text()
+        main = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        self.assertIn("fun flowIsFresh", contract)
+        self.assertIn("private fun hasFreshPendingAccountAuth", main)
+        self.assertIn("AccountAuthContract.flowIsFresh", main)
+        self.assertNotIn('accountExchangeRunning.get() || prefs.contains(AUTH_PKCE_VERIFIER)', main)
+
     def test_appdeploy_account_bridge_is_pkce_bound_user_scoped_and_hash_only(self):
         routes = (ROOT / "fitness-v2" / "appdeploy" / "android_v2_routes.ts").read_text()
         bridge = (ROOT / "fitness-v2" / "appdeploy" / "native_auth_bridge.tsx").read_text()
@@ -192,7 +210,8 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         for marker in (
             "auth.signIn", "api.post('/api/v2/auth/android/tickets'",
             "topherofit://auth/v2/complete", "code_challenge_method",
-            "Continue to sign in", "AndroidAuthBridgeScreen",
+            "Continue to sign in", "Return to the Top Hero Fit app",
+            "AndroidAuthBridgeScreen",
         ):
             self.assertIn(marker, bridge)
         self.assertNotIn("accessToken:", routes)
@@ -338,6 +357,31 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             html + script + billing,
             r"(?i)(token reward|investment return|guaranteed profit|pay.?to.?win)",
         )
+
+
+    def test_health_sync_rate_limit_is_single_flight_and_recovers_ui(self):
+        activity = (
+            ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt"
+        ).read_text()
+        gate_path = (
+            ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "HealthSyncGate.kt"
+        )
+        gate = gate_path.read_text() if gate_path.exists() else ""
+        script = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        for marker in (
+            "HealthSyncGate",
+            "healthSyncGate.tryStart",
+            "healthSyncGate.finish",
+            "RATE_LIMITED",
+        ):
+            self.assertIn(marker, activity + gate)
+        for marker in (
+            "function setHealthSyncBusy",
+            "function renderHealthError",
+            "setHealthSyncBusy(false",
+            "retryAfterMs",
+        ):
+            self.assertIn(marker, script)
 
 
 if __name__ == "__main__":

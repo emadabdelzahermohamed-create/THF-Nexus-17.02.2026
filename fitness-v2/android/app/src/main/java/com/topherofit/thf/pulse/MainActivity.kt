@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var sessionBaseline = -1f
     private var tts: TextToSpeech? = null
     private val healthFlushRunning = AtomicBoolean(false)
+    private val healthSyncGate = HealthSyncGate()
     private val backendFlushRunning = AtomicBoolean(false)
     private val accountExchangeRunning = AtomicBoolean(false)
 
@@ -89,7 +90,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             )
             if (cachedHealthState.connected) {
                 flushPendingHealth()
-                syncHealthInternal()
+                syncHealth()
             }
         }
     }
@@ -148,6 +149,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
+        if (::prefs.isInitialized) clearExpiredPendingAccountAuth()
         registerStepSensor()
         if (::foundingHeroBilling.isInitialized) foundingHeroBilling.start()
         if (::healthRepository.isInitialized) {
@@ -282,6 +284,17 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
     }
 
+    private fun hasFreshPendingAccountAuth(nowMillis: Long = System.currentTimeMillis()): Boolean {
+        val verifier = prefs.getString(AUTH_PKCE_VERIFIER, null)
+        val startedAt = prefs.getLong(AUTH_STARTED_AT, 0L)
+        return AccountAuthContract.validVerifier(verifier) && AccountAuthContract.flowIsFresh(startedAt, nowMillis)
+    }
+
+    private fun clearExpiredPendingAccountAuth() {
+        val hasPendingState = prefs.contains(AUTH_PKCE_VERIFIER) || prefs.contains(AUTH_STARTED_AT)
+        if (hasPendingState && !hasFreshPendingAccountAuth()) clearPendingAccountAuth()
+    }
+
     private fun clearPendingAccountAuth() {
         prefs.edit { remove(AUTH_PKCE_VERIFIER); remove(AUTH_STARTED_AT) }
     }
@@ -366,8 +379,15 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
     }
 
-    private fun syncHealth() {
-        lifecycleScope.launch { syncHealthInternal() }
+    private fun syncHealth(): String = when (val decision = healthSyncGate.tryStart()) {
+        HealthSyncDecision.Started -> {
+            lifecycleScope.launch { syncHealthInternal() }
+            JSONObject().put("status", "STARTED").toString()
+        }
+        is HealthSyncDecision.Wait -> JSONObject()
+            .put("status", "WAIT")
+            .put("retryAfterMs", decision.retryAfterMs)
+            .toString()
     }
 
     private fun openAccountResource(relativePath: String) {
@@ -393,37 +413,71 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
     }
 
-    private suspend fun syncHealthInternal() {
-        refreshHealthState()
-        if (!cachedHealthState.connected) {
-            dispatch("thf:health-error", healthStatusJson().put("message", "Permissions required"))
-            return
+    private fun isHealthRateLimited(error: Throwable): Boolean {
+        var current: Throwable? = error
+        while (current != null) {
+            val text = current.message.orEmpty()
+            if (text.contains("rate limit", ignoreCase = true) || text.contains("quota", ignoreCase = true)) return true
+            current = current.cause
         }
-        runCatching { withContext(Dispatchers.IO) { healthRepository.readRecent() } }
-            .onSuccess { snapshot ->
-                val now = Instant.now().toString()
-                prefs.edit {
-                    putString("health_last_sync", now)
-                    remove("health_last_error")
-                }
+        return false
+    }
+
+    private suspend fun syncHealthInternal() {
+        var rateLimited = false
+        try {
+            refreshHealthState()
+            if (!cachedHealthState.connected) {
                 dispatch(
-                    "thf:health-sync",
-                    JSONObject()
-                        .put("status", "SYNCED")
-                        .put("steps", snapshot.steps)
-                        .put("distanceMeters", snapshot.distanceMeters)
-                        .put("activeCaloriesKcal", snapshot.activeCaloriesKcal)
-                        .put("exerciseSessions", snapshot.exerciseSessions)
-                        .put("origins", JSONArray(snapshot.origins.sorted()))
-                        .put("latestSessionEnd", snapshot.latestSessionEnd?.toString() ?: "")
-                        .put("lastSync", now),
+                    "thf:health-error",
+                    healthStatusJson()
+                        .put("code", "PERMISSIONS_REQUIRED")
+                        .put("message", "Health Connect permissions are required")
+                        .put("retryAfterMs", 0),
                 )
+                return
             }
-            .onFailure { error ->
-                val message = error.message ?: error.javaClass.simpleName
-                prefs.edit { putString("health_last_error", message) }
-                dispatch("thf:health-error", healthStatusJson().put("message", message))
-            }
+            runCatching { withContext(Dispatchers.IO) { healthRepository.readRecent() } }
+                .onSuccess { snapshot ->
+                    val now = Instant.now().toString()
+                    prefs.edit {
+                        putString("health_last_sync", now)
+                        remove("health_last_error")
+                    }
+                    dispatch(
+                        "thf:health-sync",
+                        JSONObject()
+                            .put("status", "SYNCED")
+                            .put("steps", snapshot.steps)
+                            .put("distanceMeters", snapshot.distanceMeters)
+                            .put("activeCaloriesKcal", snapshot.activeCaloriesKcal)
+                            .put("exerciseSessions", snapshot.exerciseSessions)
+                            .put("origins", JSONArray(snapshot.origins.sorted()))
+                            .put("latestSessionEnd", snapshot.latestSessionEnd?.toString() ?: "")
+                            .put("lastSync", now),
+                    )
+                }
+                .onFailure { error ->
+                    rateLimited = isHealthRateLimited(error)
+                    val code = if (rateLimited) "RATE_LIMITED" else "SYNC_FAILED"
+                    val message = if (rateLimited) {
+                        "Health Connect is temporarily rate limited. Please wait before syncing again."
+                    } else {
+                        error.message ?: error.javaClass.simpleName
+                    }
+                    val retryAfterMs = if (rateLimited) 60_000L else 5_000L
+                    prefs.edit { putString("health_last_error", message) }
+                    dispatch(
+                        "thf:health-error",
+                        healthStatusJson()
+                            .put("code", code)
+                            .put("message", message)
+                            .put("retryAfterMs", retryAfterMs),
+                    )
+                }
+        } finally {
+            healthSyncGate.finish(rateLimited = rateLimited)
+        }
     }
 
     private fun enqueueSummaryForHealth(item: JSONObject): String =
@@ -558,7 +612,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             .put("syncConfigured", validPersistentHttps(BuildConfig.THF_BASE_URL) && backendRepository.configured)
             .put("accountAuthConfigured", validPersistentHttps(BuildConfig.THF_ACCOUNT_URL) && accountAuthRepository.configured)
             .put("syncAuthenticated", backendAccessToken != null)
-            .put("accountAuthPending", accountExchangeRunning.get() || prefs.contains(AUTH_PKCE_VERIFIER))
+            .put("accountAuthPending", accountExchangeRunning.get() || hasFreshPendingAccountAuth())
             .put("backendPending", jsonArrayPreference(PENDING_BACKEND).length())
             .put("backendLastSync", prefs.getString("backend_last_sync", ""))
             .put("backendLastError", prefs.getString("backend_last_error", ""))
@@ -585,7 +639,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         fun requestHealthPermissions() = runOnUiThread { this@MainActivity.requestHealthPermissions() }
 
         @JavascriptInterface
-        fun syncHealth() = this@MainActivity.syncHealth()
+        fun syncHealth(): String = this@MainActivity.syncHealth()
 
         @JavascriptInterface
         fun requestBackendSignIn() = runOnUiThread { this@MainActivity.requestBackendSignIn() }
