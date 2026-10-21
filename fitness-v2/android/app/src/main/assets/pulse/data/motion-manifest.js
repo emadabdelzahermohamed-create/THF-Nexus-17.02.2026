@@ -27,6 +27,7 @@ window.THF_MOTION_MANIFEST = {
   'use strict';
   const FRAME_MS = 850;
   let timer = null;
+  let observer = null;
   let activeExerciseId = null;
   let frameIndex = 0;
 
@@ -59,7 +60,11 @@ window.THF_MOTION_MANIFEST = {
   function renderFrame(item) {
     const image = byId('activeDemoImage');
     if (!image || !Array.isArray(item?.demo?.assets) || item.demo.assets.length < 2) return;
-    image.src = './' + item.demo.assets[frameIndex % item.demo.assets.length];
+    const nextSrc = './' + item.demo.assets[frameIndex % item.demo.assets.length];
+    // MutationObserver watches src. Avoid writing an identical src because WebView
+    // still reports that mutation, which used to recursively reconcile and reset
+    // the interval on every frame (visible jank on the API31 Samsung lane).
+    if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
     image.alt = item?.demo?.alt?.[document.documentElement.lang === 'ar' ? 'ar' : 'en'] || '';
     const phase = byId('activeDemoPhase');
     if (phase) phase.textContent = document.documentElement.lang === 'ar'
@@ -116,7 +121,7 @@ window.THF_MOTION_MANIFEST = {
   window.addEventListener('load', () => {
     const root = byId('activeWorkoutScreen');
     if (!root) return;
-    const observer = new MutationObserver(reconcile);
+    observer = new MutationObserver(reconcile);
     observer.observe(root, {
       subtree: true,
       childList: true,
