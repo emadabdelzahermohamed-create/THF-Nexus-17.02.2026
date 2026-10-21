@@ -61,9 +61,7 @@ window.THF_MOTION_MANIFEST = {
     const image = byId('activeDemoImage');
     if (!image || !Array.isArray(item?.demo?.assets) || item.demo.assets.length < 2) return;
     const nextSrc = './' + item.demo.assets[frameIndex % item.demo.assets.length];
-    // MutationObserver watches src. Avoid writing an identical src because WebView
-    // still reports that mutation, which used to recursively reconcile and reset
-    // the interval on every frame (visible jank on the API31 Samsung lane).
+    // Avoid redundant WebView image work on the API31 Samsung lane.
     if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
     image.alt = item?.demo?.alt?.[document.documentElement.lang === 'ar' ? 'ar' : 'en'] || '';
     const phase = byId('activeDemoPhase');
@@ -127,7 +125,9 @@ window.THF_MOTION_MANIFEST = {
       childList: true,
       attributes: true,
       characterData: true,
-      attributeFilter: ['class', 'src', 'data-exercise-id']
+      // Frame src changes are renderer output, not state inputs. Observing them wakes
+      // reconcile on every animation frame and creates avoidable WebView main-thread work.
+      attributeFilter: ['class', 'data-exercise-id']
     });
     byId('reduceMotion')?.addEventListener('change', reconcile);
     document.addEventListener('visibilitychange', reconcile);
