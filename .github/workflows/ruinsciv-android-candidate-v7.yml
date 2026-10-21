@@ -1,0 +1,45 @@
+name: RuinsCiv Android Candidate V7
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ReleaseOps/RuinsCiv/build_ruinsciv_android_candidate_v7.sh'
+      - '.github/workflows/ruinsciv-android-candidate-v7.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  GCP_WIF_PROVIDER: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+  GCP_SERVICE_ACCOUNT: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with: {persist-credentials: false}
+      - uses: google-github-actions/auth@f112390a2df9932162083945e46d439060d66ec2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f
+        with: {project_id: '${{ env.GCP_PROJECT_ID }}'}
+      - name: Copy RC36 export helpers
+        run: |
+          gcloud compute scp ReleaseOps/RuinsCiv/build_ruinsciv_android_candidate_v6.sh "$GCP_BUILDER:/tmp/build_ruinsciv_android_candidate_v6.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+          gcloud compute scp ReleaseOps/RuinsCiv/build_ruinsciv_android_candidate_v7.sh "$GCP_BUILDER:/tmp/build_ruinsciv_android_candidate_v7.sh" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - name: Export RC36 Android candidate
+        run: gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet --command='chmod +x /tmp/build_ruinsciv_android_candidate_v7.sh; /tmp/build_ruinsciv_android_candidate_v7.sh'
+      - name: Collect exact candidate
+        run: |
+          mkdir -p "$RUNNER_TEMP/v7"
+          gcloud compute scp --recurse "$GCP_BUILDER:ruinsciv-build-evidence-v6" "$RUNNER_TEMP/v7/" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ruinsciv-android-v7-${{ github.run_id }}
+          path: ${{ runner.temp }}/v7
+          if-no-files-found: error
+          retention-days: 14
