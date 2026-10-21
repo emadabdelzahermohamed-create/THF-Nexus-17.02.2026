@@ -384,5 +384,30 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             self.assertIn(marker, script)
 
 
+    def test_android_main_activity_delegates_motion_to_engine(self):
+        activity = (
+            ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt"
+        ).read_text()
+        self.assertNotIn("SensorEventListener", activity)
+        for marker in (
+            "absoluteSteps",
+            "sessionBaseline",
+            "stepSensor",
+            "sensorManager?.registerListener",
+        ):
+            self.assertNotIn(marker, activity)
+        for marker in (
+            "MotionSessionEngine",
+            "AndroidMotionSensorGateway",
+            "beginMotionSession",
+            "motionSnapshot",
+            "endMotionSession",
+            'remove("motionEvidence")',
+            'remove("verification")',
+            '"measurementSource"',
+        ):
+            self.assertIn(marker, activity)
+
+
 if __name__ == "__main__":
     unittest.main()
