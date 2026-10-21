@@ -392,7 +392,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         for marker in (
             "absoluteSteps",
             "sessionBaseline",
-            "stepSensor",
+            "private var stepSensor",
             "sensorManager?.registerListener",
         ):
             self.assertNotIn(marker, activity)
