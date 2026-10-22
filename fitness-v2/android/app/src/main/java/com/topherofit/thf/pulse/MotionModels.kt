@@ -68,6 +68,17 @@ data class MotionEvidence(
                 (capabilities.stepDetector && stepDetectorCount > 0)
         }
 
+    /**
+     * Require a minimum evidence window before issuing locally verified reward credit.
+     * Very short bursts are useful for live UI/activity detection, but are too easy to spoof
+     * or misclassify to serve as reward evidence. This does not block local tracking.
+     */
+    val hasSufficientRewardEvidenceWindow: Boolean
+        get() = elapsedDurationMs >= 10_000L &&
+            activeDurationMs >= 5_000L &&
+            activeMotionMs >= 3_000L &&
+            interruptionMs.coerceAtLeast(0L) <= elapsedDurationMs / 2
+
     val sensorVerifiedForRewards: Boolean
         get() = plausibleForRewards &&
             capabilities.activityRecognitionPermission &&
@@ -76,6 +87,7 @@ data class MotionEvidence(
             localConfidence >= 0.60 &&
             activityConfidence >= 0.60 &&
             hasConsistentHardwareStepEvidence &&
+            hasSufficientRewardEvidenceWindow &&
             accelerometerSampleCount > 0 &&
             detectedActivity != DetectedActivity.STATIONARY &&
             detectedActivity != DetectedActivity.UNKNOWN
