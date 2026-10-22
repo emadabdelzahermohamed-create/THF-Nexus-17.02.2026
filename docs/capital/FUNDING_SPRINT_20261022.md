@@ -57,6 +57,12 @@ THF is building a verified human-activity layer that makes fitness rewards, chal
 ## Outreach log
 | Time (Africa/Cairo) | Target | Channel | Subject / action | Result |
 |---|---|---|---|---|
+| 2026-10-22 evening | Solana Foundation Grants | TopHeroFit Gmail on authorized phone | Grant / convertible-grant routing for verified Proof-of-Workout | Full body visually verified; send action completed; delivery/reply pending |
+| 2026-10-22 evening | Outlier Ventures | TopHeroFit Gmail on authorized phone | Base Camp / pre-seed fit | First message accidentally left with blank body; immediately followed by a visually verified full correction; reply pending |
+| 2026-10-22 evening | Republic Crypto | TopHeroFit Gmail on authorized phone | Regulated pre-seed / future-token financing + gaming route | Full body visually verified; send action completed; reply pending |
+| 2026-10-22 evening | Flat6Labs Cairo | TopHeroFit Gmail on authorized phone | Egypt seed / accelerator fit | Full body visually verified; send action completed; reply pending |
+| 2026-10-22 evening | AUC Venture Lab outreach | TopHeroFit Gmail on authorized phone | Venture Lab / AUC Angels route for working HealthTech MVP | Sender, recipient, subject and body verified before send; send action completed; reply pending |
+| 2026-10-22 evening | Superteam | TopHeroFit Gmail on authorized phone | Egypt/global grant + Fast Track routing | Concise follow-up composed through tested direct Intent path and send action completed; reply pending |
 
 ## Next evidence upgrades
 1. Public Proof-of-Workout spec and verifier path.
