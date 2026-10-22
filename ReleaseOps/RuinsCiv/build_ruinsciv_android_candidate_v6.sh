@@ -20,6 +20,36 @@ cat > "$DST/RuinsCivMobileControls.gd" <<'GDSCRIPT'
 extends CanvasLayer
 
 var held := {}
+var controlled: Node3D
+var active_camera: Camera3D
+
+func _physics_process(delta):
+    if controlled == null or not is_instance_valid(controlled):
+        controlled = _find_controlled(get_tree().current_scene)
+    if active_camera == null or not is_instance_valid(active_camera):
+        active_camera = get_viewport().get_camera_3d()
+    if controlled != null:
+        var dir := Vector3.ZERO
+        if held.has("move_forward"): dir.z -= 1.0
+        if held.has("move_backward"): dir.z += 1.0
+        if held.has("move_left"): dir.x -= 1.0
+        if held.has("move_right"): dir.x += 1.0
+        if dir.length_squared() > 0.0:
+            dir = dir.normalized()
+            var yaw := active_camera.global_rotation.y if active_camera != null else controlled.global_rotation.y
+            dir = dir.rotated(Vector3.UP, yaw)
+            controlled.global_position += dir * 4.2 * delta
+        var cam_turn := float(held.has("camera_right")) - float(held.has("camera_left"))
+        if cam_turn != 0.0 and active_camera != null:
+            active_camera.rotation.y += cam_turn * 1.65 * delta
+
+func _find_controlled(node: Node) -> Node3D:
+    if node == null: return null
+    if node is CharacterBody3D: return node as Node3D
+    for c in node.get_children():
+        var found := _find_controlled(c)
+        if found != null: return found
+    return null
 
 func _ready():
     layer = 100
