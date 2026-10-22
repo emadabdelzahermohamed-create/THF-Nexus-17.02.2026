@@ -1,6 +1,6 @@
 # TopHeroFit Growth Platform Design
 
-Status: user-approved product direction, written specification pending final review
+Status: user-approved written specification
 Date: 2026-10-22
 Product: TopHeroFit / THF Fitness
 Primary Android package: `com.topherofit.thf.pulse`
