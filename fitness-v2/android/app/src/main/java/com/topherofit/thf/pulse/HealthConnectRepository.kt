@@ -27,6 +27,10 @@ data class HealthConnectionState(
 )
 
 data class HealthRecordEvidence(
+    val recordId: String,
+    val clientRecordId: String?,
+    val clientRecordVersion: Long,
+    val lastModifiedTime: Instant,
     val recordType: String,
     val dataOrigin: String,
     val recordingMethod: Int,
@@ -191,6 +195,10 @@ class HealthConnectRepository(private val context: Context) {
             else -> "EXTERNAL_SENSOR_RECORDED"
         }
         return HealthRecordEvidence(
+            recordId = metadata.id,
+            clientRecordId = metadata.clientRecordId,
+            clientRecordVersion = metadata.clientRecordVersion,
+            lastModifiedTime = metadata.lastModifiedTime,
             recordType = this::class.simpleName ?: "Record",
             dataOrigin = origin,
             recordingMethod = method,
