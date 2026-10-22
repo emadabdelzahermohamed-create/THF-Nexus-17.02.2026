@@ -1,0 +1,128 @@
+name: THF Play Source Icons Sync V2
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  GCP_ZONE: europe-west1-b
+  GCP_BUILDER: thf-wave-builder
+  ECHO_DRIVE_FILE_ID: 1YnRTB_CSUwd7q6myLKkG2Pi_3qJ_A3Vw
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch exact pinned sources and extract authentic store icons
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check pillow google-api-python-client google-auth
+          rm -rf source-zips play-icons && mkdir -p source-zips play-icons
+          REMOTE_HOME="$(gcloud compute ssh "$GCP_BUILDER" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=10m --quiet --command='printf %s "$HOME"')"
+          test -n "$REMOTE_HOME"
+          for spec in \
+            "core:$REMOTE_HOME/thf-builder/inputs-rc17/THF_Core_RC6_ANDROID_NATIVE_I18N_RELEASE_CUMULATIVE_SOURCE.zip:6dab85e19f17e9d9c712cc1e588759bf826aa2ddd291fa361bbadaee014a045a" \
+            "terra:$REMOTE_HOME/thf-terra-rc34-gate/input/THF_Terra_v4.6.8_RC34_REMOTE_LOD_HYSTERESIS_CUMULATIVE_SOURCE.zip:eaa2ae79b4f85781903e7c7909910758344422209baa650cf7cf9fd397bdbd68" \
+            "rift:$REMOTE_HOME/thf-rift-rc37-gate/input/THF_Rift_v4.7.1_RC37_HUMAN_RELOAD_TIMING_PARITY_CUMULATIVE_SOURCE.zip:3e2407d4aa76d4d23f4f0a0c3ccb02f02f1a9522b42518a38c03e0f01775e914"; do
+            IFS=: read -r key remote sha <<<"$spec"
+            gcloud compute scp "$GCP_BUILDER:$remote" "source-zips/$key.zip" --project "$GCP_PROJECT_ID" --zone "$GCP_ZONE" --tunnel-through-iap --quiet
+            echo "$sha  source-zips/$key.zip" | sha256sum -c -
+          done
+          TOKEN="$(gcloud auth print-access-token)"
+          code=$(curl -fsSLo source-zips/echo.zip -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "https://www.googleapis.com/drive/v3/files/$ECHO_DRIVE_FILE_ID?alt=media&supportsAllDrives=true")
+          test "$code" = 200
+          echo '3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9  source-zips/echo.zip' | sha256sum -c -
+          python - <<'PY'
+          import hashlib,io,json,re,zipfile
+          from pathlib import Path
+          from PIL import Image
+          out={}
+          for key in ['core','terra','rift','echo']:
+            zp=Path('source-zips')/f'{key}.zip'
+            with zipfile.ZipFile(zp) as z:
+              if z.testzip(): raise SystemExit(f'{key}: corrupt zip')
+              names=[x.filename for x in z.infolist() if not x.is_dir()]
+              preferred=[n for n in names if re.search(r'(?i)(store-assets/.*/?icon-?512|store-assets/icon-?512|play[^/]*icon|store[^/]*icon)',n) and n.lower().endswith(('.png','.jpg','.jpeg','.webp'))]
+              fallback=[n for n in names if re.search(r'(?i)(ic_launcher|launcher|app[_-]?icon)',n) and n.lower().endswith(('.png','.jpg','.jpeg','.webp'))]
+              candidates=[]
+              for n in preferred+fallback:
+                if n not in candidates: candidates.append(n)
+              item={'sourceSha256':hashlib.sha256(zp.read_bytes()).hexdigest(),'candidates':candidates[:20]}
+              chosen=None
+              for n in candidates:
+                try:
+                  im0=Image.open(io.BytesIO(z.read(n))).convert('RGBA')
+                  if min(im0.size)>=48: chosen=(n,im0.copy()); break
+                except Exception: pass
+              if not chosen:
+                item['status']='NO_RASTER_ICON'; out[key]=item; continue
+              n,im=chosen; original=list(im.size)
+              im.thumbnail((512,512),Image.Resampling.LANCZOS)
+              canvas=Image.new('RGBA',(512,512),(0,0,0,0)); canvas.alpha_composite(im,((512-im.width)//2,(512-im.height)//2))
+              path=Path('play-icons')/f'{key}.png'; canvas.save(path,'PNG',optimize=True)
+              item.update({'status':'READY','chosen':n,'inputSize':original,'outputSha256':hashlib.sha256(path.read_bytes()).hexdigest(),'bytes':path.stat().st_size})
+              out[key]=item
+          Path('play-icons/source-evidence.json').write_text(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          if not any(x.get('status')=='READY' for x in out.values()): raise SystemExit('no authentic icons found')
+          PY
+      - name: Upload only source-authentic icons to Play
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          packages={'core':'com.topherofit.thf.core','terra':'com.topherofit.thf.terra','rift':'com.topherofit.thf.rift','echo':'com.topherofit.thf.echo'}
+          evidence=json.loads(Path('play-icons/source-evidence.json').read_text())
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher']); api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          result={'apps':[]}
+          for key,package in packages.items():
+            item={'key':key,'package':package,'sourceStatus':evidence[key].get('status'),'committed':False}; icon=Path('play-icons')/f'{key}.png'
+            if not icon.exists(): item['skipped']='NO_AUTHENTIC_RASTER_ICON'; result['apps'].append(item); continue
+            edit=api.edits().insert(packageName=package,body={}).execute()['id']
+            try:
+              listings=api.edits().listings().list(packageName=package,editId=edit).execute().get('listings',[]) or []
+              langs=sorted({x.get('language') for x in listings if x.get('language')}) or ['ar']; item['languages']={}
+              for lang in langs:
+                try: api.edits().images().deleteall(packageName=package,editId=edit,language=lang,imageType='icon').execute()
+                except Exception: pass
+                api.edits().images().upload(packageName=package,editId=edit,language=lang,imageType='icon',media_body=MediaFileUpload(str(icon),mimetype='image/png',resumable=False)).execute()
+                xs=api.edits().images().list(packageName=package,editId=edit,language=lang,imageType='icon').execute().get('images',[]) or []
+                if len(xs)!=1: raise RuntimeError(f'{key}/{lang}: icon count {len(xs)}')
+                item['languages'][lang]={'count':1,'sha1':xs[0].get('sha1')}
+              v=api.edits().validate(packageName=package,editId=edit).execute(); item['validationId']=v.get('id'); c=api.edits().commit(packageName=package,editId=edit).execute(); item['committed']=True; item['committedEditId']=c.get('id'); edit=None
+            finally:
+              if edit:
+                try: api.edits().delete(packageName=package,editId=edit).execute()
+                except Exception: pass
+            result['apps'].append(item)
+          print(json.dumps(result,indent=2)); Path('play-icons/upload.json').write_text(json.dumps(result,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-play-source-icons-sync-v2
+          path: play-icons/
+          if-no-files-found: error
+          retention-days: 30
