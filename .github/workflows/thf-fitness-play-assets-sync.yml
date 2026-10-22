@@ -34,9 +34,8 @@ jobs:
           import cairosvg
 
           out=Path('play-assets')
-          # Render the exact current Android vector icon, without redesign.
-          src=Path('fitness-v2/android/app/src/main/res/drawable/ic_launcher.xml').read_text()
-          # Android VectorDrawable -> exact equivalent SVG for the three paths present in the source.
+          # Exact equivalent of the current Android VectorDrawable, retained here so
+          # this release-ops workflow does not depend on a branch-only product path.
           svg='''<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108">
           <path fill="#071219" d="M0,0h108v108h-108z"/>
           <path fill="#edca78" d="M18,54c0,-20 16,-36 36,-36s36,16 36,36 -16,36 -36,36 -36,-16 -36,-36z"/>
@@ -63,8 +62,6 @@ jobs:
             if got != expected[key]: raise SystemExit(f'{key} SHA mismatch {got}')
             raw[key]=data
 
-          # Play screenshots cannot exceed a 2:1 max:min ratio. Preserve every app pixel
-          # and add neutral side padding instead of cropping or altering UI.
           def phone_asset(key,path):
             im=Image.open(io.BytesIO(raw[key])).convert('RGB')
             w,h=im.size
@@ -78,7 +75,6 @@ jobs:
             'phone_en':phone_asset('phone_en','phone-en.png'),
             'phone_latest':phone_asset('phone_latest','phone-latest.png'),
           }
-          # Feature graphic is a faithful crop of a verified real web screenshot.
           web=Image.open(io.BytesIO(raw['web_latest'])).convert('RGB')
           w,h=web.size
           target_ratio=1024/500
@@ -109,7 +105,6 @@ jobs:
           try:
             for lang in ['ar','en-US']:
               inv={}
-              # Replace rather than append to keep deterministic exact assets.
               for typ in ['icon','featureGraphic','phoneScreenshots']:
                 try: api.edits().images().deleteall(packageName=package,editId=edit,language=lang,imageType=typ).execute()
                 except Exception: pass
@@ -118,7 +113,7 @@ jobs:
               else: phones=['play-assets/phone-en.png','play-assets/phone-latest.png']
               uploads += [('phoneScreenshots',p) for p in phones]
               for typ,path in uploads:
-                r=api.edits().images().upload(packageName=package,editId=edit,language=lang,imageType=typ,media_body=MediaFileUpload(path,mimetype='image/png',resumable=False)).execute()
+                api.edits().images().upload(packageName=package,editId=edit,language=lang,imageType=typ,media_body=MediaFileUpload(path,mimetype='image/png',resumable=False)).execute()
               for typ in ['icon','featureGraphic','phoneScreenshots']:
                 imgs=api.edits().images().list(packageName=package,editId=edit,language=lang,imageType=typ).execute().get('images',[]) or []
                 inv[typ]={'count':len(imgs),'sha1s':[x.get('sha1') for x in imgs]}
