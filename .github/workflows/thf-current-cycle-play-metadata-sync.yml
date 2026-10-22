@@ -1,0 +1,151 @@
+name: THF Current Cycle Play Metadata Sync
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sync titles, descriptions and developer contact metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PY'
+          import json
+          import google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.errors import HttpError
+
+          META = {
+            'com.topherofit.thf.pulse': {
+              'key':'fitness',
+              'ar': {
+                'title':'Top Hero Fit',
+                'shortDescription':'تمارين وخطط وخطوات وHealth Connect في تطبيق لياقة عملي يعمل أوفلاين.',
+                'fullDescription':'Top Hero Fit تطبيق لياقة عملي يجمع التمارين والخطط وتتبع النشاط في تجربة عربية وإنجليزية مصممة للعمل بسلاسة على الهاتف. استعرض التمارين، اتبع خطط التدريب، سجّل الجلسات والتقدم، وتابع الخطوات والنشاط اليومي. يدعم التطبيق العمل أوفلاين في الأجزاء الأساسية، ويستخدم Health Connect عند منح الأذونات المناسبة لقراءة وكتابة بيانات اللياقة المدعومة. تبقى بياناتك الخاصة مرتبطة بحسابك، ويمكنك الوصول إلى مسارات الخصوصية وحذف الحساب من الخدمات المخصصة لذلك. صُممت التجربة لتكون واضحة وسريعة مع واجهات مناسبة للهاتف ودعم الاتجاه من اليمين إلى اليسار.'
+              },
+              'en-US': {
+                'title':'Top Hero Fit',
+                'shortDescription':'Workouts, steps, training plans and Health Connect in one offline-ready app.',
+                'fullDescription':'Top Hero Fit brings workouts, training plans and activity tracking into one practical mobile fitness experience. Browse exercises, follow structured plans, log sessions and progress, and keep track of daily steps and activity. Core experiences are designed to remain useful offline, while supported Health Connect features can read and write fitness data when you grant the required permissions. Private progress stays tied to your account, with dedicated privacy and account-deletion paths. The app supports Arabic and English, mobile-first navigation and right-to-left layouts where appropriate.'
+              }
+            },
+            'com.topherofit.thf.terra': {
+              'key':'ruinsciv',
+              'ar': {
+                'title':'RuinsCiv',
+                'shortDescription':'عالم اجتماعي ثلاثي الأبعاد للاستكشاف والمهام والتقدم مع تجربة محلية.',
+                'fullDescription':'RuinsCiv عالم اجتماعي ثلاثي الأبعاد يدعوك للاستكشاف والتفاعل والتقدم داخل بيئة حية. تحرك بشخصيتك داخل العالم، استخدم الكاميرا والتحكم المخصص للهاتف، وتفاعل مع عناصر البيئة والشخصيات والمهام. تم تصميم الاستكشاف المحلي ليظل متاحًا دون اعتماد دائم على الاتصال، بينما تحتاج الوظائف الاجتماعية والمتصلة إلى الشبكة عند استخدامها. يركز الاختبار الحالي على ثبات الحركة والكاميرا وتجربة العالم والأداء على الهاتف، مع تطوير المحتوى والأنشطة بصورة مستمرة.'
+              },
+              'en-US': {
+                'title':'RuinsCiv',
+                'shortDescription':'Explore a living 3D social world with quests, progression and local play.',
+                'fullDescription':'RuinsCiv is a living 3D social world built around exploration, interaction and progression. Move through the world with mobile-friendly character and camera controls, interact with the environment, characters and quests, and continue local exploration without requiring a permanent network connection. Connected and social features use the network when needed. The current test focuses on reliable movement, camera control, world interaction and mobile performance while the world and activities continue to expand.'
+              }
+            },
+            'com.topherofit.thf.rift': {
+              'key':'endciv',
+              'ar': {
+                'title':'EndCiv',
+                'shortDescription':'قتال ساحة ثلاثي الأبعاد بتحكم مباشر ومعارك تكتيكية مصممة للهاتف.',
+                'fullDescription':'EndCiv لعبة قتال ساحة ثلاثية الأبعاد تركز على التحكم المباشر والاشتباكات التكتيكية السريعة. تحرك داخل الساحة، وجّه الكاميرا، وادخل حالات القتال باستخدام واجهة مصممة للهاتف. يركز الاختبار الحالي على ثبات الحركة والتحكم والاستجابة وحالات القتال والأداء، مع فصل وظائف اللعب المحلية عن الخدمات المتصلة بحيث لا تعتمد التجربة الأساسية على اتصال دائم بالشبكة. يتم توسيع أنظمة القتال والمحتوى تدريجيًا مع الحفاظ على قابلية الاختبار على الأجهزة الحقيقية.'
+              },
+              'en-US': {
+                'title':'EndCiv',
+                'shortDescription':'3D arena combat with direct controls and tactical battles built for mobile.',
+                'fullDescription':'EndCiv is a 3D arena combat game focused on direct control and fast tactical encounters. Move through the arena, control the camera and enter real combat states through a mobile-first interface. The current test focuses on movement, responsiveness, combat transitions and device performance, while keeping core local play separated from connected services so the basic experience does not require a permanent network connection. Combat systems and content will continue to expand as device testing progresses.'
+              }
+            },
+            'com.topherofit.thf.core': {
+              'key':'core',
+              'ar': {
+                'title':'مركز THF',
+                'shortDescription':'حسابك وخدمات THF وروابط التطبيقات في مكان واحد.',
+                'fullDescription':'مركز THF هو نقطة الدخول الموحدة لخدمات THF. استخدم حسابًا واحدًا للوصول إلى ملفك الشخصي وخدمات المنظومة والتنقل بين التطبيقات المدعومة، مع مسارات واضحة لتسجيل الدخول والخروج وإدارة الحساب. صُممت التجربة للهاتف مع دعم العربية والإنجليزية، الاتجاه من اليمين إلى اليسار، حالات التحميل وعدم الاتصال والأخطاء، وإعدادات الوصول. الوظائف الخاصة أو الإدارية لا تظهر للمستخدم العادي إلا عندما يملك الحساب صلاحية مناسبة من الخادم.'
+              },
+              'en-US': {
+                'title':'THF Hub',
+                'shortDescription':'Your THF account, services and connected app links in one place.',
+                'fullDescription':'THF Hub is the central entry point for THF services. Use one account to reach your profile, supported services and connected THF apps, with clear sign-in, sign-out and account-management flows. The mobile experience supports Arabic and English, right-to-left layouts, loading, offline and error states, notifications and accessibility preferences. Private or administrative surfaces stay hidden from normal users unless the authenticated server session carries the appropriate role.'
+              }
+            },
+            'com.topherofit.thf.echo': {
+              'key':'community',
+              'ar': {
+                'title':'مجتمع THF',
+                'shortDescription':'مجتمعات ودردشة ومحتوى وملفات شخصية مرتبطة بحساب THF.',
+                'fullDescription':'مجتمع THF يجمع التواصل والمجتمعات والدردشة والمحتوى في تجربة مرتبطة بحساب THF. أنشئ ملفك الشخصي، انتقل بين مساحات المجتمع، وتابع المحادثات والمحتوى مع إشعارات وحالات واضحة للاتصال وعدم الاتصال. يدعم التطبيق العربية والإنجليزية والاتجاه من اليمين إلى اليسار وإعدادات الوصول وتوفير البيانات. تتطلب الوظائف الخاصة تسجيل الدخول، وتتوفر مسارات صريحة لتسجيل الخروج وإدارة الحساب وحذف الحساب.'
+              },
+              'en-US': {
+                'title':'THF Community',
+                'shortDescription':'Communities, chat, media and profiles connected to your THF account.',
+                'fullDescription':'THF Community brings social spaces, communities, chat and media together around your THF account. Build your profile, move between community spaces and follow conversations and content with clear online, offline and notification states. The app supports Arabic and English, right-to-left layouts, accessibility preferences and data-saver behavior. Private features require authentication, with explicit sign-out, account-management and account-deletion paths.'
+              }
+            }
+          }
+
+          for package,spec in META.items():
+              for lang in ('ar','en-US'):
+                  x=spec[lang]
+                  assert len(x['title']) <= 30, (package,lang,'title',len(x['title']))
+                  assert len(x['shortDescription']) <= 80, (package,lang,'short',len(x['shortDescription']))
+                  assert len(x['fullDescription']) <= 4000, (package,lang,'full',len(x['fullDescription']))
+
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          out={'mode':'metadata_sync','releaseTracksTouched':False,'apps':[]}
+          for package,spec in META.items():
+              item={'key':spec['key'],'package':package,'committed':False,'languages':[]}
+              edit_id=None
+              try:
+                  edit_id=api.edits().insert(packageName=package,body={}).execute()['id']
+                  details=api.edits().details().get(packageName=package,editId=edit_id).execute()
+                  details['defaultLanguage']='ar'
+                  details['contactEmail']='TopHeroFit@gmail.com'
+                  api.edits().details().update(packageName=package,editId=edit_id,body=details).execute()
+                  item['detailsUpdated']=True
+                  for lang in ('ar','en-US'):
+                      body={'language':lang,**spec[lang]}
+                      api.edits().listings().update(packageName=package,editId=edit_id,language=lang,body=body).execute()
+                      item['languages'].append({'language':lang,'title':spec[lang]['title'],'shortLength':len(spec[lang]['shortDescription']),'fullLength':len(spec[lang]['fullDescription'])})
+                  validation=api.edits().validate(packageName=package,editId=edit_id).execute()
+                  item['validated']=True; item['validationId']=validation.get('id')
+                  committed=api.edits().commit(packageName=package,editId=edit_id).execute()
+                  item['committed']=True; item['committedEditId']=committed.get('id')
+                  edit_id=None
+              except Exception as exc:
+                  item['error']=str(exc)[:2000]
+              finally:
+                  if edit_id:
+                      try:
+                          api.edits().delete(packageName=package,editId=edit_id).execute(); item['cleanup']='PASS'
+                      except Exception as exc:
+                          item['cleanup']='FAIL'; item['cleanupError']=str(exc)[:1000]
+                  out['apps'].append(item)
+          print(json.dumps(out,indent=2,ensure_ascii=False))
+          with open('thf-current-cycle-play-metadata-sync.json','w') as fh: json.dump(out,fh,indent=2,ensure_ascii=False)
+          if not all(x.get('committed') for x in out['apps']): raise SystemExit(4)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-current-cycle-play-metadata-sync
+          path: thf-current-cycle-play-metadata-sync.json
+          if-no-files-found: error
+          retention-days: 30
