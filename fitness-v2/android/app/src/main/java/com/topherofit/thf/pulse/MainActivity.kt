@@ -61,7 +61,14 @@ class MainActivity : ComponentActivity() {
     private var backendAccessToken: String? = null
 
     @Volatile
-    private var cachedHealthState = HealthConnectionState("CHECKING", false, emptySet(), HealthConnectRepository.REQUIRED_PERMISSIONS)
+    private var cachedHealthState = HealthConnectionState(
+        availability = "CHECKING",
+        connected = false,
+        readPermissionsGranted = false,
+        writePermissionsGranted = false,
+        grantedPermissions = emptySet(),
+        missingPermissions = HealthConnectRepository.REQUIRED_PERMISSIONS,
+    )
 
     @Volatile
     private var cachedBillingState = FoundingHeroBillingState(configured = BuildConfig.THF_PLAY_LICENSE_KEY.isNotBlank())
@@ -188,7 +195,16 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun refreshHealthState() {
         cachedHealthState = runCatching { healthRepository.connectionState() }
-            .getOrElse { HealthConnectionState(healthRepository.availability(), false, emptySet(), HealthConnectRepository.REQUIRED_PERMISSIONS) }
+            .getOrElse {
+                HealthConnectionState(
+                    availability = healthRepository.availability(),
+                    connected = false,
+                    readPermissionsGranted = false,
+                    writePermissionsGranted = false,
+                    grantedPermissions = emptySet(),
+                    missingPermissions = HealthConnectRepository.REQUIRED_PERMISSIONS,
+                )
+            }
     }
 
     private fun requestBackendSignIn() {

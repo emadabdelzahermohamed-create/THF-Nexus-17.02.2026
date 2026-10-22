@@ -105,6 +105,11 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             health,
         )
 
+    def test_health_state_fallbacks_track_read_and_write_permissions_explicitly(self):
+        source = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        self.assertGreaterEqual(source.count("readPermissionsGranted = false"), 2)
+        self.assertGreaterEqual(source.count("writePermissionsGranted = false"), 2)
+
     def test_health_flow_is_user_visible_and_fail_closed(self):
         html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
         for marker in (
