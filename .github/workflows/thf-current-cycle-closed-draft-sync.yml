@@ -32,7 +32,7 @@ jobs:
           from googleapiclient.discovery import build
 
           apps=[
-            ('fitness','com.topherofit.thf.pulse','51006','Top Hero Fit 51006 Closed Test'),
+            ('fitness','com.topherofit.thf.pulse','51007','Top Hero Fit 51007 Closed Test'),
             ('core','com.topherofit.thf.core','62200','THF Hub 62200 Closed Test'),
             ('community','com.topherofit.thf.echo','21102','THF Community 21102 Closed Test'),
           ]
