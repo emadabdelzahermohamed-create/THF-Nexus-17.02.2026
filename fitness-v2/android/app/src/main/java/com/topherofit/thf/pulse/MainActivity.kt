@@ -64,6 +64,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var detectorSteps = 0L
     private var absoluteSteps = -1f
     private var sessionBaseline = -1f
+    private var motionSessionActive = false
     private var tts: TextToSpeech? = null
     private val healthFlushRunning = AtomicBoolean(false)
     private val healthSyncGate = HealthSyncGate()
@@ -189,9 +190,18 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         if (stepSensor != null && hasActivityPermission()) {
             sensorManager?.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
             stepDetector?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
-            accelerometer?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
-            gyroscope?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+            if (motionSessionActive) registerRawMotionSensors()
         }
+    }
+
+    private fun registerRawMotionSensors() {
+        accelerometer?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+        gyroscope?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+    }
+
+    private fun stopRawMotionSensors() {
+        accelerometer?.let { sensorManager?.unregisterListener(this, it) }
+        gyroscope?.let { sensorManager?.unregisterListener(this, it) }
     }
 
     private fun hasActivityPermission(): Boolean =
@@ -706,6 +716,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
         @JavascriptInterface
         fun beginStepSession() {
+            motionSessionActive = true
+            registerRawMotionSensors()
             sessionBaseline = if (absoluteSteps >= 0) absoluteSteps else -1f
             detectorSteps = 0L
             motionSamples = 0L
@@ -782,6 +794,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             } else {
                 localOutcome
             }
+            motionSessionActive = false
+            stopRawMotionSensors()
             val backendOutcome = if (localOutcome == "inserted" || localOutcome == "updated") {
                 enqueueSummaryForBackend(item)
             } else {
