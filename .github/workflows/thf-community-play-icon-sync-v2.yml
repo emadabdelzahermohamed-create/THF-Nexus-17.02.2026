@@ -1,0 +1,68 @@
+name: THF Community Play Icon Sync V2
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore exact pinned icon and verify bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          cat > evidence/icon.b64 <<'EOF'
+          iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAAHc0lEQVR4nO3XwW3CABBFwRDRgH3CFeD+q3EH3KghDQRFIooW8mYq+IeVnva0XK4fAPR8Tg8AYIYAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAECUAABECQBAlAAARAkAQJQAAEQJAEDUeXrAq7vfjukJwPPWbZ+e8Lp8AABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAEHVaLtfpDfDQ/XZMT/itddunJ8D3fAAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQdZ4e8K7ut2N6wqtbt316wv/h3n7k3p7gAwCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEgCAKAEAiBIAgKjz9IB3tW779ARC3Bt/wQcAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQNQX6dMRmpHBlsoAAAAASUVORK5CYII=
+          EOF
+          tr -d '[:space:]' < evidence/icon.b64 | base64 -d > evidence/community-icon-512.png
+          echo '07fa2649cfd5dc97292b05fd2ff432a9072e7f70769be59af29d7fe3f24d74f6  evidence/community-icon-512.png' | sha256sum -c -
+          file evidence/community-icon-512.png | grep -F '512 x 512'
+      - name: Upload exact Community icon to Play
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PY'
+          import json,google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          package='com.topherofit.thf.echo'; creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher']); api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          edit=api.edits().insert(packageName=package,body={}).execute()['id']; out={'package':package,'committed':False,'sourceIconSha256':'07fa2649cfd5dc97292b05fd2ff432a9072e7f70769be59af29d7fe3f24d74f6','languages':{}}
+          try:
+            for lang in ['ar','en-US']:
+              try: api.edits().images().deleteall(packageName=package,editId=edit,language=lang,imageType='icon').execute()
+              except Exception: pass
+              api.edits().images().upload(packageName=package,editId=edit,language=lang,imageType='icon',media_body=MediaFileUpload('evidence/community-icon-512.png',mimetype='image/png',resumable=False)).execute()
+              xs=api.edits().images().list(packageName=package,editId=edit,language=lang,imageType='icon').execute().get('images',[]) or []
+              if len(xs)!=1: raise RuntimeError(f'{lang}: icon count {len(xs)}')
+              out['languages'][lang]={'count':1,'sha1':xs[0].get('sha1')}
+            v=api.edits().validate(packageName=package,editId=edit).execute(); out['validationId']=v.get('id'); c=api.edits().commit(packageName=package,editId=edit).execute(); out['committed']=True; out['committedEditId']=c.get('id'); edit=None
+          finally:
+            if edit:
+              try: api.edits().delete(packageName=package,editId=edit).execute()
+              except Exception: pass
+          open('evidence/upload.json','w').write(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          if not out['committed']: raise SystemExit(4)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-community-play-icon-sync-v2
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
