@@ -52,7 +52,7 @@ class MotionSessionEngineTest {
         assertEquals(1, gateway.activeStarts)
     }
 
-    @Test fun stopSessionReturnsEvidenceAndStopsHighRateSensors() {
+    @Test fun stopSessionReturnsEvidenceAndRestoresLowPowerTracking() {
         val gateway = FakeGateway(caps())
         val clock = FakeClock()
         val engine = MotionSessionEngine(gateway, clock)
@@ -63,6 +63,7 @@ class MotionSessionEngineTest {
         assertNotNull(evidence)
         assertEquals(6, evidence!!.stepDelta)
         assertTrue(gateway.activeStops >= 1)
+        assertEquals(2, gateway.lowPowerStarts)
         assertFalse(engine.currentState().active)
     }
 
