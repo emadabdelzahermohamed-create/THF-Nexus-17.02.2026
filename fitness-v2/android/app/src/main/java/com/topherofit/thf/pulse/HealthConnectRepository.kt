@@ -51,6 +51,7 @@ data class HealthSnapshot(
     val recordsRead: Int,
     val verifiedRecords: Int,
     val excludedManualOrUnknownRecords: Int,
+    val duplicateRecordsExcluded: Int,
     val recordEvidence: List<HealthRecordEvidence>,
     val dataReadSuccessfully: Boolean,
     val hasVerifiedRewardData: Boolean,
@@ -131,23 +132,31 @@ class HealthConnectRepository(private val context: Context) {
         val sessions = readAll(client, ExerciseSessionRecord::class, start, end)
         val allRecords: List<Record> = steps + distances + calories + sessions
         val evidence = allRecords.map { it.toEvidence() }
-        val verifiedIds = allRecords.zip(evidence)
-            .filter { (_, e) -> e.verifiedForRewards }
-            .mapTo(mutableSetOf()) { (record, _) -> record.metadata.id }
+        val verifiedEvidenceById = evidence
+            .asSequence()
+            .filter { it.verifiedForRewards }
+            .groupBy { it.recordId }
+            .mapValues { (_, versions) ->
+                versions.maxWithOrNull(compareBy<HealthRecordEvidence> { it.clientRecordVersion }.thenBy { it.lastModifiedTime })!!
+            }
+        val verifiedIds = verifiedEvidenceById.keys
+        val verifiedCount = verifiedIds.size
+        val verifiedEvidenceCount = evidence.count { it.verifiedForRewards }
+        val duplicateRecordsExcluded = verifiedEvidenceCount - verifiedCount
 
         val origins = evidence.map { it.dataOrigin }.filter { it.isNotBlank() }.toSet()
-        val verifiedCount = evidence.count { it.verifiedForRewards }
 
         return HealthSnapshot(
-            steps = steps.filter { it.metadata.id in verifiedIds }.sumOf { it.count },
-            distanceMeters = distances.filter { it.metadata.id in verifiedIds }.sumOf { it.distance.inMeters },
-            activeCaloriesKcal = calories.filter { it.metadata.id in verifiedIds }.sumOf { it.energy.inKilocalories },
-            exerciseSessions = sessions.count { it.metadata.id in verifiedIds },
+            steps = steps.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.sumOf { it.count },
+            distanceMeters = distances.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.sumOf { it.distance.inMeters },
+            activeCaloriesKcal = calories.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.sumOf { it.energy.inKilocalories },
+            exerciseSessions = sessions.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.size,
             origins = origins,
             latestSessionEnd = sessions.filter { it.metadata.id in verifiedIds }.maxOfOrNull { it.endTime },
             recordsRead = allRecords.size,
             verifiedRecords = verifiedCount,
-            excludedManualOrUnknownRecords = evidence.size - verifiedCount,
+            excludedManualOrUnknownRecords = evidence.count { !it.verifiedForRewards },
+            duplicateRecordsExcluded = duplicateRecordsExcluded,
             recordEvidence = evidence,
             dataReadSuccessfully = true,
             hasVerifiedRewardData = verifiedCount > 0,
