@@ -2,9 +2,18 @@ package com.topherofit.thf.pulse
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.security.SecureRandom
 
 object WorkoutIdentity {
     private const val PREFIX = "thf-workout-"
+    private val secureRandom = SecureRandom()
+
+    /** Creates a replay-resistant local workout identity for a newly-started sensor session. */
+    fun newSessionId(nowMillis: Long = System.currentTimeMillis()): String {
+        val nonce = ByteArray(16).also(secureRandom::nextBytes)
+            .joinToString("") { "%02x".format(it) }
+        return "$PREFIX$nowMillis-$nonce"
+    }
 
     fun stableClientRecordId(
         suppliedId: String?,

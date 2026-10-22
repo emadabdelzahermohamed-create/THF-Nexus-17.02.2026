@@ -730,8 +730,9 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun beginMotionSession(sessionId: String?): String = runCatching {
-            val id = requireNotNull(sessionId).trim()
-            require(id.isNotBlank()) { "sessionId is required" }
+            val supplied = sessionId.orEmpty().trim()
+            val id = if (supplied.isBlank()) WorkoutIdentity.newSessionId() else supplied
+            require(id.matches(Regex("[A-Za-z0-9._:-]{8,120}"))) { "invalid sessionId" }
             motionSessionJson(motionEngine.startSession(id)).toString()
         }.getOrElse { JSONObject().put("active", false).put("error", it.message ?: it.javaClass.simpleName).toString() }
 
