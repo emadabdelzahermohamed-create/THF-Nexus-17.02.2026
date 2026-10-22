@@ -1,0 +1,56 @@
+name: THF Release Builder IAM Probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+      PROJECT_NUMBER: '1035420130588'
+      DEPLOYER: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - name: Probe IAM and Cloud Run capabilities without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          python - <<'PY'
+          import json,subprocess,os
+          project=os.environ['PROJECT_ID']; deployer=os.environ['DEPLOYER']; out={'project':project,'deployer':deployer,'mutationAttempted':False}
+          def cmd(args):
+            p=subprocess.run(args,text=True,capture_output=True)
+            return {'rc':p.returncode,'stdout':p.stdout[:12000],'stderr':p.stderr[:4000]}
+          out['projectIamPolicy']=cmd(['gcloud','projects','get-iam-policy',project,'--format=json'])
+          out['runServicesList']=cmd(['gcloud','run','services','list','--project',project,'--region','europe-west1','--format=json'])
+          out['projectDescribe']=cmd(['gcloud','projects','describe',project,'--format=json'])
+          # IAM test endpoint is read-only and reports effective permissions for current credentials.
+          perms=['run.services.get','run.services.list','run.services.create','run.services.update','run.operations.get','serviceusage.services.use','resourcemanager.projects.getIamPolicy','resourcemanager.projects.setIamPolicy']
+          body=json.dumps({'permissions':perms})
+          access=cmd(['gcloud','beta','projects','test-iam-permissions',project,'--permissions='+','.join(perms),'--format=json'])
+          out['testIamPermissions']=access
+          print(json.dumps(out,indent=2))
+          open('evidence/thf-release-builder-iam-probe.json','w').write(json.dumps(out,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-release-builder-iam-probe
+          path: evidence/thf-release-builder-iam-probe.json
+          if-no-files-found: error
+          retention-days: 14
