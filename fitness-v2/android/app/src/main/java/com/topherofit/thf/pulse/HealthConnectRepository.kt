@@ -20,6 +20,8 @@ import kotlin.reflect.KClass
 data class HealthConnectionState(
     val availability: String,
     val connected: Boolean,
+    val readPermissionsGranted: Boolean,
+    val writePermissionsGranted: Boolean,
     val grantedPermissions: Set<String>,
     val missingPermissions: Set<String>,
 )
@@ -63,13 +65,16 @@ data class WorkoutForHealth(
 
 class HealthConnectRepository(private val context: Context) {
     companion object {
-        val REQUIRED_PERMISSIONS: Set<String> = setOf(
+        val READ_PERMISSIONS: Set<String> = setOf(
             HealthPermission.getReadPermission(StepsRecord::class),
             HealthPermission.getReadPermission(ExerciseSessionRecord::class),
-            HealthPermission.getWritePermission(ExerciseSessionRecord::class),
             HealthPermission.getReadPermission(DistanceRecord::class),
             HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
         )
+        val WRITE_PERMISSIONS: Set<String> = setOf(
+            HealthPermission.getWritePermission(ExerciseSessionRecord::class),
+        )
+        val REQUIRED_PERMISSIONS: Set<String> = READ_PERMISSIONS + WRITE_PERMISSIONS
     }
 
     private fun sdkStatus(): Int = HealthConnectClient.getSdkStatus(context)
@@ -85,16 +90,32 @@ class HealthConnectRepository(private val context: Context) {
 
     suspend fun connectionState(): HealthConnectionState {
         val client = clientOrNull()
-            ?: return HealthConnectionState(availability(), false, emptySet(), REQUIRED_PERMISSIONS)
+            ?: return HealthConnectionState(
+                availability = availability(),
+                connected = false,
+                readPermissionsGranted = false,
+                writePermissionsGranted = false,
+                grantedPermissions = emptySet(),
+                missingPermissions = REQUIRED_PERMISSIONS,
+            )
         val granted = client.permissionController.getGrantedPermissions()
         val missing = REQUIRED_PERMISSIONS - granted
-        return HealthConnectionState(availability(), missing.isEmpty(), granted, missing)
+        val readsGranted = granted.containsAll(READ_PERMISSIONS)
+        val writesGranted = granted.containsAll(WRITE_PERMISSIONS)
+        return HealthConnectionState(
+            availability = availability(),
+            connected = readsGranted,
+            readPermissionsGranted = readsGranted,
+            writePermissionsGranted = writesGranted,
+            grantedPermissions = granted,
+            missingPermissions = missing,
+        )
     }
 
     suspend fun readRecent(days: Long = 7): HealthSnapshot {
         val client = requireNotNull(clientOrNull()) { "Health Connect is unavailable" }
         val granted = client.permissionController.getGrantedPermissions()
-        require(granted.containsAll(REQUIRED_PERMISSIONS.filterNot { it.contains("WRITE_") })) {
+        require(granted.containsAll(READ_PERMISSIONS)) {
             "Health Connect read permissions are missing"
         }
 
@@ -124,9 +145,6 @@ class HealthConnectRepository(private val context: Context) {
             verifiedRecords = verifiedCount,
             excludedManualOrUnknownRecords = evidence.size - verifiedCount,
             recordEvidence = evidence,
-            // Reaching this return means all four record-level queries completed successfully.
-            // An empty provider is still a successful read and must not be confused with
-            // provider availability or permission grant state.
             dataReadSuccessfully = true,
             hasVerifiedRewardData = verifiedCount > 0,
         )
