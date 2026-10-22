@@ -43,3 +43,12 @@ Do not invert this order by opening a thin mainnet pool first. A low-liquidity t
 6. Multisig treasury and incident/authority controls.
 7. Independent smart-contract/token configuration review where required.
 8. Written liquidity plan defining paired capital, venue, lock/vesting, custody and market-making limits.
+
+## Institutional liquidity shortlist added 2026-10-22
+
+| Partner | Why it matters before/at TGE | THF action |
+|---|---|---|
+| GSR | works with pre-token projects; venture/capital plus liquidity seeding, DEX/CEX market making and treasury planning | TopHeroFit outreach sent; verify reply/bounce before advancing |
+| Flowdesk | pre-TGE ventures/capital-markets/OTC; TGE DeFi pool deployment; Dubai regulated entity and institutional reporting | high-priority contact after required founder/entity fields are verified |
+| Auros | venture/funding + token launch + strategic market making with contractual KPIs | shortlist for founder contact form once issuer/entity package fields are ready |
+| Wintermute | early-stage token/equity venture investing plus multi-venue liquidity capability | shortlist Ventures + Liquidity routes; keep investment and commercial liquidity mandates independently evaluated |
