@@ -1,0 +1,144 @@
+name: THF Fitness Play Assets Sync
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build deterministic assets from verified app visuals
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check pillow cairosvg google-api-python-client google-auth
+          mkdir -p play-assets
+          python - <<'PY'
+          import hashlib,io,json,urllib.request
+          from pathlib import Path
+          from PIL import Image
+          import cairosvg
+
+          out=Path('play-assets')
+          # Render the exact current Android vector icon, without redesign.
+          src=Path('fitness-v2/android/app/src/main/res/drawable/ic_launcher.xml').read_text()
+          # Android VectorDrawable -> exact equivalent SVG for the three paths present in the source.
+          svg='''<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108">
+          <path fill="#071219" d="M0,0h108v108h-108z"/>
+          <path fill="#edca78" d="M18,54c0,-20 16,-36 36,-36s36,16 36,36 -16,36 -36,36 -36,-16 -36,-36z"/>
+          <path fill="#071219" d="M33,34h42v10h-16v30h-10v-30h-16z"/>
+          </svg>'''
+          cairosvg.svg2png(bytestring=svg.encode(),write_to=str(out/'icon.png'),output_width=512,output_height=512)
+
+          urls={
+            'phone_ar':'https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790499962714/mobile.png',
+            'phone_en':'https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790500026414/mobile.png',
+            'phone_latest':'https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790910512577/mobile.png',
+            'web_latest':'https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790910512577/web.png',
+          }
+          expected={
+            'phone_ar':'33de966811f06a574810c222f4965f270125a16e4e45d044317c6a60d9f65a2b',
+            'phone_en':'86e123649cdcaf5906a1730d490f24a677dd7a844b09fc073a1a2b090196ef6e',
+            'phone_latest':'3b1ac322eb9f4026d833fae8fa268561fb6e8fec1cd5afdd5cce1ed96598817c',
+            'web_latest':'ba19c001464503006ba6fee5c56dfa92d7ad5bcf7df7ce46560ddc7e1abf5c8e',
+          }
+          raw={}
+          for key,url in urls.items():
+            data=urllib.request.urlopen(url,timeout=30).read()
+            got=hashlib.sha256(data).hexdigest()
+            if got != expected[key]: raise SystemExit(f'{key} SHA mismatch {got}')
+            raw[key]=data
+
+          # Play screenshots cannot exceed a 2:1 max:min ratio. Preserve every app pixel
+          # and add neutral side padding instead of cropping or altering UI.
+          def phone_asset(key,path):
+            im=Image.open(io.BytesIO(raw[key])).convert('RGB')
+            w,h=im.size
+            target_w=max(w,(h+1)//2)
+            canvas=Image.new('RGB',(target_w,h),(7,18,25))
+            canvas.paste(im,((target_w-w)//2,0))
+            canvas.save(out/path,'PNG',optimize=True)
+            return {'source':[w,h],'output':[target_w,h]}
+          dims={
+            'phone_ar':phone_asset('phone_ar','phone-ar.png'),
+            'phone_en':phone_asset('phone_en','phone-en.png'),
+            'phone_latest':phone_asset('phone_latest','phone-latest.png'),
+          }
+          # Feature graphic is a faithful crop of a verified real web screenshot.
+          web=Image.open(io.BytesIO(raw['web_latest'])).convert('RGB')
+          w,h=web.size
+          target_ratio=1024/500
+          if w/h > target_ratio:
+            crop_w=int(h*target_ratio); left=(w-crop_w)//2; box=(left,0,left+crop_w,h)
+          else:
+            crop_h=int(w/target_ratio); top=(h-crop_h)//2; box=(0,top,w,top+crop_h)
+          web.crop(box).resize((1024,500),Image.Resampling.LANCZOS).save(out/'feature.png','PNG',optimize=True)
+          manifest={'sourceVerified':True,'sourceSha256':expected,'dimensions':dims,'featureSource':[w,h],'featureOutput':[1024,500]}
+          for p in out.glob('*.png'): manifest[p.name]={'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size}
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
+          print(json.dumps(manifest,indent=2))
+          PY
+      - name: Upload Fitness store assets to Play
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          package='com.topherofit.thf.pulse'
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          edit=api.edits().insert(packageName=package,body={}).execute()['id']
+          out={'package':package,'committed':False,'languages':{}}
+          try:
+            for lang in ['ar','en-US']:
+              inv={}
+              # Replace rather than append to keep deterministic exact assets.
+              for typ in ['icon','featureGraphic','phoneScreenshots']:
+                try: api.edits().images().deleteall(packageName=package,editId=edit,language=lang,imageType=typ).execute()
+                except Exception: pass
+              uploads=[('icon','play-assets/icon.png'),('featureGraphic','play-assets/feature.png')]
+              if lang=='ar': phones=['play-assets/phone-ar.png','play-assets/phone-latest.png']
+              else: phones=['play-assets/phone-en.png','play-assets/phone-latest.png']
+              uploads += [('phoneScreenshots',p) for p in phones]
+              for typ,path in uploads:
+                r=api.edits().images().upload(packageName=package,editId=edit,language=lang,imageType=typ,media_body=MediaFileUpload(path,mimetype='image/png',resumable=False)).execute()
+              for typ in ['icon','featureGraphic','phoneScreenshots']:
+                imgs=api.edits().images().list(packageName=package,editId=edit,language=lang,imageType=typ).execute().get('images',[]) or []
+                inv[typ]={'count':len(imgs),'sha1s':[x.get('sha1') for x in imgs]}
+              if inv['icon']['count']!=1 or inv['featureGraphic']['count']!=1 or inv['phoneScreenshots']['count']<2:
+                raise RuntimeError(f'incomplete images {lang}: {inv}')
+              out['languages'][lang]=inv
+            v=api.edits().validate(packageName=package,editId=edit).execute(); out['validated']=True; out['validationId']=v.get('id')
+            c=api.edits().commit(packageName=package,editId=edit).execute(); out['committed']=True; out['committedEditId']=c.get('id'); edit=None
+          finally:
+            if edit:
+              try: api.edits().delete(packageName=package,editId=edit).execute()
+              except Exception: pass
+          print(json.dumps(out,indent=2))
+          with open('play-assets/upload.json','w') as fh: json.dump(out,fh,indent=2)
+          if not out['committed']: raise SystemExit(4)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-fitness-play-assets-sync
+          path: play-assets/
+          if-no-files-found: error
+          retention-days: 30
