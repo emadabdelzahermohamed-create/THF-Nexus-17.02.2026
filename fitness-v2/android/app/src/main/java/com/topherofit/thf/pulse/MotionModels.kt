@@ -39,4 +39,19 @@ data class MotionEvidence(
     val plausibleForRewards: Boolean,
     val plausibilityReasons: List<String>,
     val evidenceDigest: String,
-)
+) {
+    /**
+     * Conservative local reward gate. A session must be plausible, confidently classified,
+     * include a hardware step signal, and contain accelerometer evidence. Manual entry alone
+     * can therefore never satisfy this gate. Server/high-value actions may impose stronger
+     * checks (for example Play Integrity) without blocking ordinary local tracking.
+     */
+    val sensorVerifiedForRewards: Boolean
+        get() = plausibleForRewards &&
+            localConfidence >= 0.60 &&
+            activityConfidence >= 0.60 &&
+            (stepDelta > 0 || stepDetectorCount > 0) &&
+            accelerometerSampleCount > 0 &&
+            detectedActivity != DetectedActivity.STATIONARY &&
+            detectedActivity != DetectedActivity.UNKNOWN
+}
