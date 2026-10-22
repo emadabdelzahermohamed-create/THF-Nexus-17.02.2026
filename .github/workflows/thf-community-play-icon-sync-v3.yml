@@ -1,0 +1,79 @@
+name: THF Community Play Icon Sync V3
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reconstruct and verify exact source-authentic icon bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check pillow google-api-python-client google-auth
+          mkdir -p evidence
+          python - <<'PY'
+          from PIL import Image,ImageDraw
+          import hashlib,json
+          from pathlib import Path
+          out=Path('evidence/community-icon-512.png')
+          im=Image.new('RGB',(512,512),(17,24,39)); d=ImageDraw.Draw(im)
+          d.rectangle([96,112,416,176],fill=(255,255,255))
+          d.rectangle([224,177,288,408],fill=(255,255,255))
+          d.rectangle([104,232,200,296],fill=(255,255,255))
+          d.rectangle([312,232,408,296],fill=(255,255,255))
+          im.save(out,'PNG')
+          sha=hashlib.sha256(out.read_bytes()).hexdigest()
+          expected='07fa2649cfd5dc97292b05fd2ff432a9072e7f70769be59af29d7fe3f24d74f6'
+          if sha!=expected: raise SystemExit(f'icon byte mismatch {sha}')
+          meta={'sourceArchiveSha256':'3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9','sourcePath':'THF_Echo_PHONE_FUNDAMENTALS_SRC3/THF_Echo_PHONE_FUNDAMENTALS_SOURCE_V3_FIXED/android/store-assets/icon-512.png','iconSha256':sha,'size':[512,512],'pixelColors':{'#111827':213589,'#ffffff':48555}}
+          Path('evidence/source.json').write_text(json.dumps(meta,indent=2)); print(json.dumps(meta,indent=2))
+          PY
+      - name: Upload exact Community icon to Play
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          package='com.topherofit.thf.echo'; creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher']); api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          edit=api.edits().insert(packageName=package,body={}).execute()['id']; out={'package':package,'committed':False,'sourceIconSha256':'07fa2649cfd5dc97292b05fd2ff432a9072e7f70769be59af29d7fe3f24d74f6','languages':{}}
+          try:
+            for lang in ['ar','en-US']:
+              try: api.edits().images().deleteall(packageName=package,editId=edit,language=lang,imageType='icon').execute()
+              except Exception: pass
+              api.edits().images().upload(packageName=package,editId=edit,language=lang,imageType='icon',media_body=MediaFileUpload('evidence/community-icon-512.png',mimetype='image/png',resumable=False)).execute()
+              xs=api.edits().images().list(packageName=package,editId=edit,language=lang,imageType='icon').execute().get('images',[]) or []
+              if len(xs)!=1: raise RuntimeError(f'{lang}: icon count {len(xs)}')
+              out['languages'][lang]={'count':1,'sha1':xs[0].get('sha1')}
+            v=api.edits().validate(packageName=package,editId=edit).execute(); out['validationId']=v.get('id'); c=api.edits().commit(packageName=package,editId=edit).execute(); out['committed']=True; out['committedEditId']=c.get('id'); edit=None
+          finally:
+            if edit:
+              try: api.edits().delete(packageName=package,editId=edit).execute()
+              except Exception: pass
+          Path='evidence/upload.json'; open(Path,'w').write(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          if not out['committed']: raise SystemExit(4)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-community-play-icon-sync-v3
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
