@@ -1,0 +1,72 @@
+name: WAVE Play Assets Copy EN
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Copy exact approved Arabic assets to English listing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth requests
+          mkdir -p evidence/assets
+          python - <<'PY'
+          import hashlib,json,requests
+          from pathlib import Path
+          import google.auth
+          from google.auth.transport.requests import AuthorizedSession
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          package='com.wave.mawja'; src='ar'; dst='en-US'; types=['icon','featureGraphic','phoneScreenshots']
+          creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher']); api=build('androidpublisher','v3',credentials=creds,cache_discovery=False); session=AuthorizedSession(creds)
+          edit=api.edits().insert(packageName=package,body={}).execute()['id']; out={'package':package,'sourceLanguage':src,'destinationLanguage':dst,'committed':False,'types':{}}
+          try:
+            for typ in types:
+              source=api.edits().images().list(packageName=package,editId=edit,language=src,imageType=typ).execute().get('images',[]) or []
+              expected={'icon':1,'featureGraphic':1,'phoneScreenshots':4}[typ]
+              if len(source)!=expected: raise RuntimeError(f'{typ}: expected {expected} source images, got {len(source)}')
+              try: api.edits().images().deleteall(packageName=package,editId=edit,language=dst,imageType=typ).execute()
+              except Exception: pass
+              source_sha=[]
+              for i,img in enumerate(source):
+                url=img.get('url')
+                if not url: raise RuntimeError(f'{typ}/{i}: missing image url')
+                r=session.get(url,timeout=30); r.raise_for_status(); data=r.content
+                p=Path('evidence/assets')/f'{typ}-{i}.png'; p.write_bytes(data)
+                source_sha.append({'playSha1':img.get('sha1'),'downloadSha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)})
+                api.edits().images().upload(packageName=package,editId=edit,language=dst,imageType=typ,media_body=MediaFileUpload(str(p),mimetype='image/png',resumable=False)).execute()
+              target=api.edits().images().list(packageName=package,editId=edit,language=dst,imageType=typ).execute().get('images',[]) or []
+              if len(target)!=expected: raise RuntimeError(f'{typ}: destination count {len(target)} != {expected}')
+              out['types'][typ]={'count':expected,'source':source_sha,'targetSha1s':[x.get('sha1') for x in target]}
+            v=api.edits().validate(packageName=package,editId=edit).execute(); out['validationId']=v.get('id'); c=api.edits().commit(packageName=package,editId=edit).execute(); out['committed']=True; out['committedEditId']=c.get('id'); edit=None
+          finally:
+            if edit:
+              try: api.edits().delete(packageName=package,editId=edit).execute()
+              except Exception: pass
+          Path('evidence/result.json').write_text(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          if not out['committed']: raise SystemExit(4)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wave-play-assets-copy-en
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
