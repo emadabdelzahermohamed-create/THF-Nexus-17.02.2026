@@ -82,6 +82,15 @@ class MotionFeatureAccumulatorTest {
         assertTrue(e.localConfidence > stationary.localConfidence)
     }
 
+    @Test fun finalActiveAccelerometerIntervalIsIncludedAtSnapshot() {
+        val a = MotionFeatureAccumulator()
+        a.start("tail-motion-001", 1_000L, 1_000_000_000L, caps)
+        a.acceptAccelerometer(4f, 0f, 13f, 2_000_000_000L)
+        val e = a.snapshot(4_000L, 4_000_000_000L)
+        assertEquals(2_000L, e.activeMotionMs)
+        assertTrue(e.localConfidence > 0.0)
+    }
+
     @Test fun interruptionTimeIsExcludedFromActiveDuration() {
         val a = MotionFeatureAccumulator()
         a.start("session-0005", 1_000L, 1_000_000_000L, caps)
