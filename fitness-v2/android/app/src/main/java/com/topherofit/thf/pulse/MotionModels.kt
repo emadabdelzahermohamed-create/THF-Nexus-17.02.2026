@@ -41,19 +41,8 @@ data class MotionEvidence(
     val evidenceDigest: String,
 ) {
     /**
-     * Conservative local reward gate. A session must be plausible, confidently classified,
-     * include a hardware step signal, and contain accelerometer evidence. Manual entry alone
-     * can therefore never satisfy this gate. Server/high-value actions may impose stronger
-     * checks (for example Play Integrity) without blocking ordinary local tracking.
-     *
-     * Require the hardware step capability as well as observed step evidence. This prevents
-     * imported/manual step values from becoming reward-verifying evidence on devices where
-     * no Step Counter/Detector was actually available to the session.
-     *
      * Cross-check cumulative Step Counter evidence against Step Detector events whenever both
-     * sensors are available. Requiring both signals for reward credit makes synthetic/imported
-     * step injection materially harder while preserving tracking on devices that expose only
-     * one of the two Android step sensors.
+     * sensors are available. Devices exposing only one Android step sensor remain supported.
      */
     val hasConsistentHardwareStepEvidence: Boolean
         get() {
@@ -70,8 +59,7 @@ data class MotionEvidence(
 
     /**
      * Require a minimum evidence window before issuing locally verified reward credit.
-     * Very short bursts are useful for live UI/activity detection, but are too easy to spoof
-     * or misclassify to serve as reward evidence. This does not block local tracking.
+     * Very short bursts remain useful for live activity detection but cannot earn rewards.
      */
     val hasSufficientRewardEvidenceWindow: Boolean
         get() = elapsedDurationMs >= 10_000L &&
@@ -79,16 +67,31 @@ data class MotionEvidence(
             activeMotionMs >= 3_000L &&
             interruptionMs.coerceAtLeast(0L) <= elapsedDurationMs / 2
 
+    /**
+     * Require the motion axes actually available on the device to participate in verification.
+     * Accelerometer evidence is mandatory. When a gyroscope exists, reward verification also
+     * requires gyroscope samples, preventing a step-only/injected stream from bypassing the
+     * richer motion evidence available on capable phones. Devices without a gyro are not
+     * penalized and ordinary local tracking is unaffected.
+     */
+    val hasAvailableMotionAxisEvidence: Boolean
+        get() = capabilities.accelerometer &&
+            accelerometerSampleCount > 0 &&
+            (!capabilities.gyroscope || gyroscopeSampleCount > 0)
+
+    /**
+     * Conservative local reward gate. Manual/imported values alone cannot satisfy it. Server
+     * and high-value actions may impose stronger checks such as Play Integrity independently.
+     */
     val sensorVerifiedForRewards: Boolean
         get() = plausibleForRewards &&
             capabilities.activityRecognitionPermission &&
             (capabilities.stepCounter || capabilities.stepDetector) &&
-            capabilities.accelerometer &&
             localConfidence >= 0.60 &&
             activityConfidence >= 0.60 &&
             hasConsistentHardwareStepEvidence &&
             hasSufficientRewardEvidenceWindow &&
-            accelerometerSampleCount > 0 &&
+            hasAvailableMotionAxisEvidence &&
             detectedActivity != DetectedActivity.STATIONARY &&
             detectedActivity != DetectedActivity.UNKNOWN
 }
