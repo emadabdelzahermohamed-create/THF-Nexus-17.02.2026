@@ -67,12 +67,27 @@ data class MotionEvidence(
             accelerometerSampleCount > 0 &&
             (!capabilities.gyroscope || gyroscopeSampleCount > 0)
 
+    /** Reject internally inconsistent timing/counter evidence before any reward decision. */
+    val hasCoherentEvidenceBounds: Boolean
+        get() = startedAtWallMs > 0L &&
+            endedAtWallMs >= startedAtWallMs &&
+            elapsedDurationMs >= 0L &&
+            activeDurationMs in 0L..elapsedDurationMs &&
+            activeMotionMs in 0L..activeDurationMs &&
+            interruptionMs in 0L..elapsedDurationMs &&
+            stepDelta >= 0 &&
+            stepDetectorCount >= 0 &&
+            counterResetCount >= 0 &&
+            accelerometerSampleCount >= 0 &&
+            gyroscopeSampleCount >= 0
+
     /**
      * Machine-readable rejection reasons make QA/reward decisions auditable without trusting a
      * Connected label or manual input. Empty means the local sensor evidence gate passed.
      */
     val rewardVerificationRejectionReasons: List<String>
         get() = buildList {
+            if (!hasCoherentEvidenceBounds) add("EVIDENCE_BOUNDS_INVALID")
             if (!plausibleForRewards) add("IMPLAUSIBLE_MOTION")
             if (!capabilities.activityRecognitionPermission) add("ACTIVITY_RECOGNITION_MISSING")
             if (!capabilities.stepCounter && !capabilities.stepDetector) add("STEP_SENSOR_UNAVAILABLE")
