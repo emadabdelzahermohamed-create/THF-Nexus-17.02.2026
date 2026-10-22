@@ -1,0 +1,118 @@
+name: THF Fitness Play Assets Sync V3
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build assets only from immutable verified evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check pillow google-api-python-client google-auth
+          mkdir -p play-assets
+          python - <<'PY'
+          import hashlib,io,json,urllib.request
+          from pathlib import Path
+          from PIL import Image,ImageDraw
+          out=Path('play-assets')
+          urls={
+            'phone_ar':'https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790499962714/mobile.png',
+            'phone_en':'https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790500026414/mobile.png',
+            'web_ar':'https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790499962714/web.png',
+            'web_en':'https://appdeployai-v2-qa-screenshots.s3.us-east-1.amazonaws.com/thf-fitness-pulse-ul26f1/1790500026414/web.png',
+          }
+          expected={
+            'phone_ar':'33de966811f06a574810c222f4965f270125a16e4e45d044317c6a60d9f65a2b',
+            'phone_en':'86e123649cdcaf5906a1730d490f24a677dd7a844b09fc073a1a2b090196ef6e',
+            'web_ar':'2e214198a66cd746fc697b2c589a63544f7d95d79adac7a28b096f307657f621',
+            'web_en':'9cc3a4abfc853a62630889728be1fb44f7ddc6c7fc4cbdfe3541566592a0abda',
+          }
+          raw={}
+          for key,url in urls.items():
+            data=urllib.request.urlopen(url,timeout=30).read()
+            got=hashlib.sha256(data).hexdigest()
+            if got!=expected[key]: raise SystemExit(f'{key} SHA mismatch {got}')
+            raw[key]=data
+          # Exact rasterization of current 108x108 vector geometry at 512x512.
+          icon=Image.new('RGB',(512,512),(7,18,25)); d=ImageDraw.Draw(icon)
+          s=512/108
+          d.ellipse((18*s,18*s,90*s,90*s),fill=(237,202,120))
+          d.rectangle((33*s,34*s,75*s,44*s),fill=(7,18,25))
+          d.rectangle((49*s,44*s,59*s,74*s),fill=(7,18,25))
+          icon.save(out/'icon.png','PNG',optimize=True)
+          def phone(key,path):
+            im=Image.open(io.BytesIO(raw[key])).convert('RGB'); w,h=im.size
+            tw=max(w,(h+1)//2); canvas=Image.new('RGB',(tw,h),(7,18,25)); canvas.paste(im,((tw-w)//2,0)); canvas.save(out/path,'PNG',optimize=True)
+            return [w,h],[tw,h]
+          dims={}
+          dims['phone_ar']=phone('phone_ar','phone-ar.png'); dims['phone_en']=phone('phone_en','phone-en.png')
+          def feature(key,path):
+            im=Image.open(io.BytesIO(raw[key])).convert('RGB'); w,h=im.size; r=1024/500
+            if w/h>r:
+              cw=int(h*r); left=(w-cw)//2; im=im.crop((left,0,left+cw,h))
+            else:
+              ch=int(w/r); top=(h-ch)//2; im=im.crop((0,top,w,top+ch))
+            im.resize((1024,500),Image.Resampling.LANCZOS).save(out/path,'PNG',optimize=True)
+            return [w,h]
+          dims['web_ar']=feature('web_ar','feature-ar.png'); dims['web_en']=feature('web_en','feature-en.png')
+          manifest={'sourceVerified':True,'sourceSha256':expected,'dimensions':dims}
+          for p in out.glob('*.png'): manifest[p.name]={'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size}
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2)); print(json.dumps(manifest,indent=2))
+          PY
+      - name: Upload and verify exact store asset counts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          package='com.topherofit.thf.pulse'; creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher']); api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          edit=api.edits().insert(packageName=package,body={}).execute()['id']; out={'package':package,'committed':False,'languages':{}}
+          try:
+            for lang in ['ar','en-US']:
+              for typ in ['icon','featureGraphic','phoneScreenshots']:
+                try: api.edits().images().deleteall(packageName=package,editId=edit,language=lang,imageType=typ).execute()
+                except Exception: pass
+              feature='play-assets/feature-ar.png' if lang=='ar' else 'play-assets/feature-en.png'
+              phones=['play-assets/phone-ar.png','play-assets/phone-en.png'] if lang=='ar' else ['play-assets/phone-en.png','play-assets/phone-ar.png']
+              for typ,path in [('icon','play-assets/icon.png'),('featureGraphic',feature)]+[('phoneScreenshots',p) for p in phones]:
+                api.edits().images().upload(packageName=package,editId=edit,language=lang,imageType=typ,media_body=MediaFileUpload(path,mimetype='image/png',resumable=False)).execute()
+              inv={}
+              for typ in ['icon','featureGraphic','phoneScreenshots']:
+                xs=api.edits().images().list(packageName=package,editId=edit,language=lang,imageType=typ).execute().get('images',[]) or []
+                inv[typ]={'count':len(xs),'sha1s':[x.get('sha1') for x in xs]}
+              if inv['icon']['count']!=1 or inv['featureGraphic']['count']!=1 or inv['phoneScreenshots']['count']!=2: raise RuntimeError(f'incomplete {lang}: {inv}')
+              out['languages'][lang]=inv
+            v=api.edits().validate(packageName=package,editId=edit).execute(); out['validationId']=v.get('id'); c=api.edits().commit(packageName=package,editId=edit).execute(); out['committed']=True; out['committedEditId']=c.get('id'); edit=None
+          finally:
+            if edit:
+              try: api.edits().delete(packageName=package,editId=edit).execute()
+              except Exception: pass
+          (open('play-assets/upload.json','w')).write(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          if not out['committed']: raise SystemExit(4)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-fitness-play-assets-sync-v3
+          path: play-assets/
+          if-no-files-found: error
+          retention-days: 30
