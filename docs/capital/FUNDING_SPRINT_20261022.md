@@ -71,3 +71,17 @@ THF is building a verified human-activity layer that makes fitness rewards, chal
 4. Android demonstration of evidence -> verification -> Devnet commitment.
 5. Milestone budget.
 6. Short 90-second founder/product pitch and 1-page deck.
+
+## Verified outreach correction — 2026-10-22 evening
+
+Earlier compose attempts that remained in Gmail Drafts are not counted as sent. The operating evidence rule is now: an email is `SENT` only after its exact subject appears in the TopHeroFit Gmail Sent folder; delivery failures are recorded separately.
+
+| Time (Africa/Cairo) | Target | Subject | State |
+|---|---|---|---|
+| 22:32 | Solana Foundation | `TopHeroFit - verified Proof of Workout funding route` | SENT — Sent-folder subject/snippet verified |
+| 22:34 | Outlier Ventures | `TopHeroFit - Base Camp and pre seed fit` | SENT — Sent-folder subject/snippet verified |
+| 22:35 | Republic Crypto | `TopHeroFit - Launchpad Token DPA and gaming route` | SENT — Sent-folder subject/snippet verified |
+| 22:35 | Flat6Labs Cairo | `TopHeroFit - Cairo investment and accelerator review` | FAILED_DELIVERY — Gmail 550 5.1.1 address not found; replace with current application route |
+| 22:36 | Superteam | `TopHeroFit x Solana - current Instagrant and Fast Track routing` | SENT — Sent-folder subject/snippet verified |
+
+Do not treat `SENT` as a response, award, investment commitment or delivery guarantee. Monitor for bounce/reply and update the ledger only on external evidence.
