@@ -85,3 +85,5 @@ Earlier compose attempts that remained in Gmail Drafts are not counted as sent. 
 | 22:36 | Superteam | `TopHeroFit x Solana - current Instagrant and Fast Track routing` | SENT — Sent-folder subject/snippet verified |
 
 Do not treat `SENT` as a response, award, investment commitment or delivery guarantee. Monitor for bounce/reply and update the ledger only on external evidence.
+| 22:39 | Impossible Finance | `TopHeroFit - token advisory capital formation and CURATED fit` | SENT — Sent-folder subject/snippet verified |
+| 22:40 | MocaList / Animoca Brands | `TopHeroFit - MocaList token launch and Animoca gaming fit` | SENT — Sent-folder subject/snippet verified |
