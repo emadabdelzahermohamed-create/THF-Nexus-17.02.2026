@@ -1,14 +1,23 @@
-name: THF Fitness Closed Test Probe
+name: THF Fitness Closed Test Gate
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Probe eligibility or prepare a committed draft closed-test release'
+        required: true
+        default: probe
+        type: choice
+        options:
+          - probe
+          - prepare_draft
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  probe:
+  gate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -21,53 +30,97 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Validate Fitness 51006 closed test without commit
+      - name: Probe or prepare Fitness 51006 closed test
         shell: bash
+        env:
+          MODE: ${{ inputs.mode }}
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check google-api-python-client google-auth
           python - <<'PY'
-          import json
+          import json, os
           import google.auth
           from googleapiclient.discovery import build
           from googleapiclient.errors import HttpError
-          package='com.topherofit.thf.pulse'; version='51006'; track='alpha'
+
+          package='com.topherofit.thf.pulse'
+          version='51006'
+          track='alpha'
+          mode=os.environ.get('MODE','probe')
+          if mode not in {'probe','prepare_draft'}:
+              raise SystemExit(f'unsupported mode: {mode}')
+          release_status='completed' if mode == 'probe' else 'draft'
           creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
           api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
-          out={'package':package,'versionCode':version,'track':track,'commitAttempted':False,'trackUpdateAttempted':False,'validated':False}
+          out={
+              'package':package,
+              'versionCode':version,
+              'track':track,
+              'mode':mode,
+              'releaseStatus':release_status,
+              'commitAttempted':False,
+              'committed':False,
+              'validated':False,
+          }
           edit_id=None
           try:
-              edit_id=api.edits().insert(packageName=package,body={}).execute()['id']; out['editInsert']='PASS'
-              try:
-                  testers=api.edits().testers().get(packageName=package,editId=edit_id,track=track).execute()
-                  out['testersRead']='PASS'; out['googleGroups']=testers.get('googleGroups',[]) or []
-              except HttpError as exc:
-                  out['testersRead']='FAIL'; out['testersHttpStatus']=exc.resp.status; out['testersError']=str(exc)[:1200]
-              try:
-                  ca=api.edits().countryavailability().get(packageName=package,editId=edit_id,track=track).execute()
-                  out['countryAvailabilityRead']='PASS'; out['countryAvailability']={'syncWithProduction':ca.get('syncWithProduction'),'countryCount':len(ca.get('countries',[]) or []),'restOfWorld':ca.get('restOfWorld'),'countries':ca.get('countries',[])[:40]}
-              except HttpError as exc:
-                  out['countryAvailabilityRead']='FAIL'; out['countryAvailabilityHttpStatus']=exc.resp.status; out['countryAvailabilityError']=str(exc)[:1200]
-              out['trackUpdateAttempted']=True
-              api.edits().tracks().update(packageName=package,editId=edit_id,track=track,body={'releases':[{'name':'THF Fitness 51006 Closed Test Validation','versionCodes':[version],'status':'completed'}]}).execute()
+              edit_id=api.edits().insert(packageName=package,body={}).execute()['id']
+              out['editInsert']='PASS'
+              testers=api.edits().testers().get(packageName=package,editId=edit_id,track=track).execute()
+              out['googleGroups']=testers.get('googleGroups',[]) or []
+              ca=api.edits().countryavailability().get(packageName=package,editId=edit_id,track=track).execute()
+              out['countryAvailability']={
+                  'syncWithProduction':ca.get('syncWithProduction'),
+                  'countryCount':len(ca.get('countries',[]) or []),
+                  'restOfWorld':ca.get('restOfWorld'),
+                  'countries':ca.get('countries',[])[:40],
+              }
+              api.edits().tracks().update(
+                  packageName=package,
+                  editId=edit_id,
+                  track=track,
+                  body={'releases':[{
+                      'name':'THF Fitness 51006 Closed Test',
+                      'versionCodes':[version],
+                      'status':release_status,
+                  }]},
+              ).execute()
               out['trackUpdate']='PASS'
-              validation=api.edits().validate(packageName=package,editId=edit_id).execute(); out['validated']=True; out['validationId']=validation.get('id')
+              validation=api.edits().validate(packageName=package,editId=edit_id).execute()
+              out['validated']=True
+              out['validationId']=validation.get('id')
+              if mode == 'prepare_draft':
+                  out['commitAttempted']=True
+                  committed=api.edits().commit(packageName=package,editId=edit_id).execute()
+                  out['committed']=True
+                  out['committedEditId']=committed.get('id')
+                  edit_id=None
           except HttpError as exc:
-              out['httpStatus']=exc.resp.status; out['error']=str(exc)[:2000]
+              out['httpStatus']=exc.resp.status
+              out['error']=str(exc)[:2000]
+          except Exception as exc:
+              out['error']=str(exc)[:2000]
           finally:
               if edit_id:
                   try:
-                      api.edits().delete(packageName=package,editId=edit_id).execute(); out['editCleanup']='PASS'
+                      api.edits().delete(packageName=package,editId=edit_id).execute()
+                      out['editCleanup']='PASS'
                   except HttpError as exc:
-                      out['editCleanup']='ALREADY_DELETED' if exc.resp.status==400 and 'This Edit has been deleted' in str(exc) else 'FAIL'
-                      if out['editCleanup']=='FAIL': out['cleanupError']=str(exc)[:1000]
+                      if exc.resp.status == 400 and 'This Edit has been deleted' in str(exc):
+                          out['editCleanup']='ALREADY_DELETED'
+                      else:
+                          out['editCleanup']='FAIL'
+                          out['cleanupError']=str(exc)[:1000]
           print(json.dumps(out,indent=2))
-          with open('fitness-closed-test-probe.json','w') as fh: json.dump(out,fh,indent=2)
+          with open('fitness-closed-test-gate.json','w') as fh:
+              json.dump(out,fh,indent=2)
+          if mode == 'prepare_draft' and not out.get('committed'):
+              raise SystemExit(2)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: thf-fitness-closed-test-probe
-          path: fitness-closed-test-probe.json
+          name: thf-fitness-closed-test-gate
+          path: fitness-closed-test-gate.json
           if-no-files-found: error
           retention-days: 14
