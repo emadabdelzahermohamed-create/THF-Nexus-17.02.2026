@@ -85,7 +85,12 @@ class MotionSessionEngine(
         accumulator = null
         activeSessionId = null
         interrupted = false
-        if (hostResumed) gateway.stopActive() else gateway.stopAll()
+        if (hostResumed) {
+            gateway.stopActive()
+            gateway.startLowPower(this)
+        } else {
+            gateway.stopAll()
+        }
         return evidence
     }
 
