@@ -108,7 +108,11 @@ class MotionFeatureAccumulator {
         val openInterruption = interruptionStartedNanos?.let { (endedAtElapsedNanos - it).coerceAtLeast(0L) } ?: 0L
         val interruptions = (interruptionNanos + openInterruption).coerceAtMost(totalNanos)
         val activeDurationNanos = (totalNanos - interruptions).coerceAtLeast(0L)
-        val activeMotionMs = (activeMotionNanos.coerceAtMost(activeDurationNanos) / NANOS_PER_MS)
+        val finalActiveIntervalNanos = if (lastAccelWasActive && lastAccelTimestamp != Long.MIN_VALUE) {
+            val intervalEnd = minOf(endedAtElapsedNanos, interruptionStartedNanos ?: endedAtElapsedNanos)
+            (intervalEnd - lastAccelTimestamp).coerceAtLeast(0L)
+        } else 0L
+        val activeMotionMs = ((activeMotionNanos + finalActiveIntervalNanos).coerceAtMost(activeDurationNanos) / NANOS_PER_MS)
         val activeDurationMs = activeDurationNanos / NANOS_PER_MS
         val stationaryFraction = if (activeDurationMs <= 0L) 1.0 else (1.0 - activeMotionMs.toDouble() / activeDurationMs).coerceIn(0.0, 1.0)
         val motionFraction = if (activeDurationMs <= 0L) 0.0 else (activeMotionMs.toDouble() / activeDurationMs).coerceIn(0.0, 1.0)
