@@ -1,0 +1,88 @@
+name: THF Community Play Icon Sync
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  DRIVE_FILE_ID: 1YnRTB_CSUwd7q6myLKkG2Pi_3qJ_A3Vw
+  EXPECTED_SOURCE_SHA256: 3c90b53009d34e9c391bc8f977daf70195a041ba6c0098eca82709932b8734e9
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch exact Community source and extract explicit store icon
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check pillow google-api-python-client google-auth
+          mkdir -p evidence
+          TOKEN="$(gcloud auth print-access-token)"
+          code=$(curl -fsSLo evidence/community.zip -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "https://www.googleapis.com/drive/v3/files/$DRIVE_FILE_ID?alt=media&supportsAllDrives=true")
+          test "$code" = 200
+          echo "$EXPECTED_SOURCE_SHA256  evidence/community.zip" | sha256sum -c -
+          python - <<'PY'
+          import hashlib,io,json,zipfile
+          from pathlib import Path
+          from PIL import Image
+          zpath=Path('evidence/community.zip')
+          with zipfile.ZipFile(zpath) as z:
+            names=[n for n in z.namelist() if n.endswith('/android/store-assets/icon-512.png')]
+            if len(names)!=1: raise SystemExit(f'expected one explicit icon-512.png, got {names}')
+            raw=z.read(names[0]); im=Image.open(io.BytesIO(raw)).convert('RGBA')
+            if im.size != (512,512): raise SystemExit(f'unexpected store icon size {im.size}')
+            im.save('evidence/community-icon-512.png','PNG',optimize=True)
+            out={'sourceSha256':hashlib.sha256(zpath.read_bytes()).hexdigest(),'sourcePath':names[0],'sourceIconSha256':hashlib.sha256(raw).hexdigest(),'outputSha256':hashlib.sha256(Path('evidence/community-icon-512.png').read_bytes()).hexdigest(),'size':[512,512]}
+            Path('evidence/source.json').write_text(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          PY
+      - name: Upload Community icon to both listings and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          package='com.topherofit.thf.echo'; creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher']); api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          edit=api.edits().insert(packageName=package,body={}).execute()['id']; out={'package':package,'committed':False,'languages':{}}
+          try:
+            for lang in ['ar','en-US']:
+              try: api.edits().images().deleteall(packageName=package,editId=edit,language=lang,imageType='icon').execute()
+              except Exception: pass
+              api.edits().images().upload(packageName=package,editId=edit,language=lang,imageType='icon',media_body=MediaFileUpload('evidence/community-icon-512.png',mimetype='image/png',resumable=False)).execute()
+              xs=api.edits().images().list(packageName=package,editId=edit,language=lang,imageType='icon').execute().get('images',[]) or []
+              if len(xs)!=1: raise RuntimeError(f'{lang}: icon count {len(xs)}')
+              out['languages'][lang]={'count':1,'sha1':xs[0].get('sha1')}
+            v=api.edits().validate(packageName=package,editId=edit).execute(); out['validationId']=v.get('id'); c=api.edits().commit(packageName=package,editId=edit).execute(); out['committed']=True; out['committedEditId']=c.get('id'); edit=None
+          finally:
+            if edit:
+              try: api.edits().delete(packageName=package,editId=edit).execute()
+              except Exception: pass
+          open('evidence/upload.json','w').write(json.dumps(out,indent=2)); print(json.dumps(out,indent=2))
+          if not out['committed']: raise SystemExit(4)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-community-play-icon-sync
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
