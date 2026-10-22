@@ -1,0 +1,139 @@
+name: THF Current Cycle Play Readiness Probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe Play records, listings, tracks, testers, countries and store images
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check google-api-python-client google-auth
+          python - <<'PY'
+          import json
+          import google.auth
+          from googleapiclient.discovery import build
+          from googleapiclient.errors import HttpError
+
+          apps = [
+              ('fitness','Top Hero Fit','com.topherofit.thf.pulse'),
+              ('ruinsciv','RuinsCiv','com.topherofit.thf.terra'),
+              ('endciv','EndCiv','com.topherofit.thf.rift'),
+              ('core','THF Hub','com.topherofit.thf.core'),
+              ('community','THF Community','com.topherofit.thf.echo'),
+          ]
+          image_types = ['icon','featureGraphic','phoneScreenshots','sevenInchScreenshots','tenInchScreenshots','tvScreenshots','wearScreenshots']
+          testing_tracks = ['internal','alpha','beta']
+          country_tracks = ['alpha','beta','production']
+          creds,_ = google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
+          api = build('androidpublisher','v3',credentials=creds,cache_discovery=False)
+          out = {'mode':'read_only','mutationCommitted':False,'apps':[]}
+
+          def err(exc):
+              status = getattr(getattr(exc,'resp',None),'status',None)
+              return {'httpStatus':status,'error':str(exc)[:1600]}
+
+          for key,expected_name,package in apps:
+              item={'key':key,'expectedPublicName':expected_name,'package':package,'recordAccessible':False,'editCleanup':'NOT_STARTED'}
+              edit_id=None
+              try:
+                  edit_id=api.edits().insert(packageName=package,body={}).execute()['id']
+                  item['recordAccessible']=True
+                  item['editInsert']='PASS'
+                  try:
+                      item['details']=api.edits().details().get(packageName=package,editId=edit_id).execute()
+                      item['detailsRead']='PASS'
+                  except Exception as exc:
+                      item['detailsRead']='FAIL'; item['detailsError']=err(exc)
+                  try:
+                      listings=api.edits().listings().list(packageName=package,editId=edit_id).execute().get('listings',[]) or []
+                      item['listingsRead']='PASS'
+                      item['listings']=[{
+                          'language':x.get('language'),
+                          'title':x.get('title'),
+                          'shortDescription':x.get('shortDescription'),
+                          'fullDescriptionLength':len(x.get('fullDescription') or ''),
+                          'hasFullDescription':bool((x.get('fullDescription') or '').strip()),
+                      } for x in listings]
+                  except Exception as exc:
+                      listings=[]; item['listingsRead']='FAIL'; item['listingsError']=err(exc)
+                  try:
+                      tracks=api.edits().tracks().list(packageName=package,editId=edit_id).execute().get('tracks',[]) or []
+                      item['tracksRead']='PASS'
+                      item['tracks']=[{'track':t.get('track'),'releases':[{
+                          'name':r.get('name'),'status':r.get('status'),'versionCodes':[str(v) for v in (r.get('versionCodes') or [])],
+                          'userFraction':r.get('userFraction')
+                      } for r in (t.get('releases') or [])]} for t in tracks if t.get('releases')]
+                  except Exception as exc:
+                      item['tracksRead']='FAIL'; item['tracksError']=err(exc)
+                  item['testers']={}
+                  for track in testing_tracks:
+                      try:
+                          t=api.edits().testers().get(packageName=package,editId=edit_id,track=track).execute()
+                          item['testers'][track]={'read':'PASS','googleGroups':t.get('googleGroups',[]) or []}
+                      except Exception as exc:
+                          item['testers'][track]={'read':'FAIL',**err(exc)}
+                  item['countryAvailability']={}
+                  for track in country_tracks:
+                      try:
+                          ca=api.edits().countryavailability().get(packageName=package,editId=edit_id,track=track).execute()
+                          countries=ca.get('countries',[]) or []
+                          item['countryAvailability'][track]={
+                              'read':'PASS','syncWithProduction':ca.get('syncWithProduction'),
+                              'countryCount':len(countries),'countries':countries[:30]
+                          }
+                      except Exception as exc:
+                          item['countryAvailability'][track]={'read':'FAIL',**err(exc)}
+                  item['images']={}
+                  langs=sorted({x.get('language') for x in listings if x.get('language')})
+                  for lang in langs:
+                      item['images'][lang]={}
+                      for typ in image_types:
+                          try:
+                              imgs=api.edits().images().list(packageName=package,editId=edit_id,language=lang,imageType=typ).execute().get('images',[]) or []
+                              item['images'][lang][typ]={'read':'PASS','count':len(imgs),'sha1s':[x.get('sha1') for x in imgs[:10]]}
+                          except Exception as exc:
+                              item['images'][lang][typ]={'read':'FAIL',**err(exc)}
+              except Exception as exc:
+                  item['recordError']=err(exc)
+              finally:
+                  if edit_id:
+                      try:
+                          api.edits().delete(packageName=package,editId=edit_id).execute()
+                          item['editCleanup']='PASS'
+                      except HttpError as exc:
+                          if exc.resp.status==400 and 'This Edit has been deleted' in str(exc):
+                              item['editCleanup']='ALREADY_DELETED'
+                          else:
+                              item['editCleanup']='FAIL'; item['cleanupError']=err(exc)
+                  out['apps'].append(item)
+          print(json.dumps(out,indent=2,ensure_ascii=False))
+          with open('thf-current-cycle-play-readiness.json','w') as fh:
+              json.dump(out,fh,indent=2,ensure_ascii=False)
+          if not all(x.get('editCleanup') in ('PASS','ALREADY_DELETED','NOT_STARTED') for x in out['apps']):
+              raise SystemExit(3)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thf-current-cycle-play-readiness
+          path: thf-current-cycle-play-readiness.json
+          if-no-files-found: error
+          retention-days: 14
