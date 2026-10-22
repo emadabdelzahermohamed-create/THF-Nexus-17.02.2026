@@ -32,6 +32,7 @@ data class HealthRecordEvidence(
     val deviceManufacturer: String?,
     val deviceModel: String?,
     val verifiedForRewards: Boolean,
+    val verificationReason: String,
 )
 
 data class HealthSnapshot(
@@ -155,6 +156,16 @@ class HealthConnectRepository(private val context: Context) {
         val origin = metadata.dataOrigin.packageName
         val trustedMethod = method == Metadata.RECORDING_METHOD_ACTIVELY_RECORDED ||
             method == Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED
+        // Records written by this app are useful for interoperability, but must not
+        // validate their own reward claim. Local sensor evidence is verified separately.
+        val externalOrigin = origin.isNotBlank() && origin != context.packageName
+        val verified = trustedMethod && externalOrigin
+        val reason = when {
+            origin.isBlank() -> "UNKNOWN_ORIGIN"
+            origin == context.packageName -> "SELF_AUTHORED"
+            !trustedMethod -> "MANUAL_OR_UNKNOWN_METHOD"
+            else -> "EXTERNAL_SENSOR_RECORDED"
+        }
         return HealthRecordEvidence(
             recordType = this::class.simpleName ?: "Record",
             dataOrigin = origin,
@@ -162,7 +173,8 @@ class HealthConnectRepository(private val context: Context) {
             deviceType = device?.type,
             deviceManufacturer = device?.manufacturer,
             deviceModel = device?.model,
-            verifiedForRewards = origin.isNotBlank() && trustedMethod,
+            verifiedForRewards = verified,
+            verificationReason = reason,
         )
     }
 
