@@ -40,10 +40,7 @@ data class MotionEvidence(
     val plausibilityReasons: List<String>,
     val evidenceDigest: String,
 ) {
-    /**
-     * Cross-check cumulative Step Counter evidence against Step Detector events whenever both
-     * sensors are available. Devices exposing only one Android step sensor remain supported.
-     */
+    /** Cross-check cumulative Step Counter against Step Detector when both are available. */
     val hasConsistentHardwareStepEvidence: Boolean
         get() {
             if (stepDelta < 0 || stepDetectorCount < 0) return false
@@ -57,41 +54,38 @@ data class MotionEvidence(
                 (capabilities.stepDetector && stepDetectorCount > 0)
         }
 
-    /**
-     * Require a minimum evidence window before issuing locally verified reward credit.
-     * Very short bursts remain useful for live activity detection but cannot earn rewards.
-     */
+    /** Short bursts may drive live UI/activity detection but cannot earn verified rewards. */
     val hasSufficientRewardEvidenceWindow: Boolean
         get() = elapsedDurationMs >= 10_000L &&
             activeDurationMs >= 5_000L &&
             activeMotionMs >= 3_000L &&
             interruptionMs.coerceAtLeast(0L) <= elapsedDurationMs / 2
 
-    /**
-     * Require the motion axes actually available on the device to participate in verification.
-     * Accelerometer evidence is mandatory. When a gyroscope exists, reward verification also
-     * requires gyroscope samples, preventing a step-only/injected stream from bypassing the
-     * richer motion evidence available on capable phones. Devices without a gyro are not
-     * penalized and ordinary local tracking is unaffected.
-     */
+    /** Require every motion axis available on the phone to participate in reward verification. */
     val hasAvailableMotionAxisEvidence: Boolean
         get() = capabilities.accelerometer &&
             accelerometerSampleCount > 0 &&
             (!capabilities.gyroscope || gyroscopeSampleCount > 0)
 
     /**
-     * Conservative local reward gate. Manual/imported values alone cannot satisfy it. Server
-     * and high-value actions may impose stronger checks such as Play Integrity independently.
+     * Machine-readable rejection reasons make QA/reward decisions auditable without trusting a
+     * Connected label or manual input. Empty means the local sensor evidence gate passed.
      */
+    val rewardVerificationRejectionReasons: List<String>
+        get() = buildList {
+            if (!plausibleForRewards) add("IMPLAUSIBLE_MOTION")
+            if (!capabilities.activityRecognitionPermission) add("ACTIVITY_RECOGNITION_MISSING")
+            if (!capabilities.stepCounter && !capabilities.stepDetector) add("STEP_SENSOR_UNAVAILABLE")
+            if (!hasConsistentHardwareStepEvidence) add("STEP_EVIDENCE_INCONSISTENT")
+            if (!hasSufficientRewardEvidenceWindow) add("EVIDENCE_WINDOW_INSUFFICIENT")
+            if (!hasAvailableMotionAxisEvidence) add("MOTION_AXIS_EVIDENCE_MISSING")
+            if (localConfidence < 0.60) add("LOCAL_CONFIDENCE_LOW")
+            if (activityConfidence < 0.60) add("ACTIVITY_CONFIDENCE_LOW")
+            if (detectedActivity == DetectedActivity.STATIONARY) add("ACTIVITY_STATIONARY")
+            if (detectedActivity == DetectedActivity.UNKNOWN) add("ACTIVITY_UNKNOWN")
+        }
+
+    /** Manual/imported values alone cannot satisfy this conservative local reward gate. */
     val sensorVerifiedForRewards: Boolean
-        get() = plausibleForRewards &&
-            capabilities.activityRecognitionPermission &&
-            (capabilities.stepCounter || capabilities.stepDetector) &&
-            localConfidence >= 0.60 &&
-            activityConfidence >= 0.60 &&
-            hasConsistentHardwareStepEvidence &&
-            hasSufficientRewardEvidenceWindow &&
-            hasAvailableMotionAxisEvidence &&
-            detectedActivity != DetectedActivity.STATIONARY &&
-            detectedActivity != DetectedActivity.UNKNOWN
+        get() = rewardVerificationRejectionReasons.isEmpty()
 }
