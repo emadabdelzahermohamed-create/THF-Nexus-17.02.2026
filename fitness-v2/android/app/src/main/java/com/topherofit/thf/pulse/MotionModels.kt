@@ -49,7 +49,25 @@ data class MotionEvidence(
      * Require the hardware step capability as well as observed step evidence. This prevents
      * imported/manual step values from becoming reward-verifying evidence on devices where
      * no Step Counter/Detector was actually available to the session.
+     *
+     * Cross-check cumulative Step Counter evidence against Step Detector events whenever both
+     * sensors are available. Requiring both signals for reward credit makes synthetic/imported
+     * step injection materially harder while preserving tracking on devices that expose only
+     * one of the two Android step sensors.
      */
+    val hasConsistentHardwareStepEvidence: Boolean
+        get() {
+            if (stepDelta < 0 || stepDetectorCount < 0) return false
+            if (capabilities.stepCounter && capabilities.stepDetector) {
+                if (stepDelta == 0 || stepDetectorCount == 0) return false
+                val larger = maxOf(stepDelta, stepDetectorCount).toDouble()
+                val difference = kotlin.math.abs(stepDelta - stepDetectorCount).toDouble()
+                return difference / larger <= 0.35
+            }
+            return (capabilities.stepCounter && stepDelta > 0) ||
+                (capabilities.stepDetector && stepDetectorCount > 0)
+        }
+
     val sensorVerifiedForRewards: Boolean
         get() = plausibleForRewards &&
             capabilities.activityRecognitionPermission &&
@@ -57,7 +75,7 @@ data class MotionEvidence(
             capabilities.accelerometer &&
             localConfidence >= 0.60 &&
             activityConfidence >= 0.60 &&
-            (stepDelta > 0 || stepDetectorCount > 0) &&
+            hasConsistentHardwareStepEvidence &&
             accelerometerSampleCount > 0 &&
             detectedActivity != DetectedActivity.STATIONARY &&
             detectedActivity != DetectedActivity.UNKNOWN
