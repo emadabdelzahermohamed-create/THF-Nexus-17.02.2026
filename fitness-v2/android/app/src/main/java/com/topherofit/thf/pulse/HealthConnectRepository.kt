@@ -46,6 +46,8 @@ data class HealthSnapshot(
     val verifiedRecords: Int,
     val excludedManualOrUnknownRecords: Int,
     val recordEvidence: List<HealthRecordEvidence>,
+    val dataReadSuccessfully: Boolean,
+    val hasVerifiedRewardData: Boolean,
 )
 
 data class WorkoutForHealth(
@@ -109,6 +111,7 @@ class HealthConnectRepository(private val context: Context) {
             .mapTo(mutableSetOf()) { (record, _) -> record.metadata.id }
 
         val origins = evidence.map { it.dataOrigin }.filter { it.isNotBlank() }.toSet()
+        val verifiedCount = evidence.count { it.verifiedForRewards }
 
         return HealthSnapshot(
             steps = steps.filter { it.metadata.id in verifiedIds }.sumOf { it.count },
@@ -118,9 +121,14 @@ class HealthConnectRepository(private val context: Context) {
             origins = origins,
             latestSessionEnd = sessions.filter { it.metadata.id in verifiedIds }.maxOfOrNull { it.endTime },
             recordsRead = allRecords.size,
-            verifiedRecords = evidence.count { it.verifiedForRewards },
-            excludedManualOrUnknownRecords = evidence.count { !it.verifiedForRewards },
+            verifiedRecords = verifiedCount,
+            excludedManualOrUnknownRecords = evidence.size - verifiedCount,
             recordEvidence = evidence,
+            // Reaching this return means all four record-level queries completed successfully.
+            // An empty provider is still a successful read and must not be confused with
+            // provider availability or permission grant state.
+            dataReadSuccessfully = true,
+            hasVerifiedRewardData = verifiedCount > 0,
         )
     }
 
@@ -156,8 +164,6 @@ class HealthConnectRepository(private val context: Context) {
         val origin = metadata.dataOrigin.packageName
         val trustedMethod = method == Metadata.RECORDING_METHOD_ACTIVELY_RECORDED ||
             method == Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED
-        // Records written by this app are useful for interoperability, but must not
-        // validate their own reward claim. Local sensor evidence is verified separately.
         val externalOrigin = origin.isNotBlank() && origin != context.packageName
         val verified = trustedMethod && externalOrigin
         val reason = when {
