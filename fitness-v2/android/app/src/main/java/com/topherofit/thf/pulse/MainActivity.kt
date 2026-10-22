@@ -393,6 +393,8 @@ class MainActivity : ComponentActivity() {
         .put("localConfidence", evidence.localConfidence)
         .put("detectedActivity", evidence.detectedActivity.name)
         .put("activityConfidence", evidence.activityConfidence)
+        .put("plausibleForRewards", evidence.plausibleForRewards)
+        .put("plausibilityReasons", org.json.JSONArray(evidence.plausibilityReasons))
         .put("evidenceDigest", evidence.evidenceDigest)
         .put("capabilities", motionCapabilitiesJson(evidence.capabilities))
 

@@ -36,5 +36,7 @@ data class MotionEvidence(
     val localConfidence: Double,
     val detectedActivity: DetectedActivity,
     val activityConfidence: Double,
+    val plausibleForRewards: Boolean,
+    val plausibilityReasons: List<String>,
     val evidenceDigest: String,
 )

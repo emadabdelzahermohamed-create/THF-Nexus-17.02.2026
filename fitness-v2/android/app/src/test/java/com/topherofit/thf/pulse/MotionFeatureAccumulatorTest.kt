@@ -130,4 +130,14 @@ class MotionFeatureAccumulatorTest {
         assertTrue(e.activityConfidence > 0.70)
     }
 
+    @Test fun implausibleStepBurstIsExcludedFromRewardEvidence() {
+        val a = MotionFeatureAccumulator()
+        a.start("burst-cheat-001", 1_000L, 1_000_000_000L, caps)
+        a.acceptStepCounter(100f, 1_100_000_000L)
+        a.acceptStepCounter(600f, 2_100_000_000L)
+        val e = a.snapshot(11_000L, 11_000_000_000L)
+        assertTrue(!e.plausibleForRewards)
+        assertTrue("STEP_COUNTER_RATE_IMPLAUSIBLE" in e.plausibilityReasons)
+    }
+
 }

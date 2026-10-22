@@ -130,6 +130,17 @@ class MotionFeatureAccumulator {
             motionFraction >= 0.15 || inertialSignal >= 0.25 -> DetectedActivity.ACTIVE
             else -> DetectedActivity.UNKNOWN
         }
+        val plausibleStepCeiling = (activeDurationMs / 60_000.0 * 240.0 + 4.0).toInt().coerceAtLeast(4)
+        val plausibilityReasons = buildList {
+            if (stepDelta > plausibleStepCeiling) add("STEP_COUNTER_RATE_IMPLAUSIBLE")
+            if (stepDetectorCount > plausibleStepCeiling) add("STEP_DETECTOR_RATE_IMPLAUSIBLE")
+            if (stepDelta > 20 && stepDetectorCount > 0) {
+                val ratio = max(stepDelta, stepDetectorCount).toDouble() / max(1, minOf(stepDelta, stepDetectorCount))
+                if (ratio > 3.0) add("STEP_SOURCES_DISAGREE")
+            }
+            if (counterResetCount > 1) add("STEP_COUNTER_UNSTABLE")
+        }
+        val plausibleForRewards = plausibilityReasons.isEmpty()
         val sourceAgreement = listOf(stepSignal, detectorSignal, motionFraction, inertialSignal)
             .count { it >= 0.08 } / 4.0
         val activityConfidence = when (activity) {
@@ -143,7 +154,7 @@ class MotionFeatureAccumulator {
             stepDelta, stepDetectorCount, counterResetCount, accelStats.count, gyroStats.count,
             "%.6f".format(java.util.Locale.ROOT, accelStats.mean), "%.6f".format(java.util.Locale.ROOT, accelStats.variance()),
             "%.6f".format(java.util.Locale.ROOT, gyroStats.mean), "%.6f".format(java.util.Locale.ROOT, gyroStats.variance()),
-            activeMotionMs, interruptions / NANOS_PER_MS, activity.name,
+            activeMotionMs, interruptions / NANOS_PER_MS, activity.name, plausibleForRewards, plausibilityReasons.joinToString(","),
             "%.6f".format(java.util.Locale.ROOT, activityConfidence)
         ).joinToString("|")
 
@@ -171,6 +182,8 @@ class MotionFeatureAccumulator {
             localConfidence = confidence,
             detectedActivity = activity,
             activityConfidence = activityConfidence,
+            plausibleForRewards = plausibleForRewards,
+            plausibilityReasons = plausibilityReasons,
             evidenceDigest = sha256(canonical),
         )
     }
