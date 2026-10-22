@@ -496,6 +496,26 @@ class MainActivity : ComponentActivity() {
                             .put("exerciseSessions", snapshot.exerciseSessions)
                             .put("origins", JSONArray(snapshot.origins.sorted()))
                             .put("latestSessionEnd", snapshot.latestSessionEnd?.toString() ?: "")
+                            .put("recordsRead", snapshot.recordsRead)
+                            .put("verifiedRecords", snapshot.verifiedRecords)
+                            .put("excludedManualOrUnknownRecords", snapshot.excludedManualOrUnknownRecords)
+                            .put("duplicateRecordsExcluded", snapshot.duplicateRecordsExcluded)
+                            .put("dataReadSuccessfully", snapshot.dataReadSuccessfully)
+                            .put("hasVerifiedRewardData", snapshot.hasVerifiedRewardData)
+                            .put("recordEvidence", JSONArray().apply {
+                                snapshot.recordEvidence.forEach { evidence ->
+                                    put(JSONObject()
+                                        .put("recordId", evidence.recordId)
+                                        .put("recordType", evidence.recordType)
+                                        .put("dataOrigin", evidence.dataOrigin)
+                                        .put("recordingMethod", evidence.recordingMethod)
+                                        .put("deviceType", evidence.deviceType ?: JSONObject.NULL)
+                                        .put("deviceManufacturer", evidence.deviceManufacturer ?: "")
+                                        .put("deviceModel", evidence.deviceModel ?: "")
+                                        .put("verifiedForRewards", evidence.verifiedForRewards)
+                                        .put("verificationReason", evidence.verificationReason))
+                                }
+                            })
                             .put("lastSync", now),
                     )
                 }
