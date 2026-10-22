@@ -45,9 +45,16 @@ data class MotionEvidence(
      * include a hardware step signal, and contain accelerometer evidence. Manual entry alone
      * can therefore never satisfy this gate. Server/high-value actions may impose stronger
      * checks (for example Play Integrity) without blocking ordinary local tracking.
+     *
+     * Require the hardware step capability as well as observed step evidence. This prevents
+     * imported/manual step values from becoming reward-verifying evidence on devices where
+     * no Step Counter/Detector was actually available to the session.
      */
     val sensorVerifiedForRewards: Boolean
         get() = plausibleForRewards &&
+            capabilities.activityRecognitionPermission &&
+            (capabilities.stepCounter || capabilities.stepDetector) &&
+            capabilities.accelerometer &&
             localConfidence >= 0.60 &&
             activityConfidence >= 0.60 &&
             (stepDelta > 0 || stepDetectorCount > 0) &&
