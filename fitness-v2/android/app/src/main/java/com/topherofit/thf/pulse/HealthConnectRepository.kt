@@ -196,11 +196,16 @@ class HealthConnectRepository(private val context: Context) {
         val trustedMethod = method == Metadata.RECORDING_METHOD_ACTIVELY_RECORDED ||
             method == Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED
         val externalOrigin = origin.isNotBlank() && origin != context.packageName
-        val verified = trustedMethod && externalOrigin
+        val hasDeviceMetadata = device != null && device.type != Device.TYPE_UNKNOWN
+        // Reward verification is intentionally stricter than Health Connect acceptance:
+        // a trusted recording method without device provenance is useful for history,
+        // but is not sufficient evidence for a verified reward.
+        val verified = trustedMethod && externalOrigin && hasDeviceMetadata
         val reason = when {
             origin.isBlank() -> "UNKNOWN_ORIGIN"
             origin == context.packageName -> "SELF_AUTHORED"
             !trustedMethod -> "MANUAL_OR_UNKNOWN_METHOD"
+            !hasDeviceMetadata -> "DEVICE_PROVENANCE_MISSING"
             else -> "EXTERNAL_SENSOR_RECORDED"
         }
         return HealthRecordEvidence(
