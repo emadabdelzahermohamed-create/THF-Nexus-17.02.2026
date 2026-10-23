@@ -1,0 +1,76 @@
+{
+  "schema": "thf-delayed-delivery/v1",
+  "status": "DRAFT_NOT_A_LIVE_OFFER",
+  "date": "2026-10-23",
+  "brand": "Top Hero Fit",
+  "contact": "TopHeroFit@gmail.com",
+  "purpose": "Compare a disclosed purchase of existing THF with later delivery against buyer-paid immediate atomic settlement.",
+  "mint": "HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv",
+  "decimals": 8,
+  "routes": [
+    {
+      "name": "Buyer-paid immediate atomic settlement",
+      "priority": 1,
+      "upfront_owner_SOL": 0,
+      "delivery": "same transaction as payment",
+      "fee_payer": "agreed buyer/sponsor",
+      "buyer_found": false
+    },
+    {
+      "name": "Existing-token purchase with delayed delivery",
+      "priority": 2,
+      "mechanism": "Bilateral documented payment now / delivery of specified existing THF later; no new mint.",
+      "upfront_owner_SOL": 0,
+      "cost_note": "Buyer can pay network cost to send SOL. Later delivery/refund costs must be budgeted from unrestricted proceeds or sponsored. A receipt/contract does not remove these costs.",
+      "custody_risk": "Direct receipt puts buyer at issuer delivery/default risk; not trustless escrow or automatically refundable.",
+      "terms": {
+        "quote_asset_preference": "native SOL for fee bootstrap; USDC only after token-account costs resolved",
+        "minimum_ticket_USDC_candidate": "25",
+        "minimum_ticket_is_live": false,
+        "THF_price": null,
+        "THF_quantity": null,
+        "maximum_aggregate_THF_candidate": "25000000",
+        "payment_recipient": null,
+        "delivery_datetime_UTC": null,
+        "longstop_datetime_UTC": null,
+        "refund_trigger": null,
+        "refund_deadline_UTC": null,
+        "refund_reserve": null,
+        "governing_terms": null,
+        "eligible_audience": null,
+        "uses_of_proceeds": "disclosed development/operations, not restricted LP funds"
+      },
+      "inventory_policy": "Reserve exact units once quote agreed; reduce remaining capacity across all routes. Do not double-sell. Existing holder balance is not a vesting lock.",
+      "execution_enabled": false
+    },
+    {
+      "name": "Onchain presale with later claims",
+      "priority": 3,
+      "implementation_candidate": "Meteora Presale Vault",
+      "source": "https://docs.meteora.ag/developer-guides/presale-vault",
+      "condition": "Exact configuration, buyer rights, refund lifecycle, vesting and third-party setup fee/rent payer verified before deployment.",
+      "implemented": false
+    }
+  ],
+  "buyer_disclosures": [
+    "THF already exists; supply10bn and two treasury-reported wallets held all observed supply at last verification.",
+    "No LP or guaranteed secondary market, profit, redemption or future listing.",
+    "Learning/gaming are roadmap; fitness is internal testing.",
+    "Delayed delivery and refunds depend on exact agreed terms; operating spending may impair refunds unless a reserve is funded."
+  ],
+  "cash_control": "Do not promise unconditional refund while spending the same cash on development. All-or-nothing refundable deposits remain reserved until the success condition. Nonrefundable/risk-bearing funding must be explicitly agreed and eligible, never disguised as guaranteed refundable reservation.",
+  "launch_gates": [
+    "Identify actual eligible buyer and obtain nonbinding indication",
+    "Set exact token price/quantity, payment asset and cap, delivery/longstop dates, fees, use of proceeds and failure/refund handling",
+    "Review applicable distribution requirements and any required private owner diligence",
+    "Verify exact seller control and inventory reservation",
+    "Owner authorizes concrete payment/sale terms; any token transfer is owner signed",
+    "No Buy button, deposit request or collection address until terms and receipt/reconciliation flow are ready"
+  ],
+  "evidence": {
+    "money_collected": "0",
+    "tokens_sold": "0",
+    "tokens_transferred": "0",
+    "buyer_commitments": 0
+  }
+}
