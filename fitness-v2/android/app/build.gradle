@@ -24,6 +24,7 @@ android {
         buildConfigField 'String', 'THF_ACCOUNT_URL', '"' + accountUrl.replace('\\','\\\\').replace('"','\\"') + '"'
         buildConfigField 'String', 'THF_PLAY_LICENSE_KEY', '"' + playLicenseKey.replace('\\','\\\\').replace('"','\\"') + '"'
         buildConfigField 'String', 'THF_APP_SLUG', '"pulse"'
+        buildConfigField 'String', 'THF_RELEASE_CANDIDATE', '"sensor-first-51008"'
     }
     buildFeatures { buildConfig true }
     compileOptions {
