@@ -1,8 +1,12 @@
 name: THF Apps V3 Exact Ingest Build
 on:
   push:
-    branches: [main]
-    paths: ['.github/workflows/thf-apps-v3-ingest-build.yml']
+    branches:
+      - main
+      - 'feature/fitness-*'
+      - 'fitness/*'
+    paths:
+      - '.github/workflows/thf-apps-v3-ingest-build.yml'
   workflow_dispatch:
 permissions:
   contents: read
