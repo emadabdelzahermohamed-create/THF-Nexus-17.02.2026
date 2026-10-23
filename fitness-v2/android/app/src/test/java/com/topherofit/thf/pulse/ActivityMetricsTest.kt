@@ -1,6 +1,7 @@
 package com.topherofit.thf.pulse
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -22,7 +23,14 @@ class ActivityMetricsTest {
     @Test
     fun paceAndSpeedAreDerivedFromDistanceAndDuration() {
         assertEquals(10.0, ActivityMetrics.averageSpeedKph(distanceMetres = 5000.0, durationMs = 1_800_000), 0.01)
-        assertEquals(6.0, ActivityMetrics.paceMinutesPerKm(distanceMetres = 5000.0, durationMs = 1_800_000), 0.01)
+        assertEquals(6.0, requireNotNull(ActivityMetrics.paceMinutesPerKm(distanceMetres = 5000.0, durationMs = 1_800_000)), 0.01)
+    }
+
+    @Test
+    fun paceIsUnavailableUntilThereIsUsableDistanceAndDuration() {
+        assertNull(ActivityMetrics.paceMinutesPerKm(0.0, 60_000))
+        assertNull(ActivityMetrics.paceMinutesPerKm(9.0, 60_000))
+        assertNull(ActivityMetrics.paceMinutesPerKm(100.0, 0))
     }
 
     @Test
