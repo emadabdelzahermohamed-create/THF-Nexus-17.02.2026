@@ -99,6 +99,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        dispatch("thf:notification-permission", JSONObject().put("granted", granted))
+    }
+
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { result ->
@@ -223,6 +229,14 @@ class MainActivity : ComponentActivity() {
         checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     private fun startPendingActivityIfReady() {
         val pending = pendingActivityStart ?: return
         if (!hasLocationPermission()) return
@@ -235,12 +249,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startActivityTracking(mode: ActivityMode, weightKg: Double) {
+        requestNotificationPermissionIfNeeded()
         if (::motionEngine.isInitialized) motionEngine.onHostPause()
         ActivityTrackingService.startActivity(this, mode, weightKg)
         dispatch("thf:activity-started", activitySnapshotJson(ActivityTrackingService.activitySnapshot()))
     }
 
     private fun startWorkoutTracking(sessionId: String, profile: MotionSensorProfile) {
+        requestNotificationPermissionIfNeeded()
         if (::motionEngine.isInitialized) motionEngine.onHostPause()
         ActivityTrackingService.startWorkout(this, sessionId, profile)
         dispatch(
