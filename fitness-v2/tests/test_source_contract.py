@@ -97,6 +97,16 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("--require-motion-sensors", runner_text)
         self.assertIn("--require-health-connect", runner_text)
 
+    def test_phone_qa_can_validate_play_installed_candidate_without_reinstall(self):
+        qa = (ROOT / "fitness-v2" / "scripts" / "fitness_phone_qa.sh").read_text()
+        self.assertIn("--skip-install", qa)
+        self.assertIn("--expected-version-code", qa)
+        self.assertIn("SKIP_INSTALL=false", qa)
+        self.assertIn("EXPECTED_VERSION_CODE=", qa)
+        self.assertIn("if ! $SKIP_INSTALL; then", qa)
+        self.assertIn("INSTALLED_VERSION_CODE=", qa)
+        self.assertIn("installed versionCode", qa)
+
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
         health = {

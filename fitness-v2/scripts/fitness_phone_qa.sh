@@ -6,6 +6,7 @@ usage() {
 Usage: fitness_phone_qa.sh --apk PATH [--serial SERIAL] [--expected-sha256 HEX]
        [--adb-connect PRIVATE_IP:PORT] [--record-seconds N] [--monkey-events N]
        [--instrumentation PACKAGE/RUNNER] [--require-health-connect] [--require-motion-sensors]
+       [--skip-install] [--expected-version-code N]
 
 Runs a fail-closed physical-phone QA evidence pass for Top Hero Fit Fitness V2.
 The phone must already be authorized in `adb devices`; this script never pairs a device.
@@ -16,6 +17,8 @@ APK=""
 SERIAL=""
 ADB_CONNECT=""
 EXPECTED_SHA=""
+EXPECTED_VERSION_CODE=""
+SKIP_INSTALL=false
 RECORD_SECONDS=30
 MONKEY_EVENTS=50
 INSTRUMENTATION=""
@@ -31,6 +34,8 @@ while (($#)); do
     --serial) SERIAL="${2:?missing --serial value}"; shift 2 ;;
     --adb-connect) ADB_CONNECT="${2:?missing --adb-connect value}"; shift 2 ;;
     --expected-sha256) EXPECTED_SHA="${2:?missing --expected-sha256 value}"; shift 2 ;;
+    --expected-version-code) EXPECTED_VERSION_CODE="${2:?missing --expected-version-code value}"; shift 2 ;;
+    --skip-install) SKIP_INSTALL=true; shift ;;
     --record-seconds) RECORD_SECONDS="${2:?missing --record-seconds value}"; shift 2 ;;
     --monkey-events) MONKEY_EVENTS="${2:?missing --monkey-events value}"; shift 2 ;;
     --instrumentation) INSTRUMENTATION="${2:?missing --instrumentation value}"; shift 2 ;;
@@ -48,6 +53,9 @@ done
 [[ "$MONKEY_EVENTS" =~ ^[0-9]+$ ]] && (( MONKEY_EVENTS >= 0 && MONKEY_EVENTS <= 500 )) || {
   echo "--monkey-events must be 0..500" >&2; exit 4;
 }
+if [[ -n "$EXPECTED_VERSION_CODE" && ! "$EXPECTED_VERSION_CODE" =~ ^[0-9]+$ ]]; then
+  echo "--expected-version-code must be numeric" >&2; exit 4
+fi
 for cmd in adb sha256sum unzip awk sed grep date; do
   command -v "$cmd" >/dev/null || { echo "Missing command: $cmd" >&2; exit 5; }
 done
@@ -119,7 +127,11 @@ else
 fi
 
 "${ADB[@]}" logcat -c
-"${ADB[@]}" install -r "$APK" | tee "$OUT/install.txt"
+if ! $SKIP_INSTALL; then
+  "${ADB[@]}" install -r "$APK" | tee "$OUT/install.txt"
+else
+  echo "SKIP_INSTALL=true; validating the Play-installed package in place" | tee "$OUT/install.txt"
+fi
 "${ADB[@]}" shell pm path "$PACKAGE" | tee "$OUT/installed_path.txt"
 grep -q '^package:' "$OUT/installed_path.txt" || {
   echo "FAIL: expected package was not installed: $PACKAGE" >&2; exit 11
@@ -127,6 +139,10 @@ grep -q '^package:' "$OUT/installed_path.txt" || {
 "${ADB[@]}" shell dumpsys package "$PACKAGE" > "$OUT/package.txt"
 grep -E 'versionCode=|versionName=|targetSdk=' "$OUT/package.txt" > "$OUT/package_identity.txt" || true
 TARGET_SDK="$(grep -Eo 'targetSdk=[0-9]+' "$OUT/package.txt" | head -n1 | cut -d= -f2 || true)"
+INSTALLED_VERSION_CODE="$(grep -Eo 'versionCode=[0-9]+' "$OUT/package.txt" | head -n1 | cut -d= -f2 || true)"
+if [[ -n "$EXPECTED_VERSION_CODE" && "$INSTALLED_VERSION_CODE" != "$EXPECTED_VERSION_CODE" ]]; then
+  echo "FAIL: installed versionCode=$INSTALLED_VERSION_CODE; expected versionCode=$EXPECTED_VERSION_CODE" >&2; exit 13
+fi
 [[ "$TARGET_SDK" == "$REQUIRED_TARGET_SDK" ]] || {
   echo "FAIL: targetSdk=$TARGET_SDK; required $REQUIRED_TARGET_SDK" >&2; exit 12
 }
@@ -257,6 +273,7 @@ fi
 echo "PASS_NO_CRASH_ANR=true"
 echo "PASS_PACKAGE=$PACKAGE"
 echo "PASS_TARGET_SDK=$TARGET_SDK"
+echo "PASS_INSTALLED_VERSION_CODE=$INSTALLED_VERSION_CODE"
 echo "PASS_DEVICE_ABI=$REQUIRED_ABI"
 echo "PASS_UI_SMOKE_EVENTS=$MONKEY_EVENTS"
 echo "HEALTH_CONNECT_PROVIDER_PRESENT=$HEALTH_CONNECT_PRESENT"
