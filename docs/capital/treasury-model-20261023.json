@@ -1,0 +1,9 @@
+{
+ "schema":"thf-operating-model/v1","status":"PROPOSED_NOT_EXECUTED","network":"solana-mainnet-beta",
+ "mint":"HjCHpu3tLRGCkJtZyUjzCKHv47usxWcMcqwhkaeBpjiv","total_supply_ui":"10000000000","decimals":8,
+ "allocations_bps":{"verified_community":3000,"development_operations":2500,"strategic_reserve":1500,"team":1000,"partnerships":1000,"liquidity_inventory":800,"financing":200},
+ "initial_financing":{"tranche_ceiling_ui":"25000000","price":null,"min_raise":null,"max_raise":null,"creator_wallet":null,"fee_payer":null,"controlled_inventory_verified":false,"sale_enabled":false},
+ "cash_policy":{"candidate_active_user_share_bps":3500,"candidate_basis":"positive_unrestricted_operating_cash_surplus","historical_policy_basis_approved":false,"holder_dividend":false,"token_sale_proceeds_count_as_revenue":false,"restricted_lp_funds_for_operations":false},
+ "vesting_targets":{"team_cliff_months":12,"team_linear_months":36,"community_release_months":60,"development_release_months":48,"partnerships_release_months":36},
+ "execution":{"wallet_unlocked":false,"biometric_required":true,"signed":false,"broadcast":false,"funds_received_verified":false,"blockers":["owner Solflare biometric","treasury ownership and inventory","fee sponsor","price and sale caps","rights vesting and refund terms","distribution eligibility","exact simulation and owner wallet authorization"]}
+}
