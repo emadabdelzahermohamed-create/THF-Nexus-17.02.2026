@@ -22,6 +22,36 @@ extends CanvasLayer
 var held := {}
 var controlled: Node3D
 var active_camera: Camera3D
+var touch_actions := {}
+
+func _input(event):
+    # RC40: consume raw Android screen touches as a deterministic fallback.
+    # This bypasses Button/theme/focus dispatch, which RC39 phone QA proved can
+    # render correctly while failing to reach gameplay state.
+    if event is InputEventScreenTouch:
+        if event.pressed:
+            var action := _touch_action(event.position)
+            if action != "":
+                touch_actions[event.index] = action
+                _press(action)
+                print("THF_RUINSCIV_TOUCH_DOWN index=%s action=%s" % [event.index, action])
+        elif touch_actions.has(event.index):
+            var action: String = touch_actions[event.index]
+            _release(action)
+            touch_actions.erase(event.index)
+            print("THF_RUINSCIV_TOUCH_UP index=%s action=%s" % [event.index, action])
+
+func _touch_action(pos: Vector2) -> String:
+    var size := get_viewport().get_visible_rect().size
+    if size.x <= 0.0 or size.y <= 0.0 or pos.y < size.y * 0.60:
+        return ""
+    if pos.x < size.x * 0.58:
+        var nx := pos.x / (size.x * 0.58)
+        var ny := (pos.y - size.y * 0.60) / (size.y * 0.40)
+        if ny < 0.38: return "move_forward"
+        if ny > 0.68: return "move_backward"
+        return "move_left" if nx < 0.50 else "move_right"
+    return "camera_left" if pos.x < size.x * 0.79 else "camera_right"
 
 func _physics_process(delta):
     if controlled == null or not is_instance_valid(controlled):
