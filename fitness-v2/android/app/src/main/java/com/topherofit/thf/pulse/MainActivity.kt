@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
     private var tts: TextToSpeech? = null
     private val healthFlushRunning = AtomicBoolean(false)
     private val healthSyncGate = HealthSyncGate()
+    @Volatile private var healthSyncing = false
     private val backendFlushRunning = AtomicBoolean(false)
     private val accountExchangeRunning = AtomicBoolean(false)
 
@@ -363,21 +364,45 @@ class MainActivity : ComponentActivity() {
         return outcome
     }
 
-    private fun healthStatusJson(): JSONObject = JSONObject()
-        .put("availability", cachedHealthState.availability)
-        .put("connected", cachedHealthState.connected)
-        .put("grantedCount", cachedHealthState.grantedPermissions.size)
-        .put("readPermissionsGranted", cachedHealthState.readPermissionsGranted)
-        .put("writePermissionsGranted", cachedHealthState.writePermissionsGranted)
-        .put("requiredCount", HealthConnectRepository.READ_PERMISSIONS.size)
-        .put("requiredReadCount", HealthConnectRepository.READ_PERMISSIONS.size)
-        .put("optionalWriteCount", HealthConnectRepository.WRITE_PERMISSIONS.size)
-        .put("missingPermissions", JSONArray(cachedHealthState.missingReadPermissions.sorted()))
-        .put("missingReadPermissions", JSONArray(cachedHealthState.missingReadPermissions.sorted()))
-        .put("missingWritePermissions", JSONArray(cachedHealthState.missingWritePermissions.sorted()))
-        .put("lastSync", prefs.getString("health_last_sync", ""))
-        .put("lastError", prefs.getString("health_last_error", ""))
-        .put("pendingWrites", jsonArrayPreference(PENDING_HEALTH).length())
+    private fun healthStatusJson(): JSONObject {
+        val lastSync = prefs.getString("health_last_sync", "").orEmpty()
+        val lastErrorCode = prefs.getString("health_last_error_code", "")
+        val recordsRead = prefs.getInt("health_last_records_read", 0)
+        val verifiedRecords = prefs.getInt("health_last_verified_records", 0)
+        val excludedRecords = prefs.getInt("health_last_excluded_records", 0)
+        val duplicateRecords = prefs.getInt("health_last_duplicate_records", 0)
+        val uxState = HealthUxStateClassifier.classify(
+            HealthUxInput(
+                availability = cachedHealthState.availability,
+                readPermissionsGranted = cachedHealthState.readPermissionsGranted,
+                syncing = healthSyncing,
+                hasSuccessfulSync = lastSync.isNotBlank(),
+                recordsRead = recordsRead,
+                verifiedRecords = verifiedRecords,
+                lastErrorCode = lastErrorCode,
+            ),
+        )
+        return JSONObject()
+            .put("availability", cachedHealthState.availability)
+            .put("connected", cachedHealthState.connected)
+            .put("uxState", uxState.name)
+            .put("grantedCount", cachedHealthState.grantedPermissions.size)
+            .put("readPermissionsGranted", cachedHealthState.readPermissionsGranted)
+            .put("writePermissionsGranted", cachedHealthState.writePermissionsGranted)
+            .put("requiredCount", HealthConnectRepository.READ_PERMISSIONS.size)
+            .put("requiredReadCount", HealthConnectRepository.READ_PERMISSIONS.size)
+            .put("optionalWriteCount", HealthConnectRepository.WRITE_PERMISSIONS.size)
+            .put("missingPermissions", JSONArray(cachedHealthState.missingReadPermissions.sorted()))
+            .put("missingReadPermissions", JSONArray(cachedHealthState.missingReadPermissions.sorted()))
+            .put("missingWritePermissions", JSONArray(cachedHealthState.missingWritePermissions.sorted()))
+            .put("recordsRead", recordsRead)
+            .put("verifiedRecords", verifiedRecords)
+            .put("excludedManualOrUnknownRecords", excludedRecords)
+            .put("duplicateRecordsExcluded", duplicateRecords)
+            .put("lastSync", lastSync)
+            .put("lastError", prefs.getString("health_last_error", ""))
+            .put("pendingWrites", jsonArrayPreference(PENDING_HEALTH).length())
+    }
 
     private fun motionCapabilitiesJson(capabilities: SensorCapabilities): JSONObject = JSONObject()
         .put("stepCounter", capabilities.stepCounter)
@@ -462,6 +487,8 @@ class MainActivity : ComponentActivity() {
 
     private fun syncHealth(): String = when (val decision = healthSyncGate.tryStart()) {
         HealthSyncDecision.Started -> {
+            healthSyncing = true
+            dispatch("thf:health-status", healthStatusJson())
             lifecycleScope.launch { syncHealthInternal() }
             JSONObject().put("status", "STARTED").toString()
         }
@@ -523,8 +550,14 @@ class MainActivity : ComponentActivity() {
                     val now = Instant.now().toString()
                     prefs.edit {
                         putString("health_last_sync", now)
+                        putInt("health_last_records_read", snapshot.recordsRead)
+                        putInt("health_last_verified_records", snapshot.verifiedRecords)
+                        putInt("health_last_excluded_records", snapshot.excludedManualOrUnknownRecords)
+                        putInt("health_last_duplicate_records", snapshot.duplicateRecordsExcluded)
                         remove("health_last_error")
+                        remove("health_last_error_code")
                     }
+                    healthSyncing = false
                     dispatch(
                         "thf:health-sync",
                         JSONObject()
@@ -535,6 +568,11 @@ class MainActivity : ComponentActivity() {
                             .put("exerciseSessions", snapshot.exerciseSessions)
                             .put("origins", JSONArray(snapshot.origins.sorted()))
                             .put("latestSessionEnd", snapshot.latestSessionEnd?.toString() ?: "")
+                            .put("recordsRead", snapshot.recordsRead)
+                            .put("verifiedRecords", snapshot.verifiedRecords)
+                            .put("excludedManualOrUnknownRecords", snapshot.excludedManualOrUnknownRecords)
+                            .put("duplicateRecordsExcluded", snapshot.duplicateRecordsExcluded)
+                            .put("uxState", if (snapshot.recordsRead == 0) "SYNCED_NO_RECORDS" else if (snapshot.verifiedRecords == 0) "SYNCED_UNVERIFIED_ONLY" else "SYNCED_VERIFIED")
                             .put("lastSync", now),
                     )
                 }
@@ -547,7 +585,11 @@ class MainActivity : ComponentActivity() {
                         error.message ?: error.javaClass.simpleName
                     }
                     val retryAfterMs = if (rateLimited) 60_000L else 5_000L
-                    prefs.edit { putString("health_last_error", message) }
+                    prefs.edit {
+                        putString("health_last_error", message)
+                        putString("health_last_error_code", code)
+                    }
+                    healthSyncing = false
                     dispatch(
                         "thf:health-error",
                         healthStatusJson()
@@ -557,6 +599,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
         } finally {
+            healthSyncing = false
             healthSyncGate.finish(rateLimited = rateLimited)
         }
     }

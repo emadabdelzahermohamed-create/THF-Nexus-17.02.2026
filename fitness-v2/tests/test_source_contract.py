@@ -134,6 +134,18 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertGreaterEqual(source.count("readPermissionsGranted = false"), 2)
         self.assertGreaterEqual(source.count("writePermissionsGranted = false"), 2)
 
+    def test_health_ux_state_distinguishes_no_data_unverified_and_errors(self):
+        state_path = ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "HealthUxState.kt"
+        main = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        self.assertTrue(state_path.exists())
+        state = state_path.read_text()
+        for marker in ("SYNCED_VERIFIED", "SYNCED_NO_RECORDS", "SYNCED_UNVERIFIED_ONLY", "PERMISSION_REQUIRED", "RATE_LIMITED", "PROVIDER_UPDATE_REQUIRED"):
+            self.assertIn(marker, state)
+            self.assertIn(marker, app)
+        for marker in ('put("uxState"', 'put("recordsRead"', 'put("verifiedRecords"', 'put("excludedManualOrUnknownRecords"', 'put("duplicateRecordsExcluded"'):
+            self.assertIn(marker, main)
+
     def test_health_flow_is_user_visible_and_fail_closed(self):
         html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
         for marker in (
