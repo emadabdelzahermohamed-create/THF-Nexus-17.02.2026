@@ -187,11 +187,14 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     }
 
     private fun registerStepSensor() {
-        if (stepSensor != null && hasActivityPermission()) {
-            sensorManager?.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        if (hasActivityPermission()) {
+            stepSensor?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
             stepDetector?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
-            if (motionSessionActive) registerRawMotionSensors()
         }
+        // Raw motion evidence is session-scoped and must not depend on step-counter availability.
+        // This keeps accelerometer/gyro workout verification usable on devices that expose only
+        // one step sensor (or temporarily fail to expose either after process recreation).
+        if (motionSessionActive) registerRawMotionSensors()
     }
 
     private fun registerRawMotionSensors() {
