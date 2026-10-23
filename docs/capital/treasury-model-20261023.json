@@ -46,8 +46,7 @@
     "broadcast": false,
     "funds_received_verified": false,
     "blockers": [
-      "two public holder addresses and exact THF amounts/units",
-      "treasury ownership and inventory",
+      "owner signing control of sale wallet; holdings are onchain verified",
       "fee sponsor",
       "price and sale caps",
       "rights vesting and refund terms",
@@ -68,13 +67,44 @@
       "8.5",
       "1.5"
     ],
-    "unit_multiplier_confirmed": false,
-    "possible_interpretation": "8.5bn and 1.5bn, subject to owner confirmation and onchain verification",
+    "unit_multiplier_confirmed": true,
+    "possible_interpretation": "Onchain confirmed: 8.5bn and 1.5bn THF",
     "public_addresses": [
-      null,
-      null
+      "Ei9gQahXJW4mynXzdr3xtqJBPEpevfNxGMNEUHnmnLrG",
+      "CnxP2aJ9YSsGDvpeFnuwRzxqvGV2WANqi9C7fYV4ZLBk"
     ],
-    "onchain_verified": false,
+    "onchain_verified": true,
     "control_verified": false
+  },
+  "verified_onchain_holdings": {
+    "verified_date": "2026-10-23",
+    "rpc": "https://api.mainnet-beta.solana.com",
+    "commitment": "finalized",
+    "total_THF_ui": "10000000000",
+    "records": [
+      {
+        "owner": "Ei9gQahXJW4mynXzdr3xtqJBPEpevfNxGMNEUHnmnLrG",
+        "token_account": "63En8JJGwoyNmRg5Udfw3H2zWo2ky1EQMcW69N77Scvv",
+        "THF_raw": "850000000000000000",
+        "THF_ui": "8500000000",
+        "token_slot": 460542707,
+        "SOL_lamports": 0,
+        "SOL_slot": 460542699
+      },
+      {
+        "owner": "CnxP2aJ9YSsGDvpeFnuwRzxqvGV2WANqi9C7fYV4ZLBk",
+        "token_account": "9FeEf5ThQrAihAtUviNjfzGQkXhn1H9ZdycFvzvhJywX",
+        "THF_raw": "150000000000000000",
+        "THF_ui": "1500000000",
+        "token_slot": 460542720,
+        "SOL_lamports": 0,
+        "SOL_slot": 460542713
+      }
+    ],
+    "decimals": 8,
+    "delegate_present": false,
+    "token_state": "initialized",
+    "control_by_user_cryptographically_verified": false,
+    "allocation_transfers_executed": false
   }
 }
