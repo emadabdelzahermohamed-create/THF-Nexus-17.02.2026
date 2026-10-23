@@ -36,8 +36,16 @@ jobs:
       - name: Test lint and build candidate 51009
         shell: bash
         run: |
-          set -euo pipefail
-          gradle --no-daemon -p fitness-v2/android :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease
+          set -uo pipefail
+          mkdir -p fitness-v2/evidence
+          set +e
+          gradle --no-daemon -p fitness-v2/android :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease 2>&1 | tee fitness-v2/evidence/candidate-51009-build.log
+          build_status=${PIPESTATUS[0]}
+          set -e
+          if [[ "$build_status" -ne 0 ]]; then
+            grep -E '(^e: |^w: |FAILURE:|FAILED|error:|Lint found)' fitness-v2/evidence/candidate-51009-build.log | tail -120 > fitness-v2/evidence/candidate-51009-errors.txt || true
+            exit "$build_status"
+          fi
           APK=fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
           AAB=fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
@@ -48,13 +56,16 @@ jobs:
           sha256sum "$APK" "$AAB" | tee fitness-v2/candidate-51009.sha256
           printf 'GIT_SHA=%s\nVERSION_CODE=51009\n' "$GITHUB_SHA" | tee fitness-v2/candidate-51009-build.txt
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: fitness-activity-candidate-51009
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
           path: |
             fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
             fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
             fitness-v2/android/app/build/reports/
+            fitness-v2/evidence/candidate-51009-build.log
+            fitness-v2/evidence/candidate-51009-errors.txt
             fitness-v2/candidate-51009.sha256
             fitness-v2/candidate-51009-build.txt
