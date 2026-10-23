@@ -116,6 +116,14 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("input tap", qa)
         self.assertIn("FAIL: startTodayBtn not found", qa)
 
+    def test_phone_qa_accepts_nonzero_native_motion_sample_evidence(self):
+        qa = (ROOT / "fitness-v2" / "scripts" / "fitness_phone_qa.sh").read_text()
+        self.assertIn("motionSensorDetail", qa)
+        self.assertIn("ACTIVE_ACCEL_SAMPLES", qa)
+        self.assertIn("ACTIVE_GYRO_SAMPLES", qa)
+        self.assertIn("PASS_ACTIVE_MOTION_UI", qa)
+        self.assertIn("accelerometer/gyroscope registration or native sample evidence not proven", qa)
+
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
         health = {

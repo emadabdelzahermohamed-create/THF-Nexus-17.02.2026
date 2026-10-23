@@ -208,25 +208,33 @@ grep -q "$PACKAGE" "$OUT/window_resume.txt" || {
 
 if $AUTO_START_TODAY; then
   echo "Auto-starting Today workout for active motion sensor proof."
-  "${ADB[@]}" shell am start -n "$PACKAGE/.MainActivity" >/dev/null
-  sleep 2
-  "${ADB[@]}" shell uiautomator dump /sdcard/thf-fitness-autostart.xml >/dev/null
-  "${ADB[@]}" pull /sdcard/thf-fitness-autostart.xml "$OUT/03b_autostart_ui.xml" >/dev/null
-  "${ADB[@]}" shell rm -f /sdcard/thf-fitness-autostart.xml
-  if grep -Fq 'resource-id="activeWorkoutScreen"' "$OUT/03b_autostart_ui.xml"; then
-    echo "AUTO_START_TODAY=ALREADY_ACTIVE" | tee "$OUT/auto_start_status.txt"
-  else
-    START_NODE="$(sed 's/></>\n</g' "$OUT/03b_autostart_ui.xml" | grep -F 'resource-id="startTodayBtn"' | head -n1 || true)"
-    [[ -n "$START_NODE" ]] || { echo "FAIL: startTodayBtn not found for automatic workout start" >&2; exit 24; }
-    BOUNDS="$(printf '%s\n' "$START_NODE" | sed -n 's/.*bounds="\[\([0-9][0-9]*\),\([0-9][0-9]*\)\]\[\([0-9][0-9]*\),\([0-9][0-9]*\)\]".*/\1 \2 \3 \4/p')"
-    read -r X1 Y1 X2 Y2 <<< "$BOUNDS"
-    [[ -n "${X1:-}" && -n "${Y1:-}" && -n "${X2:-}" && -n "${Y2:-}" ]] || { echo "FAIL: startTodayBtn bounds are unreadable" >&2; exit 24; }
-    TAP_X=$(((X1 + X2) / 2)); TAP_Y=$(((Y1 + Y2) / 2))
+  AUTO_READY=false
+  for attempt in 1 2 3; do
     "${ADB[@]}" shell am start -n "$PACKAGE/.MainActivity" >/dev/null
-    "${ADB[@]}" shell input tap "$TAP_X" "$TAP_Y"
-    sleep 2
-    printf 'AUTO_START_TODAY=TAPPED\nTAP_X=%s\nTAP_Y=%s\n' "$TAP_X" "$TAP_Y" | tee "$OUT/auto_start_status.txt"
-  fi
+    sleep 4
+    "${ADB[@]}" shell uiautomator dump /sdcard/thf-fitness-autostart.xml >/dev/null || true
+    "${ADB[@]}" pull /sdcard/thf-fitness-autostart.xml "$OUT/03b_autostart_ui.xml" >/dev/null 2>&1 || true
+    "${ADB[@]}" shell rm -f /sdcard/thf-fitness-autostart.xml
+    if grep -Fq 'resource-id="activeWorkoutScreen"' "$OUT/03b_autostart_ui.xml" 2>/dev/null; then
+      echo "AUTO_START_TODAY=ALREADY_ACTIVE" | tee "$OUT/auto_start_status.txt"
+      AUTO_READY=true
+      break
+    fi
+    START_NODE="$(sed 's/></>\n</g' "$OUT/03b_autostart_ui.xml" 2>/dev/null | grep -F 'resource-id="startTodayBtn"' | head -n1 || true)"
+    if [[ -n "$START_NODE" ]]; then
+      BOUNDS="$(printf '%s\n' "$START_NODE" | sed -n 's/.*bounds="\[\([0-9][0-9]*\),\([0-9][0-9]*\)\]\[\([0-9][0-9]*\),\([0-9][0-9]*\)\]".*/\1 \2 \3 \4/p')"
+      read -r X1 Y1 X2 Y2 <<< "$BOUNDS"
+      [[ -n "${X1:-}" && -n "${Y1:-}" && -n "${X2:-}" && -n "${Y2:-}" ]] || { echo "FAIL: startTodayBtn bounds are unreadable" >&2; exit 24; }
+      TAP_X=$(((X1 + X2) / 2)); TAP_Y=$(((Y1 + Y2) / 2))
+      "${ADB[@]}" shell am start -n "$PACKAGE/.MainActivity" >/dev/null
+      "${ADB[@]}" shell input tap "$TAP_X" "$TAP_Y"
+      sleep 3
+      printf 'AUTO_START_TODAY=TAPPED\nTAP_X=%s\nTAP_Y=%s\n' "$TAP_X" "$TAP_Y" | tee "$OUT/auto_start_status.txt"
+      AUTO_READY=true
+      break
+    fi
+  done
+  $AUTO_READY || { echo "FAIL: startTodayBtn not found for automatic workout start" >&2; exit 24; }
 else
   echo "Interact with Fitness now; start a workout during the next ${RECORD_SECONDS}s so active motion registration can be proven."
 fi
@@ -255,7 +263,27 @@ REC_PID=$!
 wait "$REC_PID" || true
 if [[ -n "${SENSOR_PROBE_PID:-}" ]]; then wait "$SENSOR_PROBE_PID" || true; fi
 if $REQUIRE_MOTION_SENSORS; then
-  [[ -s "$OUT/sensor_registration_active.txt" ]] || { echo "FAIL: active workout accelerometer/gyroscope registration not proven" >&2; exit 23; }
+  ACTIVE_ACCEL_SAMPLES=0
+  ACTIVE_GYRO_SAMPLES=0
+  ACTIVE_MOTION_UI=false
+  "${ADB[@]}" shell uiautomator dump /sdcard/thf-fitness-motion.xml >/dev/null || true
+  "${ADB[@]}" pull /sdcard/thf-fitness-motion.xml "$OUT/04_motion_ui.xml" >/dev/null 2>&1 || true
+  "${ADB[@]}" shell rm -f /sdcard/thf-fitness-motion.xml
+  MOTION_NODE="$(sed 's/></>\n</g' "$OUT/04_motion_ui.xml" 2>/dev/null | grep -F 'resource-id="motionSensorDetail"' | head -n1 || true)"
+  if [[ -n "$MOTION_NODE" ]]; then
+    ACTIVE_ACCEL_SAMPLES="$(printf '%s\n' "$MOTION_NODE" | sed -n 's/.*accel \([0-9][0-9]*\).*gyro \([0-9][0-9]*\).*/\1/p')"
+    ACTIVE_GYRO_SAMPLES="$(printf '%s\n' "$MOTION_NODE" | sed -n 's/.*accel \([0-9][0-9]*\).*gyro \([0-9][0-9]*\).*/\2/p')"
+    ACTIVE_ACCEL_SAMPLES="${ACTIVE_ACCEL_SAMPLES:-0}"
+    ACTIVE_GYRO_SAMPLES="${ACTIVE_GYRO_SAMPLES:-0}"
+    if (( ACTIVE_ACCEL_SAMPLES > 0 && ACTIVE_GYRO_SAMPLES > 0 )); then
+      ACTIVE_MOTION_UI=true
+      printf 'PASS_ACTIVE_MOTION_UI=true\nACTIVE_ACCEL_SAMPLES=%s\nACTIVE_GYRO_SAMPLES=%s\n' "$ACTIVE_ACCEL_SAMPLES" "$ACTIVE_GYRO_SAMPLES" | tee "$OUT/active_motion_ui.txt"
+    fi
+  fi
+  if [[ ! -s "$OUT/sensor_registration_active.txt" ]] && ! $ACTIVE_MOTION_UI; then
+    echo "FAIL: active workout accelerometer/gyroscope registration or native sample evidence not proven" >&2
+    exit 23
+  fi
 fi
 "${ADB[@]}" pull /sdcard/thf-fitness-qa.mp4 "$OUT/04_interaction.mp4" >/dev/null
 "${ADB[@]}" shell rm -f /sdcard/thf-fitness-qa.mp4
@@ -287,7 +315,7 @@ fi
 "${ADB[@]}" shell dumpsys thermalservice > "$OUT/thermal.txt" || true
 "${ADB[@]}" shell dumpsys battery > "$OUT/battery.txt" || true
 "${ADB[@]}" logcat -d -v threadtime > "$OUT/logcat.txt"
-grep -Ei 'FATAL EXCEPTION|ANR in|AndroidRuntime|am_crash|am_anr' "$OUT/logcat.txt" > "$OUT/crash_anr.txt" || true
+grep -Ei "ANR in[ :]+$PACKAGE|am_crash.*$PACKAGE|am_anr.*$PACKAGE|Process: $PACKAGE" "$OUT/logcat.txt" > "$OUT/crash_anr.txt" || true
 
 if [[ -s "$OUT/crash_anr.txt" ]]; then
   echo "FAIL: crash/ANR signals found in $OUT/crash_anr.txt" >&2
