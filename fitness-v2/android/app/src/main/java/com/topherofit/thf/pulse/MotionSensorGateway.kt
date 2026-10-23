@@ -10,7 +10,7 @@ interface MotionSensorListener {
 interface MotionSensorGateway {
     fun capabilities(): SensorCapabilities
     fun startLowPower(listener: MotionSensorListener)
-    fun startActive(listener: MotionSensorListener)
+    fun startActive(listener: MotionSensorListener, profile: MotionSensorProfile)
     fun stopActive()
     fun stopAll()
 }

@@ -19,9 +19,10 @@ class MotionSessionEngineTest {
         var activeStops = 0
         var allStops = 0
         var listener: MotionSensorListener? = null
+        var lastProfile: MotionSensorProfile? = null
         override fun capabilities(): SensorCapabilities = caps
         override fun startLowPower(listener: MotionSensorListener) { this.listener = listener; lowPowerStarts++ }
-        override fun startActive(listener: MotionSensorListener) { this.listener = listener; activeStarts++ }
+        override fun startActive(listener: MotionSensorListener, profile: MotionSensorProfile) { this.listener = listener; lastProfile = profile; activeStarts++ }
         override fun stopActive() { activeStops++ }
         override fun stopAll() { allStops++ }
         fun stepCounter(value: Float, t: Long) = listener?.onStepCounter(value, t)
@@ -46,10 +47,11 @@ class MotionSessionEngineTest {
         val gateway = FakeGateway(caps())
         val engine = MotionSessionEngine(gateway, FakeClock())
         engine.onHostResume()
-        val state = engine.startSession("session-1001")
+        val state = engine.startSession("session-1001", MotionSensorProfile.IMPACT_JUMP)
         assertTrue(state.active)
         assertEquals("session-1001", state.sessionId)
         assertEquals(1, gateway.activeStarts)
+        assertEquals(MotionSensorProfile.IMPACT_JUMP, gateway.lastProfile)
     }
 
     @Test fun stopSessionReturnsEvidenceAndRestoresLowPowerTracking() {

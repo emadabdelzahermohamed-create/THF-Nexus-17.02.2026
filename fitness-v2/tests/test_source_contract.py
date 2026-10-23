@@ -63,39 +63,29 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
         self.assertGreaterEqual(version, 51005)
 
-    def test_sensor_first_51008_is_candidate_while_play_gate_remains_pinned_to_51007(self):
+    def test_activity_51009_is_candidate_while_signed_publish_gate_remains_fail_closed(self):
         candidate = (ROOT / ".github" / "workflows" / "fitness-sensor-candidate.yml").read_text()
         android_gate = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
         play_gate = (ROOT / ".github" / "workflows" / "thf-fitness-play-probe.yml").read_text()
         gradle = (ANDROID / "app" / "build.gradle").read_text()
 
-        self.assertIn("versionCode 51008", gradle)
-        self.assertIn("versionName '5.0.0-v2-alpha8'", gradle)
-        self.assertIn("candidate 51008", candidate.lower())
-        self.assertIn("versionCode='51008'", candidate)
-        self.assertIn("fitness-sensor-candidate-51008", candidate)
+        self.assertIn("versionCode 51009", gradle)
+        self.assertIn("versionName '5.0.0-v2-alpha9'", gradle)
+        self.assertIn("candidate 51009", candidate.lower())
+        self.assertIn("versionCode='51009'", candidate)
+        self.assertIn("fitness-activity-candidate-51009", candidate)
 
-        # Publishing stays deliberately pinned to the already-proven 51007 package
-        # until 51008 completes CI + physical phone QA.
-        self.assertIn("fitness-v2-51007-package-gate", android_gate)
-        self.assertIn("fitness-v2-51007-package-gate", play_gate)
-        self.assertRegex(play_gate, r"expected_version\s*=\s*[\"\']51007[\"\']")
-        self.assertIn("THF Fitness 51007 Internal", play_gate)
-        self.assertNotIn("51008", play_gate)
-        self.assertNotIn("39089308617", play_gate)
-        self.assertNotIn("EXPECTED_UNSIGNED_SHA256", play_gate)
+        # The signed publish workflow stays on its previous proven package until
+        # 51009 clears candidate CI. It must not silently publish the new code.
+        self.assertIn("51007", android_gate)
+        self.assertIn("51007", play_gate)
+        self.assertNotIn("51009", play_gate)
 
         qa = (ROOT / "fitness-v2" / "scripts" / "fitness_phone_qa.sh").read_text()
-        runner = (ROOT / "fitness-v2" / "scripts" / "run_fitness_phone_candidate_51007.sh")
         self.assertIn("--require-motion-sensors", qa)
         self.assertIn("sensor_capabilities.txt", qa)
         self.assertIn("sensor_registration_before.txt", qa)
         self.assertIn("sensor_registration_active.txt", qa)
-        self.assertTrue(runner.exists())
-        runner_text = runner.read_text()
-        self.assertIn("fitness-v2-51007-package-gate", runner_text)
-        self.assertIn("--require-motion-sensors", runner_text)
-        self.assertIn("--require-health-connect", runner_text)
 
     def test_phone_qa_can_validate_play_installed_candidate_without_reinstall(self):
         qa = (ROOT / "fitness-v2" / "scripts" / "fitness_phone_qa.sh").read_text()
@@ -142,7 +132,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         ):
             self.assertIn(permission, manifest)
         self.assertIn("ActivityTrackingService", manifest)
-        self.assertIn('android:foregroundServiceType="location"', manifest)
+        self.assertIn('android:foregroundServiceType="location|health"', manifest)
         self.assertTrue(service.exists())
         for token in ("activityScreen", "activityWalkBtn", "activityRunBtn", "activityCycleBtn", "activityMap", "activityCalories"):
             self.assertIn(token, html)
@@ -547,8 +537,10 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             "endMotionSession",
             "measurementSource",
             "motionEvidence",
-            "motionLiveSteps",
-            "motionDetectorEvents",
+            "motionPrimaryMetricLabel",
+            "motionPrimaryMetricValue",
+            "motionSecondaryMetricLabel",
+            "motionSecondaryMetricValue",
             "motionConfidence",
         ):
             self.assertIn(marker, app + html)

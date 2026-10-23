@@ -51,6 +51,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var foundingHeroBilling: FoundingHeroBilling
     private lateinit var motionEngine: MotionSessionEngine
     private var lastEndedMotionEvidence: MotionEvidence? = null
+    private var pendingActivityStart: Pair<ActivityMode, Double>? = null
+    private var pendingWorkoutStart: Pair<String, MotionSensorProfile>? = null
     private var tts: TextToSpeech? = null
     private val healthFlushRunning = AtomicBoolean(false)
     private val healthSyncGate = HealthSyncGate()
@@ -80,10 +82,30 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         dispatch("thf:activity-permission", JSONObject().put("granted", granted))
-        if (granted && ::motionEngine.isInitialized && motionEngine.currentState().hostResumed) {
+        if (granted) {
+            val workout = pendingWorkoutStart
+            if (workout != null) {
+                pendingWorkoutStart = null
+                startWorkoutTracking(workout.first, workout.second)
+            }
+            startPendingActivityIfReady()
+        } else {
+            pendingWorkoutStart = null
+            pendingActivityStart = null
+        }
+        if (granted && ::motionEngine.isInitialized && motionEngine.currentState().hostResumed && !ActivityTrackingService.hasActiveTracking()) {
             motionEngine.onHostPause()
             motionEngine.onHostResume()
         }
+    }
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { result ->
+        val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            result[Manifest.permission.ACCESS_COARSE_LOCATION] == true || hasLocationPermission()
+        dispatch("thf:location-permission", JSONObject().put("granted", granted))
+        if (granted) startPendingActivityIfReady() else pendingActivityStart = null
     }
 
     private val healthReadPermissionLauncher = registerForActivityResult(
@@ -169,7 +191,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::prefs.isInitialized) clearExpiredPendingAccountAuth()
-        if (::motionEngine.isInitialized) motionEngine.onHostResume()
+        if (::motionEngine.isInitialized && !ActivityTrackingService.hasActiveTracking()) motionEngine.onHostResume()
         if (::foundingHeroBilling.isInitialized) foundingHeroBilling.start()
         if (::healthRepository.isInitialized) {
             lifecycleScope.launch {
@@ -196,6 +218,36 @@ class MainActivity : ComponentActivity() {
 
     private fun hasActivityPermission(): Boolean =
         Build.VERSION.SDK_INT < 29 || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
+
+    private fun hasLocationPermission(): Boolean =
+        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    private fun startPendingActivityIfReady() {
+        val pending = pendingActivityStart ?: return
+        if (!hasLocationPermission()) return
+        if (pending.first.usesSteps && !hasActivityPermission()) {
+            if (Build.VERSION.SDK_INT >= 29) activityPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+            return
+        }
+        pendingActivityStart = null
+        startActivityTracking(pending.first, pending.second)
+    }
+
+    private fun startActivityTracking(mode: ActivityMode, weightKg: Double) {
+        if (::motionEngine.isInitialized) motionEngine.onHostPause()
+        ActivityTrackingService.startActivity(this, mode, weightKg)
+        dispatch("thf:activity-started", activitySnapshotJson(ActivityTrackingService.activitySnapshot()))
+    }
+
+    private fun startWorkoutTracking(sessionId: String, profile: MotionSensorProfile) {
+        if (::motionEngine.isInitialized) motionEngine.onHostPause()
+        ActivityTrackingService.startWorkout(this, sessionId, profile)
+        dispatch(
+            "thf:motion-started",
+            JSONObject().put("active", true).put("sessionId", sessionId).put("profile", profile.wireName),
+        )
+    }
 
     private fun isOnline(): Boolean {
         val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
@@ -415,7 +467,36 @@ class MainActivity : ComponentActivity() {
         .put("active", state.active)
         .put("sessionId", state.sessionId ?: "")
         .put("hostResumed", state.hostResumed)
+        .put("profile", state.profile.wireName)
         .put("capabilities", motionCapabilitiesJson(state.capabilities))
+
+    private fun activitySnapshotJson(snapshot: ActivitySnapshot): JSONObject {
+        val route = JSONArray()
+        snapshot.route.forEach { point ->
+            route.put(
+                JSONObject()
+                    .put("lat", point.latitude)
+                    .put("lng", point.longitude)
+                    .put("altitudeMetres", point.altitudeMetres)
+                    .put("accuracyMetres", point.accuracyMetres)
+                    .put("elapsedMs", point.elapsedMs),
+            )
+        }
+        return JSONObject()
+            .put("active", snapshot.active)
+            .put("mode", snapshot.mode?.wireName ?: "")
+            .put("startedAtWallMs", snapshot.startedAtWallMs)
+            .put("elapsedMs", snapshot.elapsedMs)
+            .put("distanceMetres", snapshot.distanceMetres)
+            .put("steps", snapshot.stepDelta)
+            .put("currentSpeedKph", snapshot.currentSpeedKph)
+            .put("averageSpeedKph", snapshot.averageSpeedKph)
+            .put("paceMinutesPerKm", snapshot.paceMinutesPerKm)
+            .put("estimatedCaloriesKcal", snapshot.estimatedCaloriesKcal)
+            .put("gpsPointCount", snapshot.gpsPointCount)
+            .put("lastAccuracyMetres", snapshot.lastAccuracyMetres)
+            .put("route", route)
+    }
 
     private fun motionEvidenceJson(evidence: MotionEvidence): JSONObject = JSONObject()
         .put("available", true)
@@ -755,6 +836,8 @@ class MainActivity : ComponentActivity() {
             .put("sessionSteps", sessionSteps())
             .put("motionCapabilities", motionCapabilitiesJson(motionEngine.capabilities()))
             .put("motionSession", motionSessionJson(motionEngine.currentState()))
+            .put("trackingServiceActive", ActivityTrackingService.hasActiveTracking())
+            .put("activitySession", activitySnapshotJson(ActivityTrackingService.activitySnapshot()))
             .put("health", healthStatusJson())
             .put("billing", billingStatusJson())
             .toString()
@@ -824,33 +907,72 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
-        fun beginMotionSession(sessionId: String?): String = runCatching {
+        fun beginMotionSession(sessionId: String?, profile: String?): String = runCatching {
             val id = requireNotNull(sessionId).trim()
             require(id.isNotBlank()) { "sessionId is required" }
-            motionSessionJson(motionEngine.startSession(id)).toString()
+            val sensorProfile = MotionSensorProfile.fromWire(profile)
+            if (Build.VERSION.SDK_INT >= 34 && !hasActivityPermission()) {
+                pendingWorkoutStart = id to sensorProfile
+                runOnUiThread { activityPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) }
+                return@runCatching JSONObject()
+                    .put("active", false)
+                    .put("permissionRequired", "activity_recognition")
+                    .put("sessionId", id)
+                    .put("profile", sensorProfile.wireName)
+                    .toString()
+            }
+            startWorkoutTracking(id, sensorProfile)
+            JSONObject().put("active", true).put("sessionId", id).put("profile", sensorProfile.wireName).toString()
         }.getOrElse { JSONObject().put("active", false).put("error", it.message ?: it.javaClass.simpleName).toString() }
 
         @JavascriptInterface
-        fun motionSnapshot(): String = motionEngine.snapshot()?.let(::motionEvidenceJson)?.toString()
+        fun motionSnapshot(): String = ActivityTrackingService.workoutSnapshot()?.let(::motionEvidenceJson)?.toString()
             ?: JSONObject().put("available", false).toString()
 
         @JavascriptInterface
         fun endMotionSession(): String {
-            val evidence = motionEngine.stopSession()
+            val evidence = ActivityTrackingService.finishWorkout()
             if (evidence != null) lastEndedMotionEvidence = evidence
+            if (!ActivityTrackingService.hasActiveTracking()) motionEngine.onHostResume()
             return evidence?.let(::motionEvidenceJson)?.toString()
                 ?: JSONObject().put("available", false).toString()
         }
 
         @JavascriptInterface
-        fun beginStepSession() {
-            if (!motionEngine.currentState().active) {
-                motionEngine.startSession("legacy-${System.currentTimeMillis()}")
+        fun beginActivitySession(mode: String?, weightKg: Double): String = runCatching {
+            val parsedMode = requireNotNull(ActivityMode.fromWire(mode)) { "unsupported activity mode" }
+            val safeWeight = weightKg.coerceIn(30.0, 250.0)
+            if (!hasLocationPermission()) {
+                pendingActivityStart = parsedMode to safeWeight
+                runOnUiThread { locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)) }
+                return@runCatching JSONObject().put("active", false).put("permissionRequired", "location").put("mode", parsedMode.wireName).toString()
             }
+            if (parsedMode.usesSteps && !hasActivityPermission() && Build.VERSION.SDK_INT >= 29) {
+                pendingActivityStart = parsedMode to safeWeight
+                runOnUiThread { activityPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) }
+                return@runCatching JSONObject().put("active", false).put("permissionRequired", "activity_recognition").put("mode", parsedMode.wireName).toString()
+            }
+            startActivityTracking(parsedMode, safeWeight)
+            JSONObject().put("active", true).put("mode", parsedMode.wireName).toString()
+        }.getOrElse { JSONObject().put("active", false).put("error", it.message ?: it.javaClass.simpleName).toString() }
+
+        @JavascriptInterface
+        fun activitySnapshot(): String = activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
+
+        @JavascriptInterface
+        fun endActivitySession(): String {
+            val snapshot = ActivityTrackingService.finishActivity()
+            if (!ActivityTrackingService.hasActiveTracking()) motionEngine.onHostResume()
+            return activitySnapshotJson(snapshot).toString()
         }
 
         @JavascriptInterface
-        fun sessionSteps(): Int = motionEngine.snapshot()?.stepDelta ?: 0
+        fun beginStepSession() {
+            beginMotionSession("legacy-${System.currentTimeMillis()}", MotionSensorProfile.STEP_DRILL.wireName)
+        }
+
+        @JavascriptInterface
+        fun sessionSteps(): Int = ActivityTrackingService.workoutSnapshot()?.stepDelta ?: 0
 
         @JavascriptInterface
         fun speak(text: String?, languageTag: String?) {
@@ -882,8 +1004,8 @@ class MainActivity : ComponentActivity() {
             item.put("recordVersion", maxOf(1L, item.optLong("recordVersion", 1L)))
             item.put("savedAt", now)
             item.put("endedAtMs", end)
-            if (motionEngine.currentState().sessionId?.startsWith("legacy-") == true) {
-                lastEndedMotionEvidence = motionEngine.stopSession()
+            if (ActivityTrackingService.workoutSnapshot()?.sessionId?.startsWith("legacy-") == true) {
+                lastEndedMotionEvidence = ActivityTrackingService.finishWorkout()
             }
             val nativeEvidence = lastEndedMotionEvidence?.takeIf { it.sessionId == clientId }
             if (nativeEvidence != null) {

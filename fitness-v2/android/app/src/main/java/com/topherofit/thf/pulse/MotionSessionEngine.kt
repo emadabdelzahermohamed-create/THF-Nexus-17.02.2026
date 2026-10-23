@@ -17,6 +17,7 @@ data class MotionSessionState(
     val sessionId: String?,
     val hostResumed: Boolean,
     val capabilities: SensorCapabilities,
+    val profile: MotionSensorProfile = MotionSensorProfile.FORM_MOTION,
 )
 
 class MotionSessionEngine(
@@ -27,6 +28,7 @@ class MotionSessionEngine(
     private var interrupted = false
     private var activeSessionId: String? = null
     private var accumulator: MotionFeatureAccumulator? = null
+    private var activeProfile: MotionSensorProfile = MotionSensorProfile.FORM_MOTION
 
     fun onHostResume() {
         if (hostResumed) return
@@ -37,7 +39,7 @@ class MotionSessionEngine(
                 current.markResumed(clock.elapsedRealtimeNanos())
                 interrupted = false
             }
-            gateway.startActive(this)
+            gateway.startActive(this, activeProfile)
         } else {
             gateway.startLowPower(this)
         }
@@ -53,7 +55,7 @@ class MotionSessionEngine(
         hostResumed = false
     }
 
-    fun startSession(sessionId: String): MotionSessionState {
+    fun startSession(sessionId: String, profile: MotionSensorProfile = MotionSensorProfile.FORM_MOTION): MotionSessionState {
         require(sessionId.isNotBlank()) { "sessionId is required" }
         val existing = activeSessionId
         if (existing != null) {
@@ -69,8 +71,9 @@ class MotionSessionEngine(
         )
         activeSessionId = sessionId
         accumulator = next
+        activeProfile = profile
         interrupted = false
-        if (hostResumed) gateway.startActive(this)
+        if (hostResumed) gateway.startActive(this, activeProfile)
         return currentState()
     }
 
@@ -84,6 +87,7 @@ class MotionSessionEngine(
         val evidence = current.snapshot(clock.wallTimeMs(), clock.elapsedRealtimeNanos())
         accumulator = null
         activeSessionId = null
+        activeProfile = MotionSensorProfile.FORM_MOTION
         interrupted = false
         if (hostResumed) {
             gateway.stopActive()
@@ -101,6 +105,7 @@ class MotionSessionEngine(
         sessionId = activeSessionId,
         hostResumed = hostResumed,
         capabilities = gateway.capabilities(),
+        profile = activeProfile,
     )
 
     override fun onStepCounter(rawCount: Float, elapsedNanos: Long) {

@@ -34,6 +34,8 @@
   Object.assign(COPY.en, {readinessToday:"Today's readiness",todaySummary:"Today's summary",trainContentType:'Training content type',programSections:'Program sections',clearSearch:'Clear search',trainingSections:'Training sections',volumeChartLabel:'Training volume chart',onboardingBenefitsLabel:'Plan benefits',close:'Close'});
   Object.assign(COPY.ar, {sensorEvidence:'قياس الحركة',sensorVerified:'حساسات الهاتف',sensorWaiting:'بانتظار بيانات الحركة',stepsLive:'الخطوات',detectorEvents:'نبضات الخطوة',confidence:'الثقة',sensorSamples:'عينات الحركة',manualUnverified:'يدوي / غير موثق'});
   Object.assign(COPY.en, {sensorEvidence:'Motion evidence',sensorVerified:'Phone sensors',sensorWaiting:'Waiting for motion data',stepsLive:'Steps',detectorEvents:'Step events',confidence:'Confidence',sensorSamples:'Motion samples',manualUnverified:'Manual / unverified'});
+  Object.assign(COPY.ar, {activityEyebrow:'نشاط فعلي بالخارج',activityQuickTitle:'ابدأ نشاطًا بـ GPS',activityQuickHint:'المشي والجري وركوب الدراجة جلسات مستقلة عن برامج التمارين، وتستمر في الخلفية بإشعار دائم.',activityTitle:'المشي والجري والدراجة',backgroundReady:'يستمر بالخلفية',walk:'مشي',run:'جري',cycle:'دراجة',gpsSteps:'GPS + خطوات',gpsSpeed:'GPS + سرعة',selectActivity:'اختر نشاطًا للبدء',gpsWaiting:'بانتظار GPS',gpsRouteHint:'سيظهر مسارك الحقيقي هنا بعد أول نقاط GPS.',pace:'الوتيرة',speed:'السرعة',gpsAccuracy:'دقة GPS',live:'مباشر',activityBackgroundHint:'يمكنك قفل الشاشة أو فتح تطبيق آخر؛ الإشعار الدائم يؤكد أن الجلسة ما زالت تعمل.',stopAndSaveActivity:'إيقاف وحفظ النشاط',recentActivities:'آخر الأنشطة',backToday:'العودة لليوم',weightKg:'الوزن لحساب السعرات',activitySaved:'تم حفظ النشاط.',activityPermissionNeeded:'اسمح بالموقع وقياس النشاط لبدء التتبع.',activityRunning:'النشاط مستمر بالخلفية',impactPeak:'قمة التسارع',rotationPeak:'قمة الدوران',stability:'الثبات',motionSamplesShort:'عينات الحركة',stepEventsShort:'نبضات الخطوة'});
+  Object.assign(COPY.en, {activityEyebrow:'Outdoor activity',activityQuickTitle:'Start a GPS activity',activityQuickHint:'Walking, running and cycling are independent activity sessions, separate from workout programs, and continue in the background with an ongoing notification.',activityTitle:'Walk, run and cycle',backgroundReady:'Background ready',walk:'Walk',run:'Run',cycle:'Cycle',gpsSteps:'GPS + steps',gpsSpeed:'GPS + speed',selectActivity:'Choose an activity to start',gpsWaiting:'Waiting for GPS',gpsRouteHint:'Your real GPS route will appear here after the first fixes.',pace:'Pace',speed:'Speed',gpsAccuracy:'GPS accuracy',live:'live',activityBackgroundHint:'You can lock the screen or open another app; the ongoing notification confirms tracking is still active.',stopAndSaveActivity:'Stop and save activity',recentActivities:'Recent activities',backToday:'Back to Today',weightKg:'Weight for calorie estimate',activitySaved:'Activity saved.',activityPermissionNeeded:'Allow location and activity access to start tracking.',activityRunning:'Activity continues in background',impactPeak:'Acceleration peak',rotationPeak:'Rotation peak',stability:'Stability',motionSamplesShort:'Motion samples',stepEventsShort:'Step events'});
 
   const SECTION_ORDER = ['gym','home','running','cycling','football','swimming','yoga','calisthenics','boxing','hiit','mobility','recovery','team_sports'];
   const state = {
@@ -51,7 +53,9 @@
     clearArmedUntil: 0,
     onboardingDraft: null,
     motionPoll: null,
-    motionEvidence: null
+    motionEvidence: null,
+    activityPoll: null,
+    activitySnapshot: null
   };
   const t = key => COPY[state.lang][key] || COPY.en[key] || key;
 
@@ -66,7 +70,7 @@
       const active = button.dataset.screen === id; button.classList.toggle('active', active);
       if (active) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
     });
-    $('primaryNav').classList.toggle('hidden', id === 'activeWorkoutScreen');
+    $('primaryNav').classList.toggle('hidden', id === 'activeWorkoutScreen' || id === 'activityScreen');
     document.body.classList.toggle('workout-active', id === 'activeWorkoutScreen');
     const demoVideo = $('activeDemoVideo');
     if (id === 'activeWorkoutScreen' && !demoVideo.classList.contains('hidden')) demoVideo.play().catch(() => {});
@@ -74,6 +78,7 @@
     window.scrollTo({top: 0, behavior: 'smooth'});
     if (id === 'progressScreen') renderProgress();
     if (id === 'healthScreen') renderHealthStatus();
+    if (id === 'activityScreen') { renderActivity(readActivitySnapshot()); startActivityPolling(); }
   }
 
   function applyLanguage() {
@@ -252,9 +257,16 @@
     return Array.from({length:Math.max(1,Number(reference.sets)||1)},()=>({type:reference.role==='warmup'?'warmup':'working',load:0,reps,rpe:reference.targetRpe,rir:reference.targetRir,restSeconds:reference.restSeconds||60,durationSeconds:reference.durationSeconds||null,complete:false}));
   }
   function makeClientId() { return 'thf-v2-' + (globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`); }
-  function beginNativeMotionSession(sessionId) {
+  function sensorProfileForExercise(item) {
+    const movement=String(item?.movement?.id||'').toLowerCase(), category=String(item?.category||'').toLowerCase();
+    if(movement.includes('jump')||movement.includes('hop')||category.includes('plyometric'))return 'impact_jump';
+    if(movement.includes('isometric')||movement.includes('hold')||movement.includes('plank'))return 'static_hold';
+    if(movement==='step'||movement.includes('step-up')||movement.includes('step drill')||category.includes('agility-step'))return 'step_drill';
+    return 'form_motion';
+  }
+  function beginNativeMotionSession(sessionId, profile) {
     if (!N || typeof N.beginMotionSession !== 'function') return {active:false,error:'ANDROID_ONLY'};
-    try { return parse(N.beginMotionSession(sessionId), {active:false}); } catch { return {active:false,error:'MOTION_START_FAILED'}; }
+    try { return parse(N.beginMotionSession(sessionId, profile), {active:false}); } catch { return {active:false,error:'MOTION_START_FAILED'}; }
   }
   function readMotionSnapshot() {
     if (!N || typeof N.motionSnapshot !== 'function') return {available:false};
@@ -267,15 +279,20 @@
   function renderMotionEvidence(evidence=readMotionSnapshot()) {
     state.motionEvidence=evidence;
     const panel=$('motionEvidencePanel'); if(!panel)return evidence;
-    const available=Boolean(evidence?.available);
+    const available=Boolean(evidence?.available), profile=state.active?.sensorProfile||sensorProfileForExercise(activeExercise());
     const source=$('motionSourceBadge');
     source.textContent=available?t('sensorVerified'):t('sensorWaiting');
     source.classList.toggle('gold',available);
-    $('motionLiveSteps').textContent=String(Number(evidence?.stepDelta||0));
-    $('motionDetectorEvents').textContent=String(Number(evidence?.stepDetectorCount||0));
+    let primaryLabel=t('motionSamplesShort'), primaryValue=Number(evidence?.accelerometerSampleCount||0);
+    let secondaryLabel=t('rotationPeak'), secondaryValue=Number(evidence?.gyroscopeMagnitudePeak||0).toFixed(2);
+    if(profile==='step_drill'){primaryLabel=t('stepsLive');primaryValue=Number(evidence?.stepDelta||0);secondaryLabel=t('stepEventsShort');secondaryValue=Number(evidence?.stepDetectorCount||0);}
+    else if(profile==='impact_jump'){primaryLabel=t('impactPeak');primaryValue=`${(Number(evidence?.accelerometerMagnitudePeak||0)/9.80665).toFixed(2)} g`;secondaryLabel=t('rotationPeak');secondaryValue=`${Number(evidence?.gyroscopeMagnitudePeak||0).toFixed(2)} rad/s`;}
+    else if(profile==='static_hold'){const variance=Math.max(0,Number(evidence?.accelerometerMagnitudeVariance||0));primaryLabel=t('stability');primaryValue=`${Math.round(100/(1+variance)*100)/100}%`;secondaryLabel=t('motionSamplesShort');secondaryValue=Number(evidence?.accelerometerSampleCount||0);}
+    $('motionPrimaryMetricLabel').textContent=primaryLabel;$('motionPrimaryMetricValue').textContent=String(primaryValue);
+    $('motionSecondaryMetricLabel').textContent=secondaryLabel;$('motionSecondaryMetricValue').textContent=String(secondaryValue);
     $('motionConfidence').textContent=`${Math.round(Math.max(0,Math.min(1,Number(evidence?.localConfidence||0)))*100)}%`;
     const samples=Number(evidence?.accelerometerSampleCount||0)+Number(evidence?.gyroscopeSampleCount||0);
-    $('motionSensorDetail').textContent=available?`${t('sensorSamples')}: ${samples} · accel ${Number(evidence?.accelerometerSampleCount||0)} · gyro ${Number(evidence?.gyroscopeSampleCount||0)}`:t('sensorWaiting');
+    $('motionSensorDetail').textContent=available?`${profile} · ${t('sensorSamples')}: ${samples} · accel ${Number(evidence?.accelerometerSampleCount||0)} · gyro ${Number(evidence?.gyroscopeSampleCount||0)}`:t('sensorWaiting');
     return evidence;
   }
   function startMotionPolling() {
@@ -285,15 +302,17 @@
   }
   function stopMotionPolling() { if(state.motionPoll){clearInterval(state.motionPoll);state.motionPoll=null;} }
   function startExercise(item) {
-    state.active = {clientRecordId:makeClientId(),exerciseId:item.id,startedAt:Date.now(),sets:makeSets(item)}; state.demoFrame=0;
+    const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
+    state.active = {clientRecordId,exerciseId:item.id,startedAt:Date.now(),sets:makeSets(item),sensorProfile,motionSessionId}; state.demoFrame=0;
     store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail();
-    beginNativeMotionSession(state.active.clientRecordId); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false);
+    beginNativeMotionSession(motionSessionId,sensorProfile); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false);
   }
   function startProgramSession(programId,sessionId) {
     const program=PROGRAMS.find(value=>value.id===programId);const sessionIndex=program?.sessions.findIndex(value=>value.id===sessionId)??-1;const session=program?.sessions[sessionIndex];const reference=session?.exercises[0];const item=reference?exerciseFor(reference):null;if(!program||!session||!item)return;
     const now=Date.now();store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex,selectedAt:new Date(now).toISOString()}));
-    state.active={clientRecordId:makeClientId(),exerciseId:item.id,startedAt:now,sets:makeProgramSets(reference,item),programId:program.id,programSessionId:session.id,programSessionIndex:sessionIndex,programExerciseIndex:0,programStartedAt:now,programEntries:[]};state.demoFrame=0;
-    persistActive();closeProgramDetail();closeDetail();beginNativeMotionSession(state.active.clientRecordId);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);
+    const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
+    state.active={clientRecordId,exerciseId:item.id,startedAt:now,sets:makeProgramSets(reference,item),programId:program.id,programSessionId:session.id,programSessionIndex:sessionIndex,programExerciseIndex:0,programStartedAt:now,programEntries:[],sensorProfile,motionSessionId};state.demoFrame=0;
+    persistActive();closeProgramDetail();closeDetail();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);
   }
   function activeExercise() { return EXERCISES.find(item => item.id === state.active?.exerciseId); }
   function completedVolume(sets) { return (sets||[]).filter(set=>set.complete).reduce((sum,set)=>sum + Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0); }
@@ -352,10 +371,10 @@
   function finishWorkout() {
     const item=activeExercise();if(!item)return;const now=Date.now();const currentEntry={exerciseId:item.id,exerciseName:item.name,sport:item.sport,sets:state.active.sets.map((set,index)=>({...set,exerciseId:item.id,ordinal:index+1}))};const entries=[...(state.active.programEntries||[]),currentEntry];
     const program=PROGRAMS.find(value=>value.id===state.active.programId);const programSession=program?.sessions.find(value=>value.id===state.active.programSessionId);const programIndex=Number(state.active.programExerciseIndex)||0;
-    if(program&&programSession&&programIndex<programSession.exercises.length-1){const nextIndex=programIndex+1;const reference=programSession.exercises[nextIndex];const next=exerciseFor(reference);if(next){state.active={...state.active,exerciseId:next.id,startedAt:now,sets:makeProgramSets(reference,next),programExerciseIndex:nextIndex,programEntries:entries};state.demoFrame=0;stopRest();persistActive();renderActiveWorkout();toast(t('nextExercise').replace('{name}',local(next.name)));window.scrollTo({top:0,behavior:'smooth'});return;}}
+    if(program&&programSession&&programIndex<programSession.exercises.length-1){const completedMotion=endNativeMotionSession();stopMotionPolling();currentEntry.motionEvidence=completedMotion;const nextIndex=programIndex+1;const reference=programSession.exercises[nextIndex];const next=exerciseFor(reference);if(next){const sensorProfile=sensorProfileForExercise(next),motionSessionId=`${state.active.clientRecordId}:${nextIndex}:${next.id}`;state.active={...state.active,exerciseId:next.id,startedAt:now,sets:makeProgramSets(reference,next),programExerciseIndex:nextIndex,programEntries:[...(state.active.programEntries||[]),currentEntry],sensorProfile,motionSessionId};state.demoFrame=0;stopRest();persistActive();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();toast(t('nextExercise').replace('{name}',local(next.name)));window.scrollTo({top:0,behavior:'smooth'});return;}}
     const allSets=entries.flatMap(entry=>entry.sets);const completedSets=allSets.filter(set=>set.complete);const volume=Math.round(completedSets.reduce((sum,set)=>sum+Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0));const title=program&&programSession?programSession.name:item.name;const startedAt=state.active.programStartedAt||state.active.startedAt;
-    const motionEvidence=endNativeMotionSession();stopMotionPolling();
-    const measurementSource=motionEvidence?.available&&motionEvidence.sessionId===state.active.clientRecordId?'SENSOR':'MANUAL_OR_UNVERIFIED';
+    const motionEvidence=endNativeMotionSession();stopMotionPolling();currentEntry.motionEvidence=motionEvidence;
+    const measurementSource=motionEvidence?.available&&motionEvidence.sessionId===state.active.motionSessionId?'SENSOR':'MANUAL_OR_UNVERIFIED';
     const summary={clientRecordId:state.active.clientRecordId,recordVersion:1,exercise:local(title),exerciseName:title,id:program?.id||item.id,sport:program?.section?.id||item.sport,programId:program?.id||null,programSessionId:programSession?.id||null,startedAtMs:startedAt,endedAtMs:now,date:new Date(now).toISOString(),durationMin:Math.max(1,Math.round((now-startedAt)/60000)),reps:completedSets.reduce((sum,set)=>sum+(Number(set.reps)||0),0),volumeKg:volume,sets:allSets,completed:true,steps:Number(motionEvidence?.stepDelta||0),motionEvidence,measurementSource};
     const history=parse(store.getItem('pulse.v2.history'),[]).filter(entry=>entry.clientRecordId!==summary.clientRecordId);history.push(summary);store.setItem('pulse.v2.history',JSON.stringify(history.slice(-200)));
     try { N?.saveSummary?.(JSON.stringify(summary)); } catch {}
@@ -439,15 +458,29 @@
   function renderHealthError(data={}){const code=String(data.code||'');const retryAfterMs=Number(data.retryAfterMs||0);setHealthSyncBusy(false,code==='RATE_LIMITED'||code==='COOLDOWN'?t('healthSyncWait'):t('healthSyncFailed'));renderHealthStatus({...currentHealth(),lastError:data.message||'Health Connect error'});if(retryAfterMs>0)scheduleHealthRetry(retryAfterMs);}
   function renderHealthSnapshot(data){clearTimeout(healthSyncRetryTimer);setHealthSyncBusy(false);$('healthSteps').textContent=Number(data.steps||0).toLocaleString(locale());$('healthSessions').textContent=Number(data.exerciseSessions||0).toLocaleString(locale());$('healthDistance').textContent=(Number(data.distanceMeters||0)/1000).toFixed(1);$('healthCalories').textContent=Math.round(Number(data.activeCaloriesKcal||0)).toLocaleString(locale());$('healthSources').innerHTML=(data.origins||[]).map(origin=>`<span class="tag">${escapeHtml(origin)}</span>`).join('');$('healthEmpty').textContent=data.uxState==='SYNCED_UNVERIFIED_ONLY'?(state.lang==='ar'?'تمت القراءة، لكن السجلات الحالية غير مؤهلة للمكافآت.':'Records were read, but none are currently reward-eligible.'):data.uxState==='SYNCED_NO_RECORDS'?(state.lang==='ar'?'الاتصال ناجح ولا توجد سجلات في آخر 7 أيام.':'Connected; no records in the last 7 days.'):(state.lang==='ar'?'تم تحديث ملخص موثّق لآخر 7 أيام.':'The verified 7-day summary is up to date.');renderHealthStatus({...currentHealth(),...data,lastError:''});}
 
-  function defaultProfile(){return{goal:'general_fitness',level:'beginner',days:3,equipment:['body only']};}
+  function activityHistory(){return parse(store.getItem('pulse.v2.activities'),[]);}
+  function profileWeightKg(){const profile=parse(store.getItem('pulse.v2.profile'),defaultProfile());return Math.max(30,Math.min(250,Number(profile.weightKg)||70));}
+  function readActivitySnapshot(){if(!N||typeof N.activitySnapshot!=='function')return state.activitySnapshot||{active:false,mode:'',route:[]};try{return parse(N.activitySnapshot(),state.activitySnapshot||{active:false,mode:'',route:[]});}catch{return state.activitySnapshot||{active:false,mode:'',route:[]};}}
+  function formatElapsed(ms){const total=Math.max(0,Math.floor(Number(ms||0)/1000)),h=Math.floor(total/3600),m=Math.floor((total%3600)/60),sec=total%60;return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
+  function formatPace(value){const pace=Number(value);if(!Number.isFinite(pace)||pace<=0)return '—';const min=Math.floor(pace),sec=Math.max(0,Math.min(59,Math.round((pace-min)*60)));return `${min}:${String(sec).padStart(2,'0')}`;}
+  function activityModeName(mode){return mode==='walk'?t('walk'):mode==='run'?t('run'):mode==='cycle'?t('cycle'):t('selectActivity');}
+  function renderActivityRoute(route=[]){const line=$('activityRouteLine'),empty=$('activityMapEmpty');if(!line||!empty)return;const points=(Array.isArray(route)?route:[]).filter(p=>Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng)));empty.classList.toggle('hidden',points.length>0);if(!points.length){line.setAttribute('points','');return;}const lats=points.map(p=>Number(p.lat)),lngs=points.map(p=>Number(p.lng)),minLat=Math.min(...lats),maxLat=Math.max(...lats),minLng=Math.min(...lngs),maxLng=Math.max(...lngs),latSpan=Math.max(0.00005,maxLat-minLat),lngSpan=Math.max(0.00005,maxLng-minLng);const svgPoints=points.map(p=>{const x=60+(Number(p.lng)-minLng)/lngSpan*880,y=500-(Number(p.lat)-minLat)/latSpan*440;return `${x.toFixed(1)},${y.toFixed(1)}`;}).join(' ');line.setAttribute('points',svgPoints);}
+  function renderActivity(snapshot=readActivitySnapshot()){state.activitySnapshot=snapshot||{active:false,route:[]};const mode=String(snapshot?.mode||'');$('activityModeLabel').textContent=activityModeName(mode);$('activityTimer').textContent=formatElapsed(snapshot?.elapsedMs);$('activityDistance').textContent=(Number(snapshot?.distanceMetres||0)/1000).toFixed(2);$('activityPace').textContent=mode==='cycle'?'—':formatPace(snapshot?.paceMinutesPerKm);$('activitySpeed').textContent=Number(snapshot?.averageSpeedKph||0).toFixed(1);$('activityCalories').textContent=Math.round(Number(snapshot?.estimatedCaloriesKcal||0));$('activitySteps').textContent=mode==='cycle'?'—':Number(snapshot?.steps||0).toLocaleString(locale());$('activityAccuracy').textContent=Number.isFinite(Number(snapshot?.lastAccuracyMetres))?Math.round(Number(snapshot.lastAccuracyMetres)):'—';$('activityGpsStatus').textContent=Number(snapshot?.gpsPointCount||0)>0?`GPS · ${Math.round(Number(snapshot.lastAccuracyMetres||0))}m`:t('gpsWaiting');$('activityGpsStatus').classList.toggle('gold',Number(snapshot?.gpsPointCount||0)>0);$('activityStopBtn').disabled=!snapshot?.active;document.querySelectorAll('[data-activity-mode]').forEach(button=>button.classList.toggle('active',snapshot?.active&&button.dataset.activityMode===mode));renderActivityRoute(snapshot?.route||[]);renderActivityHistory();return snapshot;}
+  function startActivityPolling(){stopActivityPolling();state.activityPoll=setInterval(()=>renderActivity(readActivitySnapshot()),1000);}
+  function stopActivityPolling(){if(state.activityPoll){clearInterval(state.activityPoll);state.activityPoll=null;}}
+  function startActivity(mode){showScreen('activityScreen',false);if(!N||typeof N.beginActivitySession!=='function'){toast(t('activityPermissionNeeded'));return;}const result=parse(N.beginActivitySession(mode,profileWeightKg()),{});state.activitySnapshot={...state.activitySnapshot,...result,mode:result.mode||mode,route:state.activitySnapshot?.route||[]};renderActivity(state.activitySnapshot);startActivityPolling();if(result.permissionRequired)toast(t('activityPermissionNeeded'));}
+  function stopAndSaveActivity(){if(!N||typeof N.endActivitySession!=='function')return;const snapshot=parse(N.endActivitySession(),{});stopActivityPolling();renderActivity(snapshot);if(Number(snapshot?.startedAtWallMs)>0&&Number(snapshot?.elapsedMs)>0){const entry={id:`activity-${snapshot.startedAtWallMs}`,mode:snapshot.mode,startedAtWallMs:snapshot.startedAtWallMs,date:new Date(snapshot.startedAtWallMs).toISOString(),elapsedMs:snapshot.elapsedMs,distanceMetres:snapshot.distanceMetres||0,steps:snapshot.steps||0,averageSpeedKph:snapshot.averageSpeedKph||0,paceMinutesPerKm:snapshot.paceMinutesPerKm,estimatedCaloriesKcal:snapshot.estimatedCaloriesKcal||0,gpsPointCount:snapshot.gpsPointCount||0,route:snapshot.route||[]};const entries=activityHistory().filter(item=>item.id!==entry.id);entries.push(entry);store.setItem('pulse.v2.activities',JSON.stringify(entries.slice(-100)));toast(t('activitySaved'));renderActivityHistory();renderToday();}}
+  function renderActivityHistory(){const node=$('activityHistory');if(!node)return;const entries=activityHistory().slice().reverse().slice(0,12);node.innerHTML=entries.length?entries.map(entry=>`<article class="history-item"><div><h3>${escapeHtml(activityModeName(entry.mode))}</h3><p class="small muted">${new Date(entry.date).toLocaleString(locale())} · ${(Number(entry.distanceMetres||0)/1000).toFixed(2)} km · ${formatElapsed(entry.elapsedMs)}</p></div><strong>${Math.round(Number(entry.estimatedCaloriesKcal||0))} kcal</strong></article>`).join(''):`<p class="muted">${escapeHtml(t('emptyHistory'))}</p>`;}
+
+  function defaultProfile(){return{goal:'general_fitness',level:'beginner',days:3,weightKg:70,equipment:['body only']};}
   function equipmentOptions(){return[['body only',state.lang==='ar'?'وزن الجسم':'Bodyweight'],['dumbbell',state.lang==='ar'?'دمبل':'Dumbbells'],['barbell',state.lang==='ar'?'بار وأوزان':'Barbell'],['cable',state.lang==='ar'?'كيبل':'Cable'],['machine',state.lang==='ar'?'أجهزة':'Machines'],['kettlebells',state.lang==='ar'?'كيتل بيل':'Kettlebells'],['bands',state.lang==='ar'?'مطاط مقاومة':'Bands']];}
   function renderEquipmentChoices(node,selected){node.innerHTML=equipmentOptions().map(([id,label])=>`<label class="choice"><input type="checkbox" value="${escapeHtml(id)}" ${selected.includes(id)?'checked':''}><span>${escapeHtml(label)}</span></label>`).join('');}
-  function renderProfile(){const profile=parse(store.getItem('pulse.v2.profile'),defaultProfile());$('profileGoal').value=profile.goal;$('profileLevel').value=profile.level;$('profileDays').value=profile.days;$('profileDaysOutput').textContent=profile.days;renderEquipmentChoices($('equipmentChoices'),profile.equipment);}
-  function saveProfile(event){event.preventDefault();const profile={goal:$('profileGoal').value,level:$('profileLevel').value,days:Number($('profileDays').value),equipment:[...$('equipmentChoices').querySelectorAll('input:checked')].map(input=>input.value)};if(!profile.equipment.length)profile.equipment=['body only'];store.setItem('pulse.v2.profile',JSON.stringify(profile));store.removeItem('pulse.v2.program');$('profileSaved').classList.remove('hidden');setTimeout(()=>$('profileSaved').classList.add('hidden'),2500);renderToday();}
+  function renderProfile(){const profile={...defaultProfile(),...parse(store.getItem('pulse.v2.profile'),defaultProfile())};$('profileGoal').value=profile.goal;$('profileLevel').value=profile.level;$('profileDays').value=profile.days;$('profileDaysOutput').textContent=profile.days;$('profileWeightKg').value=Number(profile.weightKg)||70;renderEquipmentChoices($('equipmentChoices'),profile.equipment);}
+  function saveProfile(event){event.preventDefault();const profile={goal:$('profileGoal').value,level:$('profileLevel').value,days:Number($('profileDays').value),weightKg:Math.max(30,Math.min(250,Number($('profileWeightKg').value)||70)),equipment:[...$('equipmentChoices').querySelectorAll('input:checked')].map(input=>input.value)};if(!profile.equipment.length)profile.equipment=['body only'];store.setItem('pulse.v2.profile',JSON.stringify(profile));store.removeItem('pulse.v2.program');$('profileSaved').classList.remove('hidden');setTimeout(()=>$('profileSaved').classList.add('hidden'),2500);renderToday();}
 
   function readOnboardingDraft(){const draft=state.onboardingDraft||parse(store.getItem('pulse.v2.profile'),defaultProfile());return{...defaultProfile(),...draft,equipment:Array.isArray(draft.equipment)&&draft.equipment.length?draft.equipment:['body only']};}
-  function renderOnboarding(){const draft=readOnboardingDraft();$('onboardingGoal').value=draft.goal;$('onboardingLevel').value=draft.level;$('onboardingDays').value=draft.days;$('onboardingDaysOutput').textContent=draft.days;renderEquipmentChoices($('onboardingEquipmentChoices'),draft.equipment);}
-  function captureOnboardingDraft(){state.onboardingDraft={goal:$('onboardingGoal').value,level:$('onboardingLevel').value,days:Number($('onboardingDays').value),equipment:[...$('onboardingEquipmentChoices').querySelectorAll('input:checked')].map(input=>input.value)};$('onboardingDaysOutput').textContent=state.onboardingDraft.days;}
+  function renderOnboarding(){const draft=readOnboardingDraft();$('onboardingGoal').value=draft.goal;$('onboardingLevel').value=draft.level;$('onboardingDays').value=draft.days;$('onboardingDaysOutput').textContent=draft.days;$('onboardingWeightKg').value=Number(draft.weightKg)||70;renderEquipmentChoices($('onboardingEquipmentChoices'),draft.equipment);}
+  function captureOnboardingDraft(){state.onboardingDraft={goal:$('onboardingGoal').value,level:$('onboardingLevel').value,days:Number($('onboardingDays').value),weightKg:Math.max(30,Math.min(250,Number($('onboardingWeightKg').value)||70)),equipment:[...$('onboardingEquipmentChoices').querySelectorAll('input:checked')].map(input=>input.value)};$('onboardingDaysOutput').textContent=state.onboardingDraft.days;}
   function openOnboarding(){renderOnboarding();$('onboardingDialog').classList.remove('hidden');document.body.classList.add('onboarding-open');setTimeout(()=>$('onboardingGoal').focus(),0);}
   function closeOnboarding(){$('onboardingDialog').classList.add('hidden');document.body.classList.remove('onboarding-open');state.onboardingDraft=null;}
   function completeOnboarding(event){event.preventDefault();captureOnboardingDraft();const profile=readOnboardingDraft();if(!profile.equipment.length)profile.equipment=['body only'];store.setItem('pulse.v2.profile',JSON.stringify(profile));store.removeItem('pulse.v2.program');closeOnboarding();renderProfile();renderToday();showScreen('todayScreen');toast(t('planReady'));}
@@ -457,7 +490,7 @@
     $('languageToggle').addEventListener('click',toggleLanguage);
     $('onboardingLanguageToggle').addEventListener('click',()=>{captureOnboardingDraft();toggleLanguage();});
     $('onboardingForm').addEventListener('submit',completeOnboarding);
-    ['onboardingGoal','onboardingLevel','onboardingDays'].forEach(id=>$(id).addEventListener('input',captureOnboardingDraft));
+    ['onboardingGoal','onboardingLevel','onboardingDays','onboardingWeightKg'].forEach(id=>$(id).addEventListener('input',captureOnboardingDraft));
     $('onboardingEquipmentChoices').addEventListener('change',captureOnboardingDraft);
     document.querySelectorAll('#primaryNav button').forEach(button=>button.addEventListener('click',()=>showScreen(button.dataset.screen)));
     document.querySelectorAll('#trainModeTabs button').forEach(button=>button.addEventListener('click',()=>{state.trainMode=button.dataset.mode;store.setItem('pulse.v2.trainMode',state.trainMode);renderTrainMode();}));
@@ -469,6 +502,9 @@
     $('startTodayBtn').addEventListener('click',()=>{const button=$('startTodayBtn');if(button.dataset.program&&button.dataset.session){startProgramSession(button.dataset.program,button.dataset.session);return;}const item=EXERCISES.find(exercise=>exercise.id===button.dataset.exercise);if(item)startExercise(item);});
     $('addSetBtn').addEventListener('click',addSet);$('finishWorkoutBtn').addEventListener('click',finishWorkout);$('skipRest').addEventListener('click',stopRest);$('exitWorkoutBtn').addEventListener('click',()=>{persistActive();showScreen('trainScreen');});
     $('speakCue').addEventListener('click',()=>{const item=activeExercise();const text=[local(item.name),...item.steps[state.lang]].join('. ');try{if(N)N.speak(text,state.lang==='ar'?'ar-EG':'en-US');else if('speechSynthesis'in window){const utterance=new SpeechSynthesisUtterance(text);utterance.lang=state.lang==='ar'?'ar-EG':'en-US';speechSynthesis.speak(utterance);}}catch{}});
+    document.querySelectorAll('[data-activity-mode]').forEach(button=>button.addEventListener('click',()=>startActivity(button.dataset.activityMode)));
+    $('activityStopBtn').addEventListener('click',stopAndSaveActivity);$('activityBackBtn').addEventListener('click',()=>{stopActivityPolling();showScreen('todayScreen');});$('activityHealthBtn').addEventListener('click',()=>{stopActivityPolling();showScreen('healthScreen');});
+    window.addEventListener('thf:activity-started',()=>{renderActivity(readActivitySnapshot());startActivityPolling();});window.addEventListener('thf:location-permission',event=>{if(event.detail?.granted){setTimeout(()=>renderActivity(readActivitySnapshot()),400);}else toast(t('activityPermissionNeeded'));});
     $('clearHistoryBtn').addEventListener('click',()=>{const now=Date.now();if(now>state.clearArmedUntil){state.clearArmedUntil=now+3000;toast(t('clearConfirm'));return;}store.removeItem('pulse.v2.history');renderToday();renderProgress();});
     $('profileForm').addEventListener('submit',saveProfile);$('profileDays').addEventListener('input',event=>$('profileDaysOutput').textContent=event.target.value);$('refreshStatus').addEventListener('click',renderNativeStatus);$('reduceMotion').addEventListener('change',event=>document.documentElement.style.setProperty('--motion',event.target.checked?'0':'1'));
     $('privacyPolicyBtn').addEventListener('click',()=>{if(N)N.openPrivacyPolicy();else toast(t('accountResourceAndroidOnly'))});
@@ -480,12 +516,14 @@
     window.addEventListener('thf:health-status',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-permission',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-sync',event=>renderHealthSnapshot(event.detail));window.addEventListener('thf:health-write',()=>renderHealthStatus());window.addEventListener('thf:health-error',event=>renderHealthError(event.detail||{}));
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
-    document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});});
+    document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
   }
 
   const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
   bind(); applyLanguage(); renderHealthStatus(); renderFoundingHero();
   if (shouldOnboard) openOnboarding();
-  if (state.active && activeExercise()) { beginNativeMotionSession(state.active.clientRecordId); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false); }
+  if (state.active && activeExercise()) { const item=activeExercise();state.active.sensorProfile=state.active.sensorProfile||sensorProfileForExercise(item);state.active.motionSessionId=state.active.motionSessionId||`${state.active.clientRecordId}:${Number(state.active.programExerciseIndex)||0}:${item.id}`;beginNativeMotionSession(state.active.motionSessionId,state.active.sensorProfile); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false); }
+  else { const liveActivity=readActivitySnapshot(); if(liveActivity?.active){state.activitySnapshot=liveActivity;showScreen('activityScreen',false);startActivityPolling();} }
+
 })();

@@ -37,13 +37,27 @@ class AndroidMotionSensorGateway(context: Context) : MotionSensorGateway, Sensor
         lowPowerRegistered = stepCounter != null || stepDetector != null
     }
 
-    override fun startActive(listener: MotionSensorListener) {
+    override fun startActive(listener: MotionSensorListener, profile: MotionSensorProfile) {
+        // Active exercise profiles are explicit: do not leave low-power step listeners
+        // registered for a jump/hold/strength exercise that does not use step metrics.
+        sensorManager.unregisterListener(this)
+        lowPowerRegistered = false
+        activeRegistered = false
         downstream = listener
-        startLowPower(listener)
-        if (activeRegistered) return
-        accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        gyroscope?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        activeRegistered = accelerometer != null || gyroscope != null
+        if (profile.stepCounter && hasActivityRecognitionPermission()) {
+            stepCounter?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
+        }
+        if (profile.stepDetector && hasActivityRecognitionPermission()) {
+            stepDetector?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
+        }
+        if (profile.accelerometer) {
+            accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+        }
+        if (profile.gyroscope) {
+            gyroscope?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+        }
+        lowPowerRegistered = (profile.stepCounter && stepCounter != null) || (profile.stepDetector && stepDetector != null)
+        activeRegistered = (profile.accelerometer && accelerometer != null) || (profile.gyroscope && gyroscope != null)
     }
 
     override fun stopActive() {
