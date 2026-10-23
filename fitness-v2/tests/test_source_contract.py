@@ -63,15 +63,28 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
         self.assertGreaterEqual(version, 51005)
 
-    def test_fitness_play_gate_targets_sensor_first_51007_candidate(self):
+    def test_sensor_first_51008_is_candidate_while_play_gate_remains_pinned_to_51007(self):
+        candidate = (ROOT / ".github" / "workflows" / "fitness-sensor-candidate.yml").read_text()
         android_gate = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
         play_gate = (ROOT / ".github" / "workflows" / "thf-fitness-play-probe.yml").read_text()
+        gradle = (ANDROID / "app" / "build.gradle").read_text()
+
+        self.assertIn("versionCode 51008", gradle)
+        self.assertIn("versionName '5.0.0-v2-alpha8'", gradle)
+        self.assertIn("candidate 51008", candidate.lower())
+        self.assertIn("versionCode='51008'", candidate)
+        self.assertIn("fitness-sensor-candidate-51008", candidate)
+
+        # Publishing stays deliberately pinned to the already-proven 51007 package
+        # until 51008 completes CI + physical phone QA.
         self.assertIn("fitness-v2-51007-package-gate", android_gate)
         self.assertIn("fitness-v2-51007-package-gate", play_gate)
         self.assertRegex(play_gate, r"expected_version\s*=\s*[\"\']51007[\"\']")
         self.assertIn("THF Fitness 51007 Internal", play_gate)
+        self.assertNotIn("51008", play_gate)
         self.assertNotIn("39089308617", play_gate)
         self.assertNotIn("EXPECTED_UNSIGNED_SHA256", play_gate)
+
         qa = (ROOT / "fitness-v2" / "scripts" / "fitness_phone_qa.sh").read_text()
         runner = (ROOT / "fitness-v2" / "scripts" / "run_fitness_phone_candidate_51007.sh")
         self.assertIn("--require-motion-sensors", qa)
@@ -83,9 +96,6 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("fitness-v2-51007-package-gate", runner_text)
         self.assertIn("--require-motion-sensors", runner_text)
         self.assertIn("--require-health-connect", runner_text)
-        gradle = (ANDROID / "app" / "build.gradle").read_text()
-        self.assertIn("versionCode 51007", gradle)
-        self.assertIn("versionName '5.0.0-v2-alpha7'", gradle)
 
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
