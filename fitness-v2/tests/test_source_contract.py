@@ -115,6 +115,20 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             health,
         )
 
+    def test_health_connect_defaults_to_read_only_and_write_is_optional(self):
+        source = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        repository = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "HealthConnectRepository.kt").read_text()
+        self.assertIn("healthReadPermissionLauncher", source)
+        self.assertIn("healthWritePermissionLauncher", source)
+        self.assertIn("healthReadPermissionLauncher.launch(HealthConnectRepository.READ_PERMISSIONS)", source)
+        self.assertIn("healthWritePermissionLauncher.launch(HealthConnectRepository.WRITE_PERMISSIONS)", source)
+        self.assertIn("fun requestHealthWritePermission()", source)
+        self.assertIn("if (!cachedHealthState.writePermissionsGranted)", source)
+        self.assertIn('put("requiredReadCount", HealthConnectRepository.READ_PERMISSIONS.size)', source)
+        self.assertIn('put("optionalWriteCount", HealthConnectRepository.WRITE_PERMISSIONS.size)', source)
+        self.assertIn("missingReadPermissions", repository)
+        self.assertIn("missingWritePermissions", repository)
+
     def test_health_state_fallbacks_track_read_and_write_permissions_explicitly(self):
         source = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
         self.assertGreaterEqual(source.count("readPermissionsGranted = false"), 2)

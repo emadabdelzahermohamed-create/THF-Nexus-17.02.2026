@@ -67,6 +67,8 @@ class MainActivity : ComponentActivity() {
         readPermissionsGranted = false,
         writePermissionsGranted = false,
         grantedPermissions = emptySet(),
+        missingReadPermissions = HealthConnectRepository.READ_PERMISSIONS,
+        missingWritePermissions = HealthConnectRepository.WRITE_PERMISSIONS,
         missingPermissions = HealthConnectRepository.REQUIRED_PERMISSIONS,
     )
 
@@ -83,7 +85,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val healthPermissionLauncher = registerForActivityResult(
+    private val healthReadPermissionLauncher = registerForActivityResult(
         PermissionController.createRequestPermissionResultContract(),
     ) { granted ->
         lifecycleScope.launch {
@@ -96,6 +98,19 @@ class MainActivity : ComponentActivity() {
                 flushPendingHealth()
                 syncHealth()
             }
+        }
+    }
+
+    private val healthWritePermissionLauncher = registerForActivityResult(
+        PermissionController.createRequestPermissionResultContract(),
+    ) { granted ->
+        lifecycleScope.launch {
+            refreshHealthState()
+            dispatch(
+                "thf:health-write-permission",
+                healthStatusJson().put("grantedCount", granted.size),
+            )
+            if (cachedHealthState.writePermissionsGranted) flushPendingHealth()
         }
     }
 
@@ -202,6 +217,8 @@ class MainActivity : ComponentActivity() {
                     readPermissionsGranted = false,
                     writePermissionsGranted = false,
                     grantedPermissions = emptySet(),
+                    missingReadPermissions = HealthConnectRepository.READ_PERMISSIONS,
+                    missingWritePermissions = HealthConnectRepository.WRITE_PERMISSIONS,
                     missingPermissions = HealthConnectRepository.REQUIRED_PERMISSIONS,
                 )
             }
@@ -350,8 +367,14 @@ class MainActivity : ComponentActivity() {
         .put("availability", cachedHealthState.availability)
         .put("connected", cachedHealthState.connected)
         .put("grantedCount", cachedHealthState.grantedPermissions.size)
-        .put("requiredCount", HealthConnectRepository.REQUIRED_PERMISSIONS.size)
-        .put("missingPermissions", JSONArray(cachedHealthState.missingPermissions.sorted()))
+        .put("readPermissionsGranted", cachedHealthState.readPermissionsGranted)
+        .put("writePermissionsGranted", cachedHealthState.writePermissionsGranted)
+        .put("requiredCount", HealthConnectRepository.READ_PERMISSIONS.size)
+        .put("requiredReadCount", HealthConnectRepository.READ_PERMISSIONS.size)
+        .put("optionalWriteCount", HealthConnectRepository.WRITE_PERMISSIONS.size)
+        .put("missingPermissions", JSONArray(cachedHealthState.missingReadPermissions.sorted()))
+        .put("missingReadPermissions", JSONArray(cachedHealthState.missingReadPermissions.sorted()))
+        .put("missingWritePermissions", JSONArray(cachedHealthState.missingWritePermissions.sorted()))
         .put("lastSync", prefs.getString("health_last_sync", ""))
         .put("lastError", prefs.getString("health_last_error", ""))
         .put("pendingWrites", jsonArrayPreference(PENDING_HEALTH).length())
@@ -413,11 +436,27 @@ class MainActivity : ComponentActivity() {
                 dispatch("thf:health-error", healthStatusJson().put("message", "Health Connect unavailable"))
                 return@launch
             }
-            if (cachedHealthState.connected) {
+            if (cachedHealthState.readPermissionsGranted) {
                 dispatch("thf:health-permission", healthStatusJson())
                 return@launch
             }
-            healthPermissionLauncher.launch(HealthConnectRepository.REQUIRED_PERMISSIONS)
+            healthReadPermissionLauncher.launch(HealthConnectRepository.READ_PERMISSIONS)
+        }
+    }
+
+    private fun requestHealthWritePermission() {
+        lifecycleScope.launch {
+            refreshHealthState()
+            if (cachedHealthState.availability != "AVAILABLE") {
+                dispatch("thf:health-error", healthStatusJson().put("message", "Health Connect unavailable"))
+                return@launch
+            }
+            if (cachedHealthState.writePermissionsGranted) {
+                dispatch("thf:health-write-permission", healthStatusJson())
+                flushPendingHealth()
+                return@launch
+            }
+            healthWritePermissionLauncher.launch(HealthConnectRepository.WRITE_PERMISSIONS)
         }
     }
 
@@ -533,6 +572,16 @@ class MainActivity : ComponentActivity() {
         try {
             refreshHealthState()
             if (!cachedHealthState.connected) return
+            if (!cachedHealthState.writePermissionsGranted) {
+                dispatch(
+                    "thf:health-write",
+                    JSONObject()
+                        .put("written", 0)
+                        .put("pending", jsonArrayPreference(PENDING_HEALTH).length())
+                        .put("writePermissionRequired", true),
+                )
+                return
+            }
             val pending = jsonArrayPreference(PENDING_HEALTH)
             val remaining = JSONArray()
             var written = 0
@@ -681,6 +730,9 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun requestHealthPermissions() = runOnUiThread { this@MainActivity.requestHealthPermissions() }
+
+        @JavascriptInterface
+        fun requestHealthWritePermission() = runOnUiThread { this@MainActivity.requestHealthWritePermission() }
 
         @JavascriptInterface
         fun syncHealth(): String = this@MainActivity.syncHealth()

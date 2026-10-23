@@ -23,6 +23,8 @@ data class HealthConnectionState(
     val readPermissionsGranted: Boolean,
     val writePermissionsGranted: Boolean,
     val grantedPermissions: Set<String>,
+    val missingReadPermissions: Set<String>,
+    val missingWritePermissions: Set<String>,
     val missingPermissions: Set<String>,
 )
 
@@ -102,18 +104,24 @@ class HealthConnectRepository(private val context: Context) {
                 readPermissionsGranted = false,
                 writePermissionsGranted = false,
                 grantedPermissions = emptySet(),
+                missingReadPermissions = READ_PERMISSIONS,
+                missingWritePermissions = WRITE_PERMISSIONS,
                 missingPermissions = REQUIRED_PERMISSIONS,
             )
         val granted = client.permissionController.getGrantedPermissions()
-        val missing = REQUIRED_PERMISSIONS - granted
-        val readsGranted = granted.containsAll(READ_PERMISSIONS)
-        val writesGranted = granted.containsAll(WRITE_PERMISSIONS)
+        val missingRead = READ_PERMISSIONS - granted
+        val missingWrite = WRITE_PERMISSIONS - granted
+        val missing = missingRead + missingWrite
+        val readsGranted = missingRead.isEmpty()
+        val writesGranted = missingWrite.isEmpty()
         return HealthConnectionState(
             availability = availability(),
             connected = readsGranted,
             readPermissionsGranted = readsGranted,
             writePermissionsGranted = writesGranted,
             grantedPermissions = granted,
+            missingReadPermissions = missingRead,
+            missingWritePermissions = missingWrite,
             missingPermissions = missing,
         )
     }
