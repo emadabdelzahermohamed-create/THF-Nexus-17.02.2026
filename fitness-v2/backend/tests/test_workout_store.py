@@ -36,6 +36,7 @@ def session(version=1, load=50.0, client_id="thf-workout-test-0001"):
 class WorkoutStoreTest(unittest.TestCase):
     def setUp(self):
         self.store = WorkoutStore(sqlite3.connect(":memory:"))
+        self.addCleanup(self.store.db.close)
 
     def test_idempotent_sync_and_versioned_update(self):
         self.assertEqual("inserted", self.store.sync("user-1", session()))

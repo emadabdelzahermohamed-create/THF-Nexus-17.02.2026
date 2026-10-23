@@ -39,6 +39,7 @@ class RewardConnectorTests(unittest.TestCase):
         envelope = self.signer.issue(**self.args)
         claim = self.signer.verify(envelope, expected_partner="ruinsciv", now=1100)
         guard = RewardClaimReplayGuard(sqlite3.connect(":memory:"))
+        self.addCleanup(guard.db.close)
         guard.consume(claim, now=1100)
         with self.assertRaises(RewardClaimError):
             guard.consume(claim, now=1101)
@@ -48,6 +49,7 @@ class RewardConnectorTests(unittest.TestCase):
         changed = dict(self.args, reward_id="skin-desert")
         second = self.signer.verify(self.signer.issue(**changed), expected_partner="ruinsciv", now=1100)
         guard = RewardClaimReplayGuard(sqlite3.connect(":memory:"))
+        self.addCleanup(guard.db.close)
         guard.consume(first, now=1100)
         with self.assertRaises(RewardClaimError):
             guard.consume(second, now=1101)
@@ -55,6 +57,7 @@ class RewardConnectorTests(unittest.TestCase):
     def test_stale_or_future_claim_cannot_be_consumed(self):
         claim = self.signer.verify(self.signer.issue(**self.args), expected_partner="ruinsciv", now=1100)
         guard = RewardClaimReplayGuard(sqlite3.connect(":memory:"))
+        self.addCleanup(guard.db.close)
         with self.assertRaises(RewardClaimError):
             guard.consume(claim, now=1301)
         with self.assertRaises(RewardClaimError):
