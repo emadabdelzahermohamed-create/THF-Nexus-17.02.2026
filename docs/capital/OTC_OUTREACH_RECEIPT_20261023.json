@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-23",
+  "brand": "Top Hero Fit",
+  "from": "topherofit@gmail.com",
+  "route": "buyer-paid direct OTC / parallel sponsorship",
+  "sent": {
+    "to": "support@streamflow.finance",
+    "subject": "THF: buyer-paid OTC fees / zero-upfront sponsorship inquiry",
+    "sender_recipient_body_guard_verified": true,
+    "send_tapped": true,
+    "sent_folder_confirmed": true,
+    "device_display_time": "21:30",
+    "message_id": null
+  },
+  "reply": {
+    "received": true,
+    "source": "native Gmail same thread, two messages",
+    "type": "Streamflow AI Agent automatic response; not human partner approval",
+    "summary": "Response assigns protocol creation/token fees to creator, says no built-in buyer/third-party payment model for those fees, distinguishes tradable contract listing fees, does not offer sponsorship or brokerage.",
+    "decision": "Not cleared for zero-upfront execution; de-prioritize unless human technical clarification changes fee path."
+  },
+  "other_route_correction": {
+    "route": "Impossible Finance",
+    "to": "contact@impossible.finance",
+    "previously_sent": true,
+    "delivered": false,
+    "evidence": "THF inbox delivery failure thread: recipient organization 550 5.7.1 message blocked",
+    "action": "Do not count as delivered inquiry or funding; do not resend same email."
+  },
+  "funds_received": "0",
+  "tokens_sold": "0",
+  "tokens_transferred": "0",
+  "next": "Qualify an actual buyer for direct standard-program atomic co-signing with buyer as fee/rent payer. RFQ is nonbinding; exact quote, eligibility, simulation and owner signature remain open. Do not call settlement implementation complete."
+}
