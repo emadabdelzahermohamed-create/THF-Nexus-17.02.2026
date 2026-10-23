@@ -61,8 +61,8 @@ Rule: `SENT` requires evidence from Gmail Sent/thread state; `DRAFT` is not outr
 | Target | Subject / route | State | Evidence note |
 |---|---|---|---|
 | Solana Foundation | verified Proof-of-Workout funding route | VERIFY_SENT_REQUIRED | Earlier compose/send claims were not sufficiently evidenced; do not count until Sent-folder evidence is captured |
-| Outlier Ventures | `TopHeroFit - Base Camp and pre seed fit` | SENT_OLDER + DRAFT_CORRECTION | Gmail search showed an older message from `أنا`; `Correction - TopHeroFit Base Camp / pre-seed fit` is explicitly labelled `مسودة` |
-| Republic Crypto | Launchpad / Token DPA / gaming route | VERIFY_SENT_REQUIRED | Do not count current batch until Sent-folder evidence is captured |
+| Outlier Ventures | `TopHeroFit - verified fitness gaming funding and future token route` | SENT_VERIFIED_2026-10-23 | Pre-send UI verified TopHeroFit account + `contact@outlierventures.io` + subject + full body; post-send Gmail search showed the new 08:50 message from `أنا` with no `مسودة` label. Older correction draft remains separate. |
+| Republic Crypto | Launchpad / Token DPA / gaming route | DRAFT_OR_VERIFY_PENDING | Existing 2026-10-22 message is explicitly labelled `مسودة`; a new compose was verified but is not counted as sent until Gmail search/Sent evidence confirms it. |
 | Flat6Labs Cairo | accelerator route | BOUNCE/ROUTE_INVALID if using prior dead address | use current official application route rather than stale email |
 | Superteam | `Top Hero Fit x Solana — Instagrant / Fast Track fit` | SENT + REPLIED | Gmail thread contains TopHeroFit send plus Superteam reply directing project to Superteam Earn |
 | MocaList / Animoca | `TopHeroFit - MocaList token launch and Animoca gaming fit` | BOUNCED | Gmail delivery failure: `nickd@animocabrands.com` returned 550 5.2.1; replace with current official Animoca/VARA-compatible route |
