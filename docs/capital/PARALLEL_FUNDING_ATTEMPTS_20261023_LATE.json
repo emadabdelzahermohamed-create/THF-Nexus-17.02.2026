@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-23",
+  "routes": [
+    {
+      "name": "CyreneAI",
+      "recipient": "support@cyreneai.com",
+      "subject": "THF existing-mint funding: no upfront cash / early-buyer introduction",
+      "status": "SENT_FOLDER_CONFIRMED",
+      "device_time": "21:38",
+      "decision": "await existing-mint, total cost and founder-public-privacy answer",
+      "earlier_email_discovered_in_sent": {
+        "subject": "THF existing-token presale: no-upfront-cost and brand-only eligibility",
+        "device_time": "19:11",
+        "correction": "Previously unconfirmed; now Sent confirmed. No more duplicate inquiries."
+      }
+    },
+    {
+      "name": "Solanium",
+      "recipient": "team@solanium.io",
+      "subject": "THF: existing-token early-buyer introduction / no-upfront funding eligibility",
+      "status": "SENT_THEN_BOUNCED",
+      "device_time": "21:40",
+      "error": "550 5.1.1 NoSuchUser",
+      "source": "Official IDO form publishes address; Gmail bounce confirms address does not exist",
+      "decision": "Do not retry this email; full form needs specific terms/docs/TG and remains unsubmitted"
+    },
+    {
+      "name": "FAIR",
+      "status": "LIVE_BROWSER_PRICING_VERIFIED_NOT_ZERO_UPFRONT",
+      "source": "https://fair.club/",
+      "observed_costs": {
+        "draft_deal_room": "free",
+        "register_interest": "250 USD one-time when live",
+        "live_commits": "1500 USD SPV setup",
+        "year_two": "1500 USD/year",
+        "optional_matching": "100 USD/100 investors"
+      },
+      "decision": "No public fundraising room without sponsor; no account or payment created"
+    },
+    {
+      "name": "ICM.RUN",
+      "status": "APPLICATION_RETESTED_HTTP_525_SSL_HANDSHAKE",
+      "source": "https://apply.icm.run/",
+      "browser_time_UTC": "2026-10-23 18:37:59",
+      "decision": "No submission; do not bypass TLS or pretend application received"
+    },
+    {
+      "name": "Superteam",
+      "status": "TARGETED_PAID_PILOT_INQUIRY_COMPOSE_REQUESTED_NOT_SENT_YET",
+      "recipient": "hello@superteam.fun",
+      "decision": "Verify brand sender, content and Sent before claiming sent; not a paid contract"
+    }
+  ],
+  "buyer_found": false,
+  "funds_raised": "0",
+  "tokens_sold": "0",
+  "tokens_transferred": "0"
+}
