@@ -54,15 +54,19 @@ THF is building a verified human-activity layer that makes fitness rewards, chal
 - No statement that game currencies are THF Token.
 - No claim that token sale/liquidity is legally cleared in Egypt.
 
-## Outreach log
-| Time (Africa/Cairo) | Target | Channel | Subject / action | Result |
-|---|---|---|---|---|
-| 2026-10-22 evening | Solana Foundation Grants | TopHeroFit Gmail on authorized phone | Grant / convertible-grant routing for verified Proof-of-Workout | Full body visually verified; send action completed; delivery/reply pending |
-| 2026-10-22 evening | Outlier Ventures | TopHeroFit Gmail on authorized phone | Base Camp / pre-seed fit | First message accidentally left with blank body; immediately followed by a visually verified full correction; reply pending |
-| 2026-10-22 evening | Republic Crypto | TopHeroFit Gmail on authorized phone | Regulated pre-seed / future-token financing + gaming route | Full body visually verified; send action completed; reply pending |
-| 2026-10-22 evening | Flat6Labs Cairo | TopHeroFit Gmail on authorized phone | Egypt seed / accelerator fit | Full body visually verified; send action completed; reply pending |
-| 2026-10-22 evening | AUC Venture Lab outreach | TopHeroFit Gmail on authorized phone | Venture Lab / AUC Angels route for working HealthTech MVP | Sender, recipient, subject and body verified before send; send action completed; reply pending |
-| 2026-10-22 evening | Superteam | TopHeroFit Gmail on authorized phone | Egypt/global grant + Fast Track routing | Concise follow-up composed through tested direct Intent path and send action completed; reply pending |
+## Outreach log — evidence corrected 2026-10-23
+
+Rule: `SENT` requires evidence from Gmail Sent/thread state; `DRAFT` is not outreach; `BOUNCED` means a send occurred but delivery failed. Compose/tap attempts are not counted.
+
+| Target | Subject / route | State | Evidence note |
+|---|---|---|---|
+| Solana Foundation | verified Proof-of-Workout funding route | VERIFY_SENT_REQUIRED | Earlier compose/send claims were not sufficiently evidenced; do not count until Sent-folder evidence is captured |
+| Outlier Ventures | `TopHeroFit - Base Camp and pre seed fit` | SENT_OLDER + DRAFT_CORRECTION | Gmail search showed an older message from `أنا`; `Correction - TopHeroFit Base Camp / pre-seed fit` is explicitly labelled `مسودة` |
+| Republic Crypto | Launchpad / Token DPA / gaming route | VERIFY_SENT_REQUIRED | Do not count current batch until Sent-folder evidence is captured |
+| Flat6Labs Cairo | accelerator route | BOUNCE/ROUTE_INVALID if using prior dead address | use current official application route rather than stale email |
+| Superteam | `Top Hero Fit x Solana — Instagrant / Fast Track fit` | SENT + REPLIED | Gmail thread contains TopHeroFit send plus Superteam reply directing project to Superteam Earn |
+| MocaList / Animoca | `TopHeroFit - MocaList token launch and Animoca gaming fit` | BOUNCED | Gmail delivery failure: `nickd@animocabrands.com` returned 550 5.2.1; replace with current official Animoca/VARA-compatible route |
+| AUC / other batch targets | funding outreach | VERIFY_SENT_REQUIRED | not counted as sent without Sent-folder evidence |
 
 ## Next evidence upgrades
 1. Public Proof-of-Workout spec and verifier path.
@@ -71,19 +75,3 @@ THF is building a verified human-activity layer that makes fitness rewards, chal
 4. Android demonstration of evidence -> verification -> Devnet commitment.
 5. Milestone budget.
 6. Short 90-second founder/product pitch and 1-page deck.
-
-## Verified outreach correction — 2026-10-22 evening
-
-Earlier compose attempts that remained in Gmail Drafts are not counted as sent. The operating evidence rule is now: an email is `SENT` only after its exact subject appears in the TopHeroFit Gmail Sent folder; delivery failures are recorded separately.
-
-| Time (Africa/Cairo) | Target | Subject | State |
-|---|---|---|---|
-| 22:32 | Solana Foundation | `TopHeroFit - verified Proof of Workout funding route` | SENT — Sent-folder subject/snippet verified |
-| 22:34 | Outlier Ventures | `TopHeroFit - Base Camp and pre seed fit` | SENT — Sent-folder subject/snippet verified |
-| 22:35 | Republic Crypto | `TopHeroFit - Launchpad Token DPA and gaming route` | SENT — Sent-folder subject/snippet verified |
-| 22:35 | Flat6Labs Cairo | `TopHeroFit - Cairo investment and accelerator review` | FAILED_DELIVERY — Gmail 550 5.1.1 address not found; replace with current application route |
-| 22:36 | Superteam | `TopHeroFit x Solana - current Instagrant and Fast Track routing` | SENT — Sent-folder subject/snippet verified |
-
-Do not treat `SENT` as a response, award, investment commitment or delivery guarantee. Monitor for bounce/reply and update the ledger only on external evidence.
-| 22:39 | Impossible Finance | `TopHeroFit - token advisory capital formation and CURATED fit` | SENT — Sent-folder subject/snippet verified |
-| 22:40 | MocaList / Animoca Brands | `TopHeroFit - MocaList token launch and Animoca gaming fit` | SENT — Sent-folder subject/snippet verified |
