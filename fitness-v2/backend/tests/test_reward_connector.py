@@ -1,6 +1,7 @@
+import sqlite3
 import unittest
 
-from reward_connector import RewardClaimError, RewardClaimSigner, assert_reward_eligible
+from reward_connector import RewardClaimError, RewardClaimReplayGuard, RewardClaimSigner, assert_reward_eligible
 
 
 class RewardConnectorTests(unittest.TestCase):
@@ -33,6 +34,31 @@ class RewardConnectorTests(unittest.TestCase):
         envelope["claim"]["quantity"] = 99
         with self.assertRaises(RewardClaimError):
             self.signer.verify(envelope, expected_partner="ruinsciv", now=1100)
+
+    def test_verified_claim_can_be_consumed_only_once(self):
+        envelope = self.signer.issue(**self.args)
+        claim = self.signer.verify(envelope, expected_partner="ruinsciv", now=1100)
+        guard = RewardClaimReplayGuard(sqlite3.connect(":memory:"))
+        guard.consume(claim, now=1100)
+        with self.assertRaises(RewardClaimError):
+            guard.consume(claim, now=1101)
+
+    def test_nonce_reuse_is_rejected_even_if_claim_id_changes(self):
+        first = self.signer.verify(self.signer.issue(**self.args), expected_partner="ruinsciv", now=1100)
+        changed = dict(self.args, reward_id="skin-desert")
+        second = self.signer.verify(self.signer.issue(**changed), expected_partner="ruinsciv", now=1100)
+        guard = RewardClaimReplayGuard(sqlite3.connect(":memory:"))
+        guard.consume(first, now=1100)
+        with self.assertRaises(RewardClaimError):
+            guard.consume(second, now=1101)
+
+    def test_stale_or_future_claim_cannot_be_consumed(self):
+        claim = self.signer.verify(self.signer.issue(**self.args), expected_partner="ruinsciv", now=1100)
+        guard = RewardClaimReplayGuard(sqlite3.connect(":memory:"))
+        with self.assertRaises(RewardClaimError):
+            guard.consume(claim, now=1301)
+        with self.assertRaises(RewardClaimError):
+            guard.consume(claim, now=999)
 
     def test_manual_unverified_revoked_never_eligible(self):
         assert_reward_eligible(verified=True, manual=False, revoked=False,

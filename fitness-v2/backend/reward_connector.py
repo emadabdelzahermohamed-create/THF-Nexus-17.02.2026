@@ -12,6 +12,7 @@ import base64
 import hashlib
 import hmac
 import json
+import sqlite3
 import time
 from typing import Mapping
 
@@ -38,6 +39,46 @@ class RewardEligibilityClaim:
 
     def payload(self) -> dict:
         return asdict(self)
+
+
+class RewardClaimReplayGuard:
+    """Durable nonce/claim consumption guard backed by the server database.
+
+    A signed claim is only an eligibility envelope. Partner fulfillment must
+    consume it exactly once; replays fail closed even after process restart
+    when this guard uses the persistent Fitness SQLite connection.
+    """
+
+    def __init__(self, connection: sqlite3.Connection):
+        self.db = connection
+        self.db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS reward_claim_consumption (
+                claim_id TEXT PRIMARY KEY,
+                partner_id TEXT NOT NULL,
+                nonce TEXT NOT NULL,
+                fitness_user_id TEXT NOT NULL,
+                expires_at INTEGER NOT NULL,
+                consumed_at INTEGER NOT NULL,
+                UNIQUE(partner_id, nonce)
+            )
+            """
+        )
+
+    def consume(self, claim: RewardEligibilityClaim, *, now: int | None = None) -> None:
+        current = int(time.time() if now is None else now)
+        if current < claim.issued_at or current > claim.expires_at or claim.expires_at <= claim.issued_at:
+            raise RewardClaimError("claim is stale or not yet valid")
+        try:
+            with self.db:
+                self.db.execute(
+                    """INSERT INTO reward_claim_consumption
+                       (claim_id, partner_id, nonce, fitness_user_id, expires_at, consumed_at)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (claim.claim_id, claim.partner_id, claim.nonce, claim.fitness_user_id, claim.expires_at, current),
+                )
+        except sqlite3.IntegrityError as exc:
+            raise RewardClaimError("claim or nonce already consumed") from exc
 
 
 class RewardClaimSigner:
