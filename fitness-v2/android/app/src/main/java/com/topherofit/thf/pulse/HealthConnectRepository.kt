@@ -28,6 +28,7 @@ data class HealthConnectionState(
 
 data class HealthRecordEvidence(
     val recordId: String,
+    val canonicalKey: String,
     val clientRecordId: String?,
     val clientRecordVersion: Long,
     val lastModifiedTime: Instant,
@@ -132,27 +133,27 @@ class HealthConnectRepository(private val context: Context) {
         val sessions = readAll(client, ExerciseSessionRecord::class, start, end)
         val allRecords: List<Record> = steps + distances + calories + sessions
         val evidence = allRecords.map { it.toEvidence() }
-        val verifiedEvidenceById = evidence
+        val verifiedEvidenceByKey = evidence
             .asSequence()
             .filter { it.verifiedForRewards }
-            .groupBy { it.recordId }
+            .groupBy { it.canonicalKey }
             .mapValues { (_, versions) ->
                 versions.maxWithOrNull(compareBy<HealthRecordEvidence> { it.clientRecordVersion }.thenBy { it.lastModifiedTime })!!
             }
-        val verifiedIds = verifiedEvidenceById.keys
-        val verifiedCount = verifiedIds.size
+        val verifiedKeys = verifiedEvidenceByKey.keys
+        val verifiedCount = verifiedKeys.size
         val verifiedEvidenceCount = evidence.count { it.verifiedForRewards }
         val duplicateRecordsExcluded = verifiedEvidenceCount - verifiedCount
 
         val origins = evidence.map { it.dataOrigin }.filter { it.isNotBlank() }.toSet()
 
         return HealthSnapshot(
-            steps = steps.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.sumOf { it.count },
-            distanceMeters = distances.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.sumOf { it.distance.inMeters },
-            activeCaloriesKcal = calories.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.sumOf { it.energy.inKilocalories },
-            exerciseSessions = sessions.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.size,
+            steps = steps.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.count },
+            distanceMeters = distances.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.distance.inMeters },
+            activeCaloriesKcal = calories.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.energy.inKilocalories },
+            exerciseSessions = sessions.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.size,
             origins = origins,
-            latestSessionEnd = sessions.filter { it.metadata.id in verifiedIds }.maxOfOrNull { it.endTime },
+            latestSessionEnd = sessions.filter { it.healthRecordKey() in verifiedKeys }.maxOfOrNull { it.endTime },
             recordsRead = allRecords.size,
             verifiedRecords = verifiedCount,
             excludedManualOrUnknownRecords = evidence.count { !it.verifiedForRewards },
@@ -193,31 +194,38 @@ class HealthConnectRepository(private val context: Context) {
         val method = metadata.recordingMethod
         val device = metadata.device
         val origin = metadata.dataOrigin.packageName
+        val recordType = this::class.simpleName ?: "Record"
         val trustedMethod = method == Metadata.RECORDING_METHOD_ACTIVELY_RECORDED ||
             method == Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED
-        val externalOrigin = origin.isNotBlank() && origin != context.packageName
-        val verified = trustedMethod && externalOrigin
-        val reason = when {
-            origin.isBlank() -> "UNKNOWN_ORIGIN"
-            origin == context.packageName -> "SELF_AUTHORED"
-            !trustedMethod -> "MANUAL_OR_UNKNOWN_METHOD"
-            else -> "EXTERNAL_SENSOR_RECORDED"
-        }
+        val assessment = HealthRecordEvidencePolicy.assess(
+            appPackageName = context.packageName,
+            dataOrigin = origin,
+            recordType = recordType,
+            recordId = metadata.id,
+            trustedRecordingMethod = trustedMethod,
+        )
         return HealthRecordEvidence(
             recordId = metadata.id,
+            canonicalKey = WorkoutIdentity.stableHealthRecordKey(origin, recordType, metadata.id),
             clientRecordId = metadata.clientRecordId,
             clientRecordVersion = metadata.clientRecordVersion,
             lastModifiedTime = metadata.lastModifiedTime,
-            recordType = this::class.simpleName ?: "Record",
+            recordType = recordType,
             dataOrigin = origin,
             recordingMethod = method,
             deviceType = device?.type,
             deviceManufacturer = device?.manufacturer,
             deviceModel = device?.model,
-            verifiedForRewards = verified,
-            verificationReason = reason,
+            verifiedForRewards = assessment.verifiedForRewards,
+            verificationReason = assessment.reason,
         )
     }
+
+    private fun Record.healthRecordKey(): String = WorkoutIdentity.stableHealthRecordKey(
+        dataOrigin = metadata.dataOrigin.packageName,
+        recordType = this::class.simpleName ?: "Record",
+        recordId = metadata.id,
+    )
 
     private suspend fun <T : Record> readAll(
         client: HealthConnectClient,

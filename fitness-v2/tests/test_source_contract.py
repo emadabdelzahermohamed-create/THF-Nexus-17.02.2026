@@ -130,6 +130,18 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             self.assertIn(marker, html)
         self.assertNotIn("Stage16A", html)
 
+    def test_health_record_policy_is_a_single_production_authority(self):
+        identity = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "WorkoutIdentity.kt").read_text()
+        policy_path = ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "HealthRecordEvidencePolicy.kt"
+        repository = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "HealthConnectRepository.kt").read_text()
+        self.assertIn("stableHealthRecordKey", identity)
+        self.assertTrue(policy_path.exists())
+        policy = policy_path.read_text()
+        for marker in ("object HealthRecordEvidencePolicy", "SELF_AUTHORED", "MANUAL_OR_UNKNOWN_METHOD", "EXTERNAL_SENSOR_RECORDED"):
+            self.assertIn(marker, policy)
+        self.assertIn("HealthRecordEvidencePolicy.assess", repository)
+        self.assertIn("canonicalKey", repository)
+
     def test_native_health_uses_stable_ids_provenance_and_revoke_checks(self):
         source = "\n".join(
             p.read_text()
