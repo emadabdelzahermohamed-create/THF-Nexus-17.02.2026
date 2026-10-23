@@ -124,6 +124,41 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("PASS_ACTIVE_MOTION_UI", qa)
         self.assertIn("accelerometer/gyroscope registration or native sample evidence not proven", qa)
 
+    def test_51009_activity_tracking_is_separate_and_background_capable(self):
+        gradle = (ANDROID / "app" / "build.gradle").read_text()
+        manifest = (ANDROID / "app" / "src" / "main" / "AndroidManifest.xml").read_text()
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        js = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        service = ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt"
+
+        self.assertIn("versionCode 51009", gradle)
+        self.assertIn("versionName '5.0.0-v2-alpha9'", gradle)
+        for permission in (
+            "android.permission.ACCESS_COARSE_LOCATION",
+            "android.permission.ACCESS_FINE_LOCATION",
+            "android.permission.FOREGROUND_SERVICE",
+            "android.permission.FOREGROUND_SERVICE_LOCATION",
+            "android.permission.POST_NOTIFICATIONS",
+        ):
+            self.assertIn(permission, manifest)
+        self.assertIn("ActivityTrackingService", manifest)
+        self.assertIn('android:foregroundServiceType="location"', manifest)
+        self.assertTrue(service.exists())
+        for token in ("activityScreen", "activityWalkBtn", "activityRunBtn", "activityCycleBtn", "activityMap", "activityCalories"):
+            self.assertIn(token, html)
+        for token in ("beginActivitySession", "activitySnapshot", "endActivitySession"):
+            self.assertIn(token, js)
+
+    def test_workout_motion_metrics_are_profile_aware_not_step_centric(self):
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        js = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        self.assertNotIn('id="motionLiveSteps"', html)
+        self.assertNotIn('id="motionDetectorEvents"', html)
+        for token in ("motionPrimaryMetricLabel", "motionPrimaryMetricValue", "motionSecondaryMetricLabel", "motionSecondaryMetricValue"):
+            self.assertIn(token, html)
+        self.assertIn("sensorProfileForExercise", js)
+        self.assertIn("beginMotionSession(sessionId, profile)", js)
+
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
         health = {
