@@ -60,7 +60,7 @@ Rule: `SENT` requires evidence from Gmail Sent/thread state; `DRAFT` is not outr
 
 | Target | Subject / route | State | Evidence note |
 |---|---|---|---|
-| Solana Foundation | verified Proof-of-Workout funding route | VERIFY_SENT_REQUIRED | Earlier compose/send claims were not sufficiently evidenced; do not count until Sent-folder evidence is captured |
+| Solana Foundation | `[POW51008] TopHeroFit Proof-of-Workout convertible grant routing` | SENT_VERIFIED_2026-10-23 | Pre-send UI verified TopHeroFit account + `grants@solana.foundation` + unique subject + full body; Gmail search for `POW51008` showed the 08:56 message from `أنا` with no `مسودة` label. This is routing outreach only; the official Foundation application form is still required. |
 | Outlier Ventures | `TopHeroFit - verified fitness gaming funding and future token route` | SENT_VERIFIED_2026-10-23 | Pre-send UI verified TopHeroFit account + `contact@outlierventures.io` + subject + full body; post-send Gmail search showed the new 08:50 message from `أنا` with no `مسودة` label. Older correction draft remains separate. |
 | Republic Crypto | Launchpad / Token DPA / gaming route | DRAFT_OR_VERIFY_PENDING | Existing 2026-10-22 message is explicitly labelled `مسودة`; a new compose was verified but is not counted as sent until Gmail search/Sent evidence confirms it. |
 | Flat6Labs Cairo | accelerator route | BOUNCE/ROUTE_INVALID if using prior dead address | use current official application route rather than stale email |
