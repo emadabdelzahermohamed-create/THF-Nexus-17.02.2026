@@ -59,6 +59,7 @@ def workout(client="thf-workout-http-0001", version=1, load=50):
 class FitnessApiTest(unittest.TestCase):
     def setUp(self):
         store = WorkoutStore(sqlite3.connect(":memory:"))
+        self.addCleanup(store.db.close)
         self.api = None
         verifier = HmacAccessTokenVerifier(
             {"primary": KEY},
