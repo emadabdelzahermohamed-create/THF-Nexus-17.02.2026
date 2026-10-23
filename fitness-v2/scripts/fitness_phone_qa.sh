@@ -5,7 +5,7 @@ usage() {
   cat <<'EOF'
 Usage: fitness_phone_qa.sh --apk PATH [--serial SERIAL] [--expected-sha256 HEX]
        [--adb-connect PRIVATE_IP:PORT] [--record-seconds N] [--monkey-events N]
-       [--instrumentation PACKAGE/RUNNER] [--require-health-connect]
+       [--instrumentation PACKAGE/RUNNER] [--require-health-connect] [--require-motion-sensors]
 
 Runs a fail-closed physical-phone QA evidence pass for Top Hero Fit Fitness V2.
 The phone must already be authorized in `adb devices`; this script never pairs a device.
@@ -20,6 +20,7 @@ RECORD_SECONDS=30
 MONKEY_EVENTS=50
 INSTRUMENTATION=""
 REQUIRE_HEALTH_CONNECT=false
+REQUIRE_MOTION_SENSORS=false
 PACKAGE="com.topherofit.thf.pulse"
 REQUIRED_TARGET_SDK=36
 REQUIRED_ABI="arm64-v8a"
@@ -34,6 +35,7 @@ while (($#)); do
     --monkey-events) MONKEY_EVENTS="${2:?missing --monkey-events value}"; shift 2 ;;
     --instrumentation) INSTRUMENTATION="${2:?missing --instrumentation value}"; shift 2 ;;
     --require-health-connect) REQUIRE_HEALTH_CONNECT=true; shift ;;
+    --require-motion-sensors) REQUIRE_MOTION_SENSORS=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -98,6 +100,13 @@ grep -Eq "(^|,)${REQUIRED_ABI}(,|$)" "$OUT/device_abis.txt" || {
 }
 "${ADB[@]}" shell getprop ro.product.manufacturer | tee "$OUT/device_manufacturer.txt"
 "${ADB[@]}" shell getprop ro.product.model | tee "$OUT/device_model.txt"
+"${ADB[@]}" shell dumpsys sensorservice > "$OUT/sensor_capabilities.txt"
+if $REQUIRE_MOTION_SENSORS; then
+  grep -Eqi 'Step Counter|android.sensor.step_counter' "$OUT/sensor_capabilities.txt" || { echo "FAIL: Step Counter sensor missing" >&2; exit 21; }
+  grep -Eqi 'Step Detector|android.sensor.step_detector' "$OUT/sensor_capabilities.txt" || { echo "FAIL: Step Detector sensor missing" >&2; exit 21; }
+  grep -Eqi 'Accelerometer|android.sensor.accelerometer' "$OUT/sensor_capabilities.txt" || { echo "FAIL: accelerometer sensor missing" >&2; exit 21; }
+  grep -Eqi 'Gyroscope|android.sensor.gyroscope' "$OUT/sensor_capabilities.txt" || { echo "FAIL: gyroscope sensor missing" >&2; exit 21; }
+fi
 
 unzip -l "$APK" > "$OUT/apk_entries.txt"
 if unzip -l "$APK" | grep -Eq 'lib/[^/]+/'; then
@@ -140,6 +149,12 @@ sleep 5
 grep -q "$PACKAGE" "$OUT/window_boot.txt" || {
   echo "FAIL: Fitness is not the visible window after launch" >&2; exit 17
 }
+"${ADB[@]}" shell dumpsys sensorservice > "$OUT/sensor_registration_before.txt"
+if $REQUIRE_MOTION_SENSORS; then
+  grep -Fq "$PACKAGE" "$OUT/sensor_registration_before.txt" || { echo "FAIL: Fitness has no sensor registration while resumed" >&2; exit 22; }
+  grep -Eiq "${PACKAGE}[^\n]*Step Counter|Step Counter[^\n]*${PACKAGE}" "$OUT/sensor_registration_before.txt" || \
+    grep -A4 -B4 -F "$PACKAGE" "$OUT/sensor_registration_before.txt" | grep -Eqi 'Step Counter|step_counter' || { echo "FAIL: Fitness Step Counter registration not proven" >&2; exit 22; }
+fi
 
 if [[ -n "$INSTRUMENTATION" ]]; then
   "${ADB[@]}" shell am instrument -w "$INSTRUMENTATION" | tee "$OUT/instrumentation.txt"
@@ -173,11 +188,34 @@ grep -q "$PACKAGE" "$OUT/window_resume.txt" || {
   echo "FAIL: Fitness is not the visible window after resume" >&2; exit 18
 }
 
-echo "Interact with Fitness now; recording ${RECORD_SECONDS}s for motion/navigation evidence."
+echo "Interact with Fitness now; start a workout during the next ${RECORD_SECONDS}s so active motion registration can be proven."
 "${ADB[@]}" shell dumpsys gfxinfo "$PACKAGE" reset >/dev/null 2>&1 || true
+rm -f "$OUT/sensor_registration_active.txt"
+if $REQUIRE_MOTION_SENSORS; then
+  (
+    deadline=$((SECONDS + RECORD_SECONDS))
+    while (( SECONDS < deadline )); do
+      snapshot="$OUT/.sensor-active-probe.txt"
+      "${ADB[@]}" shell dumpsys sensorservice > "$snapshot" 2>/dev/null || true
+      if grep -Fq "$PACKAGE" "$snapshot" && \
+         grep -A10 -B10 -F "$PACKAGE" "$snapshot" | grep -Eqi 'Accelerometer|android.sensor.accelerometer' && \
+         grep -A10 -B10 -F "$PACKAGE" "$snapshot" | grep -Eqi 'Gyroscope|android.sensor.gyroscope'; then
+        cp "$snapshot" "$OUT/sensor_registration_active.txt"
+        exit 0
+      fi
+      sleep 1
+    done
+    exit 0
+  ) &
+  SENSOR_PROBE_PID=$!
+fi
 "${ADB[@]}" shell screenrecord --time-limit "$RECORD_SECONDS" /sdcard/thf-fitness-qa.mp4 &
 REC_PID=$!
 wait "$REC_PID" || true
+if [[ -n "${SENSOR_PROBE_PID:-}" ]]; then wait "$SENSOR_PROBE_PID" || true; fi
+if $REQUIRE_MOTION_SENSORS; then
+  [[ -s "$OUT/sensor_registration_active.txt" ]] || { echo "FAIL: active workout accelerometer/gyroscope registration not proven" >&2; exit 23; }
+fi
 "${ADB[@]}" pull /sdcard/thf-fitness-qa.mp4 "$OUT/04_interaction.mp4" >/dev/null
 "${ADB[@]}" shell rm -f /sdcard/thf-fitness-qa.mp4
 [[ -s "$OUT/04_interaction.mp4" ]] || {
@@ -222,5 +260,6 @@ echo "PASS_TARGET_SDK=$TARGET_SDK"
 echo "PASS_DEVICE_ABI=$REQUIRED_ABI"
 echo "PASS_UI_SMOKE_EVENTS=$MONKEY_EVENTS"
 echo "HEALTH_CONNECT_PROVIDER_PRESENT=$HEALTH_CONNECT_PRESENT"
+echo "MOTION_SENSOR_GATE_REQUIRED=$REQUIRE_MOTION_SENSORS"
 echo "Evidence: $OUT"
 echo "Manual acceptance still required for login, Health Connect grant/data flow, exercise anatomy/motion, and purchase/restore."

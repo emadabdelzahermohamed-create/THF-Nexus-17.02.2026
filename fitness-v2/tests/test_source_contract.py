@@ -63,15 +63,29 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
         self.assertGreaterEqual(version, 51005)
 
-    def test_fitness_play_gate_targets_current_51005_candidate(self):
+    def test_fitness_play_gate_targets_sensor_first_51006_candidate(self):
         android_gate = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
         play_gate = (ROOT / ".github" / "workflows" / "thf-fitness-play-probe.yml").read_text()
-        self.assertIn("fitness-v2-51005-package-gate", android_gate)
-        self.assertIn("fitness-v2-51005-package-gate", play_gate)
-        self.assertIn("expected_version = '51005'", play_gate)
-        self.assertIn("THF Fitness 51005 Internal", play_gate)
+        self.assertIn("fitness-v2-51006-package-gate", android_gate)
+        self.assertIn("fitness-v2-51006-package-gate", play_gate)
+        self.assertRegex(play_gate, r"expected_version\s*=\s*[\"\']51006[\"\']")
+        self.assertIn("THF Fitness 51006 Internal", play_gate)
         self.assertNotIn("39089308617", play_gate)
         self.assertNotIn("EXPECTED_UNSIGNED_SHA256", play_gate)
+        qa = (ROOT / "fitness-v2" / "scripts" / "fitness_phone_qa.sh").read_text()
+        runner = (ROOT / "fitness-v2" / "scripts" / "run_fitness_phone_candidate_51006.sh")
+        self.assertIn("--require-motion-sensors", qa)
+        self.assertIn("sensor_capabilities.txt", qa)
+        self.assertIn("sensor_registration_before.txt", qa)
+        self.assertIn("sensor_registration_active.txt", qa)
+        self.assertTrue(runner.exists())
+        runner_text = runner.read_text()
+        self.assertIn("fitness-v2-51006-package-gate", runner_text)
+        self.assertIn("--require-motion-sensors", runner_text)
+        self.assertIn("--require-health-connect", runner_text)
+        gradle = (ANDROID / "app" / "build.gradle").read_text()
+        self.assertIn("versionCode 51006", gradle)
+        self.assertIn("versionName '5.0.0-v2-alpha6'", gradle)
 
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
@@ -90,6 +104,11 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             },
             health,
         )
+
+    def test_health_state_fallbacks_track_read_and_write_permissions_explicitly(self):
+        source = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        self.assertGreaterEqual(source.count("readPermissionsGranted = false"), 2)
+        self.assertGreaterEqual(source.count("writePermissionsGranted = false"), 2)
 
     def test_health_flow_is_user_visible_and_fail_closed(self):
         html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
@@ -382,6 +401,50 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             "retryAfterMs",
         ):
             self.assertIn(marker, script)
+
+
+    def test_android_main_activity_delegates_motion_to_engine(self):
+        activity = (
+            ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt"
+        ).read_text()
+        self.assertNotIn("SensorEventListener", activity)
+        for marker in (
+            "absoluteSteps",
+            "sessionBaseline",
+            "private var stepSensor",
+            "sensorManager?.registerListener",
+        ):
+            self.assertNotIn(marker, activity)
+        for marker in (
+            "MotionSessionEngine",
+            "AndroidMotionSensorGateway",
+            "beginMotionSession",
+            "motionSnapshot",
+            "endMotionSession",
+            'remove("motionEvidence")',
+            'remove("verification")',
+            '"measurementSource"',
+        ):
+            self.assertIn(marker, activity)
+
+
+    def test_workout_ui_uses_native_motion_session_and_surfaces_evidence(self):
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        for marker in (
+            "beginMotionSession",
+            "motionSnapshot",
+            "endMotionSession",
+            "measurementSource",
+            "motionEvidence",
+            "motionLiveSteps",
+            "motionDetectorEvents",
+            "motionConfidence",
+        ):
+            self.assertIn(marker, app + html)
+        self.assertNotIn("N?.beginStepSession?.()", app)
+        self.assertIn('id="motionEvidencePanel"', html)
+        self.assertIn('id="motionSourceBadge"', html)
 
 
 if __name__ == "__main__":

@@ -5,10 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -35,7 +31,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
-class MainActivity : ComponentActivity(), SensorEventListener {
+class MainActivity : ComponentActivity() {
     companion object {
         private const val PREFS = "thf_fitness_v2_local"
         private const val PENDING_HEALTH = "pending_health_workouts"
@@ -53,10 +49,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var backendRepository: BackendSyncRepository
     private lateinit var accountAuthRepository: AccountAuthRepository
     private lateinit var foundingHeroBilling: FoundingHeroBilling
-    private var sensorManager: SensorManager? = null
-    private var stepSensor: Sensor? = null
-    private var absoluteSteps = -1f
-    private var sessionBaseline = -1f
+    private lateinit var motionEngine: MotionSessionEngine
+    private var lastEndedMotionEvidence: MotionEvidence? = null
     private var tts: TextToSpeech? = null
     private val healthFlushRunning = AtomicBoolean(false)
     private val healthSyncGate = HealthSyncGate()
@@ -67,7 +61,14 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var backendAccessToken: String? = null
 
     @Volatile
-    private var cachedHealthState = HealthConnectionState("CHECKING", false, emptySet(), HealthConnectRepository.REQUIRED_PERMISSIONS)
+    private var cachedHealthState = HealthConnectionState(
+        availability = "CHECKING",
+        connected = false,
+        readPermissionsGranted = false,
+        writePermissionsGranted = false,
+        grantedPermissions = emptySet(),
+        missingPermissions = HealthConnectRepository.REQUIRED_PERMISSIONS,
+    )
 
     @Volatile
     private var cachedBillingState = FoundingHeroBillingState(configured = BuildConfig.THF_PLAY_LICENSE_KEY.isNotBlank())
@@ -76,7 +77,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         dispatch("thf:activity-permission", JSONObject().put("granted", granted))
-        if (granted) registerStepSensor()
+        if (granted && ::motionEngine.isInitialized && motionEngine.currentState().hostResumed) {
+            motionEngine.onHostPause()
+            motionEngine.onHostResume()
+        }
     }
 
     private val healthPermissionLauncher = registerForActivityResult(
@@ -105,8 +109,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             cachedBillingState = next
             dispatch("thf:billing-status", next.toJson())
         }
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as? SensorManager
-        stepSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        motionEngine = MotionSessionEngine(AndroidMotionSensorGateway(this))
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) tts?.language = Locale("ar", "EG")
         }
@@ -150,7 +153,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         if (::prefs.isInitialized) clearExpiredPendingAccountAuth()
-        registerStepSensor()
+        if (::motionEngine.isInitialized) motionEngine.onHostResume()
         if (::foundingHeroBilling.isInitialized) foundingHeroBilling.start()
         if (::healthRepository.isInitialized) {
             lifecycleScope.launch {
@@ -163,7 +166,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     }
 
     override fun onPause() {
-        sensorManager?.unregisterListener(this)
+        if (::motionEngine.isInitialized) motionEngine.onHostPause()
         super.onPause()
     }
 
@@ -175,20 +178,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         super.onDestroy()
     }
 
-    private fun registerStepSensor() {
-        if (stepSensor != null && hasActivityPermission()) {
-            sensorManager?.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
-        }
-    }
-
     private fun hasActivityPermission(): Boolean =
         Build.VERSION.SDK_INT < 29 || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
-
-    override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type == Sensor.TYPE_STEP_COUNTER && event.values.isNotEmpty()) absoluteSteps = event.values[0]
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 
     private fun isOnline(): Boolean {
         val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
@@ -204,7 +195,16 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     private suspend fun refreshHealthState() {
         cachedHealthState = runCatching { healthRepository.connectionState() }
-            .getOrElse { HealthConnectionState(healthRepository.availability(), false, emptySet(), HealthConnectRepository.REQUIRED_PERMISSIONS) }
+            .getOrElse {
+                HealthConnectionState(
+                    availability = healthRepository.availability(),
+                    connected = false,
+                    readPermissionsGranted = false,
+                    writePermissionsGranted = false,
+                    grantedPermissions = emptySet(),
+                    missingPermissions = HealthConnectRepository.REQUIRED_PERMISSIONS,
+                )
+            }
     }
 
     private fun requestBackendSignIn() {
@@ -356,6 +356,48 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         .put("lastError", prefs.getString("health_last_error", ""))
         .put("pendingWrites", jsonArrayPreference(PENDING_HEALTH).length())
 
+    private fun motionCapabilitiesJson(capabilities: SensorCapabilities): JSONObject = JSONObject()
+        .put("stepCounter", capabilities.stepCounter)
+        .put("stepDetector", capabilities.stepDetector)
+        .put("accelerometer", capabilities.accelerometer)
+        .put("gyroscope", capabilities.gyroscope)
+        .put("activityRecognitionPermission", capabilities.activityRecognitionPermission)
+
+    private fun motionSessionJson(state: MotionSessionState): JSONObject = JSONObject()
+        .put("active", state.active)
+        .put("sessionId", state.sessionId ?: "")
+        .put("hostResumed", state.hostResumed)
+        .put("capabilities", motionCapabilitiesJson(state.capabilities))
+
+    private fun motionEvidenceJson(evidence: MotionEvidence): JSONObject = JSONObject()
+        .put("available", true)
+        .put("sessionId", evidence.sessionId)
+        .put("startedAtWallMs", evidence.startedAtWallMs)
+        .put("endedAtWallMs", evidence.endedAtWallMs)
+        .put("elapsedDurationMs", evidence.elapsedDurationMs)
+        .put("activeDurationMs", evidence.activeDurationMs)
+        .put("stepDelta", evidence.stepDelta)
+        .put("stepDetectorCount", evidence.stepDetectorCount)
+        .put("counterResetCount", evidence.counterResetCount)
+        .put("accelerometerSampleCount", evidence.accelerometerSampleCount)
+        .put("gyroscopeSampleCount", evidence.gyroscopeSampleCount)
+        .put("accelerometerMagnitudeMean", evidence.accelerometerMagnitudeMean)
+        .put("accelerometerMagnitudeVariance", evidence.accelerometerMagnitudeVariance)
+        .put("accelerometerMagnitudePeak", evidence.accelerometerMagnitudePeak)
+        .put("gyroscopeMagnitudeMean", evidence.gyroscopeMagnitudeMean)
+        .put("gyroscopeMagnitudeVariance", evidence.gyroscopeMagnitudeVariance)
+        .put("gyroscopeMagnitudePeak", evidence.gyroscopeMagnitudePeak)
+        .put("activeMotionMs", evidence.activeMotionMs)
+        .put("stationaryFraction", evidence.stationaryFraction)
+        .put("interruptionMs", evidence.interruptionMs)
+        .put("localConfidence", evidence.localConfidence)
+        .put("detectedActivity", evidence.detectedActivity.name)
+        .put("activityConfidence", evidence.activityConfidence)
+        .put("plausibleForRewards", evidence.plausibleForRewards)
+        .put("plausibilityReasons", org.json.JSONArray(evidence.plausibilityReasons))
+        .put("evidenceDigest", evidence.evidenceDigest)
+        .put("capabilities", motionCapabilitiesJson(evidence.capabilities))
+
     private fun billingStatusJson(): JSONObject = cachedBillingState.toJson()
 
     private fun dispatch(name: String, payload: JSONObject) {
@@ -454,6 +496,26 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                             .put("exerciseSessions", snapshot.exerciseSessions)
                             .put("origins", JSONArray(snapshot.origins.sorted()))
                             .put("latestSessionEnd", snapshot.latestSessionEnd?.toString() ?: "")
+                            .put("recordsRead", snapshot.recordsRead)
+                            .put("verifiedRecords", snapshot.verifiedRecords)
+                            .put("excludedManualOrUnknownRecords", snapshot.excludedManualOrUnknownRecords)
+                            .put("duplicateRecordsExcluded", snapshot.duplicateRecordsExcluded)
+                            .put("dataReadSuccessfully", snapshot.dataReadSuccessfully)
+                            .put("hasVerifiedRewardData", snapshot.hasVerifiedRewardData)
+                            .put("recordEvidence", JSONArray().apply {
+                                snapshot.recordEvidence.forEach { evidence ->
+                                    put(JSONObject()
+                                        .put("recordId", evidence.recordId)
+                                        .put("recordType", evidence.recordType)
+                                        .put("dataOrigin", evidence.dataOrigin)
+                                        .put("recordingMethod", evidence.recordingMethod)
+                                        .put("deviceType", evidence.deviceType ?: JSONObject.NULL)
+                                        .put("deviceManufacturer", evidence.deviceManufacturer ?: "")
+                                        .put("deviceModel", evidence.deviceModel ?: "")
+                                        .put("verifiedForRewards", evidence.verifiedForRewards)
+                                        .put("verificationReason", evidence.verificationReason))
+                                }
+                            })
                             .put("lastSync", now),
                     )
                 }
@@ -616,9 +678,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             .put("backendPending", jsonArrayPreference(PENDING_BACKEND).length())
             .put("backendLastSync", prefs.getString("backend_last_sync", ""))
             .put("backendLastError", prefs.getString("backend_last_error", ""))
-            .put("stepSensorAvailable", stepSensor != null)
+            .put("stepSensorAvailable", motionEngine.capabilities().stepCounter)
             .put("activityPermission", hasActivityPermission())
             .put("sessionSteps", sessionSteps())
+            .put("motionCapabilities", motionCapabilitiesJson(motionEngine.capabilities()))
+            .put("motionSession", motionSessionJson(motionEngine.currentState()))
             .put("health", healthStatusJson())
             .put("billing", billingStatusJson())
             .toString()
@@ -685,16 +749,34 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
 
         @JavascriptInterface
-        fun beginStepSession() {
-            sessionBaseline = if (absoluteSteps >= 0) absoluteSteps else -1f
-            prefs.edit { putFloat("step_baseline", sessionBaseline) }
+        fun beginMotionSession(sessionId: String?): String = runCatching {
+            val supplied = sessionId.orEmpty().trim()
+            val id = if (supplied.isBlank()) WorkoutIdentity.newSessionId() else supplied
+            require(id.matches(Regex("[A-Za-z0-9._:-]{8,120}"))) { "invalid sessionId" }
+            motionSessionJson(motionEngine.startSession(id)).toString()
+        }.getOrElse { JSONObject().put("active", false).put("error", it.message ?: it.javaClass.simpleName).toString() }
+
+        @JavascriptInterface
+        fun motionSnapshot(): String = motionEngine.snapshot()?.let(::motionEvidenceJson)?.toString()
+            ?: JSONObject().put("available", false).toString()
+
+        @JavascriptInterface
+        fun endMotionSession(): String {
+            val evidence = motionEngine.stopSession()
+            if (evidence != null) lastEndedMotionEvidence = evidence
+            return evidence?.let(::motionEvidenceJson)?.toString()
+                ?: JSONObject().put("available", false).toString()
         }
 
         @JavascriptInterface
-        fun sessionSteps(): Int {
-            val baseline = if (sessionBaseline >= 0) sessionBaseline else prefs.getFloat("step_baseline", -1f)
-            return if (absoluteSteps < 0 || baseline < 0) 0 else maxOf(0, (absoluteSteps - baseline).toInt())
+        fun beginStepSession() {
+            if (!motionEngine.currentState().active) {
+                motionEngine.startSession("legacy-${System.currentTimeMillis()}")
+            }
         }
+
+        @JavascriptInterface
+        fun sessionSteps(): Int = motionEngine.snapshot()?.stepDelta ?: 0
 
         @JavascriptInterface
         fun speak(text: String?, languageTag: String?) {
@@ -712,6 +794,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 "invalid workout summary size"
             }
             val item = JSONObject(json)
+            item.remove("motionEvidence")
+            item.remove("verification")
             val now = System.currentTimeMillis()
             val start = item.optLong("startedAtMs", now - item.optLong("durationMin", 1L) * 60_000L)
             val end = item.optLong("endedAtMs", now)
@@ -724,6 +808,16 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             item.put("recordVersion", maxOf(1L, item.optLong("recordVersion", 1L)))
             item.put("savedAt", now)
             item.put("endedAtMs", end)
+            if (motionEngine.currentState().sessionId?.startsWith("legacy-") == true) {
+                lastEndedMotionEvidence = motionEngine.stopSession()
+            }
+            val nativeEvidence = lastEndedMotionEvidence?.takeIf { it.sessionId == clientId }
+            if (nativeEvidence != null) {
+                item.put("motionEvidence", motionEvidenceJson(nativeEvidence))
+                item.put("measurementSource", "SENSOR")
+            } else {
+                item.put("measurementSource", "MANUAL_OR_UNVERIFIED")
+            }
             val localOutcome = upsertLocalRecord(SUMMARIES, item, MAX_LOCAL_SUMMARIES)
             val healthOutcome = if (localOutcome == "inserted" || localOutcome == "updated") {
                 enqueueSummaryForHealth(item)

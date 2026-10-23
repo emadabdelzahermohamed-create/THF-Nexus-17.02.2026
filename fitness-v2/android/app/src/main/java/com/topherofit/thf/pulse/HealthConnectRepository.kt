@@ -20,8 +20,25 @@ import kotlin.reflect.KClass
 data class HealthConnectionState(
     val availability: String,
     val connected: Boolean,
+    val readPermissionsGranted: Boolean,
+    val writePermissionsGranted: Boolean,
     val grantedPermissions: Set<String>,
     val missingPermissions: Set<String>,
+)
+
+data class HealthRecordEvidence(
+    val recordId: String,
+    val clientRecordId: String?,
+    val clientRecordVersion: Long,
+    val lastModifiedTime: Instant,
+    val recordType: String,
+    val dataOrigin: String,
+    val recordingMethod: Int,
+    val deviceType: Int?,
+    val deviceManufacturer: String?,
+    val deviceModel: String?,
+    val verifiedForRewards: Boolean,
+    val verificationReason: String,
 )
 
 data class HealthSnapshot(
@@ -31,6 +48,13 @@ data class HealthSnapshot(
     val exerciseSessions: Int,
     val origins: Set<String>,
     val latestSessionEnd: Instant?,
+    val recordsRead: Int,
+    val verifiedRecords: Int,
+    val excludedManualOrUnknownRecords: Int,
+    val duplicateRecordsExcluded: Int,
+    val recordEvidence: List<HealthRecordEvidence>,
+    val dataReadSuccessfully: Boolean,
+    val hasVerifiedRewardData: Boolean,
 )
 
 data class WorkoutForHealth(
@@ -46,13 +70,16 @@ data class WorkoutForHealth(
 
 class HealthConnectRepository(private val context: Context) {
     companion object {
-        val REQUIRED_PERMISSIONS: Set<String> = setOf(
+        val READ_PERMISSIONS: Set<String> = setOf(
             HealthPermission.getReadPermission(StepsRecord::class),
             HealthPermission.getReadPermission(ExerciseSessionRecord::class),
-            HealthPermission.getWritePermission(ExerciseSessionRecord::class),
             HealthPermission.getReadPermission(DistanceRecord::class),
             HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
         )
+        val WRITE_PERMISSIONS: Set<String> = setOf(
+            HealthPermission.getWritePermission(ExerciseSessionRecord::class),
+        )
+        val REQUIRED_PERMISSIONS: Set<String> = READ_PERMISSIONS + WRITE_PERMISSIONS
     }
 
     private fun sdkStatus(): Int = HealthConnectClient.getSdkStatus(context)
@@ -68,16 +95,32 @@ class HealthConnectRepository(private val context: Context) {
 
     suspend fun connectionState(): HealthConnectionState {
         val client = clientOrNull()
-            ?: return HealthConnectionState(availability(), false, emptySet(), REQUIRED_PERMISSIONS)
+            ?: return HealthConnectionState(
+                availability = availability(),
+                connected = false,
+                readPermissionsGranted = false,
+                writePermissionsGranted = false,
+                grantedPermissions = emptySet(),
+                missingPermissions = REQUIRED_PERMISSIONS,
+            )
         val granted = client.permissionController.getGrantedPermissions()
         val missing = REQUIRED_PERMISSIONS - granted
-        return HealthConnectionState(availability(), missing.isEmpty(), granted, missing)
+        val readsGranted = granted.containsAll(READ_PERMISSIONS)
+        val writesGranted = granted.containsAll(WRITE_PERMISSIONS)
+        return HealthConnectionState(
+            availability = availability(),
+            connected = readsGranted,
+            readPermissionsGranted = readsGranted,
+            writePermissionsGranted = writesGranted,
+            grantedPermissions = granted,
+            missingPermissions = missing,
+        )
     }
 
     suspend fun readRecent(days: Long = 7): HealthSnapshot {
         val client = requireNotNull(clientOrNull()) { "Health Connect is unavailable" }
         val granted = client.permissionController.getGrantedPermissions()
-        require(granted.containsAll(REQUIRED_PERMISSIONS.filterNot { it.contains("WRITE_") })) {
+        require(granted.containsAll(READ_PERMISSIONS)) {
             "Health Connect read permissions are missing"
         }
 
@@ -87,21 +130,36 @@ class HealthConnectRepository(private val context: Context) {
         val distances = readAll(client, DistanceRecord::class, start, end)
         val calories = readAll(client, ActiveCaloriesBurnedRecord::class, start, end)
         val sessions = readAll(client, ExerciseSessionRecord::class, start, end)
+        val allRecords: List<Record> = steps + distances + calories + sessions
+        val evidence = allRecords.map { it.toEvidence() }
+        val verifiedEvidenceById = evidence
+            .asSequence()
+            .filter { it.verifiedForRewards }
+            .groupBy { it.recordId }
+            .mapValues { (_, versions) ->
+                versions.maxWithOrNull(compareBy<HealthRecordEvidence> { it.clientRecordVersion }.thenBy { it.lastModifiedTime })!!
+            }
+        val verifiedIds = verifiedEvidenceById.keys
+        val verifiedCount = verifiedIds.size
+        val verifiedEvidenceCount = evidence.count { it.verifiedForRewards }
+        val duplicateRecordsExcluded = verifiedEvidenceCount - verifiedCount
 
-        val origins = buildSet {
-            steps.mapTo(this) { it.metadata.dataOrigin.packageName }
-            distances.mapTo(this) { it.metadata.dataOrigin.packageName }
-            calories.mapTo(this) { it.metadata.dataOrigin.packageName }
-            sessions.mapTo(this) { it.metadata.dataOrigin.packageName }
-        }.filter { it.isNotBlank() }.toSet()
+        val origins = evidence.map { it.dataOrigin }.filter { it.isNotBlank() }.toSet()
 
         return HealthSnapshot(
-            steps = steps.sumOf { it.count },
-            distanceMeters = distances.sumOf { it.distance.inMeters },
-            activeCaloriesKcal = calories.sumOf { it.energy.inKilocalories },
-            exerciseSessions = sessions.size,
+            steps = steps.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.sumOf { it.count },
+            distanceMeters = distances.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.sumOf { it.distance.inMeters },
+            activeCaloriesKcal = calories.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.sumOf { it.energy.inKilocalories },
+            exerciseSessions = sessions.filter { it.metadata.id in verifiedIds }.distinctBy { it.metadata.id }.size,
             origins = origins,
-            latestSessionEnd = sessions.maxOfOrNull { it.endTime },
+            latestSessionEnd = sessions.filter { it.metadata.id in verifiedIds }.maxOfOrNull { it.endTime },
+            recordsRead = allRecords.size,
+            verifiedRecords = verifiedCount,
+            excludedManualOrUnknownRecords = evidence.count { !it.verifiedForRewards },
+            duplicateRecordsExcluded = duplicateRecordsExcluded,
+            recordEvidence = evidence,
+            dataReadSuccessfully = true,
+            hasVerifiedRewardData = verifiedCount > 0,
         )
     }
 
@@ -129,6 +187,41 @@ class HealthConnectRepository(private val context: Context) {
             ),
         )
         client.insertRecords(listOf(record))
+    }
+
+    private fun Record.toEvidence(): HealthRecordEvidence {
+        val method = metadata.recordingMethod
+        val device = metadata.device
+        val origin = metadata.dataOrigin.packageName
+        val trustedMethod = method == Metadata.RECORDING_METHOD_ACTIVELY_RECORDED ||
+            method == Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED
+        val externalOrigin = origin.isNotBlank() && origin != context.packageName
+        val hasDeviceMetadata = device != null && device.type != Device.TYPE_UNKNOWN
+        // Reward verification is intentionally stricter than Health Connect acceptance:
+        // a trusted recording method without device provenance is useful for history,
+        // but is not sufficient evidence for a verified reward.
+        val verified = trustedMethod && externalOrigin && hasDeviceMetadata
+        val reason = when {
+            origin.isBlank() -> "UNKNOWN_ORIGIN"
+            origin == context.packageName -> "SELF_AUTHORED"
+            !trustedMethod -> "MANUAL_OR_UNKNOWN_METHOD"
+            !hasDeviceMetadata -> "DEVICE_PROVENANCE_MISSING"
+            else -> "EXTERNAL_SENSOR_RECORDED"
+        }
+        return HealthRecordEvidence(
+            recordId = metadata.id,
+            clientRecordId = metadata.clientRecordId,
+            clientRecordVersion = metadata.clientRecordVersion,
+            lastModifiedTime = metadata.lastModifiedTime,
+            recordType = this::class.simpleName ?: "Record",
+            dataOrigin = origin,
+            recordingMethod = method,
+            deviceType = device?.type,
+            deviceManufacturer = device?.manufacturer,
+            deviceModel = device?.model,
+            verifiedForRewards = verified,
+            verificationReason = reason,
+        )
     }
 
     private suspend fun <T : Record> readAll(
