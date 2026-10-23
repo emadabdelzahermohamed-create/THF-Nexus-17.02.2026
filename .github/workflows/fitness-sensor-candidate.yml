@@ -1,9 +1,9 @@
-name: Fitness Sensor Candidate Build
+name: Fitness Activity Candidate Build
 
 on:
   push:
     branches:
-      - feature/fitness-trust-core-20261022
+      - feature/fitness-activity-tracking-51009-code
     paths:
       - 'fitness-v2/**'
       - '.github/workflows/fitness-sensor-candidate.yml'
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: fitness-sensor-candidate-${{ github.ref }}
+  group: fitness-activity-candidate-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0'
-      - name: Test lint and build candidate 51008
+      - name: Test lint and build candidate 51009
         shell: bash
         run: |
           set -euo pipefail
@@ -43,18 +43,18 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           test -s "$APK" && test -s "$AAB"
           "$AAPT" dump badging "$APK" | tee /tmp/badging.txt
-          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51008'" /tmp/badging.txt
-          grep -F "versionName='5.0.0-v2-alpha8-debug'" /tmp/badging.txt
-          sha256sum "$APK" "$AAB" | tee fitness-v2/candidate-51008.sha256
-          printf 'GIT_SHA=%s\nVERSION_CODE=51008\n' "$GITHUB_SHA" | tee fitness-v2/candidate-51008-build.txt
+          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51009'" /tmp/badging.txt
+          grep -F "versionName='5.0.0-v2-alpha9-debug'" /tmp/badging.txt
+          sha256sum "$APK" "$AAB" | tee fitness-v2/candidate-51009.sha256
+          printf 'GIT_SHA=%s\nVERSION_CODE=51009\n' "$GITHUB_SHA" | tee fitness-v2/candidate-51009-build.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: fitness-sensor-candidate-51008
+          name: fitness-activity-candidate-51009
           if-no-files-found: error
           retention-days: 14
           path: |
             fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
             fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
             fitness-v2/android/app/build/reports/
-            fitness-v2/candidate-51008.sha256
-            fitness-v2/candidate-51008-build.txt
+            fitness-v2/candidate-51009.sha256
+            fitness-v2/candidate-51009-build.txt
