@@ -153,8 +153,13 @@ class MotionFeatureAccumulator {
             sessionId, startedAtWallMs, endedAtWallMs, totalNanos / NANOS_PER_MS, activeDurationMs,
             stepDelta, stepDetectorCount, counterResetCount, accelStats.count, gyroStats.count,
             "%.6f".format(java.util.Locale.ROOT, accelStats.mean), "%.6f".format(java.util.Locale.ROOT, accelStats.variance()),
+            "%.6f".format(java.util.Locale.ROOT, accelStats.peak),
             "%.6f".format(java.util.Locale.ROOT, gyroStats.mean), "%.6f".format(java.util.Locale.ROOT, gyroStats.variance()),
-            activeMotionMs, interruptions / NANOS_PER_MS, activity.name, plausibleForRewards, plausibilityReasons.joinToString(","),
+            "%.6f".format(java.util.Locale.ROOT, gyroStats.peak), activeMotionMs,
+            "%.6f".format(java.util.Locale.ROOT, stationaryFraction), interruptions / NANOS_PER_MS,
+            capabilities.stepCounter, capabilities.stepDetector, capabilities.accelerometer, capabilities.gyroscope,
+            capabilities.activityRecognitionPermission, "%.6f".format(java.util.Locale.ROOT, confidence),
+            activity.name, plausibleForRewards, plausibilityReasons.joinToString(","),
             "%.6f".format(java.util.Locale.ROOT, activityConfidence)
         ).joinToString("|")
 
