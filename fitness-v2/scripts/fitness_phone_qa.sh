@@ -6,7 +6,7 @@ usage() {
 Usage: fitness_phone_qa.sh --apk PATH [--serial SERIAL] [--expected-sha256 HEX]
        [--adb-connect PRIVATE_IP:PORT] [--record-seconds N] [--monkey-events N]
        [--instrumentation PACKAGE/RUNNER] [--require-health-connect] [--require-motion-sensors]
-       [--skip-install] [--expected-version-code N]
+       [--skip-install] [--expected-version-code N] [--auto-start-today]
 
 Runs a fail-closed physical-phone QA evidence pass for Top Hero Fit Fitness V2.
 The phone must already be authorized in `adb devices`; this script never pairs a device.
@@ -19,6 +19,7 @@ ADB_CONNECT=""
 EXPECTED_SHA=""
 EXPECTED_VERSION_CODE=""
 SKIP_INSTALL=false
+AUTO_START_TODAY=false
 RECORD_SECONDS=30
 MONKEY_EVENTS=50
 INSTRUMENTATION=""
@@ -36,6 +37,7 @@ while (($#)); do
     --expected-sha256) EXPECTED_SHA="${2:?missing --expected-sha256 value}"; shift 2 ;;
     --expected-version-code) EXPECTED_VERSION_CODE="${2:?missing --expected-version-code value}"; shift 2 ;;
     --skip-install) SKIP_INSTALL=true; shift ;;
+    --auto-start-today) AUTO_START_TODAY=true; shift ;;
     --record-seconds) RECORD_SECONDS="${2:?missing --record-seconds value}"; shift 2 ;;
     --monkey-events) MONKEY_EVENTS="${2:?missing --monkey-events value}"; shift 2 ;;
     --instrumentation) INSTRUMENTATION="${2:?missing --instrumentation value}"; shift 2 ;;
@@ -204,7 +206,30 @@ grep -q "$PACKAGE" "$OUT/window_resume.txt" || {
   echo "FAIL: Fitness is not the visible window after resume" >&2; exit 18
 }
 
-echo "Interact with Fitness now; start a workout during the next ${RECORD_SECONDS}s so active motion registration can be proven."
+if $AUTO_START_TODAY; then
+  echo "Auto-starting Today workout for active motion sensor proof."
+  "${ADB[@]}" shell am start -n "$PACKAGE/.MainActivity" >/dev/null
+  sleep 2
+  "${ADB[@]}" shell uiautomator dump /sdcard/thf-fitness-autostart.xml >/dev/null
+  "${ADB[@]}" pull /sdcard/thf-fitness-autostart.xml "$OUT/03b_autostart_ui.xml" >/dev/null
+  "${ADB[@]}" shell rm -f /sdcard/thf-fitness-autostart.xml
+  if grep -Fq 'resource-id="activeWorkoutScreen"' "$OUT/03b_autostart_ui.xml"; then
+    echo "AUTO_START_TODAY=ALREADY_ACTIVE" | tee "$OUT/auto_start_status.txt"
+  else
+    START_NODE="$(sed 's/></>\n</g' "$OUT/03b_autostart_ui.xml" | grep -F 'resource-id="startTodayBtn"' | head -n1 || true)"
+    [[ -n "$START_NODE" ]] || { echo "FAIL: startTodayBtn not found for automatic workout start" >&2; exit 24; }
+    BOUNDS="$(printf '%s\n' "$START_NODE" | sed -n 's/.*bounds="\[\([0-9][0-9]*\),\([0-9][0-9]*\)\]\[\([0-9][0-9]*\),\([0-9][0-9]*\)\]".*/\1 \2 \3 \4/p')"
+    read -r X1 Y1 X2 Y2 <<< "$BOUNDS"
+    [[ -n "${X1:-}" && -n "${Y1:-}" && -n "${X2:-}" && -n "${Y2:-}" ]] || { echo "FAIL: startTodayBtn bounds are unreadable" >&2; exit 24; }
+    TAP_X=$(((X1 + X2) / 2)); TAP_Y=$(((Y1 + Y2) / 2))
+    "${ADB[@]}" shell am start -n "$PACKAGE/.MainActivity" >/dev/null
+    "${ADB[@]}" shell input tap "$TAP_X" "$TAP_Y"
+    sleep 2
+    printf 'AUTO_START_TODAY=TAPPED\nTAP_X=%s\nTAP_Y=%s\n' "$TAP_X" "$TAP_Y" | tee "$OUT/auto_start_status.txt"
+  fi
+else
+  echo "Interact with Fitness now; start a workout during the next ${RECORD_SECONDS}s so active motion registration can be proven."
+fi
 "${ADB[@]}" shell dumpsys gfxinfo "$PACKAGE" reset >/dev/null 2>&1 || true
 rm -f "$OUT/sensor_registration_active.txt"
 if $REQUIRE_MOTION_SENSORS; then

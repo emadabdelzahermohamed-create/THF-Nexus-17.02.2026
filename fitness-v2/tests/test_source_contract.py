@@ -107,6 +107,15 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("INSTALLED_VERSION_CODE=", qa)
         self.assertIn("installed versionCode", qa)
 
+    def test_phone_qa_can_auto_start_today_workout_for_motion_gate(self):
+        qa = (ROOT / "fitness-v2" / "scripts" / "fitness_phone_qa.sh").read_text()
+        self.assertIn("--auto-start-today", qa)
+        self.assertIn("AUTO_START_TODAY=false", qa)
+        self.assertIn("resource-id=\"startTodayBtn\"", qa)
+        self.assertIn("am start -n", qa)
+        self.assertIn("input tap", qa)
+        self.assertIn("FAIL: startTodayBtn not found", qa)
+
     def test_health_permissions_are_exactly_the_data_used(self):
         manifest = ET.parse(ANDROID / "app" / "src" / "main" / "AndroidManifest.xml")
         health = {
