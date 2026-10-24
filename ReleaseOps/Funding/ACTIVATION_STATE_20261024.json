@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-24",
+  "route": "product sponsorship, no owner upfront payment",
+  "prior_art": "https://github.com/sponsors/wger-project",
+  "official_fees": "https://docs.github.com/en/sponsors/sponsoring-open-source-contributors/about-sponsorships-fees-and-taxes",
+  "profile_draft": "ReleaseOps/Funding/NO_UPFRONT_SPONSORSHIP_20261024.md",
+  "activation": "blocked_auth_and_eligibility",
+  "auth": {
+    "result": "declined_or_unavailable",
+    "duration_seconds": 1082,
+    "unattended_retry": false,
+    "blocks_fitness": false
+  },
+  "license": {
+    "checked_scope": "fitness recovery branch tracked files",
+    "finding": "Only third-party exercise-db LICENSE found; no blanket first-party open-source license established",
+    "action": "Verify eligible contribution scope; do not silently relicense user IP"
+  },
+  "application_submitted": false,
+  "checkout_live": false,
+  "confirmed_receipts": 0,
+  "automation": "6ad61d7995988191981933f81525495f",
+  "next": "Owner-assisted enrollment when ready; meanwhile work on truthful product proof and existing qualified funding replies without duplicate outreach or fees."
+}
