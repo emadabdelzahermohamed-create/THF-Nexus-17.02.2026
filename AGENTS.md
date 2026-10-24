@@ -1,6 +1,18 @@
 # THF Multi-AI Launch Contract
 
-## Mission
+## Current execution priority — 2026-10-24
+This section supersedes historical October 6–16 deadlines and old canonical pointers below. Active work is ONLY Fitness (four isolated lanes) and zero-upfront funding (one lane), through the user's next two-day sprint. Games/WAVE/Creator stay paused.
+
+- Fitness canonical development branch: `agent/codex/fitness-recovery/20261023`. Read its live `ReleaseOps/FitnessStandalone/EXECUTION_20261024.md` and `RECOVERY_20261023.md` before any work. This branch is a development truth, not evidence of public release.
+- Source notification candidate: PR82 / `agent/codex/live-notification/20261024`,51012; includes GPS PR81 and newer provenance fixes. Read current CI and merge state; never assume it shipped.
+- Funding: `agent/codex/token-funding/20261023` receipts and `agent/codex/sponsorship/20261024` sponsorship draft. No verified revenue at this checkpoint.
+- Only integrator changes canonical/release/version/Play; sensors, exercise experience, and phone QA have separate file/resource ownership. Check current ownership before shared operations; schedule staggering alone is not a lock.
+- Save exact SHA/run/artifact/version/gate/next action before waiting. Optional auth must never stop independent app work. Unattended runs must not initiate interactive browser login. Record unavailable/declined auth once and move to executable work; don't retry it or bypass it.
+- A tool timeout did not bound a prior auth handoff (~18min). Do not promise a guaranteed timeout or fix to ChatGPT's UI. Poll CI briefly and preserve durable checkpoints.
+- Publish meaningful passing candidates through the existing Google Play Internal pipeline and verify committed track/version. Public Production additionally requires actual release gates; never call a build a Play release.
+- Delete obsolete material only after references/dependencies and standalone replacement have been verified. Record reversible deletion manifest; preserve historical evidence, licenses, signing material and unrelated projects. No force push/history purge.
+
+## Historical mission
 Ship the THF ecosystem to the highest practical production quality within the 10-day launch window ending 2026-10-16 (Africa/Cairo). Git is the single source of truth. Never redo a gate already proven PASS for the same exact SHA/candidate.
 
 ## Mandatory startup
