@@ -63,17 +63,16 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
         self.assertGreaterEqual(version, 51005)
 
-    def test_activity_51009_is_candidate_while_signed_publish_gate_remains_fail_closed(self):
+    def test_current_candidate_matches_build_while_signed_publish_gate_remains_fail_closed(self):
         candidate = (ROOT / ".github" / "workflows" / "fitness-sensor-candidate.yml").read_text()
         android_gate = (ROOT / ".github" / "workflows" / "fitness-v2-android-health.yml").read_text()
         play_gate = (ROOT / ".github" / "workflows" / "thf-fitness-play-probe.yml").read_text()
         gradle = (ANDROID / "app" / "build.gradle").read_text()
 
-        self.assertIn("versionCode 51009", gradle)
-        self.assertIn("versionName '5.0.0-v2-alpha9'", gradle)
-        self.assertIn("candidate 51009", candidate.lower())
-        self.assertIn("versionCode='51009'", candidate)
-        self.assertIn("fitness-activity-candidate-51009", candidate)
+        version = re.search(r"versionCode\s+(\d+)", gradle).group(1)
+        self.assertIn(f"candidate {version}", candidate.lower())
+        self.assertIn(f"versionCode='{version}'", candidate)
+        self.assertIn(f"fitness-activity-candidate-{version}", candidate)
 
         # The signed publish workflow stays on its previous proven package until
         # 51009 clears candidate CI. It must not silently publish the new code.
@@ -121,8 +120,6 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         js = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
         service = ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt"
 
-        self.assertIn("versionCode 51009", gradle)
-        self.assertIn("versionName '5.0.0-v2-alpha9'", gradle)
         for permission in (
             "android.permission.ACCESS_COARSE_LOCATION",
             "android.permission.ACCESS_FINE_LOCATION",

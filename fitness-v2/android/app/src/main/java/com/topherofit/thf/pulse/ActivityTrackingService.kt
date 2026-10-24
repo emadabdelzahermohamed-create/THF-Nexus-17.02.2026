@@ -42,7 +42,6 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         private const val CHANNEL_ID = "thf_live_tracking"
         private const val NOTIFICATION_ID = 51009
         private const val MAX_ROUTE_POINTS = 1200
-        private const val MAX_ACCEPTED_ACCURACY_METRES = 80f
 
         @Volatile private var instance: ActivityTrackingService? = null
         @Volatile private var lastActivitySnapshot = ActivitySnapshot(
@@ -221,19 +220,15 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     override fun onLocationChanged(location: Location) {
         val mode = activityMode ?: return
-        if (location.accuracy <= 0f || location.accuracy > MAX_ACCEPTED_ACCURACY_METRES) return
         val nowElapsed = SystemClock.elapsedRealtime()
         val previous = lastLocation
+        // Reject before changing the distance, route, or next comparison baseline.
+        if (!GpsFixGate.accepts(location.toGpsFix(), previous?.toGpsFix(), mode, activityStartedAtElapsedMs, nowElapsed)) return
         if (previous != null) {
             val deltaMetres = ActivityMetrics.distanceMetres(previous.latitude, previous.longitude, location.latitude, location.longitude)
-            val deltaMs = max(1L, location.elapsedRealtimeNanos / 1_000_000L - previous.elapsedRealtimeNanos / 1_000_000L)
+            val deltaMs = location.elapsedRealtimeNanos / 1_000_000L - previous.elapsedRealtimeNanos / 1_000_000L
             val impliedKph = ActivityMetrics.averageSpeedKph(deltaMetres, deltaMs)
-            val maxPlausibleKph = when (mode) {
-                ActivityMode.WALK -> 13.0
-                ActivityMode.RUN -> 32.0
-                ActivityMode.CYCLE -> 85.0
-            }
-            if (deltaMetres >= 1.0 && impliedKph <= maxPlausibleKph) {
+            if (deltaMetres >= 1.0) {
                 activityDistanceMetres += deltaMetres
                 currentSpeedKph = if (location.hasSpeed()) location.speed * 3.6 else impliedKph
             } else if (deltaMetres < 1.0) {
@@ -256,6 +251,16 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             lastNotificationUpdateMs = nowElapsed
         }
     }
+
+    @Suppress("DEPRECATION")
+    private fun Location.toGpsFix() = GpsFix(
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMetres = if (hasAccuracy()) accuracy.toDouble() else Double.NaN,
+        elapsedMs = elapsedRealtimeNanos / 1_000_000L,
+        mock = if (Build.VERSION.SDK_INT >= 31) isMock else isFromMockProvider,
+        speedMps = if (hasSpeed()) speed.toDouble() else null,
+    )
 
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type != Sensor.TYPE_STEP_COUNTER || activityMode?.usesSteps != true) return
