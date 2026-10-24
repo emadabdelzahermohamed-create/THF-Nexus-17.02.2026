@@ -1,3 +1,7 @@
+# Current routing
+
+Read the current execution priority in root AGENTS.md first. It supersedes the historical deadlines, active projects and canonical branch pointers below. Current canonical fitness branch: `agent/codex/fitness-recovery/20261023`; live contract: `ReleaseOps/FitnessStandalone/EXECUTION_20261024.md` on that branch. Historical quality gates remain applicable.
+
 # Multi-AI Launch Protocol — 2026-10-06 → 2026-10-16
 
 ## Objective
