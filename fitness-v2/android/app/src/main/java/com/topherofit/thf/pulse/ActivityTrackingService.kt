@@ -361,7 +361,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         workoutEngine = null
         if (!keepService) {
             notificationHandler.removeCallbacks(notificationTicker)
-        stopForeground(STOP_FOREGROUND_REMOVE)
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
     }
@@ -389,7 +389,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         val state = workoutEngine?.currentState()
         val evidence = workoutEngine?.snapshot()
         val profile = state?.profile
-        val stepAvailable = if (profile?.showStepMetrics == true) {
+        val stepAvailable = if (state != null && profile?.showStepMetrics == true) {
             val caps = state.capabilities
             caps.activityRecognitionPermission && (caps.stepCounter || caps.stepDetector)
         } else null
