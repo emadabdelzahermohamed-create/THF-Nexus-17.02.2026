@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-24T19:42:00Z",
+  "canonical_branch": "agent/codex/fitness-recovery/20261023",
+  "package": "com.topherofit.thf.pulse",
+  "candidate": {
+    "version_code": 51012,
+    "source_sha": "29bfe57d58b84a5391e201120888d053f54ed055",
+    "build_run": 40125830819,
+    "build_artifact": 12572602451,
+    "android_unit_lint_apk_aab": "PASS",
+    "source_tests": 29,
+    "product_tests": 13,
+    "backend_tests": 15,
+    "unsigned_aab_sha256": "2a782528c1d939d58bb8fe0a0dd48faef53e9286444ae653f6830d69567a4d4e",
+    "signed_aab_sha256": "c5ae818b45d9775b1850dae9fb36f8c211ac6b9141c4117f17d85da54e56a374"
+  },
+  "play": {
+    "track": "internal",
+    "version_code": 51012,
+    "committed": true,
+    "promotion_run": 40126227388,
+    "evidence_artifact": 12573306971,
+    "evidence_digest": "sha256:65a690e95c160af19a97c068f98e87bda19be05d4109b5f704449e803dc8fcbb",
+    "production": "NOT_VERIFIED"
+  },
+  "phone": {
+    "last_verified_play_installed_version": 51010,
+    "candidate_51012": "NOT_TESTED_ADB_UNAVAILABLE",
+    "pending": [
+      "Play propagation",
+      "notification metrics/expanded/Stop",
+      "outdoor GPS",
+      "Health Connect provenance",
+      "background and recovery",
+      "audible offline voice"
+    ]
+  },
+  "merged_prs": [
+    82,
+    83,
+    84
+  ],
+  "superseded_closed_prs": [
+    81
+  ],
+  "schedules": {
+    "enabled_count": 5,
+    "fitness": 4,
+    "funding": 1,
+    "iterations_each": 48,
+    "start_timezone": "Africa/Cairo",
+    "next_run_time_reported": null,
+    "execution_guaranteed": false
+  },
+  "next_action": "Verify51012 Play propagation and notifications when phone available; otherwise advance independent exercise/provenance work. Do not rebuild or republish this artifact.",
+  "funding": "No confirmed receipts; auth and eligibility blockers isolated.",
+  "cleanup": {
+    "removed": "Expired execution-plan phases and dormant workflow auto-trigger",
+    "preserved": "App source/assets without proven standalone replacement; historical evidence in Git",
+    "workflow_repair": "Apps V3 heredoc indentation validated by YAML parse, bash -n and Python AST"
+  }
+}
