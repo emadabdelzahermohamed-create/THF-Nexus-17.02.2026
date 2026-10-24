@@ -1,11 +1,6 @@
 name: THF Apps V3 Exact Ingest Build
 
 'on':
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/thf-apps-v3-ingest-build.yml
   workflow_dispatch: {}
 
 permissions:
@@ -61,15 +56,15 @@ jobs:
             printf '%s id=%s metadata_http=%s\n' "$name" "$id" "$meta_code" >> drive-access-evidence.txt
             if [ "$meta_code" != 200 ]; then
               python - "$name" "$id" "$meta_code" "meta-${id}.json" >> drive-access-evidence.txt <<'PY'
-import json,sys
-name,fid,code,path=sys.argv[1:]
-try:
-    d=json.load(open(path))
-    e=d.get('error',{})
-    print(f"ACCESS_BLOCK name={name} id={fid} http={code} reason={e.get('status','UNKNOWN')} message={e.get('message','')}")
-except Exception:
-    print(f"ACCESS_BLOCK name={name} id={fid} http={code} reason=UNPARSEABLE")
-PY
+          import json,sys
+          name,fid,code,path=sys.argv[1:]
+          try:
+              d=json.load(open(path))
+              e=d.get('error',{})
+              print(f"ACCESS_BLOCK name={name} id={fid} http={code} reason={e.get('status','UNKNOWN')} message={e.get('message','')}")
+          except Exception:
+              print(f"ACCESS_BLOCK name={name} id={fid} http={code} reason=UNPARSEABLE")
+          PY
               exit 21
             fi
             media_code=$(curl -sS -L --retry 2 --connect-timeout 15 -o "exact/$name" -w '%{http_code}' -H "Authorization: Bearer $token" "https://www.googleapis.com/drive/v3/files/${id}?alt=media" || true)
