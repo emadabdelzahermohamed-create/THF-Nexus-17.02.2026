@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "window": {
-    "start": "2026-10-06T20:00:00+03:00",
-    "deadline": "2026-10-16T23:59:00+03:00"
+    "start": "2026-10-24T22:30:00+03:00",
+    "deadline": "2026-10-26T23:59:00+03:00"
   },
   "source_of_truth": "GitHub",
   "integrator": "GPT",
@@ -14,18 +14,41 @@
     "visual_regression_is_failure": true
   },
   "fitness_v2": {
-    "canonical_branch": "release/fitness-v2-rebuild-20261002",
-    "known_head_at_swarm_start": "b492443757ffcec04a2a5351a7631adda311d385",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "known_head_at_swarm_start": "historical-only: b492443757ffcec04a2a5351a7631adda311d385",
     "visual_baseline": "approved high-quality exercise imagery",
-    "p0_next": "continuous automatic exercise motion preserving the approved image quality"
+    "p0_next": "Read live EXECUTION_20261024.md; integrate and verify PR82 notification51012, preserve GPS and provenance"
   },
   "lanes": {
-    "motion_visual": {"status": "READY", "priority": "P0"},
-    "fitness_release": {"status": "READY", "priority": "P0"},
-    "thf_apps_tokenops": {"status": "READY", "priority": "P0"},
-    "games": {"status": "READY", "priority": "P0"},
-    "independent_products": {"status": "READY", "priority": "P0"},
-    "integrator": {"status": "READY", "priority": "P0"}
+    "fitness_sensors": {
+      "status": "ACTIVE",
+      "owner": "Fitness Sensors & Notifications"
+    },
+    "fitness_experience": {
+      "status": "ACTIVE",
+      "owner": "Fitness Exercise Experience"
+    },
+    "fitness_qa": {
+      "status": "ACTIVE",
+      "owner": "Fitness Physical QA"
+    },
+    "fitness_integrator": {
+      "status": "ACTIVE",
+      "owner": "Fitness Integrator & Play"
+    },
+    "funding": {
+      "status": "ACTIVE",
+      "owner": "THF Zero-upfront Funding"
+    },
+    "games": {
+      "status": "PAUSED"
+    },
+    "wave": {
+      "status": "PAUSED"
+    },
+    "creator": {
+      "status": "PAUSED"
+    }
   },
   "completion_definition": "real user-visible/runtime evidence + tests/build + exact Git SHA + release/deployment evidence where applicable"
 }
