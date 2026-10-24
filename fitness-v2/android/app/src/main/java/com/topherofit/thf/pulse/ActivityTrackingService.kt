@@ -18,10 +18,10 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
-import java.util.Locale
 import kotlin.math.max
 
 /**
@@ -42,7 +42,6 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         private const val CHANNEL_ID = "thf_live_tracking"
         private const val NOTIFICATION_ID = 51009
         private const val MAX_ROUTE_POINTS = 1200
-        private const val MAX_ACCEPTED_ACCURACY_METRES = 80f
 
         @Volatile private var instance: ActivityTrackingService? = null
         @Volatile private var lastActivitySnapshot = ActivitySnapshot(
@@ -113,7 +112,20 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private var lastLocation: Location? = null
     private var lastAccuracyMetres: Float? = null
     private val route = mutableListOf<ActivityRoutePoint>()
-    private var lastNotificationUpdateMs = 0L
+    private var sessionStartedAtWallMs = 0L
+    private val notificationHandler = Handler(Looper.getMainLooper())
+    private val notificationTicker = object : Runnable {
+        override fun run() {
+            if (!hasLiveSession()) return
+            notificationManager.notify(NOTIFICATION_ID, buildNotification())
+            notificationHandler.postDelayed(this, 5_000L)
+        }
+    }
+
+    private fun startNotificationUpdates() {
+        notificationHandler.removeCallbacks(notificationTicker)
+        notificationHandler.postDelayed(notificationTicker, 5_000L)
+    }
 
     internal var workoutEngine: MotionSessionEngine? = null
         private set
@@ -154,6 +166,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     override fun onDestroy() {
+        notificationHandler.removeCallbacks(notificationTicker)
         unregisterActivitySources()
         workoutEngine?.let { engine ->
             lastWorkoutEvidence = runCatching { engine.stopSession() }.getOrNull() ?: lastWorkoutEvidence
@@ -171,6 +184,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityMode = mode
         activityWeightKg = weightKg.coerceIn(30.0, 250.0)
         activityStartedAtWallMs = System.currentTimeMillis()
+        sessionStartedAtWallMs = activityStartedAtWallMs
         activityStartedAtElapsedMs = SystemClock.elapsedRealtime()
         activityDistanceMetres = 0.0
         activityStepBaseline = null
@@ -182,6 +196,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         startForegroundForCurrentSession(buildNotification())
         registerActivitySources(mode)
         publishActivitySnapshot()
+        startNotificationUpdates()
     }
 
     private fun startWorkoutInternal(sessionId: String, profile: MotionSensorProfile) {
@@ -191,13 +206,18 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         engine.onHostResume()
         engine.startSession(sessionId, profile)
         workoutEngine = engine
+        sessionStartedAtWallMs = System.currentTimeMillis()
         startForegroundForCurrentSession(buildNotification())
+        startNotificationUpdates()
     }
 
     private fun registerActivitySources(mode: ActivityMode) {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-        ) return
+        ) {
+            registerStepSource(mode)
+            return
+        }
 
         runCatching {
             if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -209,6 +229,10 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2_500L, 4f, this, Looper.getMainLooper())
             }
         }
+        registerStepSource(mode)
+    }
+
+    private fun registerStepSource(mode: ActivityMode) {
         if (mode.usesSteps && hasActivityRecognitionPermission()) {
             stepCounter?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
         }
@@ -221,19 +245,15 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     override fun onLocationChanged(location: Location) {
         val mode = activityMode ?: return
-        if (location.accuracy <= 0f || location.accuracy > MAX_ACCEPTED_ACCURACY_METRES) return
         val nowElapsed = SystemClock.elapsedRealtime()
         val previous = lastLocation
+        // Reject before changing the distance, route, or next comparison baseline.
+        if (!GpsFixGate.accepts(location.toGpsFix(), previous?.toGpsFix(), mode, activityStartedAtElapsedMs, nowElapsed)) return
         if (previous != null) {
             val deltaMetres = ActivityMetrics.distanceMetres(previous.latitude, previous.longitude, location.latitude, location.longitude)
-            val deltaMs = max(1L, location.elapsedRealtimeNanos / 1_000_000L - previous.elapsedRealtimeNanos / 1_000_000L)
+            val deltaMs = location.elapsedRealtimeNanos / 1_000_000L - previous.elapsedRealtimeNanos / 1_000_000L
             val impliedKph = ActivityMetrics.averageSpeedKph(deltaMetres, deltaMs)
-            val maxPlausibleKph = when (mode) {
-                ActivityMode.WALK -> 13.0
-                ActivityMode.RUN -> 32.0
-                ActivityMode.CYCLE -> 85.0
-            }
-            if (deltaMetres >= 1.0 && impliedKph <= maxPlausibleKph) {
+            if (deltaMetres >= 1.0) {
                 activityDistanceMetres += deltaMetres
                 currentSpeedKph = if (location.hasSpeed()) location.speed * 3.6 else impliedKph
             } else if (deltaMetres < 1.0) {
@@ -251,15 +271,22 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             elapsedMs = nowElapsed - activityStartedAtElapsedMs,
         )
         publishActivitySnapshot()
-        if (nowElapsed - lastNotificationUpdateMs >= 5_000L) {
-            notificationManager.notify(NOTIFICATION_ID, buildNotification())
-            lastNotificationUpdateMs = nowElapsed
-        }
     }
+
+    @Suppress("DEPRECATION")
+    private fun Location.toGpsFix() = GpsFix(
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMetres = if (hasAccuracy()) accuracy.toDouble() else Double.NaN,
+        elapsedMs = elapsedRealtimeNanos / 1_000_000L,
+        mock = if (Build.VERSION.SDK_INT >= 31) isMock else isFromMockProvider,
+        speedMps = if (hasSpeed()) speed.toDouble() else null,
+    )
 
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type != Sensor.TYPE_STEP_COUNTER || activityMode?.usesSteps != true) return
         val raw = event.values.firstOrNull() ?: return
+        if (!raw.isFinite() || raw < 0f) return
         val baseline = activityStepBaseline
         if (baseline == null || raw < baseline) {
             activityStepBaseline = raw
@@ -303,6 +330,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         lastActivitySnapshot = final
         unregisterActivitySources()
         activityMode = null
+        notificationHandler.removeCallbacks(notificationTicker)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
         return final
@@ -314,6 +342,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         engine.onHostPause()
         workoutEngine = null
         if (evidence != null) lastWorkoutEvidence = evidence
+        notificationHandler.removeCallbacks(notificationTicker)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
         return evidence
@@ -331,6 +360,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }
         workoutEngine = null
         if (!keepService) {
+            notificationHandler.removeCallbacks(notificationTicker)
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
@@ -356,20 +386,35 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             ActivityMode.CYCLE -> "Top Hero Fit · ركوب الدراجة مستمر"
             null -> "Top Hero Fit · التمرين مستمر"
         }
-        val text = snapshot?.let {
-            val km = it.distanceMetres / 1000.0
-            val metric = if (it.mode == ActivityMode.CYCLE) {
-                String.format(Locale.US, "%.1f km · %.1f km/h · %.0f kcal", km, it.averageSpeedKph, it.estimatedCaloriesKcal)
-            } else {
-                val pace = it.paceMinutesPerKm?.let(::formatPace) ?: "—"
-                String.format(Locale.US, "%.1f km · %s /km · %.0f kcal", km, pace, it.estimatedCaloriesKcal)
+        val state = workoutEngine?.currentState()
+        val evidence = workoutEngine?.snapshot()
+        val profile = state?.profile
+        val stepAvailable = if (state != null && profile?.showStepMetrics == true) {
+            val caps = state.capabilities
+            caps.activityRecognitionPermission && (caps.stepCounter || caps.stepDetector)
+        } else null
+        val content = if (snapshot != null) {
+            LiveNotificationText.activity(snapshot, stepCounter != null && hasActivityRecognitionPermission(), gpsStatus())
+        } else {
+            val profileName = when (profile) {
+                MotionSensorProfile.STEP_DRILL -> "تمرين خطوات"
+                MotionSensorProfile.IMPACT_JUMP -> "تمرين قفز"
+                MotionSensorProfile.STATIC_HOLD -> "تمرين ثبات"
+                else -> "تمرين حركة"
             }
-            metric
-        } ?: "قياس الحركة مستمر حتى عند الخروج من التطبيق"
+            // Counter and detector observe the same steps; never add them together.
+            val measuredSteps = evidence?.let { max(it.stepDelta, it.stepDetectorCount) }
+            LiveNotificationText.workout(measuredSteps, profileName, stepAvailable)
+        }
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(title)
-            .setContentText(text)
+            .setContentText(content.compact)
+            .setStyle(Notification.BigTextStyle().bigText(content.expanded))
+            .setWhen(sessionStartedAtWallMs)
+            .setShowWhen(true)
+            .setUsesChronometer(true)
+            .setVisibility(Notification.VISIBILITY_PRIVATE)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setCategory(Notification.CATEGORY_SERVICE)
@@ -406,10 +451,19 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private fun hasActivityRecognitionPermission(): Boolean =
         Build.VERSION.SDK_INT < 29 || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
 
-    private fun formatPace(value: Double): String {
-        val safe = value.coerceAtMost(99.0)
-        val minutes = safe.toInt()
-        val seconds = ((safe - minutes) * 60.0).toInt().coerceIn(0, 59)
-        return "%d:%02d".format(Locale.US, minutes, seconds)
+    private fun gpsStatus(): String {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) return "إذن الموقع غير متاح · المسافة لا تتحدث"
+        val enabled = runCatching {
+            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        }.getOrDefault(false)
+        if (!enabled) return "الموقع مغلق · المسافة لا تتحدث"
+        val fix = lastLocation ?: return "بانتظار إشارة GPS"
+        if (SystemClock.elapsedRealtime() - fix.elapsedRealtimeNanos / 1_000_000L > 30_000L) {
+            return "إشارة GPS قديمة · بانتظار تحديث"
+        }
+        return "GPS متصل · دقة ±${fix.accuracy.toInt()} م"
     }
 }
