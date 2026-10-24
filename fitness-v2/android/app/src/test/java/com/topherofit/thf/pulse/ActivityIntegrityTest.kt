@@ -58,6 +58,27 @@ class ActivityIntegrityTest {
         assertEquals(IntegrityClass.REJECTED, ActivityIntegrityClassifier.classify(input(selfAuthored = true)))
     }
 
+    @Test fun thfProviderPackageCannotVerifyItselfEvenIfFlagIsWrong() {
+        assertEquals(
+            IntegrityClass.REJECTED,
+            ActivityIntegrityClassifier.classify(input(provider = "com.topherofit.thf.pulse")),
+        )
+    }
+
+    @Test fun malformedProviderPackageCannotBecomeVerified() {
+        assertEquals(
+            IntegrityClass.SUPPORTED,
+            ActivityIntegrityClassifier.classify(input(provider = "not-a-package")),
+        )
+    }
+
+    @Test fun blankRecordIdCannotBecomeVerified() {
+        assertEquals(
+            IntegrityClass.SUPPORTED,
+            ActivityIntegrityClassifier.classify(input(recordId = "   ")),
+        )
+    }
+
     @Test fun nonFiniteMetricsAreRejected() {
         assertEquals(
             IntegrityClass.REJECTED,
