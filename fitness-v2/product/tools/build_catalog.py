@@ -481,7 +481,10 @@ def validate_guidance_diversity(guidance: dict[str, dict[str, str]]) -> None:
                 key = f"{field}_{language}"
                 if key not in guidance[family]:
                     raise ValueError(f"missing {key} for {family}")
-                values.append(guidance[family][key])
+                value = guidance[family][key]
+                if not isinstance(value, str) or not value.strip():
+                    raise ValueError(f"{key} for {family} must be non-blank text")
+                values.append(value)
             family_guidance.append(tuple(values))
         if len(set(family_guidance)) != len(EXPECTED_GUIDANCE_FAMILIES):
             raise ValueError(f"{label} guidance must contain 12 distinct families")

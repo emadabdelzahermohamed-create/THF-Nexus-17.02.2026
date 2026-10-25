@@ -4,7 +4,9 @@ import importlib.util
 import json
 from pathlib import Path
 import re
+import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -160,6 +162,36 @@ class ProductCatalogTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "exactly the 12 movement families"):
             self.guidance_diversity_validator()(guidance)
+
+    def test_guidance_diversity_validator_rejects_blank_copy(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        guidance["squat"]["safety_ar"] = "   "
+
+        with self.assertRaisesRegex(ValueError, "safety_ar for squat must be non-blank text"):
+            self.guidance_diversity_validator()(guidance)
+
+    def test_guidance_diversity_validator_rejects_non_string_copy(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        guidance["squat"]["safety_en"] = None
+
+        with self.assertRaisesRegex(ValueError, "safety_en for squat must be non-blank text"):
+            self.guidance_diversity_validator()(guidance)
+
+    def test_catalog_build_validates_guidance_before_creating_output(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        guidance["squat"]["safety_en"] = ""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            repo = root / "repo"
+            with mock.patch.object(CATALOG_BUILDER, "GUIDANCE", guidance):
+                try:
+                    CATALOG_BUILDER.build(root / "source", repo)
+                except ValueError as error:
+                    self.assertRegex(str(error), "safety_en for squat must be non-blank text")
+                except SystemExit:
+                    self.fail("build consulted the source before rejecting invalid guidance")
+            self.assertFalse(repo.exists())
 
     def test_named_family_outliers_receive_non_contradictory_guidance(self):
         items = {item["sourceItemId"]: item for item in self.catalog}
