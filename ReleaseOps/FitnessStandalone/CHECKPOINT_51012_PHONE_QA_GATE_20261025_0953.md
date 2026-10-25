@@ -51,3 +51,24 @@ When ADB becomes available and this exact APK remains the newest candidate:
 6. Capture logcat/crash/ANR and screenshots only where useful.
 
 If a newer source/artifact exists first, supersede this candidate and do not spend a run testing stale bytes.
+
+
+## Bounded physical recheck — 2026-10-25 15:11 Cairo
+
+A single read-only probe found the physical Samsung SM-A217F connected at `192.168.8.6:37319`, awake and not keyguard-restricted. The canonical branch still resolves to `cb425fef23b8541499acb02cecd8b86312b0eb34`.
+
+The phone still has the Play-installed older candidate:
+
+- package: `com.topherofit.thf.pulse`
+- versionCode: `51010`
+- versionName: `5.0.0-v2-alpha10`
+- targetSdk: `36`
+- installer: `com.android.vending`
+
+A real `ActivityTrackingService` session was active: `isForeground=true`, `startRequested=true`, with an ongoing low-importance notification and one visible `إيقاف` action. The notification text was the older generic tracking copy, not the newer 51012 metric layout. Another non-THF app was foreground, which establishes active owner use while tracking continues.
+
+Because a real workout/tracking session was in progress, QA deliberately did not install/upgrade, launch THF, expand/tap the notification, press Stop, change permissions, turn the screen off, clear data, or collect screenshots. This preserves the owner's live session. The observation is not a defect against the uninstalled `cb425fef...` candidate and does not close any 51012 physical gate.
+
+### Next safe action
+
+After the existing tracking service is no longer active, first re-confirm that `cb425fef...` and artifact `12586864799` remain the newest exact candidate. Only then perform the in-place upgrade and the smallest pending notification/Stop/Home/screen-off regression. Do not interrupt the current session and do not claim Phone PASS before that evidence.
