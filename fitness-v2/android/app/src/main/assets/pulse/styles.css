@@ -35,3 +35,4 @@
 .activity-live-panel .button.danger{background:linear-gradient(180deg,#5b2525,#351717);border-color:#8a4545;color:#ffd9d7}
 .profile-form input[type=number],.onboarding-form input[type=number]{min-height:44px;padding:8px 10px;border:1px solid #3e5b66;border-radius:12px;background:#0e242d;color:var(--text);width:100%}
 @media(max-width:600px){.activity-quick-actions,.activity-mode-grid{grid-template-columns:repeat(3,1fr);gap:6px}.activity-mode-button{min-height:74px;padding:7px}.activity-mode-button b{font-size:24px}.activity-metrics{grid-template-columns:repeat(2,1fr)}}
+.program-card:focus-visible,.session-exercises button:focus-visible,.activity-mode-button:focus-visible,.set-complete:focus-visible,.text-button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
