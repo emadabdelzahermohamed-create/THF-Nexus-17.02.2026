@@ -72,3 +72,23 @@ Because a real workout/tracking session was in progress, QA deliberately did not
 ### Next safe action
 
 After the existing tracking service is no longer active, first re-confirm that `cb425fef...` and artifact `12586864799` remain the newest exact candidate. Only then perform the in-place upgrade and the smallest pending notification/Stop/Home/screen-off regression. Do not interrupt the current session and do not claim Phone PASS before that evidence.
+
+## Safe preflight checkpoint — 2026-10-25 20:53 Cairo
+
+The authorized remote Termux host was online and contained ADB, but one bounded `adb devices -l` inventory returned an empty device list. No reconnect, stale IP/port reuse, install, launch, force-stop, wake/unlock, permission change, notification action, or data operation followed. The phone candidate therefore remains physically unverified.
+
+Canonical remains `agent/codex/fitness-recovery/20261023` at `17e84b6b16a99fbb624edd79792bbef95e7c5415`. The newest exact standalone APK candidate recorded for phone QA remains source `cb425fef23b8541499acb02cecd8b86312b0eb34`, run `40163572486`, artifact `12586864799`, version code `51012`. It is not installed or phone-tested. Separately, the earlier signed 51012 artifact from source `29bfe57d...` remains verified committed to Play Internal; this observation does not change that release truth or prove Play propagation.
+
+### Reusable safety gate
+
+`fitness-v2/scripts/fitness_phone_preflight.sh` now defines a read-only gate for future device windows. It performs exactly one inventory call and exits successfully only with `qa_state=READY_FOR_MANUAL_QA`. It fails closed for:
+
+- no authorized device or multiple devices;
+- a requested serial that is unavailable;
+- a non-interactive or keyguard-locked device;
+- a missing Fitness package;
+- an active `ActivityTrackingService` session.
+
+The gate never reconnects, pairs, wakes, unlocks, installs, launches, stops, taps, changes permissions, or clears data. A ready result permits only a separate deliberate QA action; it does not claim Phone PASS.
+
+Verification: `python3 -m unittest discover -s fitness-v2/tests -v` passed 37 tests, including eight fake-ADB preflight cases. `bash -n fitness-v2/scripts/fitness_phone_preflight.sh` and `git diff --check` passed. ShellCheck was not installed in the execution environment.
