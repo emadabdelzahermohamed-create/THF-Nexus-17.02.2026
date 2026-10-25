@@ -36,7 +36,8 @@ window.THF_MOTION_MANIFEST = {
   const currentExercise = () => exercises().find(item => item.id === activeExerciseId);
   const reduceMotion = () => {
     const control = byId('reduceMotion');
-    return Boolean(control?.checked) || Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    if (control) return Boolean(control.checked);
+    return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
   };
 
   function inferActiveExercise() {
