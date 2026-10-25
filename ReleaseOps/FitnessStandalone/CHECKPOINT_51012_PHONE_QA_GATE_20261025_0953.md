@@ -92,3 +92,11 @@ Canonical remains `agent/codex/fitness-recovery/20261023` at `17e84b6b16a99fbb62
 The gate never reconnects, pairs, wakes, unlocks, installs, launches, stops, taps, changes permissions, or clears data. A ready result permits only a separate deliberate QA action; it does not claim Phone PASS.
 
 Verification: `python3 -m unittest discover -s fitness-v2/tests -v` passed 37 tests, including eight fake-ADB preflight cases. `bash -n fitness-v2/scripts/fitness_phone_preflight.sh` and `git diff --check` passed. ShellCheck was not installed in the execution environment.
+
+## Fail-closed parser repair — 2026-10-25 21:18 Cairo
+
+A synthetic read-only reproduction showed that a successful but empty `dumpsys window` response could previously reach `READY_FOR_MANUAL_QA`. The preflight now requires a recognized explicit unlocked indicator after rejecting every recognized locked indicator. Empty or unrecognized window output returns `DEVICE_LOCK_STATE_UNKNOWN` before package/service queries.
+
+The same boundary was applied to tracking-service inspection: an empty successful response returns `SERVICE_STATE_UNKNOWN`; only a recognized Activity Manager services response without active flags can proceed. These are QA-harness safety results, not physical-device or app-candidate results. No phone operation occurred.
+
+TDD evidence: both new regressions failed against the prior script by returning exit `0`; after the minimal parser repair, all 10 preflight cases pass. The complete Fitness Python suite now passes 39 tests; `bash -n` and `git diff --check` pass.

@@ -48,9 +48,10 @@ if command == "dumpsys power":
     if scenario != "noninteractive":
         print("mInteractive=true")
 elif command == "dumpsys window":
-    print("mShowingLockscreen=true" if scenario == "locked" else "mShowingLockscreen=false")
-    print("mDreamingLockscreen=false")
-    print("isStatusBarKeyguard=false")
+    if scenario != "empty_window":
+        print("mShowingLockscreen=true" if scenario == "locked" else "mShowingLockscreen=false")
+        print("mDreamingLockscreen=false")
+        print("isStatusBarKeyguard=false")
 elif command == "pm path com.topherofit.thf.pulse":
     if scenario != "package_missing":
         print("package:/data/app/com.topherofit.thf.pulse/base.apk")
@@ -64,6 +65,9 @@ elif command == "dumpsys activity services com.topherofit.thf.pulse/.ActivityTra
         print("ServiceRecord{abc com.topherofit.thf.pulse/.ActivityTrackingService}")
         print("isForeground=true")
         print("startRequested=true")
+    elif scenario != "empty_service":
+        print("ACTIVITY MANAGER SERVICES (dumpsys activity services)")
+        print("  (nothing)")
 else:
     print("unexpected fake adb call: " + " ".join(args), file=sys.stderr)
     raise SystemExit(91)
@@ -128,6 +132,13 @@ class FitnessPhonePreflightTests(unittest.TestCase):
         self.assertFalse(any("dumpsys window" in call for call in calls))
         self.assert_read_only(calls)
 
+    def test_empty_window_state_fails_closed_before_package_queries(self):
+        result, calls = self.run_preflight("empty_window")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("qa_state=DEVICE_LOCK_STATE_UNKNOWN", result.stdout)
+        self.assertFalse(any("pm path" in call for call in calls))
+        self.assert_read_only(calls)
+
     def test_unavailable_requested_serial_fails_before_shell_queries(self):
         result, calls = self.run_preflight("ready", "--serial", "OTHER_SERIAL")
         self.assertNotEqual(result.returncode, 0)
@@ -149,6 +160,13 @@ class FitnessPhonePreflightTests(unittest.TestCase):
         self.assertIn("installed_version_code=51010", result.stdout)
         self.assertIn("installed_version_name=5.0.0-v2-alpha10", result.stdout)
         self.assertIn("installer=com.android.vending", result.stdout)
+        self.assert_read_only(calls)
+
+    def test_empty_service_state_never_reports_ready(self):
+        result, calls = self.run_preflight("empty_service")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("qa_state=SERVICE_STATE_UNKNOWN", result.stdout)
+        self.assertNotIn("qa_state=READY_FOR_MANUAL_QA", result.stdout)
         self.assert_read_only(calls)
 
     def test_idle_unlocked_device_is_ready_for_separate_manual_qa(self):

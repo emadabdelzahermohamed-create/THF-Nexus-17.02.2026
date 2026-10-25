@@ -59,6 +59,9 @@ WINDOW="$("${ADB[@]}" shell dumpsys window 2>/dev/null)" || state "DEVICE_LOCKED
 if grep -Eq 'mShowingLockscreen=true|mDreamingLockscreen=true|isStatusBarKeyguard=true' <<<"$WINDOW"; then
   state "DEVICE_LOCKED" 25
 fi
+if ! grep -Eq 'mShowingLockscreen=false|mDreamingLockscreen=false|isStatusBarKeyguard=false' <<<"$WINDOW"; then
+  state "DEVICE_LOCK_STATE_UNKNOWN" 25
+fi
 
 PACKAGE_PATH="$("${ADB[@]}" shell pm path "$PACKAGE" 2>/dev/null)" || state "PACKAGE_NOT_INSTALLED" 26
 if ! grep -q '^package:' <<<"$PACKAGE_PATH"; then
@@ -78,6 +81,9 @@ INSTALLER="$(sed -n 's/.*installer=\([^[:space:]]*\).*/\1/p' <<<"$INSTALLER_INFO
 SERVICE="$("${ADB[@]}" shell dumpsys activity services "$PACKAGE/.ActivityTrackingService" 2>/dev/null)" || state "SERVICE_STATE_UNKNOWN" 27
 if grep -Eq 'isForeground=true|startRequested=true' <<<"$SERVICE"; then
   state "ACTIVE_TRACKING_SESSION" 28
+fi
+if ! grep -q 'ACTIVITY MANAGER SERVICES' <<<"$SERVICE"; then
+  state "SERVICE_STATE_UNKNOWN" 27
 fi
 
 state "READY_FOR_MANUAL_QA" 0
