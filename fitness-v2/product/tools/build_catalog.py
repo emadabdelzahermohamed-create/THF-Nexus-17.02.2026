@@ -309,6 +309,170 @@ FAMILY = {
     },
 }
 
+GUIDANCE = {
+    "squat": {
+        "regression_en": "Reduce load or depth, or squat to a stable box while keeping the whole foot planted.",
+        "regression_ar": "خفّض الحمل أو عمق النزول، أو استخدم صندوقًا ثابتًا مع بقاء القدم كاملة على الأرض.",
+        "progression_en": "Add depth, repetitions, or a small load only while the feet stay planted and knees track cleanly.",
+        "progression_ar": "زد العمق أو العدات أو حملًا بسيطًا فقط مع ثبات القدم وتتبع الركبة لاتجاهها.",
+        "safety_en": "Keep knees aligned with the feet and stop for joint pain, heel lift, or loss of balance.",
+        "safety_ar": "حافظ على اتجاه الركبتين مع القدمين وتوقف عند ألم المفصل أو ارتفاع الكعب أو فقدان التوازن.",
+    },
+    "hinge": {
+        "regression_en": "Use a shorter range, lighter load, or a dowel guide until the hip hinge stays separate from spinal motion.",
+        "regression_ar": "استخدم مدى أقصر أو حملًا أخف أو عصًا إرشادية حتى تثبت حركة الحوض دون تحريك العمود الفقري.",
+        "progression_en": "Increase range or load gradually only while the spine stays neutral and the load remains close.",
+        "progression_ar": "زد المدى أو الحمل تدريجيًا فقط مع بقاء الظهر محايدًا والحمل قريبًا من الجسم.",
+        "safety_en": "Keep the load close and stop for radiating pain, loss of grip, or rounding that cannot be corrected.",
+        "safety_ar": "أبقِ الحمل قريبًا وتوقف عند ألم ممتد أو فقدان القبضة أو تقوس لا يمكنك تصحيحه.",
+    },
+    "horizontal_push": {
+        "regression_en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+        "regression_ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين.",
+        "progression_en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+        "progression_ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة.",
+        "safety_en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+        "safety_ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك.",
+    },
+    "vertical_push": {
+        "regression_en": "Use a lighter load, neutral grip, seated support, or a shorter pain-free overhead range.",
+        "regression_ar": "استخدم حملًا أخف أو قبضة محايدة أو دعمًا بالجلوس أو مدى رأسيًا أقصر دون ألم.",
+        "progression_en": "Add range or a small load only while ribs stay stacked over the pelvis and both arms move evenly.",
+        "progression_ar": "زد المدى أو حملًا بسيطًا فقط مع ثبات القفص الصدري فوق الحوض وتحرك الذراعين بالتساوي.",
+        "safety_en": "Stop for shoulder pain, numbness, uneven pressing, or lower-back arching that you cannot control.",
+        "safety_ar": "توقف عند ألم الكتف أو التنميل أو الدفع غير المتساوي أو تقوس أسفل الظهر الذي لا يمكنك التحكم فيه.",
+    },
+    "horizontal_pull": {
+        "regression_en": "Use chest support, a lighter band, or less range so the pull does not depend on torso momentum.",
+        "regression_ar": "استخدم دعمًا للصدر أو مطاطًا أخف أو مدى أقل حتى لا يعتمد السحب على زخم الجذع.",
+        "progression_en": "Add a pause, range, repetitions, or a small load while the neck stays relaxed and torso remains still.",
+        "progression_ar": "أضف توقفًا أو مدى أو عدات أو حملًا بسيطًا مع ارتخاء الرقبة وثبات الجذع.",
+        "safety_en": "Stop if you must jerk the torso, shrug repeatedly, or feel sharp shoulder, elbow, or back pain.",
+        "safety_ar": "توقف إذا اضطررت لهز الجذع أو رفع الكتفين باستمرار أو شعرت بألم حاد في الكتف أو المرفق أو الظهر.",
+    },
+    "vertical_pull": {
+        "regression_en": "Use assisted support, a pulldown machine, or a shorter range that preserves shoulder control.",
+        "regression_ar": "استخدم مساعدة أو جهاز سحب أو مدى أقصر يحافظ على التحكم في الكتف.",
+        "progression_en": "Reduce assistance or add repetitions before load, keeping a controlled full reach.",
+        "progression_ar": "قلّل المساعدة أو زد العدات قبل الحمل مع الحفاظ على مد كامل ومتحكم فيه.",
+        "safety_en": "Avoid pulling behind the neck; stop for painful hanging, numbness, or loss of shoulder control.",
+        "safety_ar": "تجنب السحب خلف الرقبة وتوقف عند ألم التعليق أو التنميل أو فقدان التحكم في الكتف.",
+    },
+    "isolation": {
+        "regression_en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+        "regression_ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده.",
+        "progression_en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+        "progression_ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة.",
+        "safety_en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+        "safety_ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه.",
+    },
+    "core": {
+        "regression_en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+        "regression_ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي.",
+        "progression_en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+        "progression_ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري.",
+        "safety_en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+        "safety_ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض.",
+    },
+    "locomotion": {
+        "regression_en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+        "regression_ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه.",
+        "progression_en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+        "progression_ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة.",
+        "safety_en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+        "safety_ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد.",
+    },
+    "jump": {
+        "regression_en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+        "regression_ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر.",
+        "progression_en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+        "progression_ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط.",
+        "safety_en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+        "safety_ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن.",
+    },
+    "mobility": {
+        "regression_en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+        "regression_ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم.",
+        "progression_en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+        "progression_ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا.",
+        "safety_en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+        "safety_ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل.",
+    },
+    "recovery": {
+        "regression_en": "Use less body weight, a softer tool, or a shorter session around the sensitive area.",
+        "regression_ar": "استخدم وزن جسم أقل أو أداة ألين أو مدة أقصر حول المنطقة الحساسة.",
+        "progression_en": "Progress with slightly more time or controlled pressure, never by rolling directly over a joint or nerve.",
+        "progression_ar": "تدرّج بزيادة بسيطة في الزمن أو الضغط المتحكم فيه، وليس بالدحرجة مباشرة فوق مفصل أو عصب.",
+        "safety_en": "Avoid bones, joints, and known nerve paths; stop immediately for numbness, bruising, or sharp pain.",
+        "safety_ar": "تجنب العظام والمفاصل ومسارات الأعصاب المعروفة، وتوقف فورًا عند تنميل أو كدمة أو ألم حاد.",
+    },
+}
+
+GUIDANCE_FAMILY_OVERRIDES = {
+    "Leg_Extensions": "isolation",
+    "Incline_Dumbbell_Press": "horizontal_push",
+    "Side_Bridge": "core",
+    "Flutter_Kicks": "core",
+    "Downward_Facing_Balance": "core",
+    "Superman": "core",
+    "Mountain_Climbers": "core",
+    "Linear_Acceleration_Wall_Drill": "locomotion",
+    "Straight-Arm_Dumbbell_Pullover": "horizontal_pull",
+}
+
+STEP_GUIDANCE_IDS = {
+    "Barbell_Step_Ups",
+    "Dumbbell_Step_Ups",
+    "Step-up_with_Knee_Raise",
+    "Bodyweight_Walking_Lunge",
+}
+
+STEP_GUIDANCE = {
+    "regression_en": "Use a lower step, shorter stride, no added load, or stable support until each transfer is controlled.",
+    "regression_ar": "استخدم ارتفاعًا أقل أو خطوة أقصر أو دون حمل إضافي أو مع دعم ثابت حتى تتحكم في كل انتقال.",
+    "progression_en": "Add height, stride, repetitions, or a small load one at a time while each planted step stays stable.",
+    "progression_ar": "زد الارتفاع أو طول الخطوة أو العدات أو حملًا بسيطًا واحدًا تلو الآخر مع ثبات كل خطوة مرتكزة.",
+    "safety_en": "Use a clear, non-slip surface, place the whole working foot securely, and stop for knee pain or loss of balance.",
+    "safety_ar": "استخدم سطحًا خاليًا وغير زلق، وثبّت القدم العاملة كاملة، وتوقف عند ألم الركبة أو فقدان التوازن.",
+}
+
+THROW_GUIDANCE_IDS = {
+    "One-Arm_Medicine_Ball_Slam",
+    "Overhead_Slam",
+    "Medicine_Ball_Chest_Pass",
+    "Medicine_Ball_Scoop_Throw",
+    "Catch_and_Overhead_Throw",
+}
+
+THROW_GUIDANCE = {
+    "regression_en": "Use a lighter ball, slower release, shorter range, or a controlled pass without an explosive catch.",
+    "regression_ar": "استخدم كرة أخف أو إطلاقًا أبطأ أو مدى أقصر أو تمريرًا متحكمًا دون التقاط انفجاري.",
+    "progression_en": "Add speed, range, or a small load one at a time only while release and catch remain controlled.",
+    "progression_ar": "زد السرعة أو المدى أو حملًا بسيطًا واحدًا تلو الآخر فقط مع ثبات الإطلاق والالتقاط.",
+    "safety_en": "Clear the throwing area, use a secure ball and target, and stop if release, catch, or trunk control deteriorates.",
+    "safety_ar": "أخلِ منطقة الرمي، واستخدم كرة وهدفًا آمنين، وتوقف عند تدهور التحكم في الإطلاق أو الالتقاط أو الجذع.",
+}
+
+SLIDER_GUIDANCE = {
+    "regression_en": "Shorten the slide, use both legs, or place the feet on a surface with more friction.",
+    "regression_ar": "قصّر مسافة الانزلاق أو استخدم الساقين معًا أو ضع القدمين على سطح احتكاكه أعلى.",
+    "progression_en": "Increase slide length or use one leg only while the hips remain level and the return stays controlled.",
+    "progression_ar": "زد طول الانزلاق أو استخدم ساقًا واحدة فقط مع ثبات الحوض والتحكم في العودة.",
+    "safety_en": "Test the sliding surface first, keep the path clear, and stop for hamstring cramp, knee pain, or loss of hip control.",
+    "safety_ar": "اختبر سطح الانزلاق أولًا وأخلِ المسار، وتوقف عند تشنج خلفية الفخذ أو ألم الركبة أو فقدان ثبات الحوض.",
+}
+
+
+def guidance_for(source_id: str, pattern: str) -> dict:
+    if source_id in STEP_GUIDANCE_IDS:
+        return STEP_GUIDANCE
+    if source_id in THROW_GUIDANCE_IDS:
+        return THROW_GUIDANCE
+    if source_id == "Platform_Hamstring_Slides":
+        return SLIDER_GUIDANCE
+    return GUIDANCE[GUIDANCE_FAMILY_OVERRIDES.get(source_id, pattern)]
+
+
 ENGLISH_STEPS = {
     "squat": ["Descend under control with the whole foot planted.", "Keep the trunk braced and knees tracking over the toes.", "Drive the floor away and stand without snapping the knees."],
     "hinge": ["Push the hips back while keeping a neutral spine.", "Stop before trunk control or load position is lost.", "Press through the feet and extend the hips without over-arching."],
@@ -429,6 +593,7 @@ def build(source: Path, repo: Path) -> None:
         level = item.get("level") or "beginner"
         section_en, section_ar = SECTION_LABELS[section]
         slug = source_id.lower().replace("_", "-").replace("/", "-")
+        guidance = guidance_for(source_id, pattern)
         catalog.append({
             "id": slug,
             "sourceItemId": source_id,
@@ -450,18 +615,9 @@ def build(source: Path, repo: Path) -> None:
             "breathing": {"en": family["breathing_en"], "ar": family["breathing_ar"]},
             "prescription": prescription(item, pattern),
             "commonMistakes": {"en": family["mistakes_en"], "ar": family["mistakes_ar"]},
-            "regression": {
-                "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-                "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة.",
-            },
-            "progression": {
-                "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-                "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا.",
-            },
-            "safety": {
-                "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-                "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي.",
-            },
+            "regression": {"en": guidance["regression_en"], "ar": guidance["regression_ar"]},
+            "progression": {"en": guidance["progression_en"], "ar": guidance["progression_ar"]},
+            "safety": {"en": guidance["safety_en"], "ar": guidance["safety_ar"]},
             "demo": {"type": "two_frame_image_sequence", "assets": assets, "offline": True, "alt": {"en": f"Start and finish positions for {item['name']}", "ar": f"وضعا البداية والنهاية لتمرين {name_ar}"}},
             "tracking": {"load": pattern not in {"mobility", "recovery", "locomotion", "jump"}, "rpe": True, "rir": pattern not in {"mobility", "recovery", "locomotion"}, "volume": pattern not in {"mobility", "recovery", "locomotion"}},
             "provenance": {

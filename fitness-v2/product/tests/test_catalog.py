@@ -70,6 +70,99 @@ class ProductCatalogTest(unittest.TestCase):
                 item["provenance"]["sourcePath"],
             )
 
+    def test_every_movement_family_has_distinct_bilingual_guidance(self):
+        expected_families = {
+            "squat", "hinge", "horizontal_push", "vertical_push",
+            "horizontal_pull", "vertical_pull", "isolation", "core",
+            "locomotion", "jump", "mobility", "recovery",
+        }
+        exception_ids = {
+            "Barbell_Step_Ups", "Dumbbell_Step_Ups", "Step-up_with_Knee_Raise",
+            "Bodyweight_Walking_Lunge", "Leg_Extensions", "Platform_Hamstring_Slides",
+            "Incline_Dumbbell_Press", "Side_Bridge", "Flutter_Kicks",
+            "Downward_Facing_Balance", "Superman", "Mountain_Climbers",
+            "Linear_Acceleration_Wall_Drill", "Straight-Arm_Dumbbell_Pullover",
+            "One-Arm_Medicine_Ball_Slam", "Overhead_Slam",
+            "Medicine_Ball_Chest_Pass", "Medicine_Ball_Scoop_Throw",
+            "Catch_and_Overhead_Throw",
+        }
+        guidance_by_family = {}
+        for item in self.catalog:
+            if item["sourceItemId"] in exception_ids:
+                continue
+            family = item["movement"]["id"]
+            guidance = tuple(
+                item[field][language]
+                for field in ("safety", "regression", "progression")
+                for language in ("ar", "en")
+            )
+            if family in guidance_by_family:
+                self.assertEqual(guidance_by_family[family], guidance)
+            else:
+                guidance_by_family[family] = guidance
+
+        self.assertEqual(expected_families, set(guidance_by_family))
+        self.assertEqual(12, len(set(guidance_by_family.values())))
+
+    def test_named_family_outliers_receive_non_contradictory_guidance(self):
+        items = {item["sourceItemId"]: item for item in self.catalog}
+        fields = ("safety", "regression", "progression")
+        languages = ("ar", "en")
+        guidance = lambda item: tuple(
+            item[field][language] for field in fields for language in languages
+        )
+
+        for source_id in ("Leg_Extensions",):
+            self.assertEqual(guidance(items["Dumbbell_Bicep_Curl"]), guidance(items[source_id]))
+        for source_id in ("Incline_Dumbbell_Press",):
+            self.assertEqual(guidance(items["Pushups"]), guidance(items[source_id]))
+        for source_id in (
+            "Side_Bridge", "Flutter_Kicks", "Downward_Facing_Balance",
+            "Superman", "Mountain_Climbers",
+        ):
+            self.assertEqual(guidance(items["Plank"]), guidance(items[source_id]))
+        for source_id in ("Linear_Acceleration_Wall_Drill",):
+            self.assertEqual(guidance(items["Trail_Running_Walking"]), guidance(items[source_id]))
+        for source_id in ("Straight-Arm_Dumbbell_Pullover",):
+            self.assertEqual(guidance(items["Bent_Over_Barbell_Row"]), guidance(items[source_id]))
+
+        step_ids = (
+            "Barbell_Step_Ups", "Dumbbell_Step_Ups", "Step-up_with_Knee_Raise",
+            "Bodyweight_Walking_Lunge",
+        )
+        self.assertEqual(1, len({guidance(items[source_id]) for source_id in step_ids}))
+        self.assertIn("working foot", items[step_ids[0]]["safety"]["en"])
+
+        throw_ids = (
+            "One-Arm_Medicine_Ball_Slam", "Overhead_Slam",
+            "Medicine_Ball_Chest_Pass", "Medicine_Ball_Scoop_Throw",
+            "Catch_and_Overhead_Throw",
+        )
+        self.assertEqual(1, len({guidance(items[source_id]) for source_id in throw_ids}))
+        self.assertIn("throwing area", items[throw_ids[0]]["safety"]["en"])
+        self.assertNotIn("landing", items[throw_ids[0]]["safety"]["en"].lower())
+
+        self.assertIn("sliding surface", items["Platform_Hamstring_Slides"]["safety"]["en"])
+
+    def test_high_risk_families_receive_behavior_specific_guidance(self):
+        examples = {
+            item["movement"]["id"]: item
+            for item in self.catalog
+            if item["movement"]["id"] in {"jump", "locomotion", "recovery"}
+        }
+        self.assertEqual(
+            "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+            examples["jump"]["safety"]["en"],
+        )
+        self.assertEqual(
+            "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه.",
+            examples["locomotion"]["regression"]["ar"],
+        )
+        self.assertEqual(
+            "Progress with slightly more time or controlled pressure, never by rolling directly over a joint or nerve.",
+            examples["recovery"]["progression"]["en"],
+        )
+
     def test_every_demo_is_two_frame_offline_and_hash_verified(self):
         asset_count = 0
         for item in self.catalog:

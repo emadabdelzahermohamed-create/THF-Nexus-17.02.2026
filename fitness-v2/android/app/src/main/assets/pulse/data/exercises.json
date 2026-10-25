@@ -104,16 +104,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+      "ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+      "ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+      "ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -254,16 +254,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -401,16 +401,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -550,16 +550,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lighter ball, slower release, shorter range, or a controlled pass without an explosive catch.",
+      "ar": "استخدم كرة أخف أو إطلاقًا أبطأ أو مدى أقصر أو تمريرًا متحكمًا دون التقاط انفجاري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add speed, range, or a small load one at a time only while release and catch remain controlled.",
+      "ar": "زد السرعة أو المدى أو حملًا بسيطًا واحدًا تلو الآخر فقط مع ثبات الإطلاق والالتقاط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Clear the throwing area, use a secure ball and target, and stop if release, catch, or trunk control deteriorates.",
+      "ar": "أخلِ منطقة الرمي، واستخدم كرة وهدفًا آمنين، وتوقف عند تدهور التحكم في الإطلاق أو الالتقاط أو الجذع."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -703,16 +703,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -854,16 +854,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -1003,16 +1003,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -1151,16 +1151,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lighter load, neutral grip, seated support, or a shorter pain-free overhead range.",
+      "ar": "استخدم حملًا أخف أو قبضة محايدة أو دعمًا بالجلوس أو مدى رأسيًا أقصر دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add range or a small load only while ribs stay stacked over the pelvis and both arms move evenly.",
+      "ar": "زد المدى أو حملًا بسيطًا فقط مع ثبات القفص الصدري فوق الحوض وتحرك الذراعين بالتساوي."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Stop for shoulder pain, numbness, uneven pressing, or lower-back arching that you cannot control.",
+      "ar": "توقف عند ألم الكتف أو التنميل أو الدفع غير المتساوي أو تقوس أسفل الظهر الذي لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -1294,16 +1294,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -1443,16 +1443,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -1593,16 +1593,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use assisted support, a pulldown machine, or a shorter range that preserves shoulder control.",
+      "ar": "استخدم مساعدة أو جهاز سحب أو مدى أقصر يحافظ على التحكم في الكتف."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Reduce assistance or add repetitions before load, keeping a controlled full reach.",
+      "ar": "قلّل المساعدة أو زد العدات قبل الحمل مع الحفاظ على مد كامل ومتحكم فيه."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid pulling behind the neck; stop for painful hanging, numbness, or loss of shoulder control.",
+      "ar": "تجنب السحب خلف الرقبة وتوقف عند ألم التعليق أو التنميل أو فقدان التحكم في الكتف."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -1741,16 +1741,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use assisted support, a pulldown machine, or a shorter range that preserves shoulder control.",
+      "ar": "استخدم مساعدة أو جهاز سحب أو مدى أقصر يحافظ على التحكم في الكتف."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Reduce assistance or add repetitions before load, keeping a controlled full reach.",
+      "ar": "قلّل المساعدة أو زد العدات قبل الحمل مع الحفاظ على مد كامل ومتحكم فيه."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid pulling behind the neck; stop for painful hanging, numbness, or loss of shoulder control.",
+      "ar": "تجنب السحب خلف الرقبة وتوقف عند ألم التعليق أو التنميل أو فقدان التحكم في الكتف."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -1894,16 +1894,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lower step, shorter stride, no added load, or stable support until each transfer is controlled.",
+      "ar": "استخدم ارتفاعًا أقل أو خطوة أقصر أو دون حمل إضافي أو مع دعم ثابت حتى تتحكم في كل انتقال."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, stride, repetitions, or a small load one at a time while each planted step stays stable.",
+      "ar": "زد الارتفاع أو طول الخطوة أو العدات أو حملًا بسيطًا واحدًا تلو الآخر مع ثبات كل خطوة مرتكزة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear, non-slip surface, place the whole working foot securely, and stop for knee pain or loss of balance.",
+      "ar": "استخدم سطحًا خاليًا وغير زلق، وثبّت القدم العاملة كاملة، وتوقف عند ألم الركبة أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -2041,16 +2041,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -2189,16 +2189,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -2336,16 +2336,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the slide, use both legs, or place the feet on a surface with more friction.",
+      "ar": "قصّر مسافة الانزلاق أو استخدم الساقين معًا أو ضع القدمين على سطح احتكاكه أعلى."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase slide length or use one leg only while the hips remain level and the return stays controlled.",
+      "ar": "زد طول الانزلاق أو استخدم ساقًا واحدة فقط مع ثبات الحوض والتحكم في العودة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Test the sliding surface first, keep the path clear, and stop for hamstring cramp, knee pain, or loss of hip control.",
+      "ar": "اختبر سطح الانزلاق أولًا وأخلِ المسار، وتوقف عند تشنج خلفية الفخذ أو ألم الركبة أو فقدان ثبات الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -2485,16 +2485,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -2628,16 +2628,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -2784,16 +2784,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+      "ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+      "ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+      "ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -2940,16 +2940,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+      "ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+      "ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+      "ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -3095,16 +3095,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+      "ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+      "ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+      "ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -3246,16 +3246,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -3398,16 +3398,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+      "ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+      "ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+      "ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -3547,16 +3547,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -3697,16 +3697,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -3859,16 +3859,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a shorter range, lighter load, or a dowel guide until the hip hinge stays separate from spinal motion.",
+      "ar": "استخدم مدى أقصر أو حملًا أخف أو عصًا إرشادية حتى تثبت حركة الحوض دون تحريك العمود الفقري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase range or load gradually only while the spine stays neutral and the load remains close.",
+      "ar": "زد المدى أو الحمل تدريجيًا فقط مع بقاء الظهر محايدًا والحمل قريبًا من الجسم."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep the load close and stop for radiating pain, loss of grip, or rounding that cannot be corrected.",
+      "ar": "أبقِ الحمل قريبًا وتوقف عند ألم ممتد أو فقدان القبضة أو تقوس لا يمكنك تصحيحه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -4007,16 +4007,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a shorter range, lighter load, or a dowel guide until the hip hinge stays separate from spinal motion.",
+      "ar": "استخدم مدى أقصر أو حملًا أخف أو عصًا إرشادية حتى تثبت حركة الحوض دون تحريك العمود الفقري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase range or load gradually only while the spine stays neutral and the load remains close.",
+      "ar": "زد المدى أو الحمل تدريجيًا فقط مع بقاء الظهر محايدًا والحمل قريبًا من الجسم."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep the load close and stop for radiating pain, loss of grip, or rounding that cannot be corrected.",
+      "ar": "أبقِ الحمل قريبًا وتوقف عند ألم ممتد أو فقدان القبضة أو تقوس لا يمكنك تصحيحه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -4157,16 +4157,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lighter load, neutral grip, seated support, or a shorter pain-free overhead range.",
+      "ar": "استخدم حملًا أخف أو قبضة محايدة أو دعمًا بالجلوس أو مدى رأسيًا أقصر دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add range or a small load only while ribs stay stacked over the pelvis and both arms move evenly.",
+      "ar": "زد المدى أو حملًا بسيطًا فقط مع ثبات القفص الصدري فوق الحوض وتحرك الذراعين بالتساوي."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Stop for shoulder pain, numbness, uneven pressing, or lower-back arching that you cannot control.",
+      "ar": "توقف عند ألم الكتف أو التنميل أو الدفع غير المتساوي أو تقوس أسفل الظهر الذي لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -4312,16 +4312,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or depth, or squat to a stable box while keeping the whole foot planted.",
+      "ar": "خفّض الحمل أو عمق النزول، أو استخدم صندوقًا ثابتًا مع بقاء القدم كاملة على الأرض."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add depth, repetitions, or a small load only while the feet stay planted and knees track cleanly.",
+      "ar": "زد العمق أو العدات أو حملًا بسيطًا فقط مع ثبات القدم وتتبع الركبة لاتجاهها."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep knees aligned with the feet and stop for joint pain, heel lift, or loss of balance.",
+      "ar": "حافظ على اتجاه الركبتين مع القدمين وتوقف عند ألم المفصل أو ارتفاع الكعب أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -4463,16 +4463,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use chest support, a lighter band, or less range so the pull does not depend on torso momentum.",
+      "ar": "استخدم دعمًا للصدر أو مطاطًا أخف أو مدى أقل حتى لا يعتمد السحب على زخم الجذع."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a pause, range, repetitions, or a small load while the neck stays relaxed and torso remains still.",
+      "ar": "أضف توقفًا أو مدى أو عدات أو حملًا بسيطًا مع ارتخاء الرقبة وثبات الجذع."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Stop if you must jerk the torso, shrug repeatedly, or feel sharp shoulder, elbow, or back pain.",
+      "ar": "توقف إذا اضطررت لهز الجذع أو رفع الكتفين باستمرار أو شعرت بألم حاد في الكتف أو المرفق أو الظهر."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -4611,16 +4611,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -4764,16 +4764,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use assisted support, a pulldown machine, or a shorter range that preserves shoulder control.",
+      "ar": "استخدم مساعدة أو جهاز سحب أو مدى أقصر يحافظ على التحكم في الكتف."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Reduce assistance or add repetitions before load, keeping a controlled full reach.",
+      "ar": "قلّل المساعدة أو زد العدات قبل الحمل مع الحفاظ على مد كامل ومتحكم فيه."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid pulling behind the neck; stop for painful hanging, numbness, or loss of shoulder control.",
+      "ar": "تجنب السحب خلف الرقبة وتوقف عند ألم التعليق أو التنميل أو فقدان التحكم في الكتف."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -4914,16 +4914,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -5064,16 +5064,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -5211,16 +5211,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -5360,16 +5360,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lighter load, neutral grip, seated support, or a shorter pain-free overhead range.",
+      "ar": "استخدم حملًا أخف أو قبضة محايدة أو دعمًا بالجلوس أو مدى رأسيًا أقصر دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add range or a small load only while ribs stay stacked over the pelvis and both arms move evenly.",
+      "ar": "زد المدى أو حملًا بسيطًا فقط مع ثبات القفص الصدري فوق الحوض وتحرك الذراعين بالتساوي."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Stop for shoulder pain, numbness, uneven pressing, or lower-back arching that you cannot control.",
+      "ar": "توقف عند ألم الكتف أو التنميل أو الدفع غير المتساوي أو تقوس أسفل الظهر الذي لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -5511,16 +5511,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lower step, shorter stride, no added load, or stable support until each transfer is controlled.",
+      "ar": "استخدم ارتفاعًا أقل أو خطوة أقصر أو دون حمل إضافي أو مع دعم ثابت حتى تتحكم في كل انتقال."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, stride, repetitions, or a small load one at a time while each planted step stays stable.",
+      "ar": "زد الارتفاع أو طول الخطوة أو العدات أو حملًا بسيطًا واحدًا تلو الآخر مع ثبات كل خطوة مرتكزة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear, non-slip surface, place the whole working foot securely, and stop for knee pain or loss of balance.",
+      "ar": "استخدم سطحًا خاليًا وغير زلق، وثبّت القدم العاملة كاملة، وتوقف عند ألم الركبة أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -5655,16 +5655,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use chest support, a lighter band, or less range so the pull does not depend on torso momentum.",
+      "ar": "استخدم دعمًا للصدر أو مطاطًا أخف أو مدى أقل حتى لا يعتمد السحب على زخم الجذع."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a pause, range, repetitions, or a small load while the neck stays relaxed and torso remains still.",
+      "ar": "أضف توقفًا أو مدى أو عدات أو حملًا بسيطًا مع ارتخاء الرقبة وثبات الجذع."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Stop if you must jerk the torso, shrug repeatedly, or feel sharp shoulder, elbow, or back pain.",
+      "ar": "توقف إذا اضطررت لهز الجذع أو رفع الكتفين باستمرار أو شعرت بألم حاد في الكتف أو المرفق أو الظهر."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -5808,16 +5808,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or depth, or squat to a stable box while keeping the whole foot planted.",
+      "ar": "خفّض الحمل أو عمق النزول، أو استخدم صندوقًا ثابتًا مع بقاء القدم كاملة على الأرض."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add depth, repetitions, or a small load only while the feet stay planted and knees track cleanly.",
+      "ar": "زد العمق أو العدات أو حملًا بسيطًا فقط مع ثبات القدم وتتبع الركبة لاتجاهها."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep knees aligned with the feet and stop for joint pain, heel lift, or loss of balance.",
+      "ar": "حافظ على اتجاه الركبتين مع القدمين وتوقف عند ألم المفصل أو ارتفاع الكعب أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -5960,16 +5960,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or depth, or squat to a stable box while keeping the whole foot planted.",
+      "ar": "خفّض الحمل أو عمق النزول، أو استخدم صندوقًا ثابتًا مع بقاء القدم كاملة على الأرض."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add depth, repetitions, or a small load only while the feet stay planted and knees track cleanly.",
+      "ar": "زد العمق أو العدات أو حملًا بسيطًا فقط مع ثبات القدم وتتبع الركبة لاتجاهها."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep knees aligned with the feet and stop for joint pain, heel lift, or loss of balance.",
+      "ar": "حافظ على اتجاه الركبتين مع القدمين وتوقف عند ألم المفصل أو ارتفاع الكعب أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -6104,16 +6104,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -6255,16 +6255,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -6403,16 +6403,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a shorter range, lighter load, or a dowel guide until the hip hinge stays separate from spinal motion.",
+      "ar": "استخدم مدى أقصر أو حملًا أخف أو عصًا إرشادية حتى تثبت حركة الحوض دون تحريك العمود الفقري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase range or load gradually only while the spine stays neutral and the load remains close.",
+      "ar": "زد المدى أو الحمل تدريجيًا فقط مع بقاء الظهر محايدًا والحمل قريبًا من الجسم."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep the load close and stop for radiating pain, loss of grip, or rounding that cannot be corrected.",
+      "ar": "أبقِ الحمل قريبًا وتوقف عند ألم ممتد أو فقدان القبضة أو تقوس لا يمكنك تصحيحه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -6546,16 +6546,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -6689,16 +6689,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -6841,16 +6841,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or depth, or squat to a stable box while keeping the whole foot planted.",
+      "ar": "خفّض الحمل أو عمق النزول، أو استخدم صندوقًا ثابتًا مع بقاء القدم كاملة على الأرض."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add depth, repetitions, or a small load only while the feet stay planted and knees track cleanly.",
+      "ar": "زد العمق أو العدات أو حملًا بسيطًا فقط مع ثبات القدم وتتبع الركبة لاتجاهها."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep knees aligned with the feet and stop for joint pain, heel lift, or loss of balance.",
+      "ar": "حافظ على اتجاه الركبتين مع القدمين وتوقف عند ألم المفصل أو ارتفاع الكعب أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -6988,16 +6988,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use chest support, a lighter band, or less range so the pull does not depend on torso momentum.",
+      "ar": "استخدم دعمًا للصدر أو مطاطًا أخف أو مدى أقل حتى لا يعتمد السحب على زخم الجذع."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a pause, range, repetitions, or a small load while the neck stays relaxed and torso remains still.",
+      "ar": "أضف توقفًا أو مدى أو عدات أو حملًا بسيطًا مع ارتخاء الرقبة وثبات الجذع."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Stop if you must jerk the torso, shrug repeatedly, or feel sharp shoulder, elbow, or back pain.",
+      "ar": "توقف إذا اضطررت لهز الجذع أو رفع الكتفين باستمرار أو شعرت بألم حاد في الكتف أو المرفق أو الظهر."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -7131,16 +7131,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -7282,16 +7282,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -7435,16 +7435,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use chest support, a lighter band, or less range so the pull does not depend on torso momentum.",
+      "ar": "استخدم دعمًا للصدر أو مطاطًا أخف أو مدى أقل حتى لا يعتمد السحب على زخم الجذع."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a pause, range, repetitions, or a small load while the neck stays relaxed and torso remains still.",
+      "ar": "أضف توقفًا أو مدى أو عدات أو حملًا بسيطًا مع ارتخاء الرقبة وثبات الجذع."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Stop if you must jerk the torso, shrug repeatedly, or feel sharp shoulder, elbow, or back pain.",
+      "ar": "توقف إذا اضطررت لهز الجذع أو رفع الكتفين باستمرار أو شعرت بألم حاد في الكتف أو المرفق أو الظهر."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -7587,16 +7587,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a shorter range, lighter load, or a dowel guide until the hip hinge stays separate from spinal motion.",
+      "ar": "استخدم مدى أقصر أو حملًا أخف أو عصًا إرشادية حتى تثبت حركة الحوض دون تحريك العمود الفقري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase range or load gradually only while the spine stays neutral and the load remains close.",
+      "ar": "زد المدى أو الحمل تدريجيًا فقط مع بقاء الظهر محايدًا والحمل قريبًا من الجسم."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep the load close and stop for radiating pain, loss of grip, or rounding that cannot be corrected.",
+      "ar": "أبقِ الحمل قريبًا وتوقف عند ألم ممتد أو فقدان القبضة أو تقوس لا يمكنك تصحيحه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -7740,16 +7740,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -7892,16 +7892,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a shorter range, lighter load, or a dowel guide until the hip hinge stays separate from spinal motion.",
+      "ar": "استخدم مدى أقصر أو حملًا أخف أو عصًا إرشادية حتى تثبت حركة الحوض دون تحريك العمود الفقري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase range or load gradually only while the spine stays neutral and the load remains close.",
+      "ar": "زد المدى أو الحمل تدريجيًا فقط مع بقاء الظهر محايدًا والحمل قريبًا من الجسم."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep the load close and stop for radiating pain, loss of grip, or rounding that cannot be corrected.",
+      "ar": "أبقِ الحمل قريبًا وتوقف عند ألم ممتد أو فقدان القبضة أو تقوس لا يمكنك تصحيحه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -8044,16 +8044,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use chest support, a lighter band, or less range so the pull does not depend on torso momentum.",
+      "ar": "استخدم دعمًا للصدر أو مطاطًا أخف أو مدى أقل حتى لا يعتمد السحب على زخم الجذع."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a pause, range, repetitions, or a small load while the neck stays relaxed and torso remains still.",
+      "ar": "أضف توقفًا أو مدى أو عدات أو حملًا بسيطًا مع ارتخاء الرقبة وثبات الجذع."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Stop if you must jerk the torso, shrug repeatedly, or feel sharp shoulder, elbow, or back pain.",
+      "ar": "توقف إذا اضطررت لهز الجذع أو رفع الكتفين باستمرار أو شعرت بألم حاد في الكتف أو المرفق أو الظهر."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -8187,16 +8187,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -8337,16 +8337,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -8492,16 +8492,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or depth, or squat to a stable box while keeping the whole foot planted.",
+      "ar": "خفّض الحمل أو عمق النزول، أو استخدم صندوقًا ثابتًا مع بقاء القدم كاملة على الأرض."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add depth, repetitions, or a small load only while the feet stay planted and knees track cleanly.",
+      "ar": "زد العمق أو العدات أو حملًا بسيطًا فقط مع ثبات القدم وتتبع الركبة لاتجاهها."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep knees aligned with the feet and stop for joint pain, heel lift, or loss of balance.",
+      "ar": "حافظ على اتجاه الركبتين مع القدمين وتوقف عند ألم المفصل أو ارتفاع الكعب أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -8636,16 +8636,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -8779,16 +8779,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -8923,16 +8923,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -9071,16 +9071,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -9224,16 +9224,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+      "ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+      "ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+      "ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -9379,16 +9379,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+      "ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+      "ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+      "ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -9528,16 +9528,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -9671,16 +9671,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lighter ball, slower release, shorter range, or a controlled pass without an explosive catch.",
+      "ar": "استخدم كرة أخف أو إطلاقًا أبطأ أو مدى أقصر أو تمريرًا متحكمًا دون التقاط انفجاري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add speed, range, or a small load one at a time only while release and catch remain controlled.",
+      "ar": "زد السرعة أو المدى أو حملًا بسيطًا واحدًا تلو الآخر فقط مع ثبات الإطلاق والالتقاط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Clear the throwing area, use a secure ball and target, and stop if release, catch, or trunk control deteriorates.",
+      "ar": "أخلِ منطقة الرمي، واستخدم كرة وهدفًا آمنين، وتوقف عند تدهور التحكم في الإطلاق أو الالتقاط أو الجذع."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -9826,16 +9826,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -9971,16 +9971,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -10119,16 +10119,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or depth, or squat to a stable box while keeping the whole foot planted.",
+      "ar": "خفّض الحمل أو عمق النزول، أو استخدم صندوقًا ثابتًا مع بقاء القدم كاملة على الأرض."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add depth, repetitions, or a small load only while the feet stay planted and knees track cleanly.",
+      "ar": "زد العمق أو العدات أو حملًا بسيطًا فقط مع ثبات القدم وتتبع الركبة لاتجاهها."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep knees aligned with the feet and stop for joint pain, heel lift, or loss of balance.",
+      "ar": "حافظ على اتجاه الركبتين مع القدمين وتوقف عند ألم المفصل أو ارتفاع الكعب أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -10269,16 +10269,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lower step, shorter stride, no added load, or stable support until each transfer is controlled.",
+      "ar": "استخدم ارتفاعًا أقل أو خطوة أقصر أو دون حمل إضافي أو مع دعم ثابت حتى تتحكم في كل انتقال."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, stride, repetitions, or a small load one at a time while each planted step stays stable.",
+      "ar": "زد الارتفاع أو طول الخطوة أو العدات أو حملًا بسيطًا واحدًا تلو الآخر مع ثبات كل خطوة مرتكزة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear, non-slip surface, place the whole working foot securely, and stop for knee pain or loss of balance.",
+      "ar": "استخدم سطحًا خاليًا وغير زلق، وثبّت القدم العاملة كاملة، وتوقف عند ألم الركبة أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -10414,16 +10414,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -10555,16 +10555,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -10704,16 +10704,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a wall, higher incline, machine, or lighter load to keep the shoulders and wrists controlled.",
+      "ar": "استخدم الحائط أو ميلًا أعلى أو جهازًا أو حملًا أخف للحفاظ على تحكم الكتفين والرسغين."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lower the incline or add a small load only after every repetition keeps the same shoulder and wrist path.",
+      "ar": "اخفض الميل أو أضف حملًا بسيطًا بعد ثبات مسار الكتف والرسغ في كل عدة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not force painful shoulder depth; use secure supports and a spotter when a heavy free load could trap you.",
+      "ar": "لا تجبر الكتف على مدى مؤلم، واستخدم دعمًا آمنًا ومساعدًا عند حمل حر ثقيل قد يحاصرك."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -10852,16 +10852,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -10998,16 +10998,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -11145,16 +11145,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a shorter range, lighter load, or a dowel guide until the hip hinge stays separate from spinal motion.",
+      "ar": "استخدم مدى أقصر أو حملًا أخف أو عصًا إرشادية حتى تثبت حركة الحوض دون تحريك العمود الفقري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase range or load gradually only while the spine stays neutral and the load remains close.",
+      "ar": "زد المدى أو الحمل تدريجيًا فقط مع بقاء الظهر محايدًا والحمل قريبًا من الجسم."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep the load close and stop for radiating pain, loss of grip, or rounding that cannot be corrected.",
+      "ar": "أبقِ الحمل قريبًا وتوقف عند ألم ممتد أو فقدان القبضة أو تقوس لا يمكنك تصحيحه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -11293,16 +11293,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -11439,16 +11439,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -11580,16 +11580,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -11723,16 +11723,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -11868,16 +11868,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -12014,16 +12014,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -12163,16 +12163,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -12303,16 +12303,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use less body weight, a softer tool, or a shorter session around the sensitive area.",
+      "ar": "استخدم وزن جسم أقل أو أداة ألين أو مدة أقصر حول المنطقة الحساسة."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Progress with slightly more time or controlled pressure, never by rolling directly over a joint or nerve.",
+      "ar": "تدرّج بزيادة بسيطة في الزمن أو الضغط المتحكم فيه، وليس بالدحرجة مباشرة فوق مفصل أو عصب."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid bones, joints, and known nerve paths; stop immediately for numbness, bruising, or sharp pain.",
+      "ar": "تجنب العظام والمفاصل ومسارات الأعصاب المعروفة، وتوقف فورًا عند تنميل أو كدمة أو ألم حاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -12444,16 +12444,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use less body weight, a softer tool, or a shorter session around the sensitive area.",
+      "ar": "استخدم وزن جسم أقل أو أداة ألين أو مدة أقصر حول المنطقة الحساسة."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Progress with slightly more time or controlled pressure, never by rolling directly over a joint or nerve.",
+      "ar": "تدرّج بزيادة بسيطة في الزمن أو الضغط المتحكم فيه، وليس بالدحرجة مباشرة فوق مفصل أو عصب."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid bones, joints, and known nerve paths; stop immediately for numbness, bruising, or sharp pain.",
+      "ar": "تجنب العظام والمفاصل ومسارات الأعصاب المعروفة، وتوقف فورًا عند تنميل أو كدمة أو ألم حاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -12585,16 +12585,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use less body weight, a softer tool, or a shorter session around the sensitive area.",
+      "ar": "استخدم وزن جسم أقل أو أداة ألين أو مدة أقصر حول المنطقة الحساسة."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Progress with slightly more time or controlled pressure, never by rolling directly over a joint or nerve.",
+      "ar": "تدرّج بزيادة بسيطة في الزمن أو الضغط المتحكم فيه، وليس بالدحرجة مباشرة فوق مفصل أو عصب."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid bones, joints, and known nerve paths; stop immediately for numbness, bruising, or sharp pain.",
+      "ar": "تجنب العظام والمفاصل ومسارات الأعصاب المعروفة، وتوقف فورًا عند تنميل أو كدمة أو ألم حاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -12725,16 +12725,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use less body weight, a softer tool, or a shorter session around the sensitive area.",
+      "ar": "استخدم وزن جسم أقل أو أداة ألين أو مدة أقصر حول المنطقة الحساسة."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Progress with slightly more time or controlled pressure, never by rolling directly over a joint or nerve.",
+      "ar": "تدرّج بزيادة بسيطة في الزمن أو الضغط المتحكم فيه، وليس بالدحرجة مباشرة فوق مفصل أو عصب."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid bones, joints, and known nerve paths; stop immediately for numbness, bruising, or sharp pain.",
+      "ar": "تجنب العظام والمفاصل ومسارات الأعصاب المعروفة، وتوقف فورًا عند تنميل أو كدمة أو ألم حاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -12865,16 +12865,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use less body weight, a softer tool, or a shorter session around the sensitive area.",
+      "ar": "استخدم وزن جسم أقل أو أداة ألين أو مدة أقصر حول المنطقة الحساسة."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Progress with slightly more time or controlled pressure, never by rolling directly over a joint or nerve.",
+      "ar": "تدرّج بزيادة بسيطة في الزمن أو الضغط المتحكم فيه، وليس بالدحرجة مباشرة فوق مفصل أو عصب."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid bones, joints, and known nerve paths; stop immediately for numbness, bruising, or sharp pain.",
+      "ar": "تجنب العظام والمفاصل ومسارات الأعصاب المعروفة، وتوقف فورًا عند تنميل أو كدمة أو ألم حاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -13005,16 +13005,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use less body weight, a softer tool, or a shorter session around the sensitive area.",
+      "ar": "استخدم وزن جسم أقل أو أداة ألين أو مدة أقصر حول المنطقة الحساسة."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Progress with slightly more time or controlled pressure, never by rolling directly over a joint or nerve.",
+      "ar": "تدرّج بزيادة بسيطة في الزمن أو الضغط المتحكم فيه، وليس بالدحرجة مباشرة فوق مفصل أو عصب."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid bones, joints, and known nerve paths; stop immediately for numbness, bruising, or sharp pain.",
+      "ar": "تجنب العظام والمفاصل ومسارات الأعصاب المعروفة، وتوقف فورًا عند تنميل أو كدمة أو ألم حاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -13151,16 +13151,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -13304,16 +13304,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -13449,16 +13449,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -13597,16 +13597,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -13745,16 +13745,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -13893,16 +13893,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce speed, duration, or incline and choose a level route or stable machine you can control.",
+      "ar": "اخفض السرعة أو الزمن أو الميل، واختر مسارًا مستويًا أو جهازًا ثابتًا يمكن التحكم فيه."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Increase only one variable—time, speed, or incline—while gait and breathing remain controlled.",
+      "ar": "زد متغيرًا واحدًا فقط—الزمن أو السرعة أو الميل—مع بقاء الخطوة والتنفس تحت السيطرة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear route or secure machine and stop for chest pain, dizziness, or unusual breathlessness.",
+      "ar": "استخدم مسارًا خاليًا أو جهازًا آمنًا وتوقف عند ألم الصدر أو الدوار أو ضيق نفس غير معتاد."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -14039,16 +14039,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -14183,16 +14183,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce load or range and support the body so only the intended joint performs the movement.",
+      "ar": "خفّض الحمل أو المدى وثبّت الجسم حتى ينفذ المفصل المستهدف الحركة وحده."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add controlled repetitions first, then a small load without recruiting adjacent joints.",
+      "ar": "زد العدات المتحكم فيها أولًا ثم حملًا بسيطًا دون إشراك المفاصل المجاورة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Keep adjacent joints stable and stop for sharp joint pain, tingling, or momentum you cannot control.",
+      "ar": "ثبّت المفاصل المجاورة وتوقف عند ألم مفصلي حاد أو وخز أو زخم لا يمكنك التحكم فيه."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -14331,16 +14331,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -14480,16 +14480,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use assisted support, a pulldown machine, or a shorter range that preserves shoulder control.",
+      "ar": "استخدم مساعدة أو جهاز سحب أو مدى أقصر يحافظ على التحكم في الكتف."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Reduce assistance or add repetitions before load, keeping a controlled full reach.",
+      "ar": "قلّل المساعدة أو زد العدات قبل الحمل مع الحفاظ على مد كامل ومتحكم فيه."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid pulling behind the neck; stop for painful hanging, numbness, or loss of shoulder control.",
+      "ar": "تجنب السحب خلف الرقبة وتوقف عند ألم التعليق أو التنميل أو فقدان التحكم في الكتف."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -14629,16 +14629,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use assisted support, a pulldown machine, or a shorter range that preserves shoulder control.",
+      "ar": "استخدم مساعدة أو جهاز سحب أو مدى أقصر يحافظ على التحكم في الكتف."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Reduce assistance or add repetitions before load, keeping a controlled full reach.",
+      "ar": "قلّل المساعدة أو زد العدات قبل الحمل مع الحفاظ على مد كامل ومتحكم فيه."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Avoid pulling behind the neck; stop for painful hanging, numbness, or loss of shoulder control.",
+      "ar": "تجنب السحب خلف الرقبة وتوقف عند ألم التعليق أو التنميل أو فقدان التحكم في الكتف."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -14782,16 +14782,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use chest support, a lighter band, or less range so the pull does not depend on torso momentum.",
+      "ar": "استخدم دعمًا للصدر أو مطاطًا أخف أو مدى أقل حتى لا يعتمد السحب على زخم الجذع."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a pause, range, repetitions, or a small load while the neck stays relaxed and torso remains still.",
+      "ar": "أضف توقفًا أو مدى أو عدات أو حملًا بسيطًا مع ارتخاء الرقبة وثبات الجذع."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Stop if you must jerk the torso, shrug repeatedly, or feel sharp shoulder, elbow, or back pain.",
+      "ar": "توقف إذا اضطررت لهز الجذع أو رفع الكتفين باستمرار أو شعرت بألم حاد في الكتف أو المرفق أو الظهر."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -14932,16 +14932,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lighter ball, slower release, shorter range, or a controlled pass without an explosive catch.",
+      "ar": "استخدم كرة أخف أو إطلاقًا أبطأ أو مدى أقصر أو تمريرًا متحكمًا دون التقاط انفجاري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add speed, range, or a small load one at a time only while release and catch remain controlled.",
+      "ar": "زد السرعة أو المدى أو حملًا بسيطًا واحدًا تلو الآخر فقط مع ثبات الإطلاق والالتقاط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Clear the throwing area, use a secure ball and target, and stop if release, catch, or trunk control deteriorates.",
+      "ar": "أخلِ منطقة الرمي، واستخدم كرة وهدفًا آمنين، وتوقف عند تدهور التحكم في الإطلاق أو الالتقاط أو الجذع."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -15088,16 +15088,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+      "ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+      "ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+      "ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -15238,16 +15238,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lighter ball, slower release, shorter range, or a controlled pass without an explosive catch.",
+      "ar": "استخدم كرة أخف أو إطلاقًا أبطأ أو مدى أقصر أو تمريرًا متحكمًا دون التقاط انفجاري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add speed, range, or a small load one at a time only while release and catch remain controlled.",
+      "ar": "زد السرعة أو المدى أو حملًا بسيطًا واحدًا تلو الآخر فقط مع ثبات الإطلاق والالتقاط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Clear the throwing area, use a secure ball and target, and stop if release, catch, or trunk control deteriorates.",
+      "ar": "أخلِ منطقة الرمي، واستخدم كرة وهدفًا آمنين، وتوقف عند تدهور التحكم في الإطلاق أو الالتقاط أو الجذع."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -15388,16 +15388,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lighter ball, slower release, shorter range, or a controlled pass without an explosive catch.",
+      "ar": "استخدم كرة أخف أو إطلاقًا أبطأ أو مدى أقصر أو تمريرًا متحكمًا دون التقاط انفجاري."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add speed, range, or a small load one at a time only while release and catch remain controlled.",
+      "ar": "زد السرعة أو المدى أو حملًا بسيطًا واحدًا تلو الآخر فقط مع ثبات الإطلاق والالتقاط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Clear the throwing area, use a secure ball and target, and stop if release, catch, or trunk control deteriorates.",
+      "ar": "أخلِ منطقة الرمي، واستخدم كرة وهدفًا آمنين، وتوقف عند تدهور التحكم في الإطلاق أو الالتقاط أو الجذع."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -15541,16 +15541,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Reduce height or speed, or practise a step-down and quiet landing before repeated jumps.",
+      "ar": "خفّض الارتفاع أو السرعة، أو تدرّب على النزول والهبوط الهادئ قبل القفز المتكرر."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, speed, or direction one at a time only after every landing is quiet and stable.",
+      "ar": "زد الارتفاع أو السرعة أو الاتجاه واحدًا تلو الآخر فقط بعد ثبات وهدوء كل هبوط."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Land quietly on a clear, stable surface; stop when landing alignment or balance deteriorates.",
+      "ar": "اهبط بهدوء على سطح ثابت وخالٍ، وتوقف عند تدهور محاذاة الهبوط أو التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -15689,16 +15689,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use a lower step, shorter stride, no added load, or stable support until each transfer is controlled.",
+      "ar": "استخدم ارتفاعًا أقل أو خطوة أقصر أو دون حمل إضافي أو مع دعم ثابت حتى تتحكم في كل انتقال."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add height, stride, repetitions, or a small load one at a time while each planted step stays stable.",
+      "ar": "زد الارتفاع أو طول الخطوة أو العدات أو حملًا بسيطًا واحدًا تلو الآخر مع ثبات كل خطوة مرتكزة."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Use a clear, non-slip surface, place the whole working foot securely, and stop for knee pain or loss of balance.",
+      "ar": "استخدم سطحًا خاليًا وغير زلق، وثبّت القدم العاملة كاملة، وتوقف عند ألم الركبة أو فقدان التوازن."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -15836,16 +15836,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -15983,16 +15983,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -16131,16 +16131,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -16278,16 +16278,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Shorten the lever, reduce range, or add stable support while maintaining normal breathing.",
+      "ar": "قصّر ذراع المقاومة أو خفّض المدى أو أضف دعمًا ثابتًا مع استمرار التنفس الطبيعي."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Lengthen the lever or add small resistance only while breathing and spinal position remain controlled.",
+      "ar": "أطل ذراع المقاومة أو أضف مقاومة بسيطة فقط مع استمرار التنفس وثبات وضع العمود الفقري."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Do not hold your breath; stop for neck strain, lower-back pain, or loss of pelvic control.",
+      "ar": "لا تحبس النفس وتوقف عند إجهاد الرقبة أو ألم أسفل الظهر أو فقدان التحكم في الحوض."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -16419,16 +16419,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
@@ -16571,16 +16571,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load, range, speed, or use stable support while keeping the same movement pattern.",
-      "ar": "خفّض الحمل أو المدى أو السرعة، أو استخدم دعمًا ثابتًا مع الحفاظ على نفس نمط الحركة."
+      "en": "Use support, a smaller range, or a shorter hold that produces mild tension without pain.",
+      "ar": "استخدم دعمًا أو مدى أصغر أو تثبيتًا أقصر يسبب شدًا خفيفًا دون ألم."
     },
     "progression": {
-      "en": "Progress only after pain-free control: add a small load, repetition, set, or harder variation—not all at once.",
-      "ar": "تدرّج بعد إتقان الحركة دون ألم: أضف حملًا بسيطًا أو عدة أو مجموعة أو نسخة أصعب، وليس كلها معًا."
+      "en": "Add a little range or hold time only while the stretch stays gentle and breathing remains relaxed.",
+      "ar": "زد المدى أو زمن التثبيت قليلًا فقط مع بقاء الإطالة لطيفة والتنفس هادئًا."
     },
     "safety": {
-      "en": "Stop for sharp pain, dizziness, numbness, or loss of control. Seek qualified guidance for injury or medical limitations.",
-      "ar": "توقف عند ألم حاد أو دوار أو تنميل أو فقدان السيطرة. استشر مختصًا عند وجود إصابة أو قيد طبي."
+      "en": "Never bounce or force range; stop for sharp pain, numbness, tingling, or joint pinching.",
+      "ar": "لا ترتد أو تجبر المدى، وتوقف عند ألم حاد أو تنميل أو وخز أو انحشار بالمفصل."
     },
     "demo": {
       "type": "two_frame_image_sequence",
