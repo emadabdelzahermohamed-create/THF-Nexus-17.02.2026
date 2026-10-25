@@ -462,6 +462,30 @@ SLIDER_GUIDANCE = {
     "safety_ar": "اختبر سطح الانزلاق أولًا وأخلِ المسار، وتوقف عند تشنج خلفية الفخذ أو ألم الركبة أو فقدان ثبات الحوض.",
 }
 
+EXPECTED_GUIDANCE_FAMILIES = frozenset({
+    "squat", "hinge", "horizontal_push", "vertical_push",
+    "horizontal_pull", "vertical_pull", "isolation", "core",
+    "locomotion", "jump", "mobility", "recovery",
+})
+
+
+def validate_guidance_diversity(guidance: dict[str, dict[str, str]]) -> None:
+    if set(guidance) != EXPECTED_GUIDANCE_FAMILIES:
+        raise ValueError("guidance must cover exactly the 12 movement families")
+
+    for language, label in (("ar", "Arabic"), ("en", "English")):
+        family_guidance = []
+        for family in sorted(EXPECTED_GUIDANCE_FAMILIES):
+            values = []
+            for field in ("regression", "progression", "safety"):
+                key = f"{field}_{language}"
+                if key not in guidance[family]:
+                    raise ValueError(f"missing {key} for {family}")
+                values.append(guidance[family][key])
+            family_guidance.append(tuple(values))
+        if len(set(family_guidance)) != len(EXPECTED_GUIDANCE_FAMILIES):
+            raise ValueError(f"{label} guidance must contain 12 distinct families")
+
 
 def guidance_for(source_id: str, pattern: str) -> dict:
     if source_id in STEP_GUIDANCE_IDS:
@@ -548,6 +572,7 @@ def clean_instructions(values: list[str]) -> list[str]:
 
 
 def build(source: Path, repo: Path) -> None:
+    validate_guidance_diversity(GUIDANCE)
     source_json = source / "dist" / "exercises.json"
     source_license = source / "LICENSE.md"
     if not source_json.is_file() or not source_license.is_file():
