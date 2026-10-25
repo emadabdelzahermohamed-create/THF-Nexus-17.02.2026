@@ -67,8 +67,11 @@ object ActivityMetrics {
     }
 
     fun estimatedCalories(mode: ActivityMode, weightKg: Double, durationMs: Long): Double {
+        // Calories are an estimate only when the inputs are real and usable. In particular,
+        // never turn a missing/invalid weight (NaN/Infinity) into a fabricated calorie value.
+        if (!weightKg.isFinite() || durationMs <= 0L) return 0.0
         val safeWeight = weightKg.coerceIn(30.0, 250.0)
-        val minutes = max(0L, durationMs) / 60_000.0
+        val minutes = durationMs / 60_000.0
         return mode.met * 3.5 * safeWeight / 200.0 * minutes
     }
 }
