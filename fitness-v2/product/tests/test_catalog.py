@@ -115,6 +115,13 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertNotRegex(combined, r"(?i)stage16a")
         self.assertNotRegex(combined, r"https?://")
 
+    def test_catalog_marketing_copy_has_no_stale_fixed_exercise_count(self):
+        script = (PULSE / "app.js").read_text()
+        self.assertNotIn("80 تمرينًا موثقًا", script)
+        self.assertNotIn("80 documented exercises", script)
+        self.assertIn("${EXERCISES.length} تمرينًا موثقًا", script)
+        self.assertIn("${EXERCISES.length} documented exercises", script)
+
     def test_workout_inputs_persist_before_set_completion(self):
         script = (PULSE / "app.js").read_text()
         self.assertIn("input.addEventListener('input'", script)
