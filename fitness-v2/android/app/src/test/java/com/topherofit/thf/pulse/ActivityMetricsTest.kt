@@ -38,4 +38,12 @@ class ActivityMetricsTest {
         val calories = ActivityMetrics.estimatedCalories(ActivityMode.RUN, weightKg = 70.0, durationMs = 3_600_000)
         assertEquals(581.0, calories, 2.0)
     }
+
+    @Test
+    fun caloriesStayZeroWhenWeightOrDurationIsInvalid() {
+        assertEquals(0.0, ActivityMetrics.estimatedCalories(ActivityMode.WALK, Double.NaN, 60_000), 0.0)
+        assertEquals(0.0, ActivityMetrics.estimatedCalories(ActivityMode.RUN, Double.POSITIVE_INFINITY, 60_000), 0.0)
+        assertEquals(0.0, ActivityMetrics.estimatedCalories(ActivityMode.CYCLE, 70.0, 0), 0.0)
+        assertEquals(0.0, ActivityMetrics.estimatedCalories(ActivityMode.CYCLE, 70.0, -1), 0.0)
+    }
 }
