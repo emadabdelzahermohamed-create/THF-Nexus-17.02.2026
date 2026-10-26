@@ -109,6 +109,17 @@ class FitnessPhoneP0SnapshotTests(unittest.TestCase):
         self.assertEqual([], calls)
         self.assertEqual({}, files)
 
+    def test_process_death_checkpoint_captures_application_exit_info(self):
+        result, calls, files = self.run_snapshot("ready", "--label", "process-death")
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("exit_info.txt", files)
+        self.assertTrue(files["exit_info.txt"])
+        self.assertIn(
+            "-s SERIAL_A shell dumpsys activity exit-info com.topherofit.thf.pulse",
+            calls,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
