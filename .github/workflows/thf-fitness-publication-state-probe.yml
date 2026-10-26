@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Read publication prerequisites without mutation
+      - name: Read publication state and apply reviewed listing
         shell: bash
         run: |
           set -euo pipefail
@@ -37,6 +37,51 @@ jobs:
           from googleapiclient.discovery import build
 
           package='com.topherofit.thf.pulse'
+          reviewed={
+              'ar': {
+                  'title':'Top Hero Fit: لياقة ونشاط',
+                  'shortDescription':'تمارين أوفلاين، خطوات، جري ودراجات بـGPS، خطط تدريب وتكامل Health Connect.',
+                  'fullDescription':'''Top Hero Fit يجمع التمارين وتتبع النشاط اليومي في تطبيق واحد يعمل بالعربية والإنجليزية.
+
+الميزات الحالية:
+• تتبع المشي والجري وركوب الدراجة باستخدام GPS.
+• عرض الوقت والمسافة والسرعة والوتيرة والخطوات والسعرات التقديرية بحسب النشاط والبيانات المتاحة.
+• استمرار جلسة النشاط في الخلفية مع إشعار دائم للتحكم والمتابعة.
+• مكتبة تمارين وبرامج تدريب متاحة دون اتصال بعد تثبيت التطبيق.
+• تعليمات للحركة والتنفس والسلامة مع إرشاد صوتي بالعربية والإنجليزية.
+• تكامل Health Connect عند تفعيل الميزة ومنح الصلاحيات المناسبة، مع الحفاظ على مصدر البيانات عند توفره.
+• واجهة عربية RTL وإنجليزية LTR وإعداد لتقليل الحركة.
+
+Top Hero Fit مصمم لمساعدتك على بناء عادة تدريب ومتابعة نشاطك بوضوح دون خلط جلسات المشي والجري والدراجة مع برامج التمارين.
+
+ملاحظات مهمة:
+السعرات والقيم المشتقة تقديرات لياقة وليست قياسات طبية. جودة GPS تعتمد على الهاتف والموقع والبيئة المحيطة. التطبيق لا يقدم تشخيصًا طبيًا أو بديلًا عن نصيحة المختص.'''
+              },
+              'en-US': {
+                  'title':'Top Hero Fit: Fitness & GPS',
+                  'shortDescription':'Offline workouts, GPS activity, steps, training plans and Health Connect.',
+                  'fullDescription':'''Top Hero Fit brings workouts and everyday activity tracking together in one Arabic- and English-ready fitness app.
+
+Current features include:
+• GPS activity sessions for walking, running and cycling.
+• Time, distance, speed, pace, steps and estimated calories when supported by the activity and available data.
+• Background activity sessions with an ongoing notification for status and controls.
+• An offline-ready exercise library and structured training programs after the app is installed.
+• Movement, breathing and safety guidance with Arabic and English voice cues.
+• Health Connect integration when enabled and granted, preserving data source information where available.
+• Arabic RTL and English LTR interfaces, plus a reduced-motion preference.
+
+Top Hero Fit is designed to help you build a consistent training habit while keeping real walking, running and cycling sessions separate from workout programs.
+
+Important notes:
+Calories and derived fitness metrics are estimates, not medical measurements. GPS quality depends on your device, location and surroundings. Top Hero Fit does not provide medical diagnosis or replace professional medical advice.'''
+              }
+          }
+          for lang,item in reviewed.items():
+              if len(item['title']) > 30: raise SystemExit(f'{lang} title too long')
+              if len(item['shortDescription']) > 80: raise SystemExit(f'{lang} short description too long')
+              if len(item['fullDescription']) > 4000: raise SystemExit(f'{lang} full description too long')
+
           creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
           api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
           out={'package':package,'uploadAttempted':False,'commitAttempted':False}
@@ -53,7 +98,7 @@ jobs:
                   listings=api.edits().listings().list(packageName=package,editId=edit_id).execute().get('listings',[]) or []
                   out['listingCount']=len(listings)
                   out['listingLanguages']=[x.get('language') for x in listings]
-                  out['listings']=[{'language':x.get('language'),'title':x.get('title'),'shortDescription':x.get('shortDescription')} for x in listings]
+                  out['listingsBefore']=[{'language':x.get('language'),'title':x.get('title'),'shortDescription':x.get('shortDescription'),'fullDescription':x.get('fullDescription')} for x in listings]
                   out['listingsRead']='PASS'
               except Exception as exc:
                   out['listingsRead']='FAIL'; out['listingsError']=str(exc)[:1200]
@@ -73,13 +118,24 @@ jobs:
                       out[f'{track}CountryAvailabilityRead']='PASS'
                   except Exception as exc:
                       out[f'{track}CountryAvailabilityRead']='FAIL'; out[f'{track}CountryAvailabilityError']=str(exc)[:900]
+              for lang,item in reviewed.items():
+                  api.edits().listings().update(packageName=package,editId=edit_id,language=lang,body=item).execute()
+              out['commitAttempted']=True
+              api.edits().commit(packageName=package,editId=edit_id).execute(); edit_id=None
+              out['listingCommit']='PASS'
+              verify_id=api.edits().insert(packageName=package,body={}).execute()['id']
+              try:
+                  after=api.edits().listings().list(packageName=package,editId=verify_id).execute().get('listings',[]) or []
+                  out['listingsAfter']=[{'language':x.get('language'),'title':x.get('title'),'shortDescription':x.get('shortDescription'),'fullDescription':x.get('fullDescription')} for x in after]
+              finally:
+                  api.edits().delete(packageName=package,editId=verify_id).execute()
           finally:
               if edit_id:
                   api.edits().delete(packageName=package,editId=edit_id).execute()
                   out['editCleanup']='PASS'
-          print(json.dumps(out,indent=2))
-          with open('fitness-publication-state.json','w') as fh: json.dump(out,fh,indent=2)
-          if out.get('editInsert')!='PASS' or out.get('editCleanup')!='PASS': raise SystemExit(2)
+          print(json.dumps(out,ensure_ascii=False,indent=2))
+          with open('fitness-publication-state.json','w',encoding='utf-8') as fh: json.dump(out,fh,ensure_ascii=False,indent=2)
+          if out.get('listingCommit')!='PASS': raise SystemExit(2)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
