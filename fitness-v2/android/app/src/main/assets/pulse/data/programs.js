@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 58948)
+Total output lines: 7586
+
 window.THF_PROGRAMS = [
   {
     "id": "gym-foundations",
@@ -52,7 +55,7 @@ window.THF_PROGRAMS = [
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
+        "الأسابيع 2–4: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 7 أو أقل.",
         "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -311,7 +314,7 @@ window.THF_PROGRAMS = [
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
+        "الأسابيع 2–6: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 8 أو أقل.",
         "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -609,13 +612,13 @@ window.THF_PROGRAMS = [
     "progression": {
       "en": [
         "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
+        "Week 2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
         "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
         "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
+        "الأسبوع 2: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 7 أو أقل.",
         "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -859,7 +862,7 @@ window.THF_PROGRAMS = [
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
+        "الأسابيع 2–4: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 8 أو أقل.",
         "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -1166,16 +1169,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: keep every session easy enough to maintain relaxed breathing and consistent technique.",
+        "Weeks 2–4: increase total time or distance by no more than 10% per week; add speed or resistance only after the easy volume feels repeatable.",
+        "Week 5: repeat the planned volume at a controlled effort without chasing pace, speed or resistance.",
+        "Week 6: reduce total time or distance by 30–40%, review recovery, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: اجعل كل جلسة سهلة بما يكفي للحفاظ على تنفس هادئ وأداء ثابت.",
+        "الأسابيع 2–4: زد الزمن أو المسافة الإجمالية بما لا يتجاوز 10% أسبوعيًا، ولا تضف السرعة أو المقاومة إلا بعد ثبات الحجم السهل.",
+        "الأسبوع 5: كرر الحجم المخطط بجهد مضبوط دون مطاردة الوتيرة أو السرعة أو المقاومة.",
+        "الأسبوع 6: قلّل الزمن أو المسافة الإجمالية 30–40%، راجع الاستشفاء، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -1420,16 +1423,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–6: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 7: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 8: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: keep every session easy enough to maintain relaxed breathing and consistent technique.",
+        "Weeks 2–6: increase total time or distance by no more than 10% per week; add speed or resistance only after the easy volume feels repeatable.",
+        "Week 7: repeat the planned volume at a controlled effort without chasing pace, speed or resistance.",
+        "Week 8: reduce total time or distance by 30–40%, review recovery, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: اجعل كل جلسة سهلة بما يكفي للحفاظ على تنفس هادئ وأداء ثابت.",
+        "الأسابيع 2–6: زد الزمن أو المسافة الإجمالية بما لا يتجاوز 10% أسبوعيًا، ولا تضف السرعة أو المقاومة إلا بعد ثبات الحجم السهل.",
+        "الأسبوع 7: كرر الحجم المخطط بجهد مضبوط دون مطاردة الوتيرة أو السرعة أو المقاومة.",
+        "الأسبوع 8: قلّل الزمن أو المسافة الإجمالية 30–40%، راجع الاستشفاء، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -1744,16 +1747,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: keep every session easy enough to maintain relaxed breathing and consistent technique.",
+        "Weeks 2–4: increase total time or distance by no more than 10% per week; add speed or resistance only after the easy volume feels repeatable.",
+        "Week 5: repeat the planned volume at a controlled effort without chasing pace, speed or resistance.",
+        "Week 6: reduce total time or distance by 30–40%, review recovery, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: اجعل كل جلسة سهلة بما يكفي للحفاظ على تنفس هادئ وأداء ثابت.",
+        "الأسابيع 2–4: زد الزمن أو المسافة الإجمالية بما لا يتجاوز 10% أسبوعيًا، ولا تضف السرعة أو المقاومة إلا بعد ثبات الحجم السهل.",
+        "الأسبوع 5: كرر الحجم المخطط بجهد مضبوط دون مطاردة الوتيرة أو السرعة أو المقاومة.",
+        "الأسبوع 6: قلّل الزمن أو المسافة الإجمالية 30–40%، راجع الاستشفاء، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -2008,16 +2011,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: keep every session easy enough to maintain relaxed breathing and consistent technique.",
+        "Weeks 2–4: increase total time or distance by no more than 10% per week; add speed or resistance only after the easy volume feels repeatable.",
+        "Week 5: repeat the planned volume at a controlled effort without chasing pace, speed or resistance.",
+        "Week 6: reduce total time or distance by 30–40%, review recovery, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: اجعل كل جلسة سهلة بما يكفي للحفاظ على تنفس هادئ وأداء ثابت.",
+        "الأسابيع 2–4: زد الزمن أو المسافة الإجمالية بما لا يتجاوز 10% أسبوعيًا، ولا تضف السرعة أو المقاومة إلا بعد ثبات الحجم السهل.",
+        "الأسبوع 5: كرر الحجم المخطط بجهد مضبوط دون مطاردة الوتيرة أو السرعة أو المقاومة.",
+        "الأسبوع 6: قلّل الزمن أو المسافة الإجمالية 30–40%، راجع الاستشفاء، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -2327,16 +2330,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -2586,16 +2589,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–6: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 7: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 8: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–6: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 7: repeat the session with consistent quality instead of adding more work.",
+        "Week 8: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–6: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 7: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 8: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -2917,7 +2920,7 @@ window.THF_PROGRAMS = [
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
+        "الأسابيع 2–4: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 7 أو أقل.",
         "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -3186,1153 +3189,9 @@ window.THF_PROGRAMS = [
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
+        "الأسابيع 2–6: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 8 أو أقل.",
         "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
-      ]
-    },
-    "offline": true,
-    "sessions": [
-      {
-        "id": "swim-strength-session-1",
-        "name": {
-          "en": "Technique and base",
-          "ar": "الأساس والتكنيك"
-        },
-        "estimatedMinutes": 44,
-        "exercises": [
-          {
-            "exerciseId": "straight-arm-dumbbell-pullover",
-            "role": "warmup",
-            "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "dumbbell-scaption",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "external-rotation-with-band",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "bent-over-barbell-row",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "cable-crossover",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          }
-        ]
-      },
-      {
-        "id": "swim-strength-session-2",
-        "name": {
-          "en": "Capacity and control",
-          "ar": "القدرة والتحكم"
-        },
-        "estimatedMinutes": 44,
-        "exercises": [
-          {
-            "exerciseId": "external-rotation-with-band",
-            "role": "warmup",
-            "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "flutter-kicks",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "full-range-of-motion-lat-pulldown",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "cable-crossover",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "close-grip-front-lat-pulldown",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          }
-        ]
-      },
-      {
-        "id": "swim-strength-session-3",
-        "name": {
-          "en": "Progressive effort",
-          "ar": "جهد متدرج"
-        },
-        "estimatedMinutes": 44,
-        "exercises": [
-          {
-            "exerciseId": "full-range-of-motion-lat-pulldown",
-            "role": "warmup",
-            "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "one-arm-lat-pulldown",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "straight-arm-dumbbell-pullover",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "close-grip-front-lat-pulldown",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "dip-machine",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          }
-        ]
-      }
-    ],
-    "provenance": {
-      "origin": "Top Hero Fit Fitness V2 editorial composition",
-      "license": "THF-owned original program metadata",
-      "exerciseCatalogRepository": "yuhonas/free-exercise-db",
-      "exerciseCatalogCommit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
-      "exerciseCatalogLicense": "Unlicense"
-    }
-  },
-  {
-    "id": "yoga-foundations",
-    "name": {
-      "en": "Yoga Foundations",
-      "ar": "أساسيات اليوغا"
-    },
-    "summary": {
-      "en": "Practice controlled positions, breathing and balance with clear options.",
-      "ar": "تدرّب على الوضعيات والتنفس والتوازن مع بدائل واضحة."
-    },
-    "section": {
-      "id": "yoga",
-      "en": "Yoga & Pilates",
-      "ar": "اليوجا والبيلاتس"
-    },
-    "goal": {
-      "id": "mobility",
-      "en": "Mobility",
-      "ar": "الحركة"
-    },
-    "level": {
-      "id": "beginner",
-      "en": "Beginner",
-      "ar": "مبتدئ"
-    },
-    "weeks": 4,
-    "daysPerWeek": 3,
-    "estimatedSessionMinutes": 28,
-    "equipment": [
-      {
-        "id": "body only",
-        "en": "body only",
-        "ar": "بدون معدات"
-      },
-      {
-        "id": "exercise ball",
-        "en": "exercise ball",
-        "ar": "كرة تمرين"
-      },
-      {
-        "id": "foam roll",
-        "en": "foam roll",
-        "ar": "فوم رول"
-      }
-    ],
-    "safety": {
-      "en": "Stop for sharp pain, dizziness, chest pain, or unusual shortness of breath. Keep two good repetitions in reserve until technique is consistent. Move within a pain-free range; never force a joint into position.",
-      "ar": "توقف عند الألم الحاد أو الدوار أو ألم الصدر أو ضيق النفس غير المعتاد. اترك عدتين جيدتين في الاحتياط حتى يثبت الأداء الصحيح. تحرك داخل مدى خالٍ من الألم ولا تجبر المفصل على وضعية."
-    },
-    "progression": {
-      "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
-      ],
-      "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
-      ]
-    },
-    "offline": true,
-    "sessions": [
-      {
-        "id": "yoga-foundations-session-1",
-        "name": {
-          "en": "Technique and base",
-          "ar": "الأساس والتكنيك"
-        },
-        "estimatedMinutes": 28,
-        "exercises": [
-          {
-            "exerciseId": "cat-stretch",
-            "role": "warmup",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "childs-pose",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "dancers-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "calves-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "hamstring-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          }
-        ]
-      },
-      {
-        "id": "yoga-foundations-session-2",
-        "name": {
-          "en": "Capacity and control",
-          "ar": "القدرة والتحكم"
-        },
-        "estimatedMinutes": 28,
-        "exercises": [
-          {
-            "exerciseId": "dancers-stretch",
-            "role": "warmup",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "pelvic-tilt-into-bridge",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "hamstring-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "iliotibial-tract-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          }
-        ]
-      },
-      {
-        "id": "yoga-foundations-session-3",
-        "name": {
-          "en": "Progressive effort",
-          "ar": "جهد متدرج"
-        },
-        "estimatedMinutes": 28,
-        "exercises": [
-          {
-            "exerciseId": "pelvic-tilt-into-bridge",
-            "role": "warmup",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "spinal-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "cat-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "iliotibial-tract-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "latissimus-dorsi-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          }
-        ]
-      }
-    ],
-    "provenance": {
-      "origin": "Top Hero Fit Fitness V2 editorial composition",
-      "license": "THF-owned original program metadata",
-      "exerciseCatalogRepository": "yuhonas/free-exercise-db",
-      "exerciseCatalogCommit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
-      "exerciseCatalogLicense": "Unlicense"
-    }
-  },
-  {
-    "id": "yoga-balance-flow",
-    "name": {
-      "en": "Balance Flow",
-      "ar": "تدفق التوازن"
-    },
-    "summary": {
-      "en": "Practice controlled positions, breathing and balance with clear options.",
-      "ar": "تدرّب على الوضعيات والتنفس والتوازن مع بدائل واضحة."
-    },
-    "section": {
-      "id": "yoga",
-      "en": "Yoga & Pilates",
-      "ar": "اليوجا والبيلاتس"
-    },
-    "goal": {
-      "id": "balance",
-      "en": "Balance",
-      "ar": "التوازن"
-    },
-    "level": {
-      "id": "intermediate",
-      "en": "Intermediate",
-      "ar": "متوسط"
-    },
-    "weeks": 6,
-    "daysPerWeek": 4,
-    "estimatedSessionMinutes": 34,
-    "equipment": [
-      {
-        "id": "body only",
-        "en": "body only",
-        "ar": "بدون معدات"
-      },
-      {
-        "id": "exercise ball",
-        "en": "exercise ball",
-        "ar": "كرة تمرين"
-      },
-      {
-        "id": "foam roll",
-        "en": "foam roll",
-        "ar": "فوم رول"
-      }
-    ],
-    "safety": {
-      "en": "Stop for sharp pain, dizziness, chest pain, or unusual shortness of breath. Keep two good repetitions in reserve until technique is consistent. Move within a pain-free range; never force a joint into position.",
-      "ar": "توقف عند الألم الحاد أو الدوار أو ألم الصدر أو ضيق النفس غير المعتاد. اترك عدتين جيدتين في الاحتياط حتى يثبت الأداء الصحيح. تحرك داخل مدى خالٍ من الألم ولا تجبر المفصل على وضعية."
-    },
-    "progression": {
-      "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
-      ],
-      "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
-      ]
-    },
-    "offline": true,
-    "sessions": [
-      {
-        "id": "yoga-balance-flow-session-1",
-        "name": {
-          "en": "Technique and base",
-          "ar": "الأساس والتكنيك"
-        },
-        "estimatedMinutes": 34,
-        "exercises": [
-          {
-            "exerciseId": "childs-pose",
-            "role": "warmup",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "dancers-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "hamstring-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "iliotibial-tract-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          }
-        ]
-      },
-      {
-        "id": "yoga-balance-flow-session-2",
-        "name": {
-          "en": "Capacity and control",
-          "ar": "القدرة والتحكم"
-        },
-        "estimatedMinutes": 34,
-        "exercises": [
-          {
-            "exerciseId": "downward-facing-balance",
-            "role": "warmup",
-            "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "pelvic-tilt-into-bridge",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "spinal-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "iliotibial-tract-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "latissimus-dorsi-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          }
-        ]
-      },
-      {
-        "id": "yoga-balance-flow-session-3",
-        "name": {
-          "en": "Progressive effort",
-          "ar": "جهد متدرج"
-        },
-        "estimatedMinutes": 34,
-        "exercises": [
-          {
-            "exerciseId": "spinal-stretch",
-            "role": "warmup",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "cat-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "childs-pose",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "latissimus-dorsi-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "piriformis-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          }
-        ]
-      },
-      {
-        "id": "yoga-balance-flow-session-4",
-        "name": {
-          "en": "Strength and repeatability",
-          "ar": "القوة وتكرار الأداء"
-        },
-        "estimatedMinutes": 34,
-        "exercises": [
-          {
-            "exerciseId": "childs-pose",
-            "role": "warmup",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "dancers-stretch",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "downward-facing-balance",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "piriformis-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "quadriceps-smr",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          }
-        ]
-      }
-    ],
-    "provenance": {
-      "origin": "Top Hero Fit Fitness V2 editorial composition",
-      "license": "THF-owned original program metadata",
-      "exerciseCatalogRepository": "yuhonas/free-exercise-db",
-      "exerciseCatalogCommit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
-      "exerciseCatalogLicense": "Unlicense"
-    }
-  },
-  {
-    "id": "calisthenics-foundations",
-    "name": {
-      "en": "Calisthenics Foundations",
-      "ar": "أساسيات الكاليستنكس"
-    },
-    "summary": {
-      "en": "Progress bodyweight strength from stable foundations to skills.",
-      "ar": "طوّر قوة وزن الجسم من الأساس الثابت إلى المهارات."
-    },
-    "section": {
-      "id": "calisthenics",
-      "en": "Calisthenics & gymnastics",
-      "ar": "الكاليستنكس والجمباز"
-    },
-    "goal": {
-      "id": "strength",
-      "en": "Strength",
-      "ar": "القوة"
-    },
-    "level": {
-      "id": "beginner",
-      "en": "Beginner",
-      "ar": "مبتدئ"
-    },
-    "weeks": 6,
-    "daysPerWeek": 3,
-    "estimatedSessionMinutes": 38,
-    "equipment": [
-      {
-        "id": "body only",
-        "en": "body only",
-        "ar": "بدون معدات"
-      },
-      {
-        "id": "other",
-        "en": "other",
-        "ar": "معدات بسيطة"
-      }
-    ],
-    "safety": {
-      "en": "Stop for sharp pain, dizziness, chest pain, or unusual shortness of breath. Keep two good repetitions in reserve until technique is consistent. Use stable bars and earn control before harder leverage or inversion.",
-      "ar": "توقف عند الألم الحاد أو الدوار أو ألم الصدر أو ضيق النفس غير المعتاد. اترك عدتين جيدتين في الاحتياط حتى يثبت الأداء الصحيح. استخدم قضبانًا ثابتة وأتقن التحكم قبل الرافعات أو الأوضاع المقلوبة الأصعب."
-    },
-    "progression": {
-      "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
-      ],
-      "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
-      ]
-    },
-    "offline": true,
-    "sessions": [
-      {
-        "id": "calisthenics-foundations-session-1",
-        "name": {
-          "en": "Technique and base",
-          "ar": "الأساس والتكنيك"
-        },
-        "estimatedMinutes": 38,
-        "exercises": [
-          {
-            "exerciseId": "hanging-leg-raise",
-            "role": "warmup",
-            "sets": 2,
-            "reps": "4–8",
-            "durationSeconds": null,
-            "restSeconds": 150,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "parallel-bar-dip",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "pullups",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "single-leg-glute-bridge",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "superman",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          }
-        ]
-      },
-      {
-        "id": "calisthenics-foundations-session-2",
-        "name": {
-          "en": "Capacity and control",
-          "ar": "القدرة والتحكم"
-        },
-        "estimatedMinutes": 38,
-        "exercises": [
-          {
-            "exerciseId": "pullups",
-            "role": "warmup",
-            "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "scapular-pull-up",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "dips---triceps-version",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "superman",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "90-90-hamstring",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          }
-        ]
-      },
-      {
-        "id": "calisthenics-foundations-session-3",
-        "name": {
-          "en": "Progressive effort",
-          "ar": "جهد متدرج"
-        },
-        "estimatedMinutes": 38,
-        "exercises": [
-          {
-            "exerciseId": "dips---triceps-version",
-            "role": "warmup",
-            "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "handstand-push-ups",
-            "role": "working",
-            "sets": 4,
-            "reps": "4–8",
-            "durationSeconds": null,
-            "restSeconds": 150,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "hanging-leg-raise",
-            "role": "working",
-            "sets": 4,
-            "reps": "4–8",
-            "durationSeconds": null,
-            "restSeconds": 150,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "90-90-hamstring",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          },
-          {
-            "exerciseId": "ankle-circles",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 7,
-            "targetRir": 3
-          }
-        ]
-      }
-    ],
-    "provenance": {
-      "origin": "Top Hero Fit Fitness V2 editorial composition",
-      "license": "THF-owned original program metadata",
-      "exerciseCatalogRepository": "yuhonas/free-exercise-db",
-      "exerciseCatalogCommit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
-      "exerciseCatalogLicense": "Unlicense"
-    }
-  },
-  {
-    "id": "calisthenics-skills",
-    "name": {
-      "en": "Strength and Skills",
-      "ar": "القوة والمهارات"
-    },
-    "summary": {
-      "en": "Progress bodyweight strength from stable foundations to skills.",
-      "ar": "طوّر قوة وزن الجسم من الأساس الثابت إلى المهارات."
-    },
-    "section": {
-      "id": "calisthenics",
-      "en": "Calisthenics & gymnastics",
-      "ar": "الكاليستنكس والجمباز"
-    },
-    "goal": {
-      "id": "skill",
-      "en": "Skill",
-      "ar": "المهارة"
-    },
-    "level": {
-      "id": "intermediate",
-      "en": "Intermediate",
-      "ar": "متوسط"
-    },
-    "weeks": 8,
-    "daysPerWeek": 4,
-    "estimatedSessionMinutes": 48,
-    "equipment": [
-      {
-        "id": "body only",
-        "en": "body only",
-        "ar": "بدون معدات"
-      },
-      {
-        "id": "other",
-        "en": "other",
-        "ar": "معدات بسيطة"
-      }
-    ],
-    "safety": {
-      "en": "Stop for sharp pain, dizziness, chest pain, or unusual shortness of breath. Keep two good repetitions in reserve until technique is consistent. Use stable bars and earn control before harder leverage or inversion.",
-      "ar": "توقف عند الألم الحاد أو الدوار أو ألم الصدر أو ضيق النفس غير المعتاد. اترك عدتين جيدتين في الاحتياط حتى يثبت الأداء الصحيح. استخدم قضبانًا ثابتة وأتقن التحكم قبل الرافعات أو الأوضاع المقلوبة الأصعب."
-    },
-    "progression": {
-      "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–6: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 7: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 8: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
-      ],
-      "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
-      ]
-    },
-    "offline": true,
-    "sessions": [
-      {
-        "id": "calisthenics-skills-session-1",
-        "name": {
-          "en": "Technique and base",
-          "ar": "الأساس والتكنيك"
-        },
-        "estimatedMinutes": 48,
-        "exercises": [
-          {
-            "exerciseId": "parallel-bar-dip",
-            "role": "warmup",
-            "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 5,
-            "targetRir": 4
-          },
-          {
-            "exerciseId": "pullups",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "scapular-pull-up",
-            "role": "working",
-            "sets": 3,
-            "reps": "8–12",
-            "durationSeconds": null,
-            "restSeconds": 90,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "superman",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          },
-          {
-            "exerciseId": "90-90-hamstring",
-            "role": "working",
-            "sets": 2,
-            "reps": null,
-            "durationSeconds": 30,
-            "restSeconds": 30,
-            "targetRpe": 8,
-            "targetRir": 2
-          }
-        ]
-      },
-      {
-        "id": "calisthenics-skills-session-2",
-        "name": {
-          "en": "Capacity and control",
-          "ar": "القدرة والتحكم"
-        },
-        "estimatedMinutes": 48,
-        "exercises": [
-          {
-            "exerciseId": "scapular-pull-up",
-            "role": "warmup",
-            "sets": 2,
-            "reps": "8–12",
-            "durationSeconds": null,
+        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كر…8948 tokens truncated…nds": null,
             "restSeconds": 90,
             "targetRpe": 5,
             "targetRir": 4
@@ -4564,16 +3423,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -4823,16 +3682,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–6: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 7: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 8: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–6: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 7: repeat the session with consistent quality instead of adding more work.",
+        "Week 8: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–6: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 7: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 8: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -5142,16 +4001,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Week 2: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 3: repeat the session with consistent quality instead of adding more work.",
+        "Week 4: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسبوع 2: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 3: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 4: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -5406,16 +4265,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -5710,16 +4569,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Week 2: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 3: repeat the easiest effective range without forcing a deeper position.",
+        "Week 4: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسبوع 2: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 3: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 4: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -6074,16 +4933,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Weeks 2–4: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 5: repeat the easiest effective range without forcing a deeper position.",
+        "Week 6: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسابيع 2–4: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 5: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 6: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -6383,16 +5242,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Week 2: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 3: repeat the easiest effective range without forcing a deeper position.",
+        "Week 4: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسبوع 2: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 3: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 4: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -6692,16 +5551,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Weeks 2–4: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 5: repeat the easiest effective range without forcing a deeper position.",
+        "Week 6: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسابيع 2–4: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 5: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 6: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -7066,16 +5925,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -7320,16 +6179,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
