@@ -34,6 +34,16 @@ class MotionRuntimePreferenceTest(unittest.TestCase):
             script,
         )
 
+    def test_reference_sequence_names_each_visible_phase_bilingually(self):
+        script = MOTION_RUNTIME.read_text()
+
+        self.assertIn("const phaseIndex = frameIndex % item.demo.assets.length;", script)
+        self.assertIn("phaseIndex === 0 ? 'البداية' : 'النهاية'", script)
+        self.assertIn("phaseIndex === 0 ? 'Start' : 'Finish'", script)
+        self.assertIn("const reduced = reduceMotion();", script)
+        self.assertIn("reduced ? 'صورة ثابتة — تقليل الحركة'", script)
+        self.assertIn("reduced ? 'Static image — reduced motion'", script)
+
 
 if __name__ == "__main__":
     unittest.main()
