@@ -21,13 +21,20 @@ class WearableProvenancePolicyTest {
     @Test fun swimming_requires_wearable_health_provenance() {
         assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.PHONE_MEASURED, gps = true)))
         assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app")))
+        assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "phone")))
+        assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "spoofed-device")))
         assertEquals(CompetitionTrust.VERIFIED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch")))
-        assertEquals(CompetitionTrust.VERIFIED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch", gps = false)))
+        assertEquals(CompetitionTrust.VERIFIED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "smartwatch", gps = false)))
     }
 
     @Test fun imported_and_manual_swimming_never_become_verified() {
         assertEquals(CompetitionTrust.IMPORTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_IMPORTED, source = "health.app")))
         assertEquals(CompetitionTrust.MANUAL, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.MANUAL)))
+    }
+
+    @Test fun wearable_origin_without_wearable_device_is_not_trusted() {
+        assertEquals(CompetitionTrust.IMPORTED, WearableProvenancePolicy.classify(evidence(SportKind.RUNNING, EvidenceOrigin.HEALTH_WEARABLE, source = "health.app", device = "phone")))
+        assertEquals(CompetitionTrust.TRUSTED, WearableProvenancePolicy.classify(evidence(SportKind.RUNNING, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "fitness_tracker")))
     }
 
     @Test fun anomalies_fail_closed() {
