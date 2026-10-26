@@ -248,7 +248,7 @@
   function list(items, ordered = false) { const tag = ordered ? 'ol' : 'ul'; return `<${tag}>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</${tag}>`; }
   function renderMuscleTags(tagsId, groupId, values) {
     const muscles = Array.isArray(values) ? values : [];
-    $(tagsId).innerHTML = muscles.map(value => `<span class="tag">${escapeHtml(value)}</span>`).join('');
+    $(tagsId).innerHTML = muscles.map(value => `<span class="tag" role="listitem">${escapeHtml(value)}</span>`).join('');
     if (groupId) $(groupId).classList.toggle('hidden', muscles.length === 0);
   }
   function renderDetail(item) {

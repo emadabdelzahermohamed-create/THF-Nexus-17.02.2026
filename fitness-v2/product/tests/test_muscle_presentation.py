@@ -46,6 +46,17 @@ class MusclePresentationTest(unittest.TestCase):
                     self.html,
                 )
 
+    def test_muscle_tags_are_exposed_as_accessible_lists(self):
+        for tags_id in (
+            "activePrimaryMuscles",
+            "activeSecondaryMuscles",
+            "detailPrimaryMuscles",
+            "detailSecondaryMuscles",
+        ):
+            with self.subTest(tags_id=tags_id):
+                self.assertIn(f'id="{tags_id}" class="tag-row" role="list"', self.html)
+        self.assertIn('<span class="tag" role="listitem">', self.javascript)
+
 
 if __name__ == "__main__":
     unittest.main()
