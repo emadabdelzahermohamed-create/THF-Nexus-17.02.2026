@@ -44,6 +44,17 @@ class MotionRuntimePreferenceTest(unittest.TestCase):
         self.assertIn("reduced ? 'صورة ثابتة — تقليل الحركة'", script)
         self.assertIn("reduced ? 'Static image — reduced motion'", script)
 
+    def test_reference_frames_are_preloaded_once_before_automatic_cycling(self):
+        script = MOTION_RUNTIME.read_text()
+
+        self.assertIn("const preloadedExercises = new Set();", script)
+        self.assertIn("function preloadFrames(item)", script)
+        self.assertIn("if (preloadedExercises.has(item.id)) return;", script)
+        self.assertIn("item.demo.assets.forEach(asset =>", script)
+        self.assertIn("const preload = new Image();", script)
+        self.assertIn("preload.src = './' + asset;", script)
+        self.assertLess(script.index("preloadFrames(item);"), script.index("timer = window.setInterval"))
+
 
 if __name__ == "__main__":
     unittest.main()
