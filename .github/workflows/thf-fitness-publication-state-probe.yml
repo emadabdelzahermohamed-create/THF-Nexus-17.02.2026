@@ -3,7 +3,7 @@ name: THF Fitness Publication State Probe
 on:
   push:
     branches:
-      - fitness/motion-runtime-api36-gate-20261018
+      - agent/codex/fitness-recovery/20261023
     paths:
       - '.github/workflows/thf-fitness-publication-state-probe.yml'
   workflow_dispatch:
