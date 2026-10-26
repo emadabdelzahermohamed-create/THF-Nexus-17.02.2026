@@ -55,6 +55,14 @@ class MotionRuntimePreferenceTest(unittest.TestCase):
         self.assertIn("preload.src = './' + asset;", script)
         self.assertLess(script.index("preloadFrames(item);"), script.index("timer = window.setInterval"))
 
+    def test_reference_image_alt_identifies_the_visible_phase_bilingually(self):
+        script = MOTION_RUNTIME.read_text()
+
+        self.assertIn("const phaseName = isArabic", script)
+        self.assertIn("? (phaseIndex === 0 ? 'البداية' : 'النهاية')", script)
+        self.assertIn("image.alt = `${baseAlt} — ${phaseName}`;", script)
+        self.assertIn("phase.setAttribute('aria-hidden', 'true');", script)
+
 
 if __name__ == "__main__":
     unittest.main()
