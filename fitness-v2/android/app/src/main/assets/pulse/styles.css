@@ -37,3 +37,9 @@
 @media(max-width:600px){.activity-quick-actions,.activity-mode-grid{grid-template-columns:repeat(3,1fr);gap:6px}.activity-mode-button{min-height:74px;padding:7px}.activity-mode-button b{font-size:24px}.activity-metrics{grid-template-columns:repeat(2,1fr)}}
 .program-card:focus-visible,.session-exercises button:focus-visible,.activity-mode-button:focus-visible,.set-complete:focus-visible,.text-button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
 @media (forced-colors:active){.button,.icon-button,.primary-nav button,.activity-mode-button,.program-card{forced-color-adjust:auto;border:1px solid ButtonText}.button:focus-visible,.icon-button:focus-visible,.primary-nav button:focus-visible,.section-rail button:focus-visible,.exercise-card:focus-visible,.program-card:focus-visible,.session-exercises button:focus-visible,.activity-mode-button:focus-visible,.set-complete:focus-visible,.text-button:focus-visible{outline:3px solid Highlight;outline-offset:3px}.status-chip,.pill.gold,.error-message{color:CanvasText;border-color:CanvasText}}
+
+/* The in-app preference sets --motion to 0 without relying on system settings. */
+:root[style*="--motion: 0"] *,:root[style*="--motion: 0"] *:before,:root[style*="--motion: 0"] *:after,:root[style*="--motion:0"] *,:root[style*="--motion:0"] *:before,:root[style*="--motion:0"] *:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+:root[style*="--motion: 0"] .button:active,:root[style*="--motion:0"] .button:active{transform:none!important}
+:root[style*="--motion: 0"] .exercise-card:hover img,:root[style*="--motion:0"] .exercise-card:hover img{transform:none!important}
+:root[style*="--motion: 0"] .program-card:hover .program-cover img,:root[style*="--motion:0"] .program-card:hover .program-cover img{transform:none!important}
