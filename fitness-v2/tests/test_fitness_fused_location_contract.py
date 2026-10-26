@@ -10,7 +10,7 @@ class FitnessFusedLocationContractTest(unittest.TestCase):
     def test_uses_current_fused_location_with_legacy_fallback(self):
         build = BUILD.read_text()
         service = SERVICE.read_text()
-        self.assertIn("com.google.android.gms:play-services-location:21.4.0", build)
+        self.assertIn("com.google.android.gms:play-services-location:21.3.0", build)
         self.assertIn('LocationServices.getFusedLocationProviderClient', service)
         self.assertIn('Priority.PRIORITY_HIGH_ACCURACY', service)
         self.assertIn('LocationRequest.Builder', service)

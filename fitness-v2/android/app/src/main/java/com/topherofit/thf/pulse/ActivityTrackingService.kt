@@ -645,4 +645,3 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         else -> "جارٍ تثبيت موقع عالي الدقة"
     }
 }
-}
