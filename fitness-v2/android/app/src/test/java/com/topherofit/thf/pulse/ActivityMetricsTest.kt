@@ -21,9 +21,24 @@ class ActivityMetricsTest {
     }
 
     @Test
+    fun invalidCoordinatesDoNotProduceRouteDistance() {
+        assertEquals(0.0, ActivityMetrics.distanceMetres(Double.NaN, 29.9187, 31.2011, 29.9187), 0.0)
+        assertEquals(0.0, ActivityMetrics.distanceMetres(91.0, 29.9187, 31.2011, 29.9187), 0.0)
+        assertEquals(0.0, ActivityMetrics.distanceMetres(31.2001, 181.0, 31.2011, 29.9187), 0.0)
+    }
+
+    @Test
     fun paceAndSpeedAreDerivedFromDistanceAndDuration() {
         assertEquals(10.0, ActivityMetrics.averageSpeedKph(distanceMetres = 5000.0, durationMs = 1_800_000), 0.01)
         assertEquals(6.0, requireNotNull(ActivityMetrics.paceMinutesPerKm(distanceMetres = 5000.0, durationMs = 1_800_000)), 0.01)
+    }
+
+    @Test
+    fun nonFiniteDistanceNeverProducesSpeedOrPace() {
+        assertEquals(0.0, ActivityMetrics.averageSpeedKph(Double.NaN, 60_000), 0.0)
+        assertEquals(0.0, ActivityMetrics.averageSpeedKph(Double.POSITIVE_INFINITY, 60_000), 0.0)
+        assertNull(ActivityMetrics.paceMinutesPerKm(Double.NaN, 60_000))
+        assertNull(ActivityMetrics.paceMinutesPerKm(Double.POSITIVE_INFINITY, 60_000))
     }
 
     @Test
