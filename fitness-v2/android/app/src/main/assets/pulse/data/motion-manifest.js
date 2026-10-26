@@ -30,6 +30,7 @@ window.THF_MOTION_MANIFEST = {
   let observer = null;
   let activeExerciseId = null;
   let frameIndex = 0;
+  const preloadedExercises = new Set();
 
   const byId = id => document.getElementById(id);
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -75,11 +76,22 @@ window.THF_MOTION_MANIFEST = {
     }
   }
 
+  function preloadFrames(item) {
+    if (preloadedExercises.has(item.id)) return;
+    preloadedExercises.add(item.id);
+    item.demo.assets.forEach(asset => {
+      const preload = new Image();
+      preload.decoding = 'async';
+      preload.src = './' + asset;
+    });
+  }
+
   function start(item) {
     stop();
     activeExerciseId = item.id;
     renderFrame(item);
     if (reduceMotion() || document.hidden) return;
+    preloadFrames(item);
     timer = window.setInterval(() => {
       const latest = currentExercise();
       if (!latest || document.hidden || reduceMotion()) return;
