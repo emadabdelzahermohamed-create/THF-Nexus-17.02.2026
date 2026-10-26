@@ -18,7 +18,7 @@ or clears data.
 
 Labels: stationary-start, true-movement, navigation, background, screen-off,
 screen-on, reopened, process-death, explicit-stop, daily-steps, notification,
-health-source.
+notification-collapsed, notification-expanded, health-source.
 EOF
 }
 
@@ -35,7 +35,7 @@ done
 [[ -n "$LABEL" ]] || { echo "--label is required" >&2; exit 2; }
 [[ -n "$OUT" ]] || { echo "--out is required" >&2; exit 2; }
 case "$LABEL" in
-  stationary-start|true-movement|navigation|background|screen-off|screen-on|reopened|process-death|explicit-stop|daily-steps|notification|health-source) ;;
+  stationary-start|true-movement|navigation|background|screen-off|screen-on|reopened|process-death|explicit-stop|daily-steps|notification|notification-collapsed|notification-expanded|health-source) ;;
   *) echo "unknown --label: $LABEL" >&2; exit 2 ;;
 esac
 [[ ! -e "$OUT" ]] || { echo "--out already exists: $OUT" >&2; exit 3; }

@@ -120,6 +120,16 @@ class FitnessPhoneP0SnapshotTests(unittest.TestCase):
             calls,
         )
 
+    def test_notification_collapsed_and_expanded_are_distinct_checkpoints(self):
+        for label in ("notification-collapsed", "notification-expanded"):
+            with self.subTest(label=label):
+                result, _calls, files = self.run_snapshot("ready", "--label", label)
+
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn(f"label={label}".encode(), files["checkpoint.txt"])
+                self.assertIn("notification.txt", files)
+                self.assertIn("screen.png", files)
+
 
 if __name__ == "__main__":
     unittest.main()
