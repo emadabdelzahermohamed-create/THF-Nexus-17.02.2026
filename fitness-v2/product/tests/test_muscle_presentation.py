@@ -31,6 +31,21 @@ class MusclePresentationTest(unittest.TestCase):
         self.assertIn("primaryMuscles:'Primary muscles'", self.javascript)
         self.assertIn("supportingMuscles:'Supporting muscles'", self.javascript)
 
+    def test_muscle_groups_are_named_for_assistive_technology(self):
+        expected_groups = {
+            "activePrimaryMuscleGroup": "activePrimaryMusclesLabel",
+            "activeSecondaryMuscleGroup": "activeSecondaryMusclesLabel",
+            "detailPrimaryMuscleGroup": "detailPrimaryMusclesLabel",
+            "detailSecondaryMuscleGroup": "detailSecondaryMusclesLabel",
+        }
+        for group_id, label_id in expected_groups.items():
+            with self.subTest(group_id=group_id):
+                self.assertIn(f'id="{label_id}"', self.html)
+                self.assertIn(
+                    f'id="{group_id}" class="muscle-group" role="group" aria-labelledby="{label_id}"',
+                    self.html,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
