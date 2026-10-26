@@ -61,14 +61,18 @@ window.THF_MOTION_MANIFEST = {
   function renderFrame(item) {
     const image = byId('activeDemoImage');
     if (!image || !Array.isArray(item?.demo?.assets) || item.demo.assets.length < 2) return;
-    const nextSrc = './' + item.demo.assets[frameIndex % item.demo.assets.length];
+    const phaseIndex = frameIndex % item.demo.assets.length;
+    const nextSrc = './' + item.demo.assets[phaseIndex];
     // Avoid redundant WebView image work on the API31 Samsung lane.
     if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
     image.alt = item?.demo?.alt?.[document.documentElement.lang === 'ar' ? 'ar' : 'en'] || '';
     const phase = byId('activeDemoPhase');
-    if (phase) phase.textContent = document.documentElement.lang === 'ar'
-      ? 'تسلسل مرجعي تلقائي — الحركة الكاملة قيد المراجعة'
-      : 'Automatic reference sequence — full motion under review';
+    if (phase) {
+      const reduced = reduceMotion();
+      phase.textContent = document.documentElement.lang === 'ar'
+        ? `${phaseIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
+        : `${phaseIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
+    }
   }
 
   function start(item) {
