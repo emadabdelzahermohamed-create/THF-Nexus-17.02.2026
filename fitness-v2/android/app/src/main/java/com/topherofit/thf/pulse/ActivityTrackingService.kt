@@ -42,6 +42,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         private const val CHANNEL_ID = "thf_live_tracking"
         private const val NOTIFICATION_ID = 51009
         private const val MAX_ROUTE_POINTS = 1200
+        private const val ACTIVITY_CHECKPOINT_PREFS = "thf_activity_tracking"
+        private const val ACTIVITY_CHECKPOINT_KEY = "active_activity_checkpoint"
+        private const val ACTIVITY_CHECKPOINT_INTERVAL_MS = 10_000L
 
         @Volatile private var instance: ActivityTrackingService? = null
         @Volatile private var lastActivitySnapshot = ActivitySnapshot(
@@ -113,6 +116,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private var lastAccuracyMetres: Float? = null
     private val route = mutableListOf<ActivityRoutePoint>()
     private var sessionStartedAtWallMs = 0L
+    private var lastActivityCheckpointWriteElapsedMs = 0L
     private val notificationHandler = Handler(Looper.getMainLooper())
     private val notificationTicker = object : Runnable {
         override fun run() {
@@ -141,7 +145,12 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        if (intent == null) {
+            if (restorePersistedActivity()) return START_STICKY
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+        when (intent.action) {
             ACTION_START_ACTIVITY -> {
                 val mode = ActivityMode.fromWire(intent.getStringExtra(EXTRA_MODE)) ?: return START_NOT_STICKY
                 startActivityInternal(mode, intent.getDoubleExtra(EXTRA_WEIGHT_KG, 70.0))
@@ -162,10 +171,12 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     override fun onTaskRemoved(rootIntent: Intent?) {
         // Deliberately keep the foreground session alive when the task UI is swiped away.
         // The visible notification remains the user's stop/control surface.
+        saveActivityCheckpoint(force = true)
         super.onTaskRemoved(rootIntent)
     }
 
     override fun onDestroy() {
+        if (activityMode != null) saveActivityCheckpoint(force = true)
         notificationHandler.removeCallbacks(notificationTicker)
         unregisterActivitySources()
         workoutEngine?.let { engine ->
@@ -196,6 +207,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         startForegroundForCurrentSession(buildNotification())
         registerActivitySources(mode)
         publishActivitySnapshot()
+        saveActivityCheckpoint(force = true)
         startNotificationUpdates()
     }
 
@@ -271,6 +283,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             elapsedMs = nowElapsed - activityStartedAtElapsedMs,
         )
         publishActivitySnapshot()
+        saveActivityCheckpoint()
     }
 
     @Suppress("DEPRECATION")
@@ -295,6 +308,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             activityStepDelta = max(0, (raw - baseline).toInt())
         }
         publishActivitySnapshot()
+        saveActivityCheckpoint()
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
@@ -329,6 +343,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         val final = buildActivitySnapshot(active = false)
         lastActivitySnapshot = final
         unregisterActivitySources()
+        clearActivityCheckpoint()
         activityMode = null
         notificationHandler.removeCallbacks(notificationTicker)
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -352,6 +367,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         if (activityMode != null) {
             lastActivitySnapshot = buildActivitySnapshot(active = false)
             unregisterActivitySources()
+            clearActivityCheckpoint()
             activityMode = null
         }
         workoutEngine?.let { engine ->
@@ -364,6 +380,75 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
+    }
+
+    private fun saveActivityCheckpoint(force: Boolean = false) {
+        val mode = activityMode ?: return
+        val nowElapsed = SystemClock.elapsedRealtime()
+        if (!force && nowElapsed - lastActivityCheckpointWriteElapsedMs < ACTIVITY_CHECKPOINT_INTERVAL_MS) return
+        val checkpoint = ActivitySessionCheckpoint(
+            mode = mode,
+            weightKg = activityWeightKg,
+            startedAtWallMs = activityStartedAtWallMs,
+            startedAtElapsedMs = activityStartedAtElapsedMs,
+            distanceMetres = activityDistanceMetres,
+            stepBaseline = activityStepBaseline,
+            stepDelta = activityStepDelta,
+            lastAccuracyMetres = lastAccuracyMetres,
+            route = route.toList(),
+        )
+        getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE)
+            .edit()
+            .putString(ACTIVITY_CHECKPOINT_KEY, ActivitySessionCheckpointCodec.encode(checkpoint))
+            .apply()
+        lastActivityCheckpointWriteElapsedMs = nowElapsed
+    }
+
+    private fun clearActivityCheckpoint() {
+        getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE)
+            .edit()
+            .remove(ACTIVITY_CHECKPOINT_KEY)
+            .apply()
+        lastActivityCheckpointWriteElapsedMs = 0L
+    }
+
+    private fun restorePersistedActivity(): Boolean {
+        val raw = getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE)
+            .getString(ACTIVITY_CHECKPOINT_KEY, null)
+        val checkpoint = ActivitySessionCheckpointCodec.decode(raw)
+        val nowElapsed = SystemClock.elapsedRealtime()
+        if (checkpoint == null || !ActivitySessionCheckpointCodec.canRestore(checkpoint, nowElapsed)) {
+            clearActivityCheckpoint()
+            return false
+        }
+
+        activityMode = checkpoint.mode
+        activityWeightKg = checkpoint.weightKg
+        activityStartedAtWallMs = checkpoint.startedAtWallMs
+        sessionStartedAtWallMs = checkpoint.startedAtWallMs
+        activityStartedAtElapsedMs = checkpoint.startedAtElapsedMs
+        activityDistanceMetres = checkpoint.distanceMetres
+        activityStepBaseline = checkpoint.stepBaseline
+        activityStepDelta = checkpoint.stepDelta
+        currentSpeedKph = 0.0
+        lastAccuracyMetres = checkpoint.lastAccuracyMetres
+        route.clear()
+        route += checkpoint.route.takeLast(MAX_ROUTE_POINTS)
+        lastLocation = checkpoint.route.lastOrNull()?.let { point ->
+            Location("thf_checkpoint").apply {
+                latitude = point.latitude
+                longitude = point.longitude
+                point.altitudeMetres?.let { altitude = it }
+                accuracy = point.accuracyMetres
+                elapsedRealtimeNanos = (checkpoint.startedAtElapsedMs + point.elapsedMs) * 1_000_000L
+            }
+        }
+        lastActivityCheckpointWriteElapsedMs = nowElapsed
+        startForegroundForCurrentSession(buildNotification())
+        registerActivitySources(checkpoint.mode)
+        publishActivitySnapshot()
+        startNotificationUpdates()
+        return true
     }
 
     private fun buildNotification(): Notification {
