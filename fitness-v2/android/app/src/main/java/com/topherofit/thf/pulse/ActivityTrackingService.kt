@@ -22,6 +22,14 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.location.Granularity
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import kotlin.math.max
 
 /**
@@ -102,6 +110,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     private lateinit var notificationManager: NotificationManager
     private lateinit var locationManager: LocationManager
+    private lateinit var fusedLocationClient: com.google.android.gms.location.FusedLocationProviderClient
     private lateinit var sensorManager: SensorManager
     private var stepCounter: Sensor? = null
 
@@ -117,11 +126,18 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private var activityStepDelta = 0
     private var currentSpeedKph = 0.0
     private var lastLocation: Location? = null
+    private var lastObservedLocation: Location? = null
     private var lastAccuracyMetres: Float? = null
+    private var lastObservedAccuracyMetres: Float? = null
     private val route = mutableListOf<ActivityRoutePoint>()
     private var sessionStartedAtWallMs = 0L
     private var lastActivityCheckpointWriteElapsedMs = 0L
     private val notificationHandler = Handler(Looper.getMainLooper())
+    private val fusedLocationCallback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            result.locations.forEach(::onLocationChanged)
+        }
+    }
     private val notificationTicker = object : Runnable {
         override fun run() {
             if (!hasLiveSession()) return
@@ -143,6 +159,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         instance = this
         notificationManager = getSystemService(NotificationManager::class.java)
         locationManager = getSystemService(LocationManager::class.java)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         sensorManager = getSystemService(SensorManager::class.java)
         stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
         createNotificationChannel()
@@ -213,7 +230,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityStepDelta = 0
         currentSpeedKph = 0.0
         lastLocation = null
+        lastObservedLocation = null
         lastAccuracyMetres = null
+        lastObservedAccuracyMetres = null
         route.clear()
         startForegroundForCurrentSession(buildNotification())
         registerActivitySources(mode)
@@ -242,6 +261,28 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             return
         }
 
+        registerStepSource(mode)
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1_000L)
+            .setMinUpdateIntervalMillis(1_000L)
+            .setMinUpdateDistanceMeters(1f)
+            .setMaxUpdateDelayMillis(2_000L)
+            .setGranularity(Granularity.GRANULARITY_FINE)
+            .setWaitForAccurateLocation(false)
+            .build()
+        val playServicesReady = GoogleApiAvailability.getInstance()
+            .isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS
+        if (playServicesReady) {
+            runCatching {
+                fusedLocationClient.requestLocationUpdates(request, fusedLocationCallback, Looper.getMainLooper())
+                    .addOnFailureListener { registerLegacyLocationProviders(mode) }
+            }.onFailure { registerLegacyLocationProviders(mode) }
+        } else {
+            registerLegacyLocationProviders(mode)
+        }
+    }
+
+    private fun registerLegacyLocationProviders(mode: ActivityMode) {
+        if (activityMode != mode) return
         runCatching {
             if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1_000L, 1f, this, Looper.getMainLooper())
@@ -252,7 +293,6 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2_500L, 4f, this, Looper.getMainLooper())
             }
         }
-        registerStepSource(mode)
     }
 
     private fun registerStepSource(mode: ActivityMode) {
@@ -262,6 +302,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun unregisterActivitySources() {
+        runCatching { fusedLocationClient.removeLocationUpdates(fusedLocationCallback) }
         runCatching { locationManager.removeUpdates(this) }
         runCatching { sensorManager.unregisterListener(this) }
     }
@@ -270,8 +311,19 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         val mode = activityMode ?: return
         val nowElapsed = SystemClock.elapsedRealtime()
         val previous = lastLocation
-        // Reject before changing the distance, route, or next comparison baseline.
-        if (!GpsFixGate.accepts(location.toGpsFix(), previous?.toGpsFix(), mode, activityStartedAtElapsedMs, nowElapsed)) return
+        val observedFix = location.toGpsFix()
+        if (observedFix.latitude.isFinite() && observedFix.latitude in -90.0..90.0 &&
+            observedFix.longitude.isFinite() && observedFix.longitude in -180.0..180.0 &&
+            observedFix.accuracyMetres.isFinite() && observedFix.accuracyMetres > 0.0
+        ) {
+            lastObservedLocation = Location(location)
+            lastObservedAccuracyMetres = location.accuracy
+        }
+        // Keep weak/stale fixes visible for signal UX, but never let them poison distance/route.
+        if (!GpsFixGate.accepts(observedFix, previous?.toGpsFix(), mode, activityStartedAtElapsedMs, nowElapsed)) {
+            publishActivitySnapshot()
+            return
+        }
         if (previous != null) {
             val deltaMetres = ActivityMetrics.distanceMetres(previous.latitude, previous.longitude, location.latitude, location.longitude)
             val deltaMs = location.elapsedRealtimeNanos / 1_000_000L - previous.elapsedRealtimeNanos / 1_000_000L
@@ -352,6 +404,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             weightKg = activityWeightKg,
             acceptedRoute = route.toList(),
             lastAccuracyMetres = lastAccuracyMetres,
+        ).copy(
+            gpsFixState = gpsFixState(),
+            observedAccuracyMetres = lastObservedAccuracyMetres,
         )
     }
 
@@ -564,19 +619,30 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private fun hasActivityRecognitionPermission(): Boolean =
         Build.VERSION.SDK_INT < 29 || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
 
-    private fun gpsStatus(): String {
+    private fun gpsFixState(): String {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-        ) return "إذن الموقع غير متاح · المسافة لا تتحدث"
+        ) return "permission"
         val enabled = runCatching {
             locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
         }.getOrDefault(false)
-        if (!enabled) return "الموقع مغلق · المسافة لا تتحدث"
-        val fix = lastLocation ?: return "بانتظار إشارة GPS"
-        if (SystemClock.elapsedRealtime() - fix.elapsedRealtimeNanos / 1_000_000L > 30_000L) {
-            return "إشارة GPS قديمة · بانتظار تحديث"
-        }
-        return "GPS متصل · دقة ±${fix.accuracy.toInt()} م"
+        if (!enabled) return "off"
+        val observed = lastObservedLocation ?: return "acquiring"
+        val ageMs = SystemClock.elapsedRealtime() - observed.elapsedRealtimeNanos / 1_000_000L
+        if (ageMs > 30_000L) return "stale"
+        val accepted = lastLocation
+        if (accepted == null || accepted.elapsedRealtimeNanos < observed.elapsedRealtimeNanos) return "weak"
+        return "ready"
     }
+
+    private fun gpsStatus(): String = when (gpsFixState()) {
+        "permission" -> "إذن الموقع غير متاح · المسافة لا تتحدث"
+        "off" -> "الموقع مغلق · المسافة لا تتحدث"
+        "stale" -> "إشارة الموقع متوقفة · بانتظار تحديث"
+        "weak" -> "تم تحديد الموقع · الدقة ضعيفة ±${lastObservedAccuracyMetres?.toInt() ?: 0} م"
+        "ready" -> "GPS متصل · دقة ±${lastAccuracyMetres?.toInt() ?: 0} م"
+        else -> "جارٍ تثبيت موقع عالي الدقة"
+    }
+}
 }

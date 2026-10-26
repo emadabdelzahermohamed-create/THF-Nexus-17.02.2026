@@ -10,8 +10,8 @@ android {
         applicationId 'com.topherofit.thf.pulse'
         minSdk 26
         targetSdk 36
-        versionCode 51015
-        versionName '5.0.0-v2-alpha15'
+        versionCode 51016
+        versionName '5.0.0-v2-alpha16'
         // AppDeploy serves the SPA from the public app origin, while native clients
         // must call the credential-free API gateway directly. Keep the account URL
         // separate so the browser sign-in still starts on the branded web origin.
@@ -24,7 +24,7 @@ android {
         buildConfigField 'String', 'THF_ACCOUNT_URL', '"' + accountUrl.replace('\\','\\\\').replace('"','\\"') + '"'
         buildConfigField 'String', 'THF_PLAY_LICENSE_KEY', '"' + playLicenseKey.replace('\\','\\\\').replace('"','\\"') + '"'
         buildConfigField 'String', 'THF_APP_SLUG', '"pulse"'
-        buildConfigField 'String', 'THF_RELEASE_CANDIDATE', '"fitness-release-51014"'
+        buildConfigField 'String', 'THF_RELEASE_CANDIDATE', '"fitness-release-51016"'
     }
     buildFeatures { buildConfig true }
     compileOptions {
@@ -46,6 +46,7 @@ dependencies {
     implementation 'androidx.fragment:fragment:1.8.6'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.9.1'
     implementation 'androidx.health.connect:connect-client:1.1.0'
+    implementation 'com.google.android.gms:play-services-location:21.4.0'
     implementation 'com.android.billingclient:billing:9.1.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
     testImplementation 'junit:junit:4.13.2'

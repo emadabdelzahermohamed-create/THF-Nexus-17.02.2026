@@ -512,6 +512,8 @@ class MainActivity : ComponentActivity() {
             .put("estimatedCaloriesKcal", snapshot.estimatedCaloriesKcal)
             .put("gpsPointCount", snapshot.gpsPointCount)
             .put("lastAccuracyMetres", snapshot.lastAccuracyMetres)
+            .put("observedAccuracyMetres", snapshot.observedAccuracyMetres)
+            .put("gpsFixState", snapshot.gpsFixState)
             .put("route", route)
     }
 
