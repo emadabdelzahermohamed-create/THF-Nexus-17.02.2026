@@ -17,6 +17,12 @@ data class SportEvidence(
 )
 
 object WearableProvenancePolicy {
+    private val wearableDeviceTypes = setOf("watch", "smartwatch", "fitness_band", "fitness_tracker", "wearable")
+
+    private fun hasWearableDeviceProvenance(evidence: SportEvidence): Boolean =
+        !evidence.sourcePackage.isNullOrBlank() &&
+            evidence.deviceType?.trim()?.lowercase() in wearableDeviceTypes
+
     fun classify(evidence: SportEvidence): CompetitionTrust {
         if (evidence.anomalyRejected || evidence.endEpochMillis <= evidence.startEpochMillis) {
             return CompetitionTrust.REJECTED
@@ -25,8 +31,7 @@ object WearableProvenancePolicy {
 
         if (evidence.sport == SportKind.SWIMMING_POOL || evidence.sport == SportKind.SWIMMING_OPEN_WATER) {
             // Phone GPS/sensors never verify swimming. Pool sessions legitimately need no GPS.
-            val wearable = evidence.origin == EvidenceOrigin.HEALTH_WEARABLE &&
-                !evidence.sourcePackage.isNullOrBlank() && !evidence.deviceType.isNullOrBlank()
+            val wearable = evidence.origin == EvidenceOrigin.HEALTH_WEARABLE && hasWearableDeviceProvenance(evidence)
             return if (wearable) CompetitionTrust.VERIFIED else when (evidence.origin) {
                 EvidenceOrigin.HEALTH_IMPORTED -> CompetitionTrust.IMPORTED
                 EvidenceOrigin.MANUAL -> CompetitionTrust.MANUAL
@@ -36,7 +41,7 @@ object WearableProvenancePolicy {
 
         return when (evidence.origin) {
             EvidenceOrigin.PHONE_MEASURED -> if (evidence.hasAcceptedGps) CompetitionTrust.VERIFIED else CompetitionTrust.TRUSTED
-            EvidenceOrigin.HEALTH_WEARABLE -> if (!evidence.sourcePackage.isNullOrBlank()) CompetitionTrust.TRUSTED else CompetitionTrust.IMPORTED
+            EvidenceOrigin.HEALTH_WEARABLE -> if (hasWearableDeviceProvenance(evidence)) CompetitionTrust.TRUSTED else CompetitionTrust.IMPORTED
             EvidenceOrigin.HEALTH_IMPORTED -> CompetitionTrust.IMPORTED
             EvidenceOrigin.MANUAL -> CompetitionTrust.MANUAL
             EvidenceOrigin.UNKNOWN -> CompetitionTrust.REJECTED
