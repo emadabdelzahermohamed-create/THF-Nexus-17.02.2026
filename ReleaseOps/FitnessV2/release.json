@@ -1,0 +1,80 @@
+{
+  "project": "Top Hero Fit Fitness V2 Rebuild",
+  "branch": "release/fitness-v2-rebuild-20261002",
+  "run_result": "PROGRESS",
+  "phase": "ANDROID_PACKAGE_GATE_PASS_APPDEPLOY_V70_LIVE_UNSIGNED",
+  "canonical_candidate_sha": "2d6e6594e4bb06d3c5f7cf5953954c58046d4949",
+  "backend_deletion_checkpoint_sha": "d246e494ad2c0b1841449a0455e9fccd4ab3fc08",
+  "candidate_version_code": 51003,
+  "candidate_package_id": "com.topherofit.thf.pulse",
+  "workflow_run_id": 37571792269,
+  "workflow_run_number": 22,
+  "artifact_id": 11461555963,
+  "artifact_digest": "sha256:935c724c5007394f019c80ef688900ad259fad37cd85b6a95746135d0efbd8f2",
+  "debug_apk_sha256": "decdee1971b017aaf4ad34f99cabe92c811123997fc5b1f9f9de97cfdfbf4849",
+  "release_aab_sha256": "c35f5033cddabef36ec2e459b9d2e525ace725d731589bc9eee5c8c71353b6fd",
+  "gates": {
+    "backend_unit_security": "PASS_SOURCE_AND_CI_8_OF_8",
+    "appdeploy_route_typecheck": "PASS_TYPESCRIPT_5_9_3_STRICT_NO_EMIT",
+    "android_source_contract": "PASS_14_OF_14",
+    "android_build_package": "PASS_EXACT_CANONICAL_SHA",
+    "android_lint": "PASS_0_ERRORS_2_DEPENDENCY_WARNINGS",
+    "offline_payload": "PASS_112_EXERCISES_26_PROGRAMS_224_IMAGES_CATALOG_EXACT_NO_STAGE16A",
+    "backend_live_https_auth": "PARTIAL_PASS_V70_READY_AUTHENTICATED_ROUNDTRIP_NOT_RUN",
+    "backend_v2_account_deletion": "DEPLOYED_SOURCE_V70_RUNTIME_DESTRUCTIVE_FLOW_NOT_RUN",
+    "live_privacy_and_deletion_pages": "PASS_VISIBLE_MANAGED_BROWSER",
+    "android_backend_binding": "PASS_EXACT_API_GATEWAY_EMBEDDED_IN_VERSION_51003_APK",
+    "android_privacy_deletion_entrypoints": "PASS_SOURCE_PACKAGE_AND_LIVE_WEB_PAGES",
+    "production_signing": "BLOCKED_MISSING_EXISTING_UPLOAD_SECRETS",
+    "digital_asset_links": "BLOCKED_HTTP_403_AND_RELEASE_CERTIFICATE_UNAVAILABLE",
+    "play_health_data_declarations": "DRAFT_READY_NOT_SUBMITTED",
+    "emulator_runtime": "NOT_RUN_ADB_AND_EMULATOR_UNAVAILABLE",
+    "physical_phone": "NOT_RUN",
+    "health_connect_physical": "NOT_RUN",
+    "samsung_health_origin": "NOT_RUN",
+    "play_internal_51003": "NOT_RUN",
+    "exact_play_candidate_verification": "NOT_RUN",
+    "monetization_surface": "NOT_PROVEN_NO_BILLING_OR_REVENUE_CLAIM"
+  },
+  "live_runtime": {
+    "appdeploy_app_id": "thf-fitness-pulse-ul26f1",
+    "snapshot_version": "1791347766744",
+    "version_name": "v70",
+    "status": "READY",
+    "candidate_backend_privacy_overlay_deployed": true,
+    "full_candidate_deployed": false,
+    "qa_timestamp": 1791347783717,
+    "qa_screenshot_version": "1791347805834",
+    "qa_errors": {
+      "frontend": 0,
+      "network": 0,
+      "backend": 0
+    },
+    "browser_verified": [
+      "https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/privacy.html",
+      "https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/account-deletion.html"
+    ],
+    "authenticated_roundtrip": "NOT_RUN"
+  },
+  "product_lane_read_only": {
+    "state": "PROGRESS",
+    "source_commit": "ac1498d0e7da0cb4a493737876fafd3ab8bf66be",
+    "evidence_commit": "97a12e03e767a8857fb7bc8ffc0dd911000bcb87",
+    "packaged_exercises": 112,
+    "packaged_programs": 26,
+    "packaged_offline_demo_images": 224
+  },
+  "blockers": [
+    "The exact release AAB is unsigned because all four existing upload-signing secrets were unavailable to GitHub Actions.",
+    "A complete disposable-account PKCE/sync/history/progress/deletion roundtrip on AppDeploy v70 remains unproven; destructive deletion was not executed without an authorized disposable QA identity.",
+    "Digital Asset Links returns HTTP 403 and cannot be finalized until the actual release signing certificate fingerprint is available.",
+    "Physical phone install/core workout/offline/background-resume, Health Connect, Samsung-origin and Play Internal evidence does not exist for versionCode 51003.",
+    "No live Google Play Billing or other lawful paid surface is evidence-backed, so first revenue is not claimed."
+  ],
+  "next_action": "Provide the existing upload-signing secrets to the protected workflow, publish certificate-correct Digital Asset Links, build one signed versionCode 51003 AAB, and run exact-artifact physical phone/Health Connect/Samsung-origin QA. In parallel, use a disposable non-privileged QA identity for the v70 auth/sync/history/progress/deletion roundtrip and define the smallest lawful Play Billing offer before any revenue claim.",
+  "evidence_path": "ReleaseOps/FitnessV2/evidence/REVENUE_RELEASE_GATE_20261007.md",
+  "play_declaration_draft": "ReleaseOps/FitnessV2/PLAY_HEALTH_DATA_DECLARATION_DRAFT_20261003.md",
+  "updated_at": "2026-10-07T09:21:30Z",
+  "base_candidate_sha": "b492443757ffcec04a2a5351a7631adda311d385",
+  "release_pr_number": 49
+}
