@@ -46,7 +46,7 @@ Daily flexible run. Sole canonical/version/workflow/Play writer. Read handoffs f
 - Build run `40288559837`; promotion run `40289036989`; independent Play readback `40289183287`.
 - Canonical integrated merge: PR #102 / merge commit `70263bb6965e794ec03dcf3811c3656dc6d46b54`.
 - Current phone read-only ADB evidence on 2026-10-26 still shows Play-installed `51012`; 51014 physical propagation/runtime QA remains pending.
-- Broad Health expansion PR #93 / #98 is build-proven but HOLD until exact Play Health declarations/privacy and physical Health verification are reconciled. Never reuse versionCode 51013 for that branch.
+- Broad Health expansion PR #93 / #98 is build-proven but HOLD until exact Play Health declarations/privacy and physical Health verification are reconciled. Any future Health-expanded release must allocate a unique versionCode >51014.
 
 ## Anti-stall rules
 - Read current canonical `RECOVERY_20261023.md` and live PR/branch heads before changing code.
