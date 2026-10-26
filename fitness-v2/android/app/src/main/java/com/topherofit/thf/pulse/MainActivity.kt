@@ -500,6 +500,7 @@ class MainActivity : ComponentActivity() {
         }
         return JSONObject()
             .put("active", snapshot.active)
+            .put("phase", snapshot.phase.wireName)
             .put("mode", snapshot.mode?.wireName ?: "")
             .put("startedAtWallMs", snapshot.startedAtWallMs)
             .put("elapsedMs", snapshot.elapsedMs)
@@ -957,6 +958,10 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun beginActivitySession(mode: String?, weightKg: Double): String = runCatching {
             val parsedMode = requireNotNull(ActivityMode.fromWire(mode)) { "unsupported activity mode" }
+            val live = ActivityTrackingService.activitySnapshot()
+            if (live.active) {
+                return@runCatching activitySnapshotJson(live).put("resumed", true).toString()
+            }
             val safeWeight = weightKg.coerceIn(30.0, 250.0)
             if (!hasLocationPermission()) {
                 pendingActivityStart = parsedMode to safeWeight

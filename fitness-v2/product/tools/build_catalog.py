@@ -190,8 +190,17 @@ PATTERN_OVERRIDES = {
     "Heavy_Bag_Thrust": "horizontal_push",
     "Side_to_Side_Box_Shuffle": "locomotion",
     "Pallof_Press_With_Rotation": "core",
-    "One-Arm_Medicine_Ball_Slam": "jump",
-    "Straight-Arm_Dumbbell_Pullover": "vertical_pull",
+    "Leg_Extensions": "isolation",
+    "Incline_Dumbbell_Press": "horizontal_push",
+    "Side_Bridge": "core",
+    "Flutter_Kicks": "core",
+    "Downward_Facing_Balance": "core",
+    "Superman": "core",
+    "Mountain_Climbers": "core",
+    "Linear_Acceleration_Wall_Drill": "locomotion",
+    "Straight-Arm_Dumbbell_Pullover": "horizontal_pull",
+    "One-Arm_Medicine_Ball_Slam": "core",
+    "Overhead_Slam": "core",
     "Catch_and_Overhead_Throw": "vertical_push",
     "Medicine_Ball_Scoop_Throw": "hinge",
     "Lateral_Bound": "jump",
@@ -554,6 +563,15 @@ def pattern_for(item: dict) -> str:
 
 
 def prescription(item: dict, pattern: str) -> dict:
+    source_id = item["id"]
+    if source_id in THROW_GUIDANCE_IDS:
+        return {"sets": 3, "reps": "5–8", "durationSeconds": None, "restSeconds": 90, "tempo": "explosive / انفجاري", "setTypes": ["warmup", "working"]}
+    if source_id in {"Side_Bridge", "Downward_Facing_Balance"}:
+        return {"sets": 3, "reps": None, "durationSeconds": 30, "restSeconds": 45, "tempo": "static / ثابت", "setTypes": ["working"]}
+    if source_id in {"Flutter_Kicks", "Mountain_Climbers"}:
+        return {"sets": 3, "reps": None, "durationSeconds": 30, "restSeconds": 60, "tempo": "controlled / متحكم", "setTypes": ["working"]}
+    if source_id == "Linear_Acceleration_Wall_Drill":
+        return {"sets": 3, "reps": None, "durationSeconds": 20, "restSeconds": 60, "tempo": "fast controlled / سريع متحكم", "setTypes": ["warmup", "working"]}
     if pattern in {"mobility", "recovery"}:
         return {"sets": 2, "reps": None, "durationSeconds": 30, "restSeconds": 20, "tempo": "slow / بطيء", "setTypes": ["working"]}
     if pattern == "locomotion":
@@ -563,6 +581,23 @@ def prescription(item: dict, pattern: str) -> dict:
     if item.get("level") == "expert":
         return {"sets": 4, "reps": "4–8", "durationSeconds": None, "restSeconds": 150, "tempo": "2-0-1", "setTypes": ["warmup", "working"]}
     return {"sets": 3, "reps": "8–12", "durationSeconds": None, "restSeconds": 90, "tempo": "3-1-1", "setTypes": ["warmup", "working"]}
+
+
+LOADLESS_EXERCISE_IDS = {
+    "Side_Bridge", "Flutter_Kicks", "Downward_Facing_Balance",
+    "Superman", "Mountain_Climbers", "Linear_Acceleration_Wall_Drill",
+}
+
+
+def tracking_for(item: dict, pattern: str) -> dict[str, bool]:
+    source_id = item["id"]
+    timed_hold = source_id in {"Side_Bridge", "Downward_Facing_Balance"}
+    return {
+        "load": source_id not in LOADLESS_EXERCISE_IDS and pattern not in {"mobility", "recovery", "locomotion", "jump"},
+        "rpe": True,
+        "rir": not timed_hold and pattern not in {"mobility", "recovery", "locomotion"},
+        "volume": not timed_hold and pattern not in {"mobility", "recovery", "locomotion"},
+    }
 
 
 def clean_instructions(values: list[str]) -> list[str]:
@@ -647,7 +682,7 @@ def build(source: Path, repo: Path) -> None:
             "progression": {"en": guidance["progression_en"], "ar": guidance["progression_ar"]},
             "safety": {"en": guidance["safety_en"], "ar": guidance["safety_ar"]},
             "demo": {"type": "two_frame_image_sequence", "assets": assets, "offline": True, "alt": {"en": f"Start and finish positions for {item['name']}", "ar": f"وضعا البداية والنهاية لتمرين {name_ar}"}},
-            "tracking": {"load": pattern not in {"mobility", "recovery", "locomotion", "jump"}, "rpe": True, "rir": pattern not in {"mobility", "recovery", "locomotion"}, "volume": pattern not in {"mobility", "recovery", "locomotion"}},
+            "tracking": tracking_for(item, pattern),
             "provenance": {
                 "source": "free-exercise-db", "repository": SOURCE_REPOSITORY, "commit": commit,
                 "sourcePath": f"exercises/{source_id}.json", "license": SOURCE_LICENSE,

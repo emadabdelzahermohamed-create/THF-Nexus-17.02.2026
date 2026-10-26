@@ -14,6 +14,12 @@ class GpsFixGateTest {
         for (accuracy in listOf(0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY, 81.0))
             assertFalse(accepts(first.copy(accuracyMetres = accuracy)))
     }
+    @Test fun rejectsGpsAccuracyTooPoorForActivityMode() {
+        assertFalse(accepts(first.copy(accuracyMetres = 26.0), mode = ActivityMode.WALK))
+        assertFalse(accepts(first.copy(accuracyMetres = 26.0), mode = ActivityMode.RUN))
+        assertTrue(accepts(first.copy(accuracyMetres = 26.0), mode = ActivityMode.CYCLE))
+        assertFalse(accepts(first.copy(accuracyMetres = 41.0), mode = ActivityMode.CYCLE))
+    }
     @Test fun rejectsInvalidCoordinates() {
         assertFalse(accepts(first.copy(latitude = Double.NaN)))
         assertFalse(accepts(first.copy(latitude = 91.0)))

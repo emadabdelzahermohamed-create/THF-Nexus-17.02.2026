@@ -52,7 +52,7 @@
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
+        "الأسابيع 2–4: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 7 أو أقل.",
         "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -311,7 +311,7 @@
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
+        "الأسابيع 2–6: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 8 أو أقل.",
         "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -609,13 +609,13 @@
     "progression": {
       "en": [
         "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
+        "Week 2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
         "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
         "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
+        "الأسبوع 2: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 7 أو أقل.",
         "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -859,7 +859,7 @@
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
+        "الأسابيع 2–4: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 8 أو أقل.",
         "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -1166,16 +1166,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: keep every session easy enough to maintain relaxed breathing and consistent technique.",
+        "Weeks 2–4: increase total time or distance by no more than 10% per week; add speed or resistance only after the easy volume feels repeatable.",
+        "Week 5: repeat the planned volume at a controlled effort without chasing pace, speed or resistance.",
+        "Week 6: reduce total time or distance by 30–40%, review recovery, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: اجعل كل جلسة سهلة بما يكفي للحفاظ على تنفس هادئ وأداء ثابت.",
+        "الأسابيع 2–4: زد الزمن أو المسافة الإجمالية بما لا يتجاوز 10% أسبوعيًا، ولا تضف السرعة أو المقاومة إلا بعد ثبات الحجم السهل.",
+        "الأسبوع 5: كرر الحجم المخطط بجهد مضبوط دون مطاردة الوتيرة أو السرعة أو المقاومة.",
+        "الأسبوع 6: قلّل الزمن أو المسافة الإجمالية 30–40%، راجع الاستشفاء، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -1420,16 +1420,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–6: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 7: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 8: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: keep every session easy enough to maintain relaxed breathing and consistent technique.",
+        "Weeks 2–6: increase total time or distance by no more than 10% per week; add speed or resistance only after the easy volume feels repeatable.",
+        "Week 7: repeat the planned volume at a controlled effort without chasing pace, speed or resistance.",
+        "Week 8: reduce total time or distance by 30–40%, review recovery, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: اجعل كل جلسة سهلة بما يكفي للحفاظ على تنفس هادئ وأداء ثابت.",
+        "الأسابيع 2–6: زد الزمن أو المسافة الإجمالية بما لا يتجاوز 10% أسبوعيًا، ولا تضف السرعة أو المقاومة إلا بعد ثبات الحجم السهل.",
+        "الأسبوع 7: كرر الحجم المخطط بجهد مضبوط دون مطاردة الوتيرة أو السرعة أو المقاومة.",
+        "الأسبوع 8: قلّل الزمن أو المسافة الإجمالية 30–40%، راجع الاستشفاء، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -1744,16 +1744,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: keep every session easy enough to maintain relaxed breathing and consistent technique.",
+        "Weeks 2–4: increase total time or distance by no more than 10% per week; add speed or resistance only after the easy volume feels repeatable.",
+        "Week 5: repeat the planned volume at a controlled effort without chasing pace, speed or resistance.",
+        "Week 6: reduce total time or distance by 30–40%, review recovery, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: اجعل كل جلسة سهلة بما يكفي للحفاظ على تنفس هادئ وأداء ثابت.",
+        "الأسابيع 2–4: زد الزمن أو المسافة الإجمالية بما لا يتجاوز 10% أسبوعيًا، ولا تضف السرعة أو المقاومة إلا بعد ثبات الحجم السهل.",
+        "الأسبوع 5: كرر الحجم المخطط بجهد مضبوط دون مطاردة الوتيرة أو السرعة أو المقاومة.",
+        "الأسبوع 6: قلّل الزمن أو المسافة الإجمالية 30–40%، راجع الاستشفاء، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -2008,16 +2008,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: keep every session easy enough to maintain relaxed breathing and consistent technique.",
+        "Weeks 2–4: increase total time or distance by no more than 10% per week; add speed or resistance only after the easy volume feels repeatable.",
+        "Week 5: repeat the planned volume at a controlled effort without chasing pace, speed or resistance.",
+        "Week 6: reduce total time or distance by 30–40%, review recovery, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: اجعل كل جلسة سهلة بما يكفي للحفاظ على تنفس هادئ وأداء ثابت.",
+        "الأسابيع 2–4: زد الزمن أو المسافة الإجمالية بما لا يتجاوز 10% أسبوعيًا، ولا تضف السرعة أو المقاومة إلا بعد ثبات الحجم السهل.",
+        "الأسبوع 5: كرر الحجم المخطط بجهد مضبوط دون مطاردة الوتيرة أو السرعة أو المقاومة.",
+        "الأسبوع 6: قلّل الزمن أو المسافة الإجمالية 30–40%، راجع الاستشفاء، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -2327,16 +2327,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -2586,16 +2586,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–6: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 7: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 8: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–6: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 7: repeat the session with consistent quality instead of adding more work.",
+        "Week 8: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–6: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 7: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 8: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -2917,7 +2917,7 @@
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
+        "الأسابيع 2–4: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 7 أو أقل.",
         "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -3186,7 +3186,7 @@
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
+        "الأسابيع 2–6: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 8 أو أقل.",
         "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -3433,16 +3433,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Week 2: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 3: repeat the easiest effective range without forcing a deeper position.",
+        "Week 4: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسبوع 2: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 3: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 4: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -3687,16 +3687,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Weeks 2–4: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 5: repeat the easiest effective range without forcing a deeper position.",
+        "Week 6: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسابيع 2–4: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 5: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 6: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -4003,7 +4003,7 @@
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
+        "الأسابيع 2–4: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 7 أو أقل.",
         "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -4252,7 +4252,7 @@
       ],
       "ar": [
         "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
+        "الأسابيع 2–6: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 8 أو أقل.",
         "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
         "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
@@ -4564,16 +4564,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -4823,16 +4823,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–6: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 7: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 8: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–6: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 7: repeat the session with consistent quality instead of adding more work.",
+        "Week 8: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–6: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 7: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 8: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -5142,16 +5142,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Week 2: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 3: repeat the session with consistent quality instead of adding more work.",
+        "Week 4: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسبوع 2: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 3: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 4: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -5406,16 +5406,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -5710,16 +5710,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Week 2: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 3: repeat the easiest effective range without forcing a deeper position.",
+        "Week 4: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسبوع 2: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 3: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 4: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -6074,16 +6074,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Weeks 2–4: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 5: repeat the easiest effective range without forcing a deeper position.",
+        "Week 6: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسابيع 2–4: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 5: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 6: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -6383,16 +6383,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Week 2: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 3: repeat the easiest effective range without forcing a deeper position.",
+        "Week 4: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–2: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسبوع 2: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 3: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 4: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -6692,16 +6692,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+        "Weeks 2–4: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+        "Week 5: repeat the easiest effective range without forcing a deeper position.",
+        "Week 6: reduce total practice time by 20–30%, review comfort and control, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+        "الأسابيع 2–4: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+        "الأسبوع 5: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+        "الأسبوع 6: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -7066,16 +7066,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,
@@ -7320,16 +7320,16 @@
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
-        "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
-        "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
+        "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+        "Weeks 2–4: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+        "Week 5: repeat the session with consistent quality instead of adding more work.",
+        "Week 6: reduce work intervals by 30–40%, review movement quality, then repeat or progress."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+        "الأسابيع 2–4: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+        "الأسبوع 5: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+        "الأسبوع 6: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج."
       ]
     },
     "offline": true,

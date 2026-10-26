@@ -496,9 +496,9 @@
       "ar": "مبتدئ"
     },
     "movement": {
-      "id": "jump",
-      "en": "Jump",
-      "ar": "قفز وهبوط"
+      "id": "core",
+      "en": "Core",
+      "ar": "مقاومة حركة الجذع"
     },
     "goal": {
       "id": "power",
@@ -506,8 +506,8 @@
       "ar": "القوة الانفجارية"
     },
     "setup": {
-      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
-      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+      "en": "Stack ribs over pelvis, brace gently, and choose a range that preserves spinal control.",
+      "ar": "ضع القفص الصدري فوق الحوض، شد البطن برفق، واختر مدى يحافظ على ثبات العمود الفقري."
     },
     "steps": {
       "en": [
@@ -517,14 +517,14 @@
         "Catch the ball on the bounce and continue for the desired number of repetitions."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
+        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
+        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
       ]
     },
     "breathing": {
-      "en": "Exhale on takeoff and reset the breath after each stable landing.",
-      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+      "en": "Keep breathing; exhale during the hardest phase without losing the brace.",
+      "ar": "استمر في التنفس وازفر في أصعب مرحلة من دون فقدان ثبات الجذع."
     },
     "prescription": {
       "sets": 3,
@@ -539,14 +539,14 @@
     },
     "commonMistakes": {
       "en": [
-        "Knees collapsing inward",
-        "Loud rigid landing",
-        "Repeating before balance returns"
+        "Holding the breath",
+        "Pulling the neck",
+        "Arching the lower back"
       ],
       "ar": [
-        "انهيار الركبتين للداخل",
-        "هبوط صلب وصاخب",
-        "التكرار قبل استعادة التوازن"
+        "حبس النفس",
+        "شد الرقبة",
+        "تقويس أسفل الظهر"
       ]
     },
     "regression": {
@@ -574,7 +574,7 @@
       }
     },
     "tracking": {
-      "load": false,
+      "load": true,
       "rpe": true,
       "rir": true,
       "volume": true
@@ -3192,9 +3192,9 @@
       "ar": "مبتدئ"
     },
     "movement": {
-      "id": "jump",
-      "en": "Jump",
-      "ar": "قفز وهبوط"
+      "id": "locomotion",
+      "en": "Locomotion",
+      "ar": "انتقال هوائي"
     },
     "goal": {
       "id": "speed",
@@ -3202,8 +3202,8 @@
       "ar": "السرعة"
     },
     "setup": {
-      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
-      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+      "en": "Start at an easy pace, use stable footwear or equipment, and keep the route clear.",
+      "ar": "ابدأ بإيقاع سهل، استخدم حذاءً أو جهازًا ثابتًا، وتأكد من خلو المسار."
     },
     "steps": {
       "en": [
@@ -3213,21 +3213,21 @@
         "Repeat once more with your right leg, and as soon as the right foot strikes the ground hammer them out rapidly, alternating left and right as fast as you can."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
+        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
+        "اخفض السرعة تدريجيًا قبل التوقف."
       ]
     },
     "breathing": {
-      "en": "Exhale on takeoff and reset the breath after each stable landing.",
-      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+      "en": "Use rhythmic breathing and reduce intensity if breathing becomes uncontrolled.",
+      "ar": "تنفس بإيقاع منتظم وخفّض الشدة إذا فقدت التحكم في التنفس."
     },
     "prescription": {
       "sets": 3,
-      "reps": "5–8",
-      "durationSeconds": null,
-      "restSeconds": 90,
-      "tempo": "explosive / انفجاري",
+      "reps": null,
+      "durationSeconds": 20,
+      "restSeconds": 60,
+      "tempo": "fast controlled / سريع متحكم",
       "setTypes": [
         "warmup",
         "working"
@@ -3235,14 +3235,14 @@
     },
     "commonMistakes": {
       "en": [
-        "Knees collapsing inward",
-        "Loud rigid landing",
-        "Repeating before balance returns"
+        "Starting too fast",
+        "Overstriding",
+        "Stopping abruptly"
       ],
       "ar": [
-        "انهيار الركبتين للداخل",
-        "هبوط صلب وصاخب",
-        "التكرار قبل استعادة التوازن"
+        "البدء بسرعة كبيرة",
+        "إطالة الخطوة أكثر من اللازم",
+        "التوقف المفاجئ"
       ]
     },
     "regression": {
@@ -3272,8 +3272,8 @@
     "tracking": {
       "load": false,
       "rpe": true,
-      "rir": true,
-      "volume": true
+      "rir": false,
+      "volume": false
     },
     "provenance": {
       "source": "free-exercise-db",
@@ -6199,9 +6199,9 @@
       "ar": "مبتدئ"
     },
     "movement": {
-      "id": "isolation",
-      "en": "Isolation",
-      "ar": "عزل عضلي"
+      "id": "horizontal_push",
+      "en": "Horizontal Push",
+      "ar": "دفع أفقي"
     },
     "goal": {
       "id": "muscle_gain",
@@ -6209,8 +6209,8 @@
       "ar": "بناء العضلات"
     },
     "setup": {
-      "en": "Choose a controllable load, stabilize the nearby joints, and align the working joint.",
-      "ar": "اختر حملًا يمكن التحكم فيه، ثبّت المفاصل القريبة، واضبط محاذاة المفصل العامل."
+      "en": "Set the shoulder blades, keep wrists stacked, and establish a stable base before pressing.",
+      "ar": "ثبّت لوحي الكتف، اجعل الرسغ فوق المرفق، وثبّت قاعدة الجسم قبل الدفع."
     },
     "steps": {
       "en": [
@@ -6222,14 +6222,14 @@
         "Repeat the movement for the prescribed amount of repetitions."
       ],
       "ar": [
-        "حرّك المفصل المستهدف فقط قدر الإمكان.",
-        "توقف لحظة عند الانقباض من دون دفع أو رمي الحمل.",
-        "عد ببطء وحافظ على شد العضلة."
+        "اخفض الحمل أو الجسم بتحكم حتى مدى مريح.",
+        "أبقِ الساعد ثابتًا والكتف بعيدًا عن الأذن.",
+        "ادفع بسلاسة مع الحفاظ على الجذع ثابتًا."
       ]
     },
     "breathing": {
-      "en": "Exhale during the lift or extension; inhale on the controlled return.",
-      "ar": "ازفر أثناء الرفع أو المد وخذ شهيقًا أثناء العودة."
+      "en": "Inhale during the controlled descent; exhale as you press.",
+      "ar": "خذ شهيقًا أثناء النزول وازفر مع الدفع."
     },
     "prescription": {
       "sets": 3,
@@ -6244,14 +6244,14 @@
     },
     "commonMistakes": {
       "en": [
-        "Using momentum",
-        "Moving adjacent joints",
-        "Choosing excessive load"
+        "Elbows flaring excessively",
+        "Bouncing at the bottom",
+        "Losing wrist alignment"
       ],
       "ar": [
-        "استخدام الزخم",
-        "تحريك مفاصل غير مستهدفة",
-        "اختيار حمل زائد"
+        "فتح المرفقين أكثر من اللازم",
+        "الارتداد في الأسفل",
+        "انحراف الرسغ"
       ]
     },
     "regression": {
@@ -6635,9 +6635,9 @@
       "ar": "مبتدئ"
     },
     "movement": {
-      "id": "squat",
-      "en": "Squat",
-      "ar": "سكوات/دفع سفلي"
+      "id": "isolation",
+      "en": "Isolation",
+      "ar": "عزل عضلي"
     },
     "goal": {
       "id": "muscle_gain",
@@ -6645,8 +6645,8 @@
       "ar": "بناء العضلات"
     },
     "setup": {
-      "en": "Set the feet securely, brace the trunk, and align knees with toes before loading the descent.",
-      "ar": "ثبّت القدمين، شد الجذع، واجعل الركبتين في اتجاه أصابع القدم قبل النزول."
+      "en": "Choose a controllable load, stabilize the nearby joints, and align the working joint.",
+      "ar": "اختر حملًا يمكن التحكم فيه، ثبّت المفاصل القريبة، واضبط محاذاة المفصل العامل."
     },
     "steps": {
       "en": [
@@ -6656,14 +6656,14 @@
         "Repeat for the recommended amount of times."
       ],
       "ar": [
-        "انزل بالحوض بتحكم مع بقاء القدم كاملة على الأرض.",
-        "حافظ على ثبات الجذع وتتبع الركبة لاتجاه القدم.",
-        "ادفع الأرض واصعد من دون قفل الركبتين بعنف."
+        "حرّك المفصل المستهدف فقط قدر الإمكان.",
+        "توقف لحظة عند الانقباض من دون دفع أو رمي الحمل.",
+        "عد ببطء وحافظ على شد العضلة."
       ]
     },
     "breathing": {
-      "en": "Inhale and brace before descending; exhale through the effort.",
-      "ar": "خذ شهيقًا وثبّت الجذع قبل النزول، وازفر أثناء الصعود."
+      "en": "Exhale during the lift or extension; inhale on the controlled return.",
+      "ar": "ازفر أثناء الرفع أو المد وخذ شهيقًا أثناء العودة."
     },
     "prescription": {
       "sets": 3,
@@ -6678,14 +6678,14 @@
     },
     "commonMistakes": {
       "en": [
-        "Knees collapsing inward",
-        "Heels lifting",
-        "Losing trunk control"
+        "Using momentum",
+        "Moving adjacent joints",
+        "Choosing excessive load"
       ],
       "ar": [
-        "انهيار الركبتين للداخل",
-        "ارتفاع الكعبين",
-        "فقدان ثبات الجذع"
+        "استخدام الزخم",
+        "تحريك مفاصل غير مستهدفة",
+        "اختيار حمل زائد"
       ]
     },
     "regression": {
@@ -9476,9 +9476,9 @@
       "ar": "مبتدئ"
     },
     "movement": {
-      "id": "jump",
-      "en": "Jump",
-      "ar": "قفز وهبوط"
+      "id": "core",
+      "en": "Core",
+      "ar": "مقاومة حركة الجذع"
     },
     "goal": {
       "id": "conditioning",
@@ -9486,8 +9486,8 @@
       "ar": "التحمل البدني"
     },
     "setup": {
-      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
-      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+      "en": "Stack ribs over pelvis, brace gently, and choose a range that preserves spinal control.",
+      "ar": "ضع القفص الصدري فوق الحوض، شد البطن برفق، واختر مدى يحافظ على ثبات العمود الفقري."
     },
     "steps": {
       "en": [
@@ -9495,36 +9495,35 @@
         "Explosively reverse the positions of your legs, extending the bent leg until the leg is straight and supported by the toe, and bringing the other foot up with the hip and knee flexed. Repeat in an alternating fashion for 20-30 seconds."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
+        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
+        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
       ]
     },
     "breathing": {
-      "en": "Exhale on takeoff and reset the breath after each stable landing.",
-      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+      "en": "Keep breathing; exhale during the hardest phase without losing the brace.",
+      "ar": "استمر في التنفس وازفر في أصعب مرحلة من دون فقدان ثبات الجذع."
     },
     "prescription": {
       "sets": 3,
-      "reps": "5–8",
-      "durationSeconds": null,
-      "restSeconds": 90,
-      "tempo": "explosive / انفجاري",
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 60,
+      "tempo": "controlled / متحكم",
       "setTypes": [
-        "warmup",
         "working"
       ]
     },
     "commonMistakes": {
       "en": [
-        "Knees collapsing inward",
-        "Loud rigid landing",
-        "Repeating before balance returns"
+        "Holding the breath",
+        "Pulling the neck",
+        "Arching the lower back"
       ],
       "ar": [
-        "انهيار الركبتين للداخل",
-        "هبوط صلب وصاخب",
-        "التكرار قبل استعادة التوازن"
+        "حبس النفس",
+        "شد الرقبة",
+        "تقويس أسفل الظهر"
       ]
     },
     "regression": {
@@ -9617,9 +9616,9 @@
       "ar": "مبتدئ"
     },
     "movement": {
-      "id": "jump",
-      "en": "Jump",
-      "ar": "قفز وهبوط"
+      "id": "core",
+      "en": "Core",
+      "ar": "مقاومة حركة الجذع"
     },
     "goal": {
       "id": "power",
@@ -9627,8 +9626,8 @@
       "ar": "القوة الانفجارية"
     },
     "setup": {
-      "en": "Clear the landing area, align feet and knees, and rehearse a quiet landing first.",
-      "ar": "أخلِ منطقة الهبوط، اضبط القدمين والركبتين، وتدرّب أولًا على هبوط هادئ."
+      "en": "Stack ribs over pelvis, brace gently, and choose a range that preserves spinal control.",
+      "ar": "ضع القفص الصدري فوق الحوض، شد البطن برفق، واختر مدى يحافظ على ثبات العمود الفقري."
     },
     "steps": {
       "en": [
@@ -9638,14 +9637,14 @@
         "Receive the ball with both hands on the bounce and repeat the movement."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
+        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
+        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
       ]
     },
     "breathing": {
-      "en": "Exhale on takeoff and reset the breath after each stable landing.",
-      "ar": "ازفر عند القفز وأعد ضبط النفس بعد كل هبوط ثابت."
+      "en": "Keep breathing; exhale during the hardest phase without losing the brace.",
+      "ar": "استمر في التنفس وازفر في أصعب مرحلة من دون فقدان ثبات الجذع."
     },
     "prescription": {
       "sets": 3,
@@ -9660,14 +9659,14 @@
     },
     "commonMistakes": {
       "en": [
-        "Knees collapsing inward",
-        "Loud rigid landing",
-        "Repeating before balance returns"
+        "Holding the breath",
+        "Pulling the neck",
+        "Arching the lower back"
       ],
       "ar": [
-        "انهيار الركبتين للداخل",
-        "هبوط صلب وصاخب",
-        "التكرار قبل استعادة التوازن"
+        "حبس النفس",
+        "شد الرقبة",
+        "تقويس أسفل الظهر"
       ]
     },
     "regression": {
@@ -9695,7 +9694,7 @@
       }
     },
     "tracking": {
-      "load": false,
+      "load": true,
       "rpe": true,
       "rir": true,
       "volume": true
@@ -10945,9 +10944,9 @@
       "ar": "مبتدئ"
     },
     "movement": {
-      "id": "isolation",
-      "en": "Isolation",
-      "ar": "عزل عضلي"
+      "id": "core",
+      "en": "Core",
+      "ar": "مقاومة حركة الجذع"
     },
     "goal": {
       "id": "core",
@@ -10955,8 +10954,8 @@
       "ar": "ثبات الجذع"
     },
     "setup": {
-      "en": "Choose a controllable load, stabilize the nearby joints, and align the working joint.",
-      "ar": "اختر حملًا يمكن التحكم فيه، ثبّت المفاصل القريبة، واضبط محاذاة المفصل العامل."
+      "en": "Stack ribs over pelvis, brace gently, and choose a range that preserves spinal control.",
+      "ar": "ضع القفص الصدري فوق الحوض، شد البطن برفق، واختر مدى يحافظ على ثبات العمود الفقري."
     },
     "steps": {
       "en": [
@@ -10965,36 +10964,35 @@
         "Return slowly while maintaining muscular tension."
       ],
       "ar": [
-        "حرّك المفصل المستهدف فقط قدر الإمكان.",
-        "توقف لحظة عند الانقباض من دون دفع أو رمي الحمل.",
-        "عد ببطء وحافظ على شد العضلة."
+        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
+        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
+        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
       ]
     },
     "breathing": {
-      "en": "Exhale during the lift or extension; inhale on the controlled return.",
-      "ar": "ازفر أثناء الرفع أو المد وخذ شهيقًا أثناء العودة."
+      "en": "Keep breathing; exhale during the hardest phase without losing the brace.",
+      "ar": "استمر في التنفس وازفر في أصعب مرحلة من دون فقدان ثبات الجذع."
     },
     "prescription": {
       "sets": 3,
-      "reps": "8–12",
-      "durationSeconds": null,
-      "restSeconds": 90,
-      "tempo": "3-1-1",
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 45,
+      "tempo": "static / ثابت",
       "setTypes": [
-        "warmup",
         "working"
       ]
     },
     "commonMistakes": {
       "en": [
-        "Using momentum",
-        "Moving adjacent joints",
-        "Choosing excessive load"
+        "Holding the breath",
+        "Pulling the neck",
+        "Arching the lower back"
       ],
       "ar": [
-        "استخدام الزخم",
-        "تحريك مفاصل غير مستهدفة",
-        "اختيار حمل زائد"
+        "حبس النفس",
+        "شد الرقبة",
+        "تقويس أسفل الظهر"
       ]
     },
     "regression": {
@@ -11022,10 +11020,10 @@
       }
     },
     "tracking": {
-      "load": true,
+      "load": false,
       "rpe": true,
-      "rir": true,
-      "volume": true
+      "rir": false,
+      "volume": false
     },
     "provenance": {
       "source": "free-exercise-db",
@@ -11240,9 +11238,9 @@
       "ar": "مبتدئ"
     },
     "movement": {
-      "id": "mobility",
-      "en": "Mobility",
-      "ar": "حركة وإطالة"
+      "id": "core",
+      "en": "Core",
+      "ar": "مقاومة حركة الجذع"
     },
     "goal": {
       "id": "posture",
@@ -11250,8 +11248,8 @@
       "ar": "تحسين القوام"
     },
     "setup": {
-      "en": "Move into a supported, pain-free position and keep the breath relaxed.",
-      "ar": "اتخذ وضعًا مدعومًا وخاليًا من الألم وحافظ على تنفس هادئ."
+      "en": "Stack ribs over pelvis, brace gently, and choose a range that preserves spinal control.",
+      "ar": "ضع القفص الصدري فوق الحوض، شد البطن برفق، واختر مدى يحافظ على ثبات العمود الفقري."
     },
     "steps": {
       "en": [
@@ -11261,35 +11259,36 @@
         "Repeat for the recommended amount of repetitions prescribed in your program."
       ],
       "ar": [
-        "ادخل المدى ببطء حتى شد خفيف لا ألم.",
-        "حافظ على الوضع والتنفس من دون ارتداد.",
-        "اخرج من الوضع تدريجيًا وكرر على الجهة الأخرى عند الحاجة."
+        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
+        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
+        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
       ]
     },
     "breathing": {
-      "en": "Use slow nasal breathing and relax further on each exhale.",
-      "ar": "استخدم تنفسًا أنفيًا بطيئًا واسترخِ أكثر مع كل زفير."
+      "en": "Keep breathing; exhale during the hardest phase without losing the brace.",
+      "ar": "استمر في التنفس وازفر في أصعب مرحلة من دون فقدان ثبات الجذع."
     },
     "prescription": {
-      "sets": 2,
-      "reps": null,
-      "durationSeconds": 30,
-      "restSeconds": 20,
-      "tempo": "slow / بطيء",
+      "sets": 3,
+      "reps": "8–12",
+      "durationSeconds": null,
+      "restSeconds": 90,
+      "tempo": "3-1-1",
       "setTypes": [
+        "warmup",
         "working"
       ]
     },
     "commonMistakes": {
       "en": [
-        "Bouncing",
-        "Forcing painful range",
-        "Holding the breath"
+        "Holding the breath",
+        "Pulling the neck",
+        "Arching the lower back"
       ],
       "ar": [
-        "الارتداد",
-        "إجبار الجسم على مدى مؤلم",
-        "حبس النفس"
+        "حبس النفس",
+        "شد الرقبة",
+        "تقويس أسفل الظهر"
       ]
     },
     "regression": {
@@ -11319,8 +11318,8 @@
     "tracking": {
       "load": false,
       "rpe": true,
-      "rir": false,
-      "volume": false
+      "rir": true,
+      "volume": true
     },
     "provenance": {
       "source": "free-exercise-db",
@@ -14276,9 +14275,9 @@
       "ar": "مبتدئ"
     },
     "movement": {
-      "id": "isolation",
-      "en": "Isolation",
-      "ar": "عزل عضلي"
+      "id": "core",
+      "en": "Core",
+      "ar": "مقاومة حركة الجذع"
     },
     "goal": {
       "id": "conditioning",
@@ -14286,8 +14285,8 @@
       "ar": "التحمل البدني"
     },
     "setup": {
-      "en": "Choose a controllable load, stabilize the nearby joints, and align the working joint.",
-      "ar": "اختر حملًا يمكن التحكم فيه، ثبّت المفاصل القريبة، واضبط محاذاة المفصل العامل."
+      "en": "Stack ribs over pelvis, brace gently, and choose a range that preserves spinal control.",
+      "ar": "ضع القفص الصدري فوق الحوض، شد البطن برفق، واختر مدى يحافظ على ثبات العمود الفقري."
     },
     "steps": {
       "en": [
@@ -14298,36 +14297,35 @@
         "Continue alternating in this manner (as though you are doing a flutter kick in water) until you have done the recommended amount of repetitions for each leg. Make sure that you keep a controlled movement at all times. You will breathe normally as you perform this movement."
       ],
       "ar": [
-        "حرّك المفصل المستهدف فقط قدر الإمكان.",
-        "توقف لحظة عند الانقباض من دون دفع أو رمي الحمل.",
-        "عد ببطء وحافظ على شد العضلة."
+        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
+        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
+        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
       ]
     },
     "breathing": {
-      "en": "Exhale during the lift or extension; inhale on the controlled return.",
-      "ar": "ازفر أثناء الرفع أو المد وخذ شهيقًا أثناء العودة."
+      "en": "Keep breathing; exhale during the hardest phase without losing the brace.",
+      "ar": "استمر في التنفس وازفر في أصعب مرحلة من دون فقدان ثبات الجذع."
     },
     "prescription": {
       "sets": 3,
-      "reps": "8–12",
-      "durationSeconds": null,
-      "restSeconds": 90,
-      "tempo": "3-1-1",
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 60,
+      "tempo": "controlled / متحكم",
       "setTypes": [
-        "warmup",
         "working"
       ]
     },
     "commonMistakes": {
       "en": [
-        "Using momentum",
-        "Moving adjacent joints",
-        "Choosing excessive load"
+        "Holding the breath",
+        "Pulling the neck",
+        "Arching the lower back"
       ],
       "ar": [
-        "استخدام الزخم",
-        "تحريك مفاصل غير مستهدفة",
-        "اختيار حمل زائد"
+        "حبس النفس",
+        "شد الرقبة",
+        "تقويس أسفل الظهر"
       ]
     },
     "regression": {
@@ -14355,7 +14353,7 @@
       }
     },
     "tracking": {
-      "load": true,
+      "load": false,
       "rpe": true,
       "rir": true,
       "volume": true
@@ -14726,9 +14724,9 @@
       "ar": "متوسط"
     },
     "movement": {
-      "id": "vertical_pull",
-      "en": "Vertical Pull",
-      "ar": "سحب رأسي"
+      "id": "horizontal_pull",
+      "en": "Horizontal Pull",
+      "ar": "سحب أفقي"
     },
     "goal": {
       "id": "strength",
@@ -14736,8 +14734,8 @@
       "ar": "القوة"
     },
     "setup": {
-      "en": "Take a secure grip, brace the trunk, and depress the shoulders before pulling.",
-      "ar": "أمسك بثبات، شد الجذع، وأنزل الكتفين قبل بدء السحب."
+      "en": "Lengthen the spine, brace the trunk, and begin with the shoulder blades controlled.",
+      "ar": "أطل العمود الفقري، شد الجذع، وابدأ بلوحي كتف متحكم فيهما."
     },
     "steps": {
       "en": [
@@ -14749,14 +14747,14 @@
         "Hold the weight on the initial position for a second and repeat the motion for the prescribed number of repetitions."
       ],
       "ar": [
-        "ابدأ الحركة من لوح الكتف ثم اسحب بالمرفقين.",
-        "تجنب التأرجح وحافظ على الصدر مرفوعًا طبيعيًا.",
-        "عد إلى المد الكامل بتحكم ومن دون ترك المفصل يسقط."
+        "اسحب المرفقين للخلف دون هز الجذع.",
+        "قرّب لوحي الكتف مع إبقاء الرقبة مرتاحة.",
+        "مد الذراعين بتحكم من دون إسقاط الحمل."
       ]
     },
     "breathing": {
-      "en": "Exhale while pulling; inhale as the arms return overhead.",
-      "ar": "ازفر أثناء السحب وخذ شهيقًا عند عودة الذراعين لأعلى."
+      "en": "Exhale as you pull; inhale during the controlled reach.",
+      "ar": "ازفر أثناء السحب وخذ شهيقًا أثناء العودة المتحكم فيها."
     },
     "prescription": {
       "sets": 3,
@@ -14771,14 +14769,14 @@
     },
     "commonMistakes": {
       "en": [
-        "Swinging",
-        "Pulling behind the neck",
-        "Losing shoulder control"
+        "Jerking the torso",
+        "Shrugging",
+        "Cutting the range short"
       ],
       "ar": [
-        "التأرجح",
-        "السحب خلف الرقبة",
-        "فقدان التحكم في الكتف"
+        "هز الجذع",
+        "رفع الكتفين",
+        "اختصار مدى الحركة"
       ]
     },
     "regression": {
@@ -14910,10 +14908,10 @@
     },
     "prescription": {
       "sets": 3,
-      "reps": "8–12",
+      "reps": "5–8",
       "durationSeconds": null,
       "restSeconds": 90,
-      "tempo": "3-1-1",
+      "tempo": "explosive / انفجاري",
       "setTypes": [
         "warmup",
         "working"
@@ -15216,10 +15214,10 @@
     },
     "prescription": {
       "sets": 3,
-      "reps": "8–12",
+      "reps": "5–8",
       "durationSeconds": null,
       "restSeconds": 90,
-      "tempo": "3-1-1",
+      "tempo": "explosive / انفجاري",
       "setTypes": [
         "warmup",
         "working"
@@ -15366,10 +15364,10 @@
     },
     "prescription": {
       "sets": 3,
-      "reps": "8–12",
+      "reps": "5–8",
       "durationSeconds": null,
       "restSeconds": 90,
-      "tempo": "3-1-1",
+      "tempo": "explosive / انفجاري",
       "setTypes": [
         "warmup",
         "working"
@@ -16226,9 +16224,9 @@
       "ar": "متوسط"
     },
     "movement": {
-      "id": "isolation",
-      "en": "Isolation",
-      "ar": "عزل عضلي"
+      "id": "core",
+      "en": "Core",
+      "ar": "مقاومة حركة الجذع"
     },
     "goal": {
       "id": "balance",
@@ -16236,8 +16234,8 @@
       "ar": "التوازن"
     },
     "setup": {
-      "en": "Choose a controllable load, stabilize the nearby joints, and align the working joint.",
-      "ar": "اختر حملًا يمكن التحكم فيه، ثبّت المفاصل القريبة، واضبط محاذاة المفصل العامل."
+      "en": "Stack ribs over pelvis, brace gently, and choose a range that preserves spinal control.",
+      "ar": "ضع القفص الصدري فوق الحوض، شد البطن برفق، واختر مدى يحافظ على ثبات العمود الفقري."
     },
     "steps": {
       "en": [
@@ -16245,36 +16243,35 @@
         "While resting on your stomach on the ball, walk your hands forward along the floor and lift your legs, extending your elbows and knees."
       ],
       "ar": [
-        "حرّك المفصل المستهدف فقط قدر الإمكان.",
-        "توقف لحظة عند الانقباض من دون دفع أو رمي الحمل.",
-        "عد ببطء وحافظ على شد العضلة."
+        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
+        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
+        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
       ]
     },
     "breathing": {
-      "en": "Exhale during the lift or extension; inhale on the controlled return.",
-      "ar": "ازفر أثناء الرفع أو المد وخذ شهيقًا أثناء العودة."
+      "en": "Keep breathing; exhale during the hardest phase without losing the brace.",
+      "ar": "استمر في التنفس وازفر في أصعب مرحلة من دون فقدان ثبات الجذع."
     },
     "prescription": {
       "sets": 3,
-      "reps": "8–12",
-      "durationSeconds": null,
-      "restSeconds": 90,
-      "tempo": "3-1-1",
+      "reps": null,
+      "durationSeconds": 30,
+      "restSeconds": 45,
+      "tempo": "static / ثابت",
       "setTypes": [
-        "warmup",
         "working"
       ]
     },
     "commonMistakes": {
       "en": [
-        "Using momentum",
-        "Moving adjacent joints",
-        "Choosing excessive load"
+        "Holding the breath",
+        "Pulling the neck",
+        "Arching the lower back"
       ],
       "ar": [
-        "استخدام الزخم",
-        "تحريك مفاصل غير مستهدفة",
-        "اختيار حمل زائد"
+        "حبس النفس",
+        "شد الرقبة",
+        "تقويس أسفل الظهر"
       ]
     },
     "regression": {
@@ -16302,10 +16299,10 @@
       }
     },
     "tracking": {
-      "load": true,
+      "load": false,
       "rpe": true,
-      "rir": true,
-      "volume": true
+      "rir": false,
+      "volume": false
     },
     "provenance": {
       "source": "free-exercise-db",
