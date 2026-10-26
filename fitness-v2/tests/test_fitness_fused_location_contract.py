@@ -16,6 +16,7 @@ class FitnessFusedLocationContractTest(unittest.TestCase):
         self.assertIn('LocationRequest.Builder', service)
         self.assertIn('registerLegacyLocationProviders', service)
         self.assertIn('removeLocationUpdates(fusedLocationCallback)', service)
+        self.assertIn('if (!hasLocationPermission()) return', service[service.index('private fun registerLegacyLocationProviders'):])
 
     def test_weak_observed_fix_is_visible_but_not_accepted_into_route(self):
         service = SERVICE.read_text()
