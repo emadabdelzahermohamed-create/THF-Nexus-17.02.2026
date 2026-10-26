@@ -41,11 +41,11 @@ Daily flexible run. Own Health Connect permission minimization, partial grants/n
 Daily flexible run. Sole canonical/version/workflow/Play writer. Read handoffs from A/B, integrate only compatible green changes, allocate one versionCode greater than the current verified baseline, build once, sign/upload exact AAB to Play Internal, independently read back the track, and update canonical recovery. Production remains fail-closed until real physical and policy/privacy gates pass.
 
 ## Current verified baseline for any post-Plus resume
-- Google Play Internal baseline: `versionCode 51013`, `versionName 5.0.0-v2-alpha13`, package `com.topherofit.thf.pulse`, targetSdk `36`.
-- Exact build source: `56e67762f8753526fb62bb0063033fdc1f136103`.
-- Build run `40284690599`; promotion run `40285259055`; independent Play readback `40285416323`.
-- Canonical Play-safe merge: PR #99 / merge commit `0d8de1056a1946b746c10edb3785ab5f1e13d1f6`.
-- Current phone read-only ADB evidence on 2026-10-26 still showed Play-installed `51012`; 51013 physical propagation/runtime QA remains pending.
+- Google Play Internal baseline: `versionCode 51014`, `versionName 5.0.0-v2-alpha14`, package `com.topherofit.thf.pulse`, targetSdk `36`.
+- Exact build source/workflow SHA: `50188b65efe335955d0296b67ac34465e5477a85`.
+- Build run `40288559837`; promotion run `40289036989`; independent Play readback `40289183287`.
+- Canonical integrated merge: PR #102 / merge commit `70263bb6965e794ec03dcf3811c3656dc6d46b54`.
+- Current phone read-only ADB evidence on 2026-10-26 still shows Play-installed `51012`; 51014 physical propagation/runtime QA remains pending.
 - Broad Health expansion PR #93 / #98 is build-proven but HOLD until exact Play Health declarations/privacy and physical Health verification are reconciled. Never reuse versionCode 51013 for that branch.
 
 ## Anti-stall rules
