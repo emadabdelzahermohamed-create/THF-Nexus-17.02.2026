@@ -142,21 +142,96 @@ def localized_goal(goal: str) -> dict[str, str]:
     return {"id": goal, "en": en, "ar": ar}
 
 
-def progression_for(weeks: int, level: str) -> dict[str, list[str]]:
+PROGRESSION_FAMILY = {
+    "gym": "strength",
+    "home": "strength",
+    "swimming": "strength",
+    "calisthenics": "strength",
+    "running": "endurance",
+    "cycling": "endurance",
+    "football": "conditioning",
+    "boxing": "conditioning",
+    "hiit": "conditioning",
+    "team_sports": "conditioning",
+    "yoga": "mobility",
+    "mobility": "mobility",
+    "recovery": "mobility",
+}
+
+
+def build_phase_label(build_end: int, language: str) -> str:
+    if build_end == 2:
+        return "Week 2" if language == "en" else "الأسبوع 2"
+    return f"Weeks 2–{build_end}" if language == "en" else f"الأسابيع 2–{build_end}"
+
+
+def progression_for(section_id: str, weeks: int, level: str) -> dict[str, list[str]]:
     build_end = max(2, weeks - 2)
     target_rpe = 7 if level == "beginner" else 8
-    return {
-        "en": [
+    phase_en = build_phase_label(build_end, "en")
+    phase_ar = build_phase_label(build_end, "ar")
+    family = PROGRESSION_FAMILY[section_id]
+
+    if family == "strength":
+        return {
+            "en": [
             "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-            f"Weeks 2–{build_end}: add one repetition first; add 2–5% load only when form stays stable at RPE {target_rpe} or lower.",
+            f"{phase_en}: add one repetition first; add 2–5% load only when form stays stable at RPE {target_rpe} or lower.",
             f"Week {weeks - 1}: keep the same exercises and confirm repeatable technique without grinding repetitions.",
             f"Week {weeks}: reduce working sets by 30–40%, review progress, then repeat or move to the next level.",
-        ],
-        "ar": [
+            ],
+            "ar": [
             "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-            f"الأسابيع 2–{build_end}: أضف عدة أولًا، ثم 2–5% للحمل فقط مع ثبات الأداء عند RPE {target_rpe} أو أقل.",
+            f"{phase_ar}: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE {target_rpe} أو أقل.",
             f"الأسبوع {weeks - 1}: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
             f"الأسبوع {weeks}: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي.",
+            ],
+        }
+
+    if family == "endurance":
+        return {
+            "en": [
+                "Week 1: keep every session easy enough to maintain relaxed breathing and consistent technique.",
+                f"{phase_en}: increase total time or distance by no more than 10% per week; add speed or resistance only after the easy volume feels repeatable.",
+                f"Week {weeks - 1}: repeat the planned volume at a controlled effort without chasing pace, speed or resistance.",
+                f"Week {weeks}: reduce total time or distance by 30–40%, review recovery, then repeat or progress.",
+            ],
+            "ar": [
+                "الأسبوع الأول: اجعل كل جلسة سهلة بما يكفي للحفاظ على تنفس هادئ وأداء ثابت.",
+                f"{phase_ar}: زد الزمن أو المسافة الإجمالية بما لا يتجاوز 10% أسبوعيًا، ولا تضف السرعة أو المقاومة إلا بعد ثبات الحجم السهل.",
+                f"الأسبوع {weeks - 1}: كرر الحجم المخطط بجهد مضبوط دون مطاردة الوتيرة أو السرعة أو المقاومة.",
+                f"الأسبوع {weeks}: قلّل الزمن أو المسافة الإجمالية 30–40%، راجع الاستشفاء، ثم كرر البرنامج أو تدرج.",
+            ],
+        }
+
+    if family == "conditioning":
+        return {
+            "en": [
+                "Week 1: learn the movement pattern at low speed and finish each interval with control intact.",
+                f"{phase_en}: add one round or interval first; increase speed only when landing, direction change and breathing remain controlled.",
+                f"Week {weeks - 1}: repeat the session with consistent quality instead of adding more work.",
+                f"Week {weeks}: reduce work intervals by 30–40%, review movement quality, then repeat or progress.",
+            ],
+            "ar": [
+                "الأسبوع الأول: تعلّم نمط الحركة بسرعة منخفضة وأنهِ كل فترة مع بقاء التحكم.",
+                f"{phase_ar}: أضف جولة أو فترة واحدة أولًا، ولا تزد السرعة إلا مع ثبات الهبوط وتغيير الاتجاه والتنفس.",
+                f"الأسبوع {weeks - 1}: كرر الجلسة بجودة ثابتة بدل إضافة جهد أكبر.",
+                f"الأسبوع {weeks}: قلّل فترات العمل 30–40%، راجع جودة الحركة، ثم كرر البرنامج أو تدرج.",
+            ],
+        }
+
+    return {
+        "en": [
+            "Week 1: use a comfortable, pain-free range and keep breathing calm throughout each position.",
+            f"{phase_en}: add 5–10 seconds or one controlled repetition only when range, breathing and next-day comfort stay unchanged.",
+            f"Week {weeks - 1}: repeat the easiest effective range without forcing a deeper position.",
+            f"Week {weeks}: reduce total practice time by 20–30%, review comfort and control, then repeat or progress.",
+        ],
+        "ar": [
+            "الأسبوع الأول: استخدم مدى مريحًا خاليًا من الألم وحافظ على تنفس هادئ في كل وضعية.",
+            f"{phase_ar}: أضف 5–10 ثوانٍ أو تكرارًا مضبوطًا واحدًا فقط إذا ظل المدى والتنفس وراحة اليوم التالي ثابتة.",
+            f"الأسبوع {weeks - 1}: كرر أسهل مدى فعّال دون إجبار الجسم على وضعية أعمق.",
+            f"الأسبوع {weeks}: قلّل زمن الممارسة الإجمالي 20–30%، راجع الراحة والتحكم، ثم كرر البرنامج أو تدرج.",
         ],
     }
 
@@ -227,7 +302,7 @@ def build() -> list[dict]:
             "estimatedSessionMinutes": minutes,
             "equipment": sorted(equipment.values(), key=lambda value: value["id"]),
             "safety": {"en": f"{SAFETY['en']} {safety_en}", "ar": f"{SAFETY['ar']} {safety_ar}"},
-            "progression": progression_for(weeks, level),
+            "progression": progression_for(section_id, weeks, level),
             "offline": True,
             "sessions": sessions,
             "provenance": {
