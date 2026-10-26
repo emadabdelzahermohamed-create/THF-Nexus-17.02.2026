@@ -49,6 +49,21 @@ class WearableProvenancePolicyTest {
         assertFalse(WearableProvenancePolicy.isDuplicate(phone, health.copy(sport = SportKind.CYCLING)))
     }
 
+    @Test fun nearby_same_origin_sessions_are_not_silently_dropped() {
+        val firstPhone = evidence(SportKind.WALKING, EvidenceOrigin.PHONE_MEASURED, start = 1_000_000L, end = 1_600_000L)
+        val secondPhone = firstPhone.copy(startEpochMillis = 1_060_000L, endEpochMillis = 1_660_000L)
+        val firstWatch = evidence(SportKind.CYCLING, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch", start = 2_000_000L, end = 2_600_000L)
+        val secondWatch = firstWatch.copy(startEpochMillis = 2_060_000L, endEpochMillis = 2_660_000L)
+        assertFalse(WearableProvenancePolicy.isDuplicate(firstPhone, secondPhone))
+        assertFalse(WearableProvenancePolicy.isDuplicate(firstWatch, secondWatch))
+    }
+
+    @Test fun swimming_never_time_deduplicates_without_stable_identity() {
+        val phone = evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.PHONE_MEASURED, gps = true)
+        val watch = evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch")
+        assertFalse(WearableProvenancePolicy.isDuplicate(phone, watch))
+    }
+
     @Test fun stable_record_identity_deduplicates() {
         val a = evidence(SportKind.WALKING, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch", recordId = "record-1")
         val b = a.copy(startEpochMillis = 9_000_000L, endEpochMillis = 9_600_000L)
