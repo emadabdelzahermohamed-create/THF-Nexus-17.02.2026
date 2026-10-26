@@ -64,13 +64,21 @@ window.THF_MOTION_MANIFEST = {
     if (!image || !Array.isArray(item?.demo?.assets) || item.demo.assets.length < 2) return;
     const phaseIndex = frameIndex % item.demo.assets.length;
     const nextSrc = './' + item.demo.assets[phaseIndex];
+    const isArabic = document.documentElement.lang === 'ar';
+    const phaseName = isArabic
+      ? (phaseIndex === 0 ? 'البداية' : 'النهاية')
+      : (phaseIndex === 0 ? 'Start' : 'Finish');
+    const baseAlt = item?.demo?.alt?.[isArabic ? 'ar' : 'en'] || '';
     // Avoid redundant WebView image work on the API31 Samsung lane.
     if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
-    image.alt = item?.demo?.alt?.[document.documentElement.lang === 'ar' ? 'ar' : 'en'] || '';
+    image.alt = `${baseAlt} — ${phaseName}`;
     const phase = byId('activeDemoPhase');
     if (phase) {
       const reduced = reduceMotion();
-      phase.textContent = document.documentElement.lang === 'ar'
+      // Keep the visible fast-changing label out of live screen-reader output;
+      // the current phase remains available in the image's descriptive alt text.
+      phase.setAttribute('aria-hidden', 'true');
+      phase.textContent = isArabic
         ? `${phaseIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
         : `${phaseIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
     }
