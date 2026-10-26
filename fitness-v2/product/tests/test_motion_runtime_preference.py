@@ -47,13 +47,23 @@ class MotionRuntimePreferenceTest(unittest.TestCase):
     def test_reference_frames_are_preloaded_once_before_automatic_cycling(self):
         script = MOTION_RUNTIME.read_text()
 
-        self.assertIn("const preloadedExercises = new Set();", script)
+        self.assertIn("const preloadPromises = new Map();", script)
         self.assertIn("function preloadFrames(item)", script)
-        self.assertIn("if (preloadedExercises.has(item.id)) return;", script)
-        self.assertIn("item.demo.assets.forEach(asset =>", script)
+        self.assertIn("if (preloadPromises.has(item.id)) return preloadPromises.get(item.id);", script)
+        self.assertIn("item.demo.assets.map(asset =>", script)
         self.assertIn("const preload = new Image();", script)
         self.assertIn("preload.src = './' + asset;", script)
-        self.assertLess(script.index("preloadFrames(item);"), script.index("timer = window.setInterval"))
+        self.assertLess(script.index("await preloadFrames(item);"), script.index("timer = window.setInterval"))
+
+    def test_reference_sequence_waits_for_both_frames_and_ignores_stale_start(self):
+        script = MOTION_RUNTIME.read_text()
+
+        self.assertIn("return new Promise(resolve =>", script)
+        self.assertIn("preload.addEventListener('load', resolve, {once: true});", script)
+        self.assertIn("preload.addEventListener('error', resolve, {once: true});", script)
+        self.assertIn("const ready = Promise.all(framePromises);", script)
+        self.assertIn("pendingExerciseId = item.id;", script)
+        self.assertIn("if (activeExerciseId !== item.id || pendingExerciseId !== item.id", script)
 
     def test_reference_image_alt_identifies_the_visible_phase_bilingually(self):
         script = MOTION_RUNTIME.read_text()
