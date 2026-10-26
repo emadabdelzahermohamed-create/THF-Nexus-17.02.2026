@@ -1,4 +1,4 @@
-name: Fitness 51015 Internal Promote
+name: Fitness 51016 Internal Promote
 
 on:
   push:
@@ -20,8 +20,8 @@ concurrency:
 env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
   EXPECTED_FITNESS_UPLOAD_SHA1: D8:BB:CA:BC:17:78:03:43:2E:5D:95:7B:19:61:D2:03:6A:3A:03:06
-  SOURCE_RUN_ID: '40378739276'
-  EXPECTED_VERSION: '51015'
+  SOURCE_RUN_ID: '40388541018'
+  EXPECTED_VERSION: '51016'
   PACKAGE_NAME: com.topherofit.thf.pulse
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Download exact green 51015 candidate
+      - name: Download exact green 51016 candidate
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -38,13 +38,13 @@ jobs:
           set -euo pipefail
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" --jq '.conclusion' | grep -x success
           mkdir -p candidate evidence
-          gh run download "$SOURCE_RUN_ID" -R "$GITHUB_REPOSITORY" -n fitness-activity-candidate-51015 -D candidate
+          gh run download "$SOURCE_RUN_ID" -R "$GITHUB_REPOSITORY" -n fitness-activity-candidate-51016 -D candidate
           AAB="$(find candidate -type f -path '*/bundle/release/app-release.aab' | head -n1)"
-          BUILD_INFO="$(find candidate -type f -name candidate-51015-build.txt | head -n1)"
+          BUILD_INFO="$(find candidate -type f -name candidate-51016-build.txt | head -n1)"
           test -s "$AAB"; test -s "$BUILD_INFO"
-          grep -F 'VERSION_CODE=51015' "$BUILD_INFO"
-          grep -F 'GIT_SHA=a49114530b250595dcdc2efd73e0fcc8756ea126' "$BUILD_INFO"
-          echo "8a081af622517ff68a24fc4cca6756a006460012a23177304adafad86f028c55  $AAB" | sha256sum -c -
+          grep -F 'VERSION_CODE=51016' "$BUILD_INFO"
+          grep -F 'GIT_SHA=e0e8e785fdcb0c672205e7f041ccd99bbd71ac22' "$BUILD_INFO"
+          echo "a80fd62d68e0e565793521f6e1c00e7687e8729a546793e6dec81d5bd27ab98c  $AAB" | sha256sum -c -
           sha256sum "$AAB" | tee evidence/aab-before-sign.sha256
           echo "AAB_PATH=$AAB" >> "$GITHUB_ENV"
       - name: Authenticate for upload key and Android Publisher
@@ -95,7 +95,7 @@ jobs:
               raise SystemExit(f'identity mismatch package={package} version={version} target={target}')
           print(f'IDENTITY_OK package={package} versionCode={version} targetSdk={target}')
           PY
-      - name: Publish exact 51015 to Google Play Internal
+      - name: Publish exact 51016 to Google Play Internal
         shell: bash
         run: |
           set -euo pipefail
@@ -108,7 +108,7 @@ jobs:
           package=os.environ['PACKAGE_NAME']; expected=os.environ['EXPECTED_VERSION']; track='internal'; aab=os.environ['AAB_PATH']
           creds,_=google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
           api=build('androidpublisher','v3',credentials=creds,cache_discovery=False)
-          result={'package':package,'expectedVersionCode':expected,'track':track,'sourceRunId':os.environ['SOURCE_RUN_ID'],'sourceSha':'a49114530b250595dcdc2efd73e0fcc8756ea126','committed':False}
+          result={'package':package,'expectedVersionCode':expected,'track':track,'sourceRunId':os.environ['SOURCE_RUN_ID'],'sourceSha':'e0e8e785fdcb0c672205e7f041ccd99bbd71ac22','committed':False}
           edit=None
           try:
               edit=api.edits().insert(packageName=package,body={}).execute()['id']
@@ -127,7 +127,7 @@ jobs:
                   bundle=api.edits().bundles().upload(packageName=package,editId=edit,media_body=MediaFileUpload(aab,mimetype='application/octet-stream',resumable=True)).execute()
                   uploaded=str(bundle['versionCode'])
                   if uploaded != expected: raise RuntimeError(f'uploaded {uploaded} != {expected}')
-                  api.edits().tracks().update(packageName=package,editId=edit,track=track,body={'releases':[{'versionCodes':[uploaded],'status':'completed','name':'THF Fitness 51015 Internal'}]}).execute()
+                  api.edits().tracks().update(packageName=package,editId=edit,track=track,body={'releases':[{'versionCodes':[uploaded],'status':'completed','name':'THF Fitness 51016 Internal'}]}).execute()
                   api.edits().commit(packageName=package,editId=edit).execute(); edit=None
                   result.update({'versionCode':uploaded,'committed':True})
           finally:
@@ -138,12 +138,14 @@ jobs:
           with open('evidence/PLAY_INTERNAL_UPLOAD.json','w') as fh: json.dump(result,fh,indent=2)
           if not result.get('committed'): raise SystemExit(3)
           PY
+      - name: Apply reviewed bilingual Play listing
+        run: python ReleaseOps/FitnessStandalone/sync_fitness_play_listing.py --output evidence/PLAY_LISTING_SYNC.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fitness-51015-internal-promote-evidence
+          name: fitness-51016-internal-promote-evidence
           retention-days: 14
           if-no-files-found: error
           path: |
             evidence/
-            candidate/**/candidate-51015-build.txt
+            candidate/**/candidate-51016-build.txt

@@ -43,6 +43,8 @@ data class ActivitySnapshot(
     val lastAccuracyMetres: Float?,
     val route: List<ActivityRoutePoint>,
     val phase: ActivitySessionPhase = ActivitySessionPhase.ARMED,
+    val gpsFixState: String = "acquiring",
+    val observedAccuracyMetres: Float? = null,
 )
 
 object ActivityMetrics {
