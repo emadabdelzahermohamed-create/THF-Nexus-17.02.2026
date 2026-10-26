@@ -49,6 +49,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         @Volatile private var instance: ActivityTrackingService? = null
         @Volatile private var lastActivitySnapshot = ActivitySnapshot(
             active = false,
+            phase = ActivitySessionPhase.ARMED,
             mode = null,
             startedAtWallMs = 0L,
             elapsedMs = 0L,
@@ -108,6 +109,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private var activityWeightKg = 70.0
     private var activityStartedAtWallMs = 0L
     private var activityStartedAtElapsedMs = 0L
+    private var activityPhase = ActivitySessionPhase.ARMED
+    private var activityActivatedAtWallMs: Long? = null
+    private var activityActivatedAtElapsedMs: Long? = null
     private var activityDistanceMetres = 0.0
     private var activityStepBaseline: Float? = null
     private var activityStepDelta = 0
@@ -191,12 +195,19 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private fun hasLiveSession(): Boolean = activityMode != null || workoutEngine?.currentState()?.active == true
 
     private fun startActivityInternal(mode: ActivityMode, weightKg: Double) {
+        if (!ActivitySessionStartPolicy.shouldStart(activityMode, mode)) {
+            publishActivitySnapshot()
+            return
+        }
         stopCurrentSession(keepService = true)
         activityMode = mode
         activityWeightKg = weightKg.coerceIn(30.0, 250.0)
         activityStartedAtWallMs = System.currentTimeMillis()
         sessionStartedAtWallMs = activityStartedAtWallMs
         activityStartedAtElapsedMs = SystemClock.elapsedRealtime()
+        activityPhase = ActivitySessionPhase.ARMED
+        activityActivatedAtWallMs = null
+        activityActivatedAtElapsedMs = null
         activityDistanceMetres = 0.0
         activityStepBaseline = null
         activityStepDelta = 0
@@ -282,6 +293,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             accuracyMetres = location.accuracy,
             elapsedMs = nowElapsed - activityStartedAtElapsedMs,
         )
+        maybeActivateActivity(nowElapsed)
         publishActivitySnapshot()
         saveActivityCheckpoint()
     }
@@ -307,30 +319,39 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         } else {
             activityStepDelta = max(0, (raw - baseline).toInt())
         }
+        maybeActivateActivity(SystemClock.elapsedRealtime())
         publishActivitySnapshot()
         saveActivityCheckpoint()
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 
+    private fun maybeActivateActivity(nowElapsed: Long) {
+        val mode = activityMode ?: return
+        if (activityPhase == ActivitySessionPhase.ACTIVE) return
+        if (!ActivityActivationGate.shouldActivate(mode, activityDistanceMetres, activityStepDelta, route.size)) return
+        activityPhase = ActivitySessionPhase.ACTIVE
+        activityActivatedAtWallMs = System.currentTimeMillis()
+        activityActivatedAtElapsedMs = nowElapsed
+        saveActivityCheckpoint(force = true)
+    }
+
     private fun buildActivitySnapshot(active: Boolean): ActivitySnapshot {
-        val mode = activityMode
-        if (mode == null) return lastActivitySnapshot
-        val elapsed = max(0L, SystemClock.elapsedRealtime() - activityStartedAtElapsedMs)
-        return ActivitySnapshot(
-            active = active,
+        val mode = activityMode ?: return lastActivitySnapshot
+        return ActivitySnapshotPolicy.build(
+            sessionActive = active,
+            phase = activityPhase,
             mode = mode,
-            startedAtWallMs = activityStartedAtWallMs,
-            elapsedMs = elapsed,
-            distanceMetres = activityDistanceMetres,
-            stepDelta = if (mode.usesSteps) activityStepDelta else 0,
+            armedStartedAtWallMs = activityStartedAtWallMs,
+            activatedAtWallMs = activityActivatedAtWallMs,
+            activatedAtElapsedMs = activityActivatedAtElapsedMs,
+            nowElapsedMs = SystemClock.elapsedRealtime(),
+            measuredDistanceMetres = activityDistanceMetres,
+            measuredStepDelta = activityStepDelta,
             currentSpeedKph = currentSpeedKph,
-            averageSpeedKph = ActivityMetrics.averageSpeedKph(activityDistanceMetres, elapsed),
-            paceMinutesPerKm = if (mode == ActivityMode.CYCLE) null else ActivityMetrics.paceMinutesPerKm(activityDistanceMetres, elapsed),
-            estimatedCaloriesKcal = ActivityMetrics.estimatedCalories(mode, activityWeightKg, elapsed),
-            gpsPointCount = route.size,
+            weightKg = activityWeightKg,
+            acceptedRoute = route.toList(),
             lastAccuracyMetres = lastAccuracyMetres,
-            route = route.toList(),
         )
     }
 
@@ -397,6 +418,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             stepDelta = activityStepDelta,
             lastAccuracyMetres = lastAccuracyMetres,
             route = route.toList(),
+            phase = activityPhase,
+            activatedAtWallMs = activityActivatedAtWallMs,
+            activatedAtElapsedMs = activityActivatedAtElapsedMs,
         )
         getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE)
             .edit()
@@ -428,6 +452,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityStartedAtWallMs = checkpoint.startedAtWallMs
         sessionStartedAtWallMs = checkpoint.startedAtWallMs
         activityStartedAtElapsedMs = ActivitySessionCheckpointCodec.adjustedStartedAtElapsedMs(checkpoint, nowElapsed)
+        activityPhase = checkpoint.phase
+        activityActivatedAtWallMs = checkpoint.activatedAtWallMs
+        activityActivatedAtElapsedMs = ActivitySessionCheckpointCodec.adjustedActivatedAtElapsedMs(checkpoint, nowElapsed)
         activityDistanceMetres = checkpoint.distanceMetres
         activityStepBaseline = checkpoint.stepBaseline
         activityStepDelta = checkpoint.stepDelta

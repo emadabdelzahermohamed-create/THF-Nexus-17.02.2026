@@ -42,6 +42,7 @@ data class ActivitySnapshot(
     val gpsPointCount: Int,
     val lastAccuracyMetres: Float?,
     val route: List<ActivityRoutePoint>,
+    val phase: ActivitySessionPhase = ActivitySessionPhase.ARMED,
 )
 
 object ActivityMetrics {
