@@ -1,8 +1,12 @@
+import copy
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import re
+import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -11,6 +15,14 @@ CATALOG_PATH = PULSE / "data" / "exercises.json"
 MANIFEST_PATH = ROOT / "fitness-v2" / "product" / "CATALOG_MANIFEST.json"
 PROGRAMS_PATH = PULSE / "data" / "programs.json"
 PROGRAMS_MANIFEST_PATH = ROOT / "fitness-v2" / "product" / "PROGRAMS_MANIFEST.json"
+CATALOG_BUILDER_PATH = ROOT / "fitness-v2" / "product" / "tools" / "build_catalog.py"
+
+CATALOG_BUILDER_SPEC = importlib.util.spec_from_file_location(
+    "thf_build_catalog",
+    CATALOG_BUILDER_PATH,
+)
+CATALOG_BUILDER = importlib.util.module_from_spec(CATALOG_BUILDER_SPEC)
+CATALOG_BUILDER_SPEC.loader.exec_module(CATALOG_BUILDER)
 
 
 def sha256(path: Path) -> str:
@@ -28,6 +40,13 @@ class ProductCatalogTest(unittest.TestCase):
         cls.manifest = json.loads(MANIFEST_PATH.read_text())
         cls.programs = json.loads(PROGRAMS_PATH.read_text())
         cls.programs_manifest = json.loads(PROGRAMS_MANIFEST_PATH.read_text())
+
+    def guidance_diversity_validator(self):
+        self.assertTrue(
+            hasattr(CATALOG_BUILDER, "validate_guidance_diversity"),
+            "catalog builder must expose validate_guidance_diversity",
+        )
+        return CATALOG_BUILDER.validate_guidance_diversity
 
     def test_catalog_is_large_and_every_required_section_is_real(self):
         self.assertEqual(112, len(self.catalog))
@@ -91,18 +110,88 @@ class ProductCatalogTest(unittest.TestCase):
             if item["sourceItemId"] in exception_ids:
                 continue
             family = item["movement"]["id"]
-            guidance = tuple(
-                item[field][language]
-                for field in ("safety", "regression", "progression")
+            guidance = {
+                language: tuple(
+                    item[field][language]
+                    for field in ("safety", "regression", "progression")
+                )
                 for language in ("ar", "en")
-            )
+            }
             if family in guidance_by_family:
                 self.assertEqual(guidance_by_family[family], guidance)
             else:
                 guidance_by_family[family] = guidance
 
         self.assertEqual(expected_families, set(guidance_by_family))
-        self.assertEqual(12, len(set(guidance_by_family.values())))
+        for language in ("ar", "en"):
+            self.assertEqual(
+                12,
+                len({guidance[language] for guidance in guidance_by_family.values()}),
+                f"{language} guidance must remain distinct across movement families",
+            )
+
+    def test_guidance_diversity_validator_accepts_current_arabic_and_english(self):
+        self.guidance_diversity_validator()(CATALOG_BUILDER.GUIDANCE)
+
+    def test_guidance_diversity_validator_rejects_arabic_only_collapse(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        for field in ("regression", "progression", "safety"):
+            guidance["hinge"][f"{field}_ar"] = guidance["squat"][f"{field}_ar"]
+
+        with self.assertRaisesRegex(ValueError, "Arabic guidance must contain 12 distinct families"):
+            self.guidance_diversity_validator()(guidance)
+
+    def test_guidance_diversity_validator_rejects_english_only_collapse(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        for field in ("regression", "progression", "safety"):
+            guidance["hinge"][f"{field}_en"] = guidance["squat"][f"{field}_en"]
+
+        with self.assertRaisesRegex(ValueError, "English guidance must contain 12 distinct families"):
+            self.guidance_diversity_validator()(guidance)
+
+    def test_guidance_diversity_validator_rejects_missing_language_copy(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        del guidance["squat"]["safety_ar"]
+
+        with self.assertRaisesRegex(ValueError, "missing safety_ar for squat"):
+            self.guidance_diversity_validator()(guidance)
+
+    def test_guidance_diversity_validator_rejects_missing_family(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        del guidance["squat"]
+
+        with self.assertRaisesRegex(ValueError, "exactly the 12 movement families"):
+            self.guidance_diversity_validator()(guidance)
+
+    def test_guidance_diversity_validator_rejects_blank_copy(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        guidance["squat"]["safety_ar"] = "   "
+
+        with self.assertRaisesRegex(ValueError, "safety_ar for squat must be non-blank text"):
+            self.guidance_diversity_validator()(guidance)
+
+    def test_guidance_diversity_validator_rejects_non_string_copy(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        guidance["squat"]["safety_en"] = None
+
+        with self.assertRaisesRegex(ValueError, "safety_en for squat must be non-blank text"):
+            self.guidance_diversity_validator()(guidance)
+
+    def test_catalog_build_validates_guidance_before_creating_output(self):
+        guidance = copy.deepcopy(CATALOG_BUILDER.GUIDANCE)
+        guidance["squat"]["safety_en"] = ""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            repo = root / "repo"
+            with mock.patch.object(CATALOG_BUILDER, "GUIDANCE", guidance):
+                try:
+                    CATALOG_BUILDER.build(root / "source", repo)
+                except ValueError as error:
+                    self.assertRegex(str(error), "safety_en for squat must be non-blank text")
+                except SystemExit:
+                    self.fail("build consulted the source before rejecting invalid guidance")
+            self.assertFalse(repo.exists())
 
     def test_named_family_outliers_receive_non_contradictory_guidance(self):
         items = {item["sourceItemId"]: item for item in self.catalog}
