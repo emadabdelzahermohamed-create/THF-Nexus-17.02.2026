@@ -29,8 +29,9 @@ window.THF_MOTION_MANIFEST = {
   let timer = null;
   let observer = null;
   let activeExerciseId = null;
+  let pendingExerciseId = null;
   let frameIndex = 0;
-  const preloadedExercises = new Set();
+  const preloadPromises = new Map();
 
   const byId = id => document.getElementById(id);
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -55,6 +56,7 @@ window.THF_MOTION_MANIFEST = {
   function stop({resetExercise = false} = {}) {
     if (timer) window.clearInterval(timer);
     timer = null;
+    pendingExerciseId = null;
     frameIndex = 0;
     if (resetExercise) activeExerciseId = null;
   }
@@ -85,21 +87,39 @@ window.THF_MOTION_MANIFEST = {
   }
 
   function preloadFrames(item) {
-    if (preloadedExercises.has(item.id)) return;
-    preloadedExercises.add(item.id);
-    item.demo.assets.forEach(asset => {
-      const preload = new Image();
-      preload.decoding = 'async';
-      preload.src = './' + asset;
+    if (preloadPromises.has(item.id)) return preloadPromises.get(item.id);
+    const framePromises = item.demo.assets.map(asset => {
+      return new Promise(resolve => {
+        const preload = new Image();
+        preload.decoding = 'async';
+        preload.addEventListener('load', resolve, {once: true});
+        // A missing audited asset must not hold the workout UI indefinitely.
+        // The normal renderer will retain the first valid frame.
+        preload.addEventListener('error', resolve, {once: true});
+        preload.src = './' + asset;
+      });
     });
+    const ready = Promise.all(framePromises);
+    preloadPromises.set(item.id, ready);
+    return ready;
   }
 
-  function start(item) {
+  async function start(item) {
     stop();
     activeExerciseId = item.id;
+    pendingExerciseId = item.id;
     renderFrame(item);
-    if (reduceMotion() || document.hidden) return;
-    preloadFrames(item);
+    if (reduceMotion() || document.hidden) {
+      pendingExerciseId = null;
+      return;
+    }
+    await preloadFrames(item);
+    if (activeExerciseId !== item.id || pendingExerciseId !== item.id
+        || reduceMotion() || document.hidden) {
+      if (pendingExerciseId === item.id) pendingExerciseId = null;
+      return;
+    }
+    pendingExerciseId = null;
     timer = window.setInterval(() => {
       const latest = currentExercise();
       if (!latest || document.hidden || reduceMotion()) return;
@@ -130,15 +150,15 @@ window.THF_MOTION_MANIFEST = {
         activeExerciseId = item.id;
         frameIndex = 0;
       }
-      if (timer) stop();
+      if (timer || pendingExerciseId) stop();
       renderFrame(item);
       return;
     }
     if (document.hidden) {
-      if (timer) stop();
+      if (timer || pendingExerciseId) stop();
       return;
     }
-    if (item.id !== activeExerciseId || !timer) start(item);
+    if (item.id !== activeExerciseId || (!timer && pendingExerciseId !== item.id)) start(item);
   }
 
   window.addEventListener('load', () => {
