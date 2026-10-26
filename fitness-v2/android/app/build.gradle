@@ -10,8 +10,8 @@ android {
         applicationId 'com.topherofit.thf.pulse'
         minSdk 26
         targetSdk 36
-        versionCode 51014
-        versionName '5.0.0-v2-alpha14'
+        versionCode 51015
+        versionName '5.0.0-v2-alpha15'
         // AppDeploy serves the SPA from the public app origin, while native clients
         // must call the credential-free API gateway directly. Keep the account URL
         // separate so the browser sign-in still starts on the branded web origin.
