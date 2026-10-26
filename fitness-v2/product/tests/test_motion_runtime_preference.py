@@ -1,0 +1,39 @@
+from pathlib import Path
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[3]
+MOTION_RUNTIME = (
+    ROOT
+    / "fitness-v2"
+    / "android"
+    / "app"
+    / "src"
+    / "main"
+    / "assets"
+    / "pulse"
+    / "data"
+    / "motion-manifest.js"
+)
+
+
+class MotionRuntimePreferenceTest(unittest.TestCase):
+    def test_explicit_app_preference_overrides_system_reduced_motion(self):
+        script = MOTION_RUNTIME.read_text()
+
+        self.assertIn(
+            "if (control) return Boolean(control.checked);",
+            script,
+        )
+        self.assertIn(
+            "return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);",
+            script,
+        )
+        self.assertNotIn(
+            "return Boolean(control?.checked) || Boolean(window.matchMedia",
+            script,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
