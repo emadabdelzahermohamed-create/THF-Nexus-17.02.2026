@@ -283,7 +283,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     private fun registerLegacyLocationProviders(mode: ActivityMode) {
         if (activityMode != mode) return
-        if (!hasLocationPermission()) return
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) return
         runCatching {
             if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1_000L, 1f, this, Looper.getMainLooper())

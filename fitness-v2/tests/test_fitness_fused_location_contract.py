@@ -16,7 +16,9 @@ class FitnessFusedLocationContractTest(unittest.TestCase):
         self.assertIn('LocationRequest.Builder', service)
         self.assertIn('registerLegacyLocationProviders', service)
         self.assertIn('removeLocationUpdates(fusedLocationCallback)', service)
-        self.assertIn('if (!hasLocationPermission()) return', service[service.index('private fun registerLegacyLocationProviders'):])
+        legacy = service[service.index('private fun registerLegacyLocationProviders'):service.index('private fun registerStepSource')]
+        self.assertIn('checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)', legacy)
+        self.assertIn('checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)', legacy)
 
     def test_weak_observed_fix_is_visible_but_not_accepted_into_route(self):
         service = SERVICE.read_text()
