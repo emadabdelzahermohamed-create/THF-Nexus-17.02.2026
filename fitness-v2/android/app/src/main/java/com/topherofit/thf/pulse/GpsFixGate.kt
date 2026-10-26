@@ -11,7 +11,11 @@ data class GpsFix(
 
 object GpsFixGate {
     fun accepts(fix: GpsFix, previous: GpsFix?, mode: ActivityMode, sessionStartedMs: Long, nowMs: Long): Boolean {
-        if (fix.mock || !fix.accuracyMetres.isFinite() || fix.accuracyMetres <= 0.0 || fix.accuracyMetres > 80.0) return false
+        val maxAccuracyMetres = when (mode) {
+            ActivityMode.WALK, ActivityMode.RUN -> 25.0
+            ActivityMode.CYCLE -> 40.0
+        }
+        if (fix.mock || !fix.accuracyMetres.isFinite() || fix.accuracyMetres <= 0.0 || fix.accuracyMetres > maxAccuracyMetres) return false
         if (!fix.latitude.isFinite() || fix.latitude !in -90.0..90.0 ||
             !fix.longitude.isFinite() || fix.longitude !in -180.0..180.0) return false
         if (fix.elapsedMs < sessionStartedMs || fix.elapsedMs > nowMs || nowMs - fix.elapsedMs > 30_000L) return false
