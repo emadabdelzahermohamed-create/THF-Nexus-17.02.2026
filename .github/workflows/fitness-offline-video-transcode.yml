@@ -1,0 +1,63 @@
+name: Fitness Offline Video Transcode
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Source branch/ref for traceability
+        required: true
+        default: agent/codex/fitness-product-51017-20261026
+
+permissions:
+  contents: read
+
+jobs:
+  transcode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+      - name: Verify ffmpeg
+        run: |
+          set -euo pipefail
+          ffmpeg -version | head -1
+          ffprobe -version | head -1
+      - name: Download and transcode audited CC-BY-SA sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source out evidence
+          transcode() {
+            id="$1"; video_id="$2"; exercise_id="$3"; url="$4"
+            src="source/${id}.mov"; dst="out/${id}.mp4"
+            curl -fL --retry 4 --retry-delay 2 -o "$src" "$url"
+            sha256sum "$src" >> evidence/source.sha256
+            ffmpeg -hide_banner -y -i "$src" -map 0:v:0 -an \
+              -vf "scale=-2:720:force_original_aspect_ratio=decrease,fps=30" \
+              -c:v libx264 -preset medium -crf 27 -pix_fmt yuv420p -movflags +faststart "$dst"
+            test -s "$dst"
+            bytes=$(stat -c %s "$dst")
+            test "$bytes" -lt $((12*1024*1024))
+            sha256sum "$dst" >> evidence/derived.sha256
+            duration=$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$dst")
+            printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "$video_id" "$exercise_id" "$bytes" "$duration" "$url" >> evidence/videos.tsv
+          }
+          transcode romanian-deadlift 2 507 'https://wger.de/media/exercise-video/507/307e7276-a14d-4ea0-b579-f5b0dbc6f5af.MOV'
+          transcode standing-calf-raises 15 622 'https://wger.de/media/exercise-video/622/461171e5-2b16-407d-bf27-27aeef43f105.MOV'
+          transcode leg-press 44 371 'https://wger.de/media/exercise-video/371/6aae16b4-01b9-4eb4-935c-3250f84d2c59.MOV'
+          transcode hammer-curls 51 272 'https://wger.de/media/exercise-video/272/df069052-2173-4f24-855f-a0eebe729f24.MOV'
+          transcode tricep-dumbbell-kickback 76 655 'https://wger.de/media/exercise-video/655/2d88a05b-bde3-4026-bfbf-524c11068dc5.MOV'
+          du -h out/*
+          cat evidence/source.sha256
+          cat evidence/derived.sha256
+          cat evidence/videos.tsv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fitness-offline-video-batch-v1
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            out/*.mp4
+            evidence/*
