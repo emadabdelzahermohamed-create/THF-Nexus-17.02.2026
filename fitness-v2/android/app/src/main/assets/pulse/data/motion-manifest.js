@@ -29,7 +29,9 @@ window.THF_MOTION_MANIFEST = {
   let timer = null;
   let observer = null;
   let activeExerciseId = null;
+  let pendingExerciseId = null;
   let frameIndex = 0;
+  const preloadPromises = new Map();
 
   const byId = id => document.getElementById(id);
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -54,6 +56,7 @@ window.THF_MOTION_MANIFEST = {
   function stop({resetExercise = false} = {}) {
     if (timer) window.clearInterval(timer);
     timer = null;
+    pendingExerciseId = null;
     frameIndex = 0;
     if (resetExercise) activeExerciseId = null;
   }
@@ -61,21 +64,62 @@ window.THF_MOTION_MANIFEST = {
   function renderFrame(item) {
     const image = byId('activeDemoImage');
     if (!image || !Array.isArray(item?.demo?.assets) || item.demo.assets.length < 2) return;
-    const nextSrc = './' + item.demo.assets[frameIndex % item.demo.assets.length];
+    const phaseIndex = frameIndex % item.demo.assets.length;
+    const nextSrc = './' + item.demo.assets[phaseIndex];
+    const isArabic = document.documentElement.lang === 'ar';
+    const phaseName = isArabic
+      ? (phaseIndex === 0 ? 'البداية' : 'النهاية')
+      : (phaseIndex === 0 ? 'Start' : 'Finish');
+    const baseAlt = item?.demo?.alt?.[isArabic ? 'ar' : 'en'] || '';
     // Avoid redundant WebView image work on the API31 Samsung lane.
     if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
-    image.alt = item?.demo?.alt?.[document.documentElement.lang === 'ar' ? 'ar' : 'en'] || '';
+    image.alt = `${baseAlt} — ${phaseName}`;
     const phase = byId('activeDemoPhase');
-    if (phase) phase.textContent = document.documentElement.lang === 'ar'
-      ? 'تسلسل مرجعي تلقائي — الحركة الكاملة قيد المراجعة'
-      : 'Automatic reference sequence — full motion under review';
+    if (phase) {
+      const reduced = reduceMotion();
+      // Keep the visible fast-changing label out of live screen-reader output;
+      // the current phase remains available in the image's descriptive alt text.
+      phase.setAttribute('aria-hidden', 'true');
+      phase.textContent = isArabic
+        ? `${phaseIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
+        : `${phaseIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
+    }
   }
 
-  function start(item) {
+  function preloadFrames(item) {
+    if (preloadPromises.has(item.id)) return preloadPromises.get(item.id);
+    const framePromises = item.demo.assets.map(asset => {
+      return new Promise(resolve => {
+        const preload = new Image();
+        preload.decoding = 'async';
+        preload.addEventListener('load', resolve, {once: true});
+        // A missing audited asset must not hold the workout UI indefinitely.
+        // The normal renderer will retain the first valid frame.
+        preload.addEventListener('error', resolve, {once: true});
+        preload.src = './' + asset;
+      });
+    });
+    const ready = Promise.all(framePromises);
+    preloadPromises.set(item.id, ready);
+    return ready;
+  }
+
+  async function start(item) {
     stop();
     activeExerciseId = item.id;
+    pendingExerciseId = item.id;
     renderFrame(item);
-    if (reduceMotion() || document.hidden) return;
+    if (reduceMotion() || document.hidden) {
+      pendingExerciseId = null;
+      return;
+    }
+    await preloadFrames(item);
+    if (activeExerciseId !== item.id || pendingExerciseId !== item.id
+        || reduceMotion() || document.hidden) {
+      if (pendingExerciseId === item.id) pendingExerciseId = null;
+      return;
+    }
+    pendingExerciseId = null;
     timer = window.setInterval(() => {
       const latest = currentExercise();
       if (!latest || document.hidden || reduceMotion()) return;
@@ -106,15 +150,15 @@ window.THF_MOTION_MANIFEST = {
         activeExerciseId = item.id;
         frameIndex = 0;
       }
-      if (timer) stop();
+      if (timer || pendingExerciseId) stop();
       renderFrame(item);
       return;
     }
     if (document.hidden) {
-      if (timer) stop();
+      if (timer || pendingExerciseId) stop();
       return;
     }
-    if (item.id !== activeExerciseId || !timer) start(item);
+    if (item.id !== activeExerciseId || (!timer && pendingExerciseId !== item.id)) start(item);
   }
 
   window.addEventListener('load', () => {
