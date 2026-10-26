@@ -484,6 +484,18 @@
   function completeOnboarding(event){event.preventDefault();captureOnboardingDraft();const profile=readOnboardingDraft();if(!profile.equipment.length)profile.equipment=['body only'];store.setItem('pulse.v2.profile',JSON.stringify(profile));store.removeItem('pulse.v2.program');closeOnboarding();renderProfile();renderToday();showScreen('todayScreen');toast(t('planReady'));}
   function toggleLanguage(){state.lang=state.lang==='ar'?'en':'ar';store.setItem('pulse.v2.lang',state.lang);applyLanguage();}
 
+  function preferredReducedMotion(){
+    const saved=store.getItem('pulse.v2.reduceMotion');
+    if(saved!==null)return saved==='1';
+    return Boolean(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  function applyMotionPreference(reduced,persist=true){
+    const enabled=Boolean(reduced);
+    $('reduceMotion').checked=enabled;
+    document.documentElement.style.setProperty('--motion',enabled?'0':'1');
+    if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
+  }
+
   function bind(){
     $('languageToggle').addEventListener('click',toggleLanguage);
     $('onboardingLanguageToggle').addEventListener('click',()=>{captureOnboardingDraft();toggleLanguage();});
@@ -504,7 +516,7 @@
     $('activityStopBtn').addEventListener('click',stopAndSaveActivity);$('activityBackBtn').addEventListener('click',()=>{stopActivityPolling();showScreen('todayScreen');});$('activityHealthBtn').addEventListener('click',()=>{stopActivityPolling();showScreen('healthScreen');});
     window.addEventListener('thf:activity-started',()=>{renderActivity(readActivitySnapshot());startActivityPolling();});window.addEventListener('thf:location-permission',event=>{if(event.detail?.granted){setTimeout(()=>renderActivity(readActivitySnapshot()),400);}else toast(t('activityPermissionNeeded'));});
     $('clearHistoryBtn').addEventListener('click',()=>{const now=Date.now();if(now>state.clearArmedUntil){state.clearArmedUntil=now+3000;toast(t('clearConfirm'));return;}store.removeItem('pulse.v2.history');renderToday();renderProgress();});
-    $('profileForm').addEventListener('submit',saveProfile);$('profileDays').addEventListener('input',event=>$('profileDaysOutput').textContent=event.target.value);$('refreshStatus').addEventListener('click',renderNativeStatus);$('reduceMotion').addEventListener('change',event=>document.documentElement.style.setProperty('--motion',event.target.checked?'0':'1'));
+    $('profileForm').addEventListener('submit',saveProfile);$('profileDays').addEventListener('input',event=>$('profileDaysOutput').textContent=event.target.value);$('refreshStatus').addEventListener('click',renderNativeStatus);$('reduceMotion').addEventListener('change',event=>applyMotionPreference(event.target.checked));
     $('privacyPolicyBtn').addEventListener('click',()=>{if(N)N.openPrivacyPolicy();else toast(t('accountResourceAndroidOnly'))});
     $('accountDeletionBtn').addEventListener('click',()=>{if(N)N.openAccountDeletion();else toast(t('accountResourceAndroidOnly'))});
     $('foundingHeroPurchaseBtn').addEventListener('click',()=>{if(N&&typeof N.purchaseFoundingHero==='function'){N.purchaseFoundingHero();renderFoundingHero({...currentBilling(),loading:true});}else toast(t('foundingHeroAndroidOnly'));});
@@ -519,7 +531,7 @@
   }
 
   const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
-  bind(); applyLanguage(); renderHealthStatus(); renderFoundingHero();
+  bind(); applyMotionPreference(preferredReducedMotion(),false); applyLanguage(); renderHealthStatus(); renderFoundingHero();
   if (shouldOnboard) openOnboarding();
   if (state.active && activeExercise()) { const item=activeExercise();state.active.sensorProfile=state.active.sensorProfile||sensorProfileForExercise(item);state.active.motionSessionId=state.active.motionSessionId||`${state.active.clientRecordId}:${Number(state.active.programExerciseIndex)||0}:${item.id}`;beginNativeMotionSession(state.active.motionSessionId,state.active.sensorProfile); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false); }
   else { const liveActivity=readActivitySnapshot(); if(liveActivity?.active){state.activitySnapshot=liveActivity;showScreen('activityScreen',false);startActivityPolling();} }
