@@ -12,6 +12,7 @@ class ActivitySessionCheckpointTest {
         weightKg = 72.5,
         startedAtWallMs = 1_700_000_000_000L,
         startedAtElapsedMs = 50_000L,
+        savedAtElapsedMs = 65_000L,
         distanceMetres = 1_234.5,
         stepBaseline = 4_000f,
         stepDelta = 321,
@@ -29,6 +30,7 @@ class ActivitySessionCheckpointTest {
 
         assertEquals(original, decoded)
         assertTrue(ActivitySessionCheckpointCodec.canRestore(decoded, nowElapsedMs = 70_000L))
+        assertEquals(55_000L, ActivitySessionCheckpointCodec.adjustedStartedAtElapsedMs(decoded, 70_000L))
     }
 
     @Test
@@ -39,10 +41,17 @@ class ActivitySessionCheckpointTest {
     }
 
     @Test
+    fun delayedRestartFailsClosedInsteadOfInflatingElapsedTimeAndCalories() {
+        val original = checkpoint()
+
+        assertFalse(ActivitySessionCheckpointCodec.canRestore(original, nowElapsedMs = 185_001L))
+    }
+
+    @Test
     fun impossibleOrCorruptStateIsRejected() {
         assertNull(ActivitySessionCheckpointCodec.decode(""))
-        assertNull(ActivitySessionCheckpointCodec.decode("1|run|NaN|1|1|0||0|\n"))
-        assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|-2||0|\n"))
-        assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|0||0|\n95,31,,5,0"))
+        assertNull(ActivitySessionCheckpointCodec.decode("1|run|NaN|1|1|1|0||0|\n"))
+        assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|1|-2||0|\n"))
+        assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|1|0||0|\n95,31,,5,0"))
     }
 }

@@ -391,6 +391,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             weightKg = activityWeightKg,
             startedAtWallMs = activityStartedAtWallMs,
             startedAtElapsedMs = activityStartedAtElapsedMs,
+            savedAtElapsedMs = nowElapsed,
             distanceMetres = activityDistanceMetres,
             stepBaseline = activityStepBaseline,
             stepDelta = activityStepDelta,
@@ -426,7 +427,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityWeightKg = checkpoint.weightKg
         activityStartedAtWallMs = checkpoint.startedAtWallMs
         sessionStartedAtWallMs = checkpoint.startedAtWallMs
-        activityStartedAtElapsedMs = checkpoint.startedAtElapsedMs
+        activityStartedAtElapsedMs = ActivitySessionCheckpointCodec.adjustedStartedAtElapsedMs(checkpoint, nowElapsed)
         activityDistanceMetres = checkpoint.distanceMetres
         activityStepBaseline = checkpoint.stepBaseline
         activityStepDelta = checkpoint.stepDelta
@@ -440,7 +441,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                 longitude = point.longitude
                 point.altitudeMetres?.let { altitude = it }
                 accuracy = point.accuracyMetres
-                elapsedRealtimeNanos = (checkpoint.startedAtElapsedMs + point.elapsedMs) * 1_000_000L
+                elapsedRealtimeNanos = (activityStartedAtElapsedMs + point.elapsedMs) * 1_000_000L
             }
         }
         lastActivityCheckpointWriteElapsedMs = nowElapsed
