@@ -9,6 +9,16 @@
     try { localStorage.setItem('__thf_probe', '1'); localStorage.removeItem('__thf_probe'); return localStorage; }
     catch { const memory = new Map(); return {getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,String(value)),removeItem:key=>memory.delete(key)}; }
   })();
+  const voiceGuidance = window.THFVoiceGuidance.createVoiceGuidance({
+    storage: store,
+    speakNative: N && typeof N.speak === 'function' ? (text, language) => N.speak(text, language) : null,
+    speakWeb: 'speechSynthesis' in window ? (text, language) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = language;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    } : null,
+  });
   const parse = (value, fallback) => { try { return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[match]));
   const locale = () => state.lang === 'ar' ? 'ar-EG' : 'en-US';
@@ -303,16 +313,26 @@
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
     state.active = {clientRecordId,exerciseId:item.id,startedAt:Date.now(),sets:makeSets(item),sensorProfile,motionSessionId}; state.demoFrame=0;
     store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail();
-    beginNativeMotionSession(motionSessionId,sensorProfile); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false);
+    beginNativeMotionSession(motionSessionId,sensorProfile); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false); speakExercise(item);
   }
   function startProgramSession(programId,sessionId) {
     const program=PROGRAMS.find(value=>value.id===programId);const sessionIndex=program?.sessions.findIndex(value=>value.id===sessionId)??-1;const session=program?.sessions[sessionIndex];const reference=session?.exercises[0];const item=reference?exerciseFor(reference):null;if(!program||!session||!item)return;
     const now=Date.now();store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex,selectedAt:new Date(now).toISOString()}));
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
     state.active={clientRecordId,exerciseId:item.id,startedAt:now,sets:makeProgramSets(reference,item),programId:program.id,programSessionId:session.id,programSessionIndex:sessionIndex,programExerciseIndex:0,programStartedAt:now,programEntries:[],sensorProfile,motionSessionId};state.demoFrame=0;
-    persistActive();closeProgramDetail();closeDetail();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);
+    persistActive();closeProgramDetail();closeDetail();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);speakExercise(item);
   }
   function activeExercise() { return EXERCISES.find(item => item.id === state.active?.exerciseId); }
+  function speakExercise(item, options) {
+    if (!item) return false;
+    return voiceGuidance.speak({
+      name: local(item.name),
+      setup: local(item.setup),
+      steps: item.steps?.[state.lang] || [],
+      breathing: local(item.breathing),
+      safety: local(item.safety),
+    }, state.lang, options);
+  }
   function completedVolume(sets) { return (sets||[]).filter(set=>set.complete).reduce((sum,set)=>sum + Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0); }
   function sessionVolume() { return completedVolume(state.active?.sets) + (state.active?.programEntries||[]).reduce((sum,entry)=>sum+completedVolume(entry.sets),0); }
   function persistActive() { store.setItem('pulse.v2.active', JSON.stringify(state.active)); }
@@ -369,7 +389,7 @@
   function finishWorkout() {
     const item=activeExercise();if(!item)return;const now=Date.now();const currentEntry={exerciseId:item.id,exerciseName:item.name,sport:item.sport,sets:state.active.sets.map((set,index)=>({...set,exerciseId:item.id,ordinal:index+1}))};const entries=[...(state.active.programEntries||[]),currentEntry];
     const program=PROGRAMS.find(value=>value.id===state.active.programId);const programSession=program?.sessions.find(value=>value.id===state.active.programSessionId);const programIndex=Number(state.active.programExerciseIndex)||0;
-    if(program&&programSession&&programIndex<programSession.exercises.length-1){const completedMotion=endNativeMotionSession();stopMotionPolling();currentEntry.motionEvidence=completedMotion;const nextIndex=programIndex+1;const reference=programSession.exercises[nextIndex];const next=exerciseFor(reference);if(next){const sensorProfile=sensorProfileForExercise(next),motionSessionId=`${state.active.clientRecordId}:${nextIndex}:${next.id}`;state.active={...state.active,exerciseId:next.id,startedAt:now,sets:makeProgramSets(reference,next),programExerciseIndex:nextIndex,programEntries:[...(state.active.programEntries||[]),currentEntry],sensorProfile,motionSessionId};state.demoFrame=0;stopRest();persistActive();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();toast(t('nextExercise').replace('{name}',local(next.name)));window.scrollTo({top:0,behavior:'smooth'});return;}}
+    if(program&&programSession&&programIndex<programSession.exercises.length-1){const completedMotion=endNativeMotionSession();stopMotionPolling();currentEntry.motionEvidence=completedMotion;const nextIndex=programIndex+1;const reference=programSession.exercises[nextIndex];const next=exerciseFor(reference);if(next){const sensorProfile=sensorProfileForExercise(next),motionSessionId=`${state.active.clientRecordId}:${nextIndex}:${next.id}`;state.active={...state.active,exerciseId:next.id,startedAt:now,sets:makeProgramSets(reference,next),programExerciseIndex:nextIndex,programEntries:[...(state.active.programEntries||[]),currentEntry],sensorProfile,motionSessionId};state.demoFrame=0;stopRest();persistActive();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();speakExercise(next);toast(t('nextExercise').replace('{name}',local(next.name)));window.scrollTo({top:0,behavior:'smooth'});return;}}
     const allSets=entries.flatMap(entry=>entry.sets);const completedSets=allSets.filter(set=>set.complete);const volume=Math.round(completedSets.reduce((sum,set)=>sum+Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0));const title=program&&programSession?programSession.name:item.name;const startedAt=state.active.programStartedAt||state.active.startedAt;
     const motionEvidence=endNativeMotionSession();stopMotionPolling();currentEntry.motionEvidence=motionEvidence;
     const measurementSource=motionEvidence?.available&&motionEvidence.sessionId===state.active.motionSessionId?'SENSOR':'MANUAL_OR_UNVERIFIED';
@@ -511,12 +531,12 @@
     $('closeProgramDetail').addEventListener('click',closeProgramDetail);$('programDetailCloseButton').addEventListener('click',closeProgramDetail);$('useProgramBtn').addEventListener('click',()=>useProgram($('useProgramBtn').dataset.program));
     $('startTodayBtn').addEventListener('click',()=>{const button=$('startTodayBtn');if(button.dataset.program&&button.dataset.session){startProgramSession(button.dataset.program,button.dataset.session);return;}const item=EXERCISES.find(exercise=>exercise.id===button.dataset.exercise);if(item)startExercise(item);});
     $('addSetBtn').addEventListener('click',addSet);$('finishWorkoutBtn').addEventListener('click',finishWorkout);$('skipRest').addEventListener('click',stopRest);$('exitWorkoutBtn').addEventListener('click',()=>{persistActive();showScreen('trainScreen');});
-    $('speakCue').addEventListener('click',()=>{const item=activeExercise();const text=[local(item.name),...item.steps[state.lang]].join('. ');try{if(N)N.speak(text,state.lang==='ar'?'ar-EG':'en-US');else if('speechSynthesis'in window){const utterance=new SpeechSynthesisUtterance(text);utterance.lang=state.lang==='ar'?'ar-EG':'en-US';speechSynthesis.speak(utterance);}}catch{}});
+    $('speakCue').addEventListener('click',()=>speakExercise(activeExercise(),{force:true}));
     document.querySelectorAll('[data-activity-mode]').forEach(button=>button.addEventListener('click',()=>startActivity(button.dataset.activityMode)));
     $('activityStopBtn').addEventListener('click',stopAndSaveActivity);$('activityBackBtn').addEventListener('click',()=>{stopActivityPolling();showScreen('todayScreen');});$('activityHealthBtn').addEventListener('click',()=>{stopActivityPolling();showScreen('healthScreen');});
     window.addEventListener('thf:activity-started',()=>{renderActivity(readActivitySnapshot());startActivityPolling();});window.addEventListener('thf:location-permission',event=>{if(event.detail?.granted){setTimeout(()=>renderActivity(readActivitySnapshot()),400);}else toast(t('activityPermissionNeeded'));});
     $('clearHistoryBtn').addEventListener('click',()=>{const now=Date.now();if(now>state.clearArmedUntil){state.clearArmedUntil=now+3000;toast(t('clearConfirm'));return;}store.removeItem('pulse.v2.history');renderToday();renderProgress();});
-    $('profileForm').addEventListener('submit',saveProfile);$('profileDays').addEventListener('input',event=>$('profileDaysOutput').textContent=event.target.value);$('refreshStatus').addEventListener('click',renderNativeStatus);$('reduceMotion').addEventListener('change',event=>applyMotionPreference(event.target.checked));
+    $('profileForm').addEventListener('submit',saveProfile);$('profileDays').addEventListener('input',event=>$('profileDaysOutput').textContent=event.target.value);$('refreshStatus').addEventListener('click',renderNativeStatus);$('voiceEnabled').addEventListener('change',event=>voiceGuidance.setEnabled(event.target.checked));$('reduceMotion').addEventListener('change',event=>applyMotionPreference(event.target.checked));
     $('privacyPolicyBtn').addEventListener('click',()=>{if(N)N.openPrivacyPolicy();else toast(t('accountResourceAndroidOnly'))});
     $('accountDeletionBtn').addEventListener('click',()=>{if(N)N.openAccountDeletion();else toast(t('accountResourceAndroidOnly'))});
     $('foundingHeroPurchaseBtn').addEventListener('click',()=>{if(N&&typeof N.purchaseFoundingHero==='function'){N.purchaseFoundingHero();renderFoundingHero({...currentBilling(),loading:true});}else toast(t('foundingHeroAndroidOnly'));});
@@ -531,7 +551,7 @@
   }
 
   const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
-  bind(); applyMotionPreference(preferredReducedMotion(),false); applyLanguage(); renderHealthStatus(); renderFoundingHero();
+  bind(); $('voiceEnabled').checked=voiceGuidance.isEnabled(); applyMotionPreference(preferredReducedMotion(),false); applyLanguage(); renderHealthStatus(); renderFoundingHero();
   if (shouldOnboard) openOnboarding();
   if (state.active && activeExercise()) { const item=activeExercise();state.active.sensorProfile=state.active.sensorProfile||sensorProfileForExercise(item);state.active.motionSessionId=state.active.motionSessionId||`${state.active.clientRecordId}:${Number(state.active.programExerciseIndex)||0}:${item.id}`;beginNativeMotionSession(state.active.motionSessionId,state.active.sensorProfile); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false); }
   else { const liveActivity=readActivitySnapshot(); if(liveActivity?.active){state.activitySnapshot=liveActivity;showScreen('activityScreen',false);startActivityPolling();} }
