@@ -48,6 +48,7 @@ object ActivityMetrics {
     private const val EARTH_RADIUS_M = 6_371_000.0
 
     fun distanceMetres(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        if (!validCoordinate(lat1, lon1) || !validCoordinate(lat2, lon2)) return 0.0
         val p1 = Math.toRadians(lat1)
         val p2 = Math.toRadians(lat2)
         val dLat = Math.toRadians(lat2 - lat1)
@@ -57,12 +58,12 @@ object ActivityMetrics {
     }
 
     fun averageSpeedKph(distanceMetres: Double, durationMs: Long): Double {
-        if (durationMs <= 0L || distanceMetres <= 0.0) return 0.0
+        if (!distanceMetres.isFinite() || durationMs <= 0L || distanceMetres <= 0.0) return 0.0
         return (distanceMetres / 1000.0) / (durationMs / 3_600_000.0)
     }
 
     fun paceMinutesPerKm(distanceMetres: Double, durationMs: Long): Double? {
-        if (distanceMetres < 10.0 || durationMs <= 0L) return null
+        if (!distanceMetres.isFinite() || distanceMetres < 10.0 || durationMs <= 0L) return null
         return (durationMs / 60_000.0) / (distanceMetres / 1000.0)
     }
 
@@ -74,4 +75,7 @@ object ActivityMetrics {
         val minutes = durationMs / 60_000.0
         return mode.met * 3.5 * safeWeight / 200.0 * minutes
     }
+
+    private fun validCoordinate(latitude: Double, longitude: Double): Boolean =
+        latitude.isFinite() && longitude.isFinite() && latitude in -90.0..90.0 && longitude in -180.0..180.0
 }
