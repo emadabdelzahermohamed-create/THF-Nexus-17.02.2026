@@ -30,6 +30,8 @@ window.THF_MOTION_MANIFEST = {
   let observer = null;
   let activeExerciseId = null;
   let pendingExerciseId = null;
+  let unavailableExerciseId = null;
+  let activeFrameAssets = null;
   let frameIndex = 0;
   const preloadPromises = new Map();
 
@@ -57,6 +59,8 @@ window.THF_MOTION_MANIFEST = {
     if (timer) window.clearInterval(timer);
     timer = null;
     pendingExerciseId = null;
+    unavailableExerciseId = null;
+    activeFrameAssets = null;
     frameIndex = 0;
     if (resetExercise) activeExerciseId = null;
   }
@@ -64,8 +68,9 @@ window.THF_MOTION_MANIFEST = {
   function renderFrame(item) {
     const image = byId('activeDemoImage');
     if (!image || !Array.isArray(item?.demo?.assets) || item.demo.assets.length < 2) return;
-    const phaseIndex = frameIndex % item.demo.assets.length;
-    const nextSrc = './' + item.demo.assets[phaseIndex];
+    const frameAssets = activeFrameAssets || item.demo.assets;
+    const phaseIndex = frameIndex % frameAssets.length;
+    const nextSrc = './' + frameAssets[phaseIndex];
     const isArabic = document.documentElement.lang === 'ar';
     const phaseName = isArabic
       ? (phaseIndex === 0 ? 'البداية' : 'النهاية')
@@ -92,10 +97,10 @@ window.THF_MOTION_MANIFEST = {
       return new Promise(resolve => {
         const preload = new Image();
         preload.decoding = 'async';
-        preload.addEventListener('load', resolve, {once: true});
+        preload.addEventListener('load', () => resolve({asset, ok: true}), {once: true});
         // A missing audited asset must not hold the workout UI indefinitely.
         // The normal renderer will retain the first valid frame.
-        preload.addEventListener('error', resolve, {once: true});
+        preload.addEventListener('error', () => resolve({asset, ok: false}), {once: true});
         preload.src = './' + asset;
       });
     });
@@ -113,17 +118,41 @@ window.THF_MOTION_MANIFEST = {
       pendingExerciseId = null;
       return;
     }
-    await preloadFrames(item);
+    const readyFrames = await preloadFrames(item);
     if (activeExerciseId !== item.id || pendingExerciseId !== item.id
         || reduceMotion() || document.hidden) {
       if (pendingExerciseId === item.id) pendingExerciseId = null;
       return;
     }
+    const loadedAssets = readyFrames.filter(frame => frame.ok)
+      .map(frame => frame.asset);
+    if (loadedAssets.length < 2) {
+      pendingExerciseId = null;
+      unavailableExerciseId = item.id;
+      const image = byId('activeDemoImage');
+      const phase = byId('activeDemoPhase');
+      const isArabic = document.documentElement.lang === 'ar';
+      const detail = loadedAssets.length
+        ? (isArabic ? 'صورة ثابتة — إطار الحركة غير متاح' : 'Static image — motion frame unavailable')
+        : (isArabic ? 'الصور المرجعية غير متاحة' : 'Reference images unavailable');
+      if (image) {
+        if (loadedAssets.length) image.setAttribute('src', './' + loadedAssets[0]);
+        else image.removeAttribute('src');
+        const baseAlt = item?.demo?.alt?.[isArabic ? 'ar' : 'en'] || '';
+        image.alt = `${baseAlt} — ${detail}`;
+      }
+      if (phase) {
+        phase.setAttribute('aria-hidden', 'true');
+        phase.textContent = detail;
+      }
+      return;
+    }
+    activeFrameAssets = loadedAssets;
     pendingExerciseId = null;
     timer = window.setInterval(() => {
       const latest = currentExercise();
       if (!latest || document.hidden || reduceMotion()) return;
-      frameIndex = (frameIndex + 1) % latest.demo.assets.length;
+      frameIndex = (frameIndex + 1) % activeFrameAssets.length;
       renderFrame(latest);
     }, FRAME_MS);
   }
@@ -158,7 +187,8 @@ window.THF_MOTION_MANIFEST = {
       if (timer || pendingExerciseId) stop();
       return;
     }
-    if (item.id !== activeExerciseId || (!timer && pendingExerciseId !== item.id)) start(item);
+    if (item.id !== activeExerciseId
+        || (!timer && pendingExerciseId !== item.id && unavailableExerciseId !== item.id)) start(item);
   }
 
   window.addEventListener('load', () => {
