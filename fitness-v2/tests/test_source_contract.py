@@ -160,6 +160,20 @@ class FitnessV2SourceContractTest(unittest.TestCase):
                 "android.permission.health.WRITE_EXERCISE",
                 "android.permission.health.READ_DISTANCE",
                 "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+                "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+                "android.permission.health.READ_SLEEP",
+                "android.permission.health.READ_HEART_RATE",
+                "android.permission.health.READ_RESTING_HEART_RATE",
+                "android.permission.health.READ_WEIGHT",
+                "android.permission.health.READ_HEIGHT",
+                "android.permission.health.READ_BODY_FAT",
+                "android.permission.health.READ_BASAL_METABOLIC_RATE",
+                "android.permission.health.READ_OXYGEN_SATURATION",
+                "android.permission.health.READ_VO2_MAX",
+                "android.permission.health.READ_SPEED",
+                "android.permission.health.READ_NUTRITION",
+                "android.permission.health.READ_BLOOD_PRESSURE",
+                "android.permission.health.READ_BLOOD_GLUCOSE",
             },
             health,
         )
@@ -228,7 +242,9 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             "EXERCISE_TYPE_SOCCER", "EXERCISE_TYPE_SWIMMING_OPEN_WATER",
         ):
             self.assertIn(marker, source)
-        self.assertNotIn("HeartRateRecord", source)
+        # Optional services must not expand the default activity/reward read path.
+        repository = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "HealthConnectRepository.kt").read_text()
+        self.assertNotIn("HeartRateRecord", repository)
 
     def test_backend_contract_is_authenticated_and_idempotent(self):
         contract = json.loads((ROOT / "fitness-v2" / "backend" / "openapi.json").read_text())

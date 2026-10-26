@@ -19,7 +19,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.edit
 import androidx.core.net.toUri
-import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.lifecycleScope
 import java.time.Instant
@@ -900,19 +899,10 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun openHealthSettings() {
             runOnUiThread {
-                runCatching { startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)) }
-                    .onFailure {
-                        runCatching {
-                            startActivity(Intent(Intent.ACTION_VIEW, "market://details?id=com.google.android.apps.healthdata".toUri()))
-                        }.onFailure {
-                            startActivity(
-                                Intent(
-                                    Intent.ACTION_VIEW,
-                                    "https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata".toUri(),
-                                ),
-                            )
-                        }
-                    }
+                web.evaluateJavascript("document.documentElement.lang") { value ->
+                    startActivity(Intent(this@MainActivity, HealthServicesActivity::class.java)
+                        .putExtra("language", if (value == "\"ar\"") "ar" else "en"))
+                }
             }
         }
 
