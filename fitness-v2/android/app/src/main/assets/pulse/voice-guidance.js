@@ -19,28 +19,38 @@
       return value;
     }
 
-    function coachingText(exercise = {}) {
-      return [
-        exercise.name,
-        exercise.setup,
-        ...(Array.isArray(exercise.steps) ? exercise.steps : []),
-        exercise.breathing,
-        exercise.safety,
-      ].filter(value => typeof value === 'string' && value.trim()).join('. ');
+    function coachingSegments(exercise = {}, language = 'en') {
+    const arabic = language === 'ar';
+    const segments = [];
+    const intro = [exercise.name, exercise.setup]
+      .filter(value => typeof value === 'string' && value.trim())
+      .join('. ');
+    if (intro) segments.push(intro);
+    if (Array.isArray(exercise.steps)) {
+      exercise.steps.filter(value => typeof value === 'string' && value.trim())
+        .forEach((step, index) => segments.push(`${arabic ? 'الخطوة' : 'Step'} ${index + 1}. ${step}`));
     }
-
-    function speak(exercise, language, {force = false} = {}) {
-      if (!force && !isEnabled()) return false;
-      const text = coachingText(exercise);
-      if (!text) return false;
-      const locale = language === 'ar' ? 'ar-EG' : 'en-US';
-      if (typeof speakNative === 'function') speakNative(text, locale);
-      else if (typeof speakWeb === 'function') speakWeb(text, locale);
-      else return false;
-      return true;
+    if (typeof exercise.breathing === 'string' && exercise.breathing.trim()) {
+      segments.push(`${arabic ? 'التنفس' : 'Breathing'}. ${exercise.breathing}`);
     }
+    if (typeof exercise.safety === 'string' && exercise.safety.trim()) {
+      segments.push(`${arabic ? 'السلامة' : 'Safety'}. ${exercise.safety}`);
+    }
+    return segments;
+  }
 
-    return {isEnabled, setEnabled, speak};
+  function speak(exercise, language, {force = false} = {}) {
+    if (!force && !isEnabled()) return false;
+    const segments = coachingSegments(exercise, language);
+    if (!segments.length) return false;
+    const locale = language === 'ar' ? 'ar-EG' : 'en-US';
+    const speakSegment = typeof speakNative === 'function' ? speakNative : speakWeb;
+    if (typeof speakSegment !== 'function') return false;
+    segments.forEach((segment, index) => speakSegment(segment, locale, index > 0));
+    return true;
+  }
+
+  return {isEnabled, setEnabled, speak};
   }
 
   return {createVoiceGuidance};
