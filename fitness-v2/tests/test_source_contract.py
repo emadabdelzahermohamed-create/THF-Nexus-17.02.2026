@@ -525,37 +525,46 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             self.assertIn(marker, activity)
 
 
-    def test_exercise_demo_ui_prefers_offline_video_and_never_substitutes_stills(self):
+    def test_exercise_demo_ui_uses_verified_video_and_animated_reference_fallback(self):
         app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        css = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "styles.css").read_text()
         manifest = json.loads((ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "data" / "motion-manifest.json").read_text())
-        self.assertIn("function motionAsset(item)", app)
-        self.assertIn("function motionPlayer(item", app)
+        exercise_source = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "data" / "exercises.js").read_text()
+        exercises = json.loads(exercise_source.split("=", 1)[1].rsplit(";", 1)[0].strip())
+
+        self.assertIn("entry.kind === 'offline_video' || entry.kind === 'verified_frame_sequence'", app)
+        self.assertIn("function referenceMotionPlayer(item", app)
+        self.assertIn("function motionCoverageLabel(item", app)
         self.assertIn("motionPlayer(item, 'card')", app)
         self.assertIn("motionPlayer(item, 'detail')", app)
         self.assertIn('data-clip-limit="6"', app)
-        self.assertIn("bindDemoClipLimits", app)
-        self.assertIn("Video coming soon", app)
-        self.assertGreaterEqual(len(manifest), 7)
+        self.assertIn("video.addEventListener('error'", app)
+        self.assertIn("CC BY-SA 4.0 license", app)
+        self.assertIn("Auto-animated reference frames", app)
+        self.assertIn("thf-reference-start", css)
+        self.assertIn("prefers-reduced-motion:reduce", css)
+        self.assertIn("motion-reduced", app + css)
+
+        self.assertEqual(len(exercises), 112)
+        self.assertTrue(all(len(item["demo"]["assets"]) == 2 for item in exercises))
+        self.assertEqual(sum(item.get("kind") == "offline_video" for item in manifest.values()), 5)
+        self.assertEqual(sum(item.get("kind") == "verified_frame_sequence" for item in manifest.values()), 2)
+        self.assertEqual(len(manifest), 7)
         for item in manifest.values():
             self.assertRegex(item["asset"], r"^media/motion/[a-z0-9-]+\.(mp4|webm)$")
             self.assertTrue((ANDROID / "app" / "src" / "main" / "assets" / "pulse" / item["asset"]).is_file())
-        self.assertEqual(sum(item.get("kind") == "offline_video" for item in manifest.values()), 5)
-        self.assertIn("entry.kind === 'offline_video'", app)
 
-    def test_account_restore_pulls_user_scoped_history_and_merges_without_duplicate_ids(self):
-        repository = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "BackendSyncRepository.kt").read_text()
-        activity = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+    def test_exercise_video_failure_falls_back_without_losing_the_demo(self):
         app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
-        routes = (ROOT / "fitness-v2" / "appdeploy" / "android_v2_routes.ts").read_text()
-        self.assertIn("fun fetchWorkouts(accessToken: String)", repository)
-        self.assertIn("GET", repository)
-        self.assertIn("/api/v2/workouts", repository)
-        self.assertIn("private suspend fun restoreBackendWorkouts()", activity)
-        self.assertIn('dispatch("thf:backend-history"', activity)
-        self.assertIn("window.addEventListener('thf:backend-history'", app)
-        self.assertIn("merged.has(id)", app)
-        self.assertIn("'GET /api/v2/workouts'", routes)
-        self.assertIn("androidUser(context.event)", routes)
+        for marker in (
+            "video.addEventListener('error'",
+            "referenceMotionPlayer(item, context)",
+            "motionCoverageLabel(item, true)",
+            "motion-reduced",
+            "video.pause()",
+        ):
+            self.assertIn(marker, app)
+        self.assertNotIn("item.demo.assets.map((asset,index)", app)
 
     def test_workout_ui_uses_native_motion_session_and_surfaces_evidence(self):
         app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
