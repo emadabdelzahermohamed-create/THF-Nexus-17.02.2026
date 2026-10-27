@@ -18,6 +18,8 @@ MANIFEST_PATH = ROOT / "fitness-v2" / "product" / "PROGRAMS_MANIFEST.json"
 
 SOURCE_COMMIT = "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5"
 
+LEVEL_RANK = {"beginner": 0, "intermediate": 1, "expert": 2}
+
 # Two real programs per first-class Train section. Names and prescriptions are
 # original THF editorial composition; referenced exercise data/media retain the
 # pinned public-domain source provenance recorded in the exercise catalog.
@@ -248,15 +250,26 @@ def build() -> list[dict]:
     programs = []
     for program_index, (program_id, section_id, name_en, name_ar, level, goal, weeks, days, minutes) in enumerate(SPECS):
         primary = by_section[section_id]
+        program_level_rank = LEVEL_RANK[level]
+        eligible_primary = [
+            item for item in primary
+            if LEVEL_RANK.get(item["level"]["id"], 99) <= program_level_rank
+        ]
         support = [item for support_id in SUPPORT[section_id] for item in by_section[support_id]]
-        pool = primary + support
+        eligible_support = [
+            item for item in support
+            if LEVEL_RANK.get(item["level"]["id"], 99) <= program_level_rank
+        ]
+        pool = eligible_primary + eligible_support
+        if len(eligible_primary) < 2 or len({item["id"] for item in pool}) < 5:
+            raise ValueError(f"Insufficient level-compatible exercises for {program_id}")
         sessions = []
         used = []
         for session_index, session_name in enumerate(SESSION_NAMES[:days]):
             picks = []
             # Guarantee each session contains at least two exercises from its own section.
-            for offset in range(min(3, len(primary))):
-                picks.append(primary[(program_index + session_index * 2 + offset) % len(primary)])
+            for offset in range(min(3, len(eligible_primary))):
+                picks.append(eligible_primary[(program_index + session_index * 2 + offset) % len(eligible_primary)])
             cursor = program_index + session_index
             while len(picks) < 5:
                 candidate = pool[cursor % len(pool)]
