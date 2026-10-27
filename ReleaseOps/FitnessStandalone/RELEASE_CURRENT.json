@@ -1,63 +1,77 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-10-24T19:42:00Z",
+  "observed_at": "2026-10-27T15:56:03Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
-    "version_code": 51012,
-    "source_sha": "29bfe57d58b84a5391e201120888d053f54ed055",
-    "build_run": 40125830819,
-    "build_artifact": 12572602451,
+    "version_code": 51019,
+    "version_name": "5.0.0-v2-alpha19-debug",
+    "source_sha": "76053bd9127c38d8065eb7ac250bdeb34ab67854",
+    "build_run": 40516382792,
+    "build_artifact": 12739543484,
+    "build_artifact_name": "fitness-activity-candidate-51019-76053bd9127c38d8065eb7ac250bdeb34ab67854",
+    "build_artifact_digest": "sha256:88699e2865cacc4cc8e157a7863721c0634a1b440cdbc5e07e3aa8629dcd57a6",
     "android_unit_lint_apk_aab": "PASS",
-    "source_tests": 29,
-    "product_tests": 13,
+    "source_tests": 31,
+    "product_tests": 60,
     "backend_tests": 15,
-    "unsigned_aab_sha256": "2a782528c1d939d58bb8fe0a0dd48faef53e9286444ae653f6830d69567a4d4e",
-    "signed_aab_sha256": "c5ae818b45d9775b1850dae9fb36f8c211ac6b9141c4117f17d85da54e56a374"
+    "unsigned_aab_sha256": "aa4ecfdfcbab20587b69ae59b75e09c47827f2ecce3c272199afc3c347ffce93",
+    "signed_aab_sha256": "5dc7d0077ecfddd3224ca8557a3b4f6d0a5524cf194c0e547fc8b1605c7ba9c5",
+    "included_features": [
+      "session persistence/navigation guard",
+      "exercise motion/demo manifest and runtime assets",
+      "motion-manifest/runtime parity regression coverage",
+      "bounded account workout-history restore /api/v2/workouts?limit=200"
+    ]
   },
   "play": {
     "track": "internal",
-    "version_code": 51012,
+    "version_code": 51019,
+    "release_name": "THF Fitness 51019 Internal",
+    "status": "completed",
     "committed": true,
-    "promotion_run": 40126227388,
-    "evidence_artifact": 12573306971,
-    "evidence_digest": "sha256:65a690e95c160af19a97c068f98e87bda19be05d4109b5f704449e803dc8fcbb",
+    "promotion_run": 40518110062,
+    "evidence_artifact": 12739484276,
+    "evidence_digest": "sha256:12492bdd85019eb8420858baf69bee480b22a462a03dd814f2c08524c717fc2c",
+    "independent_readback_run": 40518110062,
+    "independent_readback": "PASS",
     "production": "NOT_VERIFIED"
   },
   "phone": {
-    "last_verified_play_installed_version": 51010,
-    "candidate_51012": "NOT_TESTED_ADB_UNAVAILABLE",
+    "last_verified_play_installed_version": 51018,
+    "version_name": "5.0.0-v2-alpha18",
+    "observed_at": "2026-10-27T10:17:49+03:00",
+    "installer": "com.android.vending",
+    "device": "Samsung SM-A217F",
+    "last_known_adb_serial": "192.168.8.6:44383",
+    "tracking_service_at_last_observation": "foreground=true; startRequested=true; owner session active/ambiguous",
+    "keyguard_unlocked": "NOT_CONFIRMED",
+    "latest_read_only_preflight_at": "2026-10-27T18:56:03+03:00",
+    "latest_preflight_result": "adb devices -l returned no attached devices",
+    "candidate_51019": "NOT_TESTED_PHYSICAL",
     "pending": [
-      "Play propagation",
-      "notification metrics/expanded/Stop",
-      "outdoor GPS",
-      "Health Connect provenance",
-      "background and recovery",
-      "audible offline voice"
+      "stationary walk/run/cycle false accumulation",
+      "real movement and GPS jump/drift rejection",
+      "tab/Home/background/screen-off/reopen session continuity",
+      "explicit Stop and truthful notification metrics",
+      "daily-vs-session steps/history",
+      "process-death recovery",
+      "Health grants/partial grants/no-data/revoke/error and record provenance",
+      "compatible source-labelled heart-rate and wearable-verified swimming with real data only",
+      "offline exercise motion and Arabic/English voice",
+      "crash/ANR/logcat"
     ]
   },
-  "merged_prs": [
-    82,
-    83,
-    84
-  ],
-  "superseded_closed_prs": [
-    81
-  ],
-  "schedules": {
-    "enabled_count": 5,
-    "fitness": 4,
-    "funding": 1,
-    "iterations_each": 48,
-    "start_timezone": "Africa/Cairo",
-    "next_run_time_reported": null,
-    "execution_guaranteed": false
+  "prior_known_good": {
+    "version_code": 51014,
+    "source_sha": "50188b65efe335955d0296b67ac34465e5477a85",
+    "signed_aab_sha256": "7b6a13bc8816278bede06a58da59a2792f25fb0d2ff9953cb54837d00b848621",
+    "note": "Prior validated Internal evidence retained; no rollback or production action taken."
   },
-  "next_action": "Verify51012 Play propagation and notifications when phone available; otherwise advance independent exercise/provenance work. Do not rebuild or republish this artifact.",
-  "funding": "No confirmed receipts; auth and eligibility blockers isolated.",
-  "cleanup": {
-    "removed": "Expired execution-plan phases and dormant workflow auto-trigger",
-    "preserved": "App source/assets without proven standalone replacement; historical evidence in Git",
-    "workflow_repair": "Apps V3 heredoc indentation validated by YAML parse, bash -n and Python AST"
-  }
+  "release_gates": {
+    "physical_p0": "BLOCKED_NOT_RUN",
+    "health_policy_privacy": "OPEN",
+    "production": "NOT_VERIFIED"
+  },
+  "next_action": "Wait for safe phone availability; perform 51019 P0 acceptance only when device is positively interactive/unlocked and no owner workout is active. Do not merge untested PR heads #117/#118/#137/#141; keep #93/#98 HOLD. Next versionCode must be >51019 and use a unique meaningful candidate."
 }
