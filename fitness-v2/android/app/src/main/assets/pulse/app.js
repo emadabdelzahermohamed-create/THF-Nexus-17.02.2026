@@ -41,6 +41,8 @@
   Object.assign(COPY.en, {accountPrivacyHint:'Review the policy or start deleting your THF Fitness account data in the secure browser.',privacyPolicy:'Privacy policy',accountDeletion:'Delete account data',accountResourceAndroidOnly:'This link is available in the Android app.'});
   Object.assign(COPY.ar, {readinessToday:'جاهزية اليوم',todaySummary:'ملخص اليوم',trainContentType:'نوع محتوى التدريب',programSections:'أقسام البرامج',clearSearch:'مسح البحث',trainingSections:'أقسام التدريب',volumeChartLabel:'مخطط حجم التدريب',onboardingBenefitsLabel:'مزايا الخطة',close:'إغلاق'});
   Object.assign(COPY.en, {readinessToday:"Today's readiness",todaySummary:"Today's summary",trainContentType:'Training content type',programSections:'Program sections',clearSearch:'Clear search',trainingSections:'Training sections',volumeChartLabel:'Training volume chart',onboardingBenefitsLabel:'Plan benefits',close:'Close'});
+  Object.assign(COPY.ar, {offlineMotionVideo:'فيديو أوفلاين', verifiedMotionClip:'مقطع إطارات موثّق', autoReferenceFrames:'صور مرجعية متحركة تلقائيًا'});
+  Object.assign(COPY.en, {offlineMotionVideo:'Offline video', verifiedMotionClip:'Verified frame-sequence clip', autoReferenceFrames:'Auto-animated reference frames'});
   Object.assign(COPY.ar, {sensorEvidence:'قياس الحركة',sensorVerified:'حساسات الهاتف',sensorWaiting:'بانتظار بيانات الحركة',stepsLive:'الخطوات',detectorEvents:'نبضات الخطوة',confidence:'الثقة',sensorSamples:'عينات الحركة',manualUnverified:'يدوي / غير موثق'});
   Object.assign(COPY.en, {sensorEvidence:'Motion evidence',sensorVerified:'Phone sensors',sensorWaiting:'Waiting for motion data',stepsLive:'Steps',detectorEvents:'Step events',confidence:'Confidence',sensorSamples:'Motion samples',manualUnverified:'Manual / unverified'});
   Object.assign(COPY.ar, {activityEyebrow:'نشاط فعلي بالخارج',activityQuickTitle:'ابدأ نشاطًا بـ GPS',activityQuickHint:'المشي والجري وركوب الدراجة جلسات مستقلة عن برامج التمارين، وتستمر في الخلفية بإشعار دائم.',activityTitle:'المشي والجري والدراجة',backgroundReady:'يستمر بالخلفية',walk:'مشي',run:'جري',cycle:'دراجة',gpsSteps:'GPS + خطوات',gpsSpeed:'GPS + سرعة',selectActivity:'اختر نشاطًا للبدء',gpsWaiting:'جارٍ تثبيت موقع عالي الدقة',gpsWeak:'تم تحديد الموقع — الدقة ضعيفة',gpsStale:'إشارة الموقع متوقفة',gpsOff:'الموقع مغلق',gpsRouteHint:'سيظهر مسارك الحقيقي هنا بعد أول نقاط GPS.',pace:'الوتيرة',speed:'السرعة',gpsAccuracy:'دقة GPS',live:'مباشر',activityBackgroundHint:'يمكنك قفل الشاشة أو فتح تطبيق آخر؛ الإشعار الدائم يؤكد أن الجلسة ما زالت تعمل.',stopAndSaveActivity:'إيقاف وحفظ النشاط',recentActivities:'آخر الأنشطة',backToday:'العودة لليوم',weightKg:'الوزن لحساب السعرات',activitySaved:'تم حفظ النشاط.',activityPermissionNeeded:'اسمح بالموقع وقياس النشاط لبدء التتبع.',activityRunning:'النشاط مستمر بالخلفية',impactPeak:'قمة التسارع',rotationPeak:'قمة الدوران',stability:'الثبات',motionSamplesShort:'عينات الحركة',stepEventsShort:'نبضات الخطوة'});
@@ -223,13 +225,46 @@
       (!state.filters.goal || item.goal.id === state.filters.goal);
   }
 
+  function demoCoverage(item) {
+    const kind = motionManifest[item.id]?.kind;
+    if (kind === 'offline_video') return t('offlineMotionVideo');
+    if (kind === 'verified_frame_sequence') return t('verifiedMotionClip');
+    return t('autoReferenceFrames');
+  }
+
+  function renderMotionCoverageSummary() {
+    const counts = {offlineVideo:0, verifiedClips:0, referenceFrames:0};
+    EXERCISES.forEach(item => {
+      const kind = motionManifest[item.id]?.kind;
+      if (kind === 'offline_video') counts.offlineVideo += 1;
+      else if (kind === 'verified_frame_sequence') counts.verifiedClips += 1;
+      else counts.referenceFrames += 1;
+    });
+    const summary = $('motionCoverageSummary');
+    if (!summary) return;
+    summary.textContent = state.lang === 'ar'
+      ? `تغطية الحركة: فيديو أوفلاين ${counts.offlineVideo} · مقاطع إطارات موثّقة ${counts.verifiedClips} · عروض صور مرجعية متحركة ${counts.referenceFrames} · الإجمالي ${EXERCISES.length} تمرينًا`
+      : `Motion coverage: ${counts.offlineVideo} offline videos · ${counts.verifiedClips} verified frame-sequence clips · ${counts.referenceFrames} auto-animated reference-frame demos · ${EXERCISES.length} exercises`;
+  }
+
   function renderExercises() {
+    renderMotionCoverageSummary();
     if (!EXERCISES.length) { $('exerciseGrid').innerHTML = `<p class="error-message">${escapeHtml(t('noCatalog'))}</p>`; return; }
     const results = EXERCISES.filter(matches);
     $('resultsCount').textContent = String(results.length);
     $('emptyResults').classList.toggle('hidden', results.length > 0);
     $('activeFilterCount').textContent = String(Object.values(state.filters).filter(Boolean).length);
     $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => {
+      const item = EXERCISES.find(exercise => exercise.id === card.dataset.id);
+      const copy = card.querySelector('.copy');
+      const tags = copy?.querySelector('.tag-row');
+      if (!item || !copy || !tags) return;
+      const coverage = document.createElement('span');
+      coverage.className = 'pill demo-coverage-badge';
+      coverage.textContent = demoCoverage(item);
+      copy.insertBefore(coverage, tags);
+    });
     $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => card.addEventListener('click', () => openDetail(card.dataset.id)));
   }
 
@@ -246,7 +281,7 @@
   function list(items, ordered = false) { const tag = ordered ? 'ol' : 'ul'; return `<${tag}>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</${tag}>`; }
   function renderDetail(item) {
     $('detailDemo').innerHTML = item.demo.assets.map((asset,index) => `<div class="detail-frame"><img src="./${escapeHtml(asset)}" alt="${escapeHtml(item.demo.alt[state.lang])}"><span>${escapeHtml(t(index ? 'finish' : 'start'))}</span></div>`).join('');
-    $('detailBadges').innerHTML = `<span class="pill gold">${escapeHtml(local(item.section))}</span><span class="pill">✓ ${escapeHtml(t('offline'))}</span><span class="pill">${escapeHtml(local(item.level))}</span>`;
+    $('detailBadges').innerHTML = `<span class="pill gold">${escapeHtml(local(item.section))}</span><span class="pill">✓ ${escapeHtml(t('offline'))}</span><span class="pill demo-coverage-badge">${escapeHtml(demoCoverage(item))}</span><span class="pill">${escapeHtml(local(item.level))}</span>`;
     $('detailName').textContent = local(item.name); $('detailMeta').textContent = `${local(item.equipment)} · ${local(item.movement)} · ${local(item.goal)}`;
     $('detailMuscles').innerHTML = item.muscles.primary[state.lang].concat(item.muscles.secondary[state.lang]).map(value => `<span class="tag">${escapeHtml(value)}</span>`).join('');
     const prescription = item.prescription; const dose = prescription.durationSeconds ? `${prescription.sets} × ${prescription.durationSeconds} sec` : `${prescription.sets} × ${prescription.reps} · ${prescription.restSeconds} sec`;
@@ -367,7 +402,7 @@
     image.classList.remove('hidden');
     image.src = './' + item.demo.assets[0];
     image.alt = item.demo.alt[state.lang];
-    $('activeDemoPhase').textContent = state.lang === 'ar' ? 'صور مرجعية — الحركة قيد الإضافة' : 'Reference images — motion pending';
+    $('activeDemoPhase').textContent = state.lang === 'ar' ? 'صور مرجعية تتحرك تلقائيًا' : 'Auto-animated reference frames';
   }
   function renderActiveWorkout() {
     const item = activeExercise(); if (!item) { state.active=null; store.removeItem('pulse.v2.active'); return; }

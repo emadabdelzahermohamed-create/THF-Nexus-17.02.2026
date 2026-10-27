@@ -43,3 +43,5 @@
 :root[style*="--motion: 0"] .button:active,:root[style*="--motion:0"] .button:active{transform:none!important}
 :root[style*="--motion: 0"] .exercise-card:hover img,:root[style*="--motion:0"] .exercise-card:hover img{transform:none!important}
 :root[style*="--motion: 0"] .program-card:hover .program-cover img,:root[style*="--motion:0"] .program-card:hover .program-cover img{transform:none!important}
+
+.demo-coverage-badge{justify-content:flex-start;max-width:100%;white-space:normal;text-align:start;line-height:1.35}
