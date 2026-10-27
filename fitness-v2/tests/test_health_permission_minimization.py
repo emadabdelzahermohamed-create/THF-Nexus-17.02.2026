@@ -38,7 +38,7 @@ class HealthPermissionMinimizationTest(unittest.TestCase):
         cls.manifest = MANIFEST.read_text(encoding="utf-8")
         cls.reconciliation = RECONCILIATION.read_text(encoding="utf-8")
         cls.declared = set(re.findall(
-            r'android:name="(android\\.permission\\.health\\.[^"]+)"',
+            r'android:name="(android\.permission\.health\.[^"]+)"',
             cls.manifest,
         ))
 
@@ -50,7 +50,7 @@ class HealthPermissionMinimizationTest(unittest.TestCase):
     def test_reconciliation_keeps_broad_expansion_held_and_heart_rate_narrow(self):
         self.assertIn("HOLD PR #98 unchanged", self.reconciliation)
         self.assertIn("READ_HEART_RATE only", self.reconciliation)
-        self.assertIn("do not claim", self.reconciliation.lower())
+        self.assertIn("does not claim", self.reconciliation.lower())
         self.assertIn("physical", self.reconciliation.lower())
 
     def test_resting_heart_rate_is_not_substituted_for_workout_samples(self):
