@@ -15,35 +15,46 @@ EXPECTED_ARABIC_CUES = {
         "ادفع الورك للخلف",
     ),
     "romanian-deadlift": (
-        "الركبتين مثنيتين قليلًا",
+        "اثنِ الركبتين قليلًا",
         "ادفع الورك للخلف",
-        "دون فرط تقوس أسفل الظهر",
+        "دون تحويل الحركة إلى سكوات",
     ),
     "barbell-bench-press---medium-grip": (
-        "لوحي الكتف للخلف ولأسفل",
-        "منتصف الصدر",
-        "حواجز أمان أو مساعدًا",
+        "تثبيت القدمين ولوحي الكتف",
+        "يلامس منتصف الصدر",
+        "الحواجز أو مساعد عند الحاجة",
     ),
     "pullups": (
-        "كتفين بعيدين عن الأذنين",
-        "اسحب المرفقين لأسفل",
-        "انزل ببطء",
+        "قبضة أمامية",
+        "اسحب المرفقين لأسفل والخلف",
+        "اخفض الجذع ببطء",
     ),
     "handstand-push-ups": (
-        "جدار ثابت",
-        "وسادة مناسبة",
-        "فقدان التوازن",
+        "واجهًا للجدار",
+        "وسادة ثابتة",
+        "انزل بمساعدة",
     ),
     "barbell-shoulder-press": (
-        "أمام الكتفين",
-        "الأضلاع فوق الحوض",
-        "اخفض البار ببطء",
+        "ارفع البار أمام الرأس",
+        "شد البطن وثبات القدمين",
+        "اخفض البار ببطء إلى الكتفين",
     ),
     "front-box-jump": (
-        "صندوقًا ثابتًا منخفضًا",
+        "صندوقًا ثابتًا بارتفاع مناسب",
         "اهبط على الصندوق بركبتين مثنيتين",
         "انزل خطوة خطوة",
     ),
+}
+
+
+EXPECTED_STEP_COUNTS = {
+    "barbell-deadlift": 5,
+    "romanian-deadlift": 5,
+    "barbell-bench-press---medium-grip": 5,
+    "pullups": 5,
+    "handstand-push-ups": 5,
+    "barbell-shoulder-press": 5,
+    "front-box-jump": 4,
 }
 
 
@@ -60,7 +71,7 @@ class ArabicInstructionQualityTests(unittest.TestCase):
             with self.subTest(exercise_id=exercise_id):
                 self.assertIn(exercise_id, self.by_id)
                 steps = self.by_id[exercise_id]["steps"]["ar"]
-                self.assertEqual(len(steps), 3)
+                self.assertEqual(len(steps), EXPECTED_STEP_COUNTS[exercise_id])
                 joined = " ".join(steps)
                 for phrase in phrases:
                     self.assertIn(phrase, joined)
