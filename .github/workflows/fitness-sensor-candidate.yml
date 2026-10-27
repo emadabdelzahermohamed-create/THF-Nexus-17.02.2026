@@ -12,6 +12,7 @@ on:
       - agent/codex/fitness-release-51015-20261026
       - agent/codex/fitness-release-51017-20261026
       - agent/codex/fitness-release-51017-20261027
+      - agent/codex/session-persistence-20261027
     paths:
       - 'fitness-v2/**'
       - '.github/workflows/fitness-sensor-candidate.yml'
@@ -41,13 +42,13 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0'
-      - name: Test lint and build candidate 51017
+      - name: Test lint and build candidate 51018
         shell: bash
         run: |
           set -uo pipefail
           mkdir -p fitness-v2/evidence
           set +e
-          gradle --no-daemon -p fitness-v2/android :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease 2>&1 | tee fitness-v2/evidence/candidate-51017-build.log
+          gradle --no-daemon -p fitness-v2/android :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease 2>&1 | tee fitness-v2/evidence/candidate-51018-build.log
           build_status=${PIPESTATUS[0]}
           set -e
           if [[ "$build_status" -ne 0 ]]; then
@@ -59,14 +60,14 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           test -s "$APK" && test -s "$AAB"
           "$AAPT" dump badging "$APK" | tee /tmp/badging.txt
-          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51017'" /tmp/badging.txt
-          grep -F "versionName='5.0.0-v2-alpha17-debug'" /tmp/badging.txt
+          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51018'" /tmp/badging.txt
+          grep -F "versionName='5.0.0-v2-alpha18-debug'" /tmp/badging.txt
           sha256sum "$APK" "$AAB" | tee fitness-v2/candidate-51017.sha256
-          printf 'GIT_SHA=%s\nVERSION_CODE=51017\n' "$GITHUB_SHA" | tee fitness-v2/candidate-51017-build.txt
+          printf 'GIT_SHA=%s\nVERSION_CODE=51018\n' "$GITHUB_SHA" | tee fitness-v2/candidate-51017-build.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fitness-activity-candidate-51017
+          name: fitness-activity-candidate-51018
           if-no-files-found: warn
           retention-days: 14
           path: |
