@@ -228,7 +228,7 @@
 
   function motionAsset(item) {
     const entry = motionManifest[item?.id];
-    return entry && typeof entry.asset === 'string' && /^media\/motion\/[a-z0-9-]+\.(?:mp4|webm)$/i.test(entry.asset) ? entry : null;
+    return entry && entry.kind === 'offline_video' && typeof entry.asset === 'string' && /^media\/motion\/[a-z0-9-]+\.(?:mp4|webm)$/i.test(entry.asset) ? entry : null;
   }
   function motionPlayer(item, context = 'detail') {
     const entry = motionAsset(item);

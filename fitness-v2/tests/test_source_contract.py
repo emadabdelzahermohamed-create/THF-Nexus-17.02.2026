@@ -539,6 +539,8 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         for item in manifest.values():
             self.assertRegex(item["asset"], r"^media/motion/[a-z0-9-]+\.(mp4|webm)$")
             self.assertTrue((ANDROID / "app" / "src" / "main" / "assets" / "pulse" / item["asset"]).is_file())
+        self.assertEqual(sum(item.get("kind") == "offline_video" for item in manifest.values()), 5)
+        self.assertIn("entry.kind === 'offline_video'", app)
 
     def test_workout_ui_uses_native_motion_session_and_surfaces_evidence(self):
         app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
