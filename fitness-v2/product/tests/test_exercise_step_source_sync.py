@@ -30,6 +30,19 @@ EXPECTED_SOURCE_IDS = {
     "Mountain_Climbers",
     "Overhead_Slam",
     "Air_Bike",
+    "Fast_Skipping",
+    "Box_Skip",
+    "Front_Cone_Hops_or_hurdle_hops",
+    "Lateral_Cone_Hops",
+    "Side_Hop-Sprint",
+    "Freehand_Jump_Squat",
+    "Lateral_Bound",
+}
+
+
+EXPECTED_ARABIC_NAMES = {
+    "Fast_Skipping": "قفز متناوب سريع",
+    "Box_Skip": "قفز متتابع بين الصناديق",
 }
 
 
@@ -54,6 +67,11 @@ class ExerciseStepSourceSyncTest(unittest.TestCase):
     def test_catalog_manifest_digest_matches_the_checked_in_json(self):
         digest = hashlib.sha256(CATALOG_PATH.read_bytes()).hexdigest()
         self.assertEqual(digest, self.manifest["catalogSha256"])
+
+    def test_reviewed_arabic_titles_match_generated_catalog(self):
+        for source_id, expected_name in EXPECTED_ARABIC_NAMES.items():
+            with self.subTest(source_id=source_id):
+                self.assertEqual(expected_name, self.by_source_id[source_id]["name"]["ar"])
 
     def test_two_step_core_drills_remain_supported_without_generic_filler(self):
         mountain_climbers = self.by_source_id["Mountain_Climbers"]["steps"]
