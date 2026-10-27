@@ -252,6 +252,110 @@ STEP_OVERRIDES = {
             "بدّل الجهة؛ مد الرجل اليسرى وقرّب المرفق الأيسر من الركبة اليمنى.",
             "استمر بالتبادل دون سحب الرأس باليدين أو حبس النفس."
         ]
+    },
+    "Fast_Skipping": {
+        "en": [
+            "Start in a relaxed position with one leg slightly forward. This will be your starting position.",
+            "Skip by executing a step-hop pattern of right-right-step to left-left-step, and so on, alternating back and forth.",
+            "Perform fast skips by maintaining close contact with the ground and reduce air time, moving as quickly as possible."
+        ],
+        "ar": [
+            "ابدأ في وضع مريح مع تقديم إحدى القدمين قليلًا.",
+            "نفّذ نمط خطوة وقفزة بالتبادل: يمين–يمين–خطوة انتقال، ثم يسار–يسار–خطوة انتقال.",
+            "زد سرعة القفز مع إبقاء زمن الطيران قصيرًا والقدمين قريبين من الأرض."
+        ]
+    },
+    "Box_Skip": {
+        "en": [
+            "You will need several boxes lined up about 8 feet apart.",
+            "Begin facing the first box with one leg slightly behind the other.",
+            "Drive off the back leg, attempting to gain as much height with the hips as possible.",
+            "Immediately upon landing on the box, drive the other leg forward and upward to gain height and distance, leaping from the box. Land between the first two boxes with the same leg that landed on the first box.",
+            "Then, step to the next box and repeat."
+        ],
+        "ar": [
+            "رتّب عدة صناديق ثابتة في صف، واترك نحو 2.4 متر بين كل صندوق وآخر.",
+            "قف أمام الصندوق الأول مع وضع إحدى القدمين خلف الأخرى قليلًا.",
+            "ادفع بالأرض من القدم الخلفية لرفع الورك واكتساب ارتفاع نحو الصندوق.",
+            "عند الهبوط على الصندوق، ادفع الرجل الأخرى للأمام والأعلى ثم اقفز نحو الصندوق التالي؛ اهبط بين الصندوقين على القدم نفسها التي هبطت بها على الأول.",
+            "انتقل إلى الصندوق التالي وكرر التسلسل، مع التأكد من ثبات الهبوط قبل القفزة التالية."
+        ]
+    },
+    "Front_Cone_Hops_or_hurdle_hops": {
+        "en": [
+            "Set up a row of cones or other small barriers, placing them a few feet apart.",
+            "Stand in front of the first cone with your feet shoulder width apart. This will be your starting position.",
+            "Begin by jumping with both feet over the first cone, swinging both arms as you jump.",
+            "Absorb the impact of landing by bending the knees, rebounding out of the first leap by jumping over the next cone.",
+            "Continue until you have jumped over all of the cones."
+        ],
+        "ar": [
+            "رتّب صفًا من الأقماع أو الحواجز المنخفضة، مع ترك بضعة أقدام بين كل حاجز وآخر.",
+            "قف أمام أول حاجز والقدمان بعرض الكتفين.",
+            "اقفز بكلتا القدمين معًا فوق الحاجز، وحرّك الذراعين للمساعدة في الدفع.",
+            "امتص الهبوط بثني الركبتين ثم ارتدّ للقفز فوق الحاجز التالي.",
+            "واصل حتى تتجاوز الصف كاملًا، وتوقف إذا أصبح الهبوط صلبًا أو اختل اتجاه الركبتين."
+        ]
+    },
+    "Lateral_Cone_Hops": {
+        "en": [
+            "Position a number of cones in a row several feet apart.",
+            "Stand next to the end of the cones, facing 90 degrees to the direction of travel. This will be your starting position.",
+            "Begin the jump by dipping with the knees to initiate a stretch reflex, and immediately reverse direction to push off the ground, jumping up and sideways over the cone.",
+            "Use your legs to absorb impact upon landing, and rebound into the next jump, continuing down the row of cones."
+        ],
+        "ar": [
+            "ضع عدة أقماع في صف يفصل بينها بضعة أقدام.",
+            "قف بجانب طرف الصف واجعل جسمك متعامدًا مع اتجاه الانتقال.",
+            "اثنِ الركبتين قليلًا ثم ادفع الأرض فورًا للقفز جانبيًا فوق القمع.",
+            "امتص الهبوط بالساقين ثم انتقل مباشرة إلى القفزة التالية حتى نهاية الصف."
+        ]
+    },
+    "Side_Hop-Sprint": {
+        "en": [
+            "Stand to the side of a cone or hurdle.",
+            "Begin this drill by hopping sideways over the obstacle, rebounding out of your landing to hop back to where you started.",
+            "Hop for a prescribed number or repetitions as quickly as possible, and finish this drill by sprinting a short distance upon landing the last hop."
+        ],
+        "ar": [
+            "قف إلى جانب قمع أو حاجز منخفض.",
+            "اقفز جانبيًا فوق الحاجز ثم استخدم الهبوط للارتداد والعودة إلى نقطة البداية.",
+            "كرر العدد المحدد بأسرع إيقاع يمكن التحكم فيه، ثم انطلق لمسافة قصيرة بعد آخر هبوط."
+        ]
+    },
+    "Freehand_Jump_Squat": {
+        "en": [
+            "Cross your arms over your chest.",
+            "With your head up and your back straight, position your feet at shoulder width.",
+            "Keeping your back straight and chest up, squat down as you inhale until your upper thighs are parallel, or lower, to the floor.",
+            "Now pressing mainly with the ball of your feet, jump straight up in the air as high as possible, using the thighs like springs. Exhale during this portion of the movement.",
+            "When you touch the floor again, immediately squat down and jump again.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "اعقد الذراعين أمام الصدر.",
+            "قف والقدمان بعرض الكتفين، والرأس مرفوع والظهر مستقيم.",
+            "اخفض الوركين في سكوات مع الشهيق حتى يصبح الفخذان موازيين للأرض أو أدنى، مع إبقاء الصدر مرفوعًا.",
+            "ادفع بمقدمة القدمين واقفز عموديًا بأعلى ارتفاع يمكنك التحكم فيه، مع الزفير.",
+            "عند ملامسة الأرض، اثنِ الوركين والركبتين لامتصاص الهبوط والعودة فورًا إلى وضع السكوات.",
+            "كرر العدد المطلوب مع الحفاظ على محاذاة الركبتين وهبوط هادئ؛ توقف إذا فقدت السيطرة."
+        ]
+    },
+    "Lateral_Bound": {
+        "en": [
+            "Assume a half squat position facing 90 degrees from your direction of travel. This will be your starting position.",
+            "Allow your lead leg to do a countermovement inward as you shift your weight to the outside leg.",
+            "Immediately push off and extend, attempting to bound to the side as far as possible.",
+            "Upon landing, immediately push off in the opposite direction, returning to your original start position.",
+            "Continue back and forth for several repetitions."
+        ],
+        "ar": [
+            "ابدأ بنصف سكوات، واجعل جسمك متعامدًا مع اتجاه الوثب.",
+            "حرّك الساق القائدة قليلًا إلى الداخل وانقل وزنك إلى الساق الخارجية.",
+            "ادفع الأرض وامدد الورك والركبة للوثب جانبيًا إلى أبعد مسافة تستطيع التحكم بها.",
+            "عند الهبوط، ادفع فورًا بالاتجاه المعاكس للعودة إلى موضع البداية.",
+            "واصل الوثب ذهابًا وإيابًا لعدة تكرارات، مع امتصاص الهبوط والحفاظ على اتجاه الركبتين."
+        ]
     }
 }
 
@@ -316,7 +420,7 @@ SELECTION = [
     ("Prowler_Sprint", "عدو دفع الزلاجة", "running", "speed"),
     ("Runners_Stretch", "إطالة العدّائين", "running", "mobility"),
     ("Linear_Acceleration_Wall_Drill", "تسارع خطي أمام الحائط", "football", "speed"),
-    ("Box_Skip", "خطوات سريعة على الصندوق", "football", "agility"),
+    ("Box_Skip", "قفز متتابع بين الصناديق", "football", "agility"),
     ("Front_Cone_Hops_or_hurdle_hops", "قفز أمامي فوق الأقماع", "football", "agility"),
     ("Lateral_Cone_Hops", "قفز جانبي فوق الأقماع", "football", "agility"),
     ("Single-Cone_Sprint_Drill", "تدريب العدو حول قمع واحد", "football", "speed"),
@@ -328,7 +432,7 @@ SELECTION = [
     ("Platform_Hamstring_Slides", "انزلاق خلفية الفخذ للدراجات", "cycling", "strength"),
     ("Standing_Dumbbell_Calf_Raise", "رفع السمانة بالدمبل للدراجات", "cycling", "strength"),
     ("Rowing_Stationary", "تجديف ثابت", "hiit", "endurance"),
-    ("Fast_Skipping", "نط حبل سريع", "boxing", "conditioning"),
+    ("Fast_Skipping", "قفز متناوب سريع", "boxing", "conditioning"),
     ("Medicine_Ball_Full_Twist", "دوران كامل بالكرة الطبية", "boxing", "power"),
     ("Heavy_Bag_Thrust", "دفع الكيس الثقيل", "boxing", "power"),
     ("Side_to_Side_Box_Shuffle", "خطوات جانبية سريعة للملاكمة", "boxing", "agility"),
