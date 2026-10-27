@@ -41,8 +41,8 @@
   Object.assign(COPY.en, {accountPrivacyHint:'Review the policy or start deleting your THF Fitness account data in the secure browser.',privacyPolicy:'Privacy policy',accountDeletion:'Delete account data',accountResourceAndroidOnly:'This link is available in the Android app.'});
   Object.assign(COPY.ar, {readinessToday:'جاهزية اليوم',todaySummary:'ملخص اليوم',trainContentType:'نوع محتوى التدريب',programSections:'أقسام البرامج',clearSearch:'مسح البحث',trainingSections:'أقسام التدريب',volumeChartLabel:'مخطط حجم التدريب',onboardingBenefitsLabel:'مزايا الخطة',close:'إغلاق'});
   Object.assign(COPY.en, {readinessToday:"Today's readiness",todaySummary:"Today's summary",trainContentType:'Training content type',programSections:'Program sections',clearSearch:'Clear search',trainingSections:'Training sections',volumeChartLabel:'Training volume chart',onboardingBenefitsLabel:'Plan benefits',close:'Close'});
-  Object.assign(COPY.ar, {offlineMotionVideo:'فيديو أوفلاين', verifiedMotionClip:'مقطع حركة موثّق', autoReferenceFrames:'صور مرجعية متحركة تلقائيًا'});
-  Object.assign(COPY.en, {offlineMotionVideo:'Offline video', verifiedMotionClip:'Verified motion clip', autoReferenceFrames:'Auto-animated reference frames'});
+  Object.assign(COPY.ar, {offlineMotionVideo:'فيديو أوفلاين', verifiedMotionClip:'مقطع إطارات موثّق', autoReferenceFrames:'صور مرجعية متحركة تلقائيًا'});
+  Object.assign(COPY.en, {offlineMotionVideo:'Offline video', verifiedMotionClip:'Verified frame-sequence clip', autoReferenceFrames:'Auto-animated reference frames'});
   Object.assign(COPY.ar, {sensorEvidence:'قياس الحركة',sensorVerified:'حساسات الهاتف',sensorWaiting:'بانتظار بيانات الحركة',stepsLive:'الخطوات',detectorEvents:'نبضات الخطوة',confidence:'الثقة',sensorSamples:'عينات الحركة',manualUnverified:'يدوي / غير موثق'});
   Object.assign(COPY.en, {sensorEvidence:'Motion evidence',sensorVerified:'Phone sensors',sensorWaiting:'Waiting for motion data',stepsLive:'Steps',detectorEvents:'Step events',confidence:'Confidence',sensorSamples:'Motion samples',manualUnverified:'Manual / unverified'});
   Object.assign(COPY.ar, {activityEyebrow:'نشاط فعلي بالخارج',activityQuickTitle:'ابدأ نشاطًا بـ GPS',activityQuickHint:'المشي والجري وركوب الدراجة جلسات مستقلة عن برامج التمارين، وتستمر في الخلفية بإشعار دائم.',activityTitle:'المشي والجري والدراجة',backgroundReady:'يستمر بالخلفية',walk:'مشي',run:'جري',cycle:'دراجة',gpsSteps:'GPS + خطوات',gpsSpeed:'GPS + سرعة',selectActivity:'اختر نشاطًا للبدء',gpsWaiting:'جارٍ تثبيت موقع عالي الدقة',gpsWeak:'تم تحديد الموقع — الدقة ضعيفة',gpsStale:'إشارة الموقع متوقفة',gpsOff:'الموقع مغلق',gpsRouteHint:'سيظهر مسارك الحقيقي هنا بعد أول نقاط GPS.',pace:'الوتيرة',speed:'السرعة',gpsAccuracy:'دقة GPS',live:'مباشر',activityBackgroundHint:'يمكنك قفل الشاشة أو فتح تطبيق آخر؛ الإشعار الدائم يؤكد أن الجلسة ما زالت تعمل.',stopAndSaveActivity:'إيقاف وحفظ النشاط',recentActivities:'آخر الأنشطة',backToday:'العودة لليوم',weightKg:'الوزن لحساب السعرات',activitySaved:'تم حفظ النشاط.',activityPermissionNeeded:'اسمح بالموقع وقياس النشاط لبدء التتبع.',activityRunning:'النشاط مستمر بالخلفية',impactPeak:'قمة التسارع',rotationPeak:'قمة الدوران',stability:'الثبات',motionSamplesShort:'عينات الحركة',stepEventsShort:'نبضات الخطوة'});
@@ -243,8 +243,8 @@
     const summary = $('motionCoverageSummary');
     if (!summary) return;
     summary.textContent = state.lang === 'ar'
-      ? `تغطية الحركة: فيديو أوفلاين ${counts.offlineVideo} · مقاطع موثّقة ${counts.verifiedClips} · عروض صور مرجعية متحركة ${counts.referenceFrames} · الإجمالي ${EXERCISES.length} تمرينًا`
-      : `Motion coverage: ${counts.offlineVideo} offline videos · ${counts.verifiedClips} verified motion clips · ${counts.referenceFrames} auto-animated reference sets · ${EXERCISES.length} exercises`;
+      ? `تغطية الحركة: فيديو أوفلاين ${counts.offlineVideo} · مقاطع إطارات موثّقة ${counts.verifiedClips} · عروض صور مرجعية متحركة ${counts.referenceFrames} · الإجمالي ${EXERCISES.length} تمرينًا`
+      : `Motion coverage: ${counts.offlineVideo} offline videos · ${counts.verifiedClips} verified frame-sequence clips · ${counts.referenceFrames} auto-animated reference-frame demos · ${EXERCISES.length} exercises`;
   }
 
   function renderExercises() {
