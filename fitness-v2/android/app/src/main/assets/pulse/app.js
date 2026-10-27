@@ -223,10 +223,24 @@
       (!state.filters.goal || item.goal.id === state.filters.goal);
   }
 
+  let exerciseResultsAnnouncementTimer = null;
+
+  function announceExerciseResults(count) {
+    const status = $('resultsAnnouncement');
+    if (!status) return;
+    window.clearTimeout(exerciseResultsAnnouncementTimer);
+    exerciseResultsAnnouncementTimer = window.setTimeout(() => {
+      status.textContent = state.lang === 'ar'
+        ? (count === 0 ? 'لا توجد تمارين مطابقة' : `عدد التمارين المطابقة: ${count}`)
+        : (count === 0 ? 'No matching exercises' : `${count} matching exercises`);
+    }, 350);
+  }
+
   function renderExercises() {
     if (!EXERCISES.length) { $('exerciseGrid').innerHTML = `<p class="error-message">${escapeHtml(t('noCatalog'))}</p>`; return; }
     const results = EXERCISES.filter(matches);
     $('resultsCount').textContent = String(results.length);
+    announceExerciseResults(results.length);
     $('emptyResults').classList.toggle('hidden', results.length > 0);
     $('activeFilterCount').textContent = String(Object.values(state.filters).filter(Boolean).length);
     $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
