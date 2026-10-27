@@ -525,6 +525,47 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             self.assertIn(marker, activity)
 
 
+    def test_exercise_demo_ui_uses_verified_video_and_animated_reference_fallback(self):
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        css = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "styles.css").read_text()
+        manifest = json.loads((ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "data" / "motion-manifest.json").read_text())
+        exercise_source = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "data" / "exercises.js").read_text()
+        exercises = json.loads(exercise_source.split("=", 1)[1].rsplit(";", 1)[0].strip())
+
+        self.assertIn("entry.kind === 'offline_video' || entry.kind === 'verified_frame_sequence'", app)
+        self.assertIn("function referenceMotionPlayer(item", app)
+        self.assertIn("function motionCoverageLabel(item", app)
+        self.assertIn("motionPlayer(item, 'card')", app)
+        self.assertIn("motionPlayer(item, 'detail')", app)
+        self.assertIn('data-clip-limit="6"', app)
+        self.assertIn("video.addEventListener('error'", app)
+        self.assertIn("CC BY-SA 4.0 license", app)
+        self.assertIn("Auto-animated reference frames", app)
+        self.assertIn("thf-reference-start", css)
+        self.assertIn("prefers-reduced-motion:reduce", css)
+        self.assertIn("motion-reduced", app + css)
+
+        self.assertEqual(len(exercises), 112)
+        self.assertTrue(all(len(item["demo"]["assets"]) == 2 for item in exercises))
+        self.assertEqual(sum(item.get("kind") == "offline_video" for item in manifest.values()), 5)
+        self.assertEqual(sum(item.get("kind") == "verified_frame_sequence" for item in manifest.values()), 2)
+        self.assertEqual(len(manifest), 7)
+        for item in manifest.values():
+            self.assertRegex(item["asset"], r"^media/motion/[a-z0-9-]+\.(mp4|webm)$")
+            self.assertTrue((ANDROID / "app" / "src" / "main" / "assets" / "pulse" / item["asset"]).is_file())
+
+    def test_exercise_video_failure_falls_back_without_losing_the_demo(self):
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        for marker in (
+            "video.addEventListener('error'",
+            "referenceMotionPlayer(item, context)",
+            "motionCoverageLabel(item, true)",
+            "motion-reduced",
+            "video.pause()",
+        ):
+            self.assertIn(marker, app)
+        self.assertNotIn("item.demo.assets.map((asset,index)", app)
+
     def test_workout_ui_uses_native_motion_session_and_surfaces_evidence(self):
         app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
         html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()

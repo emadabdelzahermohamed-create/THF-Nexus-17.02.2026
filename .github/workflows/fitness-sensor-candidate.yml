@@ -12,6 +12,7 @@ on:
       - agent/codex/fitness-release-51015-20261026
       - agent/codex/fitness-release-51017-20261026
       - agent/codex/fitness-release-51017-20261027
+      - agent/codex/session-persistence-20261027
     paths:
       - 'fitness-v2/**'
       - '.github/workflows/fitness-sensor-candidate.yml'
@@ -30,6 +31,19 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Product, source-contract and backend regression tests
+        run: |
+          python -m unittest discover -s fitness-v2/product/tests -v
+          python fitness-v2/tests/test_source_contract.py
+          python -m unittest discover -s fitness-v2/backend/tests -v
+          node --check fitness-v2/android/app/src/main/assets/pulse/app.js
+          npm exec --yes --package=typescript@5.9.3 -- tsc -p fitness-v2/appdeploy/tsconfig.routes.json
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -41,17 +55,17 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0'
-      - name: Test lint and build candidate 51017
+      - name: Test lint and build candidate 51019 (verify package identity)
         shell: bash
         run: |
           set -uo pipefail
           mkdir -p fitness-v2/evidence
           set +e
-          gradle --no-daemon -p fitness-v2/android :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease 2>&1 | tee fitness-v2/evidence/candidate-51017-build.log
+          gradle --no-daemon -p fitness-v2/android :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease 2>&1 | tee fitness-v2/evidence/candidate-build.log
           build_status=${PIPESTATUS[0]}
           set -e
           if [[ "$build_status" -ne 0 ]]; then
-            grep -E '(^e: |^w: |FAILURE:|FAILED|error:|Lint found)' fitness-v2/evidence/candidate-51017-build.log | tail -120 > fitness-v2/evidence/candidate-51017-errors.txt || true
+            grep -E '(^e: |^w: |FAILURE:|FAILED|error:|Lint found)' fitness-v2/evidence/candidate-build.log | tail -120 > fitness-v2/evidence/candidate-errors.txt || true
             exit "$build_status"
           fi
           APK=fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
@@ -59,21 +73,24 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           test -s "$APK" && test -s "$AAB"
           "$AAPT" dump badging "$APK" | tee /tmp/badging.txt
-          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51017'" /tmp/badging.txt
-          grep -F "versionName='5.0.0-v2-alpha17-debug'" /tmp/badging.txt
-          sha256sum "$APK" "$AAB" | tee fitness-v2/candidate-51017.sha256
-          printf 'GIT_SHA=%s\nVERSION_CODE=51017\n' "$GITHUB_SHA" | tee fitness-v2/candidate-51017-build.txt
+          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51019'" /tmp/badging.txt
+          grep -F "versionName='5.0.0-v2-alpha19-debug'" /tmp/badging.txt
+          VERSION_CODE=$(sed -nE "s/.*versionCode='([0-9]+)'.*/\1/p" /tmp/badging.txt | head -1)
+          VERSION_NAME=$(sed -nE "s/.*versionName='([^']+)'.*/\1/p" /tmp/badging.txt | head -1)
+          test -n "$VERSION_CODE" && test -n "$VERSION_NAME"
+          printf 'VERSION_CODE=%s\nVERSION_NAME=%s\n' "$VERSION_CODE" "$VERSION_NAME" | tee fitness-v2/candidate-build.txt
+          sha256sum "$APK" "$AAB" | tee fitness-v2/candidate-build.sha256
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fitness-activity-candidate-51017
+          name: fitness-activity-candidate-51019-${{ github.sha }}
           if-no-files-found: warn
           retention-days: 14
           path: |
             fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
             fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
             fitness-v2/android/app/build/reports/
-            fitness-v2/evidence/candidate-51017-build.log
-            fitness-v2/evidence/candidate-51017-errors.txt
-            fitness-v2/candidate-51017.sha256
-            fitness-v2/candidate-51017-build.txt
+            fitness-v2/evidence/candidate-build.log
+            fitness-v2/evidence/candidate-errors.txt
+            fitness-v2/candidate-build.sha256
+            fitness-v2/candidate-build.txt

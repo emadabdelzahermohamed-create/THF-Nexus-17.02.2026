@@ -356,6 +356,7 @@ class MainActivity : ComponentActivity() {
                     JSONObject().put("authenticated", true).put("persisted", false),
                 )
                 flushPendingBackend()
+                restoreBackendWorkouts()
             }.onFailure { error ->
                 backendAccessToken = null
                 val message = error.message ?: error.javaClass.simpleName
@@ -500,6 +501,7 @@ class MainActivity : ComponentActivity() {
         }
         return JSONObject()
             .put("active", snapshot.active)
+            .put("paused", snapshot.paused)
             .put("phase", snapshot.phase.wireName)
             .put("mode", snapshot.mode?.wireName ?: "")
             .put("startedAtWallMs", snapshot.startedAtWallMs)
@@ -780,6 +782,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private suspend fun restoreBackendWorkouts() {
+        val token = backendAccessToken ?: return
+        if (!backendRepository.configured || !isOnline()) return
+        runCatching {
+            withContext(Dispatchers.IO) { backendRepository.fetchWorkouts(token) }
+        }.onSuccess { document ->
+            dispatch("thf:backend-history", document.put("restoredAt", System.currentTimeMillis()))
+            prefs.edit { remove("backend_restore_last_error") }
+        }.onFailure { error ->
+            val message = error.message ?: error.javaClass.simpleName
+            prefs.edit { putString("backend_restore_last_error", message) }
+            dispatch("thf:backend-history", JSONObject().put("items", JSONArray()).put("lastError", message))
+        }
+    }
+
     private suspend fun flushPendingBackend() {
         if (!backendFlushRunning.compareAndSet(false, true)) return
         try {
@@ -850,6 +867,7 @@ class MainActivity : ComponentActivity() {
             .put("backendPending", jsonArrayPreference(PENDING_BACKEND).length())
             .put("backendLastSync", prefs.getString("backend_last_sync", ""))
             .put("backendLastError", prefs.getString("backend_last_error", ""))
+            .put("backendRestoreLastError", prefs.getString("backend_restore_last_error", ""))
             .put("stepSensorAvailable", motionEngine.capabilities().stepCounter)
             .put("activityPermission", hasActivityPermission())
             .put("sessionSteps", sessionSteps())
@@ -978,6 +996,21 @@ class MainActivity : ComponentActivity() {
             startActivityTracking(parsedMode, safeWeight)
             JSONObject().put("active", true).put("mode", parsedMode.wireName).toString()
         }.getOrElse { JSONObject().put("active", false).put("error", it.message ?: it.javaClass.simpleName).toString() }
+
+        @JavascriptInterface
+        fun pauseActivitySession(): String {
+            ActivityTrackingService.pauseActivity()
+            return activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
+        }
+
+        @JavascriptInterface
+        fun resumeActivitySession(): String {
+            ActivityTrackingService.resumeActivity()
+            return activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
+        }
+
+        @JavascriptInterface
+        fun takePendingFinishedActivitySnapshot(): String = ActivityTrackingService.takePendingFinishedActivitySnapshot(this@MainActivity)
 
         @JavascriptInterface
         fun activitySnapshot(): String = activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()

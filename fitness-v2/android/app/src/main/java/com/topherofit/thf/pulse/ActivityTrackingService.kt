@@ -30,6 +30,8 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.math.max
 
 /**
@@ -42,6 +44,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         const val ACTION_START_ACTIVITY = "com.topherofit.thf.pulse.START_ACTIVITY"
         const val ACTION_START_WORKOUT = "com.topherofit.thf.pulse.START_WORKOUT"
         const val ACTION_STOP_TRACKING = "com.topherofit.thf.pulse.STOP_TRACKING"
+        private const val PENDING_FINISHED_ACTIVITY_KEY = "pending_finished_activity_json"
+        const val ACTION_PAUSE_TRACKING = "com.topherofit.thf.pulse.PAUSE_TRACKING"
+        const val ACTION_RESUME_TRACKING = "com.topherofit.thf.pulse.RESUME_TRACKING"
         const val EXTRA_MODE = "mode"
         const val EXTRA_WEIGHT_KG = "weight_kg"
         const val EXTRA_SESSION_ID = "session_id"
@@ -93,6 +98,17 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             startForegroundCompat(context, intent)
         }
 
+        fun pauseActivity() { instance?.pauseActivityInternal() }
+
+        fun resumeActivity() { instance?.resumeActivityInternal() }
+
+        fun takePendingFinishedActivitySnapshot(context: Context): String {
+            val prefs = context.getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, Context.MODE_PRIVATE)
+            val pending = prefs.getString(PENDING_FINISHED_ACTIVITY_KEY, "") ?: ""
+            if (pending.isNotBlank()) prefs.edit().remove(PENDING_FINISHED_ACTIVITY_KEY).apply()
+            return pending
+        }
+
         fun finishActivity(): ActivitySnapshot {
             val service = instance ?: return lastActivitySnapshot
             return service.finishActivityInternal()
@@ -119,6 +135,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private var activityStartedAtWallMs = 0L
     private var activityStartedAtElapsedMs = 0L
     private var activityPhase = ActivitySessionPhase.ARMED
+    private var activityPaused = false
+    private var activityPauseStartedElapsedMs = 0L
     private var activityActivatedAtWallMs: Long? = null
     private var activityActivatedAtElapsedMs: Long? = null
     private var activityDistanceMetres = 0.0
@@ -182,7 +200,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                     startWorkoutInternal(sessionId, MotionSensorProfile.fromWire(intent.getStringExtra(EXTRA_SENSOR_PROFILE)))
                 }
             }
-            ACTION_STOP_TRACKING -> stopCurrentSession()
+            ACTION_STOP_TRACKING -> finishFromNotification()
+            ACTION_PAUSE_TRACKING -> pauseActivityInternal()
+            ACTION_RESUME_TRACKING -> resumeActivityInternal()
         }
         return START_STICKY
     }
@@ -218,6 +238,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }
         stopCurrentSession(keepService = true)
         activityMode = mode
+        activityPaused = false
+        activityPauseStartedElapsedMs = 0L
         activityWeightKg = weightKg.coerceIn(30.0, 250.0)
         activityStartedAtWallMs = System.currentTimeMillis()
         sessionStartedAtWallMs = activityStartedAtWallMs
@@ -243,7 +265,11 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     private fun startWorkoutInternal(sessionId: String, profile: MotionSensorProfile) {
         if (workoutEngine?.currentState()?.sessionId == sessionId) return
-        stopCurrentSession(keepService = true)
+        if (activityMode != null) {
+            pauseActivityInternal()
+        } else {
+            stopCurrentSession(keepService = true)
+        }
         val engine = MotionSessionEngine(AndroidMotionSensorGateway(this))
         engine.onHostResume()
         engine.startSession(sessionId, profile)
@@ -456,6 +482,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun buildActivitySnapshot(active: Boolean): ActivitySnapshot {
+        if (activityPaused && activityMode != null) return lastActivitySnapshot.copy(active = active, paused = true, currentSpeedKph = 0.0)
         val mode = activityMode ?: return lastActivitySnapshot
         return ActivitySnapshotPolicy.build(
             sessionActive = active,
@@ -474,11 +501,47 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         ).copy(
             gpsFixState = gpsFixState(),
             observedAccuracyMetres = lastObservedAccuracyMetres,
+            paused = false,
         )
     }
 
     private fun publishActivitySnapshot() {
         if (activityMode != null) lastActivitySnapshot = buildActivitySnapshot(active = true)
+    }
+
+    private fun pauseActivityInternal() {
+        if (activityMode == null || activityPaused) return
+        lastActivitySnapshot = buildActivitySnapshot(active = true).copy(paused = true, currentSpeedKph = 0.0)
+        activityPaused = true
+        activityPauseStartedElapsedMs = SystemClock.elapsedRealtime()
+        unregisterActivitySources()
+        getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE).edit().putBoolean("activity_paused", true).apply()
+        saveActivityCheckpoint(force = true)
+        publishActivitySnapshot()
+        if (hasLiveSession()) {
+            startForegroundForCurrentSession(buildNotification())
+            notificationManager.notify(NOTIFICATION_ID, buildNotification())
+        }
+    }
+
+    private fun resumeActivityInternal() {
+        val mode = activityMode ?: return
+        if (!activityPaused) return
+        val pausedFor = (SystemClock.elapsedRealtime() - activityPauseStartedElapsedMs).coerceAtLeast(0L)
+        activityActivatedAtElapsedMs = activityActivatedAtElapsedMs?.plus(pausedFor)
+        activityStartedAtElapsedMs += pausedFor
+        activityPauseStartedElapsedMs = 0L
+        activityPaused = false
+        getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE).edit().putBoolean("activity_paused", false).apply()
+        lastLocation = null
+        currentSpeedKph = 0.0
+        registerActivitySources(mode)
+        publishActivitySnapshot()
+        saveActivityCheckpoint(force = true)
+        if (hasLiveSession()) {
+            startForegroundForCurrentSession(buildNotification())
+            notificationManager.notify(NOTIFICATION_ID, buildNotification())
+        }
     }
 
     private fun finishActivityInternal(): ActivitySnapshot {
@@ -500,18 +563,50 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         engine.onHostPause()
         workoutEngine = null
         if (evidence != null) lastWorkoutEvidence = evidence
-        notificationHandler.removeCallbacks(notificationTicker)
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        if (activityMode != null) {
+            if (activityPaused) resumeActivityInternal()
+            startForegroundForCurrentSession(buildNotification())
+            startNotificationUpdates()
+        } else {
+            notificationHandler.removeCallbacks(notificationTicker)
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
         return evidence
+    }
+
+    private fun finishFromNotification() {
+        if (activityMode != null) {
+            val final = buildActivitySnapshot(active = false).copy(paused = false)
+            val route = JSONArray()
+            final.route.forEach { point ->
+                route.put(JSONObject().put("lat", point.latitude).put("lng", point.longitude)
+                    .put("altitudeMetres", point.altitudeMetres).put("accuracyMetres", point.accuracyMetres)
+                    .put("elapsedMs", point.elapsedMs))
+            }
+            val payload = JSONObject().put("active", false).put("paused", false)
+                .put("phase", final.phase.wireName).put("mode", final.mode?.wireName ?: "")
+                .put("startedAtWallMs", final.startedAtWallMs).put("elapsedMs", final.elapsedMs)
+                .put("distanceMetres", final.distanceMetres).put("steps", final.stepDelta)
+                .put("currentSpeedKph", 0.0).put("averageSpeedKph", final.averageSpeedKph)
+                .put("paceMinutesPerKm", final.paceMinutesPerKm).put("estimatedCaloriesKcal", final.estimatedCaloriesKcal)
+                .put("gpsPointCount", final.gpsPointCount).put("lastAccuracyMetres", final.lastAccuracyMetres)
+                .put("observedAccuracyMetres", final.observedAccuracyMetres).put("gpsFixState", final.gpsFixState)
+                .put("route", route)
+            getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE).edit()
+                .putString(PENDING_FINISHED_ACTIVITY_KEY, payload.toString()).apply()
+        }
+        stopCurrentSession()
     }
 
     private fun stopCurrentSession(keepService: Boolean = false) {
         if (activityMode != null) {
-            lastActivitySnapshot = buildActivitySnapshot(active = false)
+            lastActivitySnapshot = buildActivitySnapshot(active = false).copy(paused = false)
             unregisterActivitySources()
             clearActivityCheckpoint()
             activityMode = null
+            activityPaused = false
+            activityPauseStartedElapsedMs = 0L
         }
         workoutEngine?.let { engine ->
             lastWorkoutEvidence = engine.stopSession() ?: lastWorkoutEvidence
@@ -555,6 +650,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE)
             .edit()
             .remove(ACTIVITY_CHECKPOINT_KEY)
+            .remove("activity_paused")
             .apply()
         lastActivityCheckpointWriteElapsedMs = 0L
     }
@@ -570,6 +666,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }
 
         activityMode = checkpoint.mode
+        val restorePaused = getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE).getBoolean("activity_paused", false)
+        activityPaused = false
+        activityPauseStartedElapsedMs = 0L
         activityWeightKg = checkpoint.weightKg
         activityStartedAtWallMs = checkpoint.startedAtWallMs
         sessionStartedAtWallMs = checkpoint.startedAtWallMs
@@ -602,8 +701,11 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             null
         }
         lastActivityCheckpointWriteElapsedMs = nowElapsed
+        lastActivitySnapshot = buildActivitySnapshot(active = true).copy(paused = restorePaused, currentSpeedKph = if (restorePaused) 0.0 else currentSpeedKph)
+        activityPaused = restorePaused
+        activityPauseStartedElapsedMs = if (restorePaused) nowElapsed else 0L
         startForegroundForCurrentSession(buildNotification())
-        registerActivitySources(checkpoint.mode)
+        if (!activityPaused) registerActivitySources(checkpoint.mode)
         publishActivitySnapshot()
         startNotificationUpdates()
         return true
@@ -616,6 +718,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         val contentIntent = launchIntent?.let {
             PendingIntent.getActivity(this, 51009, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         }
+        val pauseResumeAction = if (activityPaused) ACTION_RESUME_TRACKING else ACTION_PAUSE_TRACKING
+        val pauseResumeLabel = if (activityPaused) "استئناف" else "إيقاف مؤقت"
+        val pauseResumeIntent = PendingIntent.getService(this, 51011, Intent(this, ActivityTrackingService::class.java).setAction(pauseResumeAction), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val stopIntent = PendingIntent.getService(
             this,
             51010,
@@ -625,9 +730,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         val snapshot = if (activityMode != null) buildActivitySnapshot(active = true) else null
         val waitingForMovement = snapshot?.phase == ActivitySessionPhase.ARMED
         val title = when (activityMode) {
-            ActivityMode.WALK -> if (waitingForMovement) "Top Hero Fit · في انتظار الحركة" else "Top Hero Fit · المشي مستمر"
-            ActivityMode.RUN -> if (waitingForMovement) "Top Hero Fit · في انتظار الحركة" else "Top Hero Fit · الجري مستمر"
-            ActivityMode.CYCLE -> if (waitingForMovement) "Top Hero Fit · في انتظار الحركة" else "Top Hero Fit · ركوب الدراجة مستمر"
+            ActivityMode.WALK -> if (activityPaused) "Top Hero Fit · المشي متوقف مؤقتًا" else if (waitingForMovement) "Top Hero Fit · في انتظار الحركة" else "Top Hero Fit · المشي مستمر"
+            ActivityMode.RUN -> if (activityPaused) "Top Hero Fit · الجري متوقف مؤقتًا" else if (waitingForMovement) "Top Hero Fit · في انتظار الحركة" else "Top Hero Fit · الجري مستمر"
+            ActivityMode.CYCLE -> if (activityPaused) "Top Hero Fit · الدراجة متوقفة مؤقتًا" else if (waitingForMovement) "Top Hero Fit · في انتظار الحركة" else "Top Hero Fit · ركوب الدراجة مستمر"
             null -> "Top Hero Fit · التمرين مستمر"
         }
         val state = workoutEngine?.currentState()
@@ -666,7 +771,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             .setOnlyAlertOnce(true)
             .setCategory(Notification.CATEGORY_SERVICE)
             .setContentIntent(contentIntent)
-            .addAction(Notification.Action.Builder(null, "إيقاف", stopIntent).build())
+            .addAction(Notification.Action.Builder(null, pauseResumeLabel, pauseResumeIntent).build())
+            .addAction(Notification.Action.Builder(null, "إنهاء وحفظ", stopIntent).build())
             .build()
     }
 

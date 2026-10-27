@@ -25,13 +25,14 @@ class BackendSyncException(message: String, val statusCode: Int? = null) : Excep
  */
 class BackendSyncRepository(baseUrl: String) {
     companion object {
-        private const val MAX_RESPONSE_BYTES = 64 * 1024
+        private const val MAX_RESPONSE_BYTES = 1024 * 1024
         private val ALLOWED_SET_TYPES = setOf("warmup", "working", "drop", "failure")
     }
 
     private val endpoint: URL? = parseEndpoint(baseUrl)
+    private val historyEndpoint: URL? = parseHistoryEndpoint(baseUrl)
 
-    val configured: Boolean get() = endpoint != null
+    val configured: Boolean get() = endpoint != null && historyEndpoint != null
 
     fun validateAccessToken(value: String): String {
         return AccountAuthContract.validAccessToken(value)
@@ -122,6 +123,31 @@ class BackendSyncRepository(baseUrl: String) {
         }
     }
 
+    /** Pull the authenticated account's workout history for cross-device restore. */
+    fun fetchWorkouts(accessToken: String): JSONObject {
+        val target = historyEndpoint ?: throw BackendSyncException("Production history endpoint is not configured")
+        val token = validateAccessToken(accessToken)
+        val connection = (target.openConnection() as HttpsURLConnection).apply {
+            requestMethod = "GET"
+            instanceFollowRedirects = false
+            connectTimeout = 10_000
+            readTimeout = 15_000
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Authorization", "Bearer $token")
+            setRequestProperty("Cache-Control", "no-store")
+        }
+        return try {
+            val status = connection.responseCode
+            val response = readBounded(if (status in 200..299) connection.inputStream else connection.errorStream)
+            if (status != 200) throw BackendSyncException("Workout history restore failed with HTTP $status", status)
+            val document = JSONObject(response)
+            if (document.optJSONArray("items") == null) throw BackendSyncException("Workout history response contract mismatch", status)
+            document
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     private fun optionalEffort(item: JSONObject, key: String): Any {
         if (!item.has(key) || item.isNull(key)) return JSONObject.NULL
         val value = item.optDouble(key, Double.NaN)
@@ -158,5 +184,10 @@ class BackendSyncRepository(baseUrl: String) {
     private fun parseEndpoint(value: String): URL? = runCatching {
         val clean = AccountAuthContract.persistentHttpsBase(value)?.trimEnd('/') ?: return@runCatching null
         URL("$clean/api/v2/workouts/sync")
+    }.getOrNull()
+
+    private fun parseHistoryEndpoint(value: String): URL? = runCatching {
+        val clean = AccountAuthContract.persistentHttpsBase(value)?.trimEnd('/') ?: return@runCatching null
+        URL("$clean/api/v2/workouts?limit=200")
     }.getOrNull()
 }

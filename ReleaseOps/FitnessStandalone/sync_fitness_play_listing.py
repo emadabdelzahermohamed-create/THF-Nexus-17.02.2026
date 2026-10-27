@@ -5,7 +5,7 @@ PACKAGE = 'com.topherofit.thf.pulse'
 LISTINGS = {
     'ar': {
         'title': 'Top Hero Fit: لياقة ونشاط',
-        'shortDescription': 'تمارين أوفلاين، خطوات، جري ودراجات بـGPS، خطط تدريب وتكامل Health Connect.',
+        'shortDescription': 'تمارين منزلية وجيم أوفلاين، دليل صوتي، وخطط للمشي والجري والدراجات.',
         'fullDescription': '''Top Hero Fit يجمع التمارين وتتبع النشاط اليومي في تطبيق واحد يعمل بالعربية والإنجليزية.
 
 الميزات الحالية:
@@ -14,7 +14,6 @@ LISTINGS = {
 • استمرار جلسة النشاط في الخلفية مع إشعار دائم للتحكم والمتابعة.
 • مكتبة تمارين وبرامج تدريب متاحة دون اتصال بعد تثبيت التطبيق.
 • تعليمات للحركة والتنفس والسلامة مع إرشاد صوتي بالعربية والإنجليزية.
-• تكامل Health Connect عند تفعيل الميزة ومنح الصلاحيات المناسبة، مع الحفاظ على مصدر البيانات عند توفره.
 • واجهة عربية RTL وإنجليزية LTR وإعداد لتقليل الحركة.
 
 Top Hero Fit مصمم لمساعدتك على بناء عادة تدريب ومتابعة نشاطك بوضوح دون خلط جلسات المشي والجري والدراجة مع برامج التمارين.
@@ -24,7 +23,7 @@ Top Hero Fit مصمم لمساعدتك على بناء عادة تدريب وم�
     },
     'en-US': {
         'title': 'Top Hero Fit: Fitness & GPS',
-        'shortDescription': 'Offline workouts, GPS activity, steps, training plans and Health Connect.',
+        'shortDescription': 'Offline home workouts, voice guidance, and walking, running & cycling GPS.',
         'fullDescription': '''Top Hero Fit brings workouts and everyday activity tracking together in one Arabic- and English-ready fitness app.
 
 Current features include:
@@ -33,7 +32,6 @@ Current features include:
 • Background activity sessions with an ongoing notification for status and controls.
 • An offline-ready exercise library and structured training programs after the app is installed.
 • Movement, breathing and safety guidance with Arabic and English voice cues.
-• Health Connect integration when enabled and granted, preserving data source information where available.
 • Arabic RTL and English LTR interfaces, plus a reduced-motion preference.
 
 Top Hero Fit is designed to help you build a consistent training habit while keeping real walking, running and cycling sessions separate from workout programs.
@@ -43,8 +41,18 @@ Calories and derived fitness metrics are estimates, not medical measurements. GP
     },
 }
 
+ICON_PATH = 'ReleaseOps/FitnessStandalone/assets/play_icon_512.png'
 
 def validate_listings():
+    from pathlib import Path
+    from struct import unpack
+    icon = Path(ICON_PATH)
+    if not icon.is_file() or icon.stat().st_size > 1024 * 1024:
+        raise ValueError('Play icon must exist and be no larger than 1 MB')
+    with icon.open('rb') as handle:
+        header = handle.read(24)
+    if header[:8] != b'\x89PNG\r\n\x1a\n' or unpack('>II', header[16:24]) != (512, 512):
+        raise ValueError('Play icon must be a 512x512 PNG')
     for language, item in LISTINGS.items():
         if len(item['title']) > 30:
             raise ValueError(f'{language} title too long: {len(item["title"])}')
@@ -69,6 +77,7 @@ def compact(items):
 def sync(output_path):
     import google.auth
     from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
 
     validate_listings()
     creds, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/androidpublisher'])
@@ -78,6 +87,7 @@ def sync(output_path):
         before = api.edits().listings().list(packageName=PACKAGE, editId=edit).execute().get('listings', []) or []
         for language, item in LISTINGS.items():
             api.edits().listings().update(packageName=PACKAGE, editId=edit, language=language, body=item).execute()
+            api.edits().images().upload(packageName=PACKAGE, editId=edit, language=language, imageType='icon', media_body=MediaFileUpload(ICON_PATH, mimetype='image/png', resumable=True)).execute()
         api.edits().commit(packageName=PACKAGE, editId=edit).execute()
         edit = None
     finally:
