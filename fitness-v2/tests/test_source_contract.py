@@ -542,6 +542,21 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertEqual(sum(item.get("kind") == "offline_video" for item in manifest.values()), 5)
         self.assertIn("entry.kind === 'offline_video'", app)
 
+    def test_account_restore_pulls_user_scoped_history_and_merges_without_duplicate_ids(self):
+        repository = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "BackendSyncRepository.kt").read_text()
+        activity = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        routes = (ROOT / "fitness-v2" / "appdeploy" / "android_v2_routes.ts").read_text()
+        self.assertIn("fun fetchWorkouts(accessToken: String)", repository)
+        self.assertIn("GET", repository)
+        self.assertIn("/api/v2/workouts", repository)
+        self.assertIn("private suspend fun restoreBackendWorkouts()", activity)
+        self.assertIn('dispatch("thf:backend-history"', activity)
+        self.assertIn("window.addEventListener('thf:backend-history'", app)
+        self.assertIn("merged.has(id)", app)
+        self.assertIn("'GET /api/v2/workouts'", routes)
+        self.assertIn("androidUser(context.event)", routes)
+
     def test_workout_ui_uses_native_motion_session_and_surfaces_evidence(self):
         app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
         html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
