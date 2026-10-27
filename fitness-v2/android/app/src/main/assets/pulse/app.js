@@ -226,13 +226,42 @@
       (!state.filters.goal || item.goal.id === state.filters.goal);
   }
 
+  function motionAsset(item) {
+    const entry = motionManifest[item?.id];
+    return entry && typeof entry.asset === 'string' && /^media\/motion\/[a-z0-9-]+\.(?:mp4|webm)$/i.test(entry.asset) ? entry : null;
+  }
+  function motionPlayer(item, context = 'detail') {
+    const entry = motionAsset(item);
+    if (!entry) return `<div class="motion-placeholder" role="img" aria-label="${escapeHtml(state.lang === 'ar' ? 'فيديو التمرين غير متاح بعد' : 'Exercise video not available yet')}"><span class="motion-placeholder-icon" aria-hidden="true">▶</span><strong>${escapeHtml(state.lang === 'ar' ? 'الفيديو قيد التجهيز' : 'Video coming soon')}</strong><small>${escapeHtml(state.lang === 'ar' ? 'نضيف مقطعًا موثوقًا لهذا التمرين' : 'A verified demonstration clip is being prepared')}</small></div>`;
+    const asset = `./${escapeHtml(entry.asset)}`;
+    const label = escapeHtml(local(item.name));
+    const controls = context === 'detail' ? 'controls' : '';
+    const autoplay = context === 'card' ? 'autoplay' : '';
+    const preload = context === 'card' ? 'none' : 'metadata';
+    const type = entry.asset.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4';
+    return `<video class="exercise-motion ${context === 'card' ? 'exercise-motion-card' : 'exercise-motion-detail'}" data-clip-limit="6" ${controls} ${autoplay} muted playsinline loop preload="${preload}" aria-label="${label}"><source src="${asset}" type="${type}"><span>${escapeHtml(state.lang === 'ar' ? 'تعذر تشغيل الفيديو' : 'Video playback unavailable')}</span></video>`;
+  }
+  function bindDemoClipLimits(root) {
+    root.querySelectorAll('video[data-clip-limit]').forEach(video => {
+      if (video.dataset.clipLimitBound === '1') return;
+      video.dataset.clipLimitBound = '1';
+      video.addEventListener('timeupdate', () => {
+        const limit = Number(video.dataset.clipLimit) || 6;
+        if (Number.isFinite(video.duration) && video.duration > limit && video.currentTime >= limit) {
+          video.currentTime = 0;
+          if (!video.paused) video.play().catch(() => {});
+        }
+      });
+    });
+  }
   function renderExercises() {
     if (!EXERCISES.length) { $('exerciseGrid').innerHTML = `<p class="error-message">${escapeHtml(t('noCatalog'))}</p>`; return; }
     const results = EXERCISES.filter(matches);
     $('resultsCount').textContent = String(results.length);
     $('emptyResults').classList.toggle('hidden', results.length > 0);
     $('activeFilterCount').textContent = String(Object.values(state.filters).filter(Boolean).length);
-    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media">${motionPlayer(item, 'card')}<span class="offline-badge">${motionAsset(item) ? '▶ ' + escapeHtml(state.lang === 'ar' ? 'فيديو دون إنترنت' : 'Offline video') : escapeHtml(state.lang === 'ar' ? 'الفيديو قريبًا' : 'Video soon')}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    bindDemoClipLimits($('exerciseGrid'));
     $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => card.addEventListener('click', () => openDetail(card.dataset.id)));
   }
 
@@ -248,7 +277,8 @@
   function closeDetail() { $('exerciseDetail').classList.add('hidden'); document.body.style.overflow = ''; }
   function list(items, ordered = false) { const tag = ordered ? 'ol' : 'ul'; return `<${tag}>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</${tag}>`; }
   function renderDetail(item) {
-    $('detailDemo').innerHTML = item.demo.assets.map((asset,index) => `<div class="detail-frame"><img src="./${escapeHtml(asset)}" alt="${escapeHtml(item.demo.alt[state.lang])}"><span>${escapeHtml(t(index ? 'finish' : 'start'))}</span></div>`).join('');
+    $('detailDemo').innerHTML = motionPlayer(item, 'detail');
+    bindDemoClipLimits($('detailDemo'));
     $('detailBadges').innerHTML = `<span class="pill gold">${escapeHtml(local(item.section))}</span><span class="pill">✓ ${escapeHtml(t('offline'))}</span><span class="pill">${escapeHtml(local(item.level))}</span>`;
     $('detailName').textContent = local(item.name); $('detailMeta').textContent = `${local(item.equipment)} · ${local(item.movement)} · ${local(item.goal)}`;
     $('detailMuscles').innerHTML = item.muscles.primary[state.lang].concat(item.muscles.secondary[state.lang]).map(value => `<span class="tag">${escapeHtml(value)}</span>`).join('');

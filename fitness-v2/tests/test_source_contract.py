@@ -525,6 +525,21 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             self.assertIn(marker, activity)
 
 
+    def test_exercise_demo_ui_prefers_offline_video_and_never_substitutes_stills(self):
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        manifest = json.loads((ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "data" / "motion-manifest.json").read_text())
+        self.assertIn("function motionAsset(item)", app)
+        self.assertIn("function motionPlayer(item", app)
+        self.assertIn("motionPlayer(item, 'card')", app)
+        self.assertIn("motionPlayer(item, 'detail')", app)
+        self.assertIn('data-clip-limit="6"', app)
+        self.assertIn("bindDemoClipLimits", app)
+        self.assertIn("Video coming soon", app)
+        self.assertGreaterEqual(len(manifest), 7)
+        for item in manifest.values():
+            self.assertRegex(item["asset"], r"^media/motion/[a-z0-9-]+\.(mp4|webm)$")
+            self.assertTrue((ANDROID / "app" / "src" / "main" / "assets" / "pulse" / item["asset"]).is_file())
+
     def test_workout_ui_uses_native_motion_session_and_surfaces_evidence(self):
         app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
         html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
