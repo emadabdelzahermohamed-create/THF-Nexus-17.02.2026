@@ -45,3 +45,32 @@
 :root[style*="--motion: 0"] .program-card:hover .program-cover img,:root[style*="--motion:0"] .program-card:hover .program-cover img{transform:none!important}
 
 .demo-coverage-badge{justify-content:flex-start;max-width:100%;white-space:normal;text-align:start;line-height:1.35}
+
+
+/* Offline exercise demonstration clips: video-first, never substitute a still photo. */
+.exercise-card .media{position:relative;display:block;overflow:hidden;background:linear-gradient(145deg,#122b35,#08161d);aspect-ratio:16/10;border-radius:16px 16px 0 0}
+.exercise-motion{display:block;width:100%;height:100%;object-fit:contain;background:#07141b}
+.exercise-motion-card{position:absolute;inset:0;object-fit:cover}
+.exercise-card .media .offline-badge{z-index:2}
+.motion-placeholder{display:flex;min-height:180px;width:100%;height:100%;aspect-ratio:16/9;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px;text-align:center;background:radial-gradient(circle at 50% 30%,#244653,#0a1920 70%);color:var(--text)}
+.motion-placeholder-icon{display:grid;place-items:center;width:52px;height:52px;border:1px solid #5c7782;border-radius:50%;color:var(--gold);font-size:22px}
+.motion-placeholder strong{font-size:14px}
+.motion-placeholder small{max-width:240px;color:var(--muted);font-size:12px}
+#detailDemo{display:block;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#07141b;min-height:180px}
+#detailDemo .exercise-motion-detail{width:100%;max-height:420px;aspect-ratio:16/9;object-fit:contain}
+#detailDemo .motion-placeholder{min-height:240px}
+
+/* Two-frame offline demos remain animated when a licensed video is not yet available. */
+.exercise-reference-motion{position:relative;display:block;overflow:hidden;width:100%;height:100%;background:#07141b}
+.exercise-reference-motion-card{position:absolute;inset:0;aspect-ratio:auto}
+.exercise-reference-motion-detail{min-height:240px;aspect-ratio:16/9}
+.exercise-reference-motion img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;pointer-events:none}
+.exercise-reference-motion img:first-of-type{opacity:1;animation:thf-reference-start 1.8s steps(1,end) infinite}
+.exercise-reference-motion img:last-of-type{animation:thf-reference-finish 1.8s steps(1,end) infinite}
+@keyframes thf-reference-start{0%,49.99%{opacity:1}50%,100%{opacity:0}}
+@keyframes thf-reference-finish{0%,49.99%{opacity:0}50%,100%{opacity:1}}
+.motion-reduced .exercise-reference-motion img:first-of-type{opacity:1;animation:none!important}
+.motion-reduced .exercise-reference-motion img:last-of-type{opacity:0;animation:none!important}
+@media(prefers-reduced-motion:reduce){.exercise-reference-motion img:first-of-type{opacity:1!important;animation:none!important}.exercise-reference-motion img:last-of-type{opacity:0!important;animation:none!important}}
+.motion-credit{margin:0;padding:8px 12px 12px;line-height:1.5;font-size:11px}
+.motion-credit a{color:var(--gold);text-decoration:underline}
