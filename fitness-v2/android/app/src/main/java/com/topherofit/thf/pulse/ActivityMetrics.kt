@@ -45,6 +45,7 @@ data class ActivitySnapshot(
     val phase: ActivitySessionPhase = ActivitySessionPhase.ARMED,
     val gpsFixState: String = "acquiring",
     val observedAccuracyMetres: Float? = null,
+    val paused: Boolean = false,
 )
 
 object ActivityMetrics {

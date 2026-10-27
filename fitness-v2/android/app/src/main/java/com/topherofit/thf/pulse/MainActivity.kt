@@ -500,6 +500,7 @@ class MainActivity : ComponentActivity() {
         }
         return JSONObject()
             .put("active", snapshot.active)
+            .put("paused", snapshot.paused)
             .put("phase", snapshot.phase.wireName)
             .put("mode", snapshot.mode?.wireName ?: "")
             .put("startedAtWallMs", snapshot.startedAtWallMs)
@@ -978,6 +979,18 @@ class MainActivity : ComponentActivity() {
             startActivityTracking(parsedMode, safeWeight)
             JSONObject().put("active", true).put("mode", parsedMode.wireName).toString()
         }.getOrElse { JSONObject().put("active", false).put("error", it.message ?: it.javaClass.simpleName).toString() }
+
+        @JavascriptInterface
+        fun pauseActivitySession(): String {
+            ActivityTrackingService.pauseActivity()
+            return activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
+        }
+
+        @JavascriptInterface
+        fun resumeActivitySession(): String {
+            ActivityTrackingService.resumeActivity()
+            return activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
+        }
 
         @JavascriptInterface
         fun activitySnapshot(): String = activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
