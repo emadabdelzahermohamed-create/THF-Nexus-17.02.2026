@@ -54,7 +54,7 @@ case "${1:-}" in
   dumpsys)
     case "${2:-}" in
       package)
-        printf 'Package [com.topherofit.thf.pulse] versionCode=%s versionName=5.0.0-v2-alpha18 targetSdk=36\n' "${FAKE_VERSION_CODE:-51018}"
+        printf 'Package [com.topherofit.thf.pulse] versionCode=%s versionName=5.0.0-v2-alpha19 targetSdk=36\n' "${FAKE_VERSION_CODE:-51019}"
         ;;
       activity)
         case "${3:-}" in
@@ -122,7 +122,7 @@ class FitnessPhonePreflightTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_preflight(self, mode="ready", version="51018", owner_idle=True,
+    def run_preflight(self, mode="ready", version="51019", owner_idle=True,
                       output=None):
         output = output or (self.root / "evidence")
         env = os.environ.copy()
@@ -134,7 +134,7 @@ class FitnessPhonePreflightTests(unittest.TestCase):
         })
         args = [
             "bash", str(SCRIPT),
-            "--expected-version-code", "51018",
+            "--expected-version-code", "51019",
             "--out", str(output),
         ]
         if owner_idle:
