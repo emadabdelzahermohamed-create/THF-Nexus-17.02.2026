@@ -746,7 +746,23 @@
     if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
   }
 
+  function bindSystemReducedMotionPreference(mediaQuery, hasSavedPreference, applyPreference) {
+    if (!mediaQuery) return;
+    const sync = event => {
+      if (hasSavedPreference()) return;
+      applyPreference(Boolean(event.matches), false);
+    };
+    if (typeof mediaQuery.addEventListener === 'function') mediaQuery.addEventListener('change', sync);
+    else if (typeof mediaQuery.addListener === 'function') mediaQuery.addListener(sync);
+  }
+
   function bind(){
+    const systemMotionPreference = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    bindSystemReducedMotionPreference(
+      systemMotionPreference,
+      () => store.getItem('pulse.v2.reduceMotion') !== null,
+      applyMotionPreference
+    );
     $('languageToggle').addEventListener('click',toggleLanguage);
     $('onboardingLanguageToggle').addEventListener('click',()=>{captureOnboardingDraft();toggleLanguage();});
     $('onboardingForm').addEventListener('submit',completeOnboarding);
