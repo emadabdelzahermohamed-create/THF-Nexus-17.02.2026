@@ -43,3 +43,5 @@
 :root[style*="--motion: 0"] .button:active,:root[style*="--motion:0"] .button:active{transform:none!important}
 :root[style*="--motion: 0"] .exercise-card:hover img,:root[style*="--motion:0"] .exercise-card:hover img{transform:none!important}
 :root[style*="--motion: 0"] .program-card:hover .program-cover img,:root[style*="--motion:0"] .program-card:hover .program-cover img{transform:none!important}
+
+.muscle-groups{display:grid;gap:9px;margin:12px 0}.muscle-group{display:grid;gap:5px}.muscle-group-label{color:var(--muted);font-size:11px}
