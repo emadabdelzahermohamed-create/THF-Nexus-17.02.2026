@@ -586,6 +586,26 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn('id="motionEvidencePanel"', html)
         self.assertIn('id="motionSourceBadge"', html)
 
+    def test_exercise_video_playback_is_visibility_gated_and_lifecycle_safe(self):
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        for marker in (
+            "function shouldPlayExerciseDemoVideo(video)",
+            "new window.IntersectionObserver(",
+            "entry.intersectionRatio >= 0.25",
+            "video.dataset.inViewport",
+            "video.removeAttribute('autoplay')",
+            "video.closest('.hidden')",
+            "document.hidden",
+            "syncExerciseDemoVideos();",
+            "unobserveExerciseDemoVideos($('exerciseGrid'))",
+            "unobserveExerciseDemoVideos($('detailDemo'))",
+            "window.addEventListener('scroll', refresh, {passive:true})",
+            "video.pause()",
+        ):
+            self.assertIn(marker, app)
+        self.assertNotIn("const autoplay = reduced ? '' : 'autoplay';", app)
+        self.assertIn("const preload = context === 'card' ? 'none' : 'metadata';", app)
+
 
 if __name__ == "__main__":
     unittest.main()
