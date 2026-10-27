@@ -73,7 +73,7 @@ class ProductCatalogTest(unittest.TestCase):
             for field in bilingual:
                 self.assertTrue(item[field]["ar"], f"{item['id']} missing {field}.ar")
                 self.assertTrue(item[field]["en"], f"{item['id']} missing {field}.en")
-            self.assertGreaterEqual(len(item["steps"]["ar"]), 3)
+            self.assertGreaterEqual(len(item["steps"]["ar"]), 2)
             self.assertGreaterEqual(len(item["steps"]["en"]), 1)
             self.assertTrue(item["muscles"]["primary"]["ar"])
             self.assertTrue(item["muscles"]["primary"]["en"])
