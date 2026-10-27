@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: fitness-google-play-internal
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
@@ -45,7 +45,6 @@ jobs:
           test -s "$AAB"; test -s "$BUILD_INFO"
           grep -F 'VERSION_CODE=51019' "$BUILD_INFO"
           grep -F 'VERSION_NAME=5.0.0-v2-alpha19-debug' "$BUILD_INFO"
-          grep -F 'VERSION_CODE=51019' "$BUILD_INFO"
           echo "aa4ecfdfcbab20587b69ae59b75e09c47827f2ecce3c272199afc3c347ffce93  $AAB" | sha256sum -c -
           sha256sum "$AAB" | tee evidence/aab-before-sign.sha256
           echo "AAB_PATH=$AAB" >> "$GITHUB_ENV"
