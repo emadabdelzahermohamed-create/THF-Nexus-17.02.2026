@@ -993,6 +993,9 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun takePendingFinishedActivitySnapshot(): String = ActivityTrackingService.takePendingFinishedActivitySnapshot(this@MainActivity)
+
+        @JavascriptInterface
         fun activitySnapshot(): String = activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
 
         @JavascriptInterface

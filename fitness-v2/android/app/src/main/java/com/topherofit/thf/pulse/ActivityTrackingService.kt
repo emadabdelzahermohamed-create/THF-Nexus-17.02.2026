@@ -30,6 +30,8 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.math.max
 
 /**
@@ -42,6 +44,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         const val ACTION_START_ACTIVITY = "com.topherofit.thf.pulse.START_ACTIVITY"
         const val ACTION_START_WORKOUT = "com.topherofit.thf.pulse.START_WORKOUT"
         const val ACTION_STOP_TRACKING = "com.topherofit.thf.pulse.STOP_TRACKING"
+        private const val PENDING_FINISHED_ACTIVITY_KEY = "pending_finished_activity_json"
         const val ACTION_PAUSE_TRACKING = "com.topherofit.thf.pulse.PAUSE_TRACKING"
         const val ACTION_RESUME_TRACKING = "com.topherofit.thf.pulse.RESUME_TRACKING"
         const val EXTRA_MODE = "mode"
@@ -98,6 +101,13 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         fun pauseActivity() { instance?.pauseActivityInternal() }
 
         fun resumeActivity() { instance?.resumeActivityInternal() }
+
+        fun takePendingFinishedActivitySnapshot(context: Context): String {
+            val prefs = context.getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, Context.MODE_PRIVATE)
+            val pending = prefs.getString(PENDING_FINISHED_ACTIVITY_KEY, "") ?: ""
+            if (pending.isNotBlank()) prefs.edit().remove(PENDING_FINISHED_ACTIVITY_KEY).apply()
+            return pending
+        }
 
         fun finishActivity(): ActivitySnapshot {
             val service = instance ?: return lastActivitySnapshot
@@ -190,7 +200,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                     startWorkoutInternal(sessionId, MotionSensorProfile.fromWire(intent.getStringExtra(EXTRA_SENSOR_PROFILE)))
                 }
             }
-            ACTION_STOP_TRACKING -> stopCurrentSession()
+            ACTION_STOP_TRACKING -> finishFromNotification()
             ACTION_PAUSE_TRACKING -> pauseActivityInternal()
             ACTION_RESUME_TRACKING -> resumeActivityInternal()
         }
@@ -563,6 +573,30 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             stopSelf()
         }
         return evidence
+    }
+
+    private fun finishFromNotification() {
+        if (activityMode != null) {
+            val final = buildActivitySnapshot(active = false).copy(paused = false)
+            val route = JSONArray()
+            final.route.forEach { point ->
+                route.put(JSONObject().put("lat", point.latitude).put("lng", point.longitude)
+                    .put("altitudeMetres", point.altitudeMetres).put("accuracyMetres", point.accuracyMetres)
+                    .put("elapsedMs", point.elapsedMs))
+            }
+            val payload = JSONObject().put("active", false).put("paused", false)
+                .put("phase", final.phase.wireName).put("mode", final.mode?.wireName ?: "")
+                .put("startedAtWallMs", final.startedAtWallMs).put("elapsedMs", final.elapsedMs)
+                .put("distanceMetres", final.distanceMetres).put("steps", final.stepDelta)
+                .put("currentSpeedKph", 0.0).put("averageSpeedKph", final.averageSpeedKph)
+                .put("paceMinutesPerKm", final.paceMinutesPerKm).put("estimatedCaloriesKcal", final.estimatedCaloriesKcal)
+                .put("gpsPointCount", final.gpsPointCount).put("lastAccuracyMetres", final.lastAccuracyMetres)
+                .put("observedAccuracyMetres", final.observedAccuracyMetres).put("gpsFixState", final.gpsFixState)
+                .put("route", route)
+            getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE).edit()
+                .putString(PENDING_FINISHED_ACTIVITY_KEY, payload.toString()).apply()
+        }
+        stopCurrentSession()
     }
 
     private fun stopCurrentSession(keepService: Boolean = false) {
