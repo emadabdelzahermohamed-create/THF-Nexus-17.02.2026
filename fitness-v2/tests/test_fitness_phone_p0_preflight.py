@@ -3,6 +3,7 @@
 All ADB calls are routed to a temporary fake executable. These tests never
 contact or modify a physical device.
 """
+import hashlib
 import os
 import re
 import subprocess
@@ -216,6 +217,21 @@ class FitnessPhonePreflightTests(unittest.TestCase):
         )
         for call in calls:
             self.assertIsNone(forbidden.search(call), f"mutating ADB command: {call}")
+
+
+    def test_sha256_manifest_matches_final_evidence(self):
+        result, output, _ = self.run_preflight()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        manifest = output / "SHA256SUMS"
+        self.assertTrue(manifest.is_file())
+        entries = [line.split(maxsplit=1) for line in manifest.read_text(encoding="utf-8").splitlines()]
+        self.assertTrue(entries)
+        for digest, relative_name in entries:
+            name = relative_name.strip().lstrip("*")
+            evidence = output / name
+            self.assertTrue(evidence.is_file(), f"manifest entry missing: {name}")
+            actual = hashlib.sha256(evidence.read_bytes()).hexdigest()
+            self.assertEqual(digest, actual, f"checksum mismatch: {name}")
 
 
 if __name__ == "__main__":
