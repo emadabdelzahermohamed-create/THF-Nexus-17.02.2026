@@ -226,13 +226,85 @@
       (!state.filters.goal || item.goal.id === state.filters.goal);
   }
 
+  function motionAsset(item) {
+    const entry = motionManifest[item?.id];
+    const supported = entry && (entry.kind === 'offline_video' || entry.kind === 'verified_frame_sequence');
+    return supported && typeof entry.asset === 'string' && /^media\/motion\/[a-z0-9-]+\.(?:mp4|webm)$/i.test(entry.asset) ? entry : null;
+  }
+  function referenceCoverageLabel(item, compact = false) {
+    if (state.lang === 'ar') return compact ? 'صور مرجعية متحركة' : 'صور مرجعية متحركة تلقائيًا · الفيديو قريبًا';
+    return compact ? 'Animated refs' : 'Auto-animated reference frames · video coming soon';
+  }
+  function motionCoverageLabel(item, compact = false) {
+    const entry = motionAsset(item);
+    if (entry?.kind === 'offline_video') return state.lang === 'ar' ? 'فيديو أوفلاين' : 'Offline video';
+    if (entry?.kind === 'verified_frame_sequence') return state.lang === 'ar' ? 'مقطع إطارات موثّق' : 'Verified frame-sequence clip';
+    return referenceCoverageLabel(item, compact);
+  }
+  function referenceMotionPlayer(item, context = 'detail') {
+    const assets = Array.isArray(item?.demo?.assets) ? item.demo.assets.slice(0, 2) : [];
+    const safeAssets = assets.length === 2 && assets.every(asset => typeof asset === 'string' && /^media\/free-exercise-db\/[A-Za-z0-9_/-]+\.jpg$/i.test(asset));
+    if (!safeAssets) return `<div class="motion-placeholder" role="img" aria-label="${escapeHtml(state.lang === 'ar' ? 'العرض المصوّر غير متاح' : 'Exercise demonstration unavailable')}"><strong>${escapeHtml(state.lang === 'ar' ? 'العرض غير متاح' : 'Demonstration unavailable')}</strong></div>`;
+    const alt = escapeHtml(local(item.demo?.alt) || local(item.name));
+    const className = context === 'card' ? 'exercise-reference-motion-card' : 'exercise-reference-motion-detail';
+    return `<div class="exercise-reference-motion ${className}" role="img" aria-label="${alt}"><img src="./${escapeHtml(assets[0])}" alt="" aria-hidden="true"><img src="./${escapeHtml(assets[1])}" alt="" aria-hidden="true"></div>`;
+  }
+  function motionPlayer(item, context = 'detail') {
+    const entry = motionAsset(item);
+    if (!entry) return referenceMotionPlayer(item, context);
+    const asset = `./${escapeHtml(entry.asset)}`;
+    const poster = item.demo?.assets?.[0] ? ` poster="./${escapeHtml(item.demo.assets[0])}"` : '';
+    const label = escapeHtml(local(item.demo?.alt) || local(item.name));
+    const reduced = document.documentElement.classList.contains('motion-reduced');
+    const controls = context === 'detail' ? 'controls' : '';
+    const autoplay = reduced ? '' : 'autoplay';
+    const preload = context === 'card' ? 'none' : 'metadata';
+    const type = entry.asset.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4';
+    return `<video class="exercise-motion ${context === 'card' ? 'exercise-motion-card' : 'exercise-motion-detail'}" data-exercise-id="${escapeHtml(item.id)}" data-context="${context}" data-clip-limit="6" ${controls} ${autoplay} muted playsinline loop preload="${preload}"${poster} aria-label="${label}"><source src="${asset}" type="${type}"></video>`;
+  }
+  function motionCredit(item) {
+    const entry = motionAsset(item);
+    if (!entry || entry.kind !== 'offline_video' || !entry.sourceUrl || !entry.licenseUrl) return '';
+    const sourceLabel = state.lang === 'ar' ? 'المصدر' : 'source';
+    const licenseLabel = state.lang === 'ar' ? 'ترخيص CC BY-SA 4.0' : 'CC BY-SA 4.0 license';
+    return `<p id="detailMotionCredit" class="motion-credit small muted">${state.lang === 'ar' ? 'مصدر الفيديو:' : 'Video source:'} ${escapeHtml(entry.author || '')} · <a href="${escapeHtml(entry.sourceUrl)}" target="_blank" rel="noopener noreferrer">${sourceLabel}</a> · <a href="${escapeHtml(entry.licenseUrl)}" target="_blank" rel="noopener noreferrer">${licenseLabel}</a></p>`;
+  }
+  function bindDemoClipLimits(root) {
+    root.querySelectorAll('video[data-clip-limit]').forEach(video => {
+      if (video.dataset.clipLimitBound === '1') return;
+      video.dataset.clipLimitBound = '1';
+      video.addEventListener('error', () => {
+        const item = EXERCISES.find(candidate => candidate.id === video.dataset.exerciseId);
+        if (!item) return;
+        const context = video.dataset.context === 'card' ? 'card' : 'detail';
+        const mediaContainer = video.closest('.media');
+        const cardBadge = mediaContainer?.querySelector('.offline-badge');
+        const detailBadge = context === 'detail' ? $('detailBadges')?.querySelector('.demo-coverage-badge') : null;
+        const template = document.createElement('template');
+        template.innerHTML = referenceMotionPlayer(item, context);
+        const fallback = template.content.firstElementChild;
+        if (fallback) video.replaceWith(fallback);
+        if (cardBadge) cardBadge.textContent = motionCoverageLabel(item, true);
+        if (detailBadge) detailBadge.textContent = motionCoverageLabel(item);
+        if (context === 'detail') $('detailMotionCredit')?.classList.add('hidden');
+      }, {once:true});
+      video.addEventListener('timeupdate', () => {
+        const limit = Number(video.dataset.clipLimit) || 6;
+        if (Number.isFinite(video.duration) && video.duration > limit && video.currentTime >= limit) {
+          video.currentTime = 0;
+          if (!video.paused && !document.documentElement.classList.contains('motion-reduced')) video.play().catch(() => {});
+        }
+      });
+    });
+  }
   function renderExercises() {
     if (!EXERCISES.length) { $('exerciseGrid').innerHTML = `<p class="error-message">${escapeHtml(t('noCatalog'))}</p>`; return; }
     const results = EXERCISES.filter(matches);
     $('resultsCount').textContent = String(results.length);
     $('emptyResults').classList.toggle('hidden', results.length > 0);
     $('activeFilterCount').textContent = String(Object.values(state.filters).filter(Boolean).length);
-    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media">${motionPlayer(item, 'card')}<span class="offline-badge">${escapeHtml(motionCoverageLabel(item, true))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    bindDemoClipLimits($('exerciseGrid'));
     $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => card.addEventListener('click', () => openDetail(card.dataset.id)));
   }
 
@@ -248,8 +320,9 @@
   function closeDetail() { $('exerciseDetail').classList.add('hidden'); document.body.style.overflow = ''; }
   function list(items, ordered = false) { const tag = ordered ? 'ol' : 'ul'; return `<${tag}>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</${tag}>`; }
   function renderDetail(item) {
-    $('detailDemo').innerHTML = item.demo.assets.map((asset,index) => `<div class="detail-frame"><img src="./${escapeHtml(asset)}" alt="${escapeHtml(item.demo.alt[state.lang])}"><span>${escapeHtml(t(index ? 'finish' : 'start'))}</span></div>`).join('');
-    $('detailBadges').innerHTML = `<span class="pill gold">${escapeHtml(local(item.section))}</span><span class="pill">✓ ${escapeHtml(t('offline'))}</span><span class="pill">${escapeHtml(local(item.level))}</span>`;
+    $('detailDemo').innerHTML = motionPlayer(item, 'detail') + motionCredit(item);
+    bindDemoClipLimits($('detailDemo'));
+    $('detailBadges').innerHTML = `<span class="pill gold">${escapeHtml(local(item.section))}</span><span class="pill">✓ ${escapeHtml(t('offline'))}</span><span class="pill demo-coverage-badge">${escapeHtml(motionCoverageLabel(item))}</span><span class="pill">${escapeHtml(local(item.level))}</span>`;
     $('detailName').textContent = local(item.name); $('detailMeta').textContent = `${local(item.equipment)} · ${local(item.movement)} · ${local(item.goal)}`;
     $('detailMuscles').innerHTML = item.muscles.primary[state.lang].concat(item.muscles.secondary[state.lang]).map(value => `<span class="tag">${escapeHtml(value)}</span>`).join('');
     const prescription = item.prescription; const dose = prescription.durationSeconds ? `${prescription.sets} × ${prescription.durationSeconds} sec` : `${prescription.sets} × ${prescription.reps} · ${prescription.restSeconds} sec`;
@@ -557,6 +630,11 @@
     const enabled=Boolean(reduced);
     $('reduceMotion').checked=enabled;
     document.documentElement.style.setProperty('--motion',enabled?'0':'1');
+    document.documentElement.classList.toggle('motion-reduced',enabled);
+    document.querySelectorAll('video.exercise-motion').forEach(video=>{
+      if(enabled) video.pause();
+      else if(!document.hidden && video.isConnected && (video.dataset.context==='card' || !$('exerciseDetail').classList.contains('hidden'))) video.play().catch(()=>{});
+    });
     if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
   }
 
@@ -590,7 +668,7 @@
     recoverPendingActivitySession();window.addEventListener('pageshow',recoverPendingActivitySession);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')recoverPendingActivitySession();});
     $('healthConnectBtn').addEventListener('click',()=>{if(N)N.requestHealthPermissions();else toast(t('browserHealth'));});$('healthSyncBtn').addEventListener('click',()=>{if(!N){toast(t('browserHealth'));return;}const result=parse(N.syncHealth(),{});if(result.status==='STARTED')setHealthSyncBusy(true,t('healthSyncing'));else renderHealthError({code:'COOLDOWN',message:t('healthSyncWait'),retryAfterMs:result.retryAfterMs||1000});});$('healthSettingsBtn').addEventListener('click',()=>{if(N)N.openHealthSettings();else toast(t('browserHealth'));});
     window.addEventListener('thf:health-status',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-permission',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-sync',event=>renderHealthSnapshot(event.detail));window.addEventListener('thf:health-write',()=>renderHealthStatus());window.addEventListener('thf:health-error',event=>renderHealthError(event.detail||{}));
-    window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});
+    window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});window.addEventListener('thf:backend-history',event=>{const detail=event.detail||{};if(detail.lastError){toast((state.lang==='ar'?'تعذرت استعادة سجل الحساب: ':'Account history restore failed: ')+detail.lastError);return;}const remote=Array.isArray(detail.items)?detail.items:[];const merged=new Map(history().map(item=>[item.clientRecordId,item]));for(const workout of remote){const id=String(workout.clientRecordId||'');if(!/^[A-Za-z0-9._:-]{8,120}$/.test(id)||merged.has(id))continue;const startedAtMs=Date.parse(workout.startedAt||'');const endedAtMs=Date.parse(workout.endedAt||'');if(!Number.isFinite(startedAtMs)||!Number.isFinite(endedAtMs)||endedAtMs<=startedAtMs)continue;const sets=(Array.isArray(workout.sets)?workout.sets:[]).map(set=>({exerciseId:String(set.exerciseId||workout.sport||'other'),type:String(set.setType||'working'),load:Number(set.loadKg)||0,reps:Number(set.reps)||0,restSeconds:Number(set.restSeconds)||0,rpe:set.rpe??null,rir:set.rir??null,complete:true}));const exercise=String(sets[0]?.exerciseId||workout.sport||'Workout');merged.set(id,{clientRecordId:id,recordVersion:Number(workout.clientRecordVersion)||1,id:exercise,exercise,exerciseName:exercise,sport:String(workout.sport||'other'),startedAtMs,endedAtMs,date:new Date(endedAtMs).toISOString(),durationMin:Math.max(1,Math.round((endedAtMs-startedAtMs)/60000)),reps:sets.reduce((sum,set)=>sum+set.reps,0),volumeKg:Number(workout.volumeKg)||sets.reduce((sum,set)=>sum+set.load*set.reps,0),sets,completed:true,steps:0,motionEvidence:null,measurementSource:'SERVER_RESTORED_UNVERIFIED',restoredFromAccount:true});}const next=[...merged.values()].sort((a,b)=>(a.endedAtMs||Date.parse(a.date)||0)-(b.endedAtMs||Date.parse(b.date)||0)).slice(-200);store.setItem('pulse.v2.history',JSON.stringify(next));renderToday();renderProgress();if(remote.length)toast(state.lang==='ar'?`تمت استعادة ${remote.length} جلسة من حسابك`:`Restored ${remote.length} workouts from your account`);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
     document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
