@@ -37,6 +37,20 @@ EXPECTED_SOURCE_IDS = {
     "Side_Hop-Sprint",
     "Freehand_Jump_Squat",
     "Lateral_Bound",
+    "Side_to_Side_Box_Shuffle",
+    "Bicycling",
+    "Bicycling_Stationary",
+    "Recumbent_Bike",
+    "Linear_Acceleration_Wall_Drill",
+    "Single-Cone_Sprint_Drill",
+    "Elliptical_Trainer",
+    "Rowing_Stationary",
+    "Bodyweight_Walking_Lunge",
+    "Jogging_Treadmill",
+    "Prowler_Sprint",
+    "Running_Treadmill",
+    "Trail_Running_Walking",
+    "Walking_Treadmill",
 }
 
 
