@@ -310,6 +310,7 @@
   }
   function stopMotionPolling() { if(state.motionPoll){clearInterval(state.motionPoll);state.motionPoll=null;} }
   function startExercise(item) {
+    clearRestComplete();
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
     state.active = {clientRecordId,exerciseId:item.id,startedAt:Date.now(),sets:makeSets(item),sensorProfile,motionSessionId}; state.demoFrame=0;
     store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail();
@@ -317,6 +318,7 @@
   }
   function startProgramSession(programId,sessionId) {
     const program=PROGRAMS.find(value=>value.id===programId);const sessionIndex=program?.sessions.findIndex(value=>value.id===sessionId)??-1;const session=program?.sessions[sessionIndex];const reference=session?.exercises[0];const item=reference?exerciseFor(reference):null;if(!program||!session||!item)return;
+    clearRestComplete();
     const now=Date.now();store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex,selectedAt:new Date(now).toISOString()}));
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
     state.active={clientRecordId,exerciseId:item.id,startedAt:now,sets:makeProgramSets(reference,item),programId:program.id,programSessionId:session.id,programSessionIndex:sessionIndex,programExerciseIndex:0,programStartedAt:now,programEntries:[],sensorProfile,motionSessionId};state.demoFrame=0;
@@ -385,7 +387,7 @@
   function startRest(seconds) {
     clearInterval(state.restTick);
     if(!state.active)return;
-    $('restCompleteNotice').classList.add('hidden');
+    clearRestComplete();
     state.active.restEndsAtMs=restTimer.deadline(seconds);persistActive();
     $('restPanel').classList.remove('hidden');renderRest();
     state.restTick=setInterval(renderRest,1000);
@@ -396,6 +398,7 @@
     if(seconds<=0){if(restTimer.expired(state.active?.restEndsAtMs))showRestComplete();stopRest();}
   }
   function showRestComplete(){ $('restCompleteNotice').classList.remove('hidden'); }
+  function clearRestComplete(){ $('restCompleteNotice').classList.add('hidden'); }
   function stopRest(){
     clearInterval(state.restTick);state.restTick=null;
     if(state.active&&Object.prototype.hasOwnProperty.call(state.active,'restEndsAtMs')){delete state.active.restEndsAtMs;persistActive();}
@@ -428,7 +431,7 @@
     const history=parse(store.getItem('pulse.v2.history'),[]).filter(entry=>entry.clientRecordId!==summary.clientRecordId);history.push(summary);store.setItem('pulse.v2.history',JSON.stringify(history.slice(-200)));
     try { N?.saveSummary?.(JSON.stringify(summary)); } catch {}
     if(program&&programSession){const nextSession=(Number(state.active.programSessionIndex)+1)%program.sessions.length;store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex:nextSession,selectedAt:new Date().toISOString()}));}
-    state.active=null;store.removeItem('pulse.v2.active');stopRest();toast(programSession?t('sessionComplete'):t('saved'));renderToday();renderProgress();showScreen('progressScreen');
+    state.active=null;store.removeItem('pulse.v2.active');stopRest();clearRestComplete();toast(programSession?t('sessionComplete'):t('saved'));renderToday();renderProgress();showScreen('progressScreen');
   }
 
   function history(){ return parse(store.getItem('pulse.v2.history'),[]); }
