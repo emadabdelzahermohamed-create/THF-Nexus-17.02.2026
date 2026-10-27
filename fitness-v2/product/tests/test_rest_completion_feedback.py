@@ -74,5 +74,14 @@ console.log(JSON.stringify([
         self.assertNotIn("$('skipRest').addEventListener('click',showRestComplete)", app)
 
 
+    def test_completion_notice_is_cleared_between_workouts(self):
+        app = APP.read_text(encoding="utf-8")
+        self.assertIn("function clearRestComplete(){ $('restCompleteNotice').classList.add('hidden'); }", app)
+        self.assertIn("function startExercise(item) {\\n    clearRestComplete();", app)
+        self.assertIn("if(!program||!session||!item)return;\\n    clearRestComplete();", app)
+        self.assertIn("state.active=null;store.removeItem('pulse.v2.active');stopRest();clearRestComplete();toast(", app)
+        self.assertIn("function startRest(seconds) {\\n    clearInterval(state.restTick);\\n    if(!state.active)return;\\n    clearRestComplete();", app)
+
+
 if __name__ == "__main__":
     unittest.main()
