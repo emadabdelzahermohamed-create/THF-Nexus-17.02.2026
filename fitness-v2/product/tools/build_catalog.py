@@ -21,6 +21,227 @@ SOURCE_LICENSE = "Unlicense"
 SOURCE_LICENSE_URL = "https://github.com/yuhonas/free-exercise-db/blob/main/LICENSE.md"
 IMPORTED_AT = "2026-10-03"
 
+# Exact exercise-specific bilingual steps synchronized with the reviewed runtime catalog.
+STEP_OVERRIDES = {
+    "Medicine_Ball_Full_Twist": {
+        "en": [
+            "For this exercise you will need a medicine ball and a partner. Stand back to back with your partner, spaced 2-3 feet apart. This will be your starting position.",
+            "Hold the ball in front of the trunk. Open the hips and turn the shoulders at the same time as your partner.",
+            "For full rotation, you and your partner should twist in the same direction, i.e. counter-clockwise.",
+            "Pass the ball to your partner, and both of you can now twist in the opposite direction to repeat the procedure."
+        ],
+        "ar": [
+            "قف مع شريكك على مسافة مناسبة وامسك الكرة أمام الصدر مع تثبيت القدمين.",
+            "أدر الكتفين والجذع معًا في اتجاه واحد، مع إبقاء الركبتين والحوض تحت السيطرة.",
+            "مرّر الكرة إلى الشريك عند اكتمال الدوران من دون إجبار أسفل الظهر على مدى مؤلم.",
+            "بدّلا اتجاه الدوران بعد التمرير، وتوقفا إذا اختل التوازن أو ظهر ألم."
+        ]
+    },
+    "One-Arm_Medicine_Ball_Slam": {
+        "en": [
+            "Start in a standing position with a staggered, athletic stance. Hold a medicine ball in one hand, on the same side as your back leg. This will be your starting position.",
+            "Begin by winding the arm, raising the medicine ball above your head. As you do so, extend through the hips, knees, and ankles to load up for the slam.",
+            "At peak extension, flex the shoulders, spine, and hips to throw the ball hard into the ground directly in front of you.",
+            "Catch the ball on the bounce and continue for the desired number of repetitions."
+        ],
+        "ar": [
+            "قف بوقفة متدرجة وامسك الكرة بيد واحدة قرب جانب الرجل الخلفية.",
+            "ارفع الكرة فوق الرأس مع مد الورك والركبتين والكاحلين دون تقويس أسفل الظهر.",
+            "اسحب الذراع والجذع إلى أسفل ووجّه الكرة بقوة إلى الأرض أمامك مع إبقاء القدمين ثابتتين.",
+            "التقط ارتداد الكرة بتحكم وأعد الوقفة قبل التكرار التالي."
+        ]
+    },
+    "Pallof_Press_With_Rotation": {
+        "en": [
+            "Connect a standard handle to a tower, and position the cable to shoulder height.",
+            "With your side to the cable, grab the handle with one hand and step away from the tower. You should be approximately arm's length away from the pulley, with the tension of the weight on the cable. Align outstretched arm with cable.",
+            "With your feet positioned hip-width apart, pull the cable into your chest and grab the handle with your other hand. Both hands should be on the handle at this time.",
+            "Facing forward, press the cable away from your chest. You core should be tight and engaged.",
+            "Keeping your hips straight, twist your torso away from the pulley until you get a full quarter rotation.",
+            "Maintain your rigid stance and straight arms. Return to the neutral position in a slow and controlled manner. Your arms should be extended in front of you."
+        ],
+        "ar": [
+            "اضبط الكيبل قرب مستوى الكتف وقف بجانبه والقدمان بعرض الورك.",
+            "أمسك المقبض بكلتا اليدين أمام الصدر وابتعد حتى تشعر بشد ثابت في الكيبل.",
+            "مد الذراعين أمامك مع إبقاء القدمين والحوض ثابتين.",
+            "أدر القفص الصدري ربع دورة بعيدًا عن البكرة دون لف الركبتين أو تحريك الورك.",
+            "اثبت لحظة والذراعان ممدودتان مع استمرار التنفس.",
+            "ارجع ببطء إلى المنتصف ثم أكمل التكرار وبدّل الجهة حسب المجموعة."
+        ]
+    },
+    "Handstand_Push-Ups": {
+        "en": [
+            "With your back to the wall bend at the waist and place both hands on the floor at shoulder width.",
+            "Kick yourself up against the wall with your arms straight. Your body should be upside down with the arms and legs fully extended. Keep your whole body as straight as possible. If doing this for the first time, have a spotter help you. Also, make sure that you keep facing the wall with your head, rather than looking down.",
+            "Slowly lower yourself to the ground as you inhale until your head almost touches the floor. It is of utmost importance that you come down slow in order to avoid head injury.",
+            "Push yourself back up slowly as you exhale until your elbows are nearly locked.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "نفّذها فقط بجوار جدار ثابت ومع مساعد إذا لزم؛ ضع اليدين بعرض الكتفين واثبت قبل النزول.",
+            "اثنِ المرفقين ببطء نحو وسادة مناسبة مع شد الجذع وتجنب تقوس أسفل الظهر.",
+            "ادفع الأرض للعودة بتحكم، وأوقف التمرين عند الألم أو فقدان التوازن."
+        ]
+    },
+    "Hanging_Leg_Raise": {
+        "en": [
+            "Hang from a chin-up bar with both arms extended at arms length in top of you using either a wide grip or a medium grip. The legs should be straight down with the pelvis rolled slightly backwards. This will be your starting position.",
+            "Raise your legs until the torso makes a 90-degree angle with the legs. Exhale as you perform this movement and hold the contraction for a second or so.",
+            "Go back slowly to the starting position as you breathe in.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "تعلّق بالعارضة بذراعين ممدودتين وقبضة ثابتة، واترك الجسم يستقر دون تأرجح.",
+            "ارفع الساقين أمامك من الورك حتى زاوية مريحة تقارب 90 درجة دون دفع الجسم للأمام.",
+            "ازفر أثناء الرفع وحافظ على الحوض ملتفًا قليلًا للخلف دون شد الرقبة.",
+            "أنزل الساقين ببطء إلى وضع البداية قبل بدء التكرار التالي."
+        ]
+    },
+    "Pullups": {
+        "en": [
+            "Grab the pull-up bar with the palms facing forward using the prescribed grip. Note on grips: For a wide grip, your hands need to be spaced out at a distance wider than your shoulder width. For a medium grip, your hands need to be spaced out at a distance equal to your shoulder width and for a close grip at a distance smaller than your shoulder width.",
+            "As you have both arms extended in front of you holding the bar at the chosen grip width, bring your torso back around 30 degrees or so while creating a curvature on your lower back and sticking your chest out. This is your starting position.",
+            "Pull your torso up until the bar touches your upper chest by drawing the shoulders and the upper arms down and back. Exhale as you perform this portion of the movement. Concentrate on squeezing the back muscles once you reach the full contracted position. The upper torso should remain stationary as it moves through space and only the arms should move. The forearms should do no other work other than hold the bar.",
+            "After a second on the contracted position, start to inhale and slowly lower your torso back to the starting position when your arms are fully extended and the lats are fully stretched.",
+            "Repeat this motion for the prescribed amount of repetitions."
+        ],
+        "ar": [
+            "تعلّق بقبضة مناسبة وابدأ بكتفين بعيدين عن الأذنين مع شد الجذع.",
+            "اسحب المرفقين لأسفل وارفع الصدر نحو البار دون تأرجح أو ركل.",
+            "انزل ببطء حتى امتداد الذراعين بتحكم، وتوقف إذا فقدت السيطرة على الكتف."
+        ]
+    },
+    "Barbell_Bench_Press_-_Medium_Grip": {
+        "en": [
+            "Lie back on a flat bench. Using a medium width grip (a grip that creates a 90-degree angle in the middle of the movement between the forearms and the upper arms), lift the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
+            "From the starting position, breathe in and begin coming down slowly until the bar touches your middle chest.",
+            "After a brief pause, push the bar back to the starting position as you breathe out. Focus on pushing the bar using your chest muscles. Lock your arms and squeeze your chest in the contracted position at the top of the motion, hold for a second and then start coming down slowly again. Ideally, lowering the weight should take about twice as long as raising it.",
+            "Repeat the movement for the prescribed amount of repetitions.",
+            "When you are done, place the bar back in the rack."
+        ],
+        "ar": [
+            "استلقِ وثبّت القدمين، واسحب لوحي الكتف للخلف ولأسفل قبل فك البار من الحامل.",
+            "اخفض البار بتحكم نحو منتصف الصدر مع إبقاء الرسغين فوق المرفقين.",
+            "ادفع البار لأعلى دون ارتداد؛ استخدم حواجز أمان أو مساعدًا عند التدريب منفردًا."
+        ]
+    },
+    "Barbell_Deadlift": {
+        "en": [
+            "Stand in front of a loaded barbell.",
+            "While keeping the back as straight as possible, bend your knees, bend forward and grasp the bar using a medium (shoulder width) overhand grip. This will be the starting position of the exercise. If it is difficult to hold on to the bar with this grip, alternate your grip or use wrist straps.",
+            "While holding the bar, start the lift by pushing with your legs while simultaneously getting your torso to the upright position as you breathe out. In the upright position, stick your chest out and contract the back by bringing the shoulder blades back. Think of how the soldiers in the military look when they are in standing in attention.",
+            "Go back to the starting position by bending at the knees while simultaneously leaning the torso forward at the waist while keeping the back straight. When the weights on the bar touch the floor you are back at the starting position and ready to perform another repetition.",
+            "Perform the amount of repetitions prescribed in the program."
+        ],
+        "ar": [
+            "قف والبار فوق منتصف القدمين، اثنِ الورك والركبتين وامسكه مع ظهر محايد.",
+            "شد الجذع وادفع الأرض بالقدمين، وابقِ البار قريبًا من الساقين حتى الوقوف.",
+            "ادفع الورك للخلف واثنِ الركبتين لإعادة البار للأرض بتحكم؛ أوقف المجموعة إذا فقدت وضع الظهر."
+        ]
+    },
+    "Barbell_Shoulder_Press": {
+        "en": [
+            "Sit on a bench with back support in a squat rack. Position a barbell at a height that is just above your head. Grab the barbell with a pronated grip (palms facing forward).",
+            "Once you pick up the barbell with the correct grip width, lift the bar up over your head by locking your arms. Hold at about shoulder level and slightly in front of your head. This is your starting position.",
+            "Lower the bar down to the shoulders slowly as you inhale.",
+            "Lift the bar back up to the starting position as you exhale.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "ابدأ بالبار أمام الكتفين والساعدين شبه رأسيين، مع شد البطن وثبات القدمين.",
+            "ادفع البار فوق الرأس في مسار مريح مع إبقاء الأضلاع فوق الحوض.",
+            "اخفض البار ببطء إلى أمام الكتفين دون إرجاع أسفل الظهر للخلف."
+        ]
+    },
+    "Pallof_Press": {
+        "en": [
+            "Connect a standard handle to a tower, and—if possible—position the cable to shoulder height. If not, a low pulley will suffice.",
+            "With your side to the cable, grab the handle with both hands and step away from the tower. You should be approximately arm's length away from the pulley, with the tension of the weight on the cable.",
+            "With your feet positioned hip-width apart and knees slightly bent, hold the cable to the middle of your chest. This will be your starting position.",
+            "Press the cable away from your chest, fully extending both arms. You core should be tight and engaged.",
+            "Hold the repetition for several seconds before returning to the starting position.",
+            "At the conclusion of the set, repeat facing the other direction."
+        ],
+        "ar": [
+            "اضبط الكيبل قرب مستوى الكتف وقف بجانبه مع القدمين بعرض الورك.",
+            "أمسك المقبض بكلتا اليدين أمام منتصف الصدر وابتعد حتى يصبح الكيبل مشدودًا.",
+            "اثن الركبتين قليلًا وشد البطن مع إبقاء الحوض مواجهًا للأمام.",
+            "ادفع المقبض بعيدًا حتى تمتد الذراعان، ولا تدع شد الكيبل يلف جذعك.",
+            "اثبت لثوانٍ مع التنفس الطبيعي ثم أعد المقبض ببطء إلى الصدر.",
+            "أكمل المجموعة ثم بدّل اتجاه الوقوف لموازنة مقاومة الدوران."
+        ]
+    },
+    "Romanian_Deadlift": {
+        "en": [
+            "Put a barbell in front of you on the ground and grab it using a pronated (palms facing down) grip that a little wider than shoulder width. Depending on the weight used, you may need wrist wraps to perform the exercise and also a raised platform in order to allow for better range of motion.",
+            "Bend the knees slightly and keep the shins vertical, hips back and back straight. This will be your starting position.",
+            "Keeping your back and arms completely straight at all times, use your hips to lift the bar as you exhale. The movement should not be fast but steady and under control.",
+            "Once you are standing completely straight up, lower the bar by pushing the hips back, only slightly bending the knees, unlike when squatting. Take a deep breath at the start of the movement and keep your chest up. Hold your breath as you lower and exhale as you complete the movement.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "امسك البار أمام الفخذين مع الركبتين مثنيتين قليلًا وظهر محايد.",
+            "ادفع الورك للخلف وانزل بالبار ملاصقًا للساقين مع بقاء الساقين شبه عموديتين.",
+            "ادفع الورك للأمام للعودة إلى الوقوف دون فرط تقوس أسفل الظهر."
+        ]
+    },
+    "Front_Box_Jump": {
+        "en": [
+            "Begin with a box of an appropriate height 1-2 feet in front of you. Stand with your feet should width apart. This will be your starting position.",
+            "Perform a short squat in preparation for jumping, swinging your arms behind you.",
+            "Rebound out of this position, extending through the hips, knees, and ankles to jump as high as possible. Swing your arms forward and up.",
+            "Land on the box with the knees bent, absorbing the impact through the legs. You can jump from the box back to the ground, or preferably step down one leg at a time."
+        ],
+        "ar": [
+            "ضع صندوقًا ثابتًا منخفضًا أمامك، وابدأ بالقدمين بعرض الحوض في مساحة خالية.",
+            "اثنِ الركبتين قليلًا ثم اقفز بالقدمين معًا، واهبط على الصندوق بركبتين مثنيتين.",
+            "اثبت بعد الهبوط، ثم انزل خطوة خطوة بدل القفز للخلف إذا كان ذلك أأمن."
+        ]
+    },
+    "Mountain_Climbers": {
+        "en": [
+            "Begin in a pushup position, with your weight supported by your hands and toes. Flexing the knee and hip, bring one leg until the knee is approximately under the hip. This will be your starting position.",
+            "Explosively reverse the positions of your legs, extending the bent leg until the leg is straight and supported by the toe, and bringing the other foot up with the hip and knee flexed. Repeat in an alternating fashion for 20-30 seconds."
+        ],
+        "ar": [
+            "ابدأ في وضع البلانك، واليدان تحت الكتفين والجسم من الرأس إلى الكعبين في خط مستقيم.",
+            "اسحب ركبة نحو الصدر ثم أعد القدم وبدّل الجهة بإيقاع متحكم فيه مع ثبات الحوض وعدم هبوط أسفل الظهر."
+        ]
+    },
+    "Overhead_Slam": {
+        "en": [
+            "Hold a medicine ball with both hands and stand with your feet at shoulder width. This will be your starting position.",
+            "Initiate the countermovement by raising the ball above your head and fully extending your body.",
+            "Reverse the motion, slamming the ball into the ground directly in front of you as hard as you can.",
+            "Receive the ball with both hands on the bounce and repeat the movement."
+        ],
+        "ar": [
+            "قف والقدمان بعرض الكتفين وامسك الكرة الطبية بكلتا اليدين أمام الجسم.",
+            "ارفع الكرة فوق الرأس مع مد الجسم دون المبالغة في تقويس أسفل الظهر.",
+            "ادفع الكرة بقوة إلى الأرض أمامك بثني الورك والركبتين مع بقاء الحركة تحت السيطرة.",
+            "التقط الكرة بعد ارتدادها وأعد الوقفة قبل التكرار التالي."
+        ]
+    },
+    "Air_Bike": {
+        "en": [
+            "Lie flat on the floor with your lower back pressed to the ground. For this exercise, you will need to put your hands beside your head. Be careful however to not strain with the neck as you perform it. Now lift your shoulders into the crunch position.",
+            "Bring knees up to where they are perpendicular to the floor, with your lower legs parallel to the floor. This will be your starting position.",
+            "Now simultaneously, slowly go through a cycle pedal motion kicking forward with the right leg and bringing in the knee of the left leg. Bring your right elbow close to your left knee by crunching to the side, as you breathe out.",
+            "Go back to the initial position as you breathe in.",
+            "Crunch to the opposite side as you cycle your legs and bring closer your left elbow to your right knee and exhale.",
+            "Continue alternating in this manner until all of the recommended repetitions for each side have been completed."
+        ],
+        "ar": [
+            "استلقِ واضغط أسفل الظهر نحو الأرض وضع اليدين بجانب الرأس دون شد الرقبة.",
+            "ارفع الكتفين قليلًا وثن الركبتين حتى تكون الساقان مرفوعتين عن الأرض.",
+            "مد الرجل اليمنى وقرّب المرفق الأيمن من الركبة اليسرى مع تدوير الجذع.",
+            "عد إلى الوسط مع إبقاء أسفل الظهر ملاصقًا للأرض.",
+            "بدّل الجهة؛ مد الرجل اليسرى وقرّب المرفق الأيسر من الركبة اليمنى.",
+            "استمر بالتبادل دون سحب الرأس باليدين أو حبس النفس."
+        ]
+    }
+}
+
 # id, Arabic name, product section, goal override (optional)
 SELECTION = [
     ("Barbell_Bench_Press_-_Medium_Grip", "ضغط صدر بالبار", "gym", "muscle_gain"),
@@ -674,7 +895,10 @@ def build(source: Path, repo: Path) -> None:
             "movement": {"id": pattern, "en": pattern.replace("_", " ").title(), "ar": PATTERN_AR[pattern]},
             "goal": {"id": goal, "en": goal.replace("_", " ").title(), "ar": GOAL_AR[goal]},
             "setup": {"en": family["setup_en"], "ar": family["setup_ar"]},
-            "steps": {"en": clean_instructions(item.get("instructions") or []) or ENGLISH_STEPS[pattern], "ar": family["steps_ar"]},
+            "steps": {
+                "en": STEP_OVERRIDES.get(source_id, {}).get("en") or clean_instructions(item.get("instructions") or []) or ENGLISH_STEPS[pattern],
+                "ar": STEP_OVERRIDES.get(source_id, {}).get("ar") or family["steps_ar"],
+            },
             "breathing": {"en": family["breathing_en"], "ar": family["breathing_ar"]},
             "prescription": prescription(item, pattern),
             "commonMistakes": {"en": family["mistakes_en"], "ar": family["mistakes_ar"]},
