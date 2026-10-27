@@ -31,6 +31,19 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Product, source-contract and backend regression tests
+        run: |
+          python -m unittest discover -s fitness-v2/product/tests -v
+          python fitness-v2/tests/test_source_contract.py
+          python -m unittest discover -s fitness-v2/backend/tests -v
+          node --check fitness-v2/android/app/src/main/assets/pulse/app.js
+          npm exec --yes --package=typescript@5.9.3 -- tsc -p fitness-v2/appdeploy/tsconfig.routes.json
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
