@@ -36,9 +36,15 @@ class WorkoutAccessibilityTest(unittest.TestCase):
     def test_rest_timer_has_a_stable_accessible_name(self):
         panel = re.search(r'<article id="restPanel"[^>]*>', self.html)
         self.assertIsNotNone(panel)
-        self.assertIn('role="timer"', panel.group())
-        self.assertIn('aria-labelledby="restLabel restTimer"', panel.group())
+        self.assertIn('role="group"', panel.group())
+        self.assertIn('aria-labelledby="restLabel"', panel.group())
         self.assertIn('id="restLabel"', self.html)
+
+        timer = re.search(r'<strong id="restTimer"[^>]*>', self.html)
+        self.assertIsNotNone(timer)
+        self.assertIn('role="timer"', timer.group())
+        self.assertIn('aria-live="off"', timer.group())
+        self.assertIn('data-i18n-aria-label="restTimerLabel"', timer.group())
 
 
 if __name__ == "__main__":
