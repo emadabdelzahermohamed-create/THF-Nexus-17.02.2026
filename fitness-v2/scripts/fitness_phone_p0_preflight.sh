@@ -154,16 +154,20 @@ else
   check owner_idle_confirmation FAIL "explicit_owner_idle_confirmation_required"
 fi
 
+if [[ "$FAILURES" -eq 0 ]]; then
+  printf 'preflight_state=PREFLIGHT_READY\n' | tee -a "$REPORT"
+  EXIT_CODE=0
+else
+  printf 'preflight_state=PREFLIGHT_BLOCKED\nfailed_checks=%s\n' "$FAILURES" | tee -a "$REPORT"
+  EXIT_CODE=30
+fi
+
+# Hash only after the report reaches its final state, so every listed digest
+# validates the exact evidence files that are committed/shared.
 (
   cd "$OUT"
   for file in *; do
     [[ "$file" == "SHA256SUMS" ]] || sha256sum "$file"
   done > SHA256SUMS
 )
-
-if [[ "$FAILURES" -eq 0 ]]; then
-  printf 'preflight_state=PREFLIGHT_READY\n' | tee -a "$REPORT"
-  exit 0
-fi
-printf 'preflight_state=PREFLIGHT_BLOCKED\nfailed_checks=%s\n' "$FAILURES" | tee -a "$REPORT"
-exit 30
+exit "$EXIT_CODE"
