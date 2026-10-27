@@ -88,6 +88,25 @@ class ProgramProgressionTest(unittest.TestCase):
             manifest["programsSha256"],
         )
 
+    def test_program_exercises_never_exceed_program_level(self):
+        catalog = json.loads(BUILDER.EXERCISES_PATH.read_text(encoding="utf-8"))
+        by_id = {item["id"]: item for item in catalog}
+
+        for program in BUILDER.build():
+            program_rank = BUILDER.LEVEL_RANK[program["level"]["id"]]
+            for session in program["sessions"]:
+                own_section_count = 0
+                for entry in session["exercises"]:
+                    exercise = by_id[entry["exerciseId"]]
+                    with self.subTest(program=program["id"], session=session["id"], exercise=exercise["id"]):
+                        self.assertLessEqual(
+                            BUILDER.LEVEL_RANK[exercise["level"]["id"]],
+                            program_rank,
+                            "program must not prescribe an exercise above its advertised level",
+                        )
+                    own_section_count += exercise["section"]["id"] == program["section"]["id"]
+                self.assertGreaterEqual(own_section_count, 2, f"{program['id']}/{session['id']} lost its section focus")
+
     def test_every_program_uses_its_section_progression(self):
         programs = BUILDER.build()
 
