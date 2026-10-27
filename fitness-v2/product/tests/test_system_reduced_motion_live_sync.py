@@ -19,7 +19,7 @@ def extract_function(source, name):
         if quote:
             if escaped:
                 escaped = False
-            elif char == "\\\\":
+            elif char == "\\":
                 escaped = True
             elif char == quote:
                 quote = None
@@ -52,7 +52,7 @@ class SystemReducedMotionLiveSyncTests(unittest.TestCase):
         self.assertIn("() => store.getItem('pulse.v2.reduceMotion') !== null", self.source)
         self.assertIn("applyMotionPreference", self.source)
         start = self.source.index("function applyMotionPreference(")
-        end = self.source.index("\\n  function bindSystemReducedMotionPreference", start)
+        end = self.source.index("\n  function bindSystemReducedMotionPreference", start)
         apply_body = self.source[start:end]
         self.assertIn("classList.toggle('motion-reduced',enabled)", apply_body)
         self.assertIn("syncExerciseDemoVideos()", apply_body)
