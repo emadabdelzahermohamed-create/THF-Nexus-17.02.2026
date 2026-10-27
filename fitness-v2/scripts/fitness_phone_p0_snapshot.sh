@@ -17,7 +17,8 @@ wakes, unlocks, launches, stops, taps, changes settings/permissions, installs,
 or clears data.
 
 Labels: stationary-start, true-movement, navigation, background, screen-off,
-screen-on, reopened, explicit-stop, daily-steps, notification, health-source.
+screen-on, reopened, process-death, explicit-stop, daily-steps, notification,
+notification-collapsed, notification-expanded, health-source.
 EOF
 }
 
@@ -34,7 +35,7 @@ done
 [[ -n "$LABEL" ]] || { echo "--label is required" >&2; exit 2; }
 [[ -n "$OUT" ]] || { echo "--out is required" >&2; exit 2; }
 case "$LABEL" in
-  stationary-start|true-movement|navigation|background|screen-off|screen-on|reopened|explicit-stop|daily-steps|notification|health-source) ;;
+  stationary-start|true-movement|navigation|background|screen-off|screen-on|reopened|process-death|explicit-stop|daily-steps|notification|notification-collapsed|notification-expanded|health-source) ;;
   *) echo "unknown --label: $LABEL" >&2; exit 2 ;;
 esac
 [[ ! -e "$OUT" ]] || { echo "--out already exists: $OUT" >&2; exit 3; }
@@ -78,6 +79,7 @@ printf 'label=%s\nhost_timestamp_utc=%s\ndevice_serial=%s\npackage=%s\n' \
 "${ADB[@]}" shell dumpsys activity services "$PACKAGE/.ActivityTrackingService" > "$OUT/service.txt" 2>&1 || true
 "${ADB[@]}" shell dumpsys activity activities > "$OUT/activity.txt" 2>&1 || true
 "${ADB[@]}" shell dumpsys activity processes > "$OUT/processes.txt" 2>&1 || true
+"${ADB[@]}" shell dumpsys activity exit-info "$PACKAGE" > "$OUT/exit_info.txt" 2>&1 || true
 "${ADB[@]}" shell dumpsys location > "$OUT/location.txt" 2>&1 || true
 "${ADB[@]}" shell dumpsys notification --noredact > "$OUT/notification.txt" 2>&1 || true
 "${ADB[@]}" shell dumpsys power > "$OUT/power.txt" 2>&1 || true
@@ -91,7 +93,7 @@ printf 'label=%s\nhost_timestamp_utc=%s\ndevice_serial=%s\npackage=%s\n' \
 "${ADB[@]}" logcat -d -v threadtime > "$OUT/logcat.txt" 2>&1 || true
 "${ADB[@]}" exec-out screencap -p > "$OUT/screen.png" 2>/dev/null || true
 
-for evidence in package.txt installer.txt service.txt activity.txt location.txt notification.txt power.txt window.txt logcat.txt screen.png; do
+for evidence in package.txt installer.txt service.txt activity.txt exit_info.txt location.txt notification.txt power.txt window.txt logcat.txt screen.png; do
   [[ -s "$OUT/$evidence" ]] || printf 'capture_status=EMPTY_OR_UNAVAILABLE\n' > "$OUT/$evidence"
 done
 
