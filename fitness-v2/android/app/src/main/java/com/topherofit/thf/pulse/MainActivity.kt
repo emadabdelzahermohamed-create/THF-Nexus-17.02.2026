@@ -998,12 +998,12 @@ class MainActivity : ComponentActivity() {
         fun sessionSteps(): Int = ActivityTrackingService.workoutSnapshot()?.stepDelta ?: 0
 
         @JavascriptInterface
-        fun speak(text: String?, languageTag: String?) {
+        fun speak(text: String?, languageTag: String?, append: Boolean) {
             if (text.isNullOrBlank()) return
             runOnUiThread {
                 val locale = if (languageTag.orEmpty().lowercase().startsWith("ar")) Locale("ar", "EG") else Locale.US
                 tts?.language = locale
-                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "thf-fitness-v2")
+                tts?.speak(text, if (append) TextToSpeech.QUEUE_ADD else TextToSpeech.QUEUE_FLUSH, null, "thf-fitness-v2")
             }
         }
 

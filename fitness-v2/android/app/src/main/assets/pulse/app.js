@@ -11,11 +11,11 @@
   })();
   const voiceGuidance = window.THFVoiceGuidance.createVoiceGuidance({
     storage: store,
-    speakNative: N && typeof N.speak === 'function' ? (text, language) => N.speak(text, language) : null,
-    speakWeb: 'speechSynthesis' in window ? (text, language) => {
+    speakNative: N && typeof N.speak === 'function' ? (text, language, append) => N.speak(text, language, Boolean(append)) : null,
+    speakWeb: 'speechSynthesis' in window ? (text, language, append) => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = language;
-      window.speechSynthesis.cancel();
+      if (!append) window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     } : null,
   });
