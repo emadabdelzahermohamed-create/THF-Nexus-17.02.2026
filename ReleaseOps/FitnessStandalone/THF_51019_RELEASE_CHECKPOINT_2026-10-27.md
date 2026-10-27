@@ -32,3 +32,9 @@
 1. Install/test the exact 51019 candidate on a real Android device or Play internal tester: sign-in, account data/history restore on fresh install/second device, session continues across navigation/background, notification controls, GPS start/stop and permission denial, Health Connect opt-in/denial, and exercise motion demos offline.
 2. Confirm the internal tester install path and current Google Play track/release state; keep production untouched until test evidence is complete.
 3. Fix/understand the separate `THF Fitness Publication State Probe` workflow failures before relying on it for listing/track status. Its failures are not evidence that the successful 51019 upload/readback failed.
+
+## Additional QA detail confirmed after the checkpoint was written
+- Regression gate counts from candidate run 40516382792: 60 product tests passed, 31 source-contract tests passed, and 15 backend tests passed.
+- Gradle reported `BUILD SUCCESSFUL`; APK identity was `com.topherofit.thf.pulse`, version code `51019`, version name `5.0.0-v2-alpha19-debug`, platform/target SDK 36. The workflow also completed Android unit tests, lint, debug APK assembly, and release AAB bundle generation.
+- Motion assets currently included in the promoted manifest: 5 locally bundled video clips (Romanian deadlift, standing calf raises, leg press, hammer curls, tricep dumbbell kickback) plus 2 audited 2-second frame-sequence demos (bodyweight squat and push-ups). The wider library still has image/frame fallbacks; the goal of broad short-video coverage is **not complete**.
+- The publication-state probe workflow had runs that failed before exposing any job steps; investigate the workflow/check-suite error separately. This does not invalidate the independent 51019 internal-track readback from promotion run 40518110062.
