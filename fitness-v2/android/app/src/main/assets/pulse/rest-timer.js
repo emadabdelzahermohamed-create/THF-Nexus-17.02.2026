@@ -17,7 +17,15 @@
       return Math.max(0, Math.ceil((deadlineMs - now()) / 1000));
     }
 
-    return {deadline, remaining};
+    function adjust(endsAtMs, deltaSeconds) {
+      const deadlineMs = Number(endsAtMs);
+      const delta = Number(deltaSeconds);
+      const current = now();
+      if (!Number.isFinite(deadlineMs) || deadlineMs <= current || !Number.isFinite(delta) || delta === 0) return 0;
+      return Math.max(current, deadlineMs + delta * 1000);
+    }
+
+    return {deadline, remaining, adjust};
   }
 
   return {createRestTimer};
