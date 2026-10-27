@@ -267,15 +267,25 @@ def build() -> list[dict]:
             prescriptions = []
             for exercise_index, item in enumerate(picks):
                 source = item["prescription"]
+                is_warmup = exercise_index == 0
+                source_duration = source.get("durationSeconds")
+                if source_duration is not None and int(source_duration) >= 600:
+                    # Long catalog cardio blocks must be budgeted as per-set durations.
+                    # A 20-minute source default is not suitable for every program slot.
+                    sets = 1
+                    duration_seconds = min(int(source_duration), 300 if is_warmup else 600)
+                else:
+                    sets = 2 if is_warmup else max(2, int(source.get("sets") or 3))
+                    duration_seconds = source_duration
                 prescriptions.append({
                     "exerciseId": item["id"],
-                    "role": "warmup" if exercise_index == 0 else "working",
-                    "sets": 2 if exercise_index == 0 else max(2, int(source.get("sets") or 3)),
+                    "role": "warmup" if is_warmup else "working",
+                    "sets": sets,
                     "reps": source.get("reps"),
-                    "durationSeconds": source.get("durationSeconds"),
+                    "durationSeconds": duration_seconds,
                     "restSeconds": min(150, max(30, int(source.get("restSeconds") or 60))),
-                    "targetRpe": 5 if exercise_index == 0 else (7 if level == "beginner" else 8),
-                    "targetRir": 4 if exercise_index == 0 else (3 if level == "beginner" else 2),
+                    "targetRpe": 5 if is_warmup else (7 if level == "beginner" else 8),
+                    "targetRir": 4 if is_warmup else (3 if level == "beginner" else 2),
                 })
             sessions.append({
                 "id": f"{program_id}-session-{session_index + 1}",
