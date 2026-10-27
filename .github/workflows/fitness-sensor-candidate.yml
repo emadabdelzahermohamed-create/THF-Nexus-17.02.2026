@@ -52,7 +52,7 @@ jobs:
           build_status=${PIPESTATUS[0]}
           set -e
           if [[ "$build_status" -ne 0 ]]; then
-            grep -E '(^e: |^w: |FAILURE:|FAILED|error:|Lint found)' fitness-v2/evidence/candidate-51017-build.log | tail -120 > fitness-v2/evidence/candidate-51017-errors.txt || true
+            grep -E '(^e: |^w: |FAILURE:|FAILED|error:|Lint found)' fitness-v2/evidence/candidate-51018-build.log | tail -120 > fitness-v2/evidence/candidate-51018-errors.txt || true
             exit "$build_status"
           fi
           APK=fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
@@ -62,8 +62,8 @@ jobs:
           "$AAPT" dump badging "$APK" | tee /tmp/badging.txt
           grep -F "package: name='com.topherofit.thf.pulse' versionCode='51018'" /tmp/badging.txt
           grep -F "versionName='5.0.0-v2-alpha18-debug'" /tmp/badging.txt
-          sha256sum "$APK" "$AAB" | tee fitness-v2/candidate-51017.sha256
-          printf 'GIT_SHA=%s\nVERSION_CODE=51018\n' "$GITHUB_SHA" | tee fitness-v2/candidate-51017-build.txt
+          sha256sum "$APK" "$AAB" | tee fitness-v2/candidate-51018.sha256
+          printf 'GIT_SHA=%s\nVERSION_CODE=51018\n' "$GITHUB_SHA" | tee fitness-v2/candidate-51018-build.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -74,7 +74,7 @@ jobs:
             fitness-v2/android/app/build/outputs/apk/debug/app-debug.apk
             fitness-v2/android/app/build/outputs/bundle/release/app-release.aab
             fitness-v2/android/app/build/reports/
-            fitness-v2/evidence/candidate-51017-build.log
-            fitness-v2/evidence/candidate-51017-errors.txt
-            fitness-v2/candidate-51017.sha256
-            fitness-v2/candidate-51017-build.txt
+            fitness-v2/evidence/candidate-51018-build.log
+            fitness-v2/evidence/candidate-51018-errors.txt
+            fitness-v2/candidate-51018.sha256
+            fitness-v2/candidate-51018-build.txt
