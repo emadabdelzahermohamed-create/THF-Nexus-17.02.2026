@@ -198,6 +198,13 @@ class FitnessPhonePreflightTests(unittest.TestCase):
         report = (output / "preflight.txt").read_text(encoding="utf-8")
         self.assertIn("preflight_state=ADB_OFFLINE", report)
         self.assertTrue((output / "devices.txt").is_file())
+        manifest = output / "SHA256SUMS"
+        self.assertTrue(manifest.is_file())
+        for line in manifest.read_text(encoding="utf-8").splitlines():
+            digest, relative_name = line.split(maxsplit=1)
+            evidence = output / relative_name.strip()
+            self.assertTrue(evidence.is_file())
+            self.assertEqual(digest, hashlib.sha256(evidence.read_bytes()).hexdigest())
 
     def test_existing_output_directory_fails_before_adb(self):
         output = self.root / "already-exists"
