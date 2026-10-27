@@ -25,7 +25,12 @@
       return Math.max(current, deadlineMs + delta * 1000);
     }
 
-    return {deadline, remaining, adjust};
+    function expired(endsAtMs) {
+      const deadlineMs = Number(endsAtMs);
+      return Number.isFinite(deadlineMs) && deadlineMs > 0 && deadlineMs <= now();
+    }
+
+    return {deadline, remaining, adjust, expired};
   }
 
   return {createRestTimer};
