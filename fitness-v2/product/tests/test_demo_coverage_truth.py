@@ -36,12 +36,12 @@ class DemoCoverageTruthTests(unittest.TestCase):
             self.assertEqual(64, len(entry["sha256"]))
 
     def test_cards_and_details_render_the_manifest_derived_demo_type(self):
-        self.assertIn("function demoCoverage(item)", self.app)
-        self.assertIn("const kind = motionManifest[item.id]?.kind;", self.app)
-        self.assertIn("return t('offlineMotionVideo')", self.app)
-        self.assertIn("return t('verifiedMotionClip')", self.app)
-        self.assertIn("return t('autoReferenceFrames')", self.app)
-        self.assertGreaterEqual(self.app.count("demoCoverage(item)"), 3)
+        self.assertIn("function motionCoverageLabel(item, compact = false)", self.app)
+        self.assertIn("const entry = motionAsset(item);", self.app)
+        self.assertIn("if (entry?.kind === 'offline_video')", self.app)
+        self.assertIn("if (entry?.kind === 'verified_frame_sequence')", self.app)
+        self.assertIn("return referenceCoverageLabel(item, compact);", self.app)
+        self.assertGreaterEqual(self.app.count("motionCoverageLabel(item"), 3)
         self.assertIn("demo-coverage-badge", self.app)
 
     def test_coverage_summary_is_dynamic_bilingual_and_visible_in_training_header(self):

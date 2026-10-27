@@ -37,6 +37,8 @@
   };
   Object.assign(COPY.ar, {programEquipment:'المعدات المذكورة', noProgramEquipment:'لم تُحدد معدات'});
   Object.assign(COPY.en, {programEquipment:'Equipment listed', noProgramEquipment:'No equipment listed'});
+  Object.assign(COPY.ar, {weeklyTrainingTime:'الوقت التدريبي التقديري أسبوعيًا', minutesPerWeek:'دقيقة', noWeeklyEstimate:'غير متاح'});
+  Object.assign(COPY.en, {weeklyTrainingTime:'Estimated weekly training time', minutesPerWeek:'min', noWeeklyEstimate:'Not available'});
   Object.assign(COPY.ar, {startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة',foundingHeroEyebrow:'حزمة تجميلية لمرة واحدة',foundingHeroTitle:'البطل المؤسس',foundingHeroBadge:'البطل المؤسس',foundingHeroBody:'شراء رقمي لمرة واحدة يضيف شارة البطل المؤسس ولمسة ذهبية لملفك.',foundingHeroScope:'شارة تجميلية فقط؛ لا تحجب التمارين أو الصحة، ولا تمنح أفضلية تنافسية أو توكنات أو عائدًا ماليًا.',foundingHeroLoading:'جارٍ التحقق من Google Play…',foundingHeroBuy:'احصل على الحزمة',foundingHeroRestore:'استعادة الشراء',foundingHeroOwned:'حزمة البطل المؤسس مفعلة على هذا الحساب.',foundingHeroPending:'عملية الشراء معلقة؛ ستتفعل الشارة بعد تأكيد Google Play.',foundingHeroUnavailable:'المنتج غير متاح في هذه النسخة بعد. لم يتم تحصيل أي مبلغ.',foundingHeroConfigure:'يلزم ربط مفتاح الترخيص العام ومنتج Play قبل إتاحة الشراء.',foundingHeroAndroidOnly:'متاح داخل نسخة Android المثبتة من Google Play.',foundingHeroCanceled:'تم إلغاء نافذة الشراء ولم يتم تحصيل مبلغ.'});
   Object.assign(COPY.en, {startSession:'Start session',saveNext:'Save and continue',finishSession:'Finish and save session',exerciseOf:'Exercise {current} of {total}',nextExercise:'Exercise saved. Next: {name}',sessionComplete:'Session complete and saved.',signInSync:'Sign in to sync',syncConnected:'Sync connected',syncConnecting:'Connecting account',offlineReady:'Offline ready',syncUnavailable:'Sync not configured',foundingHeroEyebrow:'One-time cosmetic pack',foundingHeroTitle:'Founding Hero',foundingHeroBadge:'Founding Hero',foundingHeroBody:'A one-time digital purchase that adds the Founding Hero badge and a gold profile accent.',foundingHeroScope:'Cosmetic badge only; workouts and Health remain free, with no competitive advantage, tokens, or financial return.',foundingHeroLoading:'Checking Google Play…',foundingHeroBuy:'Get the pack',foundingHeroRestore:'Restore purchase',foundingHeroOwned:'The Founding Hero pack is active for this account.',foundingHeroPending:'Purchase pending; the badge activates after Google Play confirms payment.',foundingHeroUnavailable:'This product is not available in this build yet. No charge was made.',foundingHeroConfigure:'Connect the public Play license key and Play product before enabling purchases.',foundingHeroAndroidOnly:'Available in the Android app installed through Google Play.',foundingHeroCanceled:'The purchase sheet was canceled and no charge was made.'});
   Object.assign(COPY.ar, {onboardingBrand:'خطتك تبدأ منك',onboardingStep:'إعداد سريع · يعمل أوفلاين',onboardingTitle:'ابنِ خطتك الأولى',onboardingIntro:'اختر هدفك وخبرتك وما يتوفر لديك. سنضع جلسة واضحة في «اليوم» ويمكنك تعديل كل شيء لاحقًا.',onboardingBenefitOffline:'دليل مصور أوفلاين',onboardingBenefitSafe:'تدرج وتعليمات سلامة',onboardingBenefitFlexible:'تعديل الخطة في أي وقت',onboardingPrivacy:'يُحفظ هذا الاختيار على جهازك أولًا. لا يلزم حساب للبدء.',createMyPlan:'أنشئ خطتي وابدأ',planReady:'خطتك جاهزة. ابدأ من جلسة اليوم.'});
@@ -166,9 +168,21 @@
 
   function programEquipmentTags(program) {
     const items = programEquipmentItems(program);
-    if (!items.length) return \`<span class="tag">\${escapeHtml(t('noProgramEquipment'))}</span>\`;
-    return \`<span class="tag program-equipment-label">\${escapeHtml(t('programEquipment'))}</span>\` +
-      items.map(item => \`<span class="tag">\${escapeHtml(local(item))}</span>\`).join('');
+    if (!items.length) return `<span class="tag">${escapeHtml(t('noProgramEquipment'))}</span>`;
+    return `<span class="tag program-equipment-label">${escapeHtml(t('programEquipment'))}</span>` +
+      items.map(item => `<span class="tag">${escapeHtml(local(item))}</span>`).join('');
+  }
+
+  function programWeeklyMinutes(program) {
+    const days = Number(program?.daysPerWeek);
+    const sessionMinutes = Number(program?.estimatedSessionMinutes);
+    if (!Number.isInteger(days) || !Number.isInteger(sessionMinutes) || days < 1 || sessionMinutes < 1) return null;
+    return days * sessionMinutes;
+  }
+
+  function programWeeklyTimeText(program) {
+    const minutes = programWeeklyMinutes(program);
+    return minutes === null ? t('noWeeklyEstimate') : `${minutes} ${t('minutesPerWeek')}`;
   }
 
   function renderPrograms() {
@@ -178,7 +192,7 @@
     $('programGrid').innerHTML = results.map(program => {
       const firstExercise = exerciseFor(program.sessions[0].exercises[0]);
       const image = firstExercise?.demo?.assets?.[0] || '';
-      return `<button class="program-card" type="button" data-program="${escapeHtml(program.id)}"><span class="program-cover">${image?`<img src="./${escapeHtml(image)}" alt="">`:''}<span class="program-duration">${program.weeks} ${escapeHtml(t('weeks'))}</span></span><span class="program-copy"><span class="pill gold">${escapeHtml(local(program.section))}</span><h3>${escapeHtml(local(program.name))}</h3><p>${escapeHtml(local(program.summary))}</p><span class="program-equipment"><b>${escapeHtml(t('programEquipment'))}:</b> ${escapeHtml(programEquipmentText(program))}</span><span class="program-meta"><b>${program.daysPerWeek}</b> ${escapeHtml(t('daysWeekly'))} · <b>${program.estimatedSessionMinutes}</b> ${escapeHtml(t('min'))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(program.level))}</span><span class="tag">${escapeHtml(local(program.goal))}</span><span class="tag">✓ ${escapeHtml(t('offline'))}</span></span></span></button>`;
+      return `<button class="program-card" type="button" data-program="${escapeHtml(program.id)}"><span class="program-cover">${image?`<img src="./${escapeHtml(image)}" alt="">`:''}<span class="program-duration">${program.weeks} ${escapeHtml(t('weeks'))}</span></span><span class="program-copy"><span class="pill gold">${escapeHtml(local(program.section))}</span><h3>${escapeHtml(local(program.name))}</h3><p>${escapeHtml(local(program.summary))}</p><span class="program-equipment"><b>${escapeHtml(t('programEquipment'))}:</b> ${escapeHtml(programEquipmentText(program))}</span><span class="program-meta"><b>${program.daysPerWeek}</b> ${escapeHtml(t('daysWeekly'))} · <b>${program.estimatedSessionMinutes}</b> ${escapeHtml(t('min'))}</span><span class="program-weekly-time"><b>${escapeHtml(t('weeklyTrainingTime'))}:</b> ${escapeHtml(programWeeklyTimeText(program))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(program.level))}</span><span class="tag">${escapeHtml(local(program.goal))}</span><span class="tag">✓ ${escapeHtml(t('offline'))}</span></span></span></button>`;
     }).join('');
     $('programGrid').querySelectorAll('.program-card').forEach(card => card.addEventListener('click', () => openProgramDetail(card.dataset.program)));
   }
@@ -197,7 +211,7 @@
 
   function renderProgramDetail(program) {
     $('programDetailSection').textContent = local(program.section); $('programDetailName').textContent = local(program.name); $('programDetailSummary').textContent = local(program.summary);
-    $('programDetailMeta').innerHTML = `<span class="tag">${program.weeks} ${escapeHtml(t('weeks'))}</span><span class="tag">${program.daysPerWeek} ${escapeHtml(t('daysWeekly'))}</span><span class="tag">${program.estimatedSessionMinutes} ${escapeHtml(t('min'))}</span><span class="tag">${escapeHtml(local(program.level))}</span><span class="tag">✓ ${escapeHtml(t('offline'))}</span>${programEquipmentTags(program)}`;
+    $('programDetailMeta').innerHTML = `<span class="tag">${program.weeks} ${escapeHtml(t('weeks'))}</span><span class="tag">${program.daysPerWeek} ${escapeHtml(t('daysWeekly'))}</span><span class="tag">${program.estimatedSessionMinutes} ${escapeHtml(t('min'))}</span><span class="tag">${escapeHtml(local(program.level))}</span><span class="tag">✓ ${escapeHtml(t('offline'))}</span>${programEquipmentTags(program)}<span class="tag program-weekly-time"><b>${escapeHtml(t('weeklyTrainingTime'))}:</b> ${escapeHtml(programWeeklyTimeText(program))}</span>`;
     $('programSessions').innerHTML = `<div class="results-heading"><h2>${escapeHtml(t('programSessions'))}</h2><span class="count-badge">${program.sessions.length}</span></div>` + program.sessions.map((session,index) => `<article class="program-session"><div class="card-heading"><div><p class="eyebrow">${escapeHtml(t('session'))} ${index+1}</p><h3>${escapeHtml(local(session.name))}</h3></div><div class="program-session-actions"><span class="count-badge">${session.exercises.length} ${escapeHtml(t('exerciseCount'))}</span><button class="button secondary compact" type="button" data-start-program="${escapeHtml(program.id)}" data-start-session="${escapeHtml(session.id)}">${escapeHtml(t('startSession'))}</button></div></div><div class="session-exercises">${session.exercises.map(reference => { const exercise=exerciseFor(reference); return exercise?`<button type="button" data-exercise="${escapeHtml(exercise.id)}"><span><b>${escapeHtml(local(exercise.name))}</b><small>${escapeHtml(prescriptionText(reference))}</small></span><span aria-hidden="true">›</span></button>`:''; }).join('')}</div></article>`).join('');
     $('programSessions').querySelectorAll('[data-exercise]').forEach(button => button.addEventListener('click', () => { const id=button.dataset.exercise; closeProgramDetail(); openDetail(id); }));
     $('programSessions').querySelectorAll('[data-start-program]').forEach(button => button.addEventListener('click', () => startProgramSession(button.dataset.startProgram, button.dataset.startSession)));

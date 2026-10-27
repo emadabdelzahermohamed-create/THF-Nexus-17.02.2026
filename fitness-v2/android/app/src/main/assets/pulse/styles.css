@@ -77,3 +77,7 @@
 
 
 .program-equipment{color:var(--muted);font-size:11px;line-height:1.55;overflow-wrap:anywhere;max-width:100%}.program-equipment b{color:var(--text);font-weight:800}.program-equipment-label{border-color:#8b733b;color:var(--gold);font-weight:800}
+
+
+/* Weekly time estimates help users compare program commitment before selection. */
+.program-weekly-time{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;color:var(--muted);font-size:11px;line-height:1.55}.program-weekly-time b{color:var(--text);font-weight:800}
