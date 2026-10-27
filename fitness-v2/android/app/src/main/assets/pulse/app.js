@@ -4,6 +4,8 @@
   const EXERCISES = Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
   const PROGRAMS = Array.isArray(window.THF_PROGRAMS) ? window.THF_PROGRAMS : [];
   const motionManifest = window.THF_MOTION_MANIFEST || {};
+  let exerciseDemoObserver = null;
+  let exerciseDemoFallbackEventsBound = false;
   const $ = id => document.getElementById(id);
   const store = (() => {
     try { localStorage.setItem('__thf_probe', '1'); localStorage.removeItem('__thf_probe'); return localStorage; }
@@ -165,10 +167,10 @@
 
   function openProgramDetail(id) {
     state.selectedProgram = PROGRAMS.find(program => program.id === id); if (!state.selectedProgram) return;
-    renderProgramDetail(state.selectedProgram); $('programDetail').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('programDetailCloseButton').focus();
+    renderProgramDetail(state.selectedProgram); $('programDetail').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('programDetailCloseButton').focus(); syncExerciseDemoVideos();
   }
 
-  function closeProgramDetail() { $('programDetail').classList.add('hidden'); document.body.style.overflow = ''; }
+  function closeProgramDetail() { $('programDetail').classList.add('hidden'); document.body.style.overflow = ''; syncExerciseDemoVideos(); }
 
   function prescriptionText(reference) {
     const dose = reference.durationSeconds ? `${reference.sets} × ${reference.durationSeconds}s` : `${reference.sets} × ${reference.reps || '—'}`;
@@ -247,6 +249,130 @@
       : `Motion coverage: ${counts.offlineVideo} offline videos · ${counts.verifiedClips} verified frame-sequence clips · ${counts.referenceFrames} auto-animated reference-frame demos · ${EXERCISES.length} exercises`;
   }
 
+  function motionAsset(item) {
+    const entry = motionManifest[item?.id];
+    const supported = entry && (entry.kind === 'offline_video' || entry.kind === 'verified_frame_sequence');
+    return supported && typeof entry.asset === 'string' && /^media\/motion\/[a-z0-9-]+\.(?:mp4|webm)$/i.test(entry.asset) ? entry : null;
+  }
+  function referenceCoverageLabel(item, compact = false) {
+    if (state.lang === 'ar') return compact ? 'صور مرجعية متحركة' : 'صور مرجعية متحركة تلقائيًا · الفيديو قريبًا';
+    return compact ? 'Animated refs' : 'Auto-animated reference frames · video coming soon';
+  }
+  function motionCoverageLabel(item, compact = false) {
+    const entry = motionAsset(item);
+    if (entry?.kind === 'offline_video') return state.lang === 'ar' ? 'فيديو أوفلاين' : 'Offline video';
+    if (entry?.kind === 'verified_frame_sequence') return state.lang === 'ar' ? 'مقطع إطارات موثّق' : 'Verified frame-sequence clip';
+    return referenceCoverageLabel(item, compact);
+  }
+  function referenceMotionPlayer(item, context = 'detail') {
+    const assets = Array.isArray(item?.demo?.assets) ? item.demo.assets.slice(0, 2) : [];
+    const safeAssets = assets.length === 2 && assets.every(asset => typeof asset === 'string' && /^media\/free-exercise-db\/[A-Za-z0-9_/-]+\.jpg$/i.test(asset));
+    if (!safeAssets) return `<div class="motion-placeholder" role="img" aria-label="${escapeHtml(state.lang === 'ar' ? 'العرض المصوّر غير متاح' : 'Exercise demonstration unavailable')}"><strong>${escapeHtml(state.lang === 'ar' ? 'العرض غير متاح' : 'Demonstration unavailable')}</strong></div>`;
+    const alt = escapeHtml(local(item.demo?.alt) || local(item.name));
+    const className = context === 'card' ? 'exercise-reference-motion-card' : 'exercise-reference-motion-detail';
+    return `<div class="exercise-reference-motion ${className}" role="img" aria-label="${alt}"><img src="./${escapeHtml(assets[0])}" alt="" aria-hidden="true"><img src="./${escapeHtml(assets[1])}" alt="" aria-hidden="true"></div>`;
+  }
+  function motionPlayer(item, context = 'detail') {
+    const entry = motionAsset(item);
+    if (!entry) return referenceMotionPlayer(item, context);
+    const asset = `./${escapeHtml(entry.asset)}`;
+    const poster = item.demo?.assets?.[0] ? ` poster="./${escapeHtml(item.demo.assets[0])}"` : '';
+    const label = escapeHtml(local(item.demo?.alt) || local(item.name));
+    const controls = context === 'detail' ? 'controls' : '';
+    const preload = context === 'card' ? 'none' : 'metadata';
+    const type = entry.asset.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4';
+    return `<video class="exercise-motion ${context === 'card' ? 'exercise-motion-card' : 'exercise-motion-detail'}" data-exercise-id="${escapeHtml(item.id)}" data-context="${context}" data-in-viewport="0" data-clip-limit="6" ${controls} muted playsinline loop preload="${preload}"${poster} aria-label="${label}"><source src="${asset}" type="${type}"></video>`;
+  }
+  function motionCredit(item) {
+    const entry = motionAsset(item);
+    if (!entry || entry.kind !== 'offline_video' || !entry.sourceUrl || !entry.licenseUrl) return '';
+    const sourceLabel = state.lang === 'ar' ? 'المصدر' : 'source';
+    const licenseLabel = state.lang === 'ar' ? 'ترخيص CC BY-SA 4.0' : 'CC BY-SA 4.0 license';
+    return `<p id="detailMotionCredit" class="motion-credit small muted">${state.lang === 'ar' ? 'مصدر الفيديو:' : 'Video source:'} ${escapeHtml(entry.author || '')} · <a href="${escapeHtml(entry.sourceUrl)}" target="_blank" rel="noopener noreferrer">${sourceLabel}</a> · <a href="${escapeHtml(entry.licenseUrl)}" target="_blank" rel="noopener noreferrer">${licenseLabel}</a></p>`;
+  }
+  function demoVideoInViewport(video) {
+    const rect = video.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight &&
+      rect.right > 0 && rect.left < window.innerWidth;
+  }
+  function shouldPlayExerciseDemoVideo(video) {
+    if (!video || !video.isConnected || document.hidden ||
+        document.documentElement.classList.contains('motion-reduced') || video.closest('.hidden')) return false;
+    const detailOpen = !$('exerciseDetail').classList.contains('hidden');
+    const programOpen = !$('programDetail').classList.contains('hidden');
+    if (video.dataset.context === 'detail') return detailOpen && video.dataset.inViewport === '1';
+    return video.dataset.context === 'card' && !detailOpen && !programOpen && video.dataset.inViewport === '1';
+  }
+  function syncExerciseDemoVideo(video) {
+    if (!video) return;
+    if (!exerciseDemoObserver) video.dataset.inViewport = demoVideoInViewport(video) ? '1' : '0';
+    if (shouldPlayExerciseDemoVideo(video)) {
+      const playback = video.play();
+      if (playback && typeof playback.catch === 'function') playback.catch(() => {});
+    } else if (!video.paused) video.pause();
+  }
+  function syncExerciseDemoVideos(root = document) {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    root.querySelectorAll('video.exercise-motion').forEach(syncExerciseDemoVideo);
+  }
+  function unobserveExerciseDemoVideos(root) {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    root.querySelectorAll('video.exercise-motion').forEach(video => exerciseDemoObserver?.unobserve(video));
+  }
+  function observeExerciseDemoVideo(video) {
+    if (typeof window.IntersectionObserver === 'function') {
+      if (!exerciseDemoObserver) {
+        exerciseDemoObserver = new window.IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            entry.target.dataset.inViewport = entry.isIntersecting && entry.intersectionRatio >= 0.25 ? '1' : '0';
+            syncExerciseDemoVideo(entry.target);
+          });
+        }, {threshold:[0,0.25]});
+      }
+      exerciseDemoObserver.observe(video);
+      return;
+    }
+    if (!exerciseDemoFallbackEventsBound) {
+      const refresh = () => syncExerciseDemoVideos();
+      window.addEventListener('scroll', refresh, {passive:true});
+      window.addEventListener('resize', refresh, {passive:true});
+      exerciseDemoFallbackEventsBound = true;
+    }
+    video.dataset.inViewport = demoVideoInViewport(video) ? '1' : '0';
+    syncExerciseDemoVideo(video);
+  }
+  function bindDemoClipLimits(root) {
+    root.querySelectorAll('video[data-clip-limit]').forEach(video => {
+      if (video.dataset.clipLimitBound === '1') return;
+      video.dataset.clipLimitBound = '1';
+      video.removeAttribute('autoplay');
+      video.autoplay = false;
+      observeExerciseDemoVideo(video);
+      video.addEventListener('error', () => {
+        const item = EXERCISES.find(candidate => candidate.id === video.dataset.exerciseId);
+        if (!item) return;
+        const context = video.dataset.context === 'card' ? 'card' : 'detail';
+        const mediaContainer = video.closest('.media');
+        const cardBadge = mediaContainer?.querySelector('.offline-badge');
+        const detailBadge = context === 'detail' ? $('detailBadges')?.querySelector('.demo-coverage-badge') : null;
+        exerciseDemoObserver?.unobserve(video);
+        const template = document.createElement('template');
+        template.innerHTML = referenceMotionPlayer(item, context);
+        const fallback = template.content.firstElementChild;
+        if (fallback) video.replaceWith(fallback);
+        if (cardBadge) cardBadge.textContent = motionCoverageLabel(item, true);
+        if (detailBadge) detailBadge.textContent = motionCoverageLabel(item);
+        if (context === 'detail') $('detailMotionCredit')?.classList.add('hidden');
+      }, {once:true});
+      video.addEventListener('timeupdate', () => {
+        const limit = Number(video.dataset.clipLimit) || 6;
+        if (Number.isFinite(video.duration) && video.duration > limit && video.currentTime >= limit) {
+          video.currentTime = 0;
+          syncExerciseDemoVideo(video);
+        }
+      });
+    });
+  }
   function renderExercises() {
     renderMotionCoverageSummary();
     if (!EXERCISES.length) { $('exerciseGrid').innerHTML = `<p class="error-message">${escapeHtml(t('noCatalog'))}</p>`; return; }
@@ -254,7 +380,9 @@
     $('resultsCount').textContent = String(results.length);
     $('emptyResults').classList.toggle('hidden', results.length > 0);
     $('activeFilterCount').textContent = String(Object.values(state.filters).filter(Boolean).length);
-    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    unobserveExerciseDemoVideos($('exerciseGrid'));
+    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media">${motionPlayer(item, 'card')}<span class="offline-badge">${escapeHtml(motionCoverageLabel(item, true))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    bindDemoClipLimits($('exerciseGrid'));
     $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => {
       const item = EXERCISES.find(exercise => exercise.id === card.dataset.id);
       const copy = card.querySelector('.copy');
@@ -275,13 +403,15 @@
 
   function openDetail(id) {
     state.selected = EXERCISES.find(item => item.id === id); if (!state.selected) return;
-    renderDetail(state.selected); $('exerciseDetail').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('detailCloseButton').focus();
+    renderDetail(state.selected); $('exerciseDetail').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('detailCloseButton').focus(); syncExerciseDemoVideos();
   }
-  function closeDetail() { $('exerciseDetail').classList.add('hidden'); document.body.style.overflow = ''; }
+  function closeDetail() { $('exerciseDetail').classList.add('hidden'); document.body.style.overflow = ''; syncExerciseDemoVideos(); }
   function list(items, ordered = false) { const tag = ordered ? 'ol' : 'ul'; return `<${tag}>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</${tag}>`; }
   function renderDetail(item) {
-    $('detailDemo').innerHTML = item.demo.assets.map((asset,index) => `<div class="detail-frame"><img src="./${escapeHtml(asset)}" alt="${escapeHtml(item.demo.alt[state.lang])}"><span>${escapeHtml(t(index ? 'finish' : 'start'))}</span></div>`).join('');
-    $('detailBadges').innerHTML = `<span class="pill gold">${escapeHtml(local(item.section))}</span><span class="pill">✓ ${escapeHtml(t('offline'))}</span><span class="pill demo-coverage-badge">${escapeHtml(demoCoverage(item))}</span><span class="pill">${escapeHtml(local(item.level))}</span>`;
+    unobserveExerciseDemoVideos($('detailDemo'));
+    $('detailDemo').innerHTML = motionPlayer(item, 'detail') + motionCredit(item);
+    bindDemoClipLimits($('detailDemo'));
+    $('detailBadges').innerHTML = `<span class="pill gold">${escapeHtml(local(item.section))}</span><span class="pill">✓ ${escapeHtml(t('offline'))}</span><span class="pill demo-coverage-badge">${escapeHtml(motionCoverageLabel(item))}</span><span class="pill">${escapeHtml(local(item.level))}</span>`;
     $('detailName').textContent = local(item.name); $('detailMeta').textContent = `${local(item.equipment)} · ${local(item.movement)} · ${local(item.goal)}`;
     $('detailMuscles').innerHTML = item.muscles.primary[state.lang].concat(item.muscles.secondary[state.lang]).map(value => `<span class="tag">${escapeHtml(value)}</span>`).join('');
     const prescription = item.prescription; const dose = prescription.durationSeconds ? `${prescription.sets} × ${prescription.durationSeconds} sec` : `${prescription.sets} × ${prescription.reps} · ${prescription.restSeconds} sec`;
@@ -579,6 +709,8 @@
     const enabled=Boolean(reduced);
     $('reduceMotion').checked=enabled;
     document.documentElement.style.setProperty('--motion',enabled?'0':'1');
+    document.documentElement.classList.toggle('motion-reduced',enabled);
+    syncExerciseDemoVideos();
     if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
   }
 
@@ -612,7 +744,7 @@
     window.addEventListener('thf:health-status',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-permission',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-sync',event=>renderHealthSnapshot(event.detail));window.addEventListener('thf:health-write',()=>renderHealthStatus());window.addEventListener('thf:health-error',event=>renderHealthError(event.detail||{}));
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
-    document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
+    document.addEventListener('visibilitychange',()=>{syncExerciseDemoVideos();const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
   }
 
