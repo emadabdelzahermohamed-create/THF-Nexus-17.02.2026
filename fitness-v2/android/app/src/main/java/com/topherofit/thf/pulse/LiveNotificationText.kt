@@ -15,9 +15,14 @@ object LiveNotificationText {
             String.format(Locale.US, "%d:%02d /km", seconds / 60, seconds % 60)
         } ?: "— /km"
         val speed = String.format(Locale.US, "%.1f km/h", s.averageSpeedKph)
-        val compact = if (s.mode == ActivityMode.WALK) "$steps · $distance" else "$distance · $calories"
+        val waitingForMovement = s.phase == ActivitySessionPhase.ARMED
+        val phaseLabel = if (waitingForMovement) "بانتظار حركة مقاسة" else "النشاط مستمر"
+        val compactMetrics = if (s.mode == ActivityMode.WALK) "$steps · $distance" else "$distance · $calories"
+        val compact = if (waitingForMovement) "$phaseLabel · $compactMetrics" else compactMetrics
         val detail = if (s.mode == ActivityMode.CYCLE) "$distance · $speed" else "$steps\n$distance · $pace"
-        return LiveNotificationContent(compact, "$detail\n$calories\n$gpsStatus")
+        val expandedMetrics = "$detail\n$calories\n$gpsStatus"
+        val expanded = if (waitingForMovement) "$phaseLabel\n$expandedMetrics" else expandedMetrics
+        return LiveNotificationContent(compact, expanded)
     }
 
     fun workout(steps: Int?, profile: String, stepSensorAvailable: Boolean?): LiveNotificationContent {

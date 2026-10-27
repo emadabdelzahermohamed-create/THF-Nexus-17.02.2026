@@ -623,10 +623,11 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val snapshot = if (activityMode != null) buildActivitySnapshot(active = true) else null
+        val waitingForMovement = snapshot?.phase == ActivitySessionPhase.ARMED
         val title = when (activityMode) {
-            ActivityMode.WALK -> "Top Hero Fit · المشي مستمر"
-            ActivityMode.RUN -> "Top Hero Fit · الجري مستمر"
-            ActivityMode.CYCLE -> "Top Hero Fit · ركوب الدراجة مستمر"
+            ActivityMode.WALK -> if (waitingForMovement) "Top Hero Fit · في انتظار الحركة" else "Top Hero Fit · المشي مستمر"
+            ActivityMode.RUN -> if (waitingForMovement) "Top Hero Fit · في انتظار الحركة" else "Top Hero Fit · الجري مستمر"
+            ActivityMode.CYCLE -> if (waitingForMovement) "Top Hero Fit · في انتظار الحركة" else "Top Hero Fit · ركوب الدراجة مستمر"
             null -> "Top Hero Fit · التمرين مستمر"
         }
         val state = workoutEngine?.currentState()
@@ -649,14 +650,17 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             val measuredSteps = evidence?.let { max(it.stepDelta, it.stepDetectorCount) }
             LiveNotificationText.workout(measuredSteps, profileName, stepAvailable)
         }
+        val notificationTiming = snapshot?.let {
+            ActivityNotificationTimingPolicy.forActivity(it, System.currentTimeMillis())
+        } ?: ActivityNotificationTimingPolicy.forWorkout(sessionStartedAtWallMs)
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(title)
             .setContentText(content.compact)
             .setStyle(Notification.BigTextStyle().bigText(content.expanded))
-            .setWhen(sessionStartedAtWallMs)
-            .setShowWhen(true)
-            .setUsesChronometer(true)
+            .setWhen(notificationTiming.whenWallMs)
+            .setShowWhen(notificationTiming.showWhen)
+            .setUsesChronometer(notificationTiming.usesChronometer)
             .setVisibility(Notification.VISIBILITY_PRIVATE)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
