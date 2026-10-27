@@ -39,7 +39,7 @@ class ActivitySnapshotPolicyTest {
         assertEquals(0.0, snapshot.averageSpeedKph, 0.0)
         assertNull(snapshot.paceMinutesPerKm)
         assertEquals(0.0, snapshot.estimatedCaloriesKcal, 0.0)
-        assertEquals(2, snapshot.gpsPointCount)
+        assertEquals(0, snapshot.gpsPointCount)
         assertEquals(7f, snapshot.lastAccuracyMetres)
         assertTrue(snapshot.route.isEmpty())
     }

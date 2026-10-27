@@ -331,11 +331,19 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             val deltaMetres = ActivityMetrics.distanceMetres(previous.latitude, previous.longitude, location.latitude, location.longitude)
             val deltaMs = location.elapsedRealtimeNanos / 1_000_000L - previous.elapsedRealtimeNanos / 1_000_000L
             val impliedKph = ActivityMetrics.averageSpeedKph(deltaMetres, deltaMs)
-            if (deltaMetres >= 1.0) {
-                activityDistanceMetres += deltaMetres
-                currentSpeedKph = if (location.hasSpeed()) location.speed * 3.6 else impliedKph
-            } else if (deltaMetres < 1.0) {
-                currentSpeedKph = 0.0
+            // Candidate GPS points are evidence only while ARMED. Never expose their distance/speed
+            // as measured workout metrics until the movement gate has confirmed sustained motion.
+            if (activityPhase == ActivitySessionPhase.ACTIVE) {
+                if (deltaMetres >= 1.0) {
+                    activityDistanceMetres += deltaMetres
+                    currentSpeedKph = if (location.hasSpeed() && location.speed.isFinite() && location.speed > 0f) {
+                        location.speed * 3.6
+                    } else {
+                        impliedKph
+                    }
+                } else {
+                    currentSpeedKph = 0.0
+                }
             }
         }
         lastLocation = Location(location)
@@ -384,10 +392,66 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private fun maybeActivateActivity(nowElapsed: Long) {
         val mode = activityMode ?: return
         if (activityPhase == ActivitySessionPhase.ACTIVE) return
-        if (!ActivityActivationGate.shouldActivate(mode, activityDistanceMetres, activityStepDelta, route.size)) return
+
+        val firstPoint = route.firstOrNull()
+        val lastPoint = route.lastOrNull()
+        val gpsDisplacementMetres = if (firstPoint != null && lastPoint != null) {
+            ActivityMetrics.distanceMetres(
+                firstPoint.latitude, firstPoint.longitude, lastPoint.latitude, lastPoint.longitude,
+            )
+        } else {
+            0.0
+        }
+        val gpsDurationMs = if (firstPoint != null && lastPoint != null) {
+            (lastPoint.elapsedMs - firstPoint.elapsedMs).coerceAtLeast(0L)
+        } else {
+            0L
+        }
+        val worstGpsAccuracyMetres = if (firstPoint != null && lastPoint != null) {
+            max(firstPoint.accuracyMetres.toDouble(), lastPoint.accuracyMetres.toDouble())
+        } else {
+            Double.NaN
+        }
+        val gpsConfirmed = ActivityGpsMotionGate.confirmsMovement(
+            mode = mode,
+            displacementMetres = gpsDisplacementMetres,
+            acceptedPointCount = route.size,
+            durationMs = gpsDurationMs,
+            worstAccuracyMetres = worstGpsAccuracyMetres,
+        )
+        if (!ActivityActivationGate.shouldActivate(
+                mode = mode,
+                gpsDisplacementMetres = gpsDisplacementMetres,
+                measuredStepDelta = activityStepDelta,
+                acceptedGpsPoints = route.size,
+                gpsDurationMs = gpsDurationMs,
+                worstGpsAccuracyMetres = worstGpsAccuracyMetres,
+            )
+        ) return
+
         activityPhase = ActivitySessionPhase.ACTIVE
-        activityActivatedAtWallMs = System.currentTimeMillis()
-        activityActivatedAtElapsedMs = nowElapsed
+        if (gpsConfirmed && firstPoint != null && lastPoint != null) {
+            // Count only the validated net displacement for the warm-up segment and collapse its
+            // route to endpoints; this prevents pre-activation GPS wander from inflating the track.
+            activityDistanceMetres = gpsDisplacementMetres
+            route.clear()
+            route += firstPoint
+            if (lastPoint != firstPoint) route += lastPoint
+            currentSpeedKph = ActivityMetrics.averageSpeedKph(gpsDisplacementMetres, gpsDurationMs)
+            lastAccuracyMetres = lastPoint.accuracyMetres
+            activityActivatedAtWallMs = activityStartedAtWallMs + (firstPoint.elapsedMs.coerceAtLeast(0L))
+            activityActivatedAtElapsedMs = activityStartedAtElapsedMs + (firstPoint.elapsedMs.coerceAtLeast(0L))
+        } else {
+            // Step evidence can activate walk/run without GPS. Discard all pre-activation GPS
+            // candidates and start a fresh route anchor after activation.
+            activityDistanceMetres = 0.0
+            currentSpeedKph = 0.0
+            route.clear()
+            lastLocation = null
+            lastAccuracyMetres = null
+            activityActivatedAtWallMs = System.currentTimeMillis()
+            activityActivatedAtElapsedMs = nowElapsed
+        }
         saveActivityCheckpoint(force = true)
     }
 
@@ -513,21 +577,29 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityPhase = checkpoint.phase
         activityActivatedAtWallMs = checkpoint.activatedAtWallMs
         activityActivatedAtElapsedMs = ActivitySessionCheckpointCodec.adjustedActivatedAtElapsedMs(checkpoint, nowElapsed)
-        activityDistanceMetres = checkpoint.distanceMetres
+        activityDistanceMetres = if (checkpoint.phase == ActivitySessionPhase.ARMED) 0.0 else checkpoint.distanceMetres
         activityStepBaseline = checkpoint.stepBaseline
         activityStepDelta = checkpoint.stepDelta
         currentSpeedKph = 0.0
-        lastAccuracyMetres = checkpoint.lastAccuracyMetres
+        lastAccuracyMetres = if (checkpoint.phase == ActivitySessionPhase.ACTIVE) checkpoint.lastAccuracyMetres else null
         route.clear()
-        route += checkpoint.route.takeLast(MAX_ROUTE_POINTS)
-        lastLocation = checkpoint.route.lastOrNull()?.let { point ->
-            Location("thf_checkpoint").apply {
-                latitude = point.latitude
-                longitude = point.longitude
-                point.altitudeMetres?.let { altitude = it }
-                accuracy = point.accuracyMetres
-                elapsedRealtimeNanos = (activityStartedAtElapsedMs + point.elapsedMs) * 1_000_000L
+        if (checkpoint.phase == ActivitySessionPhase.ACTIVE) {
+            route += checkpoint.route.takeLast(MAX_ROUTE_POINTS)
+        }
+        // An ARMED checkpoint preserves the session and sensor baseline, but not stale warm-up
+        // GPS candidates. ACTIVE checkpoints retain the accepted route and measured distance.
+        lastLocation = if (checkpoint.phase == ActivitySessionPhase.ACTIVE) {
+            checkpoint.route.lastOrNull()?.let { point ->
+                Location("thf_checkpoint").apply {
+                    latitude = point.latitude
+                    longitude = point.longitude
+                    point.altitudeMetres?.let { altitude = it }
+                    accuracy = point.accuracyMetres
+                    elapsedRealtimeNanos = (activityStartedAtElapsedMs + point.elapsedMs) * 1_000_000L
+                }
             }
+        } else {
+            null
         }
         lastActivityCheckpointWriteElapsedMs = nowElapsed
         startForegroundForCurrentSession(buildNotification())
