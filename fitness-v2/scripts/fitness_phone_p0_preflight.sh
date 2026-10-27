@@ -33,6 +33,15 @@ blocked() {
         printf '%s\n' "$DEVICE_OUTPUT" > "$OUT/devices.txt"
       fi
     } > "$OUT/preflight.txt"
+    # Preserve integrity for early blocked/offline checkpoints too.
+    if command -v sha256sum >/dev/null 2>&1; then
+      (
+        cd "$OUT"
+        for file in *; do
+          [[ "$file" == "SHA256SUMS" ]] || sha256sum "$file"
+        done > SHA256SUMS
+      ) 2>/dev/null || true
+    fi
   fi
   exit 30
 }
