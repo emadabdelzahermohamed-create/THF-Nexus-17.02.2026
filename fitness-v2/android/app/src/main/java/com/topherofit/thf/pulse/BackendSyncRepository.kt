@@ -188,6 +188,6 @@ class BackendSyncRepository(baseUrl: String) {
 
     private fun parseHistoryEndpoint(value: String): URL? = runCatching {
         val clean = AccountAuthContract.persistentHttpsBase(value)?.trimEnd('/') ?: return@runCatching null
-        URL("$clean/api/v2/workouts")
+        URL("$clean/api/v2/workouts?limit=200")
     }.getOrNull()
 }
