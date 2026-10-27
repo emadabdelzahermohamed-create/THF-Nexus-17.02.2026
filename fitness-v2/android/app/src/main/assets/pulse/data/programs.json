@@ -633,9 +633,9 @@
           {
             "exerciseId": "bodyweight-walking-lunge",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -1191,9 +1191,9 @@
           {
             "exerciseId": "trail-running-walking",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -1201,9 +1201,9 @@
           {
             "exerciseId": "walking-treadmill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -1211,9 +1211,9 @@
           {
             "exerciseId": "jogging-treadmill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -1251,9 +1251,9 @@
           {
             "exerciseId": "jogging-treadmill",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -1261,9 +1261,9 @@
           {
             "exerciseId": "prowler-sprint",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -1281,9 +1281,9 @@
           {
             "exerciseId": "walking-treadmill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -1321,9 +1321,9 @@
           {
             "exerciseId": "running-treadmill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -1331,9 +1331,9 @@
           {
             "exerciseId": "trail-running-walking",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -1445,9 +1445,9 @@
           {
             "exerciseId": "walking-treadmill",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -1455,9 +1455,9 @@
           {
             "exerciseId": "jogging-treadmill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -1465,9 +1465,9 @@
           {
             "exerciseId": "prowler-sprint",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -1505,9 +1505,9 @@
           {
             "exerciseId": "prowler-sprint",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -1525,9 +1525,9 @@
           {
             "exerciseId": "running-treadmill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -1565,9 +1565,9 @@
           {
             "exerciseId": "running-treadmill",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -1575,9 +1575,9 @@
           {
             "exerciseId": "trail-running-walking",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -1585,9 +1585,9 @@
           {
             "exerciseId": "walking-treadmill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -1625,9 +1625,9 @@
           {
             "exerciseId": "walking-treadmill",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -1635,9 +1635,9 @@
           {
             "exerciseId": "jogging-treadmill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -1645,9 +1645,9 @@
           {
             "exerciseId": "prowler-sprint",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -1779,9 +1779,9 @@
           {
             "exerciseId": "bicycling",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -1789,9 +1789,9 @@
           {
             "exerciseId": "bicycling-stationary",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -1829,9 +1829,9 @@
           {
             "exerciseId": "bicycling-stationary",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -1849,9 +1849,9 @@
           {
             "exerciseId": "recumbent-bike",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -1889,9 +1889,9 @@
           {
             "exerciseId": "recumbent-bike",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -2033,9 +2033,9 @@
           {
             "exerciseId": "bicycling",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -2043,9 +2043,9 @@
           {
             "exerciseId": "bicycling-stationary",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -2103,9 +2103,9 @@
           {
             "exerciseId": "recumbent-bike",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -2173,9 +2173,9 @@
           {
             "exerciseId": "bicycling",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -2213,9 +2213,9 @@
           {
             "exerciseId": "bicycling",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -2223,9 +2223,9 @@
           {
             "exerciseId": "bicycling-stationary",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -2422,9 +2422,9 @@
           {
             "exerciseId": "single-cone-sprint-drill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -2512,9 +2512,9 @@
           {
             "exerciseId": "rowing-stationary",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -2631,9 +2631,9 @@
           {
             "exerciseId": "single-cone-sprint-drill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -2671,9 +2671,9 @@
           {
             "exerciseId": "single-cone-sprint-drill",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -2711,9 +2711,9 @@
           {
             "exerciseId": "rowing-stationary",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -2761,9 +2761,9 @@
           {
             "exerciseId": "rowing-stationary",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -2811,9 +2811,9 @@
           {
             "exerciseId": "single-cone-sprint-drill",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -4599,9 +4599,9 @@
           {
             "exerciseId": "side-to-side-box-shuffle",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -4848,9 +4848,9 @@
           {
             "exerciseId": "side-to-side-box-shuffle",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -4988,9 +4988,9 @@
           {
             "exerciseId": "side-to-side-box-shuffle",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -5028,9 +5028,9 @@
           {
             "exerciseId": "side-to-side-box-shuffle",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -5167,9 +5167,9 @@
           {
             "exerciseId": "elliptical-trainer",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -5297,9 +5297,9 @@
           {
             "exerciseId": "rowing-stationary",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -5307,9 +5307,9 @@
           {
             "exerciseId": "elliptical-trainer",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 7,
             "targetRir": 3
@@ -5511,9 +5511,9 @@
           {
             "exerciseId": "rowing-stationary",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
@@ -5551,9 +5551,9 @@
           {
             "exerciseId": "rowing-stationary",
             "role": "warmup",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 300,
             "restSeconds": 60,
             "targetRpe": 5,
             "targetRir": 4
@@ -5561,9 +5561,9 @@
           {
             "exerciseId": "elliptical-trainer",
             "role": "working",
-            "sets": 2,
+            "sets": 1,
             "reps": null,
-            "durationSeconds": 1200,
+            "durationSeconds": 600,
             "restSeconds": 60,
             "targetRpe": 8,
             "targetRir": 2
