@@ -32,6 +32,24 @@ class InstructionAccessibilityTest(unittest.TestCase):
         )
         self.assertIn('aria-labelledby="${escapeHtml(labelId)}"', self.javascript)
 
+    def test_active_breathing_and_safety_guidance_have_visible_headings(self):
+        self.assertIn(
+            '<div class="breathing-cue" role="group" aria-labelledby="activeBreathingTitle">',
+            self.html,
+        )
+        self.assertIn(
+            '<h3 id="activeBreathingTitle" data-i18n="breathing">التنفس</h3>',
+            self.html,
+        )
+        self.assertIn(
+            '<article class="surface safety-card" aria-labelledby="activeSafetyTitle">',
+            self.html,
+        )
+        self.assertIn(
+            '<h2 id="activeSafetyTitle" data-i18n="safety">السلامة أولًا</h2>',
+            self.html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
