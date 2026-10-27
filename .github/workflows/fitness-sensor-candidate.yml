@@ -55,7 +55,7 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0'
-      - name: Test lint and build candidate
+      - name: Test lint and build candidate 51019 (verify package identity)
         shell: bash
         run: |
           set -uo pipefail
