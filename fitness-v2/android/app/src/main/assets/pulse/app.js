@@ -254,7 +254,17 @@
     $('resultsCount').textContent = String(results.length);
     $('emptyResults').classList.toggle('hidden', results.length > 0);
     $('activeFilterCount').textContent = String(Object.values(state.filters).filter(Boolean).length);
-    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="pill demo-coverage-badge">${escapeHtml(demoCoverage(item))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => {
+      const item = EXERCISES.find(exercise => exercise.id === card.dataset.id);
+      const copy = card.querySelector('.copy');
+      const tags = copy?.querySelector('.tag-row');
+      if (!item || !copy || !tags) return;
+      const coverage = document.createElement('span');
+      coverage.className = 'pill demo-coverage-badge';
+      coverage.textContent = demoCoverage(item);
+      copy.insertBefore(coverage, tags);
+    });
     $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => card.addEventListener('click', () => openDetail(card.dataset.id)));
   }
 
