@@ -74,3 +74,10 @@
 @media(prefers-reduced-motion:reduce){.exercise-reference-motion img:first-of-type{opacity:1!important;animation:none!important}.exercise-reference-motion img:last-of-type{opacity:0!important;animation:none!important}}
 .motion-credit{margin:0;padding:8px 12px 12px;line-height:1.5;font-size:11px}
 .motion-credit a{color:var(--gold);text-decoration:underline}
+
+
+.program-equipment{color:var(--muted);font-size:11px;line-height:1.55;overflow-wrap:anywhere;max-width:100%}.program-equipment b{color:var(--text);font-weight:800}.program-equipment-label{border-color:#8b733b;color:var(--gold);font-weight:800}
+
+
+/* Weekly time estimates help users compare program commitment before selection. */
+.program-weekly-time{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;color:var(--muted);font-size:11px;line-height:1.55}.program-weekly-time b{color:var(--text);font-weight:800}

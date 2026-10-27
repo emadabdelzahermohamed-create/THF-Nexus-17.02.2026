@@ -22,19 +22,24 @@ class DetailDemoAutoplayTests(unittest.TestCase):
     def test_all_detail_demos_have_a_complete_two_frame_loop(self):
         self.assertEqual(112, len(self.exercises))
         self.assertTrue(all(len(item["demo"]["assets"]) == 2 for item in self.exercises))
-        self.assertIn("item.demo.assets.map((asset,index) =>", self.app)
-        self.assertIn('class="detail-frame"', self.app)
-        self.assertIn("item.demo.alt[state.lang]", self.app)
-        self.assertIn("animation:detail-demo-crossfade 1.8s steps(1,end) infinite", self.css)
-        self.assertIn("animation-delay:-.9s", self.css)
-        self.assertIn("@keyframes detail-demo-crossfade{0%,49.999%{opacity:1}50%,100%{opacity:0}}", self.css)
+        self.assertIn("function referenceMotionPlayer(item, context = 'detail')", self.app)
+        self.assertIn("item.demo.assets.slice(0, 2)", self.app)
+        self.assertIn("const safeAssets = assets.length === 2", self.app)
+        self.assertIn('class="exercise-reference-motion ${className}"', self.app)
+        self.assertIn("exercise-reference-motion-detail", self.app)
+        self.assertIn("thf-reference-start 1.8s steps(1,end) infinite", self.css)
+        self.assertIn("thf-reference-finish 1.8s steps(1,end) infinite", self.css)
+        self.assertIn("@keyframes thf-reference-start", self.css)
+        self.assertIn("@keyframes thf-reference-finish", self.css)
 
     def test_manual_and_system_reduced_motion_show_static_start_and_finish(self):
-        self.assertIn(':root[style*="--motion: 0"] .detail-demo', self.css)
-        self.assertIn(':root[style*="--motion:0"] .detail-demo', self.css)
-        self.assertIn("@media(prefers-reduced-motion:reduce){.detail-demo", self.css)
-        self.assertIn(".detail-demo .detail-frame{position:relative;inset:auto;aspect-ratio:4/3;opacity:1;animation:none}", self.css)
+        self.assertIn(".motion-reduced .exercise-reference-motion img:first-of-type", self.css)
+        self.assertIn(".motion-reduced .exercise-reference-motion img:last-of-type", self.css)
+        self.assertIn("@media(prefers-reduced-motion:reduce){.exercise-reference-motion", self.css)
+        self.assertIn("animation:none!important", self.css)
 
-    def test_frame_labels_remain_attached_to_their_own_images(self):
-        self.assertIn("escapeHtml(t(index ? 'finish' : 'start'))", self.app)
-        self.assertIn(".detail-frame span{position:absolute;bottom:7px;inset-inline-start:7px", self.css)
+    def test_bilingual_demo_description_remains_attached_to_the_reference_sequence(self):
+        self.assertIn("const alt = escapeHtml(local(item.demo?.alt) || local(item.name));", self.app)
+        self.assertIn('role="img" aria-label="${alt}"', self.app)
+        self.assertIn('alt="" aria-hidden="true"', self.app)
+        self.assertIn("local(item.demo?.alt)", self.app)
