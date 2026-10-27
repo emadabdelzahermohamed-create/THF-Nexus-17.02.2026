@@ -41,7 +41,7 @@ object ActivitySnapshotPolicy {
                 averageSpeedKph = 0.0,
                 paceMinutesPerKm = null,
                 estimatedCaloriesKcal = 0.0,
-                gpsPointCount = acceptedRoute.size,
+                gpsPointCount = 0,
                 lastAccuracyMetres = lastAccuracyMetres,
                 route = emptyList(),
             )

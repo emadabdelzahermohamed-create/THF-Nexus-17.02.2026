@@ -36,7 +36,12 @@ class GpsFixGateTest {
     }
     @Test fun rejectsTeleportWithoutPoisoningNextGoodFix() {
         assertFalse(accepts(first.copy(latitude = 31.0, elapsedMs = 101_000L), first))
-        assertTrue(accepts(first.copy(latitude = 30.00001, elapsedMs = 102_000L), first))
+        assertTrue(accepts(first.copy(latitude = 30.00003, elapsedMs = 103_000L), first))
+    }
+
+    @Test fun rejectsStationaryGpsDriftWithoutAdvancingTheAcceptedAnchor() {
+        assertFalse(accepts(first.copy(latitude = 30.000005, elapsedMs = 101_000L), first))
+        assertTrue(accepts(first.copy(latitude = 30.00003, elapsedMs = 103_000L), first))
     }
     @Test fun appliesDifferentSportSpeedLimits() {
         val moving = first.copy(latitude = 30.0001, elapsedMs = 102_000L)
