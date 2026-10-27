@@ -4,7 +4,7 @@
     "sourceItemId": "Fast_Skipping",
     "name": {
       "en": "Fast Skipping",
-      "ar": "نط حبل سريع"
+      "ar": "قفز متناوب سريع"
     },
     "section": {
       "id": "boxing",
@@ -71,9 +71,9 @@
         "Perform fast skips by maintaining close contact with the ground and reduce air time, moving as quickly as possible."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "ابدأ في وضع مريح مع تقديم إحدى القدمين قليلًا.",
+        "نفّذ نمط خطوة وقفزة بالتبادل: يمين–يمين–خطوة انتقال، ثم يسار–يسار–خطوة انتقال.",
+        "زد سرعة القفز مع إبقاء زمن الطيران قصيرًا والقدمين قريبين من الأرض."
       ]
     },
     "breathing": {
@@ -368,9 +368,10 @@
         "Pass the ball to your partner, and both of you can now twist in the opposite direction to repeat the procedure."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "قف مع شريكك على مسافة مناسبة وامسك الكرة أمام الصدر مع تثبيت القدمين.",
+        "أدر الكتفين والجذع معًا في اتجاه واحد، مع إبقاء الركبتين والحوض تحت السيطرة.",
+        "مرّر الكرة إلى الشريك عند اكتمال الدوران من دون إجبار أسفل الظهر على مدى مؤلم.",
+        "بدّلا اتجاه الدوران بعد التمرير، وتوقفا إذا اختل التوازن أو ظهر ألم."
       ]
     },
     "breathing": {
@@ -517,9 +518,10 @@
         "Catch the ball on the bounce and continue for the desired number of repetitions."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "قف بوقفة متدرجة وامسك الكرة بيد واحدة قرب جانب الرجل الخلفية.",
+        "ارفع الكرة فوق الرأس مع مد الورك والركبتين والكاحلين دون تقويس أسفل الظهر.",
+        "اسحب الذراع والجذع إلى أسفل ووجّه الكرة بقوة إلى الأرض أمامك مع إبقاء القدمين ثابتتين.",
+        "التقط ارتداد الكرة بتحكم وأعد الوقفة قبل التكرار التالي."
       ]
     },
     "breathing": {
@@ -670,9 +672,12 @@
         "Maintain your rigid stance and straight arms. Return to the neutral position in a slow and controlled manner. Your arms should be extended in front of you."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "اضبط الكيبل قرب مستوى الكتف وقف بجانبه والقدمان بعرض الورك.",
+        "أمسك المقبض بكلتا اليدين أمام الصدر وابتعد حتى تشعر بشد ثابت في الكيبل.",
+        "مد الذراعين أمامك مع إبقاء القدمين والحوض ثابتين.",
+        "أدر القفص الصدري ربع دورة بعيدًا عن البكرة دون لف الركبتين أو تحريك الورك.",
+        "اثبت لحظة والذراعان ممدودتان مع استمرار التنفس.",
+        "ارجع ببطء إلى المنتصف ثم أكمل التكرار وبدّل الجهة حسب المجموعة."
       ]
     },
     "breathing": {
@@ -817,14 +822,14 @@
     },
     "steps": {
       "en": [
-        "Stand to one side of the box with your left foot resting on the middle of it.",
-        "To begin, jump up and over to the other side of the box, landing with your right foot on top of the box and your left foot on the floor. Swing your arms to aid your movement.",
-        "Continue shuffling back and forth across the box."
+        "Stand beside a stable box with one foot centered on it and the other foot on the floor; keep your knees soft.",
+        "Hop laterally across the box and switch which foot lands on the box and which lands on the floor, using your arms for balance.",
+        "Continue shuffling from side to side with quiet, controlled landings and a clear path."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "قف بجانب صندوق ثابت، وضع قدمًا في منتصفه والأخرى على الأرض مع ثني الركبتين قليلًا.",
+        "اقفز جانبيًا فوق الصندوق وبدّل موضع القدمين؛ استخدم الذراعين للموازنة.",
+        "واصل الانتقال من جانب إلى آخر بهبوط هادئ ومتحكم فيه مع إبقاء المسار خاليًا."
       ]
     },
     "breathing": {
@@ -1118,9 +1123,11 @@
         "Repeat for the recommended amount of repetitions."
       ],
       "ar": [
-        "ادفع الحمل لأعلى في مسار مريح.",
-        "لا ترفع الكتفين نحو الأذنين ولا تقوس أسفل الظهر.",
-        "اخفض الحمل ببطء إلى وضع البداية."
+        "قف مواجهًا للجدار وضع يديك على الأرض بعرض الكتفين، مع مساحة آمنة للرأس ومساعد إذا كانت الحركة جديدة.",
+        "ارفع القدمين إلى الجدار ومد الذراعين، وحافظ على الجسم مستقيمًا والرأس بوضع محايد دون النظر للأسفل.",
+        "اثنِ المرفقين ببطء حتى يقترب الرأس من وسادة ثابتة، وتوقف قبل الضغط على الرقبة.",
+        "ادفع الأرض للعودة مع الزفير حتى يقترب المرفقان من الامتداد دون قفل قاسٍ.",
+        "كرر ضمن مدى آمن؛ انزل بمساعدة إذا فقدت الثبات أو ظهر ألم."
       ]
     },
     "breathing": {
@@ -1261,9 +1268,10 @@
         "Repeat for the recommended amount of repetitions."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "تعلّق بالعارضة بذراعين ممدودتين وقبضة ثابتة، واترك الجسم يستقر دون تأرجح.",
+        "ارفع الساقين أمامك من الورك حتى زاوية مريحة تقارب 90 درجة دون دفع الجسم للأمام.",
+        "ازفر أثناء الرفع وحافظ على الحوض ملتفًا قليلًا للخلف دون شد الرقبة.",
+        "أنزل الساقين ببطء إلى وضع البداية قبل بدء التكرار التالي."
       ]
     },
     "breathing": {
@@ -1560,9 +1568,11 @@
         "Repeat this motion for the prescribed amount of repetitions."
       ],
       "ar": [
-        "ابدأ الحركة من لوح الكتف ثم اسحب بالمرفقين.",
-        "تجنب التأرجح وحافظ على الصدر مرفوعًا طبيعيًا.",
-        "عد إلى المد الكامل بتحكم ومن دون ترك المفصل يسقط."
+        "أمسك البار بقبضة أمامية؛ اجعل المسافة أوسع من الكتفين أو مساوية لهما أو أضيق حسب القبضة المختارة.",
+        "مد الذراعين، وارجع بالجذع قليلًا مع رفع الصدر والحفاظ على أسفل الظهر تحت السيطرة.",
+        "اسحب المرفقين لأسفل والخلف حتى يقترب أعلى الصدر من البار، دون تأرجح.",
+        "اخفض الجذع ببطء مع الشهيق حتى تمتد الذراعان بالكامل دون ارتخاء مفاجئ.",
+        "كرر مع ثبات الجذع؛ استخدم مساعدة أو مدى أقصر إذا تعذر الأداء النظيف."
       ]
     },
     "breathing": {
@@ -2006,12 +2016,14 @@
     },
     "steps": {
       "en": [
-        "To begin, seat yourself on the bike and adjust the seat to your height."
+        "Adjust the saddle so your knee remains slightly bent when the pedal is at its lowest point.",
+        "Start with easy resistance and a smooth cadence; keep your shoulders relaxed and hands secure on the bars.",
+        "Increase effort gradually, then reduce resistance and slow your cadence before dismounting."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "اضبط ارتفاع المقعد بحيث تبقى الركبة مثنية قليلًا عندما تكون الدواسة في أدنى نقطة.",
+        "ابدأ بمقاومة خفيفة ودوران سلس للدواسات، مع إرخاء الكتفين وثبات اليدين على المقود.",
+        "زد الجهد تدريجيًا، ثم خفّض المقاومة والإيقاع قبل النزول عن الدراجة."
       ]
     },
     "breathing": {
@@ -2153,13 +2165,14 @@
     },
     "steps": {
       "en": [
-        "To begin, seat yourself on the bike and adjust the seat to your height.",
-        "Select the desired option from the menu. You may have to start pedaling to turn it on. You can use the manual setting, or you can select a program to use. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. The level of resistance can be changed throughout the workout. The handles can be used to monitor your heart rate to help you stay at an appropriate intensity."
+        "Adjust the seat so your knee stays slightly bent at the bottom of the pedal stroke, then secure your feet if straps are provided.",
+        "Choose a manual setting or suitable program and begin with low resistance; do not treat console calorie estimates as measured results.",
+        "Pedal smoothly and raise resistance gradually only while you can keep a steady cadence and relaxed posture."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "اضبط المقعد بحيث تبقى الركبة مثنية قليلًا عند أسفل دورة الدواسة، وثبّت القدمين إذا توفرت أحزمة.",
+        "اختر الوضع اليدوي أو برنامجًا مناسبًا وابدأ بمقاومة منخفضة؛ تقدير السعرات على الشاشة ليس قياسًا فعليًا.",
+        "بدّل الدواسات بسلاسة وزد المقاومة تدريجيًا فقط مع الحفاظ على إيقاع ثابت ووضع مريح."
       ]
     },
     "breathing": {
@@ -2448,14 +2461,14 @@
     },
     "steps": {
       "en": [
-        "To begin, seat yourself on the bike and adjust the seat to your height.",
-        "Select the desired option from the menu. You may have to start pedaling to turn it on. You can use the manual setting, or you can select a program to use. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. The level of resistance can be changed throughout the workout. The handles can be used to monitor your heart rate to help you stay at an appropriate intensity.",
-        "Recumbent bikes offer convenience, cardiovascular benefits, and have less impact than other activities. A 150 lb person will burn about 230 calories cycling at a moderate rate for 30 minutes, compared to 450 calories or more running."
+        "Move the seat until your knee remains slightly bent when the pedal is farthest away, and sit with your back supported.",
+        "Secure your feet and start at low resistance with an even pedal stroke.",
+        "Increase effort gradually, then lower resistance and slow down before getting off."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "حرّك المقعد حتى تبقى الركبة مثنية قليلًا عند أبعد نقطة للدواسة، واجلس مع إسناد الظهر.",
+        "ثبّت القدمين وابدأ بمقاومة منخفضة ودورة دواسة منتظمة.",
+        "زد الجهد تدريجيًا، ثم خفّض المقاومة وأبطئ الإيقاع قبل النزول."
       ]
     },
     "breathing": {
@@ -2682,7 +2695,7 @@
     "sourceItemId": "Box_Skip",
     "name": {
       "en": "Box Skip",
-      "ar": "خطوات سريعة على الصندوق"
+      "ar": "قفز متتابع بين الصناديق"
     },
     "section": {
       "id": "football",
@@ -2751,9 +2764,11 @@
         "Then, step to the next box and repeat."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "رتّب عدة صناديق ثابتة في صف، واترك نحو 2.4 متر بين كل صندوق وآخر.",
+        "قف أمام الصندوق الأول مع وضع إحدى القدمين خلف الأخرى قليلًا.",
+        "ادفع بالأرض من القدم الخلفية لرفع الورك واكتساب ارتفاع نحو الصندوق.",
+        "عند الهبوط على الصندوق، ادفع الرجل الأخرى للأمام والأعلى ثم اقفز نحو الصندوق التالي؛ اهبط بين الصندوقين على القدم نفسها التي هبطت بها على الأول.",
+        "انتقل إلى الصندوق التالي وكرر التسلسل، مع التأكد من ثبات الهبوط قبل القفزة التالية."
       ]
     },
     "breathing": {
@@ -2907,9 +2922,11 @@
         "Continue until you have jumped over all of the cones."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "رتّب صفًا من الأقماع أو الحواجز المنخفضة، مع ترك بضعة أقدام بين كل حاجز وآخر.",
+        "قف أمام أول حاجز والقدمان بعرض الكتفين.",
+        "اقفز بكلتا القدمين معًا فوق الحاجز، وحرّك الذراعين للمساعدة في الدفع.",
+        "امتص الهبوط بثني الركبتين ثم ارتدّ للقفز فوق الحاجز التالي.",
+        "واصل حتى تتجاوز الصف كاملًا، وتوقف إذا أصبح الهبوط صلبًا أو اختل اتجاه الركبتين."
       ]
     },
     "breathing": {
@@ -3062,9 +3079,10 @@
         "Use your legs to absorb impact upon landing, and rebound into the next jump, continuing down the row of cones."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "ضع عدة أقماع في صف يفصل بينها بضعة أقدام.",
+        "قف بجانب طرف الصف واجعل جسمك متعامدًا مع اتجاه الانتقال.",
+        "اثنِ الركبتين قليلًا ثم ادفع الأرض فورًا للقفز جانبيًا فوق القمع.",
+        "امتص الهبوط بالساقين ثم انتقل مباشرة إلى القفزة التالية حتى نهاية الصف."
       ]
     },
     "breathing": {
@@ -3207,15 +3225,16 @@
     },
     "steps": {
       "en": [
-        "Lean at around 45 degrees against a wall. Your feet should be together, glutes contracted.",
-        "Begin by lifting your right knee quickly, pausing, and then driving it straight down into the ground.",
-        "Switch legs, raising the opposite knee, and then attacking the ground straight down.",
-        "Repeat once more with your right leg, and as soon as the right foot strikes the ground hammer them out rapidly, alternating left and right as fast as you can."
+        "Lean into a wall at about 45 degrees with your body aligned and glutes engaged.",
+        "Drive one knee up quickly, then strike the foot down beneath your hips without letting the trunk collapse.",
+        "Switch legs and repeat with the same forward lean and controlled foot placement.",
+        "Once the rhythm is stable, alternate the legs rapidly for the prescribed interval; stop if your posture breaks down."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "استند إلى الحائط بزاوية تقارب 45 درجة، مع محاذاة الجسم وشد عضلات الألوية.",
+        "ارفع ركبة واحدة بسرعة ثم اضرب الأرض بالقدم أسفل الحوض دون انهيار الجذع.",
+        "بدّل الساق وكرر مع الحفاظ على الميل الأمامي وموضع قدم متحكم فيه.",
+        "بعد ثبات الإيقاع، بدّل الساقين بسرعة خلال المدة المحددة، وتوقف إذا اختل وضع الجسم."
       ]
     },
     "breathing": {
@@ -3365,9 +3384,9 @@
         "Hop for a prescribed number or repetitions as quickly as possible, and finish this drill by sprinting a short distance upon landing the last hop."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "قف إلى جانب قمع أو حاجز منخفض.",
+        "اقفز جانبيًا فوق الحاجز ثم استخدم الهبوط للارتداد والعودة إلى نقطة البداية.",
+        "كرر العدد المحدد بأسرع إيقاع يمكن التحكم فيه، ثم انطلق لمسافة قصيرة بعد آخر هبوط."
       ]
     },
     "breathing": {
@@ -3510,14 +3529,14 @@
     },
     "steps": {
       "en": [
-        "This drill teaches quick foot action. You need a single cone. Begin standing next to the cone with one arm back and one arm forward.",
-        "Chop the feet as quickly as possible, blocking with the arms. Circle the cone, keep your knees up, with violent foot action.",
-        "Rest after three trips around the cone."
+        "Place one cone on a clear, non-slip surface and stand beside it with your arms in a running position.",
+        "Take quick, short steps around the cone while driving your arms and lifting your knees without crossing your feet.",
+        "Rest after three controlled circuits, or sooner if you lose footing or coordination."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "ضع قمعًا واحدًا على سطح ثابت غير زلق وخالٍ من العوائق، وقف بجانبه بوضعية الجري.",
+        "نفّذ خطوات قصيرة وسريعة حول القمع مع تحريك الذراعين ورفع الركبتين دون تشابك القدمين.",
+        "استرح بعد ثلاث دورات متحكم فيها، أو قبل ذلك إذا اختل التوازن أو التناسق."
       ]
     },
     "breathing": {
@@ -3664,9 +3683,11 @@
         "When you are done, place the bar back in the rack."
       ],
       "ar": [
-        "اخفض الحمل أو الجسم بتحكم حتى مدى مريح.",
-        "أبقِ الساعد ثابتًا والكتف بعيدًا عن الأذن.",
-        "ادفع بسلاسة مع الحفاظ على الجذع ثابتًا."
+        "استلقِ على مقعد مستوٍ، أمسك البار بقبضة متوسطة وارفعه من الحامل فوق الصدر مع تثبيت القدمين ولوحي الكتف.",
+        "خذ شهيقًا واخفض البار ببطء حتى يلامس منتصف الصدر مع بقاء الرسغين فوق المرفقين.",
+        "توقف لحظة ثم ادفع البار لأعلى مع الزفير دون ارتداد، وحافظ على مسار ثابت.",
+        "كرر النزول المتحكم والصعود؛ اجعل النزول أبطأ من الصعود وتجنب قفل المرفقين بعنف.",
+        "بعد آخر عدة أعد البار إلى الحامل باستخدام الحواجز أو مساعد عند الحاجة."
       ]
     },
     "breathing": {
@@ -3826,9 +3847,11 @@
         "Perform the amount of repetitions prescribed in the program."
       ],
       "ar": [
-        "ادفع الحوض للخلف مع ظهر محايد.",
-        "توقف قبل أن تفقد ثبات الجذع أو موضع الحمل.",
-        "اضغط بالأقدام ومد الحوض للعودة دون فرط تقوس الظهر."
+        "قف أمام بار محمّل وضعه فوق منتصف القدمين.",
+        "اثنِ الورك والركبتين، أمسك البار بقبضة متوسطة وحافظ على الظهر محايدًا.",
+        "ادفع الأرض بالقدمين وارفع الجذع مع الزفير حتى الوقوف، دون سحب البار بعيدًا عن الساقين.",
+        "ادفع الورك للخلف واثنِ الركبتين لإعادة البار للأرض مع بقاء الظهر محايدًا.",
+        "كرر العدات مع نفس المسار؛ توقف إذا فقدت ثبات الظهر أو القبضة."
       ]
     },
     "breathing": {
@@ -4124,9 +4147,11 @@
         "Repeat for the recommended amount of repetitions."
       ],
       "ar": [
-        "ادفع الحمل لأعلى في مسار مريح.",
-        "لا ترفع الكتفين نحو الأذنين ولا تقوس أسفل الظهر.",
-        "اخفض الحمل ببطء إلى وضع البداية."
+        "اجلس مع دعم للظهر وضع البار في الحامل أعلى مستوى الرأس بقليل، وأمسكه بقبضة أمامية.",
+        "ارفع البار أمام الرأس إلى مستوى الكتفين مع شد البطن وثبات القدمين.",
+        "اخفض البار ببطء إلى الكتفين مع الشهيق.",
+        "ادفع البار فوق الرأس مع الزفير دون تقويس أسفل الظهر.",
+        "كرر بمدى مريح، وتوقف إذا تحركت الأضلاع للأمام أو ظهر ألم بالكتف."
       ]
     },
     "breathing": {
@@ -7707,9 +7732,12 @@
         "At the conclusion of the set, repeat facing the other direction."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "اضبط الكيبل قرب مستوى الكتف وقف بجانبه مع القدمين بعرض الورك.",
+        "أمسك المقبض بكلتا اليدين أمام منتصف الصدر وابتعد حتى يصبح الكيبل مشدودًا.",
+        "اثن الركبتين قليلًا وشد البطن مع إبقاء الحوض مواجهًا للأمام.",
+        "ادفع المقبض بعيدًا حتى تمتد الذراعان، ولا تدع شد الكيبل يلف جذعك.",
+        "اثبت لثوانٍ مع التنفس الطبيعي ثم أعد المقبض ببطء إلى الصدر.",
+        "أكمل المجموعة ثم بدّل اتجاه الوقوف لموازنة مقاومة الدوران."
       ]
     },
     "breathing": {
@@ -7859,9 +7887,11 @@
         "Repeat for the recommended amount of repetitions."
       ],
       "ar": [
-        "ادفع الحوض للخلف مع ظهر محايد.",
-        "توقف قبل أن تفقد ثبات الجذع أو موضع الحمل.",
-        "اضغط بالأقدام ومد الحوض للعودة دون فرط تقوس الظهر."
+        "أمسك البار أمام الفخذين بقبضة أمامية أوسع قليلًا من الكتفين، واستخدم منصة ثابتة عند الحاجة.",
+        "اثنِ الركبتين قليلًا، وادفع الورك للخلف مع بقاء الساقين شبه عموديتين والظهر محايدًا.",
+        "ارفع الجذع بتحريك الورك للأمام مع الزفير، والذراعان مستقيمتان والبار قريب من الجسم.",
+        "ادفع الورك للخلف واخفض البار ببطء مع الشهيق دون تحويل الحركة إلى سكوات.",
+        "كرر بتحكم، وتوقف إذا فقدت وضع الظهر أو بدأت الركبتان تنثنيان كثيرًا."
       ]
     },
     "breathing": {
@@ -9035,13 +9065,14 @@
     },
     "steps": {
       "en": [
-        "To begin, step onto the elliptical and select the desired option from the menu. Most ellipticals have a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Elevation can be adjusted to change the intensity of the workout.",
-        "The handles can be used to monitor your heart rate to help you stay at an appropriate intensity."
+        "Step onto the pedals, hold the handles securely, and select an easy program or low resistance before starting.",
+        "Move through a smooth stride with an upright torso and relaxed shoulders; use moving handles only if they feel stable.",
+        "Increase resistance or incline gradually, then reduce the effort and let the machine slow before stepping off."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "اصعد إلى الدواسات وأمسك المقابض بثبات، واختر برنامجًا سهلًا أو مقاومة منخفضة قبل البدء.",
+        "تحرك بخطوة سلسة مع جذع منتصب وكتفين مرتاحين، واستخدم المقابض المتحركة فقط إذا كانت مستقرة.",
+        "زد المقاومة أو الميل تدريجيًا، ثم خفّض الجهد واترك الجهاز يبطئ قبل النزول."
       ]
     },
     "breathing": {
@@ -9191,9 +9222,12 @@
         "Repeat for the recommended amount of repetitions."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "اعقد الذراعين أمام الصدر.",
+        "قف والقدمان بعرض الكتفين، والرأس مرفوع والظهر مستقيم.",
+        "اخفض الوركين في سكوات مع الشهيق حتى يصبح الفخذان موازيين للأرض أو أدنى، مع إبقاء الصدر مرفوعًا.",
+        "ادفع بمقدمة القدمين واقفز عموديًا بأعلى ارتفاع يمكنك التحكم فيه، مع الزفير.",
+        "عند ملامسة الأرض، اثنِ الوركين والركبتين لامتصاص الهبوط والعودة فورًا إلى وضع السكوات.",
+        "كرر العدد المطلوب مع الحفاظ على محاذاة الركبتين وهبوط هادئ؛ توقف إذا فقدت السيطرة."
       ]
     },
     "breathing": {
@@ -9346,9 +9380,10 @@
         "Land on the box with the knees bent, absorbing the impact through the legs. You can jump from the box back to the ground, or preferably step down one leg at a time."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "ضع صندوقًا ثابتًا بارتفاع مناسب أمامك، والقدمان بعرض الكتفين.",
+        "اثنِ الركبتين قليلًا وارجع الذراعين استعدادًا للقفز.",
+        "اقفز بدفع الورك والركبتين والكاحلين، وحرك الذراعين للأمام والأعلى.",
+        "اهبط على الصندوق بركبتين مثنيتين لامتصاص الصدمة، ثم انزل خطوة خطوة إذا كان ذلك أأمن."
       ]
     },
     "breathing": {
@@ -9495,9 +9530,8 @@
         "Explosively reverse the positions of your legs, extending the bent leg until the leg is straight and supported by the toe, and bringing the other foot up with the hip and knee flexed. Repeat in an alternating fashion for 20-30 seconds."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "ابدأ في وضع البلانك، واليدان تحت الكتفين والجسم من الرأس إلى الكعبين في خط مستقيم.",
+        "اسحب ركبة نحو الصدر ثم أعد القدم وبدّل الجهة بإيقاع متحكم فيه مع ثبات الحوض وعدم هبوط أسفل الظهر."
       ]
     },
     "breathing": {
@@ -9631,15 +9665,16 @@
     },
     "steps": {
       "en": [
-        "Hold a medine ball with both hands and stand with your feet at shoulder width. This will be your starting position.",
+        "Hold a medicine ball with both hands and stand with your feet at shoulder width. This will be your starting position.",
         "Initiate the countermovement by raising the ball above your head and fully extending your body.",
         "Reverse the motion, slamming the ball into the ground directly in front of you as hard as you can.",
         "Receive the ball with both hands on the bounce and repeat the movement."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "قف والقدمان بعرض الكتفين وامسك الكرة الطبية بكلتا اليدين أمام الجسم.",
+        "ارفع الكرة فوق الرأس مع مد الجسم دون المبالغة في تقويس أسفل الظهر.",
+        "ادفع الكرة بقوة إلى الأرض أمامك بثني الورك والركبتين مع بقاء الحركة تحت السيطرة.",
+        "التقط الكرة بعد ارتدادها وأعد الوقفة قبل التكرار التالي."
       ]
     },
     "breathing": {
@@ -9788,14 +9823,16 @@
     },
     "steps": {
       "en": [
-        "To begin, seat yourself on the rower. Make sure that your heels are resting comfortably against the base of the foot pedals and that the straps are secured. Select the program that you wish to use, if applicable. Sit up straight and bend forward at the hips.",
-        "There are three phases of movement when using a rower. The first phase is when you come forward on the rower. Your knees are bent and against your chest. Your upper body is leaning slightly forward while still maintaining good posture. Next, push against the foot pedals and extend your legs while bringing your hands to your upper abdominal area, squeezing your shoulders back as you do so. To avoid straining your back, use primarily your leg and hip muscles.",
-        "The recovery phase simply involves straightening your arms, bending the knees, and bringing your body forward again as you transition back into the first phase."
+        "Secure your feet in the straps, sit tall, and hinge slightly forward from the hips with a neutral back.",
+        "Drive through the legs first, then swing the torso slightly back and pull the handle toward the upper abdomen.",
+        "Return the arms first, hinge forward, and then bend the knees to slide toward the starting position.",
+        "Repeat in that order with a smooth rhythm; stop if you feel back pain or cannot maintain control."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "ثبّت القدمين بالأحزمة، واجلس منتصبًا مع ميل بسيط للأمام من الورك وظهر محايد.",
+        "ادفع بالقدمين أولًا، ثم أمل الجذع قليلًا للخلف واسحب المقبض نحو أعلى البطن.",
+        "أعد الذراعين أولًا، ثم أمل الجذع للأمام واثنِ الركبتين للعودة إلى وضع البداية.",
+        "كرر التسلسل بإيقاع سلس، وتوقف إذا ظهر ألم بالظهر أو تعذر الحفاظ على التحكم."
       ]
     },
     "breathing": {
@@ -9937,9 +9974,12 @@
         "Continue alternating in this manner until all of the recommended repetitions for each side have been completed."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "استلقِ واضغط أسفل الظهر نحو الأرض وضع اليدين بجانب الرأس دون شد الرقبة.",
+        "ارفع الكتفين قليلًا وثن الركبتين حتى تكون الساقان مرفوعتين عن الأرض.",
+        "مد الرجل اليمنى وقرّب المرفق الأيمن من الركبة اليسرى مع تدوير الجذع.",
+        "عد إلى الوسط مع إبقاء أسفل الظهر ملاصقًا للأرض.",
+        "بدّل الجهة؛ مد الرجل اليسرى وقرّب المرفق الأيسر من الركبة اليمنى.",
+        "استمر بالتبادل دون سحب الرأس باليدين أو حبس النفس."
       ]
     },
     "breathing": {
@@ -10230,15 +10270,16 @@
     },
     "steps": {
       "en": [
-        "Begin standing with your feet shoulder width apart and your hands on your hips.",
-        "Step forward with one leg, flexing the knees to drop your hips. Descend until your rear knee nearly touches the ground. Your posture should remain upright, and your front knee should stay above the front foot.",
-        "Drive through the heel of your lead foot and extend both knees to raise yourself back up.",
-        "Step forward with your rear foot, repeating the lunge on the opposite leg."
+        "Stand with feet about hip-width apart, torso upright, and hands on your hips or by your sides.",
+        "Step forward and lower until the rear knee approaches the floor while the front knee tracks in line with the foot.",
+        "Push through the whole front foot to stand without bouncing or letting the knee collapse inward.",
+        "Bring the rear foot forward into the next lunge and alternate sides with a controlled stride."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "قف والقدمان بعرض الورك تقريبًا، والجذع منتصب، واليدان على الحوض أو بجانب الجسم.",
+        "تقدم خطوة إلى الأمام وانزل حتى تقترب الركبة الخلفية من الأرض مع بقاء الركبة الأمامية في اتجاه القدم.",
+        "ادفع بالأرض بكامل القدم الأمامية للوقوف دون ارتداد أو انهيار الركبة إلى الداخل.",
+        "قدّم القدم الخلفية إلى الاندفاع التالي وبدّل الجانبين بخطوة متحكم فيها."
       ]
     },
     "breathing": {
@@ -10372,17 +10413,18 @@
     },
     "steps": {
       "en": [
-        "Lie flat on your back with your feet flat on the ground, or resting on a bench with your knees bent at a 90 degree angle. If you are resting your feet on a bench, place them three to four inches apart and point your toes inward so they touch.",
-        "Now place your hands lightly on either side of your head keeping your elbows in. Don't lock your fingers behind your head.",
-        "While pushing the small of your back down in the floor to better isolate your abdominal muscles, begin to roll your shoulders off the floor.",
-        "Continue to push down as hard as you can with your lower back as you contract your abdominals and exhale. Your shoulders should come up off the floor only about four inches, and your lower back should remain on the floor. At the top of the movement, contract your abdominals hard and keep the contraction for a second. Focus on slow, controlled movement - don't cheat yourself by using momentum.",
-        "After the one second contraction, begin to come down slowly again to the starting position as you inhale.",
-        "Repeat for the recommended amount of repetitions."
+        "Lie on your back with knees bent and feet flat; keep your lower back gently in contact with the floor.",
+        "Place fingertips beside your ears with elbows open; do not pull on your head.",
+        "Exhale and curl your shoulder blades a few inches off the floor by tightening your abdominal muscles.",
+        "Pause briefly at the top without swinging or straining your neck.",
+        "Inhale and lower your shoulders slowly to the starting position."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "استلقِ على ظهرك واثنِ الركبتين مع تثبيت القدمين على الأرض، وأبقِ أسفل الظهر ملامسًا للأرض برفق.",
+        "ضع أطراف الأصابع بجانب الأذنين واترك المرفقين مفتوحين، ولا تسحب الرأس باليدين.",
+        "ازفر وارفع لوحي الكتف بضعة سنتيمترات عن الأرض بشد عضلات البطن.",
+        "توقف لحظة في الأعلى دون تأرجح أو إجهاد الرقبة.",
+        "خذ شهيقًا وأنزل الكتفين ببطء إلى وضع البداية."
       ]
     },
     "breathing": {
@@ -10517,13 +10559,16 @@
     },
     "steps": {
       "en": [
-        "Get into a prone position on the floor, supporting your weight on your toes and your forearms. Your arms are bent and directly below the shoulder.",
-        "Keep your body straight at all times, and hold this position as long as possible. To increase difficulty, an arm or leg can be raised."
+        "Start face down with forearms on the floor and elbows directly beneath your shoulders; tuck your toes under.",
+        "Lift your torso and hips into a straight line from head to heels, bracing your abdomen and glutes.",
+        "Breathe steadily and keep your hips from sagging or rising; hold only while alignment remains controlled.",
+        "Lower your knees and hips carefully to finish, or use a shorter hold or knee plank if alignment breaks."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "ابدأ ووجهك إلى الأرض، وضع الساعدين عليها والمرفقين أسفل الكتفين مباشرة، مع تثبيت أصابع القدمين.",
+        "ارفع الجذع والحوض حتى يصنع الجسم خطًا مستقيمًا من الرأس إلى الكعبين، مع شد البطن والألوية.",
+        "تنفس بانتظام وامنع هبوط الحوض أو ارتفاعه؛ استمر فقط ما دامت المحاذاة ثابتة.",
+        "أنزل الركبتين والحوض بتحكم لإنهاء الثبات، أو استخدم مدة أقصر أو بلانك على الركبتين إذا اختل الوضع."
       ]
     },
     "breathing": {
@@ -10811,16 +10856,18 @@
     },
     "steps": {
       "en": [
-        "Lie down on the floor placing your feet either under something that will not move or by having a partner hold them. Your legs should be bent at the knees.",
-        "Elevate your upper body so that it creates an imaginary V-shape with your thighs. Your arms should be fully extended in front of you perpendicular to your torso and with the hands clasped. This is the starting position.",
-        "Twist your torso to the right side until your arms are parallel with the floor while breathing out.",
-        "Hold the contraction for a second and move back to the starting position while breathing out. Now move to the opposite side performing the same techniques you applied to the right side.",
-        "Repeat for the recommended amount of repetitions."
+        "Sit with knees bent and heels on the floor, then lean back slightly while keeping your spine long.",
+        "Hold your hands together in front of your chest and brace your abdomen without rounding your lower back.",
+        "Rotate your rib cage to one side within a comfortable range while keeping your hips and knees steady.",
+        "Return through the center and rotate to the other side; move under control instead of swinging your arms.",
+        "Keep your feet grounded; for an easier version sit more upright and use a smaller rotation, and stop if your lower back hurts."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "اجلس والركبتان مثنيتان والكعبان على الأرض، ثم أمل الجذع قليلًا للخلف مع إطالة العمود الفقري.",
+        "ضم اليدين أمام الصدر وشد عضلات البطن دون تدوير أسفل الظهر.",
+        "أدر القفص الصدري إلى أحد الجانبين ضمن مدى مريح مع تثبيت الحوض والركبتين.",
+        "عد إلى المنتصف ثم أدر الجذع إلى الجهة الأخرى بتحكم بدل تأرجح الذراعين.",
+        "أبقِ القدمين على الأرض؛ ولتسهيل الحركة اجلس أكثر انتصابًا وقلل الدوران، وتوقف إذا ظهر ألم أسفل الظهر."
       ]
     },
     "breathing": {
@@ -10959,14 +11006,16 @@
     },
     "steps": {
       "en": [
-        "Move primarily through the target joint.",
-        "Pause briefly at peak contraction without throwing the load.",
-        "Return slowly while maintaining muscular tension."
+        "Lie on your side with the elbow directly under the shoulder; keep the legs straight or bend the knees for an easier version.",
+        "Brace your abdomen and lift your hips until your shoulder, hip, and ankle form one line.",
+        "Breathe steadily, keep the top hip stacked over the lower hip, and avoid rolling your chest toward the floor.",
+        "Lower your hips with control and repeat on the other side; stop if the shoulder becomes painful."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "استلقِ على جانبك وضع المرفق أسفل الكتف مباشرة؛ أبقِ الساقين مستقيمتين أو اثنِ الركبتين لتسهيل الحركة.",
+        "شد عضلات البطن وارفع الحوض حتى يصطف الكتف والحوض والكاحل في خط واحد.",
+        "تنفس بانتظام وأبقِ الورك العلوي فوق السفلي، وتجنب تدوير الصدر نحو الأرض.",
+        "أنزل الحوض بتحكم وكرر على الجانب الآخر، وتوقف إذا ظهر ألم في الكتف."
       ]
     },
     "breathing": {
@@ -11253,15 +11302,16 @@
     },
     "steps": {
       "en": [
-        "To begin, lie straight and face down on the floor or exercise mat. Your arms should be fully extended in front of you. This is the starting position.",
-        "Simultaneously raise your arms, legs, and chest off of the floor and hold this contraction for 2 seconds. Squeeze your lower back to get the best results from this exercise. Remember to exhale during this movement. Note: When holding the contracted position, you should look like superman when he is flying.",
-        "Slowly begin to lower your arms, legs and chest back down to the starting position while inhaling.",
-        "Repeat for the recommended amount of repetitions prescribed in your program."
+        "Lie face down on a mat with arms extended overhead and legs straight; look down to keep your neck neutral.",
+        "Gently brace your abdomen and squeeze your glutes before lifting.",
+        "Raise the opposite arm and leg a small distance, or lift both sides only if comfortable; do not force an arch in the lower back.",
+        "Pause briefly, lower slowly, and alternate sides or repeat as prescribed; stop if back pain appears."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "استلقِ على بطنك فوق بساط مع مد الذراعين أمام الرأس والساقين للخلف، وانظر إلى الأرض لإبقاء الرقبة محايدة.",
+        "شد عضلات البطن برفق واضغط الألوية قبل الرفع.",
+        "ارفع الذراع والساق المتعاكستين مسافة صغيرة، أو ارفع الطرفين معًا فقط إذا كان ذلك مريحًا، دون المبالغة في تقويس أسفل الظهر.",
+        "توقف لحظة ثم اخفض الطرفين ببطء وبدّل الجهة أو كرر حسب البرنامج؛ توقف إذا ظهر ألم بالظهر."
       ]
     },
     "breathing": {
@@ -13114,13 +13164,14 @@
     },
     "steps": {
       "en": [
-        "To begin, step onto the treadmill and select the desired option from the menu. Most treadmills have a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Elevation can be adjusted to change the intensity of the workout.",
-        "Treadmills offer convenience, cardiovascular benefits, and usually have less impact than jogging outside. A 150 lb person will burn almost 250 calories jogging for 30 minutes, compared to more than 450 calories running. Maintain proper posture as you jog, and only hold onto the handles when necessary, such as when dismounting or checking your heart rate."
+        "With the belt stopped, stand on the side rails, choose a low starting speed, and begin only when the belt is moving safely.",
+        "Jog with a tall posture, short controlled steps, and relaxed shoulders; avoid holding the rails during normal running.",
+        "Reduce the belt to a walk and wait for it to stop before stepping off."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "والحزام متوقف، قف على الجانبين واختر سرعة بداية منخفضة، ولا تبدأ إلا بعد تحرك الحزام بأمان.",
+        "اهرول بجذع منتصب وخطوات قصيرة متحكم فيها وكتفين مرتاحين؛ لا تتمسك بالمقابض أثناء الجري الطبيعي.",
+        "اخفض السرعة إلى المشي وانتظر توقف الحزام قبل النزول."
       ]
     },
     "breathing": {
@@ -13266,14 +13317,16 @@
     },
     "steps": {
       "en": [
-        "Place your sled on an appropriate surface, loaded to a suitable weight. The sled should provide enough resistance to require effort, but not so heavy that you are significantly slowed down.",
-        "You may use the upright or the low handles for this exercise. Place your hands on the handles with your arms extended, leaning into the implement.",
-        "With good posture, drive through the ground with alternating, short steps. Move as fast as you can for a short distance."
+        "Choose a sled load that creates resistance but still allows quick, short steps without losing posture.",
+        "Grip the upright or low handles, extend the arms, brace the trunk, and lean forward from the ankles.",
+        "Drive through the floor with alternating short steps for a short distance while keeping the sled path clear.",
+        "Stop before technique breaks down; reduce the load if your steps slow sharply or your back rounds."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "اختر وزنًا للزلاجة يوفر مقاومة مع السماح بخطوات قصيرة وسريعة دون فقدان الوضع.",
+        "أمسك بالمقابض المرتفعة أو المنخفضة، ومد الذراعين، وشد الجذع، ومل للأمام من الكاحلين.",
+        "ادفع الأرض بخطوات قصيرة متبادلة لمسافة قصيرة مع إبقاء مسار الزلاجة خاليًا.",
+        "توقف قبل انهيار التقنية؛ خفّض الوزن إذا تباطأت الخطوات بشدة أو تقوس الظهر."
       ]
     },
     "breathing": {
@@ -13560,13 +13613,14 @@
     },
     "steps": {
       "en": [
-        "To begin, step onto the treadmill and select the desired option from the menu. Most treadmills have a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Elevation can be adjusted to change the intensity of the workout.",
-        "Treadmills offer convenience, cardiovascular benefits, and usually have less impact than running outside. A 150 lb person will burn over 450 calories running 8 miles per hour for 30 minutes. Maintain proper posture as you run, and only hold onto the handles when necessary, such as when dismounting or checking your heart rate."
+        "With the belt stopped, stand on the side rails, set a conservative speed and incline, and start the belt before stepping on.",
+        "Run with controlled strides, eyes forward, and a stable torso; use the rails only for balance or dismounting.",
+        "Lower the speed to a walk, wait for the belt to stop, and then step off."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "والحزام متوقف، قف على الجانبين واضبط سرعة وميلًا مناسبين، ثم شغّل الحزام قبل الصعود إليه.",
+        "اجرِ بخطوات متحكم فيها ونظرك للأمام وجذع ثابت؛ استخدم المقابض للتوازن أو عند النزول فقط.",
+        "اخفض السرعة إلى المشي، وانتظر توقف الحزام ثم انزل."
       ]
     },
     "breathing": {
@@ -13708,13 +13762,16 @@
     },
     "steps": {
       "en": [
-        "Running or hiking on trails will get the blood pumping and heart beating almost immediately. Make sure you have good shoes. While you use the muscles in your calves and buttocks to pull yourself up a hill, the knees, joints and ankles absorb the bulk of the pounding coming back down. Take smaller steps as you walk downhill, keep your knees bent to reduce the impact and slow down to avoid falling.",
-        "A 150 lb person can burn over 200 calories for 30 minutes walking uphill, compared to 175 on a flat surface. If running the trail, a 150 lb person can burn well over 500 calories in 30 minutes."
+        "Wear shoes with suitable grip, scan the trail ahead, and choose a pace that matches the surface and visibility.",
+        "On climbs, shorten your stride and keep effort steady rather than overreaching.",
+        "On descents, take shorter steps, bend the knees, and slow down to manage impact and avoid slipping.",
+        "Walk technical, loose, or slippery sections and stop if footing becomes unsafe."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "ارتدِ حذاءً مناسبًا للتشبث بالأرض، وراقب المسار أمامك واختر سرعة تناسب السطح ومدى الرؤية.",
+        "في الصعود، قصّر الخطوة وحافظ على جهد ثابت بدل المبالغة في مدها.",
+        "في النزول، قصّر الخطوات واثنِ الركبتين وأبطئ لتقليل الصدمة وتجنب الانزلاق.",
+        "امشِ في المقاطع الوعرة أو المفككة أو الزلقة، وتوقف إذا أصبح تثبيت القدم غير آمن."
       ]
     },
     "breathing": {
@@ -13856,13 +13913,14 @@
     },
     "steps": {
       "en": [
-        "To begin, step onto the treadmill and select the desired option from the menu. Most treadmills have a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Elevation can be adjusted to change the intensity of the workout.",
-        "Treadmills offer convenience, cardiovascular benefits, and usually have less impact than walking outside. When walking, you should move at a moderate to fast pace, not a leisurely one. Being an activity of lower intensity, walking doesn't burn as many calories as some other activities, but still provides great benefit. A 150 lb person will burn about 175 calories walking 4 miles per hour for 30 minutes, compared to 450 calories running twice as fast. Maintain proper posture as you walk, and only hold onto the handles when necessary, such as when dismounting or checking your heart rate."
+        "With the belt stopped, stand on the side rails, select a comfortable starting speed, and start the belt before stepping on.",
+        "Walk upright with eyes forward and a natural arm swing; avoid leaning on the rails throughout the session.",
+        "Reduce the speed to zero and wait for the belt to stop before stepping off."
       ],
       "ar": [
-        "ارفع الإيقاع تدريجيًا مع وضع جسم مريح.",
-        "حافظ على خطوات أو دورات سلسة ويمكنك التحدث بجمل قصيرة.",
-        "اخفض السرعة تدريجيًا قبل التوقف."
+        "والحزام متوقف، قف على الجانبين واختر سرعة بداية مريحة، ثم شغّل الحزام قبل الصعود إليه.",
+        "امشِ بجذع منتصب ونظرك للأمام وحركة ذراعين طبيعية؛ تجنب الاتكاء المستمر على المقابض.",
+        "اخفض السرعة إلى الصفر وانتظر توقف الحزام قبل النزول."
       ]
     },
     "breathing": {
@@ -14290,16 +14348,16 @@
     },
     "steps": {
       "en": [
-        "On a flat bench lie facedown with the hips on the edge of the bench, the legs straight with toes high off the floor and with the arms on top of the bench holding on to the front edge.",
-        "Squeeze your glutes and hamstrings and straighten the legs until they are level with the hips. This will be your starting position.",
-        "Start the movement by lifting the left leg higher than the right leg.",
-        "Then lower the left leg as you lift the right leg.",
-        "Continue alternating in this manner (as though you are doing a flutter kick in water) until you have done the recommended amount of repetitions for each leg. Make sure that you keep a controlled movement at all times. You will breathe normally as you perform this movement."
+        "Lie face down on a sturdy flat bench with your hips near the edge, grip the front securely, and let straight legs hover clear of the floor.",
+        "Brace your abdomen and glutes while keeping your pelvis steady and lower back neutral.",
+        "Alternate small leg lifts, raising one leg slightly as the other lowers without swinging or arching your back.",
+        "Continue evenly for the prescribed repetitions or time; stop if your lower back hurts or the bench feels unstable."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "استلقِ على بطنك فوق مقعد مسطح وثابت مع اقتراب الوركين من الحافة، وأمسك مقدمة المقعد بإحكام واترك الساقين مستقيمتين فوق الأرض.",
+        "شد عضلات البطن والألوية مع تثبيت الحوض والحفاظ على وضع محايد لأسفل الظهر.",
+        "ارفع إحدى الساقين مسافة صغيرة بينما تنخفض الأخرى، بالتبادل دون تأرجح أو تقويس الظهر.",
+        "واصل بإيقاع منتظم حسب التكرارات أو المدة المحددة، وتوقف إذا ظهر ألم أسفل الظهر أو لم يكن المقعد ثابتًا."
       ]
     },
     "breathing": {
@@ -15053,9 +15111,11 @@
         "Continue back and forth for several repetitions."
       ],
       "ar": [
-        "حمّل الورك والركبتين بسرعة متحكم فيها.",
-        "ادفع الأرض وحافظ على اتجاه الركبتين.",
-        "اهبط بهدوء واثبت قبل التكرار التالي."
+        "ابدأ بنصف سكوات، واجعل جسمك متعامدًا مع اتجاه الوثب.",
+        "حرّك الساق القائدة قليلًا إلى الداخل وانقل وزنك إلى الساق الخارجية.",
+        "ادفع الأرض وامدد الورك والركبة للوثب جانبيًا إلى أبعد مسافة تستطيع التحكم بها.",
+        "عند الهبوط، ادفع فورًا بالاتجاه المعاكس للعودة إلى موضع البداية.",
+        "واصل الوثب ذهابًا وإيابًا لعدة تكرارات، مع امتصاص الهبوط والحفاظ على اتجاه الركبتين."
       ]
     },
     "breathing": {
@@ -16239,13 +16299,16 @@
     },
     "steps": {
       "en": [
-        "Lie facedown on top of an exercise ball.",
-        "While resting on your stomach on the ball, walk your hands forward along the floor and lift your legs, extending your elbows and knees."
+        "Place your abdomen and hips on a stable exercise ball and set both hands on a clear, non-slip floor in front of you.",
+        "Walk your hands forward until your torso is supported and aligned, keeping the ball centered under your pelvis and abdomen.",
+        "Brace your core and lift both legs only to hip height while keeping the elbows and knees straight; avoid over-arching your back.",
+        "Breathe steadily, lower your legs, and walk your hands back; use assistance or skip the move if you cannot balance securely."
       ],
       "ar": [
-        "ابدأ من جذع ثابت وتنفس دون حبس طويل.",
-        "نفّذ الحركة ببطء ومن دون شد الرقبة.",
-        "توقف قبل فقدان وضع الحوض أو أسفل الظهر."
+        "ضع البطن والوركين فوق كرة تمرين ثابتة، وثبّت اليدين على أرضية غير زلقة وخالية من العوائق أمامك.",
+        "حرّك اليدين إلى الأمام حتى يستند الجذع وتصبح محاذاته مستقيمة، مع إبقاء الكرة تحت الحوض والبطن.",
+        "شد عضلات الجذع وارفع الساقين حتى مستوى الورك فقط، مع إبقاء المرفقين والركبتين مستقيمين وتجنب تقويس الظهر.",
+        "تنفس بانتظام ثم اخفض الساقين وأعد اليدين للخلف؛ اطلب المساعدة أو اترك التمرين إذا تعذر الحفاظ على التوازن."
       ]
     },
     "breathing": {
