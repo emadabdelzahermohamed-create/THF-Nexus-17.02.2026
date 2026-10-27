@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "videos": [
+    {
+      "exerciseId": "romanian-deadlift",
+      "asset": "media/motion/romanian-deadlift.mp4",
+      "sha256": "5f6e6258a3bbbde659ef9673620808e63b0ee6ff0f15a53d04f25ea07a229ac1",
+      "source": "wger",
+      "sourceUrl": "https://wger.de/media/exercise-video/507/307e7276-a14d-4ea0-b579-f5b0dbc6f5af.MOV",
+      "author": "Goulart",
+      "license": "CC-BY-SA-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
+      "exerciseId": "standing-calf-raises",
+      "asset": "media/motion/standing-calf-raises.mp4",
+      "sha256": "28282f7bfaf80fbc6ec7b85f465b9f7a7c3fb3a83bdd9bc01cc19fd95e5348a6",
+      "source": "wger",
+      "sourceUrl": "https://wger.de/media/exercise-video/622/461171e5-2b16-407d-bf27-27aeef43f105.MOV",
+      "author": "Goulart",
+      "license": "CC-BY-SA-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
+      "exerciseId": "leg-press",
+      "asset": "media/motion/leg-press.mp4",
+      "sha256": "1f3b4e71c153ff25c9512592bc477cc17ace0f1d7e9c55619cd2d3518e8b68ad",
+      "source": "wger",
+      "sourceUrl": "https://wger.de/media/exercise-video/371/6aae16b4-01b9-4eb4-935c-3250f84d2c59.MOV",
+      "author": "Goulart",
+      "license": "CC-BY-SA-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
+      "exerciseId": "hammer-curls",
+      "asset": "media/motion/hammer-curls.mp4",
+      "sha256": "22987fc1c5c1bbcb1174cec3319c1f63b612e79e800f3c32a2237a89811b5574",
+      "source": "wger",
+      "sourceUrl": "https://wger.de/media/exercise-video/272/df069052-2173-4f24-855f-a0eebe729f24.MOV",
+      "author": "Goulart",
+      "license": "CC-BY-SA-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
+      "exerciseId": "tricep-dumbbell-kickback",
+      "asset": "media/motion/tricep-dumbbell-kickback.mp4",
+      "sha256": "ab4bddda7689f1d9921e0d857e8e9667dd25e530745254f4e79b9190e796cb41",
+      "source": "wger",
+      "sourceUrl": "https://wger.de/media/exercise-video/655/2d88a05b-bde3-4026-bfbf-524c11068dc5.MOV",
+      "author": "Goulart",
+      "license": "CC-BY-SA-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+    }
+  ]
+}

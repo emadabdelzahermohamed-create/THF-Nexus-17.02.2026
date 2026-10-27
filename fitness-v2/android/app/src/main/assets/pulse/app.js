@@ -346,10 +346,20 @@
       video.setAttribute('aria-label', item.demo.alt[state.lang]);
       video.classList.remove('hidden');
       image.classList.add('hidden');
+      const credit = $('activeDemoCredit');
+      const sourceLink = $('activeDemoSource');
+      const licenseLink = $('activeDemoLicense');
+      if (credit && sourceLink && licenseLink && motion.sourceUrl && motion.licenseUrl) {
+        sourceLink.href = motion.sourceUrl;
+        sourceLink.textContent = state.lang === 'ar' ? `مصدر الفيديو: ${motion.author || 'Goulart'}` : `Video source: ${motion.author || 'Goulart'}`;
+        licenseLink.href = motion.licenseUrl;
+        credit.classList.remove('hidden');
+      }
       $('activeDemoPhase').textContent = state.lang === 'ar' ? 'حركة كاملة تلقائية' : 'Automatic full movement';
       if (!document.hidden) video.play().catch(() => {});
       return;
     }
+    $('activeDemoCredit')?.classList.add('hidden');
     video.pause();
     video.removeAttribute('src');
     video.load();

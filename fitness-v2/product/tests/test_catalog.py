@@ -326,15 +326,19 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertIn("motionManifest", script)
         self.assertIn("video.play()", script)
 
-        self.assertEqual({"bodyweight-squat", "pushups"}, set(manifest))
+        self.assertEqual({"bodyweight-squat", "pushups", "romanian-deadlift", "standing-calf-raises", "leg-press", "hammer-curls", "tricep-dumbbell-kickback"}, set(manifest))
         for exercise_id, motion in manifest.items():
             with self.subTest(exercise_id=exercise_id):
-                self.assertEqual("verified_frame_sequence", motion["kind"])
-                self.assertEqual(16, motion["sourceFrameCount"])
-                self.assertEqual(8, motion["fps"])
                 video_path = PULSE / motion["asset"]
                 self.assertTrue(video_path.is_file())
                 self.assertEqual(motion["sha256"], sha256(video_path))
+                if motion["kind"] == "verified_frame_sequence":
+                    self.assertEqual(16, motion["sourceFrameCount"])
+                    self.assertEqual(8, motion["fps"])
+                else:
+                    self.assertEqual("offline_video", motion["kind"])
+                    self.assertIn("licenseUrl", motion)
+                    self.assertIn("sourceUrl", motion)
 
     def test_program_library_replaces_legacy_baseline_across_every_section(self):
         expected = {
