@@ -33,7 +33,7 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
         prefix = "window.THF_MOTION_MANIFEST = "
         if not motion_js.startswith(prefix):
             raise AssertionError("runtime motion manifest must keep its known assignment wrapper")
-        runtime_end = motion_js.find(";\\n\\n/*", len(prefix))
+        runtime_end = motion_js.find(";\n\n/*", len(prefix))
         if runtime_end < 0:
             raise AssertionError("runtime motion manifest wrapper terminator not found")
         cls.runtime_motion = json.loads(motion_js[len(prefix):runtime_end])
@@ -107,7 +107,7 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
                 item["id"] not in self.runtime_motion
                 and isinstance(assets, list)
                 and len(assets) == 2
-                and all(isinstance(asset, str) and re.fullmatch(r"media/free-exercise-db/[A-Za-z0-9_/-]+\\.jpg", asset, re.IGNORECASE) for asset in assets)
+                and all(isinstance(asset, str) and re.fullmatch(r"media/free-exercise-db/[A-Za-z0-9_/-]+\.jpg", asset, re.IGNORECASE) for asset in assets)
             )
             if safe_pair:
                 reference_only.append(item["id"])
