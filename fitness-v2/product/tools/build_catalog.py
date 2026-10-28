@@ -23,6 +23,33 @@ IMPORTED_AT = "2026-10-03"
 
 # Exact exercise-specific bilingual steps synchronized with the reviewed runtime catalog.
 STEP_OVERRIDES = {
+    "Scapular_Pull-Up": {
+        "en": [
+            "Hang from a pull-up bar with an overhand grip, arms straight and body still.",
+            "Without bending your elbows, draw the shoulder blades down and slightly together to lift your body a few inches; do not swing or shrug toward your ears.",
+            "Pause briefly, then slowly release the shoulder blades to return to a controlled hang before repeating.",
+        ],
+        "ar": [
+            "تعلّق بعارضة العقلة بقبضة علوية والذراعان ممدودتان، مع إبقاء الجسم ثابتًا.",
+            "اسحب لوحي الكتف إلى أسفل وإلى الداخل قليلًا لرفع الجسم بضعة سنتيمترات دون ثني المرفقين أو التأرجح.",
+            "توقف لحظة ثم أرخِ لوحي الكتف ببطء للعودة إلى تعليق متحكم فيه قبل التكرار.",
+        ]
+    },
+    "Kettlebell_One-Legged_Deadlift": {
+        "en": [
+            "Stand on one leg holding the kettlebell in the hand on the same side, keep a soft bend in the stance knee, and brace your trunk.",
+            "Hinge at the hip while reaching the free leg straight behind you; keep your hips level and the bell close to the stance leg.",
+            "Lower only as far as you can maintain balance and a neutral spine, keeping pressure through the whole stance foot.",
+            "Drive through the stance foot and extend the hip to stand; reset your balance before the next repetition, then switch sides.",
+        ],
+        "ar": [
+            "قف على ساق واحدة وامسك الكيتل بيل باليد من الجهة نفسها، مع ثني بسيط لركبة الارتكاز وشد الجذع.",
+            "ادفع الورك للخلف ومد الساق الحرة خلفك، مع إبقاء الحوض مستويًا والجرس قريبًا من ساق الارتكاز.",
+            "اخفض الجرس بقدر ما يسمح بالحفاظ على التوازن والظهر المحايد، مع توزيع الضغط على القدم الداعمة كاملة.",
+            "ادفع بالأرض بقدم الارتكاز ومد الورك للعودة إلى الوقوف؛ استعد للتوازن قبل التكرار التالي ثم بدّل الجهة.",
+        ]
+    },
+
     "Bodyweight_Squat": {
         "en": [
             "Stand with feet about shoulder-width apart and turn the toes slightly outward; extend your arms forward for balance.",
