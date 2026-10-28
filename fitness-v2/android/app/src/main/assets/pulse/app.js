@@ -668,8 +668,8 @@
       if(enabled) video.pause();
       else if(!document.hidden && video.isConnected && (video.dataset.context==='card' || !$('exerciseDetail').classList.contains('hidden'))) video.play().catch(()=>{});
     });
-    syncActiveDemoPlayback();
     if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
+    syncActiveDemoPlayback();
   }
 
   function bind(){
