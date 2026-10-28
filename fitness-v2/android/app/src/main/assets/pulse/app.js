@@ -41,6 +41,8 @@
   };
   Object.assign(COPY.ar, {primaryMuscles:'العضلات الأساسية',secondaryMuscles:'العضلات المساعدة',supportingMusclesUndocumented:'لم تُوثَّق العضلات المساعدة لهذا التمرين بعد.',referenceMotionAuto:'عرض مرجعي تلقائي',referenceMotionStatic:'صور مرجعية ثابتة — تقليل الحركة',referenceMotionUnavailable:'لا تتوفر إطارات مرجعية للحركة في هذا التمرين',startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة',foundingHeroEyebrow:'حزمة تجميلية لمرة واحدة',foundingHeroTitle:'البطل المؤسس',foundingHeroBadge:'البطل المؤسس',foundingHeroBody:'شراء رقمي لمرة واحدة يضيف شارة البطل المؤسس ولمسة ذهبية لملفك.',foundingHeroScope:'شارة تجميلية فقط؛ لا تحجب التمارين أو الصحة، ولا تمنح أفضلية تنافسية أو توكنات أو عائدًا ماليًا.',foundingHeroLoading:'جارٍ التحقق من Google Play…',foundingHeroBuy:'احصل على الحزمة',foundingHeroRestore:'استعادة الشراء',foundingHeroOwned:'حزمة البطل المؤسس مفعلة على هذا الحساب.',foundingHeroPending:'عملية الشراء معلقة؛ ستتفعل الشارة بعد تأكيد Google Play.',foundingHeroUnavailable:'المنتج غير متاح في هذه النسخة بعد. لم يتم تحصيل أي مبلغ.',foundingHeroConfigure:'يلزم ربط مفتاح الترخيص العام ومنتج Play قبل إتاحة الشراء.',foundingHeroAndroidOnly:'متاح داخل نسخة Android المثبتة من Google Play.',foundingHeroCanceled:'تم إلغاء نافذة الشراء ولم يتم تحصيل مبلغ.'});
   Object.assign(COPY.en, {primaryMuscles:'Primary muscles',secondaryMuscles:'Supporting muscles',supportingMusclesUndocumented:'Supporting muscles are not documented for this exercise yet.',referenceMotionAuto:'Automatic reference-frame demo',referenceMotionStatic:'Reference frames paused — reduced motion',referenceMotionUnavailable:'Motion frames are unavailable for this exercise',startSession:'Start session',saveNext:'Save and continue',finishSession:'Finish and save session',exerciseOf:'Exercise {current} of {total}',nextExercise:'Exercise saved. Next: {name}',sessionComplete:'Session complete and saved.',signInSync:'Sign in to sync',syncConnected:'Sync connected',syncConnecting:'Connecting account',offlineReady:'Offline ready',syncUnavailable:'Sync not configured',foundingHeroEyebrow:'One-time cosmetic pack',foundingHeroTitle:'Founding Hero',foundingHeroBadge:'Founding Hero',foundingHeroBody:'A one-time digital purchase that adds the Founding Hero badge and a gold profile accent.',foundingHeroScope:'Cosmetic badge only; workouts and Health remain free, with no competitive advantage, tokens, or financial return.',foundingHeroLoading:'Checking Google Play…',foundingHeroBuy:'Get the pack',foundingHeroRestore:'Restore purchase',foundingHeroOwned:'The Founding Hero pack is active for this account.',foundingHeroPending:'Purchase pending; the badge activates after Google Play confirms payment.',foundingHeroUnavailable:'This product is not available in this build yet. No charge was made.',foundingHeroConfigure:'Connect the public Play license key and Play product before enabling purchases.',foundingHeroAndroidOnly:'Available in the Android app installed through Google Play.',foundingHeroCanceled:'The purchase sheet was canceled and no charge was made.'});
+  Object.assign(COPY.ar, {instructionProgress:'تقدم خطوات الأداء',instructionStepOf:'الخطوة {current} من {total}',previousInstructionStep:'الخطوة السابقة',nextInstructionStep:'الخطوة التالية',instructionStepsUnavailable:'لا تتوفر خطوات موثقة لهذا التمرين.'});
+  Object.assign(COPY.en, {instructionProgress:'Technique step progress',instructionStepOf:'Step {current} of {total}',previousInstructionStep:'Previous step',nextInstructionStep:'Next step',instructionStepsUnavailable:'No documented steps are available for this exercise.'});
   Object.assign(COPY.ar, {onboardingBrand:'خطتك تبدأ منك',onboardingStep:'إعداد سريع · يعمل أوفلاين',onboardingTitle:'ابنِ خطتك الأولى',onboardingIntro:'اختر هدفك وخبرتك وما يتوفر لديك. سنضع جلسة واضحة في «اليوم» ويمكنك تعديل كل شيء لاحقًا.',onboardingBenefitOffline:'دليل مصور أوفلاين',onboardingBenefitSafe:'تدرج وتعليمات سلامة',onboardingBenefitFlexible:'تعديل الخطة في أي وقت',onboardingPrivacy:'يُحفظ هذا الاختيار على جهازك أولًا. لا يلزم حساب للبدء.',createMyPlan:'أنشئ خطتي وابدأ',planReady:'خطتك جاهزة. ابدأ من جلسة اليوم.'});
   Object.assign(COPY.en, {onboardingBrand:'Your plan starts with you',onboardingStep:'Quick setup · works offline',onboardingTitle:'Build your first plan',onboardingIntro:'Choose your goal, experience and available equipment. We will put one clear session in Today, and you can change everything later.',onboardingBenefitOffline:'Offline visual guidance',onboardingBenefitSafe:'Safe progression and cues',onboardingBenefitFlexible:'Change your plan anytime',onboardingPrivacy:'Your choices are saved on this device first. No account is required to begin.',createMyPlan:'Create my plan and start',planReady:'Your plan is ready. Start with Today.'});
   Object.assign(COPY.ar, {accountPrivacyHint:'تستطيع مراجعة السياسة وبدء حذف بيانات حساب THF Fitness من المتصفح الآمن.',privacyPolicy:'سياسة الخصوصية',accountDeletion:'حذف بيانات الحساب',accountResourceAndroidOnly:'هذا الرابط متاح داخل تطبيق Android.'});
@@ -78,6 +80,8 @@
   let activeDemoManualPlay = false;
   let activeDemoExerciseId = null;
   let activeDemoErrorHandler = null;
+  let activeInstructionIndex = 0;
+  let activeInstructionSessionKey = null;
 
   function toast(message) {
     const node = $('toast'); node.textContent = message; node.classList.remove('hidden');
@@ -556,8 +560,41 @@
       ? (preferredReducedMotion() ? t('referenceMotionStatic') : t('referenceMotionAuto'))
       : t('referenceMotionUnavailable');
   }
+  function boundedInstructionIndex(index, total) {
+    const count = Math.max(0, Number(total) || 0);
+    return count ? Math.min(count - 1, Math.max(0, Number(index) || 0)) : 0;
+  }
+  function renderActiveInstructionSteps(item = activeExercise()) {
+    const steps = Array.isArray(item?.steps?.[state.lang]) ? item.steps[state.lang] : [];
+    activeInstructionIndex = boundedInstructionIndex(activeInstructionIndex, steps.length);
+    $('activeSteps').innerHTML = steps.map((step, index) =>
+      `<li${index === activeInstructionIndex ? ' aria-current="step"' : ''}>${escapeHtml(step)}</li>`
+    ).join('');
+    const progress = $('activeInstructionProgress');
+    const fill = $('instructionProgressFill');
+    const previous = $('previousInstructionStep');
+    const next = $('nextInstructionStep');
+    if (progress) progress.textContent = steps.length
+      ? t('instructionStepOf').replace('{current}', activeInstructionIndex + 1).replace('{total}', steps.length)
+      : t('instructionStepsUnavailable');
+    if (fill) fill.style.width = `${steps.length ? ((activeInstructionIndex + 1) / steps.length) * 100 : 0}%`;
+    if (previous) previous.disabled = !steps.length || activeInstructionIndex <= 0;
+    if (next) next.disabled = !steps.length || activeInstructionIndex >= steps.length - 1;
+  }
+  function moveActiveInstructionStep(delta) {
+    const item = activeExercise();
+    const steps = Array.isArray(item?.steps?.[state.lang]) ? item.steps[state.lang] : [];
+    if (!steps.length) return;
+    activeInstructionIndex = boundedInstructionIndex(activeInstructionIndex + delta, steps.length);
+    renderActiveInstructionSteps(item);
+  }
   function renderActiveWorkout() {
     const item = activeExercise(); if (!item) { state.active=null; store.removeItem('pulse.v2.active'); return; }
+    const instructionSessionKey = `${state.active?.clientRecordId || state.active?.startedAt || ''}:${item.id}`;
+    if (activeInstructionSessionKey !== instructionSessionKey) {
+      activeInstructionSessionKey = instructionSessionKey;
+      activeInstructionIndex = 0;
+    }
     // Give the frame animator an exact ID before its MutationObserver reconciles the view.
     $('activeWorkoutScreen').dataset.exerciseId = item.id;
     renderActiveMotion(item);
@@ -573,7 +610,7 @@
       ? `<section class="muscle-group" aria-label="${escapeHtml(t('secondaryMuscles'))}"><strong class="muscle-group-label">${escapeHtml(t('secondaryMuscles'))}</strong><div class="tag-row">${supportingMuscles.map(value => `<span class="tag">${escapeHtml(value)}</span>`).join('')}</div></section>`
       : `<p class="muscle-coverage-note">${escapeHtml(t('supportingMusclesUndocumented'))}</p>`;
     $('activeMuscles').innerHTML = `${primaryMuscleGroup}${supportingMuscleGroup}`;
-    $('activeSteps').innerHTML = item.steps[state.lang].map(step=>`<li>${escapeHtml(step)}</li>`).join(''); $('activeBreathing').textContent = local(item.breathing); $('activeSafety').textContent = local(item.safety);
+    renderActiveInstructionSteps(item); $('activeBreathing').textContent = local(item.breathing); $('activeSafety').textContent = local(item.safety);
     renderMotionEvidence(state.motionEvidence||readMotionSnapshot());
     const done = state.active.sets.filter(set=>set.complete).length; $('setProgressTitle').textContent = t('setProgress').replace('{done}',done).replace('{total}',state.active.sets.length); $('sessionVolume').textContent = `${Math.round(sessionVolume())} kg`;
     $('finishWorkoutBtn').textContent=programSession?(programIndex<programSession.exercises.length-1?t('saveNext'):t('finishSession')):t('finishWorkout');
@@ -859,6 +896,8 @@
     });
     $('addSetBtn').addEventListener('click',addSet);$('finishWorkoutBtn').addEventListener('click',finishWorkout);$('skipRest').addEventListener('click',()=>stopRest());$('exitWorkoutBtn').addEventListener('click',()=>{persistActive();showScreen('trainScreen');});
     $('speakCue').addEventListener('click',()=>speakExercise(activeExercise(),{force:true}));
+    $('previousInstructionStep').addEventListener('click',()=>moveActiveInstructionStep(-1));
+    $('nextInstructionStep').addEventListener('click',()=>moveActiveInstructionStep(1));
     document.querySelectorAll('[data-activity-mode]').forEach(button=>button.addEventListener('click',()=>startActivity(button.dataset.activityMode)));
     $('activityAutoPauseLeave').checked=store.getItem('pulse.v2.activityAutoPauseLeave')==='true';$('activityAutoPauseLeave').addEventListener('change',event=>store.setItem('pulse.v2.activityAutoPauseLeave',String(Boolean(event.target.checked))));const pauseIfLeavingActivity=()=>{if($('activityAutoPauseLeave').checked&&state.activitySnapshot?.active&&!state.activitySnapshot?.paused&&typeof N?.pauseActivitySession==='function'){state.activitySnapshot=parse(N.pauseActivitySession(),state.activitySnapshot);renderActivity(state.activitySnapshot);}};$('activityStopBtn').addEventListener('click',stopAndSaveActivity);$('activityPauseBtn').addEventListener('click',()=>{if(!N)return;const fn=state.activitySnapshot?.paused?N.resumeActivitySession:N.pauseActivitySession;if(typeof fn==='function'){state.activitySnapshot=parse(fn(),state.activitySnapshot||{});renderActivity(state.activitySnapshot);}});$('activityBackBtn').addEventListener('click',()=>{pauseIfLeavingActivity();stopActivityPolling();showScreen('todayScreen');});$('activityHealthBtn').addEventListener('click',()=>{pauseIfLeavingActivity();stopActivityPolling();showScreen('healthScreen');});
     window.addEventListener('thf:activity-started',()=>{renderActivity(readActivitySnapshot());startActivityPolling();});window.addEventListener('thf:location-permission',event=>{if(event.detail?.granted){setTimeout(()=>renderActivity(readActivitySnapshot()),400);}else toast(t('activityPermissionNeeded'));});
