@@ -71,7 +71,7 @@
 @keyframes thf-reference-finish{0%,49.99%{opacity:0}50%,100%{opacity:1}}
 .motion-reduced .exercise-reference-motion img:first-of-type{opacity:1;animation:none!important}
 .motion-reduced .exercise-reference-motion img:last-of-type{opacity:0;animation:none!important}
-@media(prefers-reduced-motion:reduce){.exercise-reference-motion img:first-of-type{opacity:1!important;animation:none!important}.exercise-reference-motion img:last-of-type{opacity:0!important;animation:none!important}}
+@media(prefers-reduced-motion:reduce){:root:not(.motion-allow-animations) .exercise-reference-motion img:first-of-type{opacity:1!important;animation:none!important}:root:not(.motion-allow-animations) .exercise-reference-motion img:last-of-type{opacity:0!important;animation:none!important}}
 .motion-credit{margin:0;padding:8px 12px 12px;line-height:1.5;font-size:11px}
 .motion-credit a{color:var(--gold);text-decoration:underline}
 
@@ -81,3 +81,6 @@
 
 /* Be transparent when secondary-muscle metadata has not been documented. */
 .muscle-coverage-note{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
+
+/* Active-workout reference frames fill the demo stage and animate without a tap. */
+.demo-stage #activeDemoReference{position:absolute;inset:0;overflow:hidden}.demo-stage #activeDemoReference .exercise-reference-motion-detail{width:100%;height:100%;min-height:0;aspect-ratio:auto}
