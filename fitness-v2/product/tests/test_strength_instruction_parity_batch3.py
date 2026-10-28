@@ -39,7 +39,7 @@ REQUIRED_ARABIC_TERMS = {
     "Lying_Leg_Curls": ("الكعبين", "الركبتين", "الحوض"),
     "Machine_Bench_Press": ("منتصف الصدر", "المقابض", "المرفقين"),
     "One-Arm_Dumbbell_Row": ("المقعد", "الدمبل", "الجذع"),
-    "Side_Lateral_Raise": ("الدمبلين", "الكتفين", "المرفقين"),
+    "Side_Lateral_Raise": ("الدمبلين", "الكتفين", "الرسغين"),
     "Smith_Machine_Bench_Press": ("جهاز سميث", "الصدر", "الخطافات"),
     "Smith_Machine_Squat": ("البار", "الركبتين", "الخطافات"),
 }
