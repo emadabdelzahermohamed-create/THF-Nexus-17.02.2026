@@ -1503,7 +1503,31 @@ STEP_OVERRIDES = {
             "أمل الحوض وارفع عظم العصعص قليلًا مع شد البطن دون رفع الظهر كاملًا.",
             "ادفع القدمين وارفع الجذع إلى وضع الجسر مع إبقاء الرقبة على الأرض، ثم اخفض العمود الفقري بتحكم."
         ]
+    },,
+    "Step-up_with_Knee_Raise": {
+        "en": [
+            "Stand facing a box or bench of an appropriate height with your feet together. This will be your starting position.",
+            "Begin the movement by stepping up, putting your left foot on the top of the bench. Extend through the hip and knee of your front leg to stand up on the box. As you stand on the box with your left leg, flex your right knee and hip, bringing your knee as high as you can.",
+            "Reverse this motion to step down off the box, and then repeat the sequence on the opposite leg."
+        ],
+        "ar": [
+            "قف أمام صندوق أو مقعد ثابت بارتفاع مناسب، والقدمان على الأرض مع شد الجذع.",
+            "ضع القدم اليسرى كاملة على الصندوق وادفع عبرها حتى تقف فوقه؛ أثناء الصعود ارفع الركبة اليمنى أمامك مع ثبات الجذع.",
+            "انزل بالقدم اليمنى ثم اليسرى بتحكم، وكرر على الجهة الأخرى مع إبقاء الركبة بمحاذاة أصابع القدم."
+        ]
     },
+    "Medicine_Ball_Scoop_Throw": {
+        "en": [
+            "Assume a semisquat stance with a medicine ball in your hands. Your arms should hang so the ball is near your feet.",
+            "Begin by thrusting the hips forward as you extend through the legs, jumping up.",
+            "As you do, swing your arms up and over your head, keeping them extended, releasing the ball at the peak of your movement. The goal is to throw the ball the greatest distance behind you."
+        ],
+        "ar": [
+            "ابدأ من نصف قرفصاء والكرة الطبية بين يديك قرب القدمين، بعد التأكد من خلو المساحة خلفك.",
+            "ادفع الأرض ومد الوركين والركبتين والكاحلين بسرعة مضبوطة للنهوض، مع إبقاء الجذع متماسكًا.",
+            "أرجح الذراعين فوق الرأس وأطلق الكرة خلفك عند قمة الحركة، دون تقويس أسفل الظهر؛ لا تنفذ الرمية إلا في مساحة خالية."
+        ]
+    }
 }
 
 # id, Arabic name, product section, goal override (optional)

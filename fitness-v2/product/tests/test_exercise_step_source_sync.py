@@ -119,6 +119,8 @@ EXPECTED_SOURCE_IDS = {
     "Cat_Stretch",
     "Childs_Pose",
     "Pelvic_Tilt_Into_Bridge",
+    "Step-up_with_Knee_Raise",
+    "Medicine_Ball_Scoop_Throw",
 }
 
 
