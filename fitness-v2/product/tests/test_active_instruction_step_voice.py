@@ -21,7 +21,7 @@ class ActiveInstructionStepVoiceTest(unittest.TestCase):
 
     def test_manual_voice_button_uses_selected_step_and_real_step_number(self):
         start = self.app.index("$('speakCue').addEventListener('click'")
-        end = self.app.index("\n", start)
+        end = self.app.index("    });", start) + len("    });")
         handler = self.app[start:end]
         self.assertIn("const steps = Array.isArray(item?.steps?.[state.lang])", handler)
         self.assertIn("boundedInstructionIndex(activeInstructionIndex, steps.length)", handler)
@@ -30,7 +30,7 @@ class ActiveInstructionStepVoiceTest(unittest.TestCase):
 
     def test_current_step_voice_handles_missing_steps_without_throwing(self):
         start = self.app.index("$('speakCue').addEventListener('click'")
-        end = self.app.index("\n", start)
+        end = self.app.index("    });", start) + len("    });")
         handler = self.app[start:end]
         self.assertIn("if (!steps.length) { toast(t('instructionStepsUnavailable')); return; }", handler)
 
