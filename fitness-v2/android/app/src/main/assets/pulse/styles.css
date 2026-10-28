@@ -78,3 +78,6 @@
 
 /* Keep primary and supporting muscle groups distinct in the active workout. */
 .muscle-groups{display:grid;gap:9px;margin-top:10px;min-width:0}.muscle-group{display:grid;gap:5px;min-width:0}.muscle-group-label{font-size:11px;font-weight:900;color:var(--muted)}.muscle-group .tag-row{gap:6px}
+
+/* Be transparent when secondary-muscle metadata has not been documented. */
+.muscle-coverage-note{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
