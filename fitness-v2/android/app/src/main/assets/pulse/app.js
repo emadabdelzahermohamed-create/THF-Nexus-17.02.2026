@@ -255,7 +255,7 @@
   }
   function hasSafeReferenceFrames(item) {
     const assets = Array.isArray(item?.demo?.assets) ? item.demo.assets.slice(0, 2) : [];
-    return assets.length === 2 && assets.every(asset => typeof asset === 'string' && /^media\\/free-exercise-db\\/[A-Za-z0-9_/-]+\\.jpg$/i.test(asset));
+    return assets.length === 2 && assets.every(asset => typeof asset === 'string' && /^media\/free-exercise-db\/[A-Za-z0-9_/-]+\.jpg$/i.test(asset));
   }
   function referenceMotionPlayer(item, context = 'detail') {
     const assets = Array.isArray(item?.demo?.assets) ? item.demo.assets.slice(0, 2) : [];
