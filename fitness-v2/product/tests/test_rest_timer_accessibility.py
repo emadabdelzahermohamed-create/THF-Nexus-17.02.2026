@@ -27,6 +27,8 @@ class RestTimerAccessibilityTests(unittest.TestCase):
             'id="restAnnouncement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"',
             self.html,
         )
+        self.assertGreater(self.html.index('id="restAnnouncement"'), self.html.index('id="toast"'))
+        self.assertGreater(self.html.index("</main>"), self.html.index('id="restAnnouncement"'))
         self.assertIn("const node=$('restAnnouncement');", self.app)
         self.assertIn("node.textContent=t('restComplete');", self.app)
 
