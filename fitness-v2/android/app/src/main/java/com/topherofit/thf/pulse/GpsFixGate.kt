@@ -32,10 +32,12 @@ object GpsFixGate {
             if (fix.elapsedMs <= previous.elapsedMs) return false
             if (!previous.accuracyMetres.isFinite() || previous.accuracyMetres <= 0.0) return false
             val distance = ActivityMetrics.distanceMetres(previous.latitude, previous.longitude, fix.latitude, fix.longitude)
-            // Keep a small accuracy-scaled deadband so stationary GPS wander does not accumulate
-            // distance or paint a route. Rejected fixes do not advance the accepted anchor.
-            val movementDeadbandMetres = max(1.0, min(fix.accuracyMetres, previous.accuracyMetres) * 0.25)
-                .coerceAtMost(3.0)
+            // GPS displacement is uncertain at both endpoints. Use the worse accuracy radius so
+            // a single weak fix cannot make a small stationary wander look like measured movement.
+            // Rejected fixes do not advance the accepted anchor, allowing genuine movement to
+            // accumulate against the last trustworthy point instead of summing jitter.
+            val endpointUncertaintyMetres = max(fix.accuracyMetres, previous.accuracyMetres)
+            val movementDeadbandMetres = max(1.0, endpointUncertaintyMetres * 0.5).coerceAtMost(8.0)
             if (distance < movementDeadbandMetres) return false
             if (ActivityMetrics.averageSpeedKph(distance, fix.elapsedMs - previous.elapsedMs) > maxKph) return false
         }

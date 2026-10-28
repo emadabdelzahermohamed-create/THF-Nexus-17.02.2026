@@ -43,6 +43,32 @@ class GpsFixGateTest {
         assertFalse(accepts(first.copy(latitude = 30.000005, elapsedMs = 101_000L), first))
         assertTrue(accepts(first.copy(latitude = 30.00003, elapsedMs = 103_000L), first))
     }
+
+    @Test fun deadbandUsesWorseAccuracyFromEitherEndpoint() {
+        val poorAccuracyAnchor = first.copy(accuracyMetres = 25.0)
+        val smallApparentMove = first.copy(
+            latitude = 30.00003,
+            accuracyMetres = 5.0,
+            elapsedMs = 103_000L,
+        )
+        assertFalse(
+            GpsFixGate.accepts(
+                smallApparentMove, poorAccuracyAnchor, ActivityMode.WALK, 90_000L, 110_000L,
+            ),
+        )
+
+        val displacementBeyondDeadband = first.copy(
+            latitude = 30.00008,
+            accuracyMetres = 5.0,
+            elapsedMs = 105_000L,
+        )
+        assertTrue(
+            GpsFixGate.accepts(
+                displacementBeyondDeadband, poorAccuracyAnchor, ActivityMode.WALK, 90_000L, 110_000L,
+            ),
+        )
+    }
+
     @Test fun appliesDifferentSportSpeedLimits() {
         val moving = first.copy(latitude = 30.0001, elapsedMs = 102_000L)
         assertFalse(accepts(moving, first, ActivityMode.WALK))
