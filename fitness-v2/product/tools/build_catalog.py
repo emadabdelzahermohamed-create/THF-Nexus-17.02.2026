@@ -940,6 +940,144 @@ STEP_OVERRIDES = {
             "خذ شهيقًا واخفض الدمبلين ببطء إلى امتداد مريح للذراعين."
         ]
     },
+    "Standing_Calf_Raises": {
+        "en": [
+            "Adjust the padded lever of the calf raise machine to fit your height.",
+            "Place your shoulders under the pads provided and position your toes facing forward (or using any of the two other positions described at the beginning of the chapter). The balls of your feet should be secured on top of the calf block with the heels extending off it. Push the lever up by extending your hips and knees until your torso is standing erect. The knees should be kept with a slight bend; never locked. Toes should be facing forward, outwards or inwards as described at the beginning of the chapter. This will be your starting position.",
+            "Raise your heels as you breathe out by extending your ankles as high as possible and flexing your calf. Ensure that the knee is kept stationary at all times. There should be no bending at any time. Hold the contracted position by a second before you start to go back down.",
+            "Go back slowly to the starting position as you breathe in by lowering your heels as you bend the ankles until calves are stretched.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "اضبط ارتفاع وسادة جهاز رفع السمانة بحيث تستقر الكتفين أسفلها.",
+            "ضع مقدمة القدمين على منصة السمانة واترك الكعبين خارج الحافة؛ اثنِ الركبتين قليلًا دون قفلهما.",
+            "ارفع الكعبين بمد الكاحلين لأعلى مع بقاء الركبتين ثابتتين، وازفر.",
+            "اثبت لحظة في أعلى الانقباض ثم اخفض الكعبين ببطء حتى تمدد مريح، وخذ شهيقًا.",
+            "كرر الحركة دون ارتداد أو تحميل يسبب ألمًا."
+        ]
+    },
+    "Tricep_Dumbbell_Kickback": {
+        "en": [
+            "Start with a dumbbell in each hand and your palms facing your torso. Keep your back straight with a slight bend in the knees and bend forward at the waist. Your torso should be almost parallel to the floor. Make sure to keep your head up. Your upper arms should be close to your torso and parallel to the floor. Your forearms should be pointed towards the floor as you hold the weights. There should be a 90-degree angle formed between your forearm and upper arm. This is your starting position.",
+            "Now, while keeping your upper arms stationary, exhale and use your triceps to lift the weights until the arm is fully extended. Focus on moving the forearm.",
+            "After a brief pause at the top contraction, inhale and slowly lower the dumbbells back down to the starting position.",
+            "Repeat the movement for the prescribed amount of repetitions."
+        ],
+        "ar": [
+            "امسك دمبلًا بكل يد، اثنِ الركبتين قليلًا ومل من الورك مع ظهر محايد حتى يميل الجذع للأمام.",
+            "أبقِ العضدين بمحاذاة الجذع والساعدين مثنيين بزاوية تقارب 90 درجة.",
+            "مدّ المرفقين للخلف حتى تستقيم الذراعان دون تحريك العضدين أو تأرجح الجذع.",
+            "اثبت لحظة ثم اثنِ المرفقين ببطء للعودة إلى وضع البداية."
+        ]
+    },
+    "Triceps_Pushdown_-_Rope_Attachment": {
+        "en": [
+            "Attach a rope attachment to a high pulley and grab with a neutral grip (palms facing each other).",
+            "Standing upright with the torso straight and a very small inclination forward, bring the upper arms close to your body and perpendicular to the floor. The forearms should be pointing up towards the pulley as they hold the rope with the palms facing each other. This is your starting position.",
+            "Using the triceps, bring the rope down as you bring each side of the rope to the side of your thighs. At the end of the movement the arms are fully extended and perpendicular to the floor. The upper arms should always remain stationary next to your torso and only the forearms should move. Exhale as you perform this movement.",
+            "After holding for a second, at the contracted position, bring the rope slowly up to the starting point. Breathe in as you perform this step.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "ثبت الحبل في بكرة عالية وامسك طرفيه بقبضة محايدة.",
+            "قف بثبات مع المرفقين بجوار الجذع والساعدين باتجاه البكرة.",
+            "ادفع الحبل للأسفل بمد المرفقين، وافصل طرفيه قرب الفخذين مع ثبات العضدين.",
+            "اثبت لحظة دون قفل المرفقين بعنف، ثم أعد الحبل ببطء مع شهيق.",
+            "كرر مع جذع ثابت ووزن يسمح بالتحكم."
+        ]
+    },
+    "Pushups": {
+        "en": [
+            "Lie on the floor face down and place your hands about 36 inches apart while holding your torso up at arms length.",
+            "Next, lower yourself downward until your chest almost touches the floor as you inhale.",
+            "Now breathe out and press your upper body back up to the starting position while squeezing your chest.",
+            "After a brief pause at the top contracted position, you can begin to lower yourself downward again for as many repetitions as needed."
+        ],
+        "ar": [
+            "اتخذ وضع بلانك عالٍ واليدان أوسع قليلًا من الكتفين، والجسم في خط مستقيم.",
+            "اثنِ المرفقين واخفض الصدر نحو الأرض مع الشهيق مع الحفاظ على ثبات الجذع.",
+            "ادفع الأرض ومدّ المرفقين للعودة إلى البداية مع الزفير.",
+            "كرر دون هبوط الحوض أو رفعه."
+        ]
+    },
+    "Single_Leg_Glute_Bridge": {
+        "en": [
+            "Lay on the floor with your feet flat and knees bent.",
+            "Raise one leg off of the ground, pulling the knee to your chest. This will be your starting position.",
+            "Execute the movement by driving through the heel, extending your hip upward and raising your glutes off of the ground.",
+            "Extend as far as possible, pause and then return to the starting position."
+        ],
+        "ar": [
+            "استلقِ على الظهر وثبّت قدمًا على الأرض مع ثني الركبة، وارفع الساق الأخرى أو مدّها حسب قدرتك.",
+            "شدّ عضلات الألوية وادفع عبر كعب القدم المثبتة لرفع الحوض.",
+            "ارفع حتى يصطف الجذع والفخذ دون تقويس أسفل الظهر.",
+            "اخفض الحوض ببطء وكرر، ثم بدّل الساق."
+        ]
+    },
+    "90_90_Hamstring": {
+        "en": [
+            "Lie on your back, with one leg extended straight out.",
+            "With the other leg, bend the hip and knee to 90 degrees. You may brace your leg with your hands if necessary. This will be your starting position.",
+            "Extend your leg straight into the air, pausing briefly at the top. Return the leg to the starting position.",
+            "Repeat for 10-20 repetitions, and then switch to the other leg."
+        ],
+        "ar": [
+            "استلقِ على ظهرك ومدّ ساقًا واحدة على الأرض.",
+            "ارفع الفخذ الآخر والركبة مثنية قرابة 90 درجة، واسند الفخذ بيديك عند الحاجة.",
+            "مدّ الركبة ببطء حتى تشعر بشد خلفية الفخذ دون ألم، ثم اثنها للعودة.",
+            "كرر العدد المناسب ثم بدّل الساق؛ لا تجبر مدى الحركة."
+        ]
+    },
+    "Inchworm": {
+        "en": [
+            "Stand with your feet close together. Keeping your legs straight, stretch down and put your hands on the floor directly in front of you. This will be your starting position.",
+            "Begin by walking your hands forward slowly, alternating your left and your right. As you do so, bend only at the hip, keeping your legs straight.",
+            "Keep going until your body is parallel to the ground in a pushup position.",
+            "Now, keep your hands in place and slowly take short steps with your feet, moving only a few inches at a time.",
+            "Continue walking until your feet are by hour hands, keeping your legs straight as you do so."
+        ],
+        "ar": [
+            "قف والقدمان متقاربتان، ثم انحنِ من الورك وضع اليدين على الأرض مع ثني الركبتين قليلًا عند الحاجة.",
+            "امشِ باليدين للأمام بالتناوب مع إبقاء الجذع مشدودًا.",
+            "توقف في وضع بلانك مستقيم دون هبوط الحوض.",
+            "امشِ بالقدمين بخطوات قصيرة نحو اليدين مع رفع الوركين تدريجيًا.",
+            "كرر ببطء وتجنب إجهاد أسفل الظهر."
+        ]
+    },
+    "Standing_Hip_Circles": {
+        "en": [
+            "Begin standing on one leg, holding to a vertical support.",
+            "Raise the unsupported knee to 90 degrees. This will be your starting position.",
+            "Open the hip as far as possible, attempting to make a big circle with your knee.",
+            "Perform this movement slowly for a number of repetitions, and repeat on the other side."
+        ],
+        "ar": [
+            "قف على ساق واحدة واستند إلى دعامة ثابتة عند الحاجة.",
+            "ارفع الركبة الحرة أمامك قرابة 90 درجة مع تثبيت الجذع.",
+            "افتح الورك وارسم دائرة بطيئة بالركبة ضمن مدى مريح دون تدوير الحوض كله.",
+            "أكمل التكرارات ثم اعكس الاتجاه وبدّل الساق."
+        ]
+    },
+    "Calves-SMR": {
+        "en": [
+            "Begin seated on the floor. Place a foam roller underneath your lower leg. Your other leg can either be crossed over the opposite or be placed on the floor, supporting some of your weight. This will be your starting position.",
+            "Place your hands to your side or just behind you, and press down to raise your hips off of the floor, placing much of your weight against your calf muscle. Roll from below the knee to above the ankle, pausing at points of tension for 10-30 seconds. Repeat for the other leg."
+        ],
+        "ar": [
+            "اجلس وضع الفوم رول تحت عضلة السمانة، واستخدم اليدين لرفع الحوض قليلًا والتحكم في مقدار الضغط.",
+            "مرّر الرول ببطء بين أسفل الركبة وفوق الكاحل وتوقف عند الشد المحتمل 10–30 ثانية؛ خفف الضغط عند ألم حاد أو تنميل ثم بدّل الساق."
+        ]
+    },
+    "Latissimus_Dorsi-SMR": {
+        "en": [
+            "While lying on the floor, place a foam roll under your back and to one side, just behind your arm pit. This will be your starting position.",
+            "Keep the arm of the side being stretched behind and to the side of you as you shift your weight onto your lats, keeping your upper body off of the ground. Hold for 10-30 seconds, and switch sides."
+        ],
+        "ar": [
+            "استلقِ على جانبك وضع الفوم رول تحت الظهر العريض قرب الإبط، مع دعم الجسم بالذراع الأخرى.",
+            "حرّك الجسم ببطء ضمن نطاق قصير، وتوقف 10–30 ثانية عند الشد المحتمل ثم بدّل الجانب؛ أوقف الضغط إذا ظهر ألم حاد أو تنميل."
+        ]
+    },
     "Incline_Dumbbell_Press": {
         "en": [
             "Lie back on an incline bench with a dumbbell in each hand atop your thighs. The palms of your hands will be facing each other.",
