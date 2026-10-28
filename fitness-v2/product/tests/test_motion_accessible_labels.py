@@ -9,6 +9,7 @@ APP_PATH = PULSE / "app.js"
 HTML_PATH = PULSE / "index.html"
 EXERCISES_PATH = PULSE / "data" / "exercises.js"
 MOTION_PATH = PULSE / "data" / "motion-manifest.json"
+CSS_PATH = PULSE / "styles.css"
 
 
 def load_exercises():
@@ -26,6 +27,7 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
         cls.html = HTML_PATH.read_text(encoding="utf-8")
         cls.exercises = {item["id"]: item for item in load_exercises()}
         cls.motion = json.loads(MOTION_PATH.read_text(encoding="utf-8"))
+        cls.css = CSS_PATH.read_text(encoding="utf-8")
 
     def test_motion_labels_are_localized_by_actual_media_kind(self):
         self.assertIn("function motionAccessibleLabel(item, entry = motionAsset(item))", self.app)
@@ -99,7 +101,9 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
         bind_start = self.app.index("function bind()")
         preference_code = self.app[preference_start:bind_start]
         self.assertIn("function syncActiveDemoPlayback()", preference_code)
-        self.assertIn("if(reduced || document.hidden || !workoutVisible){video.pause();return;}", preference_code)
+        self.assertIn("if(reduced && !activeDemoManualPlay){video.pause();return;}", preference_code)
+        self.assertIn("if(document.hidden || !workoutVisible){", preference_code)
+        self.assertIn("if(activeDemoManualPlay){activeDemoManualPlay=false;video.loop=true;}", preference_code)
         self.assertIn("Motion paused by reduced-motion preference", preference_code)
         self.assertIn("function bindReducedMotionPreference()", preference_code)
         self.assertIn("media.addEventListener('change',onChange)", preference_code)
@@ -127,6 +131,28 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
         self.assertIn("const explicitId = byId('activeWorkoutScreen')?.dataset?.exerciseId;", motion_runtime)
         self.assertIn("if (exact) return exact;", motion_runtime)
         self.assertIn("attributeFilter: ['class', 'data-exercise-id']", motion_runtime)
+
+    def test_reduced_motion_offers_accessible_one_shot_demo_playback(self):
+        button = next(line for line in self.html.splitlines() if 'id="activeDemoPlayOnce"' in line)
+        self.assertIn('type="button"', button)
+        self.assertIn('class="button secondary active-demo-play-once hidden"', button)
+        self.assertIn('data-i18n="playDemoOnce"', button)
+        self.assertIn('aria-controls="activeDemoVideo"', button)
+        self.assertIn('aria-describedby="activeDemoPhase"', button)
+        self.assertIn("playDemoOnce:'شغّل العرض مرة واحدة'", self.app)
+        self.assertIn("playDemoOnce:'Play demo once'", self.app)
+        self.assertIn("motionDemoPlayingOnce:'يتم تشغيل العرض مرة واحدة'", self.app)
+        self.assertIn("motionDemoPlayingOnce:'Playing demo once'", self.app)
+        self.assertIn("function playActiveDemoOnce()", self.app)
+        self.assertIn("video.loop=false;", self.app)
+        self.assertIn("video.currentTime=0;", self.app)
+        self.assertIn("playback.catch", self.app)
+        self.assertIn("$('activeDemoVideo').addEventListener('ended'", self.app)
+        self.assertIn("const canOfferManual=reduced && workoutVisible && !document.hidden && !manualPlayback;", self.app)
+        self.assertIn("if (activeDemoExerciseId !== item.id)", self.app)
+        self.assertIn("try{video.currentTime=0;}catch{}", self.app)
+        self.assertIn(".active-demo-play-once{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);", self.css)
+        self.assertIn(".active-demo-play-once:active{transform:translate(-50%,-49%)}", self.css)
 
 
 if __name__ == "__main__":
