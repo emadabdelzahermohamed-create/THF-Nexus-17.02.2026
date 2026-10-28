@@ -1372,6 +1372,138 @@ STEP_OVERRIDES = {
             "عد إلى الوسط ببطء ثم كرر للجهة الأخرى مع ثبات الحوض واستمرار التنفس.",
         ]
     },
+    "Heavy_Bag_Thrust": {
+        "en": [
+            "Utilize a heavy bag for this exercise. Assume an upright stance next to the bag, with your feet staggered, fairly wide apart. Place your hand on the bag at about chest height. This will be your starting position.",
+            "Begin by twisting at the waist, pushing the bag forward as hard as possible. Perform this move quickly, pushing the bag away from your body.",
+            "Receive the bag as it swings back by reversing these steps."
+        ],
+        "ar": [
+            "قف بجانب الكيس بوقفة متدرجة وثابتة، والقدمان أوسع قليلًا، وضع اليد على مستوى الصدر.",
+            "لف الجذع والورك بتحكم وادفع الكيس للأمام من الصدر، مع ثبات القدمين وعدم المبالغة في تدوير أسفل الظهر.",
+            "استقبل رجوع الكيس بثني المرفقين والوركين قليلًا، ثم استعد للدفعة التالية دون فقدان التوازن."
+        ]
+    },
+    "Ankle_Circles": {
+        "en": [
+            "Use a sturdy object like a squat rack to hold yourself.",
+            "Lift the right leg in the air (just around 2 inches from the floor) and perform a circular motion with the big toe. Pretend that you are drawing a big circle with it. One circle equals 1 repetition. Breathe normally as you perform the movement.",
+            "When you are done with the right foot, then repeat with the left leg."
+        ],
+        "ar": [
+            "أمسك حاملًا ثابتًا وارفع القدم اليمنى قليلًا عن الأرض مع إرخاء الركبة.",
+            "ارسم دوائر بطيئة بإصبع القدم الكبير من مفصل الكاحل، مع إبقاء الساق ثابتة والتنفس طبيعيًا.",
+            "أكمل العدد ثم بدّل القدم، وصغّر الدائرة إذا ظهر شد أو ألم."
+        ]
+    },
+    "Standing_Gastrocnemius_Calf_Stretch": {
+        "en": [
+            "Place your right heel on a step with your knee extended and lean forward to grab your right toe with your right hand. Your left knee should be slightly bent and your back should be straight.",
+            "Support your weight on your left leg and place your left hand on your left thigh.",
+            "Pull your right toes toward your knee until you feel a stretch in your calf."
+        ],
+        "ar": [
+            "ضع كعب القدم اليمنى على درجة ثابتة والركبة ممدودة، وأمسك أصابع القدم إن أمكن مع استقامة الظهر.",
+            "اسند اليد الأخرى على الفخذ المقابل وثبّت الوزن على الساق الداعمة دون ضغط على مفصل الركبة.",
+            "اسحب أصابع القدم برفق نحو الساق حتى تشعر بتمدد في السمانة، ثم بدّل الجانب دون ارتداد."
+        ]
+    },
+    "Worlds_Greatest_Stretch": {
+        "en": [
+            "This is a three-part stretch. Begin by lunging forward, with your front foot flat on the ground and on the toes of your back foot. With your knees bent, squat down until your knee is almost touching the ground. Keep your torso erect, and hold this position for 10-20 seconds.",
+            "Now, place the arm on the same side as your front leg on the ground, with the elbow next to the foot. Your other hand should be placed on the ground, parallel to your lead leg, to help support you during this portion of the stretch.",
+            "After 10-20 seconds, place your hands on either side of your front foot. Raise the toes of the front foot off of the ground, and straighten your leg. You may need to reposition your rear leg to do so. Hold for 10-20 seconds, and then repeat the entire sequence for the other side."
+        ],
+        "ar": [
+            "اتخذ اندفاعًا أماميًا والقدم الأمامية مسطحة والخلفية على الأصابع، واخفض الحوض ضمن مدى مريح 10–20 ثانية.",
+            "ضع اليد بجانب القدم الأمامية وأنزل المرفق نحو الأرض فقط بقدر يسمح بثبات الجذع والتنفس.",
+            "ضع اليدين على جانبي القدم الأمامية، وارفع أصابعها ومدّ الساق الأمامية تدريجيًا 10–20 ثانية، ثم بدّل الجهة."
+        ]
+    },
+    "Hamstring-SMR": {
+        "en": [
+            "In a seated position, extend your legs over a foam roll so that it is position on the back of the upper legs. Place your hands to the side or behind you to help support your weight. This will be your starting position.",
+            "Using your hands, lift your hips off of the floor and shift your weight on the foam roll to one leg. Relax the hamstrings of the leg you are stretching.",
+            "Roll over the foam from below the hip to above the back of the knee, pausing at points of tension for 10-30 seconds. Repeat for the other leg."
+        ],
+        "ar": [
+            "اجلس ومد الساقين فوق الفوم رول أسفل خلفية الفخذ، واسند اليدين خلف الجسم لتخفيف الوزن.",
+            "ارفع الحوض قليلًا وانقل ضغطًا محتملًا إلى ساق واحدة مع إرخاء العضلة.",
+            "مرّر الرول من أسفل الورك إلى أعلى خلف الركبة وتوقف 10–30 ثانية عند الشد، ثم بدّل الساق؛ أوقف الضغط عند التنميل أو الألم الحاد."
+        ]
+    },
+    "Iliotibial_Tract-SMR": {
+        "en": [
+            "Lay on your side, with the bottom leg placed onto a foam roller between the hip and the knee. The other leg can be crossed in front of you.",
+            "Place as much of your weight as is tolerable onto your bottom leg; there is no need to keep your bottom leg in contact with the ground. Be sure to relax the muscles of the leg you are stretching.",
+            "Roll your leg over the foam from you hip to your knee, pausing for 10-30 seconds at points of tension. Repeat with the opposite leg."
+        ],
+        "ar": [
+            "استلقِ على الجانب وضع الفوم رول تحت الجانب الخارجي للفخذ بين الورك والركبة، مع عبور الساق الأخرى أمامك للدعم.",
+            "انقل وزنًا محتملًا على الساق السفلية واستخدم الذراعين والساق العليا لضبط الضغط دون إجبار الركبة.",
+            "مرّر الرول ببطء من قرب الورك باتجاه الركبة، وتوقف 10–30 ثانية عند الشد ثم بدّل الجانب؛ خفف الضغط عند التنميل أو الألم الحاد."
+        ]
+    },
+    "Runners_Stretch": {
+        "en": [
+            "It's easiest to get into this stretch if you start standing up, put one leg behind you, and slowly lower your torso down to the floor.",
+            "Keep the front heel on the floor (if it lifts up, scoot your other leg further back).",
+            "Place your hands on either side of your front leg. To get more out of this stretch, push your butt up toward the ceiling, and then gradually lower it back toward the floor. You'll Stretch the hip flexor of the back leg and the hamstring and buttocks of the front."
+        ],
+        "ar": [
+            "ابدأ واقفًا ثم اخطُ بساق واحدة إلى الخلف وأنزل اليدين والجذع تدريجيًا نحو الأرض مع دعم ثابت.",
+            "أبقِ كعب القدم الأمامية ملامسًا للأرض؛ إن ارتفع، أرجع الساق الخلفية قليلًا بدل دفع الكاحل.",
+            "ضع اليدين على جانبي القدم الأمامية وارفع الورك قليلًا ثم اخفضه بتحكم لتمديد مثنيات الورك وخلفية الفخذ، ثم بدّل الجهة."
+        ]
+    },
+    "Dumbbell_Scaption": {
+        "en": [
+            "This corrective exercise strengthens the muscles that stabilize your shoulder blade. Hold a light weight in each hand, hanging at your sides. Your thumbs should pointing up.",
+            "Begin the movement raising your arms out in front of you, about 30 degrees off center. Your arms should be fully extended as you perform the movement.",
+            "Continue until your arms are parallel to the ground, and then return to the starting position."
+        ],
+        "ar": [
+            "أمسك دمبل خفيفًا في كل يد بجانب الجسم، والإبهامان للأعلى والكتفان منخفضان.",
+            "ارفع الذراعين للأمام وللجانب بزاوية تقارب 30 درجة عن خط الجسم مع ثبات الجذع والمرفقين.",
+            "توقف عندما تصبح الذراعان بمستوى الكتفين ثم اخفضهما ببطء دون تأرجح أو ألم."
+        ]
+    },
+    "Cat_Stretch": {
+        "en": [
+            "Position yourself on the floor on your hands and knees.",
+            "Pull your belly in and round your spine, lower back, shoulders, and neck, letting your head drop.",
+            "Hold for 15 seconds."
+        ],
+        "ar": [
+            "ابدأ على اليدين والركبتين، واليدان أسفل الكتفين والركبتان أسفل الوركين.",
+            "اسحب البطن للداخل ودوّر الظهر للأعلى تدريجيًا مع إرخاء الرقبة والسماح للرأس بالانخفاض.",
+            "اثبت 15 ثانية مع التنفس الطبيعي ثم عد إلى وضع محايد دون دفع أسفل الظهر."
+        ]
+    },
+    "Childs_Pose": {
+        "en": [
+            "Get on your hands and knees, walk your hands in front of you.",
+            "Lower your buttocks down to sit on your heels. Let your arms drag along the floor as you sit back to stretch your entire spine.",
+            "Once you settle onto your heels, bring your hands next to your feet and relax. \"breathe\" into your back. Rest your forehead on the floor. Avoid this position if you have knee problems."
+        ],
+        "ar": [
+            "ابدأ على اليدين والركبتين وامشِ باليدين للأمام مع إبقاء الركبتين ضمن مدى مريح.",
+            "أرجع الحوض باتجاه الكعبين ومد الذراعين على الأرض، مع إطالة العمود الفقري دون إجبار الركبتين.",
+            "استقر بالجبهة على وسادة أو الأرض وتنفس بهدوء؛ تجنب الوضع إذا كان يثير ألم الركبة."
+        ]
+    },
+    "Pelvic_Tilt_Into_Bridge": {
+        "en": [
+            "Lie down with your feet on the floor, heels directly under your knees.",
+            "Lift only your tailbone to the ceiling to stretch your lower back. (Don't lift the entire spine yet.) Pull in your stomach.",
+            "To go into a bridge, lift the entire spine except the neck."
+        ],
+        "ar": [
+            "استلقِ على الظهر والقدمان على الأرض والكعبان تحت الركبتين تقريبًا.",
+            "أمل الحوض وارفع عظم العصعص قليلًا مع شد البطن دون رفع الظهر كاملًا.",
+            "ادفع القدمين وارفع الجذع إلى وضع الجسر مع إبقاء الرقبة على الأرض، ثم اخفض العمود الفقري بتحكم."
+        ]
+    },
 }
 
 # id, Arabic name, product section, goal override (optional)
