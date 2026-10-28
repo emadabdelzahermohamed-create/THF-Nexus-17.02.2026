@@ -68,12 +68,25 @@ EXPECTED_SOURCE_IDS = {
     "Dumbbell_Step_Ups",
     "Seated_Cable_Rows",
     "Leg_Press",
+    "Dips_-_Triceps_Version",
+    "Barbell_Step_Ups",
+    "Platform_Hamstring_Slides",
+    "Standing_Dumbbell_Calf_Raise",
+    "Cable_Crossover",
+    "Close-Grip_Front_Lat_Pulldown",
+    "Dip_Machine",
+    "Face_Pull",
+    "Front_Barbell_Squat",
+    "Hammer_Curls",
 }
 
 
 EXPECTED_ARABIC_NAMES = {
     "Fast_Skipping": "قفز متناوب سريع",
     "Box_Skip": "قفز متتابع بين الصناديق",
+    "Barbell_Step_Ups": "صعود الصندوق بالبار",
+    "Platform_Hamstring_Slides": "انزلاق الكعبين لثني خلفية الفخذ",
+    "Standing_Dumbbell_Calf_Raise": "رفع السمانة واقفًا بالدمبل",
 }
 
 
