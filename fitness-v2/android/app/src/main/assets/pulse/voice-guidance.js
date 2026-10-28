@@ -50,7 +50,20 @@
     return true;
   }
 
-  return {isEnabled, setEnabled, speak};
+  function speakStep(step, index, language = 'en', {force = false} = {}) {
+    if (!force && !isEnabled()) return false;
+    if (typeof step !== 'string' || !step.trim()) return false;
+    const speakSegment = typeof speakNative === 'function' ? speakNative : speakWeb;
+    if (typeof speakSegment !== 'function') return false;
+    const numericIndex = Number(index);
+    const stepNumber = (Number.isFinite(numericIndex) ? Math.max(0, Math.floor(numericIndex)) : 0) + 1;
+    const arabic = language === 'ar';
+    const locale = arabic ? 'ar-EG' : 'en-US';
+    speakSegment(`${arabic ? 'الخطوة' : 'Step'} ${stepNumber}. ${step.trim()}`, locale, false);
+    return true;
+  }
+
+  return {isEnabled, setEnabled, speak, speakStep};
   }
 
   return {createVoiceGuidance};
