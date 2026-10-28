@@ -98,6 +98,16 @@ EXPECTED_SOURCE_IDS = {
     "Side_Lateral_Raise",
     "Smith_Machine_Bench_Press",
     "Smith_Machine_Squat",
+    "Piriformis-SMR",
+    "Quadriceps-SMR",
+    "External_Rotation_with_Band",
+    "Full_Range-Of-Motion_Lat_Pulldown",
+    "One_Arm_Lat_Pulldown",
+    "Straight-Arm_Dumbbell_Pullover",
+    "Medicine_Ball_Chest_Pass",
+    "Single-Leg_Lateral_Hop",
+    "Dancers_Stretch",
+    "Spinal_Stretch",
 }
 
 
