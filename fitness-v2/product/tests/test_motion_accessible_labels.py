@@ -93,7 +93,7 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
                 item["id"] not in self.motion
                 and isinstance(assets, list)
                 and len(assets) == 2
-                and all(isinstance(asset, str) and re.fullmatch(r"media/free-exercise-db/[A-Za-z0-9_/-]+\\.jpg", asset, re.IGNORECASE) for asset in assets)
+                and all(isinstance(asset, str) and re.fullmatch(r"media/free-exercise-db/[A-Za-z0-9_/-]+\.jpg", asset, re.IGNORECASE) for asset in assets)
             )
             if safe_pair:
                 reference_only.append(item["id"])
