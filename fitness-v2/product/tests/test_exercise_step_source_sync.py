@@ -58,6 +58,16 @@ EXPECTED_SOURCE_IDS = {
     "Superman",
     "Flutter_Kicks",
     "Downward_Facing_Balance",
+    "Barbell_Squat",
+    "Bent_Over_Barbell_Row",
+    "Dumbbell_Bench_Press",
+    "Dumbbell_Bicep_Curl",
+    "Dumbbell_Shoulder_Press",
+    "Parallel_Bar_Dip",
+    "Barbell_Hip_Thrust",
+    "Dumbbell_Step_Ups",
+    "Seated_Cable_Rows",
+    "Leg_Press",
 }
 
 
