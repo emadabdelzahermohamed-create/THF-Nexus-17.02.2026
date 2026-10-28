@@ -98,5 +98,26 @@ class ActiveWorkoutMuscleGroupsTests(unittest.TestCase):
         self.assertIn(".muscle-group{display:grid;gap:5px;", self.css)
 
 
+    def test_missing_supporting_muscles_are_explicitly_marked_undocumented(self):
+        missing = [
+            item["id"]
+            for item in self.exercises
+            if not item["muscles"]["secondary"]["en"]
+        ]
+        self.assertEqual(24, len(missing))
+        self.assertIn(
+            "supportingMusclesUndocumented:'لم تُوثَّق العضلات المساعدة لهذا التمرين بعد.'",
+            self.app,
+        )
+        self.assertIn(
+            "supportingMusclesUndocumented:'Supporting muscles are not documented for this exercise yet.'",
+            self.app,
+        )
+        self.assertIn("const supportingMuscleGroup = supportingMuscles.length", self.app)
+        self.assertIn("t('supportingMusclesUndocumented')", self.app)
+        self.assertIn("muscle-coverage-note", self.app)
+        self.assertIn(".muscle-coverage-note{", self.css)
+
+
 if __name__ == "__main__":
     unittest.main()
