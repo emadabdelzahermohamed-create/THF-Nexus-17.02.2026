@@ -17,7 +17,7 @@ class ActiveInstructionAccessibilityTest(unittest.TestCase):
         self.assertIn("readCurrentInstructionStep:'اقرأ الخطوة الحالية صوتيًا'", self.app)
         self.assertIn("readCurrentInstructionStep:'Read the current step aloud'", self.app)
         self.assertIn("speakCue.setAttribute('aria-label', steps.length", self.app)
-        self.assertIn("`${t('readCurrentInstructionStep')}, ${stepStatus}`", self.app)
+        self.assertIn("state.lang === 'ar' ? '، ' : ', '", self.app)
         self.assertIn("t('instructionStepsUnavailable')", self.app)
 
     def test_current_cue_has_a_polite_atomic_live_region(self):
