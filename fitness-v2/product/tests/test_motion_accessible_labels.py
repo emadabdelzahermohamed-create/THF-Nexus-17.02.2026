@@ -81,5 +81,37 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
         self.assertEqual(7, len(self.motion))
 
 
+    def test_active_workout_demo_respects_reduced_motion_and_os_changes(self):
+        show_start = self.app.index("function showScreen")
+        show_end = self.app.index("function applyLanguage", show_start)
+        show_screen = self.app[show_start:show_end]
+        self.assertIn("syncActiveDemoPlayback();", show_screen)
+        self.assertIn("preferredReducedMotion() ? 'auto' : 'smooth'", show_screen)
+        self.assertNotIn("demoVideo.play()", show_screen)
+
+        active_start = self.app.index("function renderActiveMotion(item)")
+        active_end = self.app.index("function renderActiveWorkout()", active_start)
+        active_motion = self.app[active_start:active_end]
+        self.assertIn("syncActiveDemoPlayback();", active_motion)
+        self.assertNotIn("if (!document.hidden) video.play()", active_motion)
+
+        preference_start = self.app.index("function preferredReducedMotion()")
+        bind_start = self.app.index("function bind()")
+        preference_code = self.app[preference_start:bind_start]
+        self.assertIn("function syncActiveDemoPlayback()", preference_code)
+        self.assertIn("if(reduced || document.hidden || !workoutVisible){video.pause();return;}", preference_code)
+        self.assertIn("Motion paused by reduced-motion preference", preference_code)
+        self.assertIn("function bindReducedMotionPreference()", preference_code)
+        self.assertIn("media.addEventListener('change',onChange)", preference_code)
+        self.assertIn("media.addListener(onChange)", preference_code)
+        self.assertIn("store.getItem('pulse.v2.reduceMotion')!==null", preference_code)
+        self.assertIn("syncActiveDemoPlayback();", preference_code)
+
+        visibility_start = self.app.index("document.addEventListener('visibilitychange',()=>{syncActiveDemoPlayback();")
+        visibility = self.app[visibility_start:visibility_start + 260]
+        self.assertIn("syncActiveDemoPlayback();", visibility)
+        active_video = next(line for line in self.html.splitlines() if 'id="activeDemoVideo"' in line)
+        self.assertNotIn("autoplay", active_video)
+
 if __name__ == "__main__":
     unittest.main()
