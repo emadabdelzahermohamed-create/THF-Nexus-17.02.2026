@@ -113,5 +113,21 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
         active_video = next(line for line in self.html.splitlines() if 'id="activeDemoVideo"' in line)
         self.assertNotIn("autoplay", active_video)
 
+
+    def test_active_reference_animation_uses_exact_exercise_id_before_rendering(self):
+        workout_start = self.app.index("function renderActiveWorkout()")
+        workout_end = self.app.index("\n  function ", workout_start + 1)
+        self.assertGreater(workout_end, workout_start)
+        workout = self.app[workout_start:workout_end]
+        identity_assignment = "$('activeWorkoutScreen').dataset.exerciseId = item.id;"
+        self.assertIn(identity_assignment, workout)
+        self.assertLess(workout.index(identity_assignment), workout.index("renderActiveMotion(item);"))
+
+        motion_runtime = (PULSE / "data" / "motion-manifest.js").read_text(encoding="utf-8")
+        self.assertIn("const explicitId = byId('activeWorkoutScreen')?.dataset?.exerciseId;", motion_runtime)
+        self.assertIn("if (exact) return exact;", motion_runtime)
+        self.assertIn("attributeFilter: ['class', 'data-exercise-id']", motion_runtime)
+
+
 if __name__ == "__main__":
     unittest.main()
