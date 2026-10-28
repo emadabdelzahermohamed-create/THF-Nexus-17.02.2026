@@ -5,9 +5,9 @@
   "sectionCounts": {
     "boxing": 6,
     "calisthenics": 6,
-    "cycling": 6,
+    "cycling": 3,
     "football": 6,
-    "gym": 36,
+    "gym": 39,
     "hiit": 6,
     "home": 10,
     "mobility": 6,
@@ -26,5 +26,5 @@
     "licenseSha256": "6b0382b16279f26ff69014300541967a356a666eb0b91b422f6862f6b7dad17e",
     "datasetSha256": "5bb747e3fc658f095a60dcbf6d53c96627acdcc6ffb6fffde86f7e26995d40bf"
   },
-  "catalogSha256": "0adcbb4e2e2a5a853f9728cd2e3239961e8600c711793bee00208ef095171fea"
+  "catalogSha256": "a40620908132de316f747fa8591454d857c958fe9c0e0aa8794f6a70c35f1591"
 }

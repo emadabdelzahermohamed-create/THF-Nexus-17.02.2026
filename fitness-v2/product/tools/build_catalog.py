@@ -786,6 +786,160 @@ STEP_OVERRIDES = {
         ]
     }
 
+    "Dips_-_Triceps_Version": {
+        "en": [
+            "To get into the starting position, hold your body at arm's length with your arms nearly locked above the bars.",
+            "Now, inhale and slowly lower yourself downward. Your torso should remain upright and your elbows should stay close to your body. This helps to better focus on tricep involvement. Lower yourself until there is a 90 degree angle formed between the upper arm and forearm.",
+            "Then, exhale and push your torso back up using your triceps to bring your body back to the starting position.",
+            "Repeat the movement for the prescribed amount of repetitions."
+        ],
+        "ar": [
+            "ابدأ أعلى العارضتين بذراعين شبه ممدودتين مع تثبيت الكتفين.",
+            "خذ شهيقًا وانزل ببطء مع إبقاء الجذع قائمًا والمرفقين قريبين من الجسم.",
+            "توقف عند مدى مريح للمرفقين؛ لا تهبط إلى حد ألم الكتف.",
+            "ازفر وادفع بالعضلة ثلاثية الرؤوس للعودة دون قفل قاسٍ للمرفقين."
+        ]
+    },
+    "Barbell_Step_Ups": {
+        "en": [
+            "Stand up straight while holding a barbell placed on the back of your shoulders (slightly below the neck) and stand upright behind an elevated platform (such as the one used for spotting behind a flat bench). This is your starting position.",
+            "Place the right foot on the elevated platform. Step on the platform by extending the hip and the knee of your right leg. Use the heel mainly to lift the rest of your body up and place the foot of the left leg on the platform as well. Breathe out as you execute the force required to come up.",
+            "Step down with the left leg by flexing the hip and knee of the right leg as you inhale. Return to the original standing position by placing the right foot of to next to the left foot on the initial position.",
+            "Repeat with the right leg for the recommended amount of repetitions and then perform with the left leg."
+        ],
+        "ar": [
+            "ضع قدمًا كاملة على صندوق ثابت، وثبّت البار على أعلى الظهر مع شد الجذع.",
+            "ادفع بالكعب والقدم المرتكزة واصعد حتى الوقوف دون قفزة من القدم الخلفية.",
+            "اصعد بالقدم الأخرى ثم انزل بتحكم خطوة واحدة في كل مرة.",
+            "أكمل العدات بساق واحدة ثم بدّل الجهة، وخفّض ارتفاع الصندوق إذا اختل التوازن."
+        ]
+    },
+    "Platform_Hamstring_Slides": {
+        "en": [
+            "For this movement a wooden floor or similar is needed. Lay on your back with your legs extended. Place a gym towel or a light weight underneath your heel. This will be your starting position.",
+            "Begin the movement by flexing the knee, keeping your other leg straight.",
+            "Continue bringing the heel closer to you, sliding it on the floor.",
+            "At full knee flexion, reverse the movement to return to the starting position."
+        ],
+        "ar": [
+            "استلقِ على الظهر وضع الكعبين على سطح منزلق ثابت مع مد الساقين.",
+            "شد عضلات البطن والألوية وارفع الحوض إلى جسر مع إبقاء الضلوع والحوض بمحاذاة.",
+            "اسحب الكعبين نحو الجسم بثني الركبتين مع الحفاظ على ارتفاع الحوض.",
+            "مد الساقين ببطء دون إسقاط الحوض، وقلّل المدى إذا تشنجت خلفية الفخذ."
+        ]
+    },
+    "Standing_Dumbbell_Calf_Raise": {
+        "en": [
+            "Stand with your torso upright holding two dumbbells in your hands by your sides. Place the ball of the foot on a sturdy and stable wooden board (that is around 2-3 inches tall) while your heels extend off and touch the floor. This will be your starting position.",
+            "With the toes pointing either straight (to hit all parts equally), inwards (for emphasis on the outer head) or outwards (for emphasis on the inner head), raise the heels off the floor as you exhale by contracting the calves. Hold the top contraction for a second.",
+            "As you inhale, go back to the starting position by slowly lowering the heels.",
+            "Repeat for the recommended amount of times."
+        ],
+        "ar": [
+            "قف طويلًا والدمبلان بجانب الجسم، وضع مقدمة القدمين على حافة ثابتة إن توفر دعم آمن.",
+            "اخفض الكعبين قليلًا تحت مستوى مقدمة القدمين دون ارتداد.",
+            "ارفع الكعبين بالضغط على عضلتي السمانة وتوقف لحظة في الأعلى.",
+            "اخفض الكعبين ببطء مع إبقاء الركبتين والجذع ثابتين."
+        ]
+    },
+    "Cable_Crossover": {
+        "en": [
+            "To get yourself into the starting position, place the pulleys on a high position (above your head), select the resistance to be used and hold the pulleys in each hand.",
+            "Step forward in front of an imaginary straight line between both pulleys while pulling your arms together in front of you. Your torso should have a small forward bend from the waist. This will be your starting position.",
+            "With a slight bend on your elbows in order to prevent stress at the biceps tendon, extend your arms to the side (straight out at both sides) in a wide arc until you feel a stretch on your chest. Breathe in as you perform this portion of the movement. Keep in mind that throughout the movement, the arms and torso should remain stationary; the movement should only occur at the shoulder joint.",
+            "Return your arms back to the starting position as you breathe out. Make sure to use the same arc of motion used to lower the weights.",
+            "Hold for a second at the starting position and repeat the movement for the prescribed amount of repetitions."
+        ],
+        "ar": [
+            "اضبط البكرتين في موضع مرتفع واختر حملًا يمكن التحكم فيه، ثم أمسك المقبضين وتقدم خطوة.",
+            "مل قليلًا من الورك مع ثني بسيط للمرفقين وثبات الجذع.",
+            "افتح الذراعين بقوس واسع حتى تشعر بتمدد مريح في الصدر دون شد مؤلم للكتف.",
+            "قرّب اليدين أمام الصدر بالقوس نفسه مع الزفير دون اصطدام الأوزان.",
+            "أعد الذراعين ببطء وكرر مع الحفاظ على زاوية المرفقين."
+        ]
+    },
+    "Close-Grip_Front_Lat_Pulldown": {
+        "en": [
+            "Sit down on a pull-down machine with a wide bar attached to the top pulley. Make sure that you adjust the knee pad of the machine to fit your height. These pads will prevent your body from being raised by the resistance attached to the bar.",
+            "Grab the bar with the palms facing forward using the prescribed grip. Note on grips: For a wide grip, your hands need to be spaced out at a distance wider than your shoulder width. For a medium grip, your hands need to be spaced out at a distance equal to your shoulder width and for a close grip at a distance smaller than your shoulder width.",
+            "As you have both arms extended in front of you - while holding the bar at the chosen grip width - bring your torso back around 30 degrees or so while creating a curvature on your lower back and sticking your chest out. This is your starting position.",
+            "As you breathe out, bring the bar down until it touches your upper chest by drawing the shoulders and the upper arms down and back. Concentrate on squeezing the back muscles once you reach the full contracted position. The upper torso should remain stationary (only the arms should move). The forearms should do no other work except for holding the bar; therefore do not try to pull the bar down using the forearms.",
+            "After a second in the contracted position, while squeezing your shoulder blades together, slowly raise the bar back to the starting position when your arms are fully extended and the lats are fully stretched. Inhale during this portion of the movement.",
+            "6. Repeat this motion for the prescribed amount of repetitions."
+        ],
+        "ar": [
+            "اجلس واضبط وسادة الفخذين لمنع ارتفاع الجسم أثناء السحب.",
+            "أمسك البار بقبضة أضيق من الكتفين مع مد الذراعين.",
+            "ارفع الصدر قليلًا مع ميل بسيط للجذع وثبات الحوض.",
+            "ازفر واسحب المرفقين إلى أسفل حتى يقترب البار من أعلى الصدر، لا خلف الرقبة.",
+            "توقف لحظة مع إبعاد الكتفين عن الأذنين وتجنب التأرجح.",
+            "أعد البار ببطء إلى المد الكامل بتحكم."
+        ]
+    },
+    "Dip_Machine": {
+        "en": [
+            "Sit securely in a dip machine, select the weight and firmly grasp the handles.",
+            "Now keep your elbows in at your sides in order to place emphasis on the triceps. The elbows should be bent at a 90 degree angle.",
+            "As you contract the triceps, extend your arms downwards as you exhale. At the bottom of the movement, focus on keeping a little bend in your arms to keep tension on the triceps muscle.",
+            "Now slowly let your arms come back up to the starting position as you inhale.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "اضبط المقعد والحمل واجلس مع قبضة ثابتة على مقابض الجهاز.",
+            "أبقِ المرفقين قريبين من الجذع والكتفين منخفضين.",
+            "ازفر ومد المرفقين لتحريك المقابض إلى أسفل دون قفل قاسٍ للمفاصل.",
+            "عد ببطء مع الشهيق حتى زاوية مريحة دون رفع الكتفين.",
+            "كرر دون تأرجح، وخفّض الحمل إذا فقدت التحكم."
+        ]
+    },
+    "Face_Pull": {
+        "en": [
+            "Set the rope or dual handles at face height and choose a light load; stand with a stable staggered stance.",
+            "Pull the rope toward your forehead, driving the elbows outward and back while separating your hands.",
+            "Pause with the upper arms near shoulder height; keep the ribs stacked and avoid shrugging or leaning back.",
+            "Extend your arms forward slowly and return without letting the weight pull your shoulders abruptly."
+        ],
+        "ar": [
+            "اضبط الحبل أو المقبضين عند مستوى الوجه واختر حملًا خفيفًا، ثم قف بوقفة ثابتة.",
+            "اسحب الحبل نحو الجبهة وحرّك المرفقين للخارج والخلف مع إبعاد اليدين.",
+            "توقف لحظة عندما يقترب العضدان من مستوى الكتفين، مع إبقاء الأضلاع فوق الحوض دون رفع الكتفين.",
+            "مد الذراعين إلى الأمام ببطء وعد دون ترك الوزن يجذب الكتفين فجأة."
+        ]
+    },
+    "Front_Barbell_Squat": {
+        "en": [
+            "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, bring your arms up under the bar while keeping the elbows high and the upper arm slightly above parallel to the floor. Rest the bar on top of the deltoids and cross your arms while grasping the bar for total control.",
+            "Lift the bar off the rack by first pushing with your legs and at the same time straightening your torso.",
+            "Step away from the rack and position your legs using a shoulder width medium stance with the toes slightly pointed out. Keep your head up at all times as looking down will get you off balance and also maintain a straight back. This will be your starting position. (Note: For the purposes of this discussion we will use the medium stance described above which targets overall development; however you can choose any of the three stances described in the foot positioning section).",
+            "Begin to slowly lower the bar by bending the knees as you maintain a straight posture with the head up. Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees (which is the point in which the upper legs are below parallel to the floor). Inhale as you perform this portion of the movement. If you performed the exercise correctly, the front of the knees should make an imaginary straight line with the toes that is perpendicular to the front. If your knees are past that imaginary line (if they are past your toes) then you are placing undue stress on the knee and the exercise has been performed incorrectly.",
+            "Begin to raise the bar as you exhale by pushing the floor mainly with the middle of your foot as you straighten the legs again and go back to the starting position.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "داخل حامل السكوات، اضبط مسامير الأمان أسفل أعمق وضع آمن؛ واستند بالبار على مقدمة الكتفين مع رفع المرفقين.",
+            "قف لرفع البار من الحامل، ثم ارجع خطوة أو خطوتين واضبط القدمين بعرض الكتفين تقريبًا.",
+            "خذ شهيقًا وشد الجذع، ثم انزل بالورك بين الركبتين مع إبقاء الجذع قائمًا والمرفقين مرتفعين.",
+            "اجعل الركبتين في اتجاه أصابع القدم وثبّت القدم كاملة، ولا تنزل أبعد من المدى الذي تتحكم فيه.",
+            "ازفر وادفع الأرض للوقوف مع منع الركبتين من الانهيار إلى الداخل.",
+            "أعد البار إلى الحامل بأمان بعد آخر عدة، وخفّض الحمل إذا هبط المرفقان أو انطوى الجذع."
+        ]
+    },
+    "Hammer_Curls": {
+        "en": [
+            "Stand up with your torso upright and a dumbbell on each hand being held at arms length. The elbows should be close to the torso.",
+            "The palms of the hands should be facing your torso. This will be your starting position.",
+            "Now, while holding your upper arm stationary, exhale and curl the weight forward while contracting the biceps. Continue to raise the weight until the biceps are fully contracted and the dumbbell is at shoulder level. Hold the contracted position for a brief moment as you squeeze the biceps. Focus on keeping the elbow stationary and only moving your forearm.",
+            "After the brief pause, inhale and slowly begin the lower the dumbbells back down to the starting position.",
+            "Repeat for the recommended amount of repetitions."
+        ],
+        "ar": [
+            "قف مستقيمًا والدمبلان بجانب الجسم والكفان في وضع محايد، مع إبقاء المرفقين قريبين من الجذع.",
+            "ثبّت العضدين وازفر أثناء ثني المرفقين لرفع الدمبلين دون تأرجح الجذع.",
+            "توقف عندما يقترب الدمبلان من الكتفين مع إبقاء الرسغين مستقيمين ودون رفع الكتفين.",
+            "اثبت لحظة دون دفع الوزن أو تحريك المرفقين إلى الأمام.",
+            "خذ شهيقًا واخفض الدمبلين ببطء إلى امتداد مريح للذراعين."
+        ]
+    },
 }
 
 # id, Arabic name, product section, goal override (optional)
@@ -857,9 +1011,9 @@ SELECTION = [
     ("Bicycling", "ركوب الدراجة", "cycling", "endurance"),
     ("Bicycling_Stationary", "دراجة ثابتة", "cycling", "endurance"),
     ("Recumbent_Bike", "دراجة ثابتة بمقعد خلفي", "cycling", "endurance"),
-    ("Barbell_Step_Ups", "صعود الصندوق بالبار للدراجات", "cycling", "strength"),
-    ("Platform_Hamstring_Slides", "انزلاق خلفية الفخذ للدراجات", "cycling", "strength"),
-    ("Standing_Dumbbell_Calf_Raise", "رفع السمانة بالدمبل للدراجات", "cycling", "strength"),
+    ("Barbell_Step_Ups", "صعود الصندوق بالبار", "gym", "strength"),
+    ("Platform_Hamstring_Slides", "انزلاق الكعبين لثني خلفية الفخذ", "gym", "strength"),
+    ("Standing_Dumbbell_Calf_Raise", "رفع السمانة واقفًا بالدمبل", "gym", "strength"),
     ("Rowing_Stationary", "تجديف ثابت", "hiit", "endurance"),
     ("Fast_Skipping", "قفز متناوب سريع", "boxing", "conditioning"),
     ("Medicine_Ball_Full_Twist", "دوران كامل بالكرة الطبية", "boxing", "power"),
