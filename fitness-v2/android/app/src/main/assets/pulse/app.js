@@ -262,7 +262,10 @@
     if (!hasSafeReferenceFrames(item)) return `<div class="motion-placeholder" role="img" aria-label="${escapeHtml(state.lang === 'ar' ? 'العرض المصوّر غير متاح' : 'Exercise demonstration unavailable')}"><strong>${escapeHtml(state.lang === 'ar' ? 'العرض غير متاح' : 'Demonstration unavailable')}</strong></div>`;
     const alt = escapeHtml(local(item.demo?.alt) || local(item.name));
     const className = context === 'card' ? 'exercise-reference-motion-card' : 'exercise-reference-motion-detail';
-    return `<div class="exercise-reference-motion ${className}" role="img" aria-label="${alt}"><img src="./${escapeHtml(assets[0])}" alt="" aria-hidden="true"><img src="./${escapeHtml(assets[1])}" alt="" aria-hidden="true"></div>`;
+    const startLabel = state.lang === 'ar' ? 'البداية' : 'Start';
+    const finishLabel = state.lang === 'ar' ? 'النهاية' : 'Finish';
+    const phaseLabels = context === 'card' ? '' : `<span class="reference-frame-label reference-frame-label-start" aria-hidden="true">${startLabel}</span><span class="reference-frame-label reference-frame-label-finish" aria-hidden="true">${finishLabel}</span>`;
+    return `<div class="exercise-reference-motion ${className}" role="img" aria-label="${alt}"><img src="./${escapeHtml(assets[0])}" alt="" aria-hidden="true"><img src="./${escapeHtml(assets[1])}" alt="" aria-hidden="true">${phaseLabels}</div>`;
   }
   function motionPlayer(item, context = 'detail') {
     const entry = motionAsset(item);

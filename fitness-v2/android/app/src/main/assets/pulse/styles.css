@@ -69,9 +69,16 @@
 .exercise-reference-motion img:last-of-type{animation:thf-reference-finish 3.6s steps(1,end) infinite}
 @keyframes thf-reference-start{0%,49.99%{opacity:1}50%,100%{opacity:0}}
 @keyframes thf-reference-finish{0%,49.99%{opacity:0}50%,100%{opacity:1}}
+.exercise-reference-motion .reference-frame-label{position:absolute;z-index:2;top:10px;padding:5px 9px;border:1px solid #49606a;border-radius:999px;background:#07141be8;color:var(--text);font-size:11px;font-weight:900;line-height:1.4;pointer-events:none;opacity:0}
+.exercise-reference-motion .reference-frame-label-start{inset-inline-start:10px;opacity:1;animation:thf-reference-start-label 3.6s steps(1,end) infinite}
+.exercise-reference-motion .reference-frame-label-finish{inset-inline-end:10px;animation:thf-reference-finish-label 3.6s steps(1,end) infinite}
+@keyframes thf-reference-start-label{0%,49.99%{opacity:1}50%,100%{opacity:0}}
+@keyframes thf-reference-finish-label{0%,49.99%{opacity:0}50%,100%{opacity:1}}
 .motion-reduced .exercise-reference-motion img:first-of-type{opacity:1;animation:none!important}
 .motion-reduced .exercise-reference-motion img:last-of-type{opacity:0;animation:none!important}
-@media(prefers-reduced-motion:reduce){:root:not(.motion-allow-animations) .exercise-reference-motion img:first-of-type{opacity:1!important;animation:none!important}:root:not(.motion-allow-animations) .exercise-reference-motion img:last-of-type{opacity:0!important;animation:none!important}}
+.motion-reduced .exercise-reference-motion .reference-frame-label-start{opacity:1;animation:none!important}
+.motion-reduced .exercise-reference-motion .reference-frame-label-finish{opacity:0;animation:none!important}
+@media(prefers-reduced-motion:reduce){:root:not(.motion-allow-animations) .exercise-reference-motion img:first-of-type{opacity:1!important;animation:none!important}:root:not(.motion-allow-animations) .exercise-reference-motion img:last-of-type{opacity:0!important;animation:none!important}:root:not(.motion-allow-animations) .exercise-reference-motion .reference-frame-label-start{opacity:1!important;animation:none!important}:root:not(.motion-allow-animations) .exercise-reference-motion .reference-frame-label-finish{opacity:0!important;animation:none!important}}
 .motion-credit{margin:0;padding:8px 12px 12px;line-height:1.5;font-size:11px}
 .motion-credit a{color:var(--gold);text-decoration:underline}
 

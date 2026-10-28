@@ -183,5 +183,26 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
         self.assertIn(".active-demo-play-once:active{transform:translate(-50%,-49%)}", self.css)
 
 
+    def test_reference_frame_phase_labels_match_visible_frame_and_localize(self):
+        player_start = self.app.index("function referenceMotionPlayer(item, context = 'detail')")
+        player_end = self.app.index("function motionPlayer(item, context = 'detail')", player_start)
+        player = self.app[player_start:player_end]
+        self.assertIn("state.lang === 'ar' ? 'البداية' : 'Start'", player)
+        self.assertIn("state.lang === 'ar' ? 'النهاية' : 'Finish'", player)
+        self.assertIn("const phaseLabels = context === 'card' ? '' :", player)
+        self.assertIn('class="reference-frame-label reference-frame-label-start" aria-hidden="true"', player)
+        self.assertIn('class="reference-frame-label reference-frame-label-finish" aria-hidden="true"', player)
+        self.assertIn("${phaseLabels}</div>`;", player)
+        self.assertIn("animation:thf-reference-start-label 3.6s steps(1,end) infinite", self.css)
+        self.assertIn("animation:thf-reference-finish-label 3.6s steps(1,end) infinite", self.css)
+        self.assertIn("@keyframes thf-reference-start-label{0%,49.99%{opacity:1}50%,100%{opacity:0}}", self.css)
+        self.assertIn("@keyframes thf-reference-finish-label{0%,49.99%{opacity:0}50%,100%{opacity:1}}", self.css)
+        self.assertIn(".motion-reduced .exercise-reference-motion .reference-frame-label-start{opacity:1;animation:none!important}", self.css)
+        self.assertIn(".motion-reduced .exercise-reference-motion .reference-frame-label-finish{opacity:0;animation:none!important}", self.css)
+        self.assertIn(":root:not(.motion-allow-animations) .exercise-reference-motion .reference-frame-label-start{opacity:1!important;animation:none!important}", self.css)
+        self.assertIn(":root:not(.motion-allow-animations) .exercise-reference-motion .reference-frame-label-finish{opacity:0!important;animation:none!important}", self.css)
+
+
+
 if __name__ == "__main__":
     unittest.main()
