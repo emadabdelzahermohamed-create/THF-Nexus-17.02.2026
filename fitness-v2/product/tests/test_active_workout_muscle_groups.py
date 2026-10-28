@@ -52,7 +52,35 @@ class ActiveWorkoutMuscleGroupsTests(unittest.TestCase):
             self.assertEqual(en_empty, ar_empty, item["id"])
             if en_empty:
                 missing.append(item["id"])
-        self.assertEqual(24, len(missing))
+        self.assertEqual(
+            {
+                "hanging-leg-raise",
+                "standing-dumbbell-calf-raise",
+                "hammer-curls",
+                "lateral-raise---with-bands",
+                "leg-extensions",
+                "lying-leg-curls",
+                "side-lateral-raise",
+                "standing-calf-raises",
+                "tricep-dumbbell-kickback",
+                "triceps-pushdown---rope-attachment",
+                "overhead-slam",
+                "air-bike",
+                "crunches",
+                "plank",
+                "ankle-circles",
+                "inchworm",
+                "calves-smr",
+                "hamstring-smr",
+                "iliotibial-tract-smr",
+                "latissimus-dorsi-smr",
+                "piriformis-smr",
+                "quadriceps-smr",
+                "external-rotation-with-band",
+                "pelvic-tilt-into-bridge",
+            },
+            set(missing),
+        )
 
     def test_active_workout_separates_and_hides_empty_muscle_groups(self):
         self.assertIn("const primaryMuscles=item.muscles?.primary?.[state.lang]||[];", self.app)
