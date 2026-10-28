@@ -108,6 +108,17 @@ EXPECTED_SOURCE_IDS = {
     "Single-Leg_Lateral_Hop",
     "Dancers_Stretch",
     "Spinal_Stretch",
+    "Heavy_Bag_Thrust",
+    "Ankle_Circles",
+    "Standing_Gastrocnemius_Calf_Stretch",
+    "Worlds_Greatest_Stretch",
+    "Hamstring-SMR",
+    "Iliotibial_Tract-SMR",
+    "Runners_Stretch",
+    "Dumbbell_Scaption",
+    "Cat_Stretch",
+    "Childs_Pose",
+    "Pelvic_Tilt_Into_Bridge",
 }
 
 
