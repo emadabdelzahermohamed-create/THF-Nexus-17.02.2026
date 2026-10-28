@@ -6,6 +6,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[3]
 PULSE = ROOT / "fitness-v2" / "android" / "app" / "src" / "main" / "assets" / "pulse"
 APP_PATH = PULSE / "app.js"
+HTML_PATH = PULSE / "index.html"
 EXERCISES_PATH = PULSE / "data" / "exercises.js"
 MOTION_PATH = PULSE / "data" / "motion-manifest.json"
 
@@ -22,6 +23,7 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = APP_PATH.read_text(encoding="utf-8")
+        cls.html = HTML_PATH.read_text(encoding="utf-8")
         cls.exercises = {item["id"]: item for item in load_exercises()}
         cls.motion = json.loads(MOTION_PATH.read_text(encoding="utf-8"))
 
@@ -68,6 +70,15 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
             else:
                 self.fail(f"unexpected motion kind: {entry['kind']}")
         self.assertEqual({"offline_video": 5, "verified_frame_sequence": 2}, kinds)
+
+
+    def test_offline_banner_reports_actual_motion_demo_coverage(self):
+        self.assertIn("offlineBanner:`مكتبة التمارين تعمل دون اتصال؛ العروض الحركية متاحة دون اتصال لـ${Object.keys(motionManifest).length} تمارين محددة.`", self.app)
+        self.assertIn("offlineBanner:`The exercise library works offline; motion demos are available offline for ${Object.keys(motionManifest).length} selected exercises.`", self.app)
+        self.assertEqual(2, self.app.count("${Object.keys(motionManifest).length}"))
+        self.assertNotIn("The exercise library and visual demos work fully offline.", self.app)
+        self.assertIn('data-i18n="offlineBanner">مكتبة التمارين تعمل دون اتصال، والعروض الحركية متاحة لتمارين محددة.</span>', self.html)
+        self.assertEqual(7, len(self.motion))
 
 
 if __name__ == "__main__":
