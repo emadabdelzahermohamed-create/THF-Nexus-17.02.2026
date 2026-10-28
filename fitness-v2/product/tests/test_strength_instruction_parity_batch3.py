@@ -34,8 +34,8 @@ GENERIC_FILLER = {
 REQUIRED_ARABIC_TERMS = {
     "Incline_Dumbbell_Press": ("المقعد المائل", "الدمبلين", "لوحي الكتف"),
     "Lateral_Raise_-_With_Bands": ("المطاط", "الكتفين", "الرسغين"),
-    "Leg_Extensions": ("الوسادة", "الركبتين", "المقعد"),
-    "Leverage_High_Row": ("المرفقين", "المقابض", "الكتفين"),
+    "Leg_Extensions": ("الوسادة", "الركبتين", "الظهر"),
+    "Leverage_High_Row": ("المرفقين", "المقبضين", "الكتفين"),
     "Lying_Leg_Curls": ("الكعبين", "الركبتين", "الحوض"),
     "Machine_Bench_Press": ("منتصف الصدر", "المقابض", "المرفقين"),
     "One-Arm_Dumbbell_Row": ("المقعد", "الدمبل", "الجذع"),
