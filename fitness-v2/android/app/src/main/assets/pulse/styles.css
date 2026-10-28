@@ -91,3 +91,17 @@
 
 /* Active-workout reference frames fill the demo stage and animate without a tap. */
 .demo-stage #activeDemoReference{position:absolute;inset:0;overflow:hidden}.demo-stage #activeDemoReference .exercise-reference-motion-detail{width:100%;height:100%;min-height:0;aspect-ratio:auto}
+
+/* Active workout instruction stepper */
+.instruction-stepper{display:grid;gap:9px;margin:10px 0 12px}
+.instruction-stepper-status{margin:0;color:var(--muted);font-size:12px;font-weight:700}
+.instruction-progress-track{height:5px;overflow:hidden;border-radius:999px;background:#203942;direction:inherit}
+#instructionProgressFill{display:block;height:100%;width:0;background:var(--gold);border-radius:inherit;transition:width .16s ease}
+.instruction-stepper-controls{display:flex;gap:8px}
+.instruction-stepper-controls .button{flex:1;min-height:42px}
+.instruction-stepper-controls .button:disabled{opacity:.45;cursor:not-allowed}
+.technique-card #activeSteps{padding-inline-start:24px}
+.technique-card #activeSteps li{padding:7px 10px;margin-block:4px;border-inline-start:3px solid transparent;border-radius:8px}
+.technique-card #activeSteps li[aria-current="step"]{background:#172e36;border-inline-start-color:var(--gold);color:#fff;font-weight:650}
+.motion-reduced #instructionProgressFill{transition:none!important}
+@media(prefers-reduced-motion:reduce){#instructionProgressFill{transition:none!important}}
