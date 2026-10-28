@@ -74,3 +74,7 @@
 @media(prefers-reduced-motion:reduce){.exercise-reference-motion img:first-of-type{opacity:1!important;animation:none!important}.exercise-reference-motion img:last-of-type{opacity:0!important;animation:none!important}}
 .motion-credit{margin:0;padding:8px 12px 12px;line-height:1.5;font-size:11px}
 .motion-credit a{color:var(--gold);text-decoration:underline}
+
+
+/* Keep primary and supporting muscle groups distinct in the active workout. */
+.muscle-groups{display:grid;gap:9px;margin-top:10px;min-width:0}.muscle-group{display:grid;gap:5px;min-width:0}.muscle-group-label{font-size:11px;font-weight:900;color:var(--muted)}.muscle-group .tag-row{gap:6px}
