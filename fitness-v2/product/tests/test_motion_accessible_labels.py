@@ -116,7 +116,7 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
 
     def test_active_reference_animation_uses_exact_exercise_id_before_rendering(self):
         workout_start = self.app.index("function renderActiveWorkout()")
-        workout_end = self.app.index("\\n  function ", workout_start + 1)
+        workout_end = self.app.index("\n  function ", workout_start + 1)
         self.assertGreater(workout_end, workout_start)
         workout = self.app[workout_start:workout_end]
         identity_assignment = "$('activeWorkoutScreen').dataset.exerciseId = item.id;"
