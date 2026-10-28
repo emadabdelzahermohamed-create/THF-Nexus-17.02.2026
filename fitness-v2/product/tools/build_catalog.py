@@ -637,6 +637,155 @@ STEP_OVERRIDES = {
             "تنفس بانتظام ثم اخفض الساقين وأعد اليدين للخلف؛ اطلب المساعدة أو اترك التمرين إذا تعذر الحفاظ على التوازن."
         ]
     },
+    "Barbell_Squat": {
+        "en": [
+            "Set the bar in a rack just below shoulder height and place the safety pins below your controlled squat depth. Position the bar across the upper back, brace, and set feet about shoulder-width apart.",
+            "Unrack with both feet stable, step back carefully, and keep the whole foot planted with toes turned slightly outward.",
+            "Breathe in and bend at the hips and knees, lowering only as far as you can keep your trunk steady and knees tracking over the toes.",
+            "Drive through the whole foot to stand, keeping the bar over mid-foot; exhale without snapping the knees straight.",
+            "Regain balance before returning the bar to the rack; use the safety pins and a spotter when appropriate."
+        ],
+        "ar": [
+            "اضبط البار على الحامل أسفل مستوى الكتفين قليلًا، وضع مسامير الأمان أسفل عمق النزول الذي تتحكم فيه. ضع البار على أعلى الظهر، وشد الجذع، واجعل القدمين بعرض الكتفين تقريبًا.",
+            "ارفع البار من الحامل بقدمين ثابتتين، وخذ خطوة أو خطوتين للخلف بحذر، مع إبقاء القدم كاملة على الأرض وتوجيه الأصابع للخارج قليلًا.",
+            "خذ شهيقًا واثنِ الوركين والركبتين للنزول، ولا تتجاوز العمق الذي يحافظ على ثبات الجذع واتجاه الركبتين مع أصابع القدم.",
+            "ادفع الأرض بكامل القدم للوقوف مع بقاء البار فوق منتصف القدم، وازفر دون قفل الركبتين بعنف.",
+            "استعد توازنك قبل إعادة البار للحامل، واستخدم مسامير الأمان ومساعدًا عند الحاجة."
+        ]
+    },
+    "Bent_Over_Barbell_Row": {
+        "en": [
+            "Stand with feet hip-width apart, hold the bar just outside the knees, soften the knees, and hinge until the torso inclines; keep the spine neutral and bar close.",
+            "Brace and pull the bar toward the lower ribs by driving the elbows back; keep the torso still rather than jerking.",
+            "Pause with the shoulder blades drawn together without shrugging or lifting the chin.",
+            "Lower the bar under control to straight arms; stop if you cannot maintain a neutral back."
+        ],
+        "ar": [
+            "قف والقدمان بعرض الحوض، وامسك البار خارج الركبتين قليلًا، واثنِ الركبتين وادفع الوركين للخلف حتى يميل الجذع مع ظهر محايد والبار قريبًا.",
+            "شد الجذع واسحب البار نحو الأضلاع السفلية بتحريك المرفقين للخلف، دون هز الجذع أو انتزاع الحمل.",
+            "توقف لحظة مع تقريب لوحي الكتف دون رفع الكتفين نحو الأذنين أو رفع الذقن.",
+            "أنزل البار بتحكم حتى تمتد الذراعان، وتوقف إذا تعذر الحفاظ على وضع محايد للظهر."
+        ]
+    },
+    "Dumbbell_Bench_Press": {
+        "en": [
+            "Sit on a flat bench with dumbbells on your thighs, then lie back and guide them to chest height one at a time; get help for heavy loads.",
+            "Plant your feet, gently set the shoulder blades, and keep wrists stacked over elbows.",
+            "Lower the dumbbells beside the chest with elbows angled about 30–60 degrees from the torso; do not bounce.",
+            "Press up over the chest while exhaling, keeping the weights controlled and avoiding a hard elbow snap.",
+            "Bring the dumbbells back to the thighs carefully before sitting up."
+        ],
+        "ar": [
+            "اجلس على مقعد مستوٍ والدمبل على الفخذين، ثم استلقِ وارفع كل دمبل إلى مستوى الصدر بالتتابع؛ اطلب المساعدة عند استخدام حمل ثقيل.",
+            "ثبّت القدمين ولوحي الكتف برفق، واجعل الرسغين فوق المرفقين.",
+            "اخفض الدمبل بجانب الصدر مع إبعاد المرفقين عن الجذع بزاوية مريحة تقارب 30 إلى 60 درجة، دون ارتداد.",
+            "ادفع الدمبل فوق الصدر مع الزفير وتحكم في المسار، وتجنب قفل المرفقين بعنف.",
+            "أعد الدمبل إلى الفخذين بحذر قبل الجلوس."
+        ]
+    },
+    "Dumbbell_Bicep_Curl": {
+        "en": [
+            "Stand tall with a dumbbell in each hand, palms forward or facing each other, and elbows close to the sides.",
+            "Bend the elbows to curl the weights toward the shoulders while keeping the upper arms still.",
+            "Pause briefly at the top without swinging the torso or rolling the shoulders forward.",
+            "Lower the dumbbells slowly to the starting position; reduce the load if you need momentum."
+        ],
+        "ar": [
+            "قف باستقامة والدمبل بجانب الجسم، واجعل راحتي اليدين للأمام أو متقابلتين والمرفقين قريبين من الجانبين.",
+            "اثنِ المرفقين وارفع الدمبل نحو الكتفين مع إبقاء العضدين ثابتين.",
+            "توقف لحظة في الأعلى دون تأرجح الجذع أو تدوير الكتفين للأمام.",
+            "اخفض الدمبل ببطء إلى البداية، وقلل الحمل إذا احتجت إلى استخدام زخم الجسم."
+        ]
+    },
+    "Dumbbell_Shoulder_Press": {
+        "en": [
+            "Sit with back support and bring the dumbbells to shoulder height; keep feet planted, wrists straight, and ribs stacked over the pelvis.",
+            "Start with elbows slightly in front of the body and forearms close to vertical.",
+            "Press the dumbbells overhead along a comfortable path while exhaling; do not arch the lower back to finish the lift.",
+            "Lower the weights slowly to shoulder height without dropping the elbows suddenly.",
+            "Use a lighter load or neutral grip if needed, and stop if the shoulder becomes painful."
+        ],
+        "ar": [
+            "اجلس مع مسند ظهر وارفع الدمبل إلى مستوى الكتفين، وثبّت القدمين واجعل الرسغين مستقيمين والقفص الصدري فوق الحوض.",
+            "ابدأ والمرفقان أمام الجسم قليلًا والساعدان قريبين من الوضع الرأسي.",
+            "ادفع الدمبل فوق الرأس في مسار مريح مع الزفير، دون تقويس أسفل الظهر لإكمال الرفعة.",
+            "اخفض الأوزان ببطء إلى مستوى الكتفين دون إسقاط المرفقين فجأة.",
+            "استخدم حملًا أخف أو قبضة محايدة عند الحاجة، وتوقف إذا ظهر ألم في الكتف."
+        ]
+    },
+    "Parallel_Bar_Dip": {
+        "en": [
+            "Grip both parallel bars and support your body with shoulders down; use an assisted machine or foot support if you cannot hold the start steadily.",
+            "Bend the elbows to lower your body through a comfortable range, keeping control and avoiding a forced deep shoulder stretch.",
+            "Press through the hands to rise until the elbows are nearly straight without shrugging.",
+            "Stop if the shoulders hurt or your body swings; shorten the range or choose an assisted variation."
+        ],
+        "ar": [
+            "أمسك العارضتين المتوازيتين وارفع الجسم مع إبقاء الكتفين منخفضين؛ استخدم جهاز المساعدة أو دعم القدمين إذا تعذر الثبات.",
+            "اثنِ المرفقين لخفض الجسم ضمن مدى مريح، وتحكم في النزول دون إجبار الكتف على امتداد عميق.",
+            "ادفع براحتي اليدين للصعود حتى يقترب المرفقان من الاستقامة دون رفع الكتفين.",
+            "توقف إذا ظهر ألم بالكتف أو تأرجح الجسم؛ قلل المدى أو استخدم نسخة بمساعدة."
+        ]
+    },
+    "Barbell_Hip_Thrust": {
+        "en": [
+            "Sit with your upper back against a stable bench, place a padded bar across the hips, and set feet flat about hip-width apart.",
+            "Brace the abdomen, keep the ribs down and chin slightly tucked, then drive through the feet to raise the hips.",
+            "Finish when the torso and thighs align; squeeze the glutes without arching the lower back.",
+            "Lower the hips under control and stop before the pelvis rolls or the back becomes painful."
+        ],
+        "ar": [
+            "اجلس وأعلى الظهر مستند إلى مقعد ثابت، وضع بارًا مبطنًا فوق الحوض وثبّت القدمين كاملتين بعرض الحوض تقريبًا.",
+            "شد البطن وأبقِ الأضلاع منخفضة والذقن للداخل قليلًا، ثم ادفع الأرض بالقدمين لرفع الحوض.",
+            "توقف عندما يصطف الجذع والفخذان، واعصر عضلات الألوية دون تقويس أسفل الظهر.",
+            "اخفض الحوض بتحكم وتوقف قبل التفافه أو ظهور ألم في الظهر."
+        ]
+    },
+    "Dumbbell_Step_Ups": {
+        "en": [
+            "Choose a stable, non-slip step low enough to keep balance, hold the dumbbells at your sides, and place the whole working foot on the box.",
+            "Drive through the foot on the box to stand tall; use the trailing leg only for balance rather than pushing off hard.",
+            "Step down slowly, keeping the working knee aligned with the toes and landing quietly.",
+            "Alternate legs as prescribed; reduce the step height or load if balance or knee control is lost."
+        ],
+        "ar": [
+            "اختر صندوقًا ثابتًا غير زلق وارتفاعه يسمح بالتوازن، وأمسك الدمبل بجانب الجسم وضع القدم العاملة كاملة على الصندوق.",
+            "ادفع بالقدم المرتكزة على الصندوق حتى تقف باستقامة، واستخدم الساق الخلفية للتوازن لا للدفع بقوة.",
+            "انزل ببطء مع توجيه الركبة نحو أصابع القدم والهبوط بهدوء.",
+            "بدّل الساقين حسب البرنامج، وقلل ارتفاع الصندوق أو الحمل إذا اختل التوازن أو تحكم الركبة."
+        ]
+    },
+    "Seated_Cable_Rows": {
+        "en": [
+            "Sit at the cable station with knees slightly bent, feet supported, torso upright, and the handle held with arms extended.",
+            "Brace and pull the handle toward the lower ribs by driving the elbows back; avoid rocking the torso.",
+            "Pause briefly with shoulder blades moving together without shrugging the shoulders.",
+            "Extend the arms slowly and allow the shoulder blades to move naturally while keeping the lower back controlled."
+        ],
+        "ar": [
+            "اجلس أمام جهاز الكيبل مع ثني الركبتين قليلًا وتثبيت القدمين والجذع منتصب، وأمسك المقبض والذراعان ممدودتان.",
+            "شد الجذع واسحب المقبض نحو الأضلاع السفلية بتحريك المرفقين للخلف، دون تأرجح الجذع.",
+            "توقف لحظة مع تقريب لوحي الكتف دون رفع الكتفين نحو الأذنين.",
+            "مد الذراعين ببطء ودع لوحي الكتف يتحركان طبيعيًا مع الحفاظ على ثبات أسفل الظهر."
+        ]
+    },
+    "Leg_Press": {
+        "en": [
+            "Sit with your back and pelvis supported, place feet about shoulder-width on the platform, and keep the knees aligned with the toes.",
+            "Release the safety lever only when ready, then lower the platform slowly until you reach a comfortable depth without the pelvis curling off the backrest.",
+            "Press through the whole foot to return the platform, keeping the knees slightly soft rather than snapping them straight.",
+            "Do not bounce at the bottom or force the knees inward; reduce the range if the pelvis shifts.",
+            "Re-engage the safety locks before exiting the machine, and stop if knee or back pain occurs."
+        ],
+        "ar": [
+            "اجلس مع إسناد الظهر والحوض، وضع القدمين بعرض الكتفين تقريبًا على مسند القدمين واجعل الركبتين في اتجاه الأصابع.",
+            "حرر ذراع الأمان بعد الاستعداد فقط، ثم اخفض المنصة ببطء إلى عمق مريح دون التفاف الحوض أو انفصاله عن مسند الظهر.",
+            "ادفع المنصة بكامل القدم للعودة، مع إبقاء الركبتين مرتخيتين قليلًا بدل قفلهما بعنف.",
+            "لا ترتد من أسفل الحركة ولا تدع الركبتين تنهاران للداخل؛ قلل المدى إذا تحرك الحوض.",
+            "أعد أقفال الأمان قبل مغادرة الجهاز، وتوقف إذا ظهر ألم في الركبة أو الظهر."
+        ]
+    }
+
 }
 
 # id, Arabic name, product section, goal override (optional)
