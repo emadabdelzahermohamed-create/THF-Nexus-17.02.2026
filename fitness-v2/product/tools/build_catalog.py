@@ -1236,6 +1236,142 @@ STEP_OVERRIDES = {
             "بعد المجموعة أعد البار إلى الخطافات بإحكام، وخفّض الحمل إذا اختل المسار.",
         ]
     },
+    "Piriformis-SMR": {
+        "en": [
+            "Sit with your buttocks on top of a foam roll. Bend your knees, and then cross one leg so that the ankle is over the knee. This will be your starting position.",
+            "Shift your weight to the side of the crossed leg, rolling over the buttocks until you feel tension in your upper glute. You may assist the stretch by using one hand to pull the bent knee towards your chest. Hold this position for 10-30 seconds, and then switch sides.",
+        ],
+        "ar": [
+            "اجلس على الفوم رول مع ثني الركبتين، ثم ضع كاحل ساق فوق ركبة الساق الأخرى.",
+            "انقل وزنك تدريجيًا نحو جهة الساق المتقاطعة ومرّر الرول فوق الألوية حتى تشعر بشد مريح؛ اثبت 10–30 ثانية ثم بدّل الجهة، وخفف الضغط فور ظهور تنميل أو ألم عصبي.",
+        ]
+    },
+    "Quadriceps-SMR": {
+        "en": [
+            "Lay facedown on the floor with your weight supported by your hands or forearms. Place a foam roll underneath one leg on the quadriceps, and keep the foot off of the ground. Make sure to relax the leg as much as possible. This will be your starting position.",
+            "Shifting as much weight onto the leg to be stretched as is tolerable, roll over the foam from above the knee to below the hip, holding points of tension for 10-30 seconds. Switch sides.",
+        ],
+        "ar": [
+            "استلقِ على البطن واسند الجزء العلوي على اليدين أو الساعدين، وضع الفوم رول تحت مقدمة الفخذ مع إرخاء الساق.",
+            "انقل وزنًا محتملًا على الفخذ ومرّر الرول ببطء من أعلى الركبة باتجاه الورك؛ توقف 10–30 ثانية عند نقاط الشد ثم بدّل الساق، وتوقف عند التنميل أو الألم الحاد.",
+        ]
+    },
+    "External_Rotation_with_Band": {
+        "en": [
+            "Choke the band around a post. The band should be at the same height as your elbow. Stand with your left side to the band a couple of feet away.",
+            "Grasp the end of the band with your right hand, and keep your elbow pressed firmly to your side. We recommend you hold a pad or foam roll in place with your elbow to keep it firmly in position.",
+            "With your upper arm in position, your elbow should be flexed to 90 degrees with your hand reaching across the front of your torso. This will be your starting position.",
+            "Execute the movement by rotating your arm in a backhand motion, keeping your elbow in place.",
+            "Continue as far as you are able, pause, and then return to the starting position.",
+        ],
+        "ar": [
+            "ثبّت المطاط عند ارتفاع المرفق وقف بجانبه على مسافة تسمح بشد خفيف دون ميل الجذع.",
+            "أمسك الطرف باليد البعيدة عن نقطة التثبيت، وأبقِ المرفق ملاصقًا للجنب ومثنيًا 90 درجة؛ يمكن وضع منشفة بين المرفق والجذع.",
+            "ابدأ واليد أمام البطن والعضد ثابت بمحاذاة الجذع، مع إبقاء الكتف منخفضًا والرسغ مستقيمًا.",
+            "أدر الساعد للخارج بعيدًا عن البطن مع تثبيت المرفق وعدم تدوير الجذع.",
+            "توقف ضمن مدى خالٍ من الألم ثم أعد اليد ببطء إلى البداية وكرر، وبدّل الجهة.",
+        ]
+    },
+    "Full_Range-Of-Motion_Lat_Pulldown": {
+        "en": [
+            "Either standing or seated on a high bench, grasp two stirrup cables that are attached to the high pulleys. Grab with the opposing hand so your arms are crisscrossed about you and your palms are facing forward.",
+            "Keeping your chest up and maintaining a slight arch in your lower back, pull the handles down as if you were doing a regular pulldown. The range of motion will be more of an arc. During the movement, rotate your hands so that in the bottom position your palms face each other rather than forward. Return slowly to the starting position and repeat.",
+        ],
+        "ar": [
+            "اجلس أو قف تحت البكرتين العاليتين وأمسك المقبضين المتقاطعين باليدين المتعاكستين، والذراعان أمامك والكفان للأمام.",
+            "ارفع الصدر طبيعيًا واسحب المقبضين للأسفل بقوس متحكم، ودوّر اليدين لتتقابل الكفان قرب الأسفل؛ ثم ارجع ببطء دون تقويس مفرط لأسفل الظهر.",
+        ]
+    },
+    "One_Arm_Lat_Pulldown": {
+        "en": [
+            "Select an appropriate weight and adjust the knee pad to help keep you down. Grasp the handle with a pronated grip. This will be your starting position.",
+            "Pull the handle down, squeezing your elbow to your side as you flex the elbow.",
+            "Pause at the bottom of the motion, and then slowly return the handle to the starting position.",
+            "For multiple repetitions, avoid completely returning the weight to keep tension on the muscles being worked.",
+        ],
+        "ar": [
+            "اضبط الوزن ووسادة الفخذ لتثبيت الجسم، ثم أمسك المقبض بقبضة أمامية والذراع ممدودة دون رفع الكتف.",
+            "اسحب المرفق باتجاه جانب الجسم مع ثني الذراع وتثبيت الجذع دون ميل أو تأرجح.",
+            "توقف لحظة في الأسفل مع تحريك لوح الكتف بتحكم وإبقاء الكتف بعيدًا عن الأذن.",
+            "أعد المقبض ببطء حتى امتداد مريح مع الحفاظ على الشد، ثم أكمل العدات دون ارتداد.",
+        ]
+    },
+    "Straight-Arm_Dumbbell_Pullover": {
+        "en": [
+            "Place a dumbbell standing up on a flat bench.",
+            "Ensuring that the dumbbell stays securely placed at the top of the bench, lie perpendicular to the bench (torso across it as in forming a cross) with only your shoulders lying on the surface. Hips should be below the bench and legs bent with feet firmly on the floor. The head will be off the bench as well.",
+            "Grasp the dumbbell with both hands and hold it straight over your chest at arms length. Both palms should be pressing against the underside one of the sides of the dumbbell. This will be your starting position. Caution: Always ensure that the dumbbell used for this exercise is secure. Using a dumbbell with loose plates can result in the dumbbell falling apart and falling on your face.",
+            "While keeping your arms straight, lower the weight slowly in an arc behind your head while breathing in until you feel a stretch on the chest.",
+            "At that point, bring the dumbbell back to the starting position using the arc through which the weight was lowered and exhale as you perform this movement.",
+            "Hold the weight on the initial position for a second and repeat the motion for the prescribed number of repetitions.",
+        ],
+        "ar": [
+            "ضع الدمبل بشكل آمن على مقعد مسطح وتحقق من إحكام الأوزان قبل رفعه.",
+            "استلقِ عرضيًا بحيث يستند الكتفان إلى المقعد، والقدمان ثابتتان على الأرض والحوض أسفل مستوى المقعد ضمن وضع مريح.",
+            "أمسك الدمبل بكلتا اليدين فوق الصدر مع تثبيت القبضة والتأكد من عدم ارتخاء الأقراص.",
+            "مع ثني بسيط وثابت للمرفقين، اخفض الدمبل في قوس خلف الرأس حتى مدى مريح مع الشهيق.",
+            "أعد الدمبل بالقوس نفسه فوق الصدر مع الزفير دون فرط تقوس أسفل الظهر.",
+            "كرر بتحكم، وتوقف إذا تعذر تثبيت الوزن أو ظهر ألم في الكتف.",
+        ]
+    },
+    "Medicine_Ball_Chest_Pass": {
+        "en": [
+            "You will need a partner for this exercise. Lacking one, this movement can be performed against a wall.",
+            "Begin facing your partner holding the medicine ball at your torso with both hands.",
+            "Pull the ball to your chest, and reverse the motion by extending through the elbows. For sports applications, you can take a step as you throw.",
+            "Your partner should catch the ball, and throw it back to you.",
+            "Receive the throw with both hands at chest height.",
+        ],
+        "ar": [
+            "قف مقابل شريك أو جدار بمسافة آمنة، وامسك الكرة الطبية بكلتا اليدين أمام الجذع.",
+            "قرّب الكرة إلى الصدر مع ثني المرفقين وإبقاء القدمين والجذع تحت السيطرة.",
+            "ادفع الكرة للأمام من الصدر بمد المرفقين؛ ويمكن أخذ خطوة للأمام فقط إذا كانت المساحة آمنة.",
+            "دع الشريك يلتقط الكرة أو استعد لارتدادها من الجدار قبل الرمية التالية.",
+            "استقبل الكرة بكلتا اليدين عند مستوى الصدر وامتص القوة بثني بسيط للمرفقين، ولا تحاول التقاطها فوق الرأس.",
+        ]
+    },
+    "Single-Leg_Lateral_Hop": {
+        "en": [
+            "Stand to the side of a cone or hurdle. To get into the start position, stand on one leg with your knee slightly bent.",
+            "To begin, execute a counterjump to hop sideways over the cone.",
+            "Land on your jumping leg, and immediately rebound out of it by jumping back to the start position.",
+            "Continue hopping back and forth.",
+        ],
+        "ar": [
+            "قف بجانب قمع أو حاجز منخفض، وارتكز على ساق واحدة مع ثني خفيف للركبة والورك.",
+            "ادفع الأرض واقفز جانبيًا فوق الحاجز مع إبقاء الركبة في اتجاه أصابع القدم.",
+            "اهبط على الساق نفسها بهدوء مع ثني الركبة والورك لامتصاص الصدمة.",
+            "ارجع بالقفز إلى جهة البداية فقط إذا بقي التوازن والهبوط آمنين؛ كرر ثم بدّل الساق.",
+        ]
+    },
+    "Dancers_Stretch": {
+        "en": [
+            "Sit up on the floor.",
+            "Cross your right leg over your left, keeping the knee bent. Your left leg is straight and down on the floor.",
+            "Place your left arm on your right leg and your right hand on the floor.",
+            "Rotate your upper body to the right, and hold for 10-20 seconds. Switch sides.",
+        ],
+        "ar": [
+            "اجلس على الأرض مع إطالة الظهر والقدمين أمامك.",
+            "اعبر الساق اليمنى فوق اليسرى مع ثني الركبة، واترك القدم اليمنى ثابتة على الأرض.",
+            "ضع الذراع اليسرى خارج الفخذ الأيمن واليد اليمنى خلفك لدعم الجذع دون سحب الركبة بقوة.",
+            "أدر الصدر برفق إلى اليمين واثبت 10–20 ثانية ضمن مدى مريح، ثم عد للوسط وبدّل الجهة.",
+        ]
+    },
+    "Spinal_Stretch": {
+        "en": [
+            "Sit in a chair so your back is straight and your feet planted on the floor.",
+            "Interlace your fingers behind your head, elbows out and your chin down.",
+            "Twist your upper body to one side about 3 times as far as you can. Then lean forward and twist your torso to reach your elbow to the floor on the inside of your knee.",
+            "Return to upright position and then repeat for your other side.",
+        ],
+        "ar": [
+            "اجلس على كرسي والقدمان مسطحتان على الأرض والظهر ممدود دون تصلب.",
+            "شبّك الأصابع خلف الرأس وافتح المرفقين، مع إرخاء الرقبة وخفض الذقن قليلًا.",
+            "أدر الجذع برفق نحو جهة واحدة ضمن مدى مريح، ويمكن الميل قليلًا للأمام دون دفع المرفق إلى الأرض بالقوة.",
+            "عد إلى الوسط ببطء ثم كرر للجهة الأخرى مع ثبات الحوض واستمرار التنفس.",
+        ]
+    },
 }
 
 # id, Arabic name, product section, goal override (optional)
