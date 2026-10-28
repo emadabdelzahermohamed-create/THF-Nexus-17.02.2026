@@ -583,7 +583,7 @@
     if (next) next.disabled = !steps.length || activeInstructionIndex >= steps.length - 1;
     const speakCue = $('speakCue');
     if (speakCue) speakCue.setAttribute('aria-label', steps.length
-      ? `${t('readCurrentInstructionStep')}, ${stepStatus}`
+      ? `${t('readCurrentInstructionStep')}${state.lang === 'ar' ? '، ' : ', '}${stepStatus}`
       : t('instructionStepsUnavailable'));
     const announcement = $('activeInstructionAnnouncement');
     const announcementText = steps.length
