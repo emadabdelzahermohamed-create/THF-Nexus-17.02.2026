@@ -895,7 +895,13 @@
       syncActiveDemoPlayback();
     });
     $('addSetBtn').addEventListener('click',addSet);$('finishWorkoutBtn').addEventListener('click',finishWorkout);$('skipRest').addEventListener('click',()=>stopRest());$('exitWorkoutBtn').addEventListener('click',()=>{persistActive();showScreen('trainScreen');});
-    $('speakCue').addEventListener('click',()=>speakExercise(activeExercise(),{force:true}));
+    $('speakCue').addEventListener('click', () => {
+      const item = activeExercise();
+      const steps = Array.isArray(item?.steps?.[state.lang]) ? item.steps[state.lang] : [];
+      if (!steps.length) { toast(t('instructionStepsUnavailable')); return; }
+      const index = boundedInstructionIndex(activeInstructionIndex, steps.length);
+      voiceGuidance.speakStep(steps[index], index, state.lang, {force: true});
+    });
     $('previousInstructionStep').addEventListener('click',()=>moveActiveInstructionStep(-1));
     $('nextInstructionStep').addEventListener('click',()=>moveActiveInstructionStep(1));
     document.querySelectorAll('[data-activity-mode]').forEach(button=>button.addEventListener('click',()=>startActivity(button.dataset.activityMode)));
