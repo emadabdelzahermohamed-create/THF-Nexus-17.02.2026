@@ -77,6 +77,7 @@
   const t = key => COPY[state.lang][key] || COPY.en[key] || key;
   let activeDemoManualPlay = false;
   let activeDemoExerciseId = null;
+  let activeDemoErrorHandler = null;
 
   function toast(message) {
     const node = $('toast'); node.textContent = message; node.classList.remove('hidden');
@@ -436,6 +437,40 @@
   function completedVolume(sets) { return (sets||[]).filter(set=>set.complete).reduce((sum,set)=>sum + Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0); }
   function sessionVolume() { return completedVolume(state.active?.sets) + (state.active?.programEntries||[]).reduce((sum,entry)=>sum+completedVolume(entry.sets),0); }
   function persistActive() { store.setItem('pulse.v2.active', JSON.stringify(state.active)); }
+  function armActiveDemoMediaError(item, expectedSource) {
+    const video = $('activeDemoVideo');
+    if (!video) return;
+    if (activeDemoErrorHandler) video.removeEventListener('error', activeDemoErrorHandler);
+    const exerciseId = item.id;
+    const handler = () => {
+      if (activeDemoErrorHandler === handler) activeDemoErrorHandler = null;
+      if (activeDemoExerciseId !== exerciseId || video.getAttribute('src') !== expectedSource) return;
+      fallbackActiveDemoToReference(item, expectedSource);
+    };
+    activeDemoErrorHandler = handler;
+    video.addEventListener('error', handler, { once: true });
+  }
+  function fallbackActiveDemoToReference(item, expectedSource) {
+    const video = $('activeDemoVideo');
+    const reference = $('activeDemoReference');
+    if (!item || !video || !reference || activeDemoExerciseId !== item.id ||
+        video.getAttribute('src') !== expectedSource ||
+        video.dataset.referenceFallbackExerciseId === item.id) return;
+    video.dataset.referenceFallbackExerciseId = item.id;
+    activeDemoManualPlay = false;
+    video.pause();
+    video.loop = true;
+    video.classList.add('hidden');
+    video.removeAttribute('src');
+    video.load();
+    $('activeDemoCredit')?.classList.add('hidden');
+    const playOnce = $('activeDemoPlayOnce');
+    playOnce?.classList.add('hidden');
+    if (playOnce) playOnce.disabled = true;
+    reference.innerHTML = referenceMotionPlayer(item, 'detail');
+    reference.classList.remove('hidden');
+    syncActiveReferenceMotionLabel(item);
+  }
   function renderActiveMotion(item) {
     const video = $('activeDemoVideo');
     const reference = $('activeDemoReference');
@@ -443,11 +478,28 @@
     if (activeDemoExerciseId !== item.id) {
       activeDemoExerciseId = item.id;
       activeDemoManualPlay = false;
+      if (activeDemoErrorHandler) video.removeEventListener('error', activeDemoErrorHandler);
+      activeDemoErrorHandler = null;
+      delete video.dataset.referenceFallbackExerciseId;
       video.loop = true;
       video.pause();
       try{video.currentTime=0;}catch{}
       $('activeDemoPlayOnce')?.classList.add('hidden');
       if(reference){reference.classList.add('hidden');reference.innerHTML='';}
+    }
+    if (video.dataset.referenceFallbackExerciseId === item.id) {
+      video.pause();
+      video.classList.add('hidden');
+      if (reference) {
+        reference.innerHTML = referenceMotionPlayer(item, 'detail');
+        reference.classList.remove('hidden');
+      }
+      $('activeDemoCredit')?.classList.add('hidden');
+      const playOnce = $('activeDemoPlayOnce');
+      playOnce?.classList.add('hidden');
+      if (playOnce) playOnce.disabled = true;
+      syncActiveReferenceMotionLabel(item);
+      return;
     }
     if (motion?.asset) {
       const nextSource = './' + motion.asset;
@@ -455,7 +507,10 @@
         activeDemoManualPlay = false;
         video.loop = true;
         video.pause();
+        armActiveDemoMediaError(item, nextSource);
         video.setAttribute('src', nextSource);
+      } else if (!activeDemoErrorHandler) {
+        armActiveDemoMediaError(item, nextSource);
       }
       video.setAttribute('aria-label', motionAccessibleLabel(item, motion));
       video.classList.remove('hidden');
@@ -477,6 +532,8 @@
       return;
     }
     $('activeDemoCredit')?.classList.add('hidden');
+    if (activeDemoErrorHandler) video.removeEventListener('error', activeDemoErrorHandler);
+    activeDemoErrorHandler = null;
     activeDemoManualPlay = false;
     video.loop = true;
     $('activeDemoPlayOnce')?.classList.add('hidden');
