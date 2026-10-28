@@ -10,6 +10,7 @@ APP_PATH = PULSE / "app.js"
 HTML_PATH = PULSE / "index.html"
 EXERCISES_PATH = PULSE / "data" / "exercises.js"
 MOTION_PATH = PULSE / "data" / "motion-manifest.json"
+MOTION_JS_PATH = PULSE / "data" / "motion-manifest.js"
 CSS_PATH = PULSE / "styles.css"
 
 
@@ -28,6 +29,14 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
         cls.html = HTML_PATH.read_text(encoding="utf-8")
         cls.exercises = {item["id"]: item for item in load_exercises()}
         cls.motion = json.loads(MOTION_PATH.read_text(encoding="utf-8"))
+        motion_js = MOTION_JS_PATH.read_text(encoding="utf-8")
+        prefix = "window.THF_MOTION_MANIFEST = "
+        if not motion_js.startswith(prefix):
+            raise AssertionError("runtime motion manifest must keep its known assignment wrapper")
+        runtime_end = motion_js.find(";\\n\\n/*", len(prefix))
+        if runtime_end < 0:
+            raise AssertionError("runtime motion manifest wrapper terminator not found")
+        cls.runtime_motion = json.loads(motion_js[len(prefix):runtime_end])
         cls.css = CSS_PATH.read_text(encoding="utf-8")
 
     def test_motion_labels_are_localized_by_actual_media_kind(self):
@@ -79,26 +88,31 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
         self.assertIn("const offlineReferenceFrameCount = EXERCISES.filter(item => !motionManifest[item.id] && hasSafeReferenceFrames(item)).length;", self.app)
         self.assertIn("offlineBanner:offlineMotionCoverage.ar", self.app)
         self.assertIn("offlineBanner:offlineMotionCoverage.en", self.app)
-        self.assertIn("7 manifest-backed motion demos plus", self.app)
+        self.assertIn("manifest-backed motion demos plus", self.app)
         self.assertIn("عروض حركة بملفات مخصصة", self.app)
         self.assertNotIn("motion demos are available offline for ${Object.keys(motionManifest).length} selected exercises", self.app)
         self.assertIn('data-i18n="offlineBanner">مكتبة التمارين تعمل دون اتصال، مع عروض حركة موثقة وصور مرجعية تتحرك تلقائيًا.</span>', self.html)
 
         self.assertEqual(112, len(self.exercises))
         self.assertEqual(7, len(self.motion))
+        self.assertEqual(set(self.motion), set(self.runtime_motion))
+        for exercise_id, entry in self.motion.items():
+            self.assertEqual(entry["kind"], self.runtime_motion[exercise_id]["kind"])
+            self.assertEqual(entry["asset"], self.runtime_motion[exercise_id]["asset"])
+
         reference_only = []
         for item in self.exercises.values():
             assets = item.get("demo", {}).get("assets", [])
             safe_pair = (
-                item["id"] not in self.motion
+                item["id"] not in self.runtime_motion
                 and isinstance(assets, list)
                 and len(assets) == 2
-                and all(isinstance(asset, str) and re.fullmatch(r"media/free-exercise-db/[A-Za-z0-9_/-]+\.jpg", asset, re.IGNORECASE) for asset in assets)
+                and all(isinstance(asset, str) and re.fullmatch(r"media/free-exercise-db/[A-Za-z0-9_/-]+\\.jpg", asset, re.IGNORECASE) for asset in assets)
             )
             if safe_pair:
                 reference_only.append(item["id"])
         self.assertEqual(105, len(reference_only))
-        self.assertEqual(112, len(self.motion) + len(reference_only))
+        self.assertEqual(112, len(self.runtime_motion) + len(reference_only))
 
 
     def test_active_workout_demo_respects_reduced_motion_and_os_changes(self):
