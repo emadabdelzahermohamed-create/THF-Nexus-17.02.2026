@@ -23,6 +23,62 @@ IMPORTED_AT = "2026-10-03"
 
 # Exact exercise-specific bilingual steps synchronized with the reviewed runtime catalog.
 STEP_OVERRIDES = {
+    "Bodyweight_Squat": {
+        "en": [
+            "Stand with feet about shoulder-width apart and turn the toes slightly outward; extend your arms forward for balance.",
+            "Brace your trunk, send your hips back, and bend your knees while keeping both heels on the floor.",
+            "Lower to a comfortable depth you can control, with your knees tracking over your toes and your back staying neutral.",
+            "Push through the whole foot and exhale to stand tall without bouncing out of the bottom."
+        ],
+        "ar": [
+            "قف والقدمان بعرض الكتفين مع توجيه أصابع القدمين للخارج قليلًا، ومد الذراعين أمامك للتوازن.",
+            "شد الجذع وابدأ بدفع الوركين للخلف وثني الركبتين مع إبقاء الكعبين على الأرض.",
+            "انزل إلى عمق مريح يمكن التحكم فيه، مع توجيه الركبتين نحو أصابع القدمين والحفاظ على ظهر محايد.",
+            "ادفع الأرض بالقدم كاملة وازفر للعودة إلى الوقوف، دون ارتداد من أسفل الحركة."
+        ]
+    },
+    "Goblet_Squat": {
+        "en": [
+            "Stand with feet about shoulder-width apart and hold a dumbbell or kettlebell close to your chest, elbows pointing down.",
+            "Brace your trunk and sit your hips between your knees, keeping the load close to your chest.",
+            "Lower only as far as you can control while keeping your heels grounded and knees tracking over your toes.",
+            "Exhale and drive through the whole foot to stand without letting your knees collapse inward."
+        ],
+        "ar": [
+            "قف والقدمان بعرض الكتفين، وامسك دمبلًا أو كيتل بيل أمام الصدر مع إبقاء المرفقين إلى أسفل.",
+            "شد الجذع وادفع الوركين للخلف مع ثني الركبتين، وأبقِ الحمل قريبًا من الصدر.",
+            "انزل إلى مدى تستطيع التحكم فيه مع بقاء الكعبين على الأرض والركبتين في اتجاه أصابع القدمين.",
+            "ازفر وادفع الأرض بالقدم كاملة للوقوف، دون السماح للركبتين بالانهيار إلى الداخل."
+        ]
+    },
+    "One-Arm_Kettlebell_Swings": {
+        "en": [
+            "Stand with feet about shoulder-width apart, hold the kettlebell in one hand, and keep the free arm available for balance.",
+            "Hinge at the hips and guide the bell between your thighs, keeping a neutral spine and soft knees.",
+            "Drive the hips forward to send the bell to about chest height; let the hip snap power the swing rather than lifting with the shoulder.",
+            "Allow the bell to fall, then hinge back to guide it between your thighs without turning the movement into a deep squat.",
+            "Finish with control, park the bell safely, and switch hands only after the bell has settled."
+        ],
+        "ar": [
+            "قف والقدمان بعرض الكتفين، وأمسك الكيتل بيل بيد واحدة مع إبقاء الذراع الحرة للمساعدة في التوازن.",
+            "ادفع الوركين للخلف ومرّر الجرس بين الفخذين مع ثني بسيط للركبتين والحفاظ على ظهر محايد.",
+            "مد الوركين للأمام بحركة قوية ومضبوطة لإرسال الجرس إلى مستوى الصدر؛ دع قوة الورك تولّد المرجحة بدل رفع الحمل بالكتف وحده.",
+            "دع الجرس يهبط ثم ادفع الوركين للخلف ليمر بين الفخذين، دون تحويل الحركة إلى قرفصاء عميقة.",
+            "أنه المجموعة بتحكم وضع الجرس بأمان، ولا تبدّل اليد إلا بعد استقرار الجرس."
+        ]
+    },
+    "Catch_and_Overhead_Throw": {
+        "en": [
+            "Stand facing a partner or a sturdy wall with a clear rebound area, holding the medicine ball securely with both hands.",
+            "Bring the ball behind your head only within a comfortable shoulder range, then extend your arms to throw it forward toward the partner or target.",
+            "Track the rebound and prepare to receive the ball with both hands; choose a distance that allows a safe catch, then reset before repeating."
+        ],
+        "ar": [
+            "قف مقابل شريك أو جدار ثابت مع إخلاء مساحة الارتداد، وامسك الكرة الطبية بإحكام بكلتا اليدين.",
+            "ارفع الكرة خلف الرأس ضمن مدى مريح للكتفين، ثم مد الذراعين لرميها إلى الأمام باتجاه الشريك أو الهدف.",
+            "تابع مسار ارتداد الكرة واستعد لاستقبالها بكلتا اليدين؛ اختر مسافة تسمح بالتقاط آمن ثم ثبّت وقفتك قبل التكرار."
+        ]
+    },
     "Medicine_Ball_Full_Twist": {
         "en": [
             "For this exercise you will need a medicine ball and a partner. Stand back to back with your partner, spaced 2-3 feet apart. This will be your starting position.",
