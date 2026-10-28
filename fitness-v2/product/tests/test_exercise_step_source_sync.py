@@ -78,6 +78,16 @@ EXPECTED_SOURCE_IDS = {
     "Face_Pull",
     "Front_Barbell_Squat",
     "Hammer_Curls",
+    "Incline_Dumbbell_Press",
+    "Lateral_Raise_-_With_Bands",
+    "Leg_Extensions",
+    "Leverage_High_Row",
+    "Lying_Leg_Curls",
+    "Machine_Bench_Press",
+    "One-Arm_Dumbbell_Row",
+    "Side_Lateral_Raise",
+    "Smith_Machine_Bench_Press",
+    "Smith_Machine_Squat",
 }
 
 

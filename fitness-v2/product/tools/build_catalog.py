@@ -940,6 +940,164 @@ STEP_OVERRIDES = {
             "خذ شهيقًا واخفض الدمبلين ببطء إلى امتداد مريح للذراعين."
         ]
     },
+    "Incline_Dumbbell_Press": {
+        "en": [
+            "Lie back on an incline bench with a dumbbell in each hand atop your thighs. The palms of your hands will be facing each other.",
+            "Then, using your thighs to help push the dumbbells up, lift the dumbbells one at a time so that you can hold them at shoulder width.",
+            "Once you have the dumbbells raised to shoulder width, rotate your wrists forward so that the palms of your hands are facing away from you. This will be your starting position.",
+            "Be sure to keep full control of the dumbbells at all times. Then breathe out and push the dumbbells up with your chest.",
+            "Lock your arms at the top, hold for a second, and then start slowly lowering the weight. Tip Ideally, lowering the weights should take about twice as long as raising them.",
+            "Repeat the movement for the prescribed amount of repetitions.",
+        ],
+        "ar": [
+            "استلقِ على المقعد المائل وامسك دمبلًا بكل يد فوق الفخذين، والكفان متقابلان.",
+            "استخدم الفخذين لمساعدة رفع الدمبلين إلى مستوى الكتفين بالتتابع.",
+            "أدر الرسغين حتى تتجه الكفان للأمام، وثبّت القدمين ولوحي الكتف على المقعد.",
+            "ازفر وادفع الدمبلين فوق الصدر بمسار متحكم دون تقويس أسفل الظهر.",
+            "توقف لحظة في الأعلى دون اصطدام الأوزان، ثم اخفضها ببطء مع جعل النزول أبطأ من الصعود.",
+            "كرر بالمدى الذي تتحكم فيه، وخفّض الحمل إذا فقدت ثبات الكتف.",
+        ]
+    },
+    "Lateral_Raise_-_With_Bands": {
+        "en": [
+            "To begin, stand on an exercise band so that tension begins at arm's length. Grasp the handles using a pronated (palms facing your thighs) grip that is slightly less than shoulder width. The handles should be resting on the sides of your thighs. Your arms should be extended with a slight bend at the elbows and your back should be straight. This will be your starting position.",
+            "Use your side shoulders to lift the handles to the sides as you exhale. Continue to lift the handles until they are slightly above parallel. As you lift the handles, slightly tilt the hand as if you were pouring water and keep your arms extended. Also, keep your torso stationary and pause for a second at the top of the movement.",
+            "Lower the handles back down slowly to the starting position. Inhale as you perform this portion of the movement.",
+            "Repeat for the recommended amount of repetitions.",
+        ],
+        "ar": [
+            "قف على منتصف المطاط والقدمان بعرض الورك، وأمسك المقبضين بجانب الفخذين مع ثني بسيط للمرفقين.",
+            "ازفر وارفع الذراعين إلى الجانبين حتى قرب مستوى الكتفين دون ميل الجذع أو رفع الكتفين نحو الأذنين.",
+            "توقف لحظة مع بقاء الرسغين محايدين والذراعين تحت السيطرة، ولا ترفع فوق مدى مريح.",
+            "اخفض المقبضين ببطء مع الشهيق حتى البداية مع الحفاظ على شد المطاط.",
+        ]
+    },
+    "Leg_Extensions": {
+        "en": [
+            "For this exercise you will need to use a leg extension machine. First choose your weight and sit on the machine with your legs under the pad (feet pointed forward) and the hands holding the side bars. This will be your starting position. You will need to adjust the pad so that it falls on top of your lower leg (just above your feet). Also, make sure that your legs form a 90-degree angle between the lower and upper leg. If the angle is less than 90-degrees then that means the knee is over the toes which in turn creates undue stress at the knee joint. If the machine is designed that way, either look for another machine or just make sure that when you start executing the exercise you stop going down once you hit the 90-degree angle.",
+            "Using your quadriceps, extend your legs to the maximum as you exhale. Ensure that the rest of the body remains stationary on the seat. Pause a second on the contracted position.",
+            "Slowly lower the weight back to the original position as you inhale, ensuring that you do not go past the 90-degree angle limit.",
+            "Repeat for the recommended amount of times.",
+        ],
+        "ar": [
+            "اجلس واضبط محور الركبة مع محور الجهاز، واجعل الوسادة فوق أسفل الساقين بقليل وثبّت الظهر.",
+            "ازفر ومد الركبتين بتحكم حتى قرب الامتداد الكامل دون قفل المفصل بعنف.",
+            "توقف لحظة مع إبقاء الحوض والظهر ملاصقين للمقعد ودون تأرجح الجذع.",
+            "اخفض الوزن ببطء مع الشهيق إلى مدى مريح، وقلّل الحمل أو المدى إذا ظهر ألم بالركبة.",
+        ]
+    },
+    "Leverage_High_Row": {
+        "en": [
+            "Load an appropriate weight onto the pins and adjust the seat height so that you can just reach the handles above you. Adjust the knee pad to help keep you down. Grasp the handles with a pronated grip. This will be your starting position.",
+            "Pull the handles towards your torso, retracting your shoulder blades as you flex the elbow.",
+            "Pause at the bottom of the motion, and then slowly return the handles to the starting position.",
+            "For multiple repetitions, avoid completely returning the weight to the stops to keep tension on the muscles being worked.",
+        ],
+        "ar": [
+            "اضبط المقعد ووسادة الركبتين، وثبّت القدمين وامسك المقبضين بقبضة أمامية.",
+            "اسحب المقبضين نحو الجذع بتحريك المرفقين للخلف مع تقريب لوحي الكتف دون هز الجذع.",
+            "توقف لحظة عند نهاية السحب وأبقِ الرقبة محايدة والكتفين بعيدين عن الأذنين.",
+            "أعد المقبضين ببطء إلى الأمام دون ترك الأوزان تصطدم أو فقدان التحكم في الشد.",
+        ]
+    },
+    "Lying_Leg_Curls": {
+        "en": [
+            "Adjust the machine lever to fit your height and lie face down on the leg curl machine with the pad of the lever on the back of your legs (just a few inches under the calves). Preferably use a leg curl machine that is angled as opposed to flat since an angled position is more favorable for hamstrings recruitment.",
+            "Keeping the torso flat on the bench, ensure your legs are fully stretched and grab the side handles of the machine. Position your toes straight (or you can also use any of the other two stances described on the foot positioning section). This will be your starting position.",
+            "As you exhale, curl your legs up as far as possible without lifting the upper legs from the pad. Once you hit the fully contracted position, hold it for a second.",
+            "As you inhale, bring the legs back to the initial position. Repeat for the recommended amount of repetitions.",
+        ],
+        "ar": [
+            "اضبط الوسادة فوق الكعبين وأسفل الساقين، واستلقِ على البطن مع محاذاة الركبتين لمحور الجهاز.",
+            "ثبّت الحوض والجذع على المقعد، ثم ازفر واثنِ الركبتين لجذب الكعبين نحو الجسم دون رفع الفخذين.",
+            "توقف لحظة عند الانقباض مع إبقاء أسفل الظهر محايدًا وعدم تقويسه.",
+            "أنزل الساقين ببطء مع الشهيق حتى امتداد مريح للركبتين دون إسقاط الوزن.",
+        ]
+    },
+    "Machine_Bench_Press": {
+        "en": [
+            "Sit down on the Chest Press Machine and select the weight.",
+            "Step on the lever provided by the machine since it will help you to bring the handles forward so that you can grab the handles and fully extend the arms.",
+            "Grab the handles with a palms-down grip and lift your elbows so that your upper arms are parallel to the floor to the sides of your torso. Your forearms will be pointing forward since you are grabbing the handles. Once you bring the handles forward and extend the arms you will be at the starting position.",
+            "Now bring the handles back towards you as you breathe in.",
+            "Push the handles away from you as you flex your pecs and you breathe out. Hold the contraction for a second before going back to the starting position.",
+            "Repeat for the recommended amount of reps.",
+        ],
+        "ar": [
+            "اضبط المقعد بحيث تصطف المقابض مع منتصف الصدر، ثم اختر حملًا يمكنك التحكم فيه.",
+            "استخدم ذراع المساعدة في الجهاز لتقريب المقابض، واجلس مع تثبيت الظهر وإمساكها بإحكام.",
+            "ابدأ والمرفقان مثنيان بزاوية مريحة، مع استقرار لوحي الكتف والرسغين بمحاذاة الساعدين.",
+            "خذ شهيقًا وأعد المقابض نحو الصدر ببطء دون دفع الكتفين للأمام.",
+            "ازفر وادفع المقابض إلى الأمام مع إبقاء الجذع ثابتًا، وتجنب قفل المرفقين بعنف.",
+            "أعد المقابض إلى وضع البداية بتحكم دون اصطدام الأوزان، وتوقف إذا ظهر ألم.",
+        ]
+    },
+    "One-Arm_Dumbbell_Row": {
+        "en": [
+            "Choose a flat bench and place a dumbbell on each side of it.",
+            "Place the right leg on top of the end of the bench, bend your torso forward from the waist until your upper body is parallel to the floor, and place your right hand on the other end of the bench for support.",
+            "Use the left hand to pick up the dumbbell on the floor and hold the weight while keeping your lower back straight. The palm of the hand should be facing your torso. This will be your starting position.",
+            "Pull the resistance straight up to the side of your chest, keeping your upper arm close to your side and keeping the torso stationary. Breathe out as you perform this step. Concentrate on squeezing the back muscles once you reach the full contracted position. Also, make sure that the force is performed with the back muscles and not the arms. Finally, the upper torso should remain stationary and only the arms should move. The forearms should do no other work except for holding the dumbbell; therefore do not try to pull the dumbbell up using the forearms.",
+            "Lower the resistance straight down to the starting position. Breathe in as you perform this step.",
+            "Repeat the movement for the specified amount of repetitions.",
+        ],
+        "ar": [
+            "ضع دمبلًا بجانب مقعد ثابت، واستند بإحدى اليدين والركبة من الجهة نفسها على المقعد.",
+            "مل من الورك حتى يميل الجذع للأمام مع ظهر محايد وثبات الحوض.",
+            "أمسك الدمبل باليد الحرة واترك الذراع ممدودة تحت الكتف دون تدوير الجذع.",
+            "ازفر واسحب المرفق بمحاذاة الجسم نحو الورك، مع إبقاء الكتف والجذع ثابتين.",
+            "اخفض الدمبل ببطء مع الشهيق حتى تمتد الذراع دون إسقاط الوزن أو شد الكتف.",
+            "أكمل العدات ثم بدّل الجهة، واستخدم حملًا أخف إذا بدأ الجذع بالدوران.",
+        ]
+    },
+    "Side_Lateral_Raise": {
+        "en": [
+            "Pick a couple of dumbbells and stand with a straight torso and the dumbbells by your side at arms length with the palms of the hand facing you. This will be your starting position.",
+            "While maintaining the torso in a stationary position (no swinging), lift the dumbbells to your side with a slight bend on the elbow and the hands slightly tilted forward as if pouring water in a glass. Continue to go up until you arms are parallel to the floor. Exhale as you execute this movement and pause for a second at the top.",
+            "Lower the dumbbells back down slowly to the starting position as you inhale.",
+            "Repeat for the recommended amount of repetitions.",
+        ],
+        "ar": [
+            "قف مستقيمًا والدمبلان بجانب الفخذين والكفان للداخل، مع ثني بسيط للمرفقين.",
+            "ارفع الدمبلين إلى الجانبين حتى قرب مستوى الكتفين مع ثبات الجذع ودون تأرجح.",
+            "توقف لحظة مع إبقاء الرقبة مرتاحة والكتفين منخفضين والرسغين ثابتين.",
+            "اخفض الدمبلين ببطء مع الشهيق إلى وضع البداية وكرر بالمدى المتحكم فيه.",
+        ]
+    },
+    "Smith_Machine_Bench_Press": {
+        "en": [
+            "Place a flat bench underneath the smith machine. Now place the barbell at a height that you can reach when lying down and your arms are almost fully extended. Once the weight you need is selected, lie down on the flat bench. Using a pronated grip that is wider than shoulder width, unlock the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
+            "As you breathe in, come down slowly until you feel the bar on your middle chest.",
+            "After a second pause, bring the bar back to the starting position as you breathe out and push the bar using your chest muscles. Lock your arms in the contracted position, hold for a second and then start coming down slowly again. It should take at least twice as long to go down than to come up.",
+            "Repeat the movement for the prescribed amount of repetitions.",
+            "When you are done, lock the bar back in the rack.",
+        ],
+        "ar": [
+            "ضع المقعد المستوي تحت جهاز سميث واضبط ارتفاع البار، ثم استلقِ وأمسكه بقبضة أوسع قليلًا من الكتفين.",
+            "حرر البار من الخطافات وثبته فوق منتصف الصدر مع محاذاة الرسغين للمرفقين.",
+            "خذ شهيقًا واخفض البار ببطء إلى منتصف الصدر مع زاوية مريحة للمرفقين.",
+            "ازفر وادفع البار إلى الأعلى دون ارتداد عن الصدر أو قفل المرفقين بعنف.",
+            "بعد آخر عدة، أعد البار إلى خطافات الأمان وتأكد من تثبيته قبل النهوض.",
+        ]
+    },
+    "Smith_Machine_Squat": {
+        "en": [
+            "To begin, first set the bar on the height that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
+            "Hold on to the bar using both arms at each side (palms facing forward), unlock it and lift it off the rack by first pushing with your legs and at the same time straightening your torso.",
+            "Position your legs using a shoulder width medium stance with the toes slightly pointed out. Keep your head up at all times and also maintain a straight back. This will be your starting position. (Note: For the purposes of this discussion we will use the medium stance which targets overall development; however you can choose any of the three stances discussed in the foot stances section).",
+            "Begin to slowly lower the bar by bending the knees as you maintain a straight posture with the head up. Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees (which is the point in which the upper legs are below parallel to the floor). Inhale as you perform this portion of the movement. If you performed the exercise correctly, the front of the knees should make an imaginary straight line with the toes that is perpendicular to the front. If your knees are past that imaginary line (if they are past your toes) then you are placing undue stress on the knee and the exercise has been performed incorrectly.",
+            "Begin to raise the bar as you exhale by pushing the floor with the heel of your foot as you straighten the legs again and go back to the starting position.",
+            "Repeat for the recommended amount of repetitions.",
+        ],
+        "ar": [
+            "اضبط ارتفاع البار وضعه على أعلى عضلات الظهر لا على الرقبة، وتأكد من ثبات القدمين أسفل البار.",
+            "أمسك البار من الجانبين، حرره من الخطافات وقف بثبات ثم اضبط القدمين بعرض الكتفين تقريبًا.",
+            "شد الجذع وخذ شهيقًا، ثم اخفض الورك مع ثني الركبتين باتجاه أصابع القدم.",
+            "انزل إلى عمق تستطيع التحكم فيه مع بقاء الكعبين على الأرض والجذع ثابتًا.",
+            "ازفر وادفع الأرض للوقوف دون انهيار الركبتين إلى الداخل أو فرط تقوس الظهر.",
+            "بعد المجموعة أعد البار إلى الخطافات بإحكام، وخفّض الحمل إذا اختل المسار.",
+        ]
+    },
 }
 
 # id, Arabic name, product section, goal override (optional)
