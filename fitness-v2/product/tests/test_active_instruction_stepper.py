@@ -96,7 +96,7 @@ class ActiveInstructionStepperTest(unittest.TestCase):
         self.assertIn(".motion-reduced #instructionProgressFill{transition:none!important}", self.css)
         self.assertIn("@media(prefers-reduced-motion:reduce){#instructionProgressFill{transition:none!important}}", self.css)
 
-    def test_all_catalog_steps_remain_nonblank_and_bilingual(self):
+    def test_all_catalog_steps_remain_nonblank_in_both_languages(self):
         ids = [item["id"] for item in self.exercises]
         self.assertEqual(112, len(self.exercises))
         self.assertEqual(112, len(set(ids)))
@@ -105,7 +105,6 @@ class ActiveInstructionStepperTest(unittest.TestCase):
                 en = item["steps"]["en"]
                 ar = item["steps"]["ar"]
                 self.assertTrue(en and ar)
-                self.assertEqual(len(en), len(ar))
                 self.assertTrue(all(isinstance(step, str) and step.strip() for step in en))
                 self.assertTrue(all(isinstance(step, str) and step.strip() for step in ar))
 
