@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 import unittest
 
@@ -75,12 +76,29 @@ class MotionAccessibleLabelsTest(unittest.TestCase):
 
 
     def test_offline_banner_reports_actual_motion_demo_coverage(self):
-        self.assertIn("offlineBanner:`مكتبة التمارين تعمل دون اتصال؛ العروض الحركية متاحة دون اتصال لـ${Object.keys(motionManifest).length} تمارين محددة.`", self.app)
-        self.assertIn("offlineBanner:`The exercise library works offline; motion demos are available offline for ${Object.keys(motionManifest).length} selected exercises.`", self.app)
-        self.assertEqual(2, self.app.count("${Object.keys(motionManifest).length}"))
-        self.assertNotIn("The exercise library and visual demos work fully offline.", self.app)
-        self.assertIn('data-i18n="offlineBanner">مكتبة التمارين تعمل دون اتصال، والعروض الحركية متاحة لتمارين محددة.</span>', self.html)
+        self.assertIn("const offlineReferenceFrameCount = EXERCISES.filter(item => !motionManifest[item.id] && hasSafeReferenceFrames(item)).length;", self.app)
+        self.assertIn("offlineBanner:offlineMotionCoverage.ar", self.app)
+        self.assertIn("offlineBanner:offlineMotionCoverage.en", self.app)
+        self.assertIn("7 manifest-backed motion demos plus", self.app)
+        self.assertIn("عروض حركة بملفات مخصصة", self.app)
+        self.assertNotIn("motion demos are available offline for ${Object.keys(motionManifest).length} selected exercises", self.app)
+        self.assertIn('data-i18n="offlineBanner">مكتبة التمارين تعمل دون اتصال، مع عروض حركة موثقة وصور مرجعية تتحرك تلقائيًا.</span>', self.html)
+
+        self.assertEqual(112, len(self.exercises))
         self.assertEqual(7, len(self.motion))
+        reference_only = []
+        for item in self.exercises.values():
+            assets = item.get("demo", {}).get("assets", [])
+            safe_pair = (
+                item["id"] not in self.motion
+                and isinstance(assets, list)
+                and len(assets) == 2
+                and all(isinstance(asset, str) and re.fullmatch(r"media/free-exercise-db/[A-Za-z0-9_/-]+\\.jpg", asset, re.IGNORECASE) for asset in assets)
+            )
+            if safe_pair:
+                reference_only.append(item["id"])
+        self.assertEqual(105, len(reference_only))
+        self.assertEqual(112, len(self.motion) + len(reference_only))
 
 
     def test_active_workout_demo_respects_reduced_motion_and_os_changes(self):
