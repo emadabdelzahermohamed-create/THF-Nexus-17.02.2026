@@ -38,7 +38,7 @@ class ActiveInstructionAccessibilityTest(unittest.TestCase):
 
     def test_empty_step_list_has_a_truthful_accessible_label(self):
         self.assertIn(
-            "? `${t('readCurrentInstructionStep')}, ${stepStatus}`",
+            "? `${t('readCurrentInstructionStep')}${state.lang === 'ar' ? '، ' : ', '}${stepStatus}`",
             self.app,
         )
         self.assertIn(": t('instructionStepsUnavailable'));", self.app)
