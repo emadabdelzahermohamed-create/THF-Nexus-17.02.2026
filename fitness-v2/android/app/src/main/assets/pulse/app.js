@@ -456,6 +456,8 @@
   }
   function renderActiveWorkout() {
     const item = activeExercise(); if (!item) { state.active=null; store.removeItem('pulse.v2.active'); return; }
+    // Give the frame animator an exact ID before its MutationObserver reconciles the view.
+    $('activeWorkoutScreen').dataset.exerciseId = item.id;
     renderActiveMotion(item);
     const program=PROGRAMS.find(value=>value.id===state.active.programId);const programSession=program?.sessions.find(value=>value.id===state.active.programSessionId);const programIndex=Number(state.active.programExerciseIndex)||0;
     $('activeSection').textContent = programSession?`${local(program.section)} · ${t('exerciseOf').replace('{current}',programIndex+1).replace('{total}',programSession.exercises.length)}`:local(item.section); $('activeExerciseName').textContent = local(item.name);
