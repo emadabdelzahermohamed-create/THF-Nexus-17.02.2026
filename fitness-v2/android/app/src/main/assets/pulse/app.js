@@ -33,8 +33,8 @@
       skip:'Skip to content',brandTag:'Clear training. Real progress.',offlineBanner:`The exercise library works offline; motion demos are available offline for ${Object.keys(motionManifest).length} selected exercises.`,todayEyebrow:"Today's plan",todayTitle:'One clear next action',startWorkout:'Start workout',readiness:'Readiness',sessions:'Sessions',today:'Today',minutes:'Minutes',volume:'Volume',streak:'Streak',days:'days',weeklyGoal:'Weekly goal',consistency:'Consistency before intensity',weeklyHint:'Complete sessions that fit your level, then progress gradually.',trainEyebrow:`26 programs · ${EXERCISES.length} documented exercises`,trainTitle:'Choose your plan and train clearly',searchLabel:'Search exercises',searchPlaceholder:'Exercise, muscle, or equipment',gymLibrary:'Gym library',gymTitle:'Build around your body and equipment',gymHint:'Real filters for muscle, equipment, movement, level, and goal.',exercises:'exercises',filters:'Filters',bodyPart:'Body part',muscle:'Muscle',equipment:'Equipment',movement:'Movement',level:'Level',goal:'Goal',resetFilters:'Reset filters',noResults:'No matching exercises',noResultsHint:'Clear the search or remove some filters.',backToLibrary:'Back to library',toggleFrame:'Change position',technique:'Technique',sessionLog:'Session log',set:'Set',load:'Load',reps:'Reps',addSet:'+ Add set',rest:'Rest',skipRest:'Skip',restComplete:'Rest is over. You can continue your workout.',safety:'Safety first',finishWorkout:'Finish and save workout',progressEyebrow:'Understand your progress',progressTitle:'Strength, volume, consistency',totalWorkouts:'All sessions',totalVolume:'Total volume',personalRecords:'Personal records',activeMinutes:'Active minutes',volumeTrend:'Last 7 session volume',localData:'Local',recentHistory:'Recent history',clearHistory:'Clear history',healthTitle:'Your activity in one place',beforeConnect:'Before connecting',yourChoice:'Your data, your choice',healthRationale:'We read steps, exercise sessions, distance, and active calories for your summary, and write only completed THF sessions. We do not request heart rate, sleep, or weight.',healthBullet1:'You may deny or revoke any permission later.',healthBullet2:'Local workout logging remains available offline.',healthBullet3:'A stable identifier prevents duplicate writes on retry.',reviewPermissions:'Review permissions and connect',steps7:'Steps / 7 days',distance:'Distance',activeCalories:'Active calories',healthEmpty:'Connect, then sync to read activity.',neverSynced:'Last sync: never',healthSyncing:'Syncing…',healthSyncWait:'Health Connect is temporarily busy. Wait briefly, then try again.',healthSyncFailed:'Sync failed. Please try again shortly.',syncNow:'Sync now',managePermissions:'Manage permissions',samsungPath:'Supported path: Samsung Health ← Health Connect ← Top Hero Fit. We do not call it connected until real Samsung data appears.',profileEyebrow:'Your plan adapts to you',profileTitle:'Training profile',goalFitness:'General fitness',goalMuscle:'Build muscle',goalStrength:'Strength',goalEndurance:'Endurance',goalMobility:'Mobility & recovery',beginner:'Beginner',intermediate:'Intermediate',advanced:'Advanced',daysPerWeek:'Training days per week',availableEquipment:'Available equipment',savePlan:'Save and update Today',profileSaved:'Profile saved and Today updated.',privacyOffline:'Privacy and offline mode',refreshStatus:'Refresh status',voiceGuidance:'Voice guidance',reduceMotion:'Reduce motion',playDemoOnce:'Play demo once',motionDemoPlayingOnce:'Playing demo once',navToday:'Today',navTrain:'Train',navProgress:'Progress',navHealth:'Health',navProfile:'Profile',startThisExercise:'Start this exercise',sourceLicense:'Source and license',all:'All',offline:'Offline',start:'Start',finish:'Finish',setup:'Setup',breathing:'Breathing',defaults:'Suggested prescription',mistakes:'Common mistakes',regression:'Regression',progression:'Progression',working:'Working',warmup:'Warm-up',completed:'Complete',saved:'Workout saved locally.',emptyHistory:'Start your first workout to see progress here.',noCatalog:'The offline exercise library could not be loaded.',browserHealth:'Health Connect is available in the Android app only.',statusOffline:'Offline mode ready',statusOnline:'Online and ready to sync',clearConfirm:'Press again within 3 seconds to clear history.',profilePlan:'A session aligned to your goal',oneExercise:'one clear movement',min:'min',setsLabel:'sets',sourceText:'free-exercise-db · Unlicense · audited offline copy',setProgress:'{done} of {total} complete',dateLabel:'Date',volumeLabel:'Volume',rpeHelp:'RPE from 1 to 10',rirHelp:'RIR is reps left in reserve',programs:'Programs',exerciseLibrary:'Exercise library',programLibrary:'Structured offline programs',programTitle:'Start with a clear path and safe progression',programHint:'Every program defines its weeks, sessions, exercises, RPE, RIR and progression rule.',noPrograms:'No programs in this section',weeks:'weeks',daysWeekly:'days weekly',useProgram:'Use this program',programSelected:'Program selected and Today updated.',programSessions:'Program sessions',session:'Session',exerciseCount:'exercises',programSource:'Original THF editorial composition · exercise data and images: free-exercise-db / Unlicense'
     }
   };
-  Object.assign(COPY.ar, {primaryMuscles:'العضلات الأساسية',secondaryMuscles:'العضلات المساعدة',supportingMusclesUndocumented:'لم تُوثَّق العضلات المساعدة لهذا التمرين بعد.',startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة',foundingHeroEyebrow:'حزمة تجميلية لمرة واحدة',foundingHeroTitle:'البطل المؤسس',foundingHeroBadge:'البطل المؤسس',foundingHeroBody:'شراء رقمي لمرة واحدة يضيف شارة البطل المؤسس ولمسة ذهبية لملفك.',foundingHeroScope:'شارة تجميلية فقط؛ لا تحجب التمارين أو الصحة، ولا تمنح أفضلية تنافسية أو توكنات أو عائدًا ماليًا.',foundingHeroLoading:'جارٍ التحقق من Google Play…',foundingHeroBuy:'احصل على الحزمة',foundingHeroRestore:'استعادة الشراء',foundingHeroOwned:'حزمة البطل المؤسس مفعلة على هذا الحساب.',foundingHeroPending:'عملية الشراء معلقة؛ ستتفعل الشارة بعد تأكيد Google Play.',foundingHeroUnavailable:'المنتج غير متاح في هذه النسخة بعد. لم يتم تحصيل أي مبلغ.',foundingHeroConfigure:'يلزم ربط مفتاح الترخيص العام ومنتج Play قبل إتاحة الشراء.',foundingHeroAndroidOnly:'متاح داخل نسخة Android المثبتة من Google Play.',foundingHeroCanceled:'تم إلغاء نافذة الشراء ولم يتم تحصيل مبلغ.'});
-  Object.assign(COPY.en, {primaryMuscles:'Primary muscles',secondaryMuscles:'Supporting muscles',supportingMusclesUndocumented:'Supporting muscles are not documented for this exercise yet.',startSession:'Start session',saveNext:'Save and continue',finishSession:'Finish and save session',exerciseOf:'Exercise {current} of {total}',nextExercise:'Exercise saved. Next: {name}',sessionComplete:'Session complete and saved.',signInSync:'Sign in to sync',syncConnected:'Sync connected',syncConnecting:'Connecting account',offlineReady:'Offline ready',syncUnavailable:'Sync not configured',foundingHeroEyebrow:'One-time cosmetic pack',foundingHeroTitle:'Founding Hero',foundingHeroBadge:'Founding Hero',foundingHeroBody:'A one-time digital purchase that adds the Founding Hero badge and a gold profile accent.',foundingHeroScope:'Cosmetic badge only; workouts and Health remain free, with no competitive advantage, tokens, or financial return.',foundingHeroLoading:'Checking Google Play…',foundingHeroBuy:'Get the pack',foundingHeroRestore:'Restore purchase',foundingHeroOwned:'The Founding Hero pack is active for this account.',foundingHeroPending:'Purchase pending; the badge activates after Google Play confirms payment.',foundingHeroUnavailable:'This product is not available in this build yet. No charge was made.',foundingHeroConfigure:'Connect the public Play license key and Play product before enabling purchases.',foundingHeroAndroidOnly:'Available in the Android app installed through Google Play.',foundingHeroCanceled:'The purchase sheet was canceled and no charge was made.'});
+  Object.assign(COPY.ar, {primaryMuscles:'العضلات الأساسية',secondaryMuscles:'العضلات المساعدة',supportingMusclesUndocumented:'لم تُوثَّق العضلات المساعدة لهذا التمرين بعد.',referenceMotionAuto:'عرض مرجعي تلقائي',referenceMotionStatic:'صور مرجعية ثابتة — تقليل الحركة',referenceMotionUnavailable:'لا تتوفر إطارات مرجعية للحركة في هذا التمرين',startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة',foundingHeroEyebrow:'حزمة تجميلية لمرة واحدة',foundingHeroTitle:'البطل المؤسس',foundingHeroBadge:'البطل المؤسس',foundingHeroBody:'شراء رقمي لمرة واحدة يضيف شارة البطل المؤسس ولمسة ذهبية لملفك.',foundingHeroScope:'شارة تجميلية فقط؛ لا تحجب التمارين أو الصحة، ولا تمنح أفضلية تنافسية أو توكنات أو عائدًا ماليًا.',foundingHeroLoading:'جارٍ التحقق من Google Play…',foundingHeroBuy:'احصل على الحزمة',foundingHeroRestore:'استعادة الشراء',foundingHeroOwned:'حزمة البطل المؤسس مفعلة على هذا الحساب.',foundingHeroPending:'عملية الشراء معلقة؛ ستتفعل الشارة بعد تأكيد Google Play.',foundingHeroUnavailable:'المنتج غير متاح في هذه النسخة بعد. لم يتم تحصيل أي مبلغ.',foundingHeroConfigure:'يلزم ربط مفتاح الترخيص العام ومنتج Play قبل إتاحة الشراء.',foundingHeroAndroidOnly:'متاح داخل نسخة Android المثبتة من Google Play.',foundingHeroCanceled:'تم إلغاء نافذة الشراء ولم يتم تحصيل مبلغ.'});
+  Object.assign(COPY.en, {primaryMuscles:'Primary muscles',secondaryMuscles:'Supporting muscles',supportingMusclesUndocumented:'Supporting muscles are not documented for this exercise yet.',referenceMotionAuto:'Automatic reference-frame demo',referenceMotionStatic:'Reference frames paused — reduced motion',referenceMotionUnavailable:'Motion frames are unavailable for this exercise',startSession:'Start session',saveNext:'Save and continue',finishSession:'Finish and save session',exerciseOf:'Exercise {current} of {total}',nextExercise:'Exercise saved. Next: {name}',sessionComplete:'Session complete and saved.',signInSync:'Sign in to sync',syncConnected:'Sync connected',syncConnecting:'Connecting account',offlineReady:'Offline ready',syncUnavailable:'Sync not configured',foundingHeroEyebrow:'One-time cosmetic pack',foundingHeroTitle:'Founding Hero',foundingHeroBadge:'Founding Hero',foundingHeroBody:'A one-time digital purchase that adds the Founding Hero badge and a gold profile accent.',foundingHeroScope:'Cosmetic badge only; workouts and Health remain free, with no competitive advantage, tokens, or financial return.',foundingHeroLoading:'Checking Google Play…',foundingHeroBuy:'Get the pack',foundingHeroRestore:'Restore purchase',foundingHeroOwned:'The Founding Hero pack is active for this account.',foundingHeroPending:'Purchase pending; the badge activates after Google Play confirms payment.',foundingHeroUnavailable:'This product is not available in this build yet. No charge was made.',foundingHeroConfigure:'Connect the public Play license key and Play product before enabling purchases.',foundingHeroAndroidOnly:'Available in the Android app installed through Google Play.',foundingHeroCanceled:'The purchase sheet was canceled and no charge was made.'});
   Object.assign(COPY.ar, {onboardingBrand:'خطتك تبدأ منك',onboardingStep:'إعداد سريع · يعمل أوفلاين',onboardingTitle:'ابنِ خطتك الأولى',onboardingIntro:'اختر هدفك وخبرتك وما يتوفر لديك. سنضع جلسة واضحة في «اليوم» ويمكنك تعديل كل شيء لاحقًا.',onboardingBenefitOffline:'دليل مصور أوفلاين',onboardingBenefitSafe:'تدرج وتعليمات سلامة',onboardingBenefitFlexible:'تعديل الخطة في أي وقت',onboardingPrivacy:'يُحفظ هذا الاختيار على جهازك أولًا. لا يلزم حساب للبدء.',createMyPlan:'أنشئ خطتي وابدأ',planReady:'خطتك جاهزة. ابدأ من جلسة اليوم.'});
   Object.assign(COPY.en, {onboardingBrand:'Your plan starts with you',onboardingStep:'Quick setup · works offline',onboardingTitle:'Build your first plan',onboardingIntro:'Choose your goal, experience and available equipment. We will put one clear session in Today, and you can change everything later.',onboardingBenefitOffline:'Offline visual guidance',onboardingBenefitSafe:'Safe progression and cues',onboardingBenefitFlexible:'Change your plan anytime',onboardingPrivacy:'Your choices are saved on this device first. No account is required to begin.',createMyPlan:'Create my plan and start',planReady:'Your plan is ready. Start with Today.'});
   Object.assign(COPY.ar, {accountPrivacyHint:'تستطيع مراجعة السياسة وبدء حذف بيانات حساب THF Fitness من المتصفح الآمن.',privacyPolicy:'سياسة الخصوصية',accountDeletion:'حذف بيانات الحساب',accountResourceAndroidOnly:'هذا الرابط متاح داخل تطبيق Android.'});
@@ -253,10 +253,13 @@
     if (entry?.kind === 'verified_frame_sequence') return `Verified motion clip: ${name}`;
     return `Exercise demonstration: ${name}`;
   }
+  function hasSafeReferenceFrames(item) {
+    const assets = Array.isArray(item?.demo?.assets) ? item.demo.assets.slice(0, 2) : [];
+    return assets.length === 2 && assets.every(asset => typeof asset === 'string' && /^media\\/free-exercise-db\\/[A-Za-z0-9_/-]+\\.jpg$/i.test(asset));
+  }
   function referenceMotionPlayer(item, context = 'detail') {
     const assets = Array.isArray(item?.demo?.assets) ? item.demo.assets.slice(0, 2) : [];
-    const safeAssets = assets.length === 2 && assets.every(asset => typeof asset === 'string' && /^media\/free-exercise-db\/[A-Za-z0-9_/-]+\.jpg$/i.test(asset));
-    if (!safeAssets) return `<div class="motion-placeholder" role="img" aria-label="${escapeHtml(state.lang === 'ar' ? 'العرض المصوّر غير متاح' : 'Exercise demonstration unavailable')}"><strong>${escapeHtml(state.lang === 'ar' ? 'العرض غير متاح' : 'Demonstration unavailable')}</strong></div>`;
+    if (!hasSafeReferenceFrames(item)) return `<div class="motion-placeholder" role="img" aria-label="${escapeHtml(state.lang === 'ar' ? 'العرض المصوّر غير متاح' : 'Exercise demonstration unavailable')}"><strong>${escapeHtml(state.lang === 'ar' ? 'العرض غير متاح' : 'Demonstration unavailable')}</strong></div>`;
     const alt = escapeHtml(local(item.demo?.alt) || local(item.name));
     const className = context === 'card' ? 'exercise-reference-motion-card' : 'exercise-reference-motion-detail';
     return `<div class="exercise-reference-motion ${className}" role="img" aria-label="${alt}"><img src="./${escapeHtml(assets[0])}" alt="" aria-hidden="true"><img src="./${escapeHtml(assets[1])}" alt="" aria-hidden="true"></div>`;
@@ -426,7 +429,7 @@
   function persistActive() { store.setItem('pulse.v2.active', JSON.stringify(state.active)); }
   function renderActiveMotion(item) {
     const video = $('activeDemoVideo');
-    const image = $('activeDemoImage');
+    const reference = $('activeDemoReference');
     const motion = motionManifest[item.id];
     if (activeDemoExerciseId !== item.id) {
       activeDemoExerciseId = item.id;
@@ -435,6 +438,7 @@
       video.pause();
       try{video.currentTime=0;}catch{}
       $('activeDemoPlayOnce')?.classList.add('hidden');
+      if(reference){reference.classList.add('hidden');reference.innerHTML='';}
     }
     if (motion?.asset) {
       const nextSource = './' + motion.asset;
@@ -446,7 +450,8 @@
       }
       video.setAttribute('aria-label', motionAccessibleLabel(item, motion));
       video.classList.remove('hidden');
-      image.classList.add('hidden');
+      reference?.classList.add('hidden');
+      if(reference)reference.innerHTML='';
       const credit = $('activeDemoCredit');
       const sourceLink = $('activeDemoSource');
       const licenseLink = $('activeDemoLicense');
@@ -454,7 +459,10 @@
         sourceLink.href = motion.sourceUrl;
         sourceLink.textContent = state.lang === 'ar' ? `مصدر الفيديو: ${motion.author || 'Goulart'}` : `Video source: ${motion.author || 'Goulart'}`;
         licenseLink.href = motion.licenseUrl;
+        licenseLink.textContent = state.lang === 'ar' ? 'ترخيص CC BY-SA 4.0' : 'CC BY-SA 4.0 license';
         credit.classList.remove('hidden');
+      } else {
+        credit?.classList.add('hidden');
       }
       syncActiveDemoPlayback();
       return;
@@ -468,10 +476,19 @@
     video.removeAttribute('src');
     video.load();
     video.classList.add('hidden');
-    image.classList.remove('hidden');
-    image.src = './' + item.demo.assets[0];
-    image.alt = item.demo.alt[state.lang];
-    $('activeDemoPhase').textContent = state.lang === 'ar' ? 'صور مرجعية — الحركة قيد الإضافة' : 'Reference images — motion pending';
+    if(reference){
+      reference.innerHTML = referenceMotionPlayer(item, 'detail');
+      reference.classList.remove('hidden');
+    }
+    syncActiveReferenceMotionLabel(item);
+  }
+  function syncActiveReferenceMotionLabel(item = activeExercise()) {
+    const reference = $('activeDemoReference');
+    if (!reference || reference.classList.contains('hidden')) return;
+    const hasFrames = hasSafeReferenceFrames(item);
+    $('activeDemoPhase').textContent = hasFrames
+      ? (preferredReducedMotion() ? t('referenceMotionStatic') : t('referenceMotionAuto'))
+      : t('referenceMotionUnavailable');
   }
   function renderActiveWorkout() {
     const item = activeExercise(); if (!item) { state.active=null; store.removeItem('pulse.v2.active'); return; }
@@ -742,11 +759,14 @@
     $('reduceMotion').checked=enabled;
     document.documentElement.style.setProperty('--motion',enabled?'0':'1');
     document.documentElement.classList.toggle('motion-reduced',enabled);
+    if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
+    const hasExplicitChoice=store.getItem('pulse.v2.reduceMotion')!==null;
+    document.documentElement.classList.toggle('motion-allow-animations',!enabled && hasExplicitChoice);
     document.querySelectorAll('video.exercise-motion').forEach(video=>{
       if(enabled) video.pause();
       else if(!document.hidden && video.isConnected && (video.dataset.context==='card' || !$('exerciseDetail').classList.contains('hidden'))) video.play().catch(()=>{});
     });
-    if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
+    syncActiveReferenceMotionLabel();
     syncActiveDemoPlayback();
   }
 
