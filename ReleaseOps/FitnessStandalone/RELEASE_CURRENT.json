@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-10-29T16:06:14Z",
+  "observed_at": "2026-10-29T16:12:27Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -73,19 +73,25 @@
     "health_policy_privacy": "OPEN",
     "production": "NOT_VERIFIED"
   },
-  "next_action": "Poll exact-SHA validation run 40907739061 for merge f67aa0eaeab1bac291d52b699d6495a56850c265. If all Android/source/product/backend gates pass, atomically advance app version identity to unique 51020 and update the candidate workflow's exact identity checks, run full acceptance once on that final candidate SHA, then use the existing Play-bound signing/Internal promotion path and independently read back track/version/source. If the gate fails, fix the named defect before allocating 51020. Physical P0 remains blocked while the authorized device is offline; Production stays NOT_VERIFIED. Free scheduler consolidation remains blocked until a supported timing_mode control exists.",
+  "next_action": "Locate the exact existing candidate workflow file and update its version/identity assertions together with fitness-v2/android/app/build.gradle to unique 51020; run full acceptance once on the final candidate SHA. Then use the validated Play-bound signing/Internal promotion path and independently read back track/version/source. Do not upload validation artifact 12912522684, rebuild/reupload unchanged 51019 bytes, or promote Production. Physical P0 remains blocked while the authorized device is offline; PR #93/#98 remain HOLD; Free scheduler consolidation remains blocked until a supported timing_mode control exists.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
     "canonical_merge_sha": "f67aa0eaeab1bac291d52b699d6495a56850c265",
     "workflow_run": 40907739061,
     "workflow_url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/40907739061",
-    "status": "IN_PROGRESS",
+    "status": "SUCCESS_VALIDATION_ONLY",
     "source_product_backend": "PASS",
-    "android_unit_lint_apk_aab": "IN_PROGRESS",
-    "artifact_digest": null,
+    "android_unit_lint_apk_aab": "PASS",
+    "artifact_id": 12912522684,
+    "artifact_name": "fitness-activity-candidate-51019-f67aa0eaeab1bac291d52b699d6495a56850c265",
+    "artifact_digest": "sha256:87426540351c9a527c40926fe6c7b95722f2f3cc27a3f0881a85b9223cdedf31",
+    "validation_version_code": 51019,
+    "validation_only": true,
     "release_version_allocated": false,
-    "play_changed": false
+    "play_changed": false,
+    "physical_p0": "BLOCKED_NOT_RUN",
+    "note": "The exact merged SHA passed source/product/backend and Android unit/lint/APK/AAB gates, but only with validation identity 51019. Do not upload this artifact. The exact existing candidate workflow path/identity assertions must be located and updated together with Gradle to unique 51020 before the one full acceptance run."
   },
   "scheduler_transition": {
     "target_enabled_daily_flexible_tasks": 3,
