@@ -47,6 +47,15 @@ class ActiveWorkoutReducedMotionVideoTests(unittest.TestCase):
         self.assertIn("if (timer || pendingExerciseId) stop();", self.motion)
         self.assertIn("renderFrame(item);", self.motion)
 
+    def test_system_preference_change_reconciles_reference_motion_controller(self):
+        handler = self.app.split("function bindSystemMotionPreference()", 1)[1].split("\n  function bind()", 1)[0]
+        self.assertIn("applyMotionPreference(Boolean(event.matches), false);", handler)
+        self.assertIn("window.dispatchEvent(new Event('thf:motion-preference-change'));", handler)
+        self.assertIn("window.addEventListener('thf:motion-preference-change', reconcile);", self.motion)
+        # An explicit user choice must return before the system-change event can be emitted.
+        self.assertLess(handler.index("if (store.getItem('pulse.v2.reduceMotion') !== null) return;"),
+                        handler.index("window.dispatchEvent(new Event('thf:motion-preference-change'));")
+
 
 if __name__ == "__main__":
     unittest.main()
