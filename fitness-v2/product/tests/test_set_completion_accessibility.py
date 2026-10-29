@@ -33,6 +33,16 @@ class SetCompletionAccessibilityTests(unittest.TestCase):
         self.assertIn("${set.complete?'✓':'○'}", self.app)
         self.assertIn('aria-pressed="${String(Boolean(set.complete))}"', self.app)
 
+    def test_rerender_captures_focused_set_toggle_before_replacing_rows(self):
+        self.assertIn("const activeElement = document.activeElement;", self.app)
+        self.assertIn("activeElement.classList.contains('set-complete')", self.app)
+        self.assertIn("setRows.contains(activeElement)", self.app)
+        self.assertIn("Number(activeElement.closest('.set-row')?.dataset.index)", self.app)
+
+    def test_rerender_restores_focus_to_the_same_set_toggle(self):
+        self.assertIn('setRows.querySelector(`.set-row[data-index="${focusedSetIndex}"] .set-complete`)', self.app)
+        self.assertIn("if (restoredButton) restoredButton.focus();", self.app)
+
 
 if __name__ == "__main__":
     unittest.main()
