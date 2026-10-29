@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const appPath = path.join(__dirname, '../../android/app/src/main/assets/pulse/app.js');
 const appSource = fs.readFileSync(appPath, 'utf8');
-const helperMatch = appSource.match(/(^  function bindSystemMotionPreference\\(\\)\\{[\\s\\S]*?^  \\})(?=\\n\\n  function applyMotionPreference)/m);
+const helperMatch = appSource.match(/(^  function bindSystemMotionPreference\(\)\{[\s\S]*?^  \})(?=\n\n  function applyMotionPreference)/m);
 
 assert.ok(helperMatch, 'app.js must define bindSystemMotionPreference before applyMotionPreference');
 
@@ -22,7 +22,7 @@ function harness({ override = null, modern = true, legacy = true, hasMatchMedia 
   const window = hasMatchMedia ? { matchMedia: () => query } : {};
   const store = { getItem: key => key === 'pulse.v2.reduceMotion' ? override : null };
   const applyMotionPreference = (...args) => calls.push(args);
-  const bind = vm.runInNewContext(`(${helperMatch[1]})`, { window, store, applyMotionPreference });
+  const bind = vm.runInNewContext(\`(\${helperMatch[1]})\`, { window, store, applyMotionPreference });
   bind();
   return { calls, listeners };
 }
@@ -66,5 +66,5 @@ test('application startup installs the system listener after applying initial pr
   const bindAt = appSource.indexOf('bindSystemMotionPreference();', applyAt);
   assert.ok(applyAt >= 0);
   assert.ok(bindAt > applyAt);
-  assert.match(appSource, /store\\.getItem\\('pulse\\.v2\\.reduceMotion'\\)!==null\\)return;/);
+  assert.ok(appSource.includes("if(store.getItem('pulse.v2.reduceMotion')!==null)return;"));
 });
