@@ -36,9 +36,9 @@ const nodes = { exerciseDetail: exerciseDialog, programDetail: programDialog, de
 const getById = id => nodes[id] || null;
 const manager = createDialogFocusManager({ document: doc, getById });
 
-// Opening focuses the close button; closing restores trigger and prior scroll behavior.
-doc.activeElement = trigger;
-manager.open('exerciseDetail', 'detailCloseButton');
+// Opening focuses the close button; closing restores explicit trigger and prior scroll behavior.
+doc.activeElement = makeNode('body');
+manager.open('exerciseDetail', 'detailCloseButton', trigger);
 assert.equal(doc.activeElement, exerciseClose);
 assert.equal(doc.body.style.overflow, 'hidden');
 manager.close('exerciseDetail');
@@ -72,10 +72,10 @@ manager.close('exerciseDetail', false);
 assert.equal(doc.activeElement, exerciseClose);
 assert.equal(doc.body.style.overflow, 'auto');
 
-// If the original trigger is no longer visible, focus falls back to the main content.
+// If the original trigger has no rendered box, focus falls back to the main content.
 doc.activeElement = trigger;
 manager.open('exerciseDetail', 'detailCloseButton');
-trigger.classList.add('hidden');
+trigger.getClientRects = () => [];
 manager.close('exerciseDetail');
 assert.equal(doc.activeElement, nodes.mainContent);
 
