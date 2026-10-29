@@ -37,7 +37,7 @@ class DialogFocusAccessibilityTests(unittest.TestCase):
         self.assertIn("closeProgramDetail(false);closeDetail(false)", start_program)
 
     def test_global_keydown_routes_tab_to_active_dialog(self):
-        self.assertIn("dialogFocus.handleKeydown(event, dialogId)", self.app)
+        self.assertIn("dialogFocus.handleKeydown(event,dialogId)", self.app)
         self.assertIn("event.key!=='Escape'", self.app)
 
     def test_manager_has_tab_trap_and_scroll_restore(self):
