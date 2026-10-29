@@ -30,11 +30,11 @@
       });
     }
 
-    function open(dialogId, closeButtonId) {
+    function open(dialogId, closeButtonId, returnTarget = null) {
       const dialog = getById(dialogId);
       if (!dialog) return;
       if (!anyDialogOpen()) {
-        const active = document.activeElement;
+        const active = returnTarget || document.activeElement;
         returnFocus = active && typeof active.focus === 'function' ? active : null;
         previousOverflow = document.body.style.overflow;
       }
@@ -52,7 +52,7 @@
       document.body.style.overflow = previousOverflow;
       const target = returnFocus;
       returnFocus = null;
-      if (restoreFocus && target && target.isConnected !== false && !(typeof target.closest === 'function' && target.closest('.hidden'))) {
+      if (restoreFocus && target && target.isConnected !== false && !(typeof target.closest === 'function' && target.closest('.hidden')) && !(typeof target.getClientRects === 'function' && target.getClientRects().length === 0)) {
         target.focus();
         return;
       }
