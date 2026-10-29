@@ -125,13 +125,13 @@ STEP_OVERRIDES = {
             "Start in a standing position with a staggered, athletic stance. Hold a medicine ball in one hand, on the same side as your back leg. This will be your starting position.",
             "Begin by winding the arm, raising the medicine ball above your head. As you do so, extend through the hips, knees, and ankles to load up for the slam.",
             "At peak extension, flex the shoulders, spine, and hips to throw the ball hard into the ground directly in front of you.",
-            "Catch the ball on the bounce and continue for the desired number of repetitions."
+            "Control the rebound only if the ball is designed to rebound; otherwise let it settle before retrieving it. Reset your stance and clear the area before the next slam."
         ],
         "ar": [
             "قف بوقفة متدرجة وامسك الكرة بيد واحدة قرب جانب الرجل الخلفية.",
             "ارفع الكرة فوق الرأس مع مد الورك والركبتين والكاحلين دون تقويس أسفل الظهر.",
             "اسحب الذراع والجذع إلى أسفل ووجّه الكرة بقوة إلى الأرض أمامك مع إبقاء القدمين ثابتتين.",
-            "التقط ارتداد الكرة بتحكم وأعد الوقفة قبل التكرار التالي."
+            "سيطر على الارتداد فقط إذا كانت الكرة مصممة لذلك؛ وإلا فاتركها تستقر قبل التقاطها. أعد ضبط الوقفة وأخلِ المنطقة قبل الرمية التالية."
         ]
     },
     "Pallof_Press_With_Rotation": {
@@ -931,14 +931,14 @@ STEP_OVERRIDES = {
             "Step forward in front of an imaginary straight line between both pulleys while pulling your arms together in front of you. Your torso should have a small forward bend from the waist. This will be your starting position.",
             "With a slight bend on your elbows in order to prevent stress at the biceps tendon, extend your arms to the side (straight out at both sides) in a wide arc until you feel a stretch on your chest. Breathe in as you perform this portion of the movement. Keep in mind that throughout the movement, the arms and torso should remain stationary; the movement should only occur at the shoulder joint.",
             "Return your arms back to the starting position as you breathe out. Make sure to use the same arc of motion used to lower the weights.",
-            "Hold for a second at the starting position and repeat the movement for the prescribed amount of repetitions."
+            "Return the handles along the same controlled arc without letting the weight stack collide; keep a slight elbow bend and stop if the shoulder hurts."
         ],
         "ar": [
             "اضبط البكرتين في موضع مرتفع واختر حملًا يمكن التحكم فيه، ثم أمسك المقبضين وتقدم خطوة.",
             "مل قليلًا من الورك مع ثني بسيط للمرفقين وثبات الجذع.",
             "افتح الذراعين بقوس واسع حتى تشعر بتمدد مريح في الصدر دون شد مؤلم للكتف.",
             "قرّب اليدين أمام الصدر بالقوس نفسه مع الزفير دون اصطدام الأوزان.",
-            "أعد الذراعين ببطء وكرر مع الحفاظ على زاوية المرفقين."
+            "أعد المقبضين بالقوس المتحكم نفسه دون اصطدام الأوزان؛ حافظ على ثني بسيط للمرفقين وتوقف إذا ظهر ألم بالكتف."
         ]
     },
     "Close-Grip_Front_Lat_Pulldown": {
@@ -948,7 +948,7 @@ STEP_OVERRIDES = {
             "As you have both arms extended in front of you - while holding the bar at the chosen grip width - bring your torso back around 30 degrees or so while creating a curvature on your lower back and sticking your chest out. This is your starting position.",
             "As you breathe out, bring the bar down until it touches your upper chest by drawing the shoulders and the upper arms down and back. Concentrate on squeezing the back muscles once you reach the full contracted position. The upper torso should remain stationary (only the arms should move). The forearms should do no other work except for holding the bar; therefore do not try to pull the bar down using the forearms.",
             "After a second in the contracted position, while squeezing your shoulder blades together, slowly raise the bar back to the starting position when your arms are fully extended and the lats are fully stretched. Inhale during this portion of the movement.",
-            "6. Repeat this motion for the prescribed amount of repetitions."
+            "Return the bar slowly until your arms are extended without shrugging or swinging; keep the bar in front of you and stop if shoulder pain develops."
         ],
         "ar": [
             "اجلس واضبط وسادة الفخذين لمنع ارتفاع الجسم أثناء السحب.",
@@ -956,7 +956,7 @@ STEP_OVERRIDES = {
             "ارفع الصدر قليلًا مع ميل بسيط للجذع وثبات الحوض.",
             "ازفر واسحب المرفقين إلى أسفل حتى يقترب البار من أعلى الصدر، لا خلف الرقبة.",
             "توقف لحظة مع إبعاد الكتفين عن الأذنين وتجنب التأرجح.",
-            "أعد البار ببطء إلى المد الكامل بتحكم."
+            "أعد البار ببطء حتى تمتد الذراعان دون رفع الكتفين أو تأرجح الجذع؛ أبقِ البار أمامك وتوقف إذا ظهر ألم بالكتف."
         ]
     },
     "Dip_Machine": {
@@ -1074,13 +1074,13 @@ STEP_OVERRIDES = {
             "Lie on the floor face down and place your hands about 36 inches apart while holding your torso up at arms length.",
             "Next, lower yourself downward until your chest almost touches the floor as you inhale.",
             "Now breathe out and press your upper body back up to the starting position while squeezing your chest.",
-            "After a brief pause at the top contracted position, you can begin to lower yourself downward again for as many repetitions as needed."
+            "Keep your head, hips, and heels aligned as you lower your chest under control; press back up without letting your hips sag, and stop when you cannot maintain that line."
         ],
         "ar": [
             "اتخذ وضع بلانك عالٍ واليدان أوسع قليلًا من الكتفين، والجسم في خط مستقيم.",
             "اثنِ المرفقين واخفض الصدر نحو الأرض مع الشهيق مع الحفاظ على ثبات الجذع.",
             "ادفع الأرض ومدّ المرفقين للعودة إلى البداية مع الزفير.",
-            "كرر دون هبوط الحوض أو رفعه."
+            "حافظ على استقامة الرأس والحوض والكعبين أثناء خفض الصدر بتحكم؛ ادفع للأعلى دون هبوط الحوض، وتوقف إذا تعذر الحفاظ على استقامة الجسم."
         ]
     },
     "Single_Leg_Glute_Bridge": {
@@ -1260,7 +1260,7 @@ STEP_OVERRIDES = {
             "Use the left hand to pick up the dumbbell on the floor and hold the weight while keeping your lower back straight. The palm of the hand should be facing your torso. This will be your starting position.",
             "Pull the resistance straight up to the side of your chest, keeping your upper arm close to your side and keeping the torso stationary. Breathe out as you perform this step. Concentrate on squeezing the back muscles once you reach the full contracted position. Also, make sure that the force is performed with the back muscles and not the arms. Finally, the upper torso should remain stationary and only the arms should move. The forearms should do no other work except for holding the dumbbell; therefore do not try to pull the dumbbell up using the forearms.",
             "Lower the resistance straight down to the starting position. Breathe in as you perform this step.",
-            "Repeat the movement for the specified amount of repetitions.",
+            "Lower the dumbbell slowly until your arm is extended beneath the shoulder; keep your torso square, then finish the reps and switch sides.",
         ],
         "ar": [
             "ضع دمبلًا بجانب مقعد ثابت، واستند بإحدى اليدين والركبة من الجهة نفسها على المقعد.",
@@ -1268,7 +1268,7 @@ STEP_OVERRIDES = {
             "أمسك الدمبل باليد الحرة واترك الذراع ممدودة تحت الكتف دون تدوير الجذع.",
             "ازفر واسحب المرفق بمحاذاة الجسم نحو الورك، مع إبقاء الكتف والجذع ثابتين.",
             "اخفض الدمبل ببطء مع الشهيق حتى تمتد الذراع دون إسقاط الوزن أو شد الكتف.",
-            "أكمل العدات ثم بدّل الجهة، واستخدم حملًا أخف إذا بدأ الجذع بالدوران.",
+            "اخفض الدمبل ببطء حتى تمتد الذراع أسفل الكتف مع ثبات الجذع، ثم أكمل العدات وبدّل الجهة.",
         ]
     },
     "Side_Lateral_Raise": {
