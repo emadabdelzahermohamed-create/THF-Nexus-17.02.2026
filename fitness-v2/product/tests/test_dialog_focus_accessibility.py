@@ -25,9 +25,9 @@ class DialogFocusAccessibilityTests(unittest.TestCase):
         self.assertLess(self.index.index(manager_tag), self.index.index(app_tag))
 
     def test_both_detail_dialogs_use_shared_focus_manager(self):
-        self.assertIn("dialogFocus.open('exerciseDetail','detailCloseButton')", self.app)
+        self.assertIn("dialogFocus.open('exerciseDetail','detailCloseButton', returnTarget)", self.app)
         self.assertIn("dialogFocus.close('exerciseDetail', restoreFocus)", self.app)
-        self.assertIn("dialogFocus.open('programDetail','programDetailCloseButton')", self.app)
+        self.assertIn("dialogFocus.open('programDetail','programDetailCloseButton', returnTarget)", self.app)
         self.assertIn("dialogFocus.close('programDetail', restoreFocus)", self.app)
 
     def test_starting_workout_does_not_restore_focus_to_hidden_library(self):
@@ -38,6 +38,8 @@ class DialogFocusAccessibilityTests(unittest.TestCase):
 
     def test_global_keydown_routes_tab_to_active_dialog(self):
         self.assertIn("dialogFocus.handleKeydown(event,dialogId)", self.app)
+        self.assertIn("openDetail(card.dataset.id, card)", self.app)
+        self.assertIn("openProgramDetail(card.dataset.program, card)", self.app)
         self.assertIn("event.key!=='Escape'", self.app)
 
     def test_manager_has_tab_trap_and_scroll_restore(self):
@@ -45,6 +47,7 @@ class DialogFocusAccessibilityTests(unittest.TestCase):
         self.assertIn("event.preventDefault()", self.manager)
         self.assertIn("document.body.style.overflow = previousOverflow", self.manager)
         self.assertIn("target.focus()", self.manager)
+        self.assertIn("target.getClientRects().length === 0", self.manager)
 
     def test_runtime_scenarios(self):
         result = subprocess.run(
