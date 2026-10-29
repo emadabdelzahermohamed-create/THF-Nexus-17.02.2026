@@ -495,13 +495,17 @@
     });
   }
   function completeSet(index) {
-    const set = state.active.sets[index]; set.complete = !set.complete; persistActive(); renderActiveWorkout();
-    if (set.complete && index < state.active.sets.length-1) startRest(set.restSeconds || activeExercise().prescription.restSeconds || 60);
+    const set = state.active.sets[index]; set.complete = !set.complete;
+    if(!set.complete && (state.active.restForSetIndex===index || (!Number.isInteger(state.active.restForSetIndex) && state.active.restEndsAtMs))) stopRest();
+    persistActive(); renderActiveWorkout();
+    if (set.complete && index < state.active.sets.length-1) startRest(set.restSeconds || activeExercise().prescription.restSeconds || 60,index);
   }
-  function startRest(seconds) {
+  function startRest(seconds,setIndex) {
     clearInterval(state.restTick);
     if(!state.active)return;
-    state.active.restEndsAtMs=restTimer.deadline(seconds);persistActive();
+    state.active.restEndsAtMs=restTimer.deadline(seconds);
+    state.active.restForSetIndex=Number.isInteger(setIndex)?setIndex:null;
+    persistActive();
     $('restPanel').classList.remove('hidden');renderRest();
     state.restTick=setInterval(renderRest,1000);
   }
@@ -518,7 +522,7 @@
   }
   function stopRest({announce=false}={}){
     clearInterval(state.restTick);state.restTick=null;
-    if(state.active&&Object.prototype.hasOwnProperty.call(state.active,'restEndsAtMs')){delete state.active.restEndsAtMs;persistActive();}
+    if(state.active){let changed=false;if(Object.prototype.hasOwnProperty.call(state.active,'restEndsAtMs')){delete state.active.restEndsAtMs;changed=true;}if(Object.prototype.hasOwnProperty.call(state.active,'restForSetIndex')){delete state.active.restForSetIndex;changed=true;}if(changed)persistActive();}
     $('restPanel').classList.add('hidden');
     if(announce)announceRestComplete();
   }
@@ -527,7 +531,7 @@
     const deadlineMs=Number(state.active?.restEndsAtMs);
     const expiredWhileAway=Boolean(state.active&&hasDeadline&&Number.isFinite(deadlineMs)&&deadlineMs>0&&restTimer.remaining(deadlineMs)<=0);
     if(!state.active||restTimer.remaining(state.active.restEndsAtMs)<=0){
-      if(state.active&&hasDeadline){delete state.active.restEndsAtMs;persistActive();}
+      if(state.active){let changed=false;if(Object.prototype.hasOwnProperty.call(state.active,'restEndsAtMs')){delete state.active.restEndsAtMs;changed=true;}if(Object.prototype.hasOwnProperty.call(state.active,'restForSetIndex')){delete state.active.restForSetIndex;changed=true;}if(changed)persistActive();}
       $('restPanel').classList.add('hidden');
       if(expiredWhileAway)announceRestComplete();
       return;
