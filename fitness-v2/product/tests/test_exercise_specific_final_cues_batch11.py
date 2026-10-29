@@ -36,6 +36,11 @@ EXPECTED = {
         "Reset your brace before each repetition, keep the bar close to your legs, and stop the set if you cannot maintain a neutral spine or secure grip.",
         "أعد ضبط شد الجذع قبل كل عدة، وأبقِ البار قريبًا من الساقين؛ أوقف المجموعة إذا تعذر الحفاظ على ظهر محايد أو قبضة ثابتة.",
     ),
+    "lying-leg-curls": (
+        "Lying_Leg_Curls",
+        "Lower the pad slowly until your knees reach a comfortable extension; keep your hips against the bench and reduce the load if you feel knee pain.",
+        "أنزل الوسادة ببطء حتى امتداد مريح للركبتين، وأبقِ الوركين على المقعد؛ خفّف الحمل إذا ظهر ألم بالركبة.",
+    ),
 }
 
 FAST_SKIPPING_ARABIC_STEPS = [
