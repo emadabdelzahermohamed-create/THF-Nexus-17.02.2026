@@ -244,7 +244,7 @@
         detailFramesObserver.observe(detailDemo, { childList: true });
       }
     }
-    document.getElementById('reduceMotion')?.addEventListener('change', refresh);
+    document.getElementById('reduceMotion')?.addEventListener('change', () => Promise.resolve().then(refresh));
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('resize', refresh, { passive: true });
     const query = window.matchMedia?.('(prefers-reduced-motion: reduce)');
