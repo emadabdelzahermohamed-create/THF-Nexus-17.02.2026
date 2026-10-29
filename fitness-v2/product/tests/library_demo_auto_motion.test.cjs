@@ -8,6 +8,8 @@ const vm = require('node:vm');
 
 const sourcePath = path.resolve(__dirname, '../../android/app/src/main/assets/pulse/library-demo-motion.js');
 const source = fs.readFileSync(sourcePath, 'utf8');
+const indexPath = path.resolve(__dirname, '../../android/app/src/main/assets/pulse/index.html');
+const indexSource = fs.readFileSync(indexPath, 'utf8');
 
 class FakeClassList {
   constructor(initial = []) { this.values = new Set(initial); }
@@ -223,4 +225,31 @@ test('visible cards resume when reduced motion is turned off', async () => {
   assert.ok(h.timers.size > 0);
   h.tick();
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/1.jpg');
+});
+
+
+test('animator loads after the motion manifest and before app bootstrap', () => {
+  const manifestIndex = indexSource.indexOf('<script src="./data/motion-manifest.js"></script>');
+  const animatorIndex = indexSource.indexOf('<script src="./library-demo-motion.js"></script>');
+  const appIndex = indexSource.indexOf('<script src="./app.js"></script>');
+  assert.ok(manifestIndex >= 0 && manifestIndex < animatorIndex && animatorIndex < appIndex);
+});
+
+test('OS reduced-motion is honored when no app override is saved', async () => {
+  const h = buildHarness({ reduced: true });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), false);
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+});
+
+test('checkbox change waits for the app preference write before reconciling', async () => {
+  const h = buildHarness();
+  await new Promise(resolve => setImmediate(resolve));
+  h.reduceControl.checked = true;
+  h.reduceControl.addEventListener('change', () => h.setStoredPreference('1'));
+  h.reduceControl.dispatch('change');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
 });
