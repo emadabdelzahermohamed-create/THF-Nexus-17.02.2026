@@ -43,3 +43,12 @@
 :root[style*="--motion: 0"] .button:active,:root[style*="--motion:0"] .button:active{transform:none!important}
 :root[style*="--motion: 0"] .exercise-card:hover img,:root[style*="--motion:0"] .exercise-card:hover img{transform:none!important}
 :root[style*="--motion: 0"] .program-card:hover .program-cover img,:root[style*="--motion:0"] .program-card:hover .program-cover img{transform:none!important}
+
+
+/* Offline library/detail demo playback: one audited start/finish frame at a time. */
+.exercise-card .media img.demo-frame-swap{animation:thfDemoFrameSwap .22s ease-out}
+@keyframes thfDemoFrameSwap{from{opacity:.55}to{opacity:1}}
+.detail-demo.auto-sequence{display:block;position:relative;aspect-ratio:4/3;min-height:180px;overflow:hidden;background:#061118}
+.detail-demo.auto-sequence .detail-frame{position:absolute;inset:0;aspect-ratio:auto;opacity:0;transition:opacity .28s ease;pointer-events:none}
+.detail-demo.auto-sequence .detail-frame.is-active{opacity:1;pointer-events:auto;z-index:1}
+.detail-demo.auto-sequence .detail-frame img{display:block}
