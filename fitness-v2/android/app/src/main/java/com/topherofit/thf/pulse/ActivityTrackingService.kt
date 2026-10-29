@@ -380,7 +380,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             longitude = location.longitude,
             altitudeMetres = if (location.hasAltitude()) location.altitude else null,
             accuracyMetres = location.accuracy,
-            elapsedMs = nowElapsed - activityStartedAtElapsedMs,
+            elapsedMs = (location.elapsedRealtimeNanos / 1_000_000L - activityStartedAtElapsedMs).coerceAtLeast(0L),
         )
         maybeActivateActivity(nowElapsed)
         publishActivitySnapshot()
@@ -419,54 +419,39 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         val mode = activityMode ?: return
         if (activityPhase == ActivitySessionPhase.ACTIVE) return
 
-        val firstPoint = route.firstOrNull()
-        val lastPoint = route.lastOrNull()
-        val gpsDisplacementMetres = if (firstPoint != null && lastPoint != null) {
-            ActivityMetrics.distanceMetres(
-                firstPoint.latitude, firstPoint.longitude, lastPoint.latitude, lastPoint.longitude,
-            )
-        } else {
-            0.0
-        }
-        val gpsDurationMs = if (firstPoint != null && lastPoint != null) {
-            (lastPoint.elapsedMs - firstPoint.elapsedMs).coerceAtLeast(0L)
-        } else {
-            0L
-        }
-        val worstGpsAccuracyMetres = if (firstPoint != null && lastPoint != null) {
-            max(firstPoint.accuracyMetres.toDouble(), lastPoint.accuracyMetres.toDouble())
-        } else {
-            Double.NaN
-        }
-        val gpsConfirmed = ActivityGpsMotionGate.confirmsMovement(
-            mode = mode,
-            displacementMetres = gpsDisplacementMetres,
-            acceptedPointCount = route.size,
-            durationMs = gpsDurationMs,
-            worstAccuracyMetres = worstGpsAccuracyMetres,
-        )
+        // Prefer the shortest recent window that proves sustained movement. Older ARMED fixes
+        // must not move the activation clock backwards or inflate elapsed time/calories.
+        val gpsWindow = ActivityGpsActivationWindowPolicy.select(route, mode)
+        val gpsDisplacementMetres = gpsWindow?.displacementMetres ?: 0.0
+        val gpsDurationMs = gpsWindow?.durationMs ?: 0L
+        val worstGpsAccuracyMetres = gpsWindow?.worstAccuracyMetres ?: Double.NaN
         if (!ActivityActivationGate.shouldActivate(
                 mode = mode,
                 gpsDisplacementMetres = gpsDisplacementMetres,
                 measuredStepDelta = activityStepDelta,
-                acceptedGpsPoints = route.size,
+                acceptedGpsPoints = gpsWindow?.pointCount ?: 0,
                 gpsDurationMs = gpsDurationMs,
                 worstGpsAccuracyMetres = worstGpsAccuracyMetres,
             )
         ) return
 
         activityPhase = ActivitySessionPhase.ACTIVE
-        if (gpsConfirmed && firstPoint != null && lastPoint != null) {
-            // Count only the validated net displacement for the warm-up segment and collapse its
-            // route to endpoints; this prevents pre-activation GPS wander from inflating the track.
-            activityDistanceMetres = gpsDisplacementMetres
+        if (gpsWindow != null) {
+            val firstPoint = gpsWindow.firstPoint
+            val lastPoint = gpsWindow.lastPoint
+            // Count only validated net displacement for the movement window. Earlier stationary
+            // drift and warm-up points are deliberately excluded from the measured route.
+            activityDistanceMetres = gpsWindow.displacementMetres
             route.clear()
             route += firstPoint
             if (lastPoint != firstPoint) route += lastPoint
-            currentSpeedKph = ActivityMetrics.averageSpeedKph(gpsDisplacementMetres, gpsDurationMs)
+            currentSpeedKph = ActivityMetrics.averageSpeedKph(
+                gpsWindow.displacementMetres,
+                gpsWindow.durationMs,
+            )
             lastAccuracyMetres = lastPoint.accuracyMetres
-            activityActivatedAtWallMs = activityStartedAtWallMs + (firstPoint.elapsedMs.coerceAtLeast(0L))
-            activityActivatedAtElapsedMs = activityStartedAtElapsedMs + (firstPoint.elapsedMs.coerceAtLeast(0L))
+            activityActivatedAtWallMs = activityStartedAtWallMs + firstPoint.elapsedMs
+            activityActivatedAtElapsedMs = activityStartedAtElapsedMs + firstPoint.elapsedMs
         } else {
             // Step evidence can activate walk/run without GPS. Discard all pre-activation GPS
             // candidates and start a fresh route anchor after activation.
