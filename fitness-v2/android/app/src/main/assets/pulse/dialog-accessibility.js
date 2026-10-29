@@ -74,10 +74,16 @@
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
       const active = document.activeElement;
-      if (event.shiftKey && (active === first || !dialog.contains(active))) {
+      const activeIsFocusable = focusables.includes(active);
+      if (!activeIsFocusable) {
+        // Dynamic content can disable or hide the focused control while the dialog stays open.
+        // Keep Tab navigation inside the dialog even when the active node is still a descendant.
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && active === first) {
         event.preventDefault();
         last.focus();
-      } else if (!event.shiftKey && (active === last || !dialog.contains(active))) {
+      } else if (!event.shiftKey && active === last) {
         event.preventDefault();
         first.focus();
       }
