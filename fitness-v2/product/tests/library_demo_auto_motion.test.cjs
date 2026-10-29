@@ -58,11 +58,12 @@ class FakeElement {
   getClientRects() { return this.rect.width > 0 && this.rect.height > 0 ? [{}] : []; }
 }
 
-function buildHarness({ reduced = false, visible = true } = {}) {
+function buildHarness({ reduced = false, visible = true, intersectionObserver = true } = {}) {
   const timers = new Map();
   const mutationObservers = [];
   const intersectionObservers = [];
   const mediaListeners = new Map();
+  const windowListeners = new Map();
   let nextTimer = 1;
   let storedPreference = null;
 
@@ -120,7 +121,10 @@ function buildHarness({ reduced = false, visible = true } = {}) {
     localStorage: { getItem() { return storedPreference; } },
     setInterval(callback, delay) { const id = nextTimer++; timers.set(id, { callback, delay }); return id; },
     clearInterval(id) { timers.delete(id); },
-    addEventListener() {},
+    addEventListener(type, callback) {
+      if (!windowListeners.has(type)) windowListeners.set(type, []);
+      windowListeners.get(type).push(callback);
+    },
     matchMedia() {
       return {
         get matches() { return reduced; },
@@ -155,6 +159,8 @@ function buildHarness({ reduced = false, visible = true } = {}) {
     }
   };
 
+  if (!intersectionObserver) delete window.IntersectionObserver;
+
   vm.runInNewContext(source, { window, document, Promise, Map, Set, Array, Boolean, Number, String, Math });
 
   const fireMutation = target => mutationObservers.filter(observer => observer.target === target).forEach(observer => observer.callback([]));
@@ -165,7 +171,8 @@ function buildHarness({ reduced = false, visible = true } = {}) {
   };
   const setStoredPreference = value => { storedPreference = value; (mediaListeners.get('change') || []).forEach(callback => callback({ matches: value === '1' })); };
 
-  return { timers, grid, card, cardImage, detailRoot, detailDemo, frame0, frame1, reduceControl, fireMutation, tick, setStoredPreference };
+  const fireWindow = type => { for (const callback of windowListeners.get(type) || []) callback({ type }); };
+  return { timers, grid, card, cardImage, detailRoot, detailDemo, frame0, frame1, reduceControl, fireMutation, fireWindow, tick, setStoredPreference };
 }
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
@@ -227,6 +234,18 @@ test('visible cards resume when reduced motion is turned off', async () => {
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/1.jpg');
 });
 
+
+test('fallback viewport tracking resumes animation after scrolling when IntersectionObserver is unavailable', async () => {
+  const h = buildHarness({ visible: false, intersectionObserver: false });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timers.size, 0);
+  h.card.rect = { top: 0, left: 0, right: 120, bottom: 90, width: 120, height: 90 };
+  h.fireWindow('scroll');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(h.timers.size > 0);
+  h.tick();
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/1.jpg');
+});
 
 test('animator loads after the motion manifest and before app bootstrap', () => {
   const manifestIndex = indexSource.indexOf('<script src="./data/motion-manifest.js"></script>');
