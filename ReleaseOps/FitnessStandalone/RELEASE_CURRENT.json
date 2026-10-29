@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-10-27T15:56:03Z",
+  "observed_at": "2026-10-29T16:06:14Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -73,5 +73,33 @@
     "health_policy_privacy": "OPEN",
     "production": "NOT_VERIFIED"
   },
-  "next_action": "Wait for safe phone availability; perform 51019 P0 acceptance only when device is positively interactive/unlocked and no owner workout is active. Do not merge untested PR heads #117/#118/#137/#141; keep #93/#98 HOLD. Next versionCode must be >51019 and use a unique meaningful candidate."
+  "next_action": "Poll exact-SHA validation run 40907739061 for merge f67aa0eaeab1bac291d52b699d6495a56850c265. If all Android/source/product/backend gates pass, atomically advance app version identity to unique 51020 and update the candidate workflow's exact identity checks, run full acceptance once on that final candidate SHA, then use the existing Play-bound signing/Internal promotion path and independently read back track/version/source. If the gate fails, fix the named defect before allocating 51020. Physical P0 remains blocked while the authorized device is offline; Production stays NOT_VERIFIED. Free scheduler consolidation remains blocked until a supported timing_mode control exists.",
+  "canonical_validation": {
+    "merged_pr": 184,
+    "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
+    "canonical_merge_sha": "f67aa0eaeab1bac291d52b699d6495a56850c265",
+    "workflow_run": 40907739061,
+    "workflow_url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/40907739061",
+    "status": "IN_PROGRESS",
+    "source_product_backend": "PASS",
+    "android_unit_lint_apk_aab": "IN_PROGRESS",
+    "artifact_digest": null,
+    "release_version_allocated": false,
+    "play_changed": false
+  },
+  "scheduler_transition": {
+    "target_enabled_daily_flexible_tasks": 3,
+    "replacement_ids": [
+      "6ad3132659e48191988b0b01e1712f26",
+      "6ad61d7995988191981933f81525495f",
+      "6ad718befb5c81919ffcc399dff852e1"
+    ],
+    "replacement_tasks_enabled": true,
+    "timing_mode": "exact_schedule",
+    "unsupported_byhour_present": true,
+    "old_exercise_only_enabled": true,
+    "old_physical_qa_enabled": false,
+    "transition": "BLOCKED",
+    "blocker": "Automation update API has no timing_mode field; prior schedule updates failed automation_schedule_not_available (requested exact_schedule, allowed flexible_schedule). No tasks created or disabled."
+  }
 }
