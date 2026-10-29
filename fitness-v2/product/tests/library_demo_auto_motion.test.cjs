@@ -64,7 +64,9 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
   const intersectionObservers = [];
   const mediaListeners = new Map();
   const windowListeners = new Map();
+  const animationFrames = new Map();
   let nextTimer = 1;
+  let nextFrame = 1;
   let storedPreference = null;
 
   const imageFor = (src, alt = '') => {
@@ -125,6 +127,11 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
       if (!windowListeners.has(type)) windowListeners.set(type, []);
       windowListeners.get(type).push(callback);
     },
+    requestAnimationFrame(callback) {
+      const id = nextFrame++;
+      animationFrames.set(id, callback);
+      return id;
+    },
     matchMedia() {
       return {
         get matches() { return reduced; },
@@ -172,7 +179,12 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
   const setStoredPreference = value => { storedPreference = value; (mediaListeners.get('change') || []).forEach(callback => callback({ matches: value === '1' })); };
 
   const fireWindow = type => { for (const callback of windowListeners.get(type) || []) callback({ type }); };
-  return { timers, grid, card, cardImage, detailRoot, detailDemo, frame0, frame1, reduceControl, fireMutation, fireWindow, tick, setStoredPreference };
+  const flushAnimationFrames = () => {
+    const callbacks = Array.from(animationFrames.values());
+    animationFrames.clear();
+    callbacks.forEach(callback => callback());
+  };
+  return { timers, animationFrames, grid, card, cardImage, detailRoot, detailDemo, frame0, frame1, reduceControl, fireMutation, fireWindow, flushAnimationFrames, tick, setStoredPreference };
 }
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
@@ -241,6 +253,22 @@ test('fallback viewport tracking resumes animation after scrolling when Intersec
   assert.equal(h.timers.size, 0);
   h.card.rect = { top: 0, left: 0, right: 120, bottom: 90, width: 120, height: 90 };
   h.fireWindow('scroll');
+  h.flushAnimationFrames();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(h.timers.size > 0);
+  h.tick();
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/1.jpg');
+});
+
+test('legacy-WebView scroll bursts are coalesced to one viewport refresh per animation frame', async () => {
+  const h = buildHarness({ visible: false, intersectionObserver: false });
+  await new Promise(resolve => setImmediate(resolve));
+  h.card.rect = { top: 0, left: 0, right: 120, bottom: 90, width: 120, height: 90 };
+  h.fireWindow('scroll');
+  h.fireWindow('scroll');
+  h.fireWindow('scroll');
+  assert.equal(h.animationFrames.size, 1);
+  h.flushAnimationFrames();
   await new Promise(resolve => setImmediate(resolve));
   assert.ok(h.timers.size > 0);
   h.tick();
