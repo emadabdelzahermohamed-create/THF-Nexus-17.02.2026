@@ -95,4 +95,15 @@ assert.equal(prevented, true, 'Shift+Tab must be trapped when active element is 
 assert.equal(doc.activeElement, exerciseStart, 'reverse Tab must move to last visible focusable control');
 manager.close('exerciseDetail');
 
-console.log('PASS: 6 dialog focus/lifecycle scenarios');
+// Focus moved outside by script/browser must be redirected into the active dialog.
+doc.activeElement = trigger;
+manager.open('exerciseDetail', 'detailCloseButton');
+doc.activeElement = trigger;
+assert.equal(manager.handleFocusIn({ target: trigger }, 'exerciseDetail'), true);
+assert.equal(doc.activeElement, exerciseClose, 'focusin outside the dialog must return focus to its first control');
+doc.activeElement = exerciseStart;
+assert.equal(manager.handleFocusIn({ target: exerciseStart }, 'exerciseDetail'), false);
+assert.equal(doc.activeElement, exerciseStart, 'focus already inside the dialog must remain undisturbed');
+manager.close('exerciseDetail');
+
+console.log('PASS: 7 dialog focus/lifecycle scenarios');
