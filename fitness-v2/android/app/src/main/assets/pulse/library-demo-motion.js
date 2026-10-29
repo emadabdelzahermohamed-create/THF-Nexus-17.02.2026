@@ -227,6 +227,8 @@
         syncTimer();
       }, { rootMargin: '64px', threshold: 0.01 });
     }
+    // Browsers without IntersectionObserver need scroll events to resume visible-card motion.
+    if (!cardObserver) window.addEventListener('scroll', refresh, { passive: true });
     if (typeof window.MutationObserver === 'function') {
       if (grid) {
         gridObserver = new window.MutationObserver(refresh);
