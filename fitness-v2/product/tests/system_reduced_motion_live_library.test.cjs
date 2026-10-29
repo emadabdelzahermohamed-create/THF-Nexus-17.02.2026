@@ -22,7 +22,7 @@ function harness({ override = null, modern = true, legacy = true, hasMatchMedia 
   const window = hasMatchMedia ? { matchMedia: () => query } : {};
   const store = { getItem: key => key === 'pulse.v2.reduceMotion' ? override : null };
   const applyMotionPreference = (...args) => calls.push(args);
-  const bind = vm.runInNewContext(\`(\${helperMatch[1]})\`, { window, store, applyMotionPreference });
+  const bind = vm.runInNewContext('(' + helperMatch[1] + ')', { window, store, applyMotionPreference });
   bind();
   return { calls, listeners };
 }
