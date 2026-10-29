@@ -49,6 +49,12 @@ class DialogFocusAccessibilityTests(unittest.TestCase):
         self.assertIn("target.focus()", self.manager)
         self.assertIn("target.getClientRects().length === 0", self.manager)
 
+    def test_focusin_redirects_external_focus_into_active_dialog(self):
+        self.assertIn("function handleFocusIn(event, dialogId)", self.manager)
+        self.assertIn("return { open, close, handleKeydown, handleFocusIn }", self.manager)
+        self.assertIn("document.addEventListener('focusin'", self.app)
+        self.assertIn("dialogFocus.handleFocusIn(event,dialogId)", self.app)
+
     def test_runtime_scenarios(self):
         result = subprocess.run(
             ["node", str(NODE_TEST)],
@@ -59,7 +65,7 @@ class DialogFocusAccessibilityTests(unittest.TestCase):
             timeout=10,
         )
         self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
-        self.assertIn("PASS: 6 dialog focus/lifecycle scenarios", result.stdout)
+        self.assertIn("PASS: 7 dialog focus/lifecycle scenarios", result.stdout)
 
 
 if __name__ == "__main__":
