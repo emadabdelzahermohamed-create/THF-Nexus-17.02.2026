@@ -62,6 +62,19 @@
       }
     }
 
+    function handleFocusIn(event, dialogId) {
+      const dialog = getById(dialogId);
+      if (!dialog || dialog.classList.contains('hidden')) return false;
+      const target = event && event.target;
+      if (target && typeof dialog.contains === 'function' && dialog.contains(target)) return false;
+      const focusables = visibleFocusable(dialog);
+      if (!focusables.length) return false;
+      // A script or browser action can move focus outside even when Tab is trapped.
+      // Pull it back into the active modal without preventing the focusin event itself.
+      focusables[0].focus();
+      return true;
+    }
+
     function handleKeydown(event, dialogId) {
       if (event.key !== 'Tab') return false;
       const dialog = getById(dialogId);
@@ -90,7 +103,7 @@
       return true;
     }
 
-    return { open, close, handleKeydown };
+    return { open, close, handleKeydown, handleFocusIn };
   }
 
   return { createDialogFocusManager };
