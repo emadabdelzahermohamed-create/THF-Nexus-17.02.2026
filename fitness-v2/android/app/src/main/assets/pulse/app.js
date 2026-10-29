@@ -627,6 +627,18 @@
     if(saved!==null)return saved==='1';
     return Boolean(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
+  function bindSystemMotionPreference(){
+    if(typeof window.matchMedia!=='function')return;
+    const query=window.matchMedia('(prefers-reduced-motion: reduce)');
+    if(!query)return;
+    const reconcile=event=>{
+      if(store.getItem('pulse.v2.reduceMotion')!==null)return;
+      applyMotionPreference(Boolean(event.matches),false);
+    };
+    if(typeof query.addEventListener==='function')query.addEventListener('change',reconcile);
+    else if(typeof query.addListener==='function')query.addListener(reconcile);
+  }
+
   function applyMotionPreference(reduced,persist=true){
     const enabled=Boolean(reduced);
     $('reduceMotion').checked=enabled;
@@ -686,7 +698,7 @@
   }
 
   const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
-  bind(); $('voiceEnabled').checked=voiceGuidance.isEnabled(); applyMotionPreference(preferredReducedMotion(),false); applyLanguage(); renderHealthStatus(); renderFoundingHero();
+  bind(); $('voiceEnabled').checked=voiceGuidance.isEnabled(); applyMotionPreference(preferredReducedMotion(),false); bindSystemMotionPreference(); applyLanguage(); renderHealthStatus(); renderFoundingHero();
   if (shouldOnboard) openOnboarding();
   if (state.active && activeExercise()) { const item=activeExercise();state.active.sensorProfile=state.active.sensorProfile||sensorProfileForExercise(item);state.active.motionSessionId=state.active.motionSessionId||`${state.active.clientRecordId}:${Number(state.active.programExerciseIndex)||0}:${item.id}`;beginNativeMotionSession(state.active.motionSessionId,state.active.sensorProfile); startMotionPolling(); renderActiveWorkout(); resumeRest(); showScreen('activeWorkoutScreen', false); }
   else { const liveActivity=readActivitySnapshot(); if(liveActivity?.active){state.activitySnapshot=liveActivity;showScreen('activityScreen',false);startActivityPolling();} }
