@@ -60,6 +60,7 @@
     selectedProgram: null,
     active: parse(store.getItem('pulse.v2.active'), null),
     restTick: null,
+    restAnnouncementTick: null,
     demoFrame: 0,
     clearArmedUntil: 0,
     onboardingDraft: null,
@@ -501,6 +502,7 @@
     if (set.complete && index < state.active.sets.length-1) startRest(set.restSeconds || activeExercise().prescription.restSeconds || 60,index);
   }
   function startRest(seconds,setIndex) {
+    cancelRestAnnouncement();
     clearInterval(state.restTick);
     if(!state.active)return;
     state.active.restEndsAtMs=restTimer.deadline(seconds);
@@ -514,13 +516,22 @@
     $('restTimer').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
     if(seconds<=0)stopRest({announce:true});
   }
+  function cancelRestAnnouncement(){
+    if(state.restAnnouncementTick!==null){window.clearTimeout(state.restAnnouncementTick);state.restAnnouncementTick=null;}
+    const node=$('restAnnouncement');if(node)node.textContent='';
+  }
   function announceRestComplete(){
+    cancelRestAnnouncement();
     const node=$('restAnnouncement');
     if(!node)return;
-    node.textContent='';
-    window.setTimeout(()=>{node.textContent=t('restComplete');},50);
+    state.restAnnouncementTick=window.setTimeout(()=>{
+      state.restAnnouncementTick=null;
+      if(state.active?.restEndsAtMs)return;
+      node.textContent=t('restComplete');
+    },50);
   }
   function stopRest({announce=false}={}){
+    if(!announce)cancelRestAnnouncement();
     clearInterval(state.restTick);state.restTick=null;
     if(state.active){let changed=false;if(Object.prototype.hasOwnProperty.call(state.active,'restEndsAtMs')){delete state.active.restEndsAtMs;changed=true;}if(Object.prototype.hasOwnProperty.call(state.active,'restForSetIndex')){delete state.active.restForSetIndex;changed=true;}if(changed)persistActive();}
     $('restPanel').classList.add('hidden');
