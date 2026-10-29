@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-10-29T16:12:27Z",
+  "observed_at": "2026-10-29T16:14:00Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -106,6 +106,22 @@
     "old_exercise_only_enabled": true,
     "old_physical_qa_enabled": false,
     "transition": "BLOCKED",
-    "blocker": "Automation update API has no timing_mode field; prior schedule updates failed automation_schedule_not_available (requested exact_schedule, allowed flexible_schedule). No tasks created or disabled."
+    "blocker": "Automation update action exposes no timing_mode field; prior schedule updates failed with automation_schedule_not_available (requested exact_schedule, allowed flexible_schedule). Do not disable the remaining Exercise-only task until all three replacements are verified daily/flexible.",
+    "last_verified_at": "2026-10-29T19:12:27+03:00",
+    "enabled_fitness_task_count": 4,
+    "enabled_fitness_task_ids": [
+      "6ad3132659e48191988b0b01e1712f26",
+      "6ad61d7995988191981933f81525495f",
+      "6ad718befb5c81919ffcc399dff852e1",
+      "6ab1a9559918819188d130896222ce58"
+    ],
+    "disabled_fitness_task_ids": [
+      "6ab1a95267a481919ff85c80e3004b07"
+    ],
+    "verified_timing_modes": {
+      "6ad3132659e48191988b0b01e1712f26": "exact_schedule",
+      "6ad61d7995988191981933f81525495f": "exact_schedule",
+      "6ad718befb5c81919ffcc399dff852e1": "exact_schedule"
+    }
   }
 }
