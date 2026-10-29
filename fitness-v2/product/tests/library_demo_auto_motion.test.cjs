@@ -211,3 +211,16 @@ test('offscreen exercise cards do not start animation work', async () => {
   assert.equal(h.timers.size, 0);
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
 });
+
+
+test('visible cards resume when reduced motion is turned off', async () => {
+  const h = buildHarness();
+  await new Promise(resolve => setImmediate(resolve));
+  h.setStoredPreference('1');
+  assert.equal(h.timers.size, 0);
+  h.setStoredPreference('0');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(h.timers.size > 0);
+  h.tick();
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/1.jpg');
+});
