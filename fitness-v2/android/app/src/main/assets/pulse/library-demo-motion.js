@@ -18,6 +18,7 @@
   let detailFramesObserver = null;
   let timer = null;
   let detailIndex = 0;
+  let scrollRefreshPending = false;
 
   const itemById = id => exercises().find(item => item.id === id);
   const localAsset = asset => typeof asset === 'string' && asset.length > 0 && !asset.startsWith('/') && !asset.includes('..')
@@ -215,6 +216,19 @@
     syncTimer();
   }
 
+  function scheduleScrollRefresh() {
+    if (scrollRefreshPending) return;
+    if (typeof window.requestAnimationFrame !== 'function') {
+      refresh();
+      return;
+    }
+    scrollRefreshPending = true;
+    window.requestAnimationFrame(() => {
+      scrollRefreshPending = false;
+      refresh();
+    });
+  }
+
   function init() {
     if (typeof window.IntersectionObserver === 'function') {
       cardObserver = new window.IntersectionObserver(entries => {
@@ -228,7 +242,8 @@
       }, { rootMargin: '64px', threshold: 0.01 });
     }
     // Browsers without IntersectionObserver need scroll events to resume visible-card motion.
-    if (!cardObserver) window.addEventListener('scroll', refresh, { passive: true });
+    // Coalesce a burst of legacy-WebView scroll events to one viewport scan per frame.
+    if (!cardObserver) window.addEventListener('scroll', scheduleScrollRefresh, { passive: true });
     if (typeof window.MutationObserver === 'function') {
       if (grid) {
         gridObserver = new window.MutationObserver(refresh);
