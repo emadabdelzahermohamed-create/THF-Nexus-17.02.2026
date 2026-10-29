@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-10-29T16:14:00Z",
+  "observed_at": "2026-10-29T16:15:00Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -73,7 +73,7 @@
     "health_policy_privacy": "OPEN",
     "production": "NOT_VERIFIED"
   },
-  "next_action": "Locate the exact existing candidate workflow file and update its version/identity assertions together with fitness-v2/android/app/build.gradle to unique 51020; run full acceptance once on the final candidate SHA. Then use the validated Play-bound signing/Internal promotion path and independently read back track/version/source. Do not upload validation artifact 12912522684, rebuild/reupload unchanged 51019 bytes, or promote Production. Physical P0 remains blocked while the authorized device is offline; PR #93/#98 remain HOLD; Free scheduler consolidation remains blocked until a supported timing_mode control exists.",
+  "next_action": "Obtain a supported way to trigger and independently list/read the push-triggered candidate workflow run and artifact. Then atomically update fitness-v2/android/app/build.gradle plus .github/workflows/fitness-sensor-candidate.yml to unique 51020; run full acceptance once on that final SHA; only after exact run/artifact/digest are available, pin .github/workflows/fitness-51008-internal-promote.yml to the new source run/SHA and exact unsigned AAB digest, sign/upload, and independently read back Internal track/version/source. Do not upload validation artifact 12912522684, rebuild/reupload unchanged 51019 bytes, or promote Production. Physical P0 remains blocked while the authorized device is offline; PR #93/#98 remain HOLD; Free scheduler consolidation remains blocked until a supported timing_mode control exists.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -123,5 +123,19 @@
       "6ad61d7995988191981933f81525495f": "exact_schedule",
       "6ad718befb5c81919ffcc399dff852e1": "exact_schedule"
     }
+  },
+  "candidate_workflow": {
+    "candidate_path": ".github/workflows/fitness-sensor-candidate.yml",
+    "candidate_blob_sha": "0423e883c29c283f909981a9b8c6d6e0bf4ffe8e",
+    "current_candidate_identity": 51019,
+    "gradle_path": "fitness-v2/android/app/build.gradle",
+    "gradle_blob_sha": "451c8b68491b88dae5ef4c0833a8160d1186bc57",
+    "promotion_path": ".github/workflows/fitness-51008-internal-promote.yml",
+    "promotion_blob_sha": "b1e21faaf19adb1604c5ea5ed70afd698cc410dd",
+    "promotion_pins_old_source_run": 40516382792,
+    "promotion_pins_old_source_sha": "76053bd9127c38d8065eb7ac250bdeb34ab67854",
+    "next_release_version_code": 51020,
+    "status": "BLOCKED_BEFORE_VERSION_ALLOCATION",
+    "blocker": "Available GitHub connector has no workflow-dispatch or push-run-listing action. fetch_commit_workflow_runs returns PR-triggered runs only, so exact run/artifact from the canonical push-triggered candidate workflow cannot currently be discovered/read back."
   }
 }
