@@ -456,7 +456,10 @@
     renderMotionEvidence(state.motionEvidence||readMotionSnapshot());
     const done = state.active.sets.filter(set=>set.complete).length; $('setProgressTitle').textContent = t('setProgress').replace('{done}',done).replace('{total}',state.active.sets.length); $('sessionVolume').textContent = `${Math.round(sessionVolume())} kg`;
     $('finishWorkoutBtn').textContent=programSession?(programIndex<programSession.exercises.length-1?t('saveNext'):t('finishSession')):t('finishWorkout');
-    $('setRows').innerHTML = state.active.sets.map((set,index)=>`<div class="set-row${set.complete?' complete':''}" data-index="${index}"><span class="set-number"><b>${index+1}</b>${escapeHtml(t(set.type))}</span><label class="set-field"><span>${escapeHtml(t('load'))}</span><input class="set-input" data-field="load" inputmode="decimal" type="number" min="0" step="0.5" value="${Number(set.load)||0}" ${item.tracking.load?'':'disabled'} aria-label="${escapeHtml(t('load'))}"></label><label class="set-field"><span>${escapeHtml(t('reps'))}</span><input class="set-input" data-field="reps" inputmode="numeric" type="number" min="0" max="999" value="${Number(set.reps)||0}" aria-label="${escapeHtml(t('reps'))}"></label><label class="set-field"><span>RPE</span><input class="set-input" data-field="rpe" inputmode="decimal" type="number" min="1" max="10" step="0.5" value="${Number(set.rpe)||7}" aria-label="RPE"></label><label class="set-field"><span>RIR</span><input class="set-input" data-field="rir" inputmode="numeric" type="number" min="0" max="10" value="${Number(set.rir)||0}" ${item.tracking.rir?'':'disabled'} aria-label="RIR"></label><button class="set-complete" type="button" aria-label="${escapeHtml(t(set.complete?'undoSetCompletion':'markSetComplete').replace('{set}',String(index+1)))}" aria-pressed="${String(Boolean(set.complete))}">${set.complete?'✓':'○'}</button></div>`).join('');
+    const setRows = $('setRows');
+    const activeElement = document.activeElement;
+    const focusedSetIndex = activeElement && activeElement.classList && activeElement.classList.contains('set-complete') && setRows.contains(activeElement) ? Number(activeElement.closest('.set-row')?.dataset.index) : null;
+    setRows.innerHTML = state.active.sets.map((set,index)=>`<div class="set-row${set.complete?' complete':''}" data-index="${index}"><span class="set-number"><b>${index+1}</b>${escapeHtml(t(set.type))}</span><label class="set-field"><span>${escapeHtml(t('load'))}</span><input class="set-input" data-field="load" inputmode="decimal" type="number" min="0" step="0.5" value="${Number(set.load)||0}" ${item.tracking.load?'':'disabled'} aria-label="${escapeHtml(t('load'))}"></label><label class="set-field"><span>${escapeHtml(t('reps'))}</span><input class="set-input" data-field="reps" inputmode="numeric" type="number" min="0" max="999" value="${Number(set.reps)||0}" aria-label="${escapeHtml(t('reps'))}"></label><label class="set-field"><span>RPE</span><input class="set-input" data-field="rpe" inputmode="decimal" type="number" min="1" max="10" step="0.5" value="${Number(set.rpe)||7}" aria-label="RPE"></label><label class="set-field"><span>RIR</span><input class="set-input" data-field="rir" inputmode="numeric" type="number" min="0" max="10" value="${Number(set.rir)||0}" ${item.tracking.rir?'':'disabled'} aria-label="RIR"></label><button class="set-complete" type="button" aria-label="${escapeHtml(t(set.complete?'undoSetCompletion':'markSetComplete').replace('{set}',String(index+1)))}" aria-pressed="${String(Boolean(set.complete))}">${set.complete?'✓':'○'}</button></div>`).join('');
     $('setRows').querySelectorAll('.set-row').forEach(row => {
       row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => {
         state.active.sets[Number(row.dataset.index)][input.dataset.field]=Number(input.value)||0;
@@ -464,6 +467,10 @@
       }));
       row.querySelector('button').addEventListener('click', () => completeSet(Number(row.dataset.index)));
     });
+    if (focusedSetIndex !== null && Number.isInteger(focusedSetIndex)) {
+      const restoredButton = setRows.querySelector(`.set-row[data-index="${focusedSetIndex}"] .set-complete`);
+      if (restoredButton) restoredButton.focus();
+    }
   }
   function completeSet(index) {
     const set = state.active.sets[index]; set.complete = !set.complete; persistActive(); renderActiveWorkout();
