@@ -86,7 +86,8 @@
     $('primaryNav').classList.toggle('hidden', id === 'activeWorkoutScreen' || id === 'activityScreen');
     document.body.classList.toggle('workout-active', id === 'activeWorkoutScreen');
     const demoVideo = $('activeDemoVideo');
-    if (id === 'activeWorkoutScreen' && !demoVideo.classList.contains('hidden')) demoVideo.play().catch(() => {});
+    if (id === 'activeWorkoutScreen' && !demoVideo.classList.contains('hidden')
+        && !document.documentElement.classList.contains('motion-reduced')) demoVideo.play().catch(() => {});
     else demoVideo.pause();
     window.scrollTo({top: 0, behavior: 'smooth'});
     if (id === 'progressScreen') renderProgress();
@@ -429,7 +430,9 @@
     const video = $('activeDemoVideo');
     const image = $('activeDemoImage');
     const motion = motionManifest[item.id];
-    if (motion?.asset && !failedMotionExerciseIds.has(item.id)) {
+    const reducedMotion = document.documentElement.classList.contains('motion-reduced')
+      || Boolean($('reduceMotion')?.checked);
+    if (motion?.asset && !failedMotionExerciseIds.has(item.id) && !reducedMotion) {
       const nextSource = './' + motion.asset;
       const sourceChanged = video.getAttribute('src') !== nextSource || video.dataset.exerciseId !== item.id;
       if (sourceChanged) {
@@ -669,6 +672,9 @@
       if(enabled) video.pause();
       else if(!document.hidden && video.isConnected && (video.dataset.context==='card' || !$('exerciseDetail').classList.contains('hidden'))) video.play().catch(()=>{});
     });
+    const activeWorkout = $('activeWorkoutScreen');
+    const activeItem = activeExercise();
+    if(activeWorkout?.classList.contains('active') && activeItem) renderActiveMotion(activeItem);
     if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
   }
 
@@ -704,7 +710,18 @@
     window.addEventListener('thf:health-status',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-permission',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-sync',event=>renderHealthSnapshot(event.detail));window.addEventListener('thf:health-write',()=>renderHealthStatus());window.addEventListener('thf:health-error',event=>renderHealthError(event.detail||{}));
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});window.addEventListener('thf:backend-history',event=>{const detail=event.detail||{};if(detail.lastError){toast((state.lang==='ar'?'تعذرت استعادة سجل الحساب: ':'Account history restore failed: ')+detail.lastError);return;}const remote=Array.isArray(detail.items)?detail.items:[];const merged=new Map(history().map(item=>[item.clientRecordId,item]));for(const workout of remote){const id=String(workout.clientRecordId||'');if(!/^[A-Za-z0-9._:-]{8,120}$/.test(id)||merged.has(id))continue;const startedAtMs=Date.parse(workout.startedAt||'');const endedAtMs=Date.parse(workout.endedAt||'');if(!Number.isFinite(startedAtMs)||!Number.isFinite(endedAtMs)||endedAtMs<=startedAtMs)continue;const sets=(Array.isArray(workout.sets)?workout.sets:[]).map(set=>({exerciseId:String(set.exerciseId||workout.sport||'other'),type:String(set.setType||'working'),load:Number(set.loadKg)||0,reps:Number(set.reps)||0,restSeconds:Number(set.restSeconds)||0,rpe:set.rpe??null,rir:set.rir??null,complete:true}));const exercise=String(sets[0]?.exerciseId||workout.sport||'Workout');merged.set(id,{clientRecordId:id,recordVersion:Number(workout.clientRecordVersion)||1,id:exercise,exercise,exerciseName:exercise,sport:String(workout.sport||'other'),startedAtMs,endedAtMs,date:new Date(endedAtMs).toISOString(),durationMin:Math.max(1,Math.round((endedAtMs-startedAtMs)/60000)),reps:sets.reduce((sum,set)=>sum+set.reps,0),volumeKg:Number(workout.volumeKg)||sets.reduce((sum,set)=>sum+set.load*set.reps,0),sets,completed:true,steps:0,motionEvidence:null,measurementSource:'SERVER_RESTORED_UNVERIFIED',restoredFromAccount:true});}const next=[...merged.values()].sort((a,b)=>(a.endedAtMs||Date.parse(a.date)||0)-(b.endedAtMs||Date.parse(b.date)||0)).slice(-200);store.setItem('pulse.v2.history',JSON.stringify(next));renderToday();renderProgress();if(remote.length)toast(state.lang==='ar'?`تمت استعادة ${remote.length} جلسة من حسابك`:`Restored ${remote.length} workouts from your account`);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
-    document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
+    document.addEventListener('visibilitychange',()=>{
+      const video=$('activeDemoVideo');
+      if(document.hidden) video.pause();
+      else {
+        if($('activeWorkoutScreen').classList.contains('active')) {
+          const item=activeExercise();
+          if(item) renderActiveMotion(item);
+        }
+        if(state.active?.restEndsAtMs) renderRest();
+        if($('activityScreen').classList.contains('active')) renderActivity(readActivitySnapshot());
+      }
+    });
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
   }
 
