@@ -31,6 +31,11 @@ EXPECTED = {
         "Return the handles to the start under control without letting the weight stack collide; keep your shoulders down and stop if you feel pain.",
         "أعد المقابض إلى وضع البداية بتحكم دون اصطدام الأوزان، وتوقف إذا ظهر ألم.",
     ),
+    "barbell-deadlift": (
+        "Barbell_Deadlift",
+        "Reset your brace before each repetition, keep the bar close to your legs, and stop the set if you cannot maintain a neutral spine or secure grip.",
+        "أعد ضبط شد الجذع قبل كل عدة، وأبقِ البار قريبًا من الساقين؛ أوقف المجموعة إذا تعذر الحفاظ على ظهر محايد أو قبضة ثابتة.",
+    ),
 }
 
 FAST_SKIPPING_ARABIC_STEPS = [
