@@ -564,6 +564,11 @@
     const count = Math.max(0, Number(total) || 0);
     return count ? Math.min(count - 1, Math.max(0, Number(index) || 0)) : 0;
   }
+  function instructionProgressPercent(index, total) {
+    const count = Math.max(0, Number(total) || 0);
+    if (!count) return 0;
+    return Math.round(((boundedInstructionIndex(index, count) + 1) / count) * 100);
+  }
   function renderActiveInstructionSteps(item = activeExercise()) {
     const steps = Array.isArray(item?.steps?.[state.lang]) ? item.steps[state.lang] : [];
     activeInstructionIndex = boundedInstructionIndex(activeInstructionIndex, steps.length);
@@ -571,14 +576,20 @@
       `<li${index === activeInstructionIndex ? ' aria-current="step"' : ''}>${escapeHtml(step)}</li>`
     ).join('');
     const progress = $('activeInstructionProgress');
+    const progressTrack = $('instructionProgressTrack');
     const fill = $('instructionProgressFill');
     const previous = $('previousInstructionStep');
     const next = $('nextInstructionStep');
     const stepStatus = steps.length
       ? t('instructionStepOf').replace('{current}', activeInstructionIndex + 1).replace('{total}', steps.length)
       : t('instructionStepsUnavailable');
+    const progressPercent = instructionProgressPercent(activeInstructionIndex, steps.length);
     if (progress) progress.textContent = stepStatus;
-    if (fill) fill.style.width = `${steps.length ? ((activeInstructionIndex + 1) / steps.length) * 100 : 0}%`;
+    if (fill) fill.style.width = `${progressPercent}%`;
+    if (progressTrack) {
+      progressTrack.setAttribute('aria-valuenow', String(progressPercent));
+      progressTrack.setAttribute('aria-valuetext', stepStatus);
+    }
     if (previous) previous.disabled = !steps.length || activeInstructionIndex <= 0;
     if (next) next.disabled = !steps.length || activeInstructionIndex >= steps.length - 1;
     const speakCue = $('speakCue');
