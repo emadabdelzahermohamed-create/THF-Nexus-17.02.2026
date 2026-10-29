@@ -685,6 +685,9 @@
       // An explicit in-app choice always wins over later OS setting changes.
       if (store.getItem('pulse.v2.reduceMotion') !== null) return;
       applyMotionPreference(Boolean(event.matches), false);
+      // The reference-frame controller does not observe checkbox property changes.
+      // Notify it explicitly so a live OS preference change can start/stop animation.
+      window.dispatchEvent(new Event('thf:motion-preference-change'));
     };
     if (typeof media.addEventListener === 'function') media.addEventListener('change', onChange);
     else if (typeof media.addListener === 'function') media.addListener(onChange);
