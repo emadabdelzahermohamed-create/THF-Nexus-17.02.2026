@@ -119,11 +119,11 @@
       else state.visible = visibleInViewport(card);
       if (state.visible && !reduceMotion() && !document.hidden) loadCardFrames(state);
     }
-    if (!cardObserver) {
-      for (const state of states.values()) {
-        state.visible = visibleInViewport(state.card);
-        if (state.visible && !reduceMotion() && !document.hidden) loadCardFrames(state);
-      }
+    for (const state of states.values()) {
+      if (!cardObserver) state.visible = visibleInViewport(state.card);
+      // Also preload cards that were already visible when reduced motion was enabled.
+      // This lets animation resume immediately when the user turns it back off.
+      if (state.visible && !reduceMotion() && !document.hidden) loadCardFrames(state);
     }
   }
 
