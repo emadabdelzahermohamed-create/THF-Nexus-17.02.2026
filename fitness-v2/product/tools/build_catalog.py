@@ -916,7 +916,7 @@ STEP_OVERRIDES = {
             "Stand with your torso upright holding two dumbbells in your hands by your sides. Place the ball of the foot on a sturdy and stable wooden board (that is around 2-3 inches tall) while your heels extend off and touch the floor. This will be your starting position.",
             "With the toes pointing either straight (to hit all parts equally), inwards (for emphasis on the outer head) or outwards (for emphasis on the inner head), raise the heels off the floor as you exhale by contracting the calves. Hold the top contraction for a second.",
             "As you inhale, go back to the starting position by slowly lowering the heels.",
-            "Repeat for the recommended amount of times."
+            "Keep your torso upright and the dumbbells still at your sides; repeat each heel raise without bouncing or rolling onto the outer edges of your feet."
         ],
         "ar": [
             "قف طويلًا والدمبلان بجانب الجسم، وضع مقدمة القدمين على حافة ثابتة إن توفر دعم آمن.",
@@ -1198,7 +1198,7 @@ STEP_OVERRIDES = {
             "For this exercise you will need to use a leg extension machine. First choose your weight and sit on the machine with your legs under the pad (feet pointed forward) and the hands holding the side bars. This will be your starting position. You will need to adjust the pad so that it falls on top of your lower leg (just above your feet). Also, make sure that your legs form a 90-degree angle between the lower and upper leg. If the angle is less than 90-degrees then that means the knee is over the toes which in turn creates undue stress at the knee joint. If the machine is designed that way, either look for another machine or just make sure that when you start executing the exercise you stop going down once you hit the 90-degree angle.",
             "Using your quadriceps, extend your legs to the maximum as you exhale. Ensure that the rest of the body remains stationary on the seat. Pause a second on the contracted position.",
             "Slowly lower the weight back to the original position as you inhale, ensuring that you do not go past the 90-degree angle limit.",
-            "Repeat for the recommended amount of times.",
+            "Keep your hips against the seat and repeat with the same controlled range, without swinging your torso or snapping the knees straight.",
         ],
         "ar": [
             "اجلس واضبط محور الركبة مع محور الجهاز، واجعل الوسادة فوق أسفل الساقين بقليل وثبّت الظهر.",
@@ -1242,7 +1242,7 @@ STEP_OVERRIDES = {
             "Grab the handles with a palms-down grip and lift your elbows so that your upper arms are parallel to the floor to the sides of your torso. Your forearms will be pointing forward since you are grabbing the handles. Once you bring the handles forward and extend the arms you will be at the starting position.",
             "Now bring the handles back towards you as you breathe in.",
             "Push the handles away from you as you flex your pecs and you breathe out. Hold the contraction for a second before going back to the starting position.",
-            "Repeat for the recommended amount of reps.",
+            "Return the handles to the start under control without letting the weight stack collide; keep your shoulders down and stop if you feel pain.",
         ],
         "ar": [
             "اضبط المقعد بحيث تصطف المقابض مع منتصف الصدر، ثم اختر حملًا يمكنك التحكم فيه.",
