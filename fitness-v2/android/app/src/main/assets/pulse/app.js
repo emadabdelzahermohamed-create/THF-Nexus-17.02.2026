@@ -162,12 +162,12 @@
       const image = firstExercise?.demo?.assets?.[0] || '';
       return `<button class="program-card" type="button" data-program="${escapeHtml(program.id)}"><span class="program-cover">${image?`<img src="./${escapeHtml(image)}" alt="">`:''}<span class="program-duration">${program.weeks} ${escapeHtml(t('weeks'))}</span></span><span class="program-copy"><span class="pill gold">${escapeHtml(local(program.section))}</span><h3>${escapeHtml(local(program.name))}</h3><p>${escapeHtml(local(program.summary))}</p><span class="program-meta"><b>${program.daysPerWeek}</b> ${escapeHtml(t('daysWeekly'))} · <b>${program.estimatedSessionMinutes}</b> ${escapeHtml(t('min'))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(program.level))}</span><span class="tag">${escapeHtml(local(program.goal))}</span><span class="tag">✓ ${escapeHtml(t('offline'))}</span></span></span></button>`;
     }).join('');
-    $('programGrid').querySelectorAll('.program-card').forEach(card => card.addEventListener('click', () => openProgramDetail(card.dataset.program)));
+    $('programGrid').querySelectorAll('.program-card').forEach(card => card.addEventListener('click', () => openProgramDetail(card.dataset.program, card)));
   }
 
-  function openProgramDetail(id) {
+  function openProgramDetail(id, returnTarget = null) {
     state.selectedProgram = PROGRAMS.find(program => program.id === id); if (!state.selectedProgram) return;
-    renderProgramDetail(state.selectedProgram); dialogFocus.open('programDetail','programDetailCloseButton');
+    renderProgramDetail(state.selectedProgram); dialogFocus.open('programDetail','programDetailCloseButton', returnTarget);
   }
 
   function closeProgramDetail(restoreFocus = true) { dialogFocus.close('programDetail', restoreFocus); }
@@ -306,7 +306,7 @@
     $('activeFilterCount').textContent = String(Object.values(state.filters).filter(Boolean).length);
     $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media">${motionPlayer(item, 'card')}<span class="offline-badge">${escapeHtml(motionCoverageLabel(item, true))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
     bindDemoClipLimits($('exerciseGrid'));
-    $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => card.addEventListener('click', () => openDetail(card.dataset.id)));
+    $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => card.addEventListener('click', () => openDetail(card.dataset.id, card)));
   }
 
   function resetFilters(render = true) {
@@ -314,9 +314,9 @@
     if (render) { populateFilters(); renderExercises(); }
   }
 
-  function openDetail(id) {
+  function openDetail(id, returnTarget = null) {
     state.selected = EXERCISES.find(item => item.id === id); if (!state.selected) return;
-    renderDetail(state.selected); dialogFocus.open('exerciseDetail','detailCloseButton');
+    renderDetail(state.selected); dialogFocus.open('exerciseDetail','detailCloseButton', returnTarget);
   }
   function closeDetail(restoreFocus = true) { dialogFocus.close('exerciseDetail', restoreFocus); }
   function list(items, ordered = false) { const tag = ordered ? 'ol' : 'ul'; return `<${tag}>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</${tag}>`; }
