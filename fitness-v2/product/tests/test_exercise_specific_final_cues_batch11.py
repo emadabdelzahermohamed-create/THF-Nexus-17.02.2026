@@ -21,7 +21,18 @@ EXPECTED = {
         "Keep your hips against the seat and repeat with the same controlled range, without swinging your torso or snapping the knees straight.",
         "اخفض الوزن ببطء مع الشهيق إلى مدى مريح، وقلّل الحمل أو المدى إذا ظهر ألم بالركبة.",
     ),
+    "fast-skipping": (
+        "Fast_Skipping",
+        "Perform fast skips by maintaining close contact with the ground and reduce air time, moving as quickly as possible.",
+        "زد سرعة القفز مع إبقاء زمن الطيران قصيرًا والقدمين قريبين من الأرض.",
+    ),
 }
+
+FAST_SKIPPING_ARABIC_STEPS = [
+    "ابدأ في وضع مريح مع تقديم إحدى القدمين قليلًا.",
+    "نفّذ نمط خطوة وقفزة بالتبادل: يمين–يمين–خطوة انتقال، ثم يسار–يسار–خطوة انتقال.",
+    "زد سرعة القفز مع إبقاء زمن الطيران قصيرًا والقدمين قريبين من الأرض.",
+]
 
 
 class ExerciseSpecificFinalCuesBatch11Test(unittest.TestCase):
@@ -47,6 +58,13 @@ class ExerciseSpecificFinalCuesBatch11Test(unittest.TestCase):
             self.assertEqual(arabic_final, exercise["steps"]["ar"][-1])
             self.assertEqual(len(exercise["steps"]["en"]), len(exercise["steps"]["ar"]))
             self.assertTrue(all(step.strip() for step in exercise["steps"]["en"] + exercise["steps"]["ar"]))
+
+    def test_fast_skipping_arabic_steps_match_the_reviewed_bilingual_override(self):
+        by_id = {item["id"]: item for item in self.catalog}
+        self.assertEqual(FAST_SKIPPING_ARABIC_STEPS, by_id["fast-skipping"]["steps"]["ar"])
+        self.assertEqual(len(by_id["fast-skipping"]["steps"]["en"]), len(FAST_SKIPPING_ARABIC_STEPS))
+        for cue in FAST_SKIPPING_ARABIC_STEPS:
+            self.assertIn(cue, self.builder)
 
     def test_catalog_and_runtime_payload_match(self):
         self.assertEqual(self.catalog, self.runtime)
