@@ -20,6 +20,7 @@
     } : null,
   });
   const restTimer = window.THFRestTimer.createRestTimer();
+  const dialogFocus = window.THFDialogAccessibility.createDialogFocusManager({document, getById: $});
   const parse = (value, fallback) => { try { return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[match]));
   const locale = () => state.lang === 'ar' ? 'ar-EG' : 'en-US';
@@ -166,10 +167,10 @@
 
   function openProgramDetail(id) {
     state.selectedProgram = PROGRAMS.find(program => program.id === id); if (!state.selectedProgram) return;
-    renderProgramDetail(state.selectedProgram); $('programDetail').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('programDetailCloseButton').focus();
+    renderProgramDetail(state.selectedProgram); dialogFocus.open('programDetail','programDetailCloseButton');
   }
 
-  function closeProgramDetail() { $('programDetail').classList.add('hidden'); document.body.style.overflow = ''; }
+  function closeProgramDetail(restoreFocus = true) { dialogFocus.close('programDetail', restoreFocus); }
 
   function prescriptionText(reference) {
     const dose = reference.durationSeconds ? `${reference.sets} × ${reference.durationSeconds}s` : `${reference.sets} × ${reference.reps || '—'}`;
@@ -315,9 +316,9 @@
 
   function openDetail(id) {
     state.selected = EXERCISES.find(item => item.id === id); if (!state.selected) return;
-    renderDetail(state.selected); $('exerciseDetail').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('detailCloseButton').focus();
+    renderDetail(state.selected); dialogFocus.open('exerciseDetail','detailCloseButton');
   }
-  function closeDetail() { $('exerciseDetail').classList.add('hidden'); document.body.style.overflow = ''; }
+  function closeDetail(restoreFocus = true) { dialogFocus.close('exerciseDetail', restoreFocus); }
   function list(items, ordered = false) { const tag = ordered ? 'ol' : 'ul'; return `<${tag}>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</${tag}>`; }
   function renderDetail(item) {
     $('detailDemo').innerHTML = motionPlayer(item, 'detail') + motionCredit(item);
@@ -388,7 +389,7 @@
   function startExercise(item) {
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
     state.active = {clientRecordId,exerciseId:item.id,startedAt:Date.now(),sets:makeSets(item),sensorProfile,motionSessionId}; state.demoFrame=0;
-    store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail();
+    store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail(false);
     beginNativeMotionSession(motionSessionId,sensorProfile); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false); speakExercise(item);
   }
   function startProgramSession(programId,sessionId) {
@@ -396,7 +397,7 @@
     const now=Date.now();store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex,selectedAt:new Date(now).toISOString()}));
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
     state.active={clientRecordId,exerciseId:item.id,startedAt:now,sets:makeProgramSets(reference,item),programId:program.id,programSessionId:session.id,programSessionIndex:sessionIndex,programExerciseIndex:0,programStartedAt:now,programEntries:[],sensorProfile,motionSessionId};state.demoFrame=0;
-    persistActive();closeProgramDetail();closeDetail();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);speakExercise(item);
+    persistActive();closeProgramDetail(false);closeDetail(false);beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);speakExercise(item);
   }
   function activeExercise() { return EXERCISES.find(item => item.id === state.active?.exerciseId); }
   function speakExercise(item, options) {
@@ -671,7 +672,13 @@
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});window.addEventListener('thf:backend-history',event=>{const detail=event.detail||{};if(detail.lastError){toast((state.lang==='ar'?'تعذرت استعادة سجل الحساب: ':'Account history restore failed: ')+detail.lastError);return;}const remote=Array.isArray(detail.items)?detail.items:[];const merged=new Map(history().map(item=>[item.clientRecordId,item]));for(const workout of remote){const id=String(workout.clientRecordId||'');if(!/^[A-Za-z0-9._:-]{8,120}$/.test(id)||merged.has(id))continue;const startedAtMs=Date.parse(workout.startedAt||'');const endedAtMs=Date.parse(workout.endedAt||'');if(!Number.isFinite(startedAtMs)||!Number.isFinite(endedAtMs)||endedAtMs<=startedAtMs)continue;const sets=(Array.isArray(workout.sets)?workout.sets:[]).map(set=>({exerciseId:String(set.exerciseId||workout.sport||'other'),type:String(set.setType||'working'),load:Number(set.loadKg)||0,reps:Number(set.reps)||0,restSeconds:Number(set.restSeconds)||0,rpe:set.rpe??null,rir:set.rir??null,complete:true}));const exercise=String(sets[0]?.exerciseId||workout.sport||'Workout');merged.set(id,{clientRecordId:id,recordVersion:Number(workout.clientRecordVersion)||1,id:exercise,exercise,exerciseName:exercise,sport:String(workout.sport||'other'),startedAtMs,endedAtMs,date:new Date(endedAtMs).toISOString(),durationMin:Math.max(1,Math.round((endedAtMs-startedAtMs)/60000)),reps:sets.reduce((sum,set)=>sum+set.reps,0),volumeKg:Number(workout.volumeKg)||sets.reduce((sum,set)=>sum+set.load*set.reps,0),sets,completed:true,steps:0,motionEvidence:null,measurementSource:'SERVER_RESTORED_UNVERIFIED',restoredFromAccount:true});}const next=[...merged.values()].sort((a,b)=>(a.endedAtMs||Date.parse(a.date)||0)-(b.endedAtMs||Date.parse(b.date)||0)).slice(-200);store.setItem('pulse.v2.history',JSON.stringify(next));renderToday();renderProgress();if(remote.length)toast(state.lang==='ar'?`تمت استعادة ${remote.length} جلسة من حسابك`:`Restored ${remote.length} workouts from your account`);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
     document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
-    window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
+    window.addEventListener('keydown',event=>{
+      const dialogId=!$('exerciseDetail').classList.contains('hidden')?'exerciseDetail':!$('programDetail').classList.contains('hidden')?'programDetail':null;
+      if(dialogId && dialogFocus.handleKeydown(event,dialogId)) return;
+      if(event.key!=='Escape')return;
+      if(dialogId==='exerciseDetail')closeDetail();
+      else if(dialogId==='programDetail')closeProgramDetail();
+    });
   }
 
   const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
