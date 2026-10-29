@@ -47,5 +47,23 @@ class RestTimerUndoTests(unittest.TestCase):
         self.assertIn("if(expiredWhileAway)announceRestComplete();", resume)
 
 
+    def test_new_rest_cancels_pending_completion_announcement(self):
+        start = self.function_slice("function startRest(", "function renderRest(){")
+        cancel = self.function_slice("function cancelRestAnnouncement(){", "function announceRestComplete(){")
+        self.assertIn("cancelRestAnnouncement();", start)
+        self.assertIn("window.clearTimeout(state.restAnnouncementTick)", cancel)
+        self.assertIn("node.textContent='';", cancel)
+
+    def test_delayed_completion_is_suppressed_if_new_rest_started(self):
+        announce = self.function_slice("function announceRestComplete(){", "function stopRest(")
+        self.assertIn("if(state.active?.restEndsAtMs)return;", announce)
+        self.assertIn("state.restAnnouncementTick=null;", announce)
+
+    def test_manual_stop_cancels_pending_completion_announcement(self):
+        stop = self.function_slice("function stopRest(", "function resumeRest(){")
+        self.assertIn("if(!announce)cancelRestAnnouncement();", stop)
+
+
+
 if __name__ == "__main__":
     unittest.main()
