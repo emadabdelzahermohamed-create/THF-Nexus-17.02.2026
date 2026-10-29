@@ -26,6 +26,11 @@ EXPECTED = {
         "Perform fast skips by maintaining close contact with the ground and reduce air time, moving as quickly as possible.",
         "زد سرعة القفز مع إبقاء زمن الطيران قصيرًا والقدمين قريبين من الأرض.",
     ),
+    "machine-bench-press": (
+        "Machine_Bench_Press",
+        "Return the handles to the start under control without letting the weight stack collide; keep your shoulders down and stop if you feel pain.",
+        "أعد المقابض إلى وضع البداية بتحكم دون اصطدام الأوزان، وتوقف إذا ظهر ألم.",
+    ),
 }
 
 FAST_SKIPPING_ARABIC_STEPS = [
