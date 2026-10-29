@@ -678,6 +678,18 @@
     if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
   }
 
+  function bindSystemMotionPreference(){
+    const media = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!media) return;
+    const onChange = event => {
+      // An explicit in-app choice always wins over later OS setting changes.
+      if (store.getItem('pulse.v2.reduceMotion') !== null) return;
+      applyMotionPreference(Boolean(event.matches), false);
+    };
+    if (typeof media.addEventListener === 'function') media.addEventListener('change', onChange);
+    else if (typeof media.addListener === 'function') media.addListener(onChange);
+  }
+
   function bind(){
     $('languageToggle').addEventListener('click',toggleLanguage);
     $('onboardingLanguageToggle').addEventListener('click',()=>{captureOnboardingDraft();toggleLanguage();});
@@ -699,6 +711,7 @@
     window.addEventListener('thf:activity-started',()=>{renderActivity(readActivitySnapshot());startActivityPolling();});window.addEventListener('thf:location-permission',event=>{if(event.detail?.granted){setTimeout(()=>renderActivity(readActivitySnapshot()),400);}else toast(t('activityPermissionNeeded'));});
     $('clearHistoryBtn').addEventListener('click',()=>{const now=Date.now();if(now>state.clearArmedUntil){state.clearArmedUntil=now+3000;toast(t('clearConfirm'));return;}store.removeItem('pulse.v2.history');renderToday();renderProgress();});
     $('profileForm').addEventListener('submit',saveProfile);$('profileDays').addEventListener('input',event=>$('profileDaysOutput').textContent=event.target.value);$('refreshStatus').addEventListener('click',renderNativeStatus);$('voiceEnabled').addEventListener('change',event=>voiceGuidance.setEnabled(event.target.checked));$('reduceMotion').addEventListener('change',event=>applyMotionPreference(event.target.checked));
+    bindSystemMotionPreference();
     $('privacyPolicyBtn').addEventListener('click',()=>{if(N)N.openPrivacyPolicy();else toast(t('accountResourceAndroidOnly'))});
     $('accountDeletionBtn').addEventListener('click',()=>{if(N)N.openAccountDeletion();else toast(t('accountResourceAndroidOnly'))});
     $('foundingHeroPurchaseBtn').addEventListener('click',()=>{if(N&&typeof N.purchaseFoundingHero==='function'){N.purchaseFoundingHero();renderFoundingHero({...currentBilling(),loading:true});}else toast(t('foundingHeroAndroidOnly'));});
