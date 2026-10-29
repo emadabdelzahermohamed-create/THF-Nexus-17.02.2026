@@ -33,6 +33,15 @@ class ActiveWorkoutReducedMotionVideoTests(unittest.TestCase):
         self.assertIn("if(item) renderActiveMotion(item);", self.app)
         self.assertNotIn("if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play()", self.app)
 
+
+    def test_os_reduce_motion_changes_update_active_preference_when_no_user_override(self):
+        self.assertIn("function bindSystemMotionPreference()", self.app)
+        self.assertIn("window.matchMedia?.('(prefers-reduced-motion: reduce)')", self.app)
+        self.assertIn("if (store.getItem('pulse.v2.reduceMotion') !== null) return;", self.app)
+        self.assertIn("media.addEventListener('change', onChange)", self.app)
+        self.assertIn("media.addListener(onChange)", self.app)
+        self.assertIn("bindSystemMotionPreference();", self.app)
+
     def test_reference_motion_controller_holds_a_static_frame_when_reduced(self):
         self.assertIn("if (reduceMotion() || document.hidden)", self.motion)
         self.assertIn("if (timer || pendingExerciseId) stop();", self.motion)
