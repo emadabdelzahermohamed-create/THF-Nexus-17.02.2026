@@ -26,11 +26,12 @@ const exerciseDialog = makeNode('exercise-dialog', { hidden: true });
 const programDialog = makeNode('program-dialog', { hidden: true });
 const exerciseClose = makeNode('exercise-close');
 const exerciseStart = makeNode('exercise-start');
+const disabledControl = makeNode('temporarily-disabled-control', { disabled: true });
 const programClose = makeNode('program-close');
 const programSessionExercise = makeNode('program-session-exercise');
-exerciseClose.parent = exerciseDialog; exerciseStart.parent = exerciseDialog;
+exerciseClose.parent = exerciseDialog; exerciseStart.parent = exerciseDialog; disabledControl.parent = exerciseDialog;
 programClose.parent = programDialog; programSessionExercise.parent = programDialog;
-exerciseDialog.children = [exerciseClose, exerciseStart];
+exerciseDialog.children = [exerciseClose, exerciseStart, disabledControl];
 programDialog.children = [programClose, programSessionExercise];
 const nodes = { exerciseDetail: exerciseDialog, programDetail: programDialog, detailCloseButton: exerciseClose, programDetailCloseButton: programClose, trainScreen: makeNode('train-screen'), mainContent: makeNode('main-content') };
 const getById = id => nodes[id] || null;
@@ -79,4 +80,19 @@ trigger.getClientRects = () => [];
 manager.close('exerciseDetail');
 assert.equal(doc.activeElement, nodes.mainContent);
 
-console.log('PASS: 5 dialog focus/lifecycle scenarios');
+// A dynamically disabled control can remain active even though it is no longer tabbable.
+doc.activeElement = trigger;
+manager.open('exerciseDetail', 'detailCloseButton');
+doc.activeElement = disabledControl;
+prevented = false;
+manager.handleKeydown({ key: 'Tab', shiftKey: false, preventDefault() { prevented = true; } }, 'exerciseDetail');
+assert.equal(prevented, true, 'Tab must be trapped when active element is no longer focusable');
+assert.equal(doc.activeElement, exerciseClose, 'forward Tab must move to first visible focusable control');
+doc.activeElement = disabledControl;
+prevented = false;
+manager.handleKeydown({ key: 'Tab', shiftKey: true, preventDefault() { prevented = true; } }, 'exerciseDetail');
+assert.equal(prevented, true, 'Shift+Tab must be trapped when active element is no longer focusable');
+assert.equal(doc.activeElement, exerciseStart, 'reverse Tab must move to last visible focusable control');
+manager.close('exerciseDetail');
+
+console.log('PASS: 6 dialog focus/lifecycle scenarios');
