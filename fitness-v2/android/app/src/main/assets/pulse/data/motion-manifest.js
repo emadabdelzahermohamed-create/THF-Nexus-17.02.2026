@@ -216,6 +216,9 @@ window.THF_MOTION_MANIFEST = {
     if (item.id !== activeExerciseId || (!timer && pendingExerciseId !== item.id)) start(item);
   }
 
+  // System preference changes update the checkbox programmatically, so the native change listener alone is insufficient.
+  window.addEventListener('thf:motion-preference-change', reconcile);
+
   window.addEventListener('load', () => {
     const root = byId('activeWorkoutScreen');
     if (!root) return;
