@@ -59,7 +59,7 @@ class DialogFocusAccessibilityTests(unittest.TestCase):
             timeout=10,
         )
         self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
-        self.assertIn("PASS: 5 dialog focus/lifecycle scenarios", result.stdout)
+        self.assertIn("PASS: 6 dialog focus/lifecycle scenarios", result.stdout)
 
 
 if __name__ == "__main__":
