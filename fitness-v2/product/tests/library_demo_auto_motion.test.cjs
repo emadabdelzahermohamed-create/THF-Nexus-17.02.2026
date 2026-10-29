@@ -168,8 +168,7 @@ function buildHarness({ reduced = false, visible = true } = {}) {
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
   const h = buildHarness();
-  await Promise.resolve();
-  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
   assert.ok(h.timers.size > 0);
   h.tick();
@@ -180,7 +179,7 @@ test('visible exercise cards cycle audited local frames automatically without a 
 
 test('exercise detail shows one frame at a time and advances automatically', async () => {
   const h = buildHarness();
-  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
   h.detailRoot.classList.remove('hidden');
   h.fireMutation(h.detailRoot);
   assert.equal(h.detailDemo.classList.contains('auto-sequence'), true);
@@ -194,7 +193,7 @@ test('exercise detail shows one frame at a time and advances automatically', asy
 
 test('reduced motion stops timers and restores the static two-frame detail', async () => {
   const h = buildHarness();
-  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
   h.detailRoot.classList.remove('hidden');
   h.fireMutation(h.detailRoot);
   assert.ok(h.timers.size > 0);
@@ -208,7 +207,7 @@ test('reduced motion stops timers and restores the static two-frame detail', asy
 
 test('offscreen exercise cards do not start animation work', async () => {
   const h = buildHarness({ visible: false });
-  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.timers.size, 0);
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
 });
