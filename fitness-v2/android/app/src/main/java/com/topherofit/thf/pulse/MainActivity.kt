@@ -189,7 +189,15 @@ class MainActivity : ComponentActivity() {
         web.addJavascriptInterface(PulseBridge(), "PulseNative")
         web.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                return !request.url.scheme.equals("file", ignoreCase = true)
+                val uri = request.url
+                if (uri.scheme.equals("https", ignoreCase = true) &&
+                    uri.host in setOf("www.google.com", "maps.google.com") &&
+                    uri.path?.startsWith("/maps", ignoreCase = true) == true
+                ) {
+                    runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                    return true
+                }
+                return !uri.scheme.equals("file", ignoreCase = true)
             }
         }
     }

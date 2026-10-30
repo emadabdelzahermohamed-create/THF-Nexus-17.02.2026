@@ -295,7 +295,16 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertIn("112 تمرينًا موثقًا", html)
         combined = html + script + (PULSE / "styles.css").read_text()
         self.assertNotRegex(combined, r"(?i)stage16a")
-        self.assertNotRegex(combined, r"https?://")
+        # Training/exercise assets remain local and offline-capable. The only
+        # network references are the optional activity-map tiles/attribution
+        # and the explicit Google Maps handoff for a captured GPS point.
+        external_assets = re.findall(r'(?:src|href)="(https?://[^"]+)"', html)
+        self.assertEqual(["https://www.google.com/maps"], external_assets)
+        external_urls = re.findall(r"https?://\S+", combined)
+        self.assertTrue(all(
+            url.startswith(("https://tile.openstreetmap.org/", "https://www.openstreetmap.org/", "https://www.google.com/maps"))
+            for url in external_urls
+        ), external_urls)
 
     def test_catalog_marketing_copy_has_no_stale_fixed_exercise_count(self):
         script = (PULSE / "app.js").read_text()
@@ -440,7 +449,7 @@ class ProductCatalogTest(unittest.TestCase):
         expected = {
             "readinessToday", "todaySummary", "trainContentType", "programSections",
             "clearSearch", "trainingSections", "voiceGuidance", "volumeChartLabel",
-            "onboardingBenefitsLabel", "close",
+            "onboardingBenefitsLabel", "close", "activityMapLabel",
         }
         bound = set(re.findall(r'data-i18n-aria-label="([^"]+)"', html))
         self.assertEqual(expected, bound)

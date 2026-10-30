@@ -14,6 +14,8 @@ class FitnessFusedLocationContractTest(unittest.TestCase):
         self.assertIn('LocationServices.getFusedLocationProviderClient', service)
         self.assertIn('Priority.PRIORITY_HIGH_ACCURACY', service)
         self.assertIn('LocationRequest.Builder', service)
+        self.assertIn('.setWaitForAccurateLocation(true)', service)
+        self.assertIn('.setMaxUpdateDelayMillis(0L)', service)
         self.assertIn('registerLegacyLocationProviders', service)
         self.assertIn('removeLocationUpdates(fusedLocationCallback)', service)
         legacy = service[service.index('private fun registerLegacyLocationProviders'):service.index('private fun registerStepSource')]
