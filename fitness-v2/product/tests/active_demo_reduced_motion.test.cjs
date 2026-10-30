@@ -59,6 +59,11 @@ function fakeElement(options = {}) {
   if (options.active) classes.add('active');
   return {
     dataset: {},
+    listeners: new Map(),
+    addEventListener(name, callback) { this.listeners.set(name, callback); },
+    removeEventListener(name, callback) {
+      if (this.listeners.get(name) === callback) this.listeners.delete(name);
+    },
     classList: {
       contains(name) { return classes.has(name); },
       add(name) { classes.add(name); },
@@ -120,9 +125,24 @@ function activeDemoHarness(reduced, lang) {
     },
     state: { lang },
     document: { hidden: false },
-    preferredReducedMotion: () => reduced
+    preferredReducedMotion: () => reduced,
+    activeExercise: () => item,
+    local: value => value?.en || '',
+    t: key => key === 'videoFallback'
+      ? 'Video unavailable; showing the automatic reference-frame sequence.'
+      : key
   };
-  return { elements, item, sandbox };
+  const names = [
+    'fallbackActiveMotionToFrames',
+    'attemptActiveDemoVideoPlayback',
+    'renderActiveMotion'
+  ];
+  const functions = names.map(name => extractFunction(appSource, name)).join('\n');
+  vm.runInNewContext(
+    functions + '\nglobalThis.api = {fallbackActiveMotionToFrames, attemptActiveDemoVideoPlayback, renderActiveMotion};',
+    sandbox
+  );
+  return { elements, item, sandbox, api: sandbox.api };
 }
 
 function motionFrameHarness(reduced, lang) {
@@ -142,6 +162,7 @@ function motionFrameHarness(reduced, lang) {
     byId: id => elements[id],
     document: { documentElement: { lang } },
     frameIndex: 0,
+    loadedFrames: new Map(),
     reduceMotion: () => reduced
   };
   const renderFrame = loadFunction(motionSource, 'renderFrame', 'preloadFrames', sandbox);
@@ -151,8 +172,7 @@ function motionFrameHarness(reduced, lang) {
 
 test('full-motion video becomes a static local Arabic reference frame when reduced motion is enabled', () => {
   const h = activeDemoHarness(true, 'ar');
-  const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
-  render(h.item);
+  h.api.renderActiveMotion(h.item);
 
   assert.equal(h.elements.activeDemoVideo.pauseCount, 1);
   assert.equal(h.elements.activeDemoVideo.getAttribute('src'), null);
@@ -167,8 +187,7 @@ test('full-motion video becomes a static local Arabic reference frame when reduc
 
 test('full-motion video remains automatic with source credit when reduced motion is disabled', () => {
   const h = activeDemoHarness(false, 'en');
-  const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
-  render(h.item);
+  h.api.renderActiveMotion(h.item);
 
   assert.equal(h.elements.activeDemoVideo.getAttribute('src'), './media/motion/pushups.webm');
   assert.equal(h.elements.activeDemoVideo.classList.contains('hidden'), false);
@@ -252,8 +271,7 @@ test('active workout reduced-motion changes are announced in Arabic and English'
 test('normal active-workout motion clears a stale reduced-motion announcement', () => {
   const h = activeDemoHarness(false, 'en');
   h.elements.activeDemoStatus.textContent = 'Reduced motion is on; a static exercise image is shown.';
-  const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
-  render(h.item);
+  h.api.renderActiveMotion(h.item);
   assert.equal(h.elements.activeDemoStatus.textContent, '');
 });
 

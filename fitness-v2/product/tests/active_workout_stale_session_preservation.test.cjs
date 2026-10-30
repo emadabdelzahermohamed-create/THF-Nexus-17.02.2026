@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const appPath = path.resolve(__dirname, '../../android/app/src/main/assets/pulse/app.js');
 const policyPath = path.resolve(__dirname, '../../android/app/src/main/assets/pulse/active-workout-resume-policy.js');
@@ -49,6 +50,27 @@ test('rendering an unknown saved exercise fails closed without deleting the sess
   assert.match(renderer, /!resumePolicy\.isResumable\(state\.active, EXERCISES\) \|\| !item\) return;/);
   assert.doesNotMatch(renderer, /removeItem\(['"]pulse\.v2\.active/);
   assert.doesNotMatch(renderer, /state\.active\s*=\s*null/);
+});
+
+test('rendering a stale saved workout leaves the persisted session untouched', () => {
+  const stale = { exerciseId: 'exercise-removed-from-catalog', sets: [{ complete: true }] };
+  const storageCalls = [];
+  const sandbox = {
+    activeExercise: () => undefined,
+    resumePolicy: policy,
+    state: { active: stale },
+    EXERCISES: [{ id: 'barbell-squat' }, { id: 'plank' }],
+    store: {
+      removeItem(key) { storageCalls.push(['remove', key]); },
+      setItem(key, value) { storageCalls.push(['set', key, value]); }
+    }
+  };
+  const renderer = vm.runInNewContext('(' + functionSource('renderActiveWorkout') + ')', sandbox);
+
+  renderer();
+
+  assert.equal(sandbox.state.active, stale);
+  assert.deepEqual(storageCalls, []);
 });
 
 test('a non-null stale session remains protected while correctly reported as unavailable', () => {

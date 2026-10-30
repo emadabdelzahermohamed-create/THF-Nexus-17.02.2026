@@ -189,7 +189,7 @@ test('autoplay rejection falls back to the first offline frame and announces the
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.video.classList.contains('hidden'), true);
   assert.equal(h.image.classList.contains('hidden'), false);
-  assert.equal(h.image.getAttribute('src'), './media/free-exercise-db/romanian-deadlift/0.jpg');
+  assert.equal(h.image.getAttribute('src'), './' + exercise('romanian-deadlift').demo.assets[0]);
   assert.match(h.image.alt, /Start and finish positions/);
   assert.equal(h.credit.classList.contains('hidden'), true);
   assert.equal(h.phase.textContent, 'Automatic reference sequence');
@@ -199,13 +199,20 @@ test('autoplay rejection falls back to the first offline frame and announces the
 
 test('a media error event uses the same safe frame fallback and removes its handler', () => {
   const h = harness({playMode: 'resolve'});
-  h.api.renderActiveMotion(exercise('leg-press'));
+  const item = exercise('leg-press');
+  h.setCurrentItem(item);
+  h.motionManifest[item.id] = {
+    asset: 'media/motion/' + item.id + '.mp4',
+    sourceUrl: 'https://example.invalid/' + item.id + '.mp4',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+  };
+  h.api.renderActiveMotion(item);
   const onError = h.video.listeners.get('error');
   assert.equal(typeof onError, 'function');
   onError();
   assert.equal(h.video.classList.contains('hidden'), true);
   assert.equal(h.image.classList.contains('hidden'), false);
-  assert.equal(h.image.getAttribute('src'), './media/free-exercise-db/leg-press/0.jpg');
+  assert.equal(h.image.getAttribute('src'), './' + item.demo.assets[0]);
   assert.equal(h.video.listeners.has('error'), false);
 });
 
@@ -250,7 +257,14 @@ test('a failed video is not retried on rerender, while a different exercise can 
 
 test('a synchronous playback exception also falls back safely', () => {
   const h = harness({playMode: 'throw'});
-  h.api.renderActiveMotion(exercise('hammer-curls'));
+  const item = exercise('hammer-curls');
+  h.setCurrentItem(item);
+  h.motionManifest[item.id] = {
+    asset: 'media/motion/' + item.id + '.mp4',
+    sourceUrl: 'https://example.invalid/' + item.id + '.mp4',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+  };
+  h.api.renderActiveMotion(item);
   assert.equal(h.video.classList.contains('hidden'), true);
   assert.equal(h.image.classList.contains('hidden'), false);
   assert.equal(h.video.dataset.failedExerciseId, 'hammer-curls');
