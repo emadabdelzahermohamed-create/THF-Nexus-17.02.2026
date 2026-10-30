@@ -12,11 +12,40 @@ const motionSource = fs.readFileSync(path.join(pulse, 'data/motion-manifest.js')
 const htmlSource = fs.readFileSync(path.join(pulse, 'index.html'), 'utf8');
 
 function extractFunction(source, name, nextName) {
-  const start = source.indexOf('  function ' + name + '(');
-  const end = source.indexOf('  function ' + nextName + '(', start);
+  const marker = 'function ' + name + '(';
+  const start = source.indexOf(marker);
   assert.notEqual(start, -1, 'missing function ' + name);
-  assert.notEqual(end, -1, 'missing function boundary ' + nextName);
-  return source.slice(start, end).trim();
+  const open = source.indexOf('{', start);
+  assert.notEqual(open, -1, 'missing function body ' + name);
+  let depth = 0;
+  let quote = null;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  for (let i = open; i < source.length; i += 1) {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (quote) {
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (lineComment) { if (ch === '\n') lineComment = false; continue; }
+    if (blockComment) {
+      if (ch === '*' && next === '/') { blockComment = false; i += 1; }
+      continue;
+    }
+    if (ch === '/' && next === '/') { lineComment = true; i += 1; continue; }
+    if (ch === '/' && next === '*') { blockComment = true; i += 1; continue; }
+    if (ch === "'" || ch === '"' || ch.charCodeAt(0) === 96) { quote = ch; continue; }
+    if (ch === '{') depth += 1;
+    else if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, i + 1);
+    }
+  }
+  throw new Error('unterminated function ' + name);
 }
 
 function loadFunction(source, name, nextName, sandbox) {
@@ -29,6 +58,7 @@ function fakeElement(options = {}) {
   if (options.hidden) classes.add('hidden');
   if (options.active) classes.add('active');
   return {
+    dataset: {},
     classList: {
       contains(name) { return classes.has(name); },
       add(name) { classes.add(name); },
@@ -244,7 +274,10 @@ test('active workout contains a persistent polite live region separate from the 
 test('OS reduced-motion changes are wired to active video and reference-frame reconciliation', () => {
   assert.match(appSource, /motionPreferenceQuery=window\.matchMedia\?\.\('\(prefers-reduced-motion: reduce\)'\)/);
   assert.match(appSource, /syncSystemMotionPreference=\(\)=>applyMotionPreference\(preferredReducedMotion\(\),false\)/);
-  assert.match(appSource, /!video\.classList\.contains\('hidden'\)&&!preferredReducedMotion\(\)\)video\.play\(\)\.catch/);
+  assert.match(appSource, /if \(motion\?\.asset && !reduced && !videoFailed\)/);
+  assert.match(appSource, /if \(!document\.hidden\) attemptActiveDemoVideoPlayback\(item, nextSource\)/);
+  assert.match(appSource, /function attemptActiveDemoVideoPlayback\(item, expectedSource\)/);
+  assert.match(appSource, /playback && typeof playback\.catch === 'function'/);
   assert.match(motionSource, /motionQuery = window\.matchMedia\?\.\('\(prefers-reduced-motion: reduce\)'\)/);
   assert.match(motionSource, /motionQuery\.addEventListener\('change', reconcile\)/);
   assert.match(motionSource, /motionQuery\?\.addListener\?\.\(reconcile\)/);

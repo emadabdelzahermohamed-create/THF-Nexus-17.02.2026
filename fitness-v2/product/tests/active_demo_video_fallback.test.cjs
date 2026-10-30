@@ -11,20 +11,41 @@ const APP = fs.readFileSync(path.join(PULSE, 'app.js'), 'utf8');
 const MOTION = fs.readFileSync(path.join(PULSE, 'data/motion-manifest.js'), 'utf8');
 const EXERCISES_JS = fs.readFileSync(path.join(PULSE, 'data/exercises.js'), 'utf8');
 
-function extractFunction(source, name) {
+function extractFunction(source, name, nextName) {
   const marker = 'function ' + name + '(';
   const start = source.indexOf(marker);
-  assert.notEqual(start, -1, 'missing ' + name);
+  assert.notEqual(start, -1, 'missing function ' + name);
   const open = source.indexOf('{', start);
+  assert.notEqual(open, -1, 'missing function body ' + name);
   let depth = 0;
+  let quote = null;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
   for (let i = open; i < source.length; i += 1) {
-    if (source[i] === '{') depth += 1;
-    else if (source[i] === '}') {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (quote) {
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (lineComment) { if (ch === '\n') lineComment = false; continue; }
+    if (blockComment) {
+      if (ch === '*' && next === '/') { blockComment = false; i += 1; }
+      continue;
+    }
+    if (ch === '/' && next === '/') { lineComment = true; i += 1; continue; }
+    if (ch === '/' && next === '*') { blockComment = true; i += 1; continue; }
+    if (ch === "'" || ch === '"' || ch.charCodeAt(0) === 96) { quote = ch; continue; }
+    if (ch === '{') depth += 1;
+    else if (ch === '}') {
       depth -= 1;
       if (depth === 0) return source.slice(start, i + 1);
     }
   }
-  throw new Error('unterminated ' + name);
+  throw new Error('unterminated function ' + name);
 }
 
 function makeClassList(initial = []) {
@@ -71,6 +92,8 @@ function makeNode({hidden = false} = {}) {
 }
 
 function exercise(id, suffix = id) {
+  const catalogItem = EXERCISES.find(item => item.id === id);
+  if (catalogItem) return catalogItem;
   return {
     id,
     name: {en: id, ar: id + ' بالعربية'},
@@ -79,7 +102,7 @@ function exercise(id, suffix = id) {
         'media/free-exercise-db/' + suffix + '/0.jpg',
         'media/free-exercise-db/' + suffix + '/1.jpg'
       ],
-      alt: {en: 'Start and finish positions for ' + id, ar: 'وضعا البداية والنهاية لتمرين ' + id}
+      alt: {en: 'Start and finish positions for ' + id, ar: 'وضعا البداية والنهاية لتمرين ' + id + ' بالعربية'}
     }
   };
 }
@@ -243,7 +266,7 @@ test('reduced motion bypasses video and keeps a static localized frame', () => {
   assert.equal(h.image.classList.contains('hidden'), false);
   assert.match(h.phase.textContent, /تقليل الحركة/);
   assert.match(h.status.textContent, /تقليل الحركة مفعّل/);
-  assert.match(h.image.alt, /بالعربية/);
+  assert.equal(h.image.alt, item.demo.alt.ar);
 });
 
 test('non-video exercises are truthfully labelled as an automatic reference sequence', () => {
