@@ -81,12 +81,14 @@ window.THF_MOTION_MANIFEST = {
 (() => {
   'use strict';
   const FRAME_MS = 850;
+  const PRELOAD_TIMEOUT_MS = 1200;
   let timer = null;
   let observer = null;
   let activeExerciseId = null;
   let pendingExerciseId = null;
   let frameIndex = 0;
   const preloadPromises = new Map();
+  const loadedFrames = new Map();
 
   const byId = id => document.getElementById(id);
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -118,13 +120,16 @@ window.THF_MOTION_MANIFEST = {
 
   function renderFrame(item) {
     const image = byId('activeDemoImage');
-    if (!image || !Array.isArray(item?.demo?.assets) || item.demo.assets.length < 2) return;
-    const phaseIndex = frameIndex % item.demo.assets.length;
-    const nextSrc = './' + item.demo.assets[phaseIndex];
+    const loaded = loadedFrames.get(item.id);
+    const assets = loaded ? loaded.map(frame => frame.asset) : item?.demo?.assets;
+    if (!image || !Array.isArray(assets) || assets.length < 1) return;
+    const phaseIndex = frameIndex % assets.length;
+    const sourceIndex = loaded ? loaded[phaseIndex].index : phaseIndex;
+    const nextSrc = './' + assets[phaseIndex];
     const isArabic = document.documentElement.lang === 'ar';
     const phaseName = isArabic
-      ? (phaseIndex === 0 ? 'البداية' : 'النهاية')
-      : (phaseIndex === 0 ? 'Start' : 'Finish');
+      ? (sourceIndex === 0 ? 'البداية' : 'النهاية')
+      : (sourceIndex === 0 ? 'Start' : 'Finish');
     const baseAlt = item?.demo?.alt?.[isArabic ? 'ar' : 'en'] || '';
     // Avoid redundant WebView image work on the API31 Samsung lane.
     if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
@@ -143,8 +148,8 @@ window.THF_MOTION_MANIFEST = {
       // the current phase remains available in the image's descriptive alt text.
       phase.setAttribute('aria-hidden', 'true');
       phase.textContent = isArabic
-        ? `${phaseIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
-        : `${phaseIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
+        ? `${sourceIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
+        : `${sourceIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
     }
   }
 
@@ -154,10 +159,22 @@ window.THF_MOTION_MANIFEST = {
       return new Promise(resolve => {
         const preload = new Image();
         preload.decoding = 'async';
-        preload.addEventListener('load', resolve, {once: true});
-        // A missing audited asset must not hold the workout UI indefinitely.
-        // The normal renderer will retain the first valid frame.
-        preload.addEventListener('error', resolve, {once: true});
+        let settled = false;
+        let timeoutId;
+        const finish = loaded => {
+          if (settled) return;
+          settled = true;
+          if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+          preload.removeEventListener('load', onLoad);
+          preload.removeEventListener('error', onError);
+          resolve(loaded);
+        };
+        const onLoad = () => finish(true);
+        const onError = () => finish(false);
+        preload.addEventListener('load', onLoad, {once: true});
+        preload.addEventListener('error', onError, {once: true});
+        // A stalled WebView decode must not block the automatic offline loop forever.
+        timeoutId = window.setTimeout(() => finish(false), PRELOAD_TIMEOUT_MS);
         preload.src = './' + asset;
       });
     });
@@ -175,17 +192,42 @@ window.THF_MOTION_MANIFEST = {
       pendingExerciseId = null;
       return;
     }
-    await preloadFrames(item);
+    const results = await preloadFrames(item);
     if (activeExerciseId !== item.id || pendingExerciseId !== item.id
         || reduceMotion() || document.hidden) {
       if (pendingExerciseId === item.id) pendingExerciseId = null;
+      return;
+    }
+    const readyFrames = item.demo.assets
+      .map((asset, index) => ({asset, index}))
+      .filter((frame, index) => results[index]);
+    loadedFrames.set(item.id, readyFrames);
+    frameIndex = 0;
+    if (readyFrames.length === 0) {
+      byId('activeDemoImage')?.removeAttribute('src');
+      const status = byId('activeDemoStatus');
+      if (status) status.textContent = document.documentElement.lang === 'ar'
+        ? 'تعذر تحميل صور الحركة لهذا التمرين دون اتصال.'
+        : 'Exercise reference frames could not be loaded offline.';
+      pendingExerciseId = null;
+      return;
+    }
+    renderFrame(item);
+    if (readyFrames.length < 2) {
+      const status = byId('activeDemoStatus');
+      if (status) status.textContent = document.documentElement.lang === 'ar'
+        ? 'تم تحميل صورة مرجعية واحدة فقط؛ تعرض بصورة ثابتة.'
+        : 'Only one reference frame loaded; showing a static view.';
+      pendingExerciseId = null;
       return;
     }
     pendingExerciseId = null;
     timer = window.setInterval(() => {
       const latest = currentExercise();
       if (!latest || document.hidden || reduceMotion()) return;
-      frameIndex = (frameIndex + 1) % latest.demo.assets.length;
+      const frames = loadedFrames.get(latest.id) || latest.demo.assets;
+      if (frames.length < 2) return;
+      frameIndex = (frameIndex + 1) % frames.length;
       renderFrame(latest);
     }, FRAME_MS);
   }
