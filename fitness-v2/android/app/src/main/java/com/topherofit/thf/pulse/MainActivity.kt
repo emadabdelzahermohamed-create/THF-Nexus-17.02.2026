@@ -197,7 +197,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::prefs.isInitialized) clearExpiredPendingAccountAuth()
-        if (::motionEngine.isInitialized && !ActivityTrackingService.hasActiveTracking()) motionEngine.onHostResume()
+        val activityRestorePending = ActivityTrackingService.restorePersistedActivityIfAvailable(this)
+        if (::motionEngine.isInitialized && !activityRestorePending && !ActivityTrackingService.hasActiveTracking()) motionEngine.onHostResume()
         if (::foundingHeroBilling.isInitialized) foundingHeroBilling.start()
         if (::healthRepository.isInitialized) {
             lifecycleScope.launch {
