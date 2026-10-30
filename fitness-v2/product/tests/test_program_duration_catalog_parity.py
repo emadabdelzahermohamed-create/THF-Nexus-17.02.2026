@@ -10,6 +10,7 @@ PULSE = ROOT / "fitness-v2" / "android" / "app" / "src" / "main" / "assets" / "p
 EXERCISES = json.loads((PULSE / "data" / "exercises.json").read_text(encoding="utf-8"))
 PROGRAMS = json.loads((PULSE / "data" / "programs.json").read_text(encoding="utf-8"))
 PROGRAMS_JS = (PULSE / "data" / "programs.js").read_text(encoding="utf-8")
+APP_JS = (PULSE / "app.js").read_text(encoding="utf-8")
 MANIFEST = json.loads((ROOT / "fitness-v2" / "product" / "PROGRAMS_MANIFEST.json").read_text(encoding="utf-8"))
 
 BUILDER_PATH = ROOT / "fitness-v2" / "product" / "tools" / "build_programs.py"
@@ -103,6 +104,39 @@ class ProgramDurationCatalogParityTest(unittest.TestCase):
         self.assertEqual(MANIFEST["programsSha256"], digest)
         self.assertEqual(MANIFEST["programCount"], len(PROGRAMS))
 
+    def test_timed_prescriptions_do_not_publish_repetitions_in_reserve(self):
+        timed = [
+            reference
+            for program in PROGRAMS
+            for session in program["sessions"]
+            for reference in session["exercises"]
+            if reference.get("durationSeconds") is not None
+        ]
+        repetition_based = [
+            reference
+            for program in PROGRAMS
+            for session in program["sessions"]
+            for reference in session["exercises"]
+            if reference.get("durationSeconds") is None
+        ]
+        self.assertGreater(len(timed), 0)
+        self.assertTrue(all(reference.get("targetRir") is None for reference in timed))
+        self.assertTrue(all(reference.get("targetRir") is not None for reference in repetition_based))
+
+    def test_builder_only_assigns_rir_to_repetition_based_prescriptions(self):
+        generated = BUILDER.build()
+        for program in generated:
+            for session in program["sessions"]:
+                for reference in session["exercises"]:
+                    if reference.get("durationSeconds") is not None:
+                        self.assertIsNone(reference.get("targetRir"))
+                    else:
+                        self.assertIsNotNone(reference.get("targetRir"))
+
+    def test_program_detail_formats_rir_only_for_repetition_based_work(self):
+        self.assertIn("const timed = Number(reference.durationSeconds) > 0;", APP_JS)
+        self.assertIn("const rir = !timed && reference.targetRir !== null", APP_JS)
+        self.assertIn("const rest = Number(reference.sets) > 1 && Number(reference.restSeconds) > 0", APP_JS)
 
 if __name__ == "__main__":
     unittest.main()

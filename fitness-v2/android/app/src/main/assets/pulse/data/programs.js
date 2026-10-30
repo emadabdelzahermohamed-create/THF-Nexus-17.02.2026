@@ -638,7 +638,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "crunches",
@@ -738,7 +738,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -768,7 +768,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "single-leg-glute-bridge",
@@ -922,7 +922,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -962,7 +962,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "plank",
@@ -1002,7 +1002,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "single-leg-glute-bridge",
@@ -1022,7 +1022,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "pushups",
@@ -1062,7 +1062,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "air-bike",
@@ -1102,7 +1102,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }
@@ -1196,7 +1196,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "walking-treadmill",
@@ -1206,7 +1206,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "jogging-treadmill",
@@ -1216,7 +1216,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -1226,7 +1226,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -1236,7 +1236,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -1256,7 +1256,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "prowler-sprint",
@@ -1266,7 +1266,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "runners-stretch",
@@ -1276,7 +1276,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "walking-treadmill",
@@ -1286,7 +1286,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -1296,7 +1296,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -1316,7 +1316,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "running-treadmill",
@@ -1326,7 +1326,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "trail-running-walking",
@@ -1336,7 +1336,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -1346,7 +1346,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -1356,7 +1356,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       }
@@ -1450,7 +1450,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "jogging-treadmill",
@@ -1460,7 +1460,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "prowler-sprint",
@@ -1470,7 +1470,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -1480,7 +1480,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -1490,7 +1490,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -1510,7 +1510,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "runners-stretch",
@@ -1520,7 +1520,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "running-treadmill",
@@ -1530,7 +1530,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -1540,7 +1540,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -1550,7 +1550,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -1570,7 +1570,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "trail-running-walking",
@@ -1580,7 +1580,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "walking-treadmill",
@@ -1590,7 +1590,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -1600,7 +1600,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -1610,7 +1610,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -1630,7 +1630,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "jogging-treadmill",
@@ -1640,7 +1640,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "prowler-sprint",
@@ -1650,7 +1650,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -1660,7 +1660,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -1670,7 +1670,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }
@@ -1784,7 +1784,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "bicycling-stationary",
@@ -1794,7 +1794,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -1804,7 +1804,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -1814,7 +1814,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -1834,7 +1834,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "platform-hamstring-slides",
@@ -1854,7 +1854,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -1864,7 +1864,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -1874,7 +1874,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -1894,7 +1894,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "standing-dumbbell-calf-raise",
@@ -1924,7 +1924,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -1934,7 +1934,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       }
@@ -2038,7 +2038,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "bicycling-stationary",
@@ -2048,7 +2048,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "platform-hamstring-slides",
@@ -2068,7 +2068,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -2078,7 +2078,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -2108,7 +2108,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-dumbbell-calf-raise",
@@ -2128,7 +2128,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -2138,7 +2138,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -2178,7 +2178,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -2188,7 +2188,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -2198,7 +2198,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -2218,7 +2218,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "bicycling-stationary",
@@ -2228,7 +2228,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "platform-hamstring-slides",
@@ -2248,7 +2248,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -2258,7 +2258,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }
@@ -2367,7 +2367,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 20,
             "restSeconds": 90,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "side-hop-sprint",
@@ -2397,7 +2397,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -2427,7 +2427,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "box-skip",
@@ -2447,7 +2447,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "overhead-slam",
@@ -2517,7 +2517,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       }
@@ -2616,7 +2616,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 20,
             "restSeconds": 90,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "side-hop-sprint",
@@ -2636,7 +2636,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "mountain-climbers",
@@ -2646,7 +2646,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "overhead-slam",
@@ -2676,7 +2676,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "box-skip",
@@ -2716,7 +2716,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -2756,7 +2756,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 20,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "rowing-stationary",
@@ -2766,7 +2766,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -2776,7 +2776,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -2796,7 +2796,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 20,
             "restSeconds": 90,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "side-hop-sprint",
@@ -2816,7 +2816,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -2826,7 +2826,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -2836,7 +2836,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }
@@ -3020,7 +3020,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "bent-over-barbell-row",
@@ -3060,7 +3060,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "full-range-of-motion-lat-pulldown",
@@ -3279,7 +3279,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "full-range-of-motion-lat-pulldown",
@@ -3463,7 +3463,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "childs-pose",
@@ -3473,7 +3473,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "dancers-stretch",
@@ -3483,7 +3483,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "calves-smr",
@@ -3493,7 +3493,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "hamstring-smr",
@@ -3503,7 +3503,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -3523,7 +3523,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "downward-facing-balance",
@@ -3533,7 +3533,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "pelvic-tilt-into-bridge",
@@ -3543,7 +3543,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "hamstring-smr",
@@ -3553,7 +3553,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "iliotibial-tract-smr",
@@ -3563,7 +3563,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -3583,7 +3583,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "spinal-stretch",
@@ -3593,7 +3593,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -3603,7 +3603,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "iliotibial-tract-smr",
@@ -3613,7 +3613,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "latissimus-dorsi-smr",
@@ -3623,7 +3623,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       }
@@ -3717,7 +3717,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "dancers-stretch",
@@ -3727,7 +3727,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "downward-facing-balance",
@@ -3737,7 +3737,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "hamstring-smr",
@@ -3747,7 +3747,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "iliotibial-tract-smr",
@@ -3757,7 +3757,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -3777,7 +3777,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "pelvic-tilt-into-bridge",
@@ -3787,7 +3787,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "spinal-stretch",
@@ -3797,7 +3797,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "iliotibial-tract-smr",
@@ -3807,7 +3807,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "latissimus-dorsi-smr",
@@ -3817,7 +3817,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -3837,7 +3837,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -3847,7 +3847,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "childs-pose",
@@ -3857,7 +3857,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "latissimus-dorsi-smr",
@@ -3867,7 +3867,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "piriformis-smr",
@@ -3877,7 +3877,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -3897,7 +3897,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "dancers-stretch",
@@ -3907,7 +3907,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "downward-facing-balance",
@@ -3917,7 +3917,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "piriformis-smr",
@@ -3927,7 +3927,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "quadriceps-smr",
@@ -3937,7 +3937,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }
@@ -4066,7 +4066,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -4116,7 +4116,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -4126,7 +4126,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -4176,7 +4176,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -4186,7 +4186,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       }
@@ -4305,7 +4305,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -4315,7 +4315,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -4365,7 +4365,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -4375,7 +4375,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -4425,7 +4425,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -4435,7 +4435,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -4485,7 +4485,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -4495,7 +4495,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }
@@ -4604,7 +4604,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "fast-skipping",
@@ -4754,7 +4754,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       }
@@ -4853,7 +4853,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "fast-skipping",
@@ -4953,7 +4953,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -4993,7 +4993,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "side-bridge",
@@ -5003,7 +5003,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "single-leg-glute-bridge",
@@ -5033,7 +5033,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "fast-skipping",
@@ -5073,7 +5073,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }
@@ -5172,7 +5172,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "freehand-jump-squat",
@@ -5202,7 +5202,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -5212,7 +5212,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -5242,7 +5242,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "overhead-slam",
@@ -5262,7 +5262,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -5272,7 +5272,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -5302,7 +5302,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "elliptical-trainer",
@@ -5312,7 +5312,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -5322,7 +5322,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -5332,7 +5332,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       }
@@ -5456,7 +5456,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -5466,7 +5466,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -5476,7 +5476,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -5496,7 +5496,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "overhead-slam",
@@ -5516,7 +5516,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -5526,7 +5526,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -5536,7 +5536,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -5556,7 +5556,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "elliptical-trainer",
@@ -5566,7 +5566,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 1200,
             "restSeconds": 60,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "freehand-jump-squat",
@@ -5586,7 +5586,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "calves-smr",
@@ -5596,7 +5596,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -5636,7 +5636,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 90,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "calves-smr",
@@ -5646,7 +5646,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "hamstring-smr",
@@ -5656,7 +5656,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }
@@ -5740,7 +5740,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -5750,7 +5750,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -5760,7 +5760,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -5770,7 +5770,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -5780,7 +5780,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -5800,7 +5800,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -5810,7 +5810,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -5820,7 +5820,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -5830,7 +5830,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -5840,7 +5840,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -5860,7 +5860,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -5870,7 +5870,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -5880,7 +5880,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -5890,7 +5890,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -5900,7 +5900,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -5920,7 +5920,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -5930,7 +5930,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -5940,7 +5940,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -5950,7 +5950,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -5960,7 +5960,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -5980,7 +5980,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -5990,7 +5990,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -6000,7 +6000,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -6010,7 +6010,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "childs-pose",
@@ -6020,7 +6020,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       }
@@ -6104,7 +6104,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -6114,7 +6114,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -6124,7 +6124,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -6134,7 +6134,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "childs-pose",
@@ -6144,7 +6144,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -6164,7 +6164,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -6174,7 +6174,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -6184,7 +6184,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -6194,7 +6194,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -6204,7 +6204,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -6224,7 +6224,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -6234,7 +6234,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -6244,7 +6244,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -6254,7 +6254,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -6264,7 +6264,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -6284,7 +6284,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -6294,7 +6294,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "worlds-greatest-stretch",
@@ -6304,7 +6304,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "cat-stretch",
@@ -6314,7 +6314,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "childs-pose",
@@ -6324,7 +6324,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }
@@ -6413,7 +6413,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "quadriceps-smr",
@@ -6423,7 +6423,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "calves-smr",
@@ -6433,7 +6433,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -6443,7 +6443,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -6453,7 +6453,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -6473,7 +6473,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "hamstring-smr",
@@ -6483,7 +6483,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "iliotibial-tract-smr",
@@ -6493,7 +6493,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "quadriceps-smr",
@@ -6503,7 +6503,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -6513,7 +6513,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -6533,7 +6533,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "latissimus-dorsi-smr",
@@ -6543,7 +6543,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "piriformis-smr",
@@ -6553,7 +6553,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -6563,7 +6563,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -6573,7 +6573,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       },
@@ -6593,7 +6593,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "quadriceps-smr",
@@ -6603,7 +6603,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "calves-smr",
@@ -6613,7 +6613,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -6623,7 +6623,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -6633,7 +6633,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 7,
-            "targetRir": 3
+            "targetRir": null
           }
         ]
       }
@@ -6722,7 +6722,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "calves-smr",
@@ -6732,7 +6732,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "hamstring-smr",
@@ -6742,7 +6742,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -6752,7 +6752,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -6762,7 +6762,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -6782,7 +6782,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "iliotibial-tract-smr",
@@ -6792,7 +6792,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "latissimus-dorsi-smr",
@@ -6802,7 +6802,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "90-90-hamstring",
@@ -6812,7 +6812,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -6822,7 +6822,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -6842,7 +6842,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "piriformis-smr",
@@ -6852,7 +6852,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "quadriceps-smr",
@@ -6862,7 +6862,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "ankle-circles",
@@ -6872,7 +6872,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -6882,7 +6882,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -6902,7 +6902,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "calves-smr",
@@ -6912,7 +6912,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "hamstring-smr",
@@ -6922,7 +6922,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "inchworm",
@@ -6932,7 +6932,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -6942,7 +6942,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       },
@@ -6962,7 +6962,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 5,
-            "targetRir": 4
+            "targetRir": null
           },
           {
             "exerciseId": "iliotibial-tract-smr",
@@ -6972,7 +6972,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "latissimus-dorsi-smr",
@@ -6982,7 +6982,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-gastrocnemius-calf-stretch",
@@ -6992,7 +6992,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           },
           {
             "exerciseId": "standing-hip-circles",
@@ -7002,7 +7002,7 @@ window.THF_PROGRAMS = [
             "durationSeconds": 30,
             "restSeconds": 30,
             "targetRpe": 8,
-            "targetRir": 2
+            "targetRir": null
           }
         ]
       }

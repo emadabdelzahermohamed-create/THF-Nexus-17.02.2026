@@ -296,7 +296,7 @@ def build() -> list[dict]:
                     "durationSeconds": duration_seconds,
                     "restSeconds": min(150, max(30, int(source.get("restSeconds") or 60))),
                     "targetRpe": 5 if exercise_index == 0 else (7 if level == "beginner" else 8),
-                    "targetRir": 4 if exercise_index == 0 else (3 if level == "beginner" else 2),
+                    "targetRir": None if duration_seconds else (4 if exercise_index == 0 else (3 if level == "beginner" else 2)),
                 })
             sessions.append({
                 "id": f"{program_id}-session-{session_index + 1}",

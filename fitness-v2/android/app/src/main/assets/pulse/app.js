@@ -177,8 +177,12 @@
     return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
   }
   function prescriptionText(reference) {
-    const dose = reference.durationSeconds ? `${reference.sets} × ${formatDuration(reference.durationSeconds)}` : `${reference.sets} × ${reference.reps || '—'}`;
-    return `${dose} · ${reference.restSeconds}s ${t('rest')} · RPE ${reference.targetRpe} · RIR ${reference.targetRir}`;
+    const timed = Number(reference.durationSeconds) > 0;
+    const dose = timed ? `${reference.sets} × ${formatDuration(reference.durationSeconds)}` : `${reference.sets} × ${reference.reps || '—'}`;
+    const rest = Number(reference.sets) > 1 && Number(reference.restSeconds) > 0 ? ` · ${reference.restSeconds}s ${t('rest')}` : '';
+    const rpe = reference.targetRpe !== null && reference.targetRpe !== undefined && Number.isFinite(Number(reference.targetRpe)) ? ` · RPE ${reference.targetRpe}` : '';
+    const rir = !timed && reference.targetRir !== null && reference.targetRir !== undefined && Number.isFinite(Number(reference.targetRir)) ? ` · RIR ${reference.targetRir}` : '';
+    return `${dose}${rest}${rpe}${rir}`;
   }
 
   function renderProgramDetail(program) {
