@@ -418,8 +418,13 @@
       row.querySelector('.set-complete').addEventListener('click',()=>completeSet(Number(row.dataset.index)));
     });
   }
+  function durationClockNow() {
+    const clock=window.performance?.now;
+    const value=typeof clock==='function'?Number(clock.call(window.performance)):NaN;
+    return Number.isFinite(value)?value:Date.now();
+  }
   function remainingDurationMs(set) {
-    if(set?.durationRunning&&Number.isFinite(Number(set.durationEndsAtMs)))return Math.max(0,Number(set.durationEndsAtMs)-Date.now());
+    if(set?.durationRunning&&Number.isFinite(Number(set.durationEndsAtMonotonicMs)))return Math.max(0,Number(set.durationEndsAtMonotonicMs)-durationClockNow());
     const stored=Number(set?.durationRemainingMs);
     return Number.isFinite(stored)?Math.max(0,stored):Math.max(0,Number(set?.durationSeconds)||0)*1000;
   }
@@ -441,7 +446,7 @@
     const runningIndex=Number.isInteger(active.durationTimerSetIndex)?active.durationTimerSetIndex:active.sets.findIndex(set=>set.durationRunning);
     if(runningIndex>=0&&runningIndex!==target)return;
     const set=active.sets[target];
-    if(set.durationRunning){set.durationRemainingMs=remainingDurationMs(set);set.durationRunning=false;delete set.durationEndsAtMs;}
+    if(set.durationRunning){set.durationRemainingMs=remainingDurationMs(set);set.durationRunning=false;delete set.durationEndsAtMonotonicMs;delete set.durationEndsAtMs;}
     if(active.durationTimerSetIndex===target)active.durationTimerSetIndex=null;
     clearInterval(state.durationTick);state.durationTick=null;
     persistActive();renderDurationControls(target);
@@ -454,7 +459,7 @@
   function resetDurationTimer(index) {
     const set=state.active?.sets?.[index];if(!set||!Number(set.durationSeconds))return;
     if(state.active.durationTimerSetIndex===index){clearInterval(state.durationTick);state.durationTick=null;state.active.durationTimerSetIndex=null;}
-    set.durationRemainingMs=Number(set.durationSeconds)*1000;set.durationRunning=false;set.durationElapsed=false;delete set.durationEndsAtMs;
+    set.durationRemainingMs=Number(set.durationSeconds)*1000;set.durationRunning=false;set.durationElapsed=false;delete set.durationEndsAtMonotonicMs;delete set.durationEndsAtMs;
   }
   function startDurationTimer(index) {
     const active=state.active;const set=active?.sets?.[index];
@@ -462,8 +467,8 @@
     const runningIndex=Number.isInteger(active.durationTimerSetIndex)?active.durationTimerSetIndex:active.sets.findIndex(value=>value.durationRunning);
     if(runningIndex>=0&&runningIndex!==index)pauseDurationTimer(runningIndex);
     const remaining=remainingDurationMs(set);
-    if(remaining<=0){set.durationRemainingMs=0;set.durationElapsed=true;set.durationRunning=false;delete set.durationEndsAtMs;persistActive();renderDurationControls(index);const node=$('durationAnnouncement');if(node)node.textContent=t('durationReached');return;}
-    set.durationRemainingMs=remaining;set.durationRunning=true;set.durationEndsAtMs=Date.now()+remaining;active.durationTimerSetIndex=index;
+    if(remaining<=0){set.durationRemainingMs=0;set.durationElapsed=true;set.durationRunning=false;delete set.durationEndsAtMonotonicMs;delete set.durationEndsAtMs;persistActive();renderDurationControls(index);const node=$('durationAnnouncement');if(node)node.textContent=t('durationReached');return;}
+    set.durationRemainingMs=remaining;set.durationRunning=true;set.durationEndsAtMonotonicMs=durationClockNow()+remaining;delete set.durationEndsAtMs;active.durationTimerSetIndex=index;
     const announcement=$('durationAnnouncement');if(announcement)announcement.textContent='';
     clearInterval(state.durationTick);state.durationTick=setInterval(()=>tickDurationTimer(index),1000);
     persistActive();renderDurationControls(index);
@@ -477,7 +482,7 @@
     if(!set||!set.durationRunning){clearInterval(state.durationTick);state.durationTick=null;return;}
     const remaining=remainingDurationMs(set);set.durationRemainingMs=remaining;
     if(remaining<=0){
-      set.durationRemainingMs=0;set.durationRunning=false;set.durationElapsed=true;delete set.durationEndsAtMs;
+      set.durationRemainingMs=0;set.durationRunning=false;set.durationElapsed=true;delete set.durationEndsAtMonotonicMs;delete set.durationEndsAtMs;
       if(active.durationTimerSetIndex===index)active.durationTimerSetIndex=null;
       clearInterval(state.durationTick);state.durationTick=null;
       persistActive();renderDurationControls(index);
@@ -502,6 +507,7 @@
         if(normalized!==storedRemaining){set.durationRemainingMs=normalized;changed=true;}
       }
       if(set.durationRunning){set.durationRunning=false;changed=true;}
+      if(Object.prototype.hasOwnProperty.call(set,'durationEndsAtMonotonicMs')){delete set.durationEndsAtMonotonicMs;changed=true;}
       if(Object.prototype.hasOwnProperty.call(set,'durationEndsAtMs')){delete set.durationEndsAtMs;changed=true;}
       if(set.durationRemainingMs<=0&&!set.durationElapsed){set.durationElapsed=true;changed=true;}
       else if(set.durationRemainingMs>0&&set.durationElapsed){set.durationElapsed=false;changed=true;}
