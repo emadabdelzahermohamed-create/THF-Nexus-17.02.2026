@@ -269,6 +269,43 @@ test('all 112 catalog exercises have two localized offline frames and all seven 
   }
 });
 
+test('all 112 offline exercises render their own first frame with the correct Arabic and English alt text', () => {
+  const h = harness({item: EXERCISES[0], playMode: 'resolve'});
+  for (const language of ['en', 'ar']) {
+    h.state.lang = language;
+    for (const item of EXERCISES) {
+      h.setCurrentItem(item);
+      for (const id of Object.keys(h.motionManifest)) delete h.motionManifest[id];
+      delete h.video.dataset.failedExerciseId;
+      h.api.renderActiveMotion(item);
+      assert.equal(h.video.classList.contains('hidden'), true, item.id + ' video should be hidden');
+      assert.equal(h.image.classList.contains('hidden'), false, item.id + ' frame should be visible');
+      assert.equal(h.image.getAttribute('src'), './' + item.demo.assets[0], item.id + ' wrong first frame');
+      assert.equal(h.image.alt, item.demo.alt[language], item.id + ' wrong ' + language + ' alt');
+      assert.equal(h.phase.textContent, language === 'ar' ? 'تسلسل مرجعي تلقائي' : 'Automatic reference sequence');
+    }
+  }
+});
+
+test('all seven reviewed video mappings fall back to their own exercise frames', () => {
+  const h = harness({item: EXERCISES[0], playMode: 'resolve'});
+  for (const id of Object.keys(MOTION_MANIFEST)) {
+    const item = EXERCISES.find(value => value.id === id);
+    assert.ok(item, id + ' has no catalog exercise');
+    h.setCurrentItem(item);
+    for (const key of Object.keys(h.motionManifest)) delete h.motionManifest[key];
+    h.motionManifest[id] = MOTION_MANIFEST[id];
+    delete h.video.dataset.failedExerciseId;
+    h.api.renderActiveMotion(item);
+    const onError = h.video.listeners.get('error');
+    assert.equal(typeof onError, 'function', id + ' has no media error handler');
+    onError();
+    assert.equal(h.video.classList.contains('hidden'), true, id + ' video should fall back');
+    assert.equal(h.image.getAttribute('src'), './' + item.demo.assets[0], id + ' mapped to the wrong exercise frame');
+    assert.equal(h.status.textContent.includes('Video unavailable'), true, id + ' fallback not announced');
+  }
+});
+
 test('the active workout motion controller observes the video hidden state and starts its automatic frame loop', () => {
   assert.match(MOTION, /observer\.observe\(root,[\s\S]*attributeFilter: \['class', 'data-exercise-id'\]/);
   assert.match(MOTION, /if \(!video\.classList\.contains\('hidden'\)\) \{\s*stop\(\{resetExercise: true\}\)/);
