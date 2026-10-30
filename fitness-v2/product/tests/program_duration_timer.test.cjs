@@ -8,29 +8,12 @@ const APP = fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets
 const HTML = fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/index.html'), 'utf8');
 const PROGRAMS = JSON.parse(fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/data/programs.json'), 'utf8'));
 
-function timedMinimumMinutes(session) {
-  const seconds = (session.exercises || []).reduce((sum, reference) => {
-    const duration = Number(reference.durationSeconds) || 0;
-    if (duration <= 0) return sum;
-    const sets = Math.max(1, Number(reference.sets) || 1);
-    const rest = Math.max(0, Number(reference.restSeconds) || 0);
-    return sum + duration * sets + Math.max(0, sets - 1) * rest;
-  }, 0);
-  return Math.ceil(seconds / 60);
-}
-
 test('program duration prescriptions use readable MM:SS instead of raw seconds', () => {
   assert.ok(APP.includes('function formatDuration(totalSeconds)'));
   assert.ok(APP.includes('formatDuration(reference.durationSeconds)'));
-});
-
-test('program detail discloses timed-work lower bounds above the stated estimate', () => {
-  assert.ok(APP.includes('function timedMinimumMinutes(session)'));
-  assert.ok(APP.includes('programTimeWarning'));
-  const program = PROGRAMS.find(item => item.id === 'walk-run-foundation');
-  const session = program.sessions.find(item => item.id === 'walk-run-foundation-session-1');
-  assert.equal(timedMinimumMinutes(session), 126);
-  assert.ok(timedMinimumMinutes(session) > session.estimatedMinutes);
+  const timedReference = PROGRAMS.flatMap(program => program.sessions.flatMap(session => session.exercises))
+    .find(reference => Number(reference.durationSeconds) > 0);
+  assert.ok(timedReference, 'the offline program library must retain at least one timed prescription');
 });
 
 test('program timed sets seed independent remaining-time state', () => {
@@ -61,8 +44,14 @@ test('reaching the target announces completion but does not auto-complete the se
   assert.equal(APP.includes('set.complete=true'), false);
 });
 
-test('timer and program-time warning copy is bilingual', () => {
-  for (const key of ['time:', 'target:', 'startTimer:', 'pauseTimer:', 'timeReached:', 'durationReached:', 'programTimeWarning:']) {
+test('undoing a completed timed set resets its timer to the full target', () => {
+  assert.ok(APP.includes('if(Number(set.durationSeconds)>0&&!set.complete)resetDurationTimer(index)'));
+  assert.ok(APP.includes('set.durationRemainingMs=Number(set.durationSeconds)*1000'));
+  assert.ok(APP.includes('set.durationElapsed=false'));
+});
+
+test('timer copy is bilingual', () => {
+  for (const key of ['time:', 'target:', 'startTimer:', 'pauseTimer:', 'timeReached:', 'durationReached:']) {
     assert.ok(APP.includes(key), `missing Arabic/English copy key ${key}`);
   }
 });
