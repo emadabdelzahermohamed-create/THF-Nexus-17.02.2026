@@ -3,15 +3,17 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 PKG = ROOT / "fitness-v2" / "android" / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse"
+SERVICE = PKG / "ActivityTrackingService.kt"
+MAIN = PKG / "MainActivity.kt"
+CHECKPOINT = PKG / "ActivitySessionCheckpoint.kt"
 
 
 class ActivitySessionRecoveryContractTest(unittest.TestCase):
     def test_live_activity_has_durable_checkpoint_and_null_intent_restore(self):
-        checkpoint = PKG / "ActivitySessionCheckpoint.kt"
-        service = (PKG / "ActivityTrackingService.kt").read_text()
+        service = SERVICE.read_text()
+        checkpoint = CHECKPOINT.read_text()
 
-        self.assertTrue(checkpoint.exists(), "active session checkpoint codec/store contract is missing")
-        source = checkpoint.read_text()
+        self.assertTrue(CHECKPOINT.exists(), "active session checkpoint codec/store contract is missing")
         for marker in (
             "data class ActivitySessionCheckpoint",
             "object ActivitySessionCheckpointCodec",
@@ -19,7 +21,7 @@ class ActivitySessionRecoveryContractTest(unittest.TestCase):
             "fun decode(",
             "fun canRestore(",
         ):
-            self.assertIn(marker, source)
+            self.assertIn(marker, checkpoint)
 
         for marker in (
             "restorePersistedActivity",
@@ -30,9 +32,30 @@ class ActivitySessionRecoveryContractTest(unittest.TestCase):
         ):
             self.assertIn(marker, service)
 
-        # Process restart must not silently claim reboot recovery: elapsedRealtime
-        # continuity is required before restoring an in-flight session.
         self.assertIn("ActivitySessionCheckpointCodec.canRestore", service)
+
+    def test_main_activity_reopen_requests_restore_before_host_motion_resumes(self):
+        source = MAIN.read_text()
+        start = source.index("override fun onResume()")
+        end = source.index("override fun onPause()", start)
+        on_resume = source[start:end]
+
+        self.assertIn("ActivityTrackingService.restorePersistedActivityIfAvailable(this)", on_resume)
+        self.assertIn("val activityRestorePending", on_resume)
+        self.assertIn("!activityRestorePending", on_resume)
+        self.assertLess(
+            on_resume.index("restorePersistedActivityIfAvailable"),
+            on_resume.index("motionEngine.onHostResume()"),
+        )
+
+    def test_service_has_explicit_reopen_restore_action_and_boot_identity(self):
+        source = SERVICE.read_text()
+
+        self.assertIn("ACTION_RESTORE_ACTIVITY", source)
+        self.assertIn("Settings.Global.BOOT_COUNT", source)
+        self.assertIn("bootCount = readBootCount(this)", source)
+        self.assertIn("currentBootCount = readBootCount(this)", source)
+        self.assertIn("ActivitySessionCheckpointCodec.canRestore", source)
 
 
 if __name__ == "__main__":
