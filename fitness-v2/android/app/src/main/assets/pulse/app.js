@@ -81,7 +81,7 @@
     $('primaryNav').classList.toggle('hidden', id === 'activeWorkoutScreen' || id === 'activityScreen');
     document.body.classList.toggle('workout-active', id === 'activeWorkoutScreen');
     const demoVideo = $('activeDemoVideo');
-    if (id === 'activeWorkoutScreen' && !demoVideo.classList.contains('hidden')) demoVideo.play().catch(() => {});
+    if (id === 'activeWorkoutScreen' && !demoVideo.classList.contains('hidden') && !preferredReducedMotion()) demoVideo.play().catch(() => {});
     else demoVideo.pause();
     window.scrollTo({top: 0, behavior: 'smooth'});
     if (id === 'progressScreen') renderProgress();
@@ -340,7 +340,8 @@
     const video = $('activeDemoVideo');
     const image = $('activeDemoImage');
     const motion = motionManifest[item.id];
-    if (motion?.asset) {
+    const reduced = preferredReducedMotion();
+    if (motion?.asset && !reduced) {
       const nextSource = './' + motion.asset;
       if (video.getAttribute('src') !== nextSource) video.setAttribute('src', nextSource);
       video.setAttribute('aria-label', item.demo.alt[state.lang]);
@@ -361,13 +362,17 @@
     }
     $('activeDemoCredit')?.classList.add('hidden');
     video.pause();
-    video.removeAttribute('src');
-    video.load();
+    if (!motion?.asset) {
+      video.removeAttribute('src');
+      video.load();
+    }
     video.classList.add('hidden');
     image.classList.remove('hidden');
     image.src = './' + item.demo.assets[0];
     image.alt = item.demo.alt[state.lang];
-    $('activeDemoPhase').textContent = state.lang === 'ar' ? 'صور مرجعية — الحركة قيد الإضافة' : 'Reference images — motion pending';
+    $('activeDemoPhase').textContent = reduced
+      ? (state.lang === 'ar' ? 'صورة ثابتة — تقليل الحركة' : 'Static image — reduced motion')
+      : (state.lang === 'ar' ? 'صور مرجعية — الحركة قيد الإضافة' : 'Reference images — motion pending');
   }
   function renderActiveWorkout() {
     const item = activeExercise(); if (!item) { state.active=null; store.removeItem('pulse.v2.active'); return; }
@@ -545,6 +550,10 @@
     $('reduceMotion').checked=enabled;
     document.documentElement.style.setProperty('--motion',enabled?'0':'1');
     if(persist)store.setItem('pulse.v2.reduceMotion',enabled?'1':'0');
+    if(state.active && $('activeWorkoutScreen').classList.contains('active')){
+      const item=activeExercise();
+      if(item)renderActiveMotion(item);
+    }
   }
 
   function bind(){
@@ -568,6 +577,10 @@
     window.addEventListener('thf:activity-started',()=>{renderActivity(readActivitySnapshot());startActivityPolling();});window.addEventListener('thf:location-permission',event=>{if(event.detail?.granted){setTimeout(()=>renderActivity(readActivitySnapshot()),400);}else toast(t('activityPermissionNeeded'));});
     $('clearHistoryBtn').addEventListener('click',()=>{const now=Date.now();if(now>state.clearArmedUntil){state.clearArmedUntil=now+3000;toast(t('clearConfirm'));return;}store.removeItem('pulse.v2.history');renderToday();renderProgress();});
     $('profileForm').addEventListener('submit',saveProfile);$('profileDays').addEventListener('input',event=>$('profileDaysOutput').textContent=event.target.value);$('refreshStatus').addEventListener('click',renderNativeStatus);$('voiceEnabled').addEventListener('change',event=>voiceGuidance.setEnabled(event.target.checked));$('reduceMotion').addEventListener('change',event=>applyMotionPreference(event.target.checked));
+    const motionPreferenceQuery=window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const syncSystemMotionPreference=()=>applyMotionPreference(preferredReducedMotion(),false);
+    if(motionPreferenceQuery?.addEventListener)motionPreferenceQuery.addEventListener('change',syncSystemMotionPreference);
+    else motionPreferenceQuery?.addListener?.(syncSystemMotionPreference);
     $('privacyPolicyBtn').addEventListener('click',()=>{if(N)N.openPrivacyPolicy();else toast(t('accountResourceAndroidOnly'))});
     $('accountDeletionBtn').addEventListener('click',()=>{if(N)N.openAccountDeletion();else toast(t('accountResourceAndroidOnly'))});
     $('foundingHeroPurchaseBtn').addEventListener('click',()=>{if(N&&typeof N.purchaseFoundingHero==='function'){N.purchaseFoundingHero();renderFoundingHero({...currentBilling(),loading:true});}else toast(t('foundingHeroAndroidOnly'));});
@@ -577,7 +590,7 @@
     window.addEventListener('thf:health-status',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-permission',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-sync',event=>renderHealthSnapshot(event.detail));window.addEventListener('thf:health-write',()=>renderHealthStatus());window.addEventListener('thf:health-error',event=>renderHealthError(event.detail||{}));
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
-    document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
+    document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden')&&!preferredReducedMotion())video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
   }
 
