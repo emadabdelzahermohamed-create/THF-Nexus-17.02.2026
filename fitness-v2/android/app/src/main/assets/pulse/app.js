@@ -27,10 +27,10 @@
 
   const COPY = {
     ar: {
-      skip:'انتقل إلى المحتوى',brandTag:'تدريب واضح. تقدم حقيقي.',offlineBanner:'مكتبة التمارين والدليل المصور متاحان دون إنترنت.',todayEyebrow:'خطتك اليوم',todayTitle:'خطوة واحدة واضحة',startWorkout:'ابدأ التمرين',readiness:'جاهزية',sessions:'جلسات',today:'اليوم',minutes:'دقائق',volume:'الحجم',streak:'الاستمرار',days:'أيام',weeklyGoal:'هدف الأسبوع',consistency:'الاستمرارية قبل الشدة',weeklyHint:'أكمل جلسات مناسبة لمستواك ثم تدرّج بهدوء.',trainEyebrow:`26 برنامجًا · ${EXERCISES.length} تمرينًا موثقًا`,trainTitle:'اختر خطتك وتدرّب بوضوح',searchLabel:'ابحث في التمارين',searchPlaceholder:'اسم التمرين أو العضلة أو المعدة',gymLibrary:'مكتبة الجيم',gymTitle:'ابنِ جلستك حسب جسمك ومعداتك',gymHint:'فلترة حقيقية للعضلة والمعدة ونمط الحركة والمستوى والهدف.',exercises:'تمرين',filters:'الفلاتر',bodyPart:'جزء الجسم',muscle:'العضلة',equipment:'المعدة',movement:'نمط الحركة',level:'المستوى',goal:'الهدف',resetFilters:'إعادة ضبط الفلاتر',noResults:'لا توجد نتائج مطابقة',noResultsHint:'جرّب مسح البحث أو تقليل عدد الفلاتر.',backToLibrary:'العودة للمكتبة',toggleFrame:'بدّل الوضع',technique:'طريقة الأداء',sessionLog:'سجل الجلسة',set:'المجموعة',load:'الحمل',reps:'العدات',addSet:'+ إضافة مجموعة',rest:'راحة',skipRest:'تخطّي',safety:'السلامة أولًا',finishWorkout:'إنهاء التمرين وحفظه',progressEyebrow:'افهم تقدمك',progressTitle:'قوة وحجم واستمرارية',totalWorkouts:'كل الجلسات',totalVolume:'إجمالي الحجم',personalRecords:'أرقام شخصية',activeMinutes:'دقائق نشطة',volumeTrend:'حجم آخر 7 جلسات',localData:'محلي',recentHistory:'السجل الأخير',clearHistory:'مسح السجل',healthTitle:'نشاطك في مكان واحد',beforeConnect:'قبل الاتصال',yourChoice:'بياناتك واختيارك',healthRationale:'نقرأ الخطوات وجلسات التمرين والمسافة والسعرات النشطة لعرض ملخصك، ونكتب فقط جلسات THF المكتملة. لا نطلب نبض القلب أو النوم أو الوزن.',healthBullet1:'يمكن رفض أي إذن أو سحبه لاحقًا.',healthBullet2:'يبقى تسجيل التمرين المحلي عاملًا دون اتصال.',healthBullet3:'معرّف ثابت يمنع تكرار الجلسة عند إعادة المحاولة.',reviewPermissions:'راجع الأذونات واتصل',steps7:'خطوات / 7 أيام',distance:'المسافة',activeCalories:'سعرات نشطة',healthEmpty:'اتصل ثم اضغط مزامنة لقراءة البيانات.',neverSynced:'آخر مزامنة: لم تتم',healthSyncing:'جاري المزامنة…',healthSyncWait:'Health Connect مشغول مؤقتًا. انتظر قليلًا ثم أعد المحاولة.',healthSyncFailed:'تعذرت المزامنة. حاول مرة أخرى بعد قليل.',syncNow:'مزامنة الآن',managePermissions:'إدارة الأذونات',samsungPath:'المسار المعتمد: Samsung Health ← Health Connect ← Top Hero Fit. لا نعتبر الربط ناجحًا قبل ظهور بيانات Samsung فعلية.',profileEyebrow:'خطتك تتكيف معك',profileTitle:'ملف التدريب',goalFitness:'لياقة عامة',goalMuscle:'بناء العضلات',goalStrength:'القوة',goalEndurance:'التحمل',goalMobility:'الحركة والاستشفاء',beginner:'مبتدئ',intermediate:'متوسط',advanced:'متقدم',daysPerWeek:'أيام التدريب أسبوعيًا',availableEquipment:'المعدات المتاحة',savePlan:'احفظ وحدّث خطة اليوم',profileSaved:'تم حفظ ملفك وتحديث اقتراح اليوم.',privacyOffline:'الخصوصية والوضع المحلي',refreshStatus:'تحديث الحالة',voiceGuidance:'الدليل الصوتي',reduceMotion:'تقليل الحركة',navToday:'اليوم',navTrain:'تدريب',navProgress:'التقدم',navHealth:'الصحة',navProfile:'ملفي',startThisExercise:'ابدأ هذا التمرين',sourceLicense:'المصدر والترخيص',all:'الكل',offline:'أوفلاين',start:'البداية',finish:'النهاية',setup:'الاستعداد',breathing:'التنفس',defaults:'الجرعة المقترحة',mistakes:'أخطاء شائعة',regression:'نسخة أسهل',progression:'التدرج',working:'أساسية',warmup:'إحماء',completed:'مكتملة',saved:'تم حفظ التمرين محليًا.',emptyHistory:'ابدأ أول تمرين ليظهر تقدمك هنا.',noCatalog:'تعذر تحميل مكتبة التمارين الأوفلاين.',browserHealth:'Health Connect متاح داخل تطبيق Android فقط.',statusOffline:'وضع أوفلاين جاهز',statusOnline:'متصل وجاهز للمزامنة',clearConfirm:'اضغط مرة أخرى خلال 3 ثوانٍ لمسح السجل.',profilePlan:'جلسة مناسبة لهدفك',oneExercise:'حركة واحدة واضحة',min:'د',setsLabel:'مجموعات',sourceText:'free-exercise-db · Unlicense · نسخة أوفلاين موثقة',setProgress:'{done} من {total} مكتملة',dateLabel:'التاريخ',volumeLabel:'الحجم',rpeHelp:'RPE من 1 إلى 10',rirHelp:'RIR عدد العدات المتبقية',programs:'البرامج',exerciseLibrary:'مكتبة التمارين',programLibrary:'برامج أوفلاين منظمة',programTitle:'ابدأ بمسار واضح وتدرّج آمن',programHint:'كل برنامج يحدد الأسابيع والجلسات والتمارين وRPE وRIR ومعيار التدرج.',noPrograms:'لا توجد برامج في هذا القسم',weeks:'أسابيع',daysWeekly:'أيام أسبوعيًا',useProgram:'استخدم هذا البرنامج',programSelected:'تم اختيار البرنامج وتحديث اليوم.',programSessions:'جلسات البرنامج',session:'جلسة',exerciseCount:'تمارين',programSource:'تكوين تحريري أصلي من THF · بيانات وصور التمارين: free-exercise-db / Unlicense'
+      skip:'انتقل إلى المحتوى',brandTag:'تدريب واضح. تقدم حقيقي.',offlineBanner:'مكتبة التمارين والدليل المصور متاحان دون إنترنت.',todayEyebrow:'خطتك اليوم',todayTitle:'خطوة واحدة واضحة',startWorkout:'ابدأ التمرين',readiness:'جاهزية',sessions:'جلسات',today:'اليوم',minutes:'دقائق',volume:'الحجم',streak:'الاستمرار',days:'أيام',weeklyGoal:'هدف الأسبوع',consistency:'الاستمرارية قبل الشدة',weeklyHint:'أكمل جلسات مناسبة لمستواك ثم تدرّج بهدوء.',trainEyebrow:`26 برنامجًا · ${EXERCISES.length} تمرينًا موثقًا`,trainTitle:'اختر خطتك وتدرّب بوضوح',searchLabel:'ابحث في التمارين',searchPlaceholder:'اسم التمرين أو العضلة أو المعدة',gymLibrary:'مكتبة الجيم',gymTitle:'ابنِ جلستك حسب جسمك ومعداتك',gymHint:'فلترة حقيقية للعضلة والمعدة ونمط الحركة والمستوى والهدف.',exercises:'تمرين',filters:'الفلاتر',bodyPart:'جزء الجسم',muscle:'العضلة',equipment:'المعدة',movement:'نمط الحركة',level:'المستوى',goal:'الهدف',resetFilters:'إعادة ضبط الفلاتر',noResults:'لا توجد نتائج مطابقة',noResultsHint:'جرّب مسح البحث أو تقليل عدد الفلاتر.',backToLibrary:'العودة للمكتبة',toggleFrame:'بدّل الوضع',technique:'طريقة الأداء',sessionLog:'سجل الجلسة',set:'المجموعة',load:'الحمل',reps:'العدات',time:'الزمن',target:'المستهدف',startTimer:'ابدأ المؤقت',pauseTimer:'إيقاف المؤقت',timeReached:'انتهى الزمن',durationReached:'انتهى الزمن المستهدف. يمكنك إكمال المجموعة عندما تكون مستعدًا.',addSet:'+ إضافة مجموعة',rest:'راحة',skipRest:'تخطّي',safety:'السلامة أولًا',finishWorkout:'إنهاء التمرين وحفظه',progressEyebrow:'افهم تقدمك',progressTitle:'قوة وحجم واستمرارية',totalWorkouts:'كل الجلسات',totalVolume:'إجمالي الحجم',personalRecords:'أرقام شخصية',activeMinutes:'دقائق نشطة',volumeTrend:'حجم آخر 7 جلسات',localData:'محلي',recentHistory:'السجل الأخير',clearHistory:'مسح السجل',healthTitle:'نشاطك في مكان واحد',beforeConnect:'قبل الاتصال',yourChoice:'بياناتك واختيارك',healthRationale:'نقرأ الخطوات وجلسات التمرين والمسافة والسعرات النشطة لعرض ملخصك، ونكتب فقط جلسات THF المكتملة. لا نطلب نبض القلب أو النوم أو الوزن.',healthBullet1:'يمكن رفض أي إذن أو سحبه لاحقًا.',healthBullet2:'يبقى تسجيل التمرين المحلي عاملًا دون اتصال.',healthBullet3:'معرّف ثابت يمنع تكرار الجلسة عند إعادة المحاولة.',reviewPermissions:'راجع الأذونات واتصل',steps7:'خطوات / 7 أيام',distance:'المسافة',activeCalories:'سعرات نشطة',healthEmpty:'اتصل ثم اضغط مزامنة لقراءة البيانات.',neverSynced:'آخر مزامنة: لم تتم',healthSyncing:'جاري المزامنة…',healthSyncWait:'Health Connect مشغول مؤقتًا. انتظر قليلًا ثم أعد المحاولة.',healthSyncFailed:'تعذرت المزامنة. حاول مرة أخرى بعد قليل.',syncNow:'مزامنة الآن',managePermissions:'إدارة الأذونات',samsungPath:'المسار المعتمد: Samsung Health ← Health Connect ← Top Hero Fit. لا نعتبر الربط ناجحًا قبل ظهور بيانات Samsung فعلية.',profileEyebrow:'خطتك تتكيف معك',profileTitle:'ملف التدريب',goalFitness:'لياقة عامة',goalMuscle:'بناء العضلات',goalStrength:'القوة',goalEndurance:'التحمل',goalMobility:'الحركة والاستشفاء',beginner:'مبتدئ',intermediate:'متوسط',advanced:'متقدم',daysPerWeek:'أيام التدريب أسبوعيًا',availableEquipment:'المعدات المتاحة',savePlan:'احفظ وحدّث خطة اليوم',profileSaved:'تم حفظ ملفك وتحديث اقتراح اليوم.',privacyOffline:'الخصوصية والوضع المحلي',refreshStatus:'تحديث الحالة',voiceGuidance:'الدليل الصوتي',reduceMotion:'تقليل الحركة',navToday:'اليوم',navTrain:'تدريب',navProgress:'التقدم',navHealth:'الصحة',navProfile:'ملفي',startThisExercise:'ابدأ هذا التمرين',sourceLicense:'المصدر والترخيص',all:'الكل',offline:'أوفلاين',start:'البداية',finish:'النهاية',setup:'الاستعداد',breathing:'التنفس',defaults:'الجرعة المقترحة',mistakes:'أخطاء شائعة',regression:'نسخة أسهل',progression:'التدرج',working:'أساسية',warmup:'إحماء',completed:'مكتملة',saved:'تم حفظ التمرين محليًا.',emptyHistory:'ابدأ أول تمرين ليظهر تقدمك هنا.',noCatalog:'تعذر تحميل مكتبة التمارين الأوفلاين.',browserHealth:'Health Connect متاح داخل تطبيق Android فقط.',statusOffline:'وضع أوفلاين جاهز',statusOnline:'متصل وجاهز للمزامنة',clearConfirm:'اضغط مرة أخرى خلال 3 ثوانٍ لمسح السجل.',profilePlan:'جلسة مناسبة لهدفك',oneExercise:'حركة واحدة واضحة',min:'د',setsLabel:'مجموعات',sourceText:'free-exercise-db · Unlicense · نسخة أوفلاين موثقة',setProgress:'{done} من {total} مكتملة',dateLabel:'التاريخ',volumeLabel:'الحجم',rpeHelp:'RPE من 1 إلى 10',rirHelp:'RIR عدد العدات المتبقية',programs:'البرامج',exerciseLibrary:'مكتبة التمارين',programLibrary:'برامج أوفلاين منظمة',programTitle:'ابدأ بمسار واضح وتدرّج آمن',programHint:'كل برنامج يحدد الأسابيع والجلسات والتمارين وRPE وRIR ومعيار التدرج.',noPrograms:'لا توجد برامج في هذا القسم',weeks:'أسابيع',daysWeekly:'أيام أسبوعيًا',useProgram:'استخدم هذا البرنامج',programSelected:'تم اختيار البرنامج وتحديث اليوم.',programSessions:'جلسات البرنامج',session:'جلسة',exerciseCount:'تمارين',programSource:'تكوين تحريري أصلي من THF · بيانات وصور التمارين: free-exercise-db / Unlicense'
     },
     en: {
-      skip:'Skip to content',brandTag:'Clear training. Real progress.',offlineBanner:'The exercise library and visual demos work fully offline.',todayEyebrow:"Today's plan",todayTitle:'One clear next action',startWorkout:'Start workout',readiness:'Readiness',sessions:'Sessions',today:'Today',minutes:'Minutes',volume:'Volume',streak:'Streak',days:'days',weeklyGoal:'Weekly goal',consistency:'Consistency before intensity',weeklyHint:'Complete sessions that fit your level, then progress gradually.',trainEyebrow:`26 programs · ${EXERCISES.length} documented exercises`,trainTitle:'Choose your plan and train clearly',searchLabel:'Search exercises',searchPlaceholder:'Exercise, muscle, or equipment',gymLibrary:'Gym library',gymTitle:'Build around your body and equipment',gymHint:'Real filters for muscle, equipment, movement, level, and goal.',exercises:'exercises',filters:'Filters',bodyPart:'Body part',muscle:'Muscle',equipment:'Equipment',movement:'Movement',level:'Level',goal:'Goal',resetFilters:'Reset filters',noResults:'No matching exercises',noResultsHint:'Clear the search or remove some filters.',backToLibrary:'Back to library',toggleFrame:'Change position',technique:'Technique',sessionLog:'Session log',set:'Set',load:'Load',reps:'Reps',addSet:'+ Add set',rest:'Rest',skipRest:'Skip',safety:'Safety first',finishWorkout:'Finish and save workout',progressEyebrow:'Understand your progress',progressTitle:'Strength, volume, consistency',totalWorkouts:'All sessions',totalVolume:'Total volume',personalRecords:'Personal records',activeMinutes:'Active minutes',volumeTrend:'Last 7 session volume',localData:'Local',recentHistory:'Recent history',clearHistory:'Clear history',healthTitle:'Your activity in one place',beforeConnect:'Before connecting',yourChoice:'Your data, your choice',healthRationale:'We read steps, exercise sessions, distance, and active calories for your summary, and write only completed THF sessions. We do not request heart rate, sleep, or weight.',healthBullet1:'You may deny or revoke any permission later.',healthBullet2:'Local workout logging remains available offline.',healthBullet3:'A stable identifier prevents duplicate writes on retry.',reviewPermissions:'Review permissions and connect',steps7:'Steps / 7 days',distance:'Distance',activeCalories:'Active calories',healthEmpty:'Connect, then sync to read activity.',neverSynced:'Last sync: never',healthSyncing:'Syncing…',healthSyncWait:'Health Connect is temporarily busy. Wait briefly, then try again.',healthSyncFailed:'Sync failed. Please try again shortly.',syncNow:'Sync now',managePermissions:'Manage permissions',samsungPath:'Supported path: Samsung Health ← Health Connect ← Top Hero Fit. We do not call it connected until real Samsung data appears.',profileEyebrow:'Your plan adapts to you',profileTitle:'Training profile',goalFitness:'General fitness',goalMuscle:'Build muscle',goalStrength:'Strength',goalEndurance:'Endurance',goalMobility:'Mobility & recovery',beginner:'Beginner',intermediate:'Intermediate',advanced:'Advanced',daysPerWeek:'Training days per week',availableEquipment:'Available equipment',savePlan:'Save and update Today',profileSaved:'Profile saved and Today updated.',privacyOffline:'Privacy and offline mode',refreshStatus:'Refresh status',voiceGuidance:'Voice guidance',reduceMotion:'Reduce motion',navToday:'Today',navTrain:'Train',navProgress:'Progress',navHealth:'Health',navProfile:'Profile',startThisExercise:'Start this exercise',sourceLicense:'Source and license',all:'All',offline:'Offline',start:'Start',finish:'Finish',setup:'Setup',breathing:'Breathing',defaults:'Suggested prescription',mistakes:'Common mistakes',regression:'Regression',progression:'Progression',working:'Working',warmup:'Warm-up',completed:'Complete',saved:'Workout saved locally.',emptyHistory:'Start your first workout to see progress here.',noCatalog:'The offline exercise library could not be loaded.',browserHealth:'Health Connect is available in the Android app only.',statusOffline:'Offline mode ready',statusOnline:'Online and ready to sync',clearConfirm:'Press again within 3 seconds to clear history.',profilePlan:'A session aligned to your goal',oneExercise:'one clear movement',min:'min',setsLabel:'sets',sourceText:'free-exercise-db · Unlicense · audited offline copy',setProgress:'{done} of {total} complete',dateLabel:'Date',volumeLabel:'Volume',rpeHelp:'RPE from 1 to 10',rirHelp:'RIR is reps left in reserve',programs:'Programs',exerciseLibrary:'Exercise library',programLibrary:'Structured offline programs',programTitle:'Start with a clear path and safe progression',programHint:'Every program defines its weeks, sessions, exercises, RPE, RIR and progression rule.',noPrograms:'No programs in this section',weeks:'weeks',daysWeekly:'days weekly',useProgram:'Use this program',programSelected:'Program selected and Today updated.',programSessions:'Program sessions',session:'Session',exerciseCount:'exercises',programSource:'Original THF editorial composition · exercise data and images: free-exercise-db / Unlicense'
+      skip:'Skip to content',brandTag:'Clear training. Real progress.',offlineBanner:'The exercise library and visual demos work fully offline.',todayEyebrow:"Today's plan",todayTitle:'One clear next action',startWorkout:'Start workout',readiness:'Readiness',sessions:'Sessions',today:'Today',minutes:'Minutes',volume:'Volume',streak:'Streak',days:'days',weeklyGoal:'Weekly goal',consistency:'Consistency before intensity',weeklyHint:'Complete sessions that fit your level, then progress gradually.',trainEyebrow:`26 programs · ${EXERCISES.length} documented exercises`,trainTitle:'Choose your plan and train clearly',searchLabel:'Search exercises',searchPlaceholder:'Exercise, muscle, or equipment',gymLibrary:'Gym library',gymTitle:'Build around your body and equipment',gymHint:'Real filters for muscle, equipment, movement, level, and goal.',exercises:'exercises',filters:'Filters',bodyPart:'Body part',muscle:'Muscle',equipment:'Equipment',movement:'Movement',level:'Level',goal:'Goal',resetFilters:'Reset filters',noResults:'No matching exercises',noResultsHint:'Clear the search or remove some filters.',backToLibrary:'Back to library',toggleFrame:'Change position',technique:'Technique',sessionLog:'Session log',set:'Set',load:'Load',reps:'Reps',time:'Time',target:'Target',startTimer:'Start timer',pauseTimer:'Pause timer',timeReached:'Time reached',durationReached:'Target time reached. Mark the set complete when ready.',addSet:'+ Add set',rest:'Rest',skipRest:'Skip',safety:'Safety first',finishWorkout:'Finish and save workout',progressEyebrow:'Understand your progress',progressTitle:'Strength, volume, consistency',totalWorkouts:'All sessions',totalVolume:'Total volume',personalRecords:'Personal records',activeMinutes:'Active minutes',volumeTrend:'Last 7 session volume',localData:'Local',recentHistory:'Recent history',clearHistory:'Clear history',healthTitle:'Your activity in one place',beforeConnect:'Before connecting',yourChoice:'Your data, your choice',healthRationale:'We read steps, exercise sessions, distance, and active calories for your summary, and write only completed THF sessions. We do not request heart rate, sleep, or weight.',healthBullet1:'You may deny or revoke any permission later.',healthBullet2:'Local workout logging remains available offline.',healthBullet3:'A stable identifier prevents duplicate writes on retry.',reviewPermissions:'Review permissions and connect',steps7:'Steps / 7 days',distance:'Distance',activeCalories:'Active calories',healthEmpty:'Connect, then sync to read activity.',neverSynced:'Last sync: never',healthSyncing:'Syncing…',healthSyncWait:'Health Connect is temporarily busy. Wait briefly, then try again.',healthSyncFailed:'Sync failed. Please try again shortly.',syncNow:'Sync now',managePermissions:'Manage permissions',samsungPath:'Supported path: Samsung Health ← Health Connect ← Top Hero Fit. We do not call it connected until real Samsung data appears.',profileEyebrow:'Your plan adapts to you',profileTitle:'Training profile',goalFitness:'General fitness',goalMuscle:'Build muscle',goalStrength:'Strength',goalEndurance:'Endurance',goalMobility:'Mobility & recovery',beginner:'Beginner',intermediate:'Intermediate',advanced:'Advanced',daysPerWeek:'Training days per week',availableEquipment:'Available equipment',savePlan:'Save and update Today',profileSaved:'Profile saved and Today updated.',privacyOffline:'Privacy and offline mode',refreshStatus:'Refresh status',voiceGuidance:'Voice guidance',reduceMotion:'Reduce motion',navToday:'Today',navTrain:'Train',navProgress:'Progress',navHealth:'Health',navProfile:'Profile',startThisExercise:'Start this exercise',sourceLicense:'Source and license',all:'All',offline:'Offline',start:'Start',finish:'Finish',setup:'Setup',breathing:'Breathing',defaults:'Suggested prescription',mistakes:'Common mistakes',regression:'Regression',progression:'Progression',working:'Working',warmup:'Warm-up',completed:'Complete',saved:'Workout saved locally.',emptyHistory:'Start your first workout to see progress here.',noCatalog:'The offline exercise library could not be loaded.',browserHealth:'Health Connect is available in the Android app only.',statusOffline:'Offline mode ready',statusOnline:'Online and ready to sync',clearConfirm:'Press again within 3 seconds to clear history.',profilePlan:'A session aligned to your goal',oneExercise:'one clear movement',min:'min',setsLabel:'sets',sourceText:'free-exercise-db · Unlicense · audited offline copy',setProgress:'{done} of {total} complete',dateLabel:'Date',volumeLabel:'Volume',rpeHelp:'RPE from 1 to 10',rirHelp:'RIR is reps left in reserve',programs:'Programs',exerciseLibrary:'Exercise library',programLibrary:'Structured offline programs',programTitle:'Start with a clear path and safe progression',programHint:'Every program defines its weeks, sessions, exercises, RPE, RIR and progression rule.',noPrograms:'No programs in this section',weeks:'weeks',daysWeekly:'days weekly',useProgram:'Use this program',programSelected:'Program selected and Today updated.',programSessions:'Program sessions',session:'Session',exerciseCount:'exercises',programSource:'Original THF editorial composition · exercise data and images: free-exercise-db / Unlicense'
     }
   };
   Object.assign(COPY.ar, {startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة',foundingHeroEyebrow:'حزمة تجميلية لمرة واحدة',foundingHeroTitle:'البطل المؤسس',foundingHeroBadge:'البطل المؤسس',foundingHeroBody:'شراء رقمي لمرة واحدة يضيف شارة البطل المؤسس ولمسة ذهبية لملفك.',foundingHeroScope:'شارة تجميلية فقط؛ لا تحجب التمارين أو الصحة، ولا تمنح أفضلية تنافسية أو توكنات أو عائدًا ماليًا.',foundingHeroLoading:'جارٍ التحقق من Google Play…',foundingHeroBuy:'احصل على الحزمة',foundingHeroRestore:'استعادة الشراء',foundingHeroOwned:'حزمة البطل المؤسس مفعلة على هذا الحساب.',foundingHeroPending:'عملية الشراء معلقة؛ ستتفعل الشارة بعد تأكيد Google Play.',foundingHeroUnavailable:'المنتج غير متاح في هذه النسخة بعد. لم يتم تحصيل أي مبلغ.',foundingHeroConfigure:'يلزم ربط مفتاح الترخيص العام ومنتج Play قبل إتاحة الشراء.',foundingHeroAndroidOnly:'متاح داخل نسخة Android المثبتة من Google Play.',foundingHeroCanceled:'تم إلغاء نافذة الشراء ولم يتم تحصيل مبلغ.'});
@@ -57,6 +57,7 @@
     selectedProgram: null,
     active: parse(store.getItem('pulse.v2.active'), null),
     restTick: null,
+    durationTick: null,
     demoFrame: 0,
     clearArmedUntil: 0,
     onboardingDraft: null,
@@ -73,6 +74,7 @@
   }
 
   function showScreen(id, updateNav = true) {
+    if (id !== 'activeWorkoutScreen') pauseActiveDurationTimer();
     document.querySelectorAll('.screen').forEach(node => node.classList.toggle('active', node.id === id));
     if (updateNav) document.querySelectorAll('#primaryNav button').forEach(button => {
       const active = button.dataset.screen === id; button.classList.toggle('active', active);
@@ -168,8 +170,12 @@
 
   function closeProgramDetail() { $('programDetail').classList.add('hidden'); document.body.style.overflow = ''; }
 
+  function formatDuration(totalSeconds) {
+    const total=Math.max(0,Math.ceil(Number(totalSeconds)||0));
+    return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+  }
   function prescriptionText(reference) {
-    const dose = reference.durationSeconds ? `${reference.sets} × ${reference.durationSeconds}s` : `${reference.sets} × ${reference.reps || '—'}`;
+    const dose = reference.durationSeconds ? `${reference.sets} × ${formatDuration(reference.durationSeconds)}` : `${reference.sets} × ${reference.reps || '—'}`;
     return `${dose} · ${reference.restSeconds}s ${t('rest')} · RPE ${reference.targetRpe} · RIR ${reference.targetRir}`;
   }
 
@@ -256,13 +262,17 @@
 
   function makeSets(item) {
     const sets = []; const count = Math.max(1, Number(item.prescription.sets) || 1); const tracked = item.tracking.load;
-    if (item.prescription.setTypes.includes('warmup') && tracked) sets.push({type:'warmup',load:0,reps:item.prescription.reps ? 8 : 0,rpe:4,rir:5,restSeconds:item.prescription.restSeconds||60,complete:false});
-    for (let index=0;index<count;index++) sets.push({type:'working',load:0,reps:item.prescription.reps ? Number(String(item.prescription.reps).split(/[–-]/)[0]) || 8 : 0,rpe:7,rir:3,restSeconds:item.prescription.restSeconds||60,complete:false});
+    const durationSeconds = Number(item.prescription.durationSeconds) || null;
+    const timed = durationSeconds ? {durationSeconds,durationRemainingMs:durationSeconds*1000,durationRunning:false,durationElapsed:false} : {};
+    if (item.prescription.setTypes.includes('warmup') && tracked) sets.push({type:'warmup',load:0,reps:item.prescription.reps ? 8 : 0,rpe:4,rir:5,restSeconds:item.prescription.restSeconds||60,...timed,complete:false});
+    for (let index=0;index<count;index++) sets.push({type:'working',load:0,reps:durationSeconds?0:(item.prescription.reps ? Number(String(item.prescription.reps).split(/[–-]/)[0]) || 8 : 0),rpe:7,rir:3,restSeconds:item.prescription.restSeconds||60,...timed,complete:false});
     return sets;
   }
   function makeProgramSets(reference,item) {
-    const reps=reference.durationSeconds?0:(Number(String(reference.reps||'').split(/[–-]/)[0])||0);
-    return Array.from({length:Math.max(1,Number(reference.sets)||1)},()=>({type:reference.role==='warmup'?'warmup':'working',load:0,reps,rpe:reference.targetRpe,rir:reference.targetRir,restSeconds:reference.restSeconds||60,durationSeconds:reference.durationSeconds||null,complete:false}));
+    const durationSeconds=Number(reference.durationSeconds)||null;
+    const reps=durationSeconds?0:(Number(String(reference.reps||'').split(/[–-]/)[0])||0);
+    const timed=durationSeconds?{durationSeconds,durationRemainingMs:durationSeconds*1000,durationRunning:false,durationElapsed:false}:{};
+    return Array.from({length:Math.max(1,Number(reference.sets)||1)},()=>({type:reference.role==='warmup'?'warmup':'working',load:0,reps,rpe:reference.targetRpe,rir:reference.targetRir,restSeconds:reference.restSeconds||60,...timed,complete:false}));
   }
   function makeClientId() { return 'thf-v2-' + (globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`); }
   function sensorProfileForExercise(item) {
@@ -389,18 +399,114 @@
     renderMotionEvidence(state.motionEvidence||readMotionSnapshot());
     const done = state.active.sets.filter(set=>set.complete).length; $('setProgressTitle').textContent = t('setProgress').replace('{done}',done).replace('{total}',state.active.sets.length); $('sessionVolume').textContent = `${Math.round(sessionVolume())} kg`;
     $('finishWorkoutBtn').textContent=programSession?(programIndex<programSession.exercises.length-1?t('saveNext'):t('finishSession')):t('finishWorkout');
-    $('setRows').innerHTML = state.active.sets.map((set,index)=>`<div class="set-row${set.complete?' complete':''}" data-index="${index}"><span class="set-number"><b>${index+1}</b>${escapeHtml(t(set.type))}</span><label class="set-field"><span>${escapeHtml(t('load'))}</span><input class="set-input" data-field="load" inputmode="decimal" type="number" min="0" step="0.5" value="${Number(set.load)||0}" ${item.tracking.load?'':'disabled'} aria-label="${escapeHtml(t('load'))}"></label><label class="set-field"><span>${escapeHtml(t('reps'))}</span><input class="set-input" data-field="reps" inputmode="numeric" type="number" min="0" max="999" value="${Number(set.reps)||0}" aria-label="${escapeHtml(t('reps'))}"></label><label class="set-field"><span>RPE</span><input class="set-input" data-field="rpe" inputmode="decimal" type="number" min="1" max="10" step="0.5" value="${Number(set.rpe)||7}" aria-label="RPE"></label><label class="set-field"><span>RIR</span><input class="set-input" data-field="rir" inputmode="numeric" type="number" min="0" max="10" value="${Number(set.rir)||0}" ${item.tracking.rir?'':'disabled'} aria-label="RIR"></label><button class="set-complete" type="button" aria-label="${escapeHtml(t('completed'))}">${set.complete?'✓':'○'}</button></div>`).join('');
+    const hasTimedSets=state.active.sets.some(set=>Number(set.durationSeconds)>0);
+    const repsHeader=$('setRepsHeader');if(repsHeader)repsHeader.textContent=hasTimedSets?t('time'):t('reps');
+    $('setRows').innerHTML = state.active.sets.map((set,index)=>{
+      const durationSeconds=Number(set.durationSeconds)||0;
+      const remainingMs=Number.isFinite(Number(set.durationRemainingMs))?Math.max(0,Number(set.durationRemainingMs)):durationSeconds*1000;
+      const timeField=durationSeconds
+        ? `<div class="duration-control"><strong class="duration-countdown" data-duration-display="${index}">${formatDuration(Math.ceil(remainingMs/1000))}</strong><small>${escapeHtml(t('target'))}: ${formatDuration(durationSeconds)}</small><button class="duration-toggle" type="button" data-duration-toggle="${index}" aria-label="${escapeHtml(set.durationRunning?t('pauseTimer'):set.durationElapsed?t('timeReached'):t('startTimer'))}" aria-pressed="${Boolean(set.durationRunning)}" ${set.complete||set.durationElapsed?'disabled':''}>${escapeHtml(set.durationRunning?t('pauseTimer'):set.durationElapsed?t('timeReached'):t('startTimer'))}</button></div>`
+        : `<input class="set-input" data-field="reps" inputmode="numeric" type="number" min="0" max="999" value="${Number(set.reps)||0}" aria-label="${escapeHtml(t('reps'))}">`;
+      return `<div class="set-row${set.complete?' complete':''}" data-index="${index}"><span class="set-number"><b>${index+1}</b>${escapeHtml(t(set.type))}</span><label class="set-field"><span>${escapeHtml(t('load'))}</span><input class="set-input" data-field="load" inputmode="decimal" type="number" min="0" step="0.5" value="${Number(set.load)||0}" ${item.tracking.load?'':'disabled'} aria-label="${escapeHtml(t('load'))}"></label><label class="set-field"><span>${escapeHtml(durationSeconds?t('time'):t('reps'))}</span>${timeField}</label><label class="set-field"><span>RPE</span><input class="set-input" data-field="rpe" inputmode="decimal" type="number" min="1" max="10" step="0.5" value="${Number(set.rpe)||7}" aria-label="RPE"></label><label class="set-field"><span>RIR</span><input class="set-input" data-field="rir" inputmode="numeric" type="number" min="0" max="10" value="${Number(set.rir)||0}" ${item.tracking.rir?'':'disabled'} aria-label="RIR"></label><button class="set-complete" type="button" aria-label="${escapeHtml(t('completed'))}">${set.complete?'✓':'○'}</button></div>`;
+    }).join('');
     $('setRows').querySelectorAll('.set-row').forEach(row => {
       row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => {
         state.active.sets[Number(row.dataset.index)][input.dataset.field]=Number(input.value)||0;
         persistActive();
       }));
-      row.querySelector('button').addEventListener('click', () => completeSet(Number(row.dataset.index)));
+      row.querySelectorAll('[data-duration-toggle]').forEach(button=>button.addEventListener('click',()=>toggleDurationTimer(Number(button.dataset.durationToggle))));
+      row.querySelector('.set-complete').addEventListener('click',()=>completeSet(Number(row.dataset.index)));
     });
   }
+  function remainingDurationMs(set) {
+    if(set?.durationRunning&&Number.isFinite(Number(set.durationEndsAtMs)))return Math.max(0,Number(set.durationEndsAtMs)-Date.now());
+    const stored=Number(set?.durationRemainingMs);
+    return Number.isFinite(stored)?Math.max(0,stored):Math.max(0,Number(set?.durationSeconds)||0)*1000;
+  }
+  function renderDurationControls(index) {
+    const set=state.active?.sets?.[index];if(!set||!Number(set.durationSeconds))return;
+    const display=document.querySelector(`[data-duration-display="${index}"]`);
+    const button=document.querySelector(`[data-duration-toggle="${index}"]`);
+    if(display)display.textContent=formatDuration(Math.ceil(remainingDurationMs(set)/1000));
+    if(button){
+      const label=set.durationRunning?t('pauseTimer'):set.durationElapsed?t('timeReached'):t('startTimer');
+      button.textContent=label;button.setAttribute('aria-label',label);button.setAttribute('aria-pressed',String(Boolean(set.durationRunning)));
+      button.disabled=Boolean(set.complete||set.durationElapsed);
+    }
+  }
+  function pauseDurationTimer(index) {
+    const active=state.active;if(!active)return;
+    const target=Number.isInteger(index)?index:active.durationTimerSetIndex;
+    if(!Number.isInteger(target)||!active.sets?.[target])return;
+    const runningIndex=Number.isInteger(active.durationTimerSetIndex)?active.durationTimerSetIndex:active.sets.findIndex(set=>set.durationRunning);
+    if(runningIndex>=0&&runningIndex!==target)return;
+    const set=active.sets[target];
+    if(set.durationRunning){set.durationRemainingMs=remainingDurationMs(set);set.durationRunning=false;delete set.durationEndsAtMs;}
+    if(active.durationTimerSetIndex===target)active.durationTimerSetIndex=null;
+    clearInterval(state.durationTick);state.durationTick=null;
+    persistActive();renderDurationControls(target);
+  }
+  function pauseActiveDurationTimer() {
+    const active=state.active;if(!active)return;
+    const index=Number.isInteger(active.durationTimerSetIndex)?active.durationTimerSetIndex:active.sets?.findIndex(set=>set.durationRunning);
+    if(Number.isInteger(index)&&index>=0)pauseDurationTimer(index);
+  }
+  function resetDurationTimer(index) {
+    const set=state.active?.sets?.[index];if(!set||!Number(set.durationSeconds))return;
+    if(state.active.durationTimerSetIndex===index){clearInterval(state.durationTick);state.durationTick=null;state.active.durationTimerSetIndex=null;}
+    set.durationRemainingMs=Number(set.durationSeconds)*1000;set.durationRunning=false;set.durationElapsed=false;delete set.durationEndsAtMs;
+  }
+  function startDurationTimer(index) {
+    const active=state.active;const set=active?.sets?.[index];
+    if(!set||!Number(set.durationSeconds)||set.complete||set.durationElapsed)return;
+    const runningIndex=Number.isInteger(active.durationTimerSetIndex)?active.durationTimerSetIndex:active.sets.findIndex(value=>value.durationRunning);
+    if(runningIndex>=0&&runningIndex!==index)pauseDurationTimer(runningIndex);
+    const remaining=remainingDurationMs(set);
+    if(remaining<=0){set.durationRemainingMs=0;set.durationElapsed=true;set.durationRunning=false;delete set.durationEndsAtMs;persistActive();renderDurationControls(index);const node=$('durationAnnouncement');if(node)node.textContent=t('durationReached');return;}
+    set.durationRemainingMs=remaining;set.durationRunning=true;set.durationEndsAtMs=Date.now()+remaining;active.durationTimerSetIndex=index;
+    const announcement=$('durationAnnouncement');if(announcement)announcement.textContent='';
+    clearInterval(state.durationTick);state.durationTick=setInterval(()=>tickDurationTimer(index),1000);
+    persistActive();renderDurationControls(index);
+  }
+  function toggleDurationTimer(index) {
+    const set=state.active?.sets?.[index];if(!set)return;
+    if(set.durationRunning)pauseDurationTimer(index);else startDurationTimer(index);
+  }
+  function tickDurationTimer(index) {
+    const active=state.active;const set=active?.sets?.[index];
+    if(!set||!set.durationRunning){clearInterval(state.durationTick);state.durationTick=null;return;}
+    const remaining=remainingDurationMs(set);set.durationRemainingMs=remaining;
+    if(remaining<=0){
+      set.durationRemainingMs=0;set.durationRunning=false;set.durationElapsed=true;delete set.durationEndsAtMs;
+      if(active.durationTimerSetIndex===index)active.durationTimerSetIndex=null;
+      clearInterval(state.durationTick);state.durationTick=null;
+      persistActive();renderDurationControls(index);
+      const node=$('durationAnnouncement');if(node)node.textContent=t('durationReached');
+      return;
+    }
+    persistActive();renderDurationControls(index);
+  }
+  function restoreDurationTimerState() {
+    const active=state.active;if(!active?.sets)return;
+    let changed=false;active.durationTimerSetIndex=null;
+    active.sets.forEach(set=>{
+      const duration=Number(set.durationSeconds)||0;if(duration<=0)return;
+      if(!Number.isFinite(Number(set.durationRemainingMs))){set.durationRemainingMs=duration*1000;changed=true;}
+      if(set.durationRunning){
+        set.durationRemainingMs=remainingDurationMs(set);set.durationRunning=false;delete set.durationEndsAtMs;
+        if(set.durationRemainingMs<=0){set.durationRemainingMs=0;set.durationElapsed=true;}
+        changed=true;
+      }
+    });
+    if(changed)persistActive();
+  }
   function completeSet(index) {
-    const set = state.active.sets[index]; set.complete = !set.complete; persistActive(); renderActiveWorkout();
-    if (set.complete && index < state.active.sets.length-1) startRest(set.restSeconds || activeExercise().prescription.restSeconds || 60);
+    const set=state.active?.sets?.[index];if(!set)return;
+    pauseActiveDurationTimer();
+    set.complete=!set.complete;
+    if(Number(set.durationSeconds)>0&&!set.complete)resetDurationTimer(index);
+    persistActive();renderActiveWorkout();
+    if(set.complete&&index<state.active.sets.length-1)startRest(set.restSeconds||activeExercise().prescription.restSeconds||60);
   }
   function startRest(seconds) {
     clearInterval(state.restTick);
@@ -426,8 +532,9 @@
     }
     clearInterval(state.restTick);$('restPanel').classList.remove('hidden');renderRest();state.restTick=setInterval(renderRest,1000);
   }
-  function addSet(){ state.active.sets.push({type:'working',load:0,reps:8,rpe:7,rir:3,restSeconds:activeExercise()?.prescription?.restSeconds||60,complete:false});persistActive();renderActiveWorkout(); }
+  function addSet(){ const item=activeExercise();const durationSeconds=Number(state.active.sets[0]?.durationSeconds)||Number(item?.prescription?.durationSeconds)||null;state.active.sets.push({type:'working',load:0,reps:durationSeconds?0:8,rpe:7,rir:3,restSeconds:item?.prescription?.restSeconds||60,...(durationSeconds?{durationSeconds,durationRemainingMs:durationSeconds*1000,durationRunning:false,durationElapsed:false}:{}),complete:false});persistActive();renderActiveWorkout(); }
   function finishWorkout() {
+    pauseActiveDurationTimer();
     const item=activeExercise();if(!item)return;const now=Date.now();const currentEntry={exerciseId:item.id,exerciseName:item.name,sport:item.sport,sets:state.active.sets.map((set,index)=>({...set,exerciseId:item.id,ordinal:index+1}))};const entries=[...(state.active.programEntries||[]),currentEntry];
     const program=PROGRAMS.find(value=>value.id===state.active.programId);const programSession=program?.sessions.find(value=>value.id===state.active.programSessionId);const programIndex=Number(state.active.programExerciseIndex)||0;
     if(program&&programSession&&programIndex<programSession.exercises.length-1){const completedMotion=endNativeMotionSession();stopMotionPolling();currentEntry.motionEvidence=completedMotion;const nextIndex=programIndex+1;const reference=programSession.exercises[nextIndex];const next=exerciseFor(reference);if(next){const sensorProfile=sensorProfileForExercise(next),motionSessionId=`${state.active.clientRecordId}:${nextIndex}:${next.id}`;state.active={...state.active,exerciseId:next.id,startedAt:now,sets:makeProgramSets(reference,next),programExerciseIndex:nextIndex,programEntries:[...(state.active.programEntries||[]),currentEntry],sensorProfile,motionSessionId};state.demoFrame=0;stopRest();persistActive();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();speakExercise(next);toast(t('nextExercise').replace('{name}',local(next.name)));window.scrollTo({top:0,behavior:'smooth'});return;}}
@@ -595,11 +702,13 @@
     window.addEventListener('thf:health-status',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-permission',event=>renderHealthStatus(event.detail));window.addEventListener('thf:health-sync',event=>renderHealthSnapshot(event.detail));window.addEventListener('thf:health-write',()=>renderHealthStatus());window.addEventListener('thf:health-error',event=>renderHealthError(event.detail||{}));
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
-    document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden')&&!preferredReducedMotion())video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
+    document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden){pauseActiveDurationTimer();video.pause();}else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden')&&!preferredReducedMotion())video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
+    window.addEventListener('pagehide',pauseActiveDurationTimer);
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
   }
 
   const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
+  restoreDurationTimerState();
   bind(); $('voiceEnabled').checked=voiceGuidance.isEnabled(); applyMotionPreference(preferredReducedMotion(),false); applyLanguage(); renderHealthStatus(); renderFoundingHero();
   if (shouldOnboard) openOnboarding();
   if (state.active && activeExercise()) { const item=activeExercise();state.active.sensorProfile=state.active.sensorProfile||sensorProfileForExercise(item);state.active.motionSessionId=state.active.motionSessionId||`${state.active.clientRecordId}:${Number(state.active.programExerciseIndex)||0}:${item.id}`;beginNativeMotionSession(state.active.motionSessionId,state.active.sensorProfile); startMotionPolling(); renderActiveWorkout(); resumeRest(); showScreen('activeWorkoutScreen', false); }
