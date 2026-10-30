@@ -488,15 +488,23 @@
   }
   function restoreDurationTimerState() {
     const active=state.active;if(!active?.sets)return;
-    let changed=false;active.durationTimerSetIndex=null;
+    let changed=active.durationTimerSetIndex!==null&&active.durationTimerSetIndex!==undefined;
+    active.durationTimerSetIndex=null;
     active.sets.forEach(set=>{
       const duration=Number(set.durationSeconds)||0;if(duration<=0)return;
-      if(!Number.isFinite(Number(set.durationRemainingMs))){set.durationRemainingMs=duration*1000;changed=true;}
-      if(set.durationRunning){
-        set.durationRemainingMs=remainingDurationMs(set);set.durationRunning=false;delete set.durationEndsAtMs;
-        if(set.durationRemainingMs<=0){set.durationRemainingMs=0;set.durationElapsed=true;}
+      const rawRemaining=set.durationRemainingMs;
+      const storedRemaining=Number(rawRemaining);
+      if(rawRemaining===null||rawRemaining===undefined||rawRemaining===''||!Number.isFinite(storedRemaining)||storedRemaining<0){
+        set.durationRemainingMs=duration*1000;
         changed=true;
+      }else{
+        const normalized=Math.min(duration*1000,storedRemaining);
+        if(normalized!==storedRemaining){set.durationRemainingMs=normalized;changed=true;}
       }
+      if(set.durationRunning){set.durationRunning=false;changed=true;}
+      if(Object.prototype.hasOwnProperty.call(set,'durationEndsAtMs')){delete set.durationEndsAtMs;changed=true;}
+      if(set.durationRemainingMs<=0&&!set.durationElapsed){set.durationElapsed=true;changed=true;}
+      else if(set.durationRemainingMs>0&&set.durationElapsed){set.durationElapsed=false;changed=true;}
     });
     if(changed)persistActive();
   }
