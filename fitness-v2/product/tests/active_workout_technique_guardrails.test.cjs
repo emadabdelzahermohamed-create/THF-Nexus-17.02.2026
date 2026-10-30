@@ -17,9 +17,9 @@ vm.runInNewContext(EXERCISES_JS, exerciseContext);
 const EXERCISES = exerciseContext.window.THF_EXERCISES || [];
 
 function extractFunction(source, name) {
-  const marker = \`function \${name}(\`;
+  const marker = `function ${name}(`;
   const start = source.indexOf(marker);
-  assert.notEqual(start, -1, \`missing \${name}\`);
+  assert.notEqual(start, -1, `missing ${name}`);
   const open = source.indexOf('{', start);
   let depth = 0;
   for (let i = open; i < source.length; i += 1) {
@@ -29,7 +29,7 @@ function extractFunction(source, name) {
       if (depth === 0) return source.slice(start, i + 1);
     }
   }
-  throw new Error(\`unterminated \${name}\`);
+  throw new Error(`unterminated ${name}`);
 }
 
 function escapeHtml(value) {
@@ -61,9 +61,9 @@ function makeRenderer(language) {
     escapeHtml,
     state: { lang: language }
   };
-  const list = vm.runInNewContext(\`(\${extractFunction(APP, 'list')})\`, context);
+  const list = vm.runInNewContext(`(${extractFunction(APP, 'list')})`, context);
   context.list = list;
-  const render = vm.runInNewContext(\`(\${extractFunction(APP, 'renderActiveCoaching')})\`, context);
+  const render = vm.runInNewContext(`(${extractFunction(APP, 'renderActiveCoaching')})`, context);
   return { render, panel, content };
 }
 
