@@ -19,8 +19,8 @@ EXPECTED_FINAL_ENGLISH_CUE = (
     "keep the knees soft, and stop if balance or comfort is lost."
 )
 GENERIC_ENGLISH_FILLER = (
-    re.compile(r"\\brepeat the procedure\\b", re.IGNORECASE),
-    re.compile(r"\\bperform the (?:amount|number) of repetitions\\b", re.IGNORECASE),
+    re.compile(r"\brepeat the procedure\b", re.IGNORECASE),
+    re.compile(r"\bperform the (?:amount|number) of repetitions\b", re.IGNORECASE),
 )
 
 
