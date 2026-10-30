@@ -88,6 +88,8 @@ window.THF_MOTION_MANIFEST = {
   let pendingExerciseId = null;
   let staticExerciseId = null;
   let frameIndex = 0;
+  // Invalidates stale async preload continuations across hide/show and exercise changes.
+  let runGeneration = 0;
   const preloadPromises = new Map();
   const loadedFrames = new Map();
 
@@ -112,6 +114,7 @@ window.THF_MOTION_MANIFEST = {
   }
 
   function stop({resetExercise = false} = {}) {
+    runGeneration += 1;
     if (timer) window.clearInterval(timer);
     timer = null;
     pendingExerciseId = null;
@@ -212,6 +215,7 @@ window.THF_MOTION_MANIFEST = {
 
   async function start(item) {
     stop();
+    const generation = runGeneration;
     activeExerciseId = item.id;
     pendingExerciseId = item.id;
     staticExerciseId = null;
@@ -221,9 +225,10 @@ window.THF_MOTION_MANIFEST = {
       return;
     }
     const results = await preloadFrames(item);
-    if (activeExerciseId !== item.id || pendingExerciseId !== item.id
+    if (generation !== runGeneration || activeExerciseId !== item.id || pendingExerciseId !== item.id
         || reduceMotion() || document.hidden) {
-      if (pendingExerciseId === item.id) pendingExerciseId = null;
+      // A stale run must never clear the pending marker owned by a newer run of the same exercise.
+      if (generation === runGeneration && pendingExerciseId === item.id) pendingExerciseId = null;
       return;
     }
     const readyFrames = item.demo.assets
