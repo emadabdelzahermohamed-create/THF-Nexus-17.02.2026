@@ -32,6 +32,14 @@
         <span id="todayDate" class="date-pill"></span>
       </div>
 
+      <article id="resumeWorkoutCard" class="surface resume-workout-card hidden" aria-labelledby="resumeWorkoutTitle">
+        <div class="card-heading"><div><p class="eyebrow" data-i18n="activeWorkoutSaved">لديك جلسة غير مكتملة محفوظة</p><h2 id="resumeWorkoutTitle" data-i18n="resumeWorkout">استئناف التمرين</h2></div><span id="resumeWorkoutProgress" class="pill gold"></span></div>
+        <p id="resumeWorkoutName" class="resume-workout-name"></p>
+        <p id="resumeWorkoutMeta" class="muted small"></p>
+        <p id="resumeWorkoutHint" class="small muted">ستكمل من نفس التمرين والمجموعات المحفوظة دون بدء جلسة جديدة.</p>
+        <button id="resumeWorkoutBtn" class="button primary full" type="button" data-i18n="resumeWorkout">استئناف التمرين</button>
+      </article>
+
       <article class="next-action-card">
         <div class="next-copy">
           <span id="todayPlanTag" class="pill gold">جسم كامل</span>
@@ -286,6 +294,7 @@
   <script src="./voice-guidance.js"></script>
   <script src="./rest-timer.js"></script>
   <script src="./set-rir-policy.js"></script>
+  <script src="./active-workout-resume-policy.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
