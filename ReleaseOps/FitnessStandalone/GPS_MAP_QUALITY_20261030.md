@@ -21,7 +21,7 @@ Package: `com.topherofit.thf.pulse`
 - The map provider is not configured with a Google Maps API key in this source tree or local configuration.
 
 ## Implemented on this branch
-- Live location requests now disable batching (`setMaxUpdateDelayMillis(0L)`) and wait briefly for a more accurate initial fix (`setWaitForAccurateLocation(true)`). This is appropriate for real-time outdoor activity tracking; power use still needs physical-device measurement.
+- Live location requests now disable batching (`setMaxUpdateDelayMillis(0L)`), reject cached initial fixes (`setMaxUpdateAgeMillis(0L)`), and wait briefly for a more accurate initial fix (`setWaitForAccurateLocation(true)`). This is appropriate for real-time outdoor activity tracking; power use still needs physical-device measurement.
 - Replaced the placeholder-only map with a vendored Leaflet 1.9.4 interactive map using OpenStreetMap raster tiles and required attribution. Leaflet source/license are included locally; only map tiles require connectivity.
 - Added route halo/line, start/current position markers, accuracy radius, automatic route fitting/following, user-pan preservation, and a recenter control.
 - Preserved the SVG route fallback for offline/no-library cases.
