@@ -1586,7 +1586,7 @@ STEP_OVERRIDES = {
             "أمل الحوض وارفع عظم العصعص قليلًا مع شد البطن دون رفع الظهر كاملًا.",
             "ادفع القدمين وارفع الجذع إلى وضع الجسر مع إبقاء الرقبة على الأرض، ثم اخفض العمود الفقري بتحكم."
         ]
-    },,
+    },
     "Step-up_with_Knee_Raise": {
         "en": [
             "Stand facing a box or bench of an appropriate height with your feet together. This will be your starting position.",
