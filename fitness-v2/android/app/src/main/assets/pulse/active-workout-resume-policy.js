@@ -90,5 +90,137 @@
     return { ok: true, archiveCount: next.length };
   }
 
-  return Object.freeze({ hasSession, isResumable, progress, archiveUnresumableSession });
+  function readArchivedSessions(storage, exercises, options = {}) {
+    if (!storage || typeof storage.getItem !== 'function') {
+      return { ok: false, reason: 'storage-unavailable', entries: [] };
+    }
+    const archiveKey = options.archiveKey || 'pulse.v2.stale-workout-archive';
+    let rawArchive;
+    try {
+      rawArchive = storage.getItem(archiveKey);
+    } catch {
+      return { ok: false, reason: 'archive-read-failed', entries: [] };
+    }
+    if (rawArchive === null || rawArchive === '') return { ok: true, entries: [] };
+
+    let archived;
+    try {
+      archived = JSON.parse(rawArchive);
+    } catch {
+      return { ok: false, reason: 'archive-invalid', entries: [] };
+    }
+    if (!Array.isArray(archived)) return { ok: false, reason: 'archive-invalid', entries: [] };
+
+    return {
+      ok: true,
+      entries: archived.map((entry, index) => {
+        const hasRawSession = isRecord(entry) && typeof entry.rawSession === 'string' && entry.rawSession.length > 0;
+        let session = null;
+        if (hasRawSession) {
+          try { session = JSON.parse(entry.rawSession); } catch {}
+        }
+        const valid = hasRawSession && isRecord(session);
+        return {
+          index,
+          valid,
+          archivedAt: typeof entry?.archivedAt === 'string' ? entry.archivedAt : '',
+          reason: typeof entry?.reason === 'string' ? entry.reason : '',
+          session: valid ? session : null,
+          resumable: valid && isResumable(session, exercises)
+        };
+      })
+    };
+  }
+
+  function restoreArchivedSession(storage, exercises, index, options = {}) {
+    if (!storage || typeof storage.getItem !== 'function' || typeof storage.setItem !== 'function') {
+      return { ok: false, reason: 'storage-unavailable' };
+    }
+    const activeKey = options.activeKey || 'pulse.v2.active';
+    const archiveKey = options.archiveKey || 'pulse.v2.stale-workout-archive';
+
+    let activeRaw;
+    try {
+      activeRaw = storage.getItem(activeKey);
+    } catch {
+      return { ok: false, reason: 'active-read-failed' };
+    }
+    if (activeRaw !== null && activeRaw !== '') return { ok: false, reason: 'active-session-present' };
+
+    let rawArchive;
+    try {
+      rawArchive = storage.getItem(archiveKey);
+    } catch {
+      return { ok: false, reason: 'archive-read-failed' };
+    }
+    if (typeof rawArchive !== 'string' || rawArchive.length === 0) return { ok: false, reason: 'archive-empty' };
+
+    let archived;
+    try {
+      archived = JSON.parse(rawArchive);
+    } catch {
+      return { ok: false, reason: 'archive-invalid' };
+    }
+    if (!Array.isArray(archived)) return { ok: false, reason: 'archive-invalid' };
+    if (!Number.isInteger(index) || index < 0 || index >= archived.length) {
+      return { ok: false, reason: 'archive-entry-missing' };
+    }
+
+    const entry = archived[index];
+    if (!isRecord(entry) || typeof entry.rawSession !== 'string' || !entry.rawSession) {
+      return { ok: false, reason: 'archive-entry-invalid' };
+    }
+    let session;
+    try {
+      session = JSON.parse(entry.rawSession);
+    } catch {
+      return { ok: false, reason: 'archive-session-invalid' };
+    }
+    if (!isResumable(session, exercises)) return { ok: false, reason: 'archive-session-not-resumable' };
+
+    try {
+      storage.setItem(activeKey, entry.rawSession);
+      if (storage.getItem(activeKey) !== entry.rawSession) {
+        return { ok: false, reason: 'active-verification-failed' };
+      }
+    } catch {
+      return { ok: false, reason: 'active-write-failed' };
+    }
+
+    const next = archived.filter((_, archivedIndex) => archivedIndex !== index);
+    const serialized = JSON.stringify(next);
+    let archiveRetained = true;
+    try {
+      storage.setItem(archiveKey, serialized);
+      const observed = storage.getItem(archiveKey);
+      if (observed === serialized) {
+        archiveRetained = false;
+      } else {
+        try {
+          const current = JSON.parse(observed || '[]');
+          archiveRetained = Array.isArray(current) && current.some(value => value?.rawSession === entry.rawSession);
+        } catch {
+          archiveRetained = true;
+        }
+      }
+    } catch {
+      try {
+        const current = JSON.parse(storage.getItem(archiveKey) || '[]');
+        archiveRetained = Array.isArray(current) && current.some(value => value?.rawSession === entry.rawSession);
+      } catch {
+        archiveRetained = true;
+      }
+    }
+
+    return { ok: true, session, archiveRetained };
+  }
+
+  return Object.freeze({
+    hasSession,
+    isResumable,
+    progress,
+    archiveUnresumableSession,
+    readArchivedSessions,
+    restoreArchivedSession
+  });
 });
