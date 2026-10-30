@@ -9,6 +9,7 @@ const vm = require('node:vm');
 const pulse = path.resolve(__dirname, '../../android/app/src/main/assets/pulse');
 const appSource = fs.readFileSync(path.join(pulse, 'app.js'), 'utf8');
 const motionSource = fs.readFileSync(path.join(pulse, 'data/motion-manifest.js'), 'utf8');
+const htmlSource = fs.readFileSync(path.join(pulse, 'index.html'), 'utf8');
 
 function extractFunction(source, name, nextName) {
   const start = source.indexOf('  function ' + name + '(');
@@ -67,7 +68,8 @@ function activeDemoHarness(reduced, lang) {
     activeDemoCredit: fakeElement({ hidden: true }),
     activeDemoSource: fakeElement(),
     activeDemoLicense: fakeElement(),
-    activeDemoPhase: fakeElement()
+    activeDemoPhase: fakeElement(),
+    activeDemoStatus: fakeElement()
   };
   const item = {
     id: 'pushups',
@@ -91,6 +93,30 @@ function activeDemoHarness(reduced, lang) {
     preferredReducedMotion: () => reduced
   };
   return { elements, item, sandbox };
+}
+
+function motionFrameHarness(reduced, lang) {
+  const elements = {
+    activeDemoImage: fakeElement(),
+    activeDemoPhase: fakeElement(),
+    activeDemoStatus: fakeElement()
+  };
+  const item = {
+    id: 'pushups',
+    demo: {
+      assets: ['media/free-exercise-db/Pushups/0.jpg', 'media/free-exercise-db/Pushups/1.jpg'],
+      alt: { en: 'Start and finish positions for pushups', ar: 'وضعا البداية والنهاية لتمرين الضغط' }
+    }
+  };
+  const sandbox = {
+    byId: id => elements[id],
+    document: { documentElement: { lang } },
+    frameIndex: 0,
+    reduceMotion: () => reduced
+  };
+  const renderFrame = loadFunction(motionSource, 'renderFrame', 'preloadFrames', sandbox);
+  renderFrame(item);
+  return { elements, item };
 }
 
 test('full-motion video becomes a static local Arabic reference frame when reduced motion is enabled', () => {
@@ -179,6 +205,40 @@ test('changing the saved motion preference refreshes the active workout demo imm
   assert.equal(renders.length, 2);
   assert.equal(renders[0], item);
   assert.equal(renders[1], item);
+});
+
+test('active workout reduced-motion changes are announced in Arabic and English', () => {
+  for (const [lang, expected] of [
+    ['ar', 'تقليل الحركة مفعّل؛ تظهر صورة ثابتة للتمرين.'],
+    ['en', 'Reduced motion is on; a static exercise image is shown.']
+  ]) {
+    const h = activeDemoHarness(true, lang);
+    const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
+    render(h.item);
+    assert.equal(h.elements.activeDemoStatus.textContent, expected);
+  }
+});
+
+test('normal active-workout motion clears a stale reduced-motion announcement', () => {
+  const h = activeDemoHarness(false, 'en');
+  h.elements.activeDemoStatus.textContent = 'Reduced motion is on; a static exercise image is shown.';
+  const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
+  render(h.item);
+  assert.equal(h.elements.activeDemoStatus.textContent, '');
+});
+
+test('offline frame fallback announces reduced motion once without exposing the changing phase label', () => {
+  const reduced = motionFrameHarness(true, 'ar');
+  assert.equal(reduced.elements.activeDemoStatus.textContent, 'تقليل الحركة مفعّل؛ تظهر صورة ثابتة للتمرين.');
+  assert.equal(reduced.elements.activeDemoPhase.getAttribute('aria-hidden'), 'true');
+  const moving = motionFrameHarness(false, 'en');
+  assert.equal(moving.elements.activeDemoStatus.textContent, '');
+  assert.equal(moving.elements.activeDemoPhase.getAttribute('aria-hidden'), 'true');
+});
+
+test('active workout contains a persistent polite live region separate from the changing phase label', () => {
+  assert.match(htmlSource, /id="activeDemoStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"/);
+  assert.match(htmlSource, /id="activeDemoPhase" class="phase-label"[^>]*><\\/span><span id="activeDemoStatus"/);
 });
 
 test('OS reduced-motion changes are wired to active video and reference-frame reconciliation', () => {
