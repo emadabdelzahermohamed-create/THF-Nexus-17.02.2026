@@ -341,6 +341,13 @@
     const image = $('activeDemoImage');
     const motion = motionManifest[item.id];
     const reduced = preferredReducedMotion();
+    const status = $('activeDemoStatus');
+    if (status) {
+      const nextStatus = reduced
+        ? (state.lang === 'ar' ? 'تقليل الحركة مفعّل؛ تظهر صورة ثابتة للتمرين.' : 'Reduced motion is on; a static exercise image is shown.')
+        : '';
+      if (status.textContent !== nextStatus) status.textContent = nextStatus;
+    }
     if (motion?.asset && !reduced) {
       const nextSource = './' + motion.asset;
       if (video.getAttribute('src') !== nextSource) video.setAttribute('src', nextSource);
