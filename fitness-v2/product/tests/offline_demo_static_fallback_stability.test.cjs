@@ -16,6 +16,7 @@ function makeHarness({exerciseId = 'one-frame', language = 'en', reduced = false
   const timeouts = new Map();
   let nextId = 1;
   let loadHandler;
+  const documentListeners = new Map();
 
   const notify = record => queueMicrotask(() => {
     observers.forEach(observer => observer.callback([record]));
@@ -135,6 +136,7 @@ function makeHarness({exerciseId = 'one-frame', language = 'en', reduced = false
     set src(value) {
       this._src = value;
       const outcome = outcomes[value] || 'load';
+      if (outcome === 'defer') return;
       queueMicrotask(() => this.emit(outcome));
     }
     get src() { return this._src; }
@@ -156,7 +158,7 @@ function makeHarness({exerciseId = 'one-frame', language = 'en', reduced = false
     documentElement,
     hidden: false,
     getElementById: id => elements[id] || null,
-    addEventListener() {}
+    addEventListener(name, callback) { documentListeners.set(name, callback); }
   };
 
   const window = {
@@ -194,6 +196,11 @@ function makeHarness({exerciseId = 'one-frame', language = 'en', reduced = false
     fireLoad() { assert.equal(typeof loadHandler, 'function'); loadHandler(); },
     triggerStateMutation,
     setLanguage(value) { documentElement.lang = value; },
+    setHidden(value) {
+      document.hidden = Boolean(value);
+      documentListeners.get('visibilitychange')?.();
+    },
+    resolveImages(event = 'load') { images.forEach(image => image.emit(event)); },
     setExercise(value) {
       root.dataset.exerciseId = value;
       triggerStateMutation();
@@ -286,4 +293,28 @@ test('reduced motion remains static and does not preload or start a timer', asyn
   assert.equal(harness.images.length, 0);
   assert.equal(harness.intervals.size, 0);
   assert.match(harness.status.textContent, /Reduced motion is on/);
+});
+
+
+test('a hidden-to-visible cycle cannot let a stale preload start a duplicate animation loop', async () => {
+  const harness = makeHarness({
+    exerciseId: 'two-frame',
+    outcomes: {
+      './media/two-frame/0.jpg': 'defer',
+      './media/two-frame/1.jpg': 'defer'
+    }
+  });
+  harness.fireLoad();
+  assert.equal(harness.images.length, 2);
+
+  // The first run is suspended while the document is hidden. Returning before its
+  // shared preload settles starts a new run for the same exercise.
+  harness.setHidden(true);
+  harness.setHidden(false);
+  assert.equal(harness.images.length, 2);
+
+  harness.resolveImages('load');
+  await harness.flush();
+  assert.equal(harness.intervals.size, 1);
+  assert.equal(harness.timeouts.size, 0);
 });
