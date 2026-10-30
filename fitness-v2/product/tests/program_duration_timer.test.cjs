@@ -7,7 +7,8 @@ const FITNESS_ROOT = path.resolve(__dirname, '../..');
 const APP = fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/app.js'), 'utf8');
 const HTML = fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/index.html'), 'utf8');
 const CSS = fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/styles.css'), 'utf8');
-const PROGRAMS = JSON.parse(fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/data/programs.json'), 'utf8'));
+const PROGRAMS_SOURCE = fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/data/programs.js'), 'utf8');
+const PROGRAMS = JSON.parse(PROGRAMS_SOURCE.slice(PROGRAMS_SOURCE.indexOf('=') + 1).trim().replace(/;$/, ''));
 
 test('program duration prescriptions use readable MM:SS instead of raw seconds', () => {
   assert.ok(APP.includes('function formatDuration(totalSeconds)'));
