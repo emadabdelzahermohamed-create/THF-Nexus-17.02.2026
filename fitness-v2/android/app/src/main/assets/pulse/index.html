@@ -139,8 +139,8 @@
       <article class="surface technique-card"><div class="card-heading"><h2 data-i18n="technique">طريقة الأداء</h2><button id="speakCue" class="icon-button" type="button" aria-label="دليل صوتي" data-i18n-aria-label="voiceGuidance">◉</button></div><ol id="activeSteps"></ol><p id="activeBreathing" class="breathing-cue"></p></article>
       <article class="surface set-logger">
         <div class="card-heading"><div><p class="eyebrow" data-i18n="sessionLog">سجل الجلسة</p><h2 id="setProgressTitle" aria-live="polite" aria-atomic="true">المجموعة 1 من 4</h2></div><strong id="sessionVolume">0 kg</strong></div>
-        <div class="set-table-head"><span data-i18n="set">المجموعة</span><span data-i18n="load">الحمل</span><span data-i18n="reps">العدات</span><span>RPE</span><span>RIR</span><span></span></div>
-        <div id="setRows" class="set-rows" role="region" aria-labelledby="setProgressTitle"></div>
+        <div class="set-table-head"><span data-i18n="set">المجموعة</span><span data-i18n="load">الحمل</span><span id="setRepsHeader" data-i18n="reps">العدات</span><span>RPE</span><span>RIR</span><span></span></div>
+        <div id="setRows" class="set-rows" role="region" aria-labelledby="setProgressTitle"></div><p id="durationAnnouncement" class="sr-only" aria-live="polite" aria-atomic="true"></p>
         <button id="addSetBtn" class="button secondary full" type="button" data-i18n="addSet">+ إضافة مجموعة</button>
       </article>
       <article id="restPanel" class="rest-panel hidden" role="timer" aria-labelledby="restLabel restTimer"><span id="restLabel" data-i18n="rest">راحة</span><strong id="restTimer">01:30</strong><button id="skipRest" class="text-button" type="button" data-i18n="skipRest">تخطّي</button></article>
@@ -269,7 +269,7 @@
     <article class="sheet-panel program-sheet">
       <div class="sheet-handle" aria-hidden="true"></div>
       <button id="programDetailCloseButton" class="sheet-close" type="button" aria-label="إغلاق" data-i18n-aria-label="close">×</button>
-      <div class="program-hero"><span id="programDetailSection" class="pill gold"></span><h1 id="programDetailName"></h1><p id="programDetailSummary" class="muted"></p><div id="programDetailMeta" class="tag-row"></div></div>
+      <div class="program-hero"><span id="programDetailSection" class="pill gold"></span><h1 id="programDetailName"></h1><p id="programDetailSummary" class="muted"></p><div id="programDetailMeta" class="tag-row"></div><p id="programTimeWarning" class="program-time-warning hidden" role="note"></p></div>
       <div class="detail-body"><button id="useProgramBtn" class="button primary full large" type="button" data-i18n="useProgram">استخدم هذا البرنامج</button><div id="programSessions"></div><section class="detail-section"><h3 data-i18n="progression">التدرج</h3><ol id="programProgression"></ol></section><section class="detail-section safety-card"><h3 data-i18n="safety">السلامة أولًا</h3><p id="programSafety"></p></section><details class="source-details"><summary data-i18n="sourceLicense">المصدر والترخيص</summary><p id="programSource" class="small muted"></p></details></div>
     </article>
   </div>
