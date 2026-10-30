@@ -13,9 +13,9 @@ test('any non-null persisted value blocks destructive replacement', () => {
 });
 
 test('only an exercise still present in the catalog is resumable', () => {
-  assert.equal(policy.isResumable({ exerciseId: 'barbell-squat' }, catalog), true);
-  assert.equal(policy.isResumable({ exerciseId: 'removed-exercise' }, catalog), false);
-  assert.equal(policy.isResumable({ exerciseId: 'barbell-squat' }, null), false);
+  assert.equal(policy.isResumable({ exerciseId: 'barbell-squat', sets: [{}] }, catalog), true);
+  assert.equal(policy.isResumable({ exerciseId: 'removed-exercise', sets: [{}] }, catalog), false);
+  assert.equal(policy.isResumable({ exerciseId: 'barbell-squat', sets: [{}] }, null), false);
   assert.equal(policy.isResumable(null, catalog), false);
 });
 

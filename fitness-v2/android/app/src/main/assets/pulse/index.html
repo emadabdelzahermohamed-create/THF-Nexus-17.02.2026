@@ -38,6 +38,13 @@
         <p id="resumeWorkoutMeta" class="muted small"></p>
         <p id="resumeWorkoutHint" class="small muted">ستكمل من نفس التمرين والمجموعات المحفوظة دون بدء جلسة جديدة.</p>
         <button id="resumeWorkoutBtn" class="button primary full" type="button" data-i18n="resumeWorkout">استئناف التمرين</button>
+        <div id="resumeRecoveryActions" class="resume-recovery-actions hidden">
+          <details>
+            <summary data-i18n="archiveStaleTitle">استعادة مساحة لتمرين جديد</summary>
+            <p class="small muted" data-i18n="archiveStaleBody">هذه الجلسة لا يمكن استئنافها حاليًا. ستُحفظ نسخة من بياناتها في سجل استرداد منفصل على الجهاز، ثم يُفتح بدء تمرين جديد. لن نحذف النسخة المؤرشفة.</p>
+            <button id="archiveStaleWorkoutBtn" class="button secondary full" type="button" data-i18n="archiveStaleAction">أرشفة النسخة للسماح ببدء تمرين جديد</button>
+          </details>
+        </div>
       </article>
 
       <article class="next-action-card">

@@ -92,3 +92,10 @@
 .resume-workout-meta,.resume-workout-hint{line-height:1.6}
 .resume-workout-card .button{margin-top:4px}
 .resume-workout-card .button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+
+/* Explicit, recoverable escape hatch for stale saved workouts. */
+.resume-recovery-actions{margin-top:12px;padding-top:10px;border-top:1px solid #3a4c54}
+.resume-recovery-actions summary{cursor:pointer;color:var(--gold);font-weight:900;padding:8px 0}
+.resume-recovery-actions p{line-height:1.65}
+.resume-recovery-actions .button{margin-top:8px}
+.resume-recovery-actions .button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
