@@ -60,7 +60,7 @@ class ExerciseCueSafetyBatch13Test(unittest.TestCase):
     def test_builder_preserves_both_reviewed_bilingual_cues(self):
         for exercise_id, (source_id, english, arabic) in EXPECTED.items():
             start = self.builder.index(f'    "{source_id}": {{')
-            end = self.builder.find("\\n    },", start)
+            end = self.builder.find("\n    },", start)
             self.assertGreaterEqual(start, 0, exercise_id)
             self.assertGreater(end, start, exercise_id)
             block = self.builder[start:end]
