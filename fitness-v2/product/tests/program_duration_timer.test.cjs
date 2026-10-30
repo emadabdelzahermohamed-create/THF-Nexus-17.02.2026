@@ -6,6 +6,7 @@ const path = require('node:path');
 const FITNESS_ROOT = path.resolve(__dirname, '../..');
 const APP = fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/app.js'), 'utf8');
 const HTML = fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/index.html'), 'utf8');
+const CSS = fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/styles.css'), 'utf8');
 const PROGRAMS = JSON.parse(fs.readFileSync(path.join(FITNESS_ROOT, 'android/app/src/main/assets/pulse/data/programs.json'), 'utf8'));
 
 test('program duration prescriptions use readable MM:SS instead of raw seconds', () => {
@@ -27,6 +28,7 @@ test('active workout renders a timer control instead of a zero-reps field for ti
   assert.ok(APP.includes("durationSeconds?t('time'):t('reps')"));
   assert.ok(HTML.includes('id="setRepsHeader"'));
   assert.ok(HTML.includes('id="durationAnnouncement" class="sr-only" aria-live="polite" aria-atomic="true"'));
+  assert.ok(CSS.includes('.sr-only{position:absolute!important'));
 });
 
 test('duration timer supports start, pause, persisted restore and background pause', () => {
