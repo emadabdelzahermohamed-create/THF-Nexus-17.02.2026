@@ -35,7 +35,7 @@ class ActivitySessionCheckpointTest {
     }
 
     @Test
-    fun processDeathAfterTwoMinutesRestoresOnSameBoot() {
+    fun processDeathAfterSeveralMinutesRestoresOnSameBoot() {
         val decoded = requireNotNull(ActivitySessionCheckpointCodec.decode(ActivitySessionCheckpointCodec.encode(checkpoint())))
 
         assertTrue(ActivitySessionCheckpointCodec.canRestore(decoded, nowElapsedMs = 500_000L, currentBootCount = 7))
@@ -59,7 +59,7 @@ class ActivitySessionCheckpointTest {
 
     @Test
     fun legacyV2CheckpointUsesConservativeRestoreWindow() {
-        val legacyV2 = "2|run|72.5|1700000000000|50000|65000|1234.5|4000.0|321|4.5|active|1700000001000|51000\\n" +
+        val legacyV2 = "2|run|72.5|1700000000000|50000|65000|1234.5|4000.0|321|4.5|active|1700000001000|51000\n" +
             "30.0444,31.2357,22.0,4.5,5000;30.0450,31.2361,,5.0,10000"
         val decoded = requireNotNull(ActivitySessionCheckpointCodec.decode(legacyV2))
 
@@ -78,8 +78,8 @@ class ActivitySessionCheckpointTest {
     @Test
     fun impossibleOrCorruptStateIsRejected() {
         assertNull(ActivitySessionCheckpointCodec.decode(""))
-        assertNull(ActivitySessionCheckpointCodec.decode("1|run|NaN|1|1|1|0||0|\\n"))
-        assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|1|-2||0|\\n"))
-        assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|1|0||0|\\n95,31,,5,0"))
+        assertNull(ActivitySessionCheckpointCodec.decode("1|run|NaN|1|1|1|0||0|\n"))
+        assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|1|-2||0|\n"))
+        assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|1|0||0|\n95,31,,5,0"))
     }
 }
