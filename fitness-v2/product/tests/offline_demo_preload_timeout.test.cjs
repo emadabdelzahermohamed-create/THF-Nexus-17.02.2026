@@ -92,7 +92,7 @@ test('successful frame loads clear their bounded preload timers', async () => {
   assert.deepEqual([...h.timers.values()].map(value => value.delay), [PRELOAD_TIMEOUT_MS, PRELOAD_TIMEOUT_MS]);
   assert.equal(h.images[0].emit('load'), true);
   assert.equal(h.images[1].emit('load'), true);
-  await ready;
+  assert.deepEqual(await ready, [true, true]);
   assert.equal(h.timers.size, 0);
 });
 
@@ -101,7 +101,7 @@ test('missing frame errors settle without waiting for the timeout', async () => 
   const ready = h.api.preloadFrames(item('pushups'));
   h.images[0].emit('error');
   h.images[1].emit('load');
-  await ready;
+  assert.deepEqual(await ready, [false, true]);
   assert.equal(h.timers.size, 0);
 });
 
@@ -110,7 +110,7 @@ test('a WebView image that emits neither load nor error cannot block the loop in
   const ready = h.api.preloadFrames(item('romanian-deadlift'));
   assert.equal(h.timers.size, 2);
   for (const timer of [...h.timers.values()]) timer.callback();
-  await ready;
+  assert.deepEqual(await ready, [false, false]);
   assert.equal(h.timers.size, 0);
 });
 
@@ -121,7 +121,7 @@ test('late load/error events after timeout are idempotent', async () => {
   callbacks.forEach(callback => callback());
   assert.equal(h.images[0].emit('load'), false);
   assert.equal(h.images[1].emit('error'), false);
-  await ready;
+  assert.deepEqual(await ready, [false, false]);
   assert.equal(h.timers.size, 0);
 });
 
@@ -134,7 +134,7 @@ test('concurrent callers share one preload operation per exercise', async () => 
   assert.equal(h.images.length, 2);
   assert.equal(h.timers.size, 2);
   h.images.forEach(image => image.emit('load'));
-  await first;
+  assert.deepEqual(await first, [true, true]);
 });
 
 test('one stalled frame is bounded while another frame loads normally', async () => {
@@ -143,11 +143,17 @@ test('one stalled frame is bounded while another frame loads normally', async ()
   h.images[0].emit('load');
   assert.equal(h.timers.size, 1);
   [...h.timers.values()][0].callback();
-  await ready;
+  assert.deepEqual(await ready, [true, false]);
   assert.equal(h.timers.size, 0);
 });
 
-test('the timeout remains a bounded 1200 ms window and the controller still starts the loop after preload', () => {
+test('the timeout remains bounded and only successfully loaded frames animate', () => {
   assert.match(MOTION, /const PRELOAD_TIMEOUT_MS = 1200;/);
-  assert.match(MOTION, /await preloadFrames\(item\);[\s\S]*?pendingExerciseId = null;[\s\S]*?timer = window\.setInterval/);
+  assert.match(MOTION, /const results = await preloadFrames\(item\);[\s\S]*?const readyFrames = item\.demo\.assets\.filter\(\(asset, index\) => results\[index\]\);/);
+  assert.match(MOTION, /if \(readyFrames\.length < 2\)[\s\S]*?showing a static view/);
+  assert.match(MOTION, /const frames = loadedFrames\.get\(latest\.id\) \|\| latest\.demo\.assets;[\s\S]*?frameIndex = \(frameIndex \+ 1\) % frames\.length/);
+});
+
+test('the complete motion manifest parses as one JavaScript asset', () => {
+  assert.doesNotThrow(() => new vm.Script(MOTION, {filename: 'motion-manifest.js'}));
 });
