@@ -12,11 +12,40 @@ const motionSource = fs.readFileSync(path.join(pulse, 'data/motion-manifest.js')
 const htmlSource = fs.readFileSync(path.join(pulse, 'index.html'), 'utf8');
 
 function extractFunction(source, name, nextName) {
-  const start = source.indexOf('  function ' + name + '(');
-  const end = source.indexOf('  function ' + nextName + '(', start);
+  const marker = 'function ' + name + '(';
+  const start = source.indexOf(marker);
   assert.notEqual(start, -1, 'missing function ' + name);
-  assert.notEqual(end, -1, 'missing function boundary ' + nextName);
-  return source.slice(start, end).trim();
+  const open = source.indexOf('{', start);
+  assert.notEqual(open, -1, 'missing function body ' + name);
+  let depth = 0;
+  let quote = null;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  for (let i = open; i < source.length; i += 1) {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (quote) {
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (lineComment) { if (ch === '\n') lineComment = false; continue; }
+    if (blockComment) {
+      if (ch === '*' && next === '/') { blockComment = false; i += 1; }
+      continue;
+    }
+    if (ch === '/' && next === '/') { lineComment = true; i += 1; continue; }
+    if (ch === '/' && next === '*') { blockComment = true; i += 1; continue; }
+    if (ch === "'" || ch === '"' || ch.charCodeAt(0) === 96) { quote = ch; continue; }
+    if (ch === '{') depth += 1;
+    else if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, i + 1);
+    }
+  }
+  throw new Error('unterminated function ' + name);
 }
 
 function loadFunction(source, name, nextName, sandbox) {
@@ -29,6 +58,12 @@ function fakeElement(options = {}) {
   if (options.hidden) classes.add('hidden');
   if (options.active) classes.add('active');
   return {
+    dataset: {},
+    listeners: new Map(),
+    addEventListener(name, callback) { this.listeners.set(name, callback); },
+    removeEventListener(name, callback) {
+      if (this.listeners.get(name) === callback) this.listeners.delete(name);
+    },
     classList: {
       contains(name) { return classes.has(name); },
       add(name) { classes.add(name); },
@@ -90,9 +125,24 @@ function activeDemoHarness(reduced, lang) {
     },
     state: { lang },
     document: { hidden: false },
-    preferredReducedMotion: () => reduced
+    preferredReducedMotion: () => reduced,
+    activeExercise: () => item,
+    local: value => value?.en || '',
+    t: key => key === 'videoFallback'
+      ? 'Video unavailable; showing the automatic reference-frame sequence.'
+      : key
   };
-  return { elements, item, sandbox };
+  const names = [
+    'fallbackActiveMotionToFrames',
+    'attemptActiveDemoVideoPlayback',
+    'renderActiveMotion'
+  ];
+  const functions = names.map(name => extractFunction(appSource, name)).join('\n');
+  vm.runInNewContext(
+    functions + '\nglobalThis.api = {fallbackActiveMotionToFrames, attemptActiveDemoVideoPlayback, renderActiveMotion};',
+    sandbox
+  );
+  return { elements, item, sandbox, api: sandbox.api };
 }
 
 function motionFrameHarness(reduced, lang) {
@@ -112,6 +162,7 @@ function motionFrameHarness(reduced, lang) {
     byId: id => elements[id],
     document: { documentElement: { lang } },
     frameIndex: 0,
+    loadedFrames: new Map(),
     reduceMotion: () => reduced
   };
   const renderFrame = loadFunction(motionSource, 'renderFrame', 'preloadFrames', sandbox);
@@ -121,8 +172,7 @@ function motionFrameHarness(reduced, lang) {
 
 test('full-motion video becomes a static local Arabic reference frame when reduced motion is enabled', () => {
   const h = activeDemoHarness(true, 'ar');
-  const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
-  render(h.item);
+  h.api.renderActiveMotion(h.item);
 
   assert.equal(h.elements.activeDemoVideo.pauseCount, 1);
   assert.equal(h.elements.activeDemoVideo.getAttribute('src'), null);
@@ -137,8 +187,7 @@ test('full-motion video becomes a static local Arabic reference frame when reduc
 
 test('full-motion video remains automatic with source credit when reduced motion is disabled', () => {
   const h = activeDemoHarness(false, 'en');
-  const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
-  render(h.item);
+  h.api.renderActiveMotion(h.item);
 
   assert.equal(h.elements.activeDemoVideo.getAttribute('src'), './media/motion/pushups.webm');
   assert.equal(h.elements.activeDemoVideo.classList.contains('hidden'), false);
@@ -222,8 +271,7 @@ test('active workout reduced-motion changes are announced in Arabic and English'
 test('normal active-workout motion clears a stale reduced-motion announcement', () => {
   const h = activeDemoHarness(false, 'en');
   h.elements.activeDemoStatus.textContent = 'Reduced motion is on; a static exercise image is shown.';
-  const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
-  render(h.item);
+  h.api.renderActiveMotion(h.item);
   assert.equal(h.elements.activeDemoStatus.textContent, '');
 });
 
@@ -244,7 +292,10 @@ test('active workout contains a persistent polite live region separate from the 
 test('OS reduced-motion changes are wired to active video and reference-frame reconciliation', () => {
   assert.match(appSource, /motionPreferenceQuery=window\.matchMedia\?\.\('\(prefers-reduced-motion: reduce\)'\)/);
   assert.match(appSource, /syncSystemMotionPreference=\(\)=>applyMotionPreference\(preferredReducedMotion\(\),false\)/);
-  assert.match(appSource, /!video\.classList\.contains\('hidden'\)&&!preferredReducedMotion\(\)\)video\.play\(\)\.catch/);
+  assert.match(appSource, /if \(motion\?\.asset && !reduced && !videoFailed\)/);
+  assert.match(appSource, /if \(!document\.hidden\) attemptActiveDemoVideoPlayback\(item, nextSource\)/);
+  assert.match(appSource, /function attemptActiveDemoVideoPlayback\(item, expectedSource\)/);
+  assert.match(appSource, /playback && typeof playback\.catch === 'function'/);
   assert.match(motionSource, /motionQuery = window\.matchMedia\?\.\('\(prefers-reduced-motion: reduce\)'\)/);
   assert.match(motionSource, /motionQuery\.addEventListener\('change', reconcile\)/);
   assert.match(motionSource, /motionQuery\?\.addListener\?\.\(reconcile\)/);

@@ -121,6 +121,12 @@ EXPECTED_SOURCE_IDS = {
     "Pelvic_Tilt_Into_Bridge",
     "Step-up_with_Knee_Raise",
     "Medicine_Ball_Scoop_Throw",
+    "Catch_and_Overhead_Throw",
+    "One-Arm_Kettlebell_Swings",
+    "Bodyweight_Squat",
+    "Scapular_Pull-Up",
+    "Kettlebell_One-Legged_Deadlift",
+    "Goblet_Squat",
 }
 
 

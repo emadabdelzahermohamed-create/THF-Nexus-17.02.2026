@@ -13,7 +13,8 @@ POLICY_JS = (PULSE / "set-rir-policy.js").read_text(encoding="utf-8")
 class ActiveWorkoutTimedRirVisibilityTest(unittest.TestCase):
     def test_policy_script_loads_before_application(self):
         self.assertLess(INDEX_HTML.index('./set-rir-policy.js'), INDEX_HTML.index('./app.js'))
-        self.assertIn("window.THF_SET_RIR_POLICY", POLICY_JS)
+        self.assertIn("root.THF_SET_RIR_POLICY = policy", POLICY_JS)
+        self.assertIn("typeof globalThis !== 'undefined' ? globalThis : null", POLICY_JS)
 
     def test_active_workout_hides_rir_for_timed_or_untracked_work(self):
         self.assertIn("window.THF_SET_RIR_POLICY.shouldShow(item, state.active.sets)", APP_JS)

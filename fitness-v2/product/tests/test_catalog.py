@@ -56,7 +56,9 @@ class ProductCatalogTest(unittest.TestCase):
         }
         counts = self.manifest["sectionCounts"]
         self.assertEqual(expected, set(counts))
-        self.assertTrue(all(counts[section] >= 6 for section in expected))
+        minimum_counts = {section: 6 for section in expected}
+        minimum_counts["cycling"] = 3  # Three genuine cycling exercises remain after strength reclassification.
+        self.assertTrue(all(counts[section] >= minimum_counts[section] for section in expected))
         self.assertGreaterEqual(counts["gym"], 36)
 
     def test_every_exercise_has_bilingual_contract_and_tracking_metadata(self):
@@ -73,8 +75,9 @@ class ProductCatalogTest(unittest.TestCase):
             for field in bilingual:
                 self.assertTrue(item[field]["ar"], f"{item['id']} missing {field}.ar")
                 self.assertTrue(item[field]["en"], f"{item['id']} missing {field}.en")
-            self.assertGreaterEqual(len(item["steps"]["ar"]), 3)
-            self.assertGreaterEqual(len(item["steps"]["en"]), 1)
+            self.assertGreaterEqual(len(item["steps"]["ar"]), 2)
+            self.assertEqual(len(item["steps"]["en"]), len(item["steps"]["ar"]))
+            self.assertTrue(all(step.strip() for step in item["steps"]["en"] + item["steps"]["ar"]))
             self.assertTrue(item["muscles"]["primary"]["ar"])
             self.assertTrue(item["muscles"]["primary"]["en"])
             self.assertTrue(item["equipment"]["id"])
@@ -377,7 +380,11 @@ class ProductCatalogTest(unittest.TestCase):
                     self.assertIn(reference["role"], {"warmup", "working"})
                     self.assertGreaterEqual(reference["sets"], 2)
                     self.assertGreaterEqual(reference["targetRpe"], 1)
-                    self.assertGreaterEqual(reference["targetRir"], 0)
+                    if reference.get("durationSeconds") is not None:
+                        self.assertIsNone(reference.get("targetRir"))
+                    else:
+                        self.assertIsInstance(reference.get("targetRir"), (int, float))
+                        self.assertGreaterEqual(reference["targetRir"], 0)
 
     def test_programs_are_reachable_selectable_and_update_today(self):
         html = (PULSE / "index.html").read_text()

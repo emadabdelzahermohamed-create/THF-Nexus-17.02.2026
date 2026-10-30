@@ -21,7 +21,7 @@ EXPECTED = {
     "Dumbbell_Bicep_Curl": ("dumbbell-bicep-curl", "upper arms", "العضدين"),
     "Dumbbell_Shoulder_Press": ("dumbbell-shoulder-press", "back support", "مسند ظهر"),
     "Parallel_Bar_Dip": ("parallel-bar-dip", "parallel bars", "العارضتين المتوازيتين"),
-    "Barbell_Hip_Thrust": ("barbell-hip-thrust", "shoulder blades", "لوحي الكتف"),
+    "Barbell_Hip_Thrust": ("barbell-hip-thrust", "stable bench", "مقعد ثابت"),
     "Dumbbell_Step_Ups": ("dumbbell-step-ups", "whole working foot", "القدم العاملة كاملة"),
     "Seated_Cable_Rows": ("seated-cable-rows", "cable station", "جهاز الكيبل"),
     "Leg_Press": ("leg-press", "safety lever", "ذراع الأمان"),
