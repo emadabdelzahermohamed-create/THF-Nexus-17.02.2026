@@ -248,7 +248,7 @@ test('reduced motion bypasses video and keeps a static localized frame', () => {
 
 test('non-video exercises are truthfully labelled as an automatic reference sequence', () => {
   const h = harness();
-  h.motionManifest = {};
+  for (const id of Object.keys(h.motionManifest)) delete h.motionManifest[id];
   const item = exercise('bodyweight-squat');
   h.api.renderActiveMotion(item);
   assert.equal(h.video.classList.contains('hidden'), true);
