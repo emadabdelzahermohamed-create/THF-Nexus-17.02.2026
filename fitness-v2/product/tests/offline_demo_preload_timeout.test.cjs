@@ -85,6 +85,39 @@ function item(id = 'bodyweight-squat') {
   return {id, demo: {assets: ['media/' + id + '/0.jpg', 'media/' + id + '/1.jpg']}};
 }
 
+function renderFrameFor(lang, loaded) {
+  const elements = {
+    activeDemoImage: {
+      attributes: new Map(),
+      getAttribute(name) { return this.attributes.get(name) ?? null; },
+      setAttribute(name, value) { this.attributes.set(name, value); },
+      alt: ''
+    },
+    activeDemoStatus: {textContent: ''},
+    activeDemoPhase: {
+      attributes: new Map(),
+      setAttribute(name, value) { this.attributes.set(name, value); },
+      textContent: ''
+    }
+  };
+  const context = {
+    document: {documentElement: {lang}},
+    byId(id) { return elements[id] || null; },
+    reduceMotion() { return false; },
+    loadedFrames: new Map([['test-demo', loaded]]),
+    frameIndex: 0
+  };
+  vm.runInNewContext(extractFunction(MOTION, 'renderFrame') + '\\nglobalThis.api = {renderFrame};', context);
+  context.api.renderFrame({
+    id: 'test-demo',
+    demo: {
+      assets: ['media/start.jpg', 'media/finish.jpg'],
+      alt: {en: 'Start and finish positions', ar: 'وضعا البداية والنهاية'}
+    }
+  });
+  return elements;
+}
+
 test('successful frame loads clear their bounded preload timers', async () => {
   const h = makeHarness();
   const ready = h.api.preloadFrames(item());
@@ -154,6 +187,20 @@ test('the timeout remains bounded and only successfully loaded frames animate', 
   assert.match(MOTION, /const frames = loadedFrames\.get\(latest\.id\) \|\| latest\.demo\.assets;[\s\S]*?frameIndex = \(frameIndex \+ 1\) % frames\.length/);
   assert.match(MOTION, /const sourceIndex = loaded \? loaded\[phaseIndex\]\.index : phaseIndex;/);
   assert.match(MOTION, /sourceIndex === 0 \? 'Start' : 'Finish'/);
+});
+
+test('a surviving second English frame keeps its Finish label', () => {
+  const elements = renderFrameFor('en', [{asset: 'media/finish.jpg', index: 1}]);
+  assert.equal(elements.activeDemoImage.getAttribute('src'), './media/finish.jpg');
+  assert.match(elements.activeDemoImage.alt, /Finish/);
+  assert.match(elements.activeDemoPhase.textContent, /^Finish/);
+});
+
+test('a surviving second Arabic frame keeps its النهاية label', () => {
+  const elements = renderFrameFor('ar', [{asset: 'media/finish.jpg', index: 1}]);
+  assert.equal(elements.activeDemoImage.getAttribute('src'), './media/finish.jpg');
+  assert.match(elements.activeDemoImage.alt, /النهاية/);
+  assert.match(elements.activeDemoPhase.textContent, /^النهاية/);
 });
 
 test('the complete motion manifest parses as one JavaScript asset', () => {
