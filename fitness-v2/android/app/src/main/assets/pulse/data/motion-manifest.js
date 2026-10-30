@@ -230,6 +230,9 @@ window.THF_MOTION_MANIFEST = {
       attributeFilter: ['class', 'data-exercise-id']
     });
     byId('reduceMotion')?.addEventListener('change', reconcile);
+    const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (motionQuery?.addEventListener) motionQuery.addEventListener('change', reconcile);
+    else motionQuery?.addListener?.(reconcile);
     document.addEventListener('visibilitychange', reconcile);
     reconcile();
   }, {once: true});
