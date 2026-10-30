@@ -10,6 +10,10 @@ const PULSE = path.resolve(__dirname, '../../android/app/src/main/assets/pulse')
 const APP = fs.readFileSync(path.join(PULSE, 'app.js'), 'utf8');
 const HTML = fs.readFileSync(path.join(PULSE, 'index.html'), 'utf8');
 const CSS = fs.readFileSync(path.join(PULSE, 'styles.css'), 'utf8');
+const EXERCISES_JS = fs.readFileSync(path.join(PULSE, 'data/exercises.js'), 'utf8');
+const exerciseContext = { window: {} };
+vm.runInNewContext(EXERCISES_JS, exerciseContext);
+const EXERCISES = exerciseContext.window.THF_EXERCISES || [];
 
 function extractFunction(source, name) {
   const marker = `function ${name}(`;
@@ -121,4 +125,21 @@ test('active workout renderer consumes the grouped muscle helper and bilingual l
   assert.match(HTML, /id="activeMuscles" class="active-muscle-groups"/);
   assert.match(CSS, /\.active-muscle-groups\{display:grid/);
   assert.match(CSS, /\.active-muscle-label\{[^}]*font-size:10px/);
+});
+
+test('all offline catalog exercises render every localized primary and supporting muscle', () => {
+  assert.equal(EXERCISES.length, 112);
+  for (const language of ['en', 'ar']) {
+    const render = renderer(language);
+    for (const exercise of EXERCISES) {
+      const html = render(exercise);
+      const primary = exercise.muscles?.primary?.[language] || [];
+      const secondary = exercise.muscles?.secondary?.[language] || [];
+      const expectedGroups = Number(primary.length > 0) + Number(secondary.length > 0);
+      assert.equal((html.match(/class="active-muscle-group"/g) || []).length, expectedGroups, exercise.id + ' ' + language);
+      for (const muscle of [...primary, ...secondary]) {
+        assert.ok(html.includes(escapeHtml(muscle)), exercise.id + ' missing ' + muscle + ' in ' + language);
+      }
+    }
+  }
 });
