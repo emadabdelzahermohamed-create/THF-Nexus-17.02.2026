@@ -120,14 +120,16 @@ window.THF_MOTION_MANIFEST = {
 
   function renderFrame(item) {
     const image = byId('activeDemoImage');
-    const assets = loadedFrames.get(item.id) || item?.demo?.assets;
+    const loaded = loadedFrames.get(item.id);
+    const assets = loaded ? loaded.map(frame => frame.asset) : item?.demo?.assets;
     if (!image || !Array.isArray(assets) || assets.length < 1) return;
     const phaseIndex = frameIndex % assets.length;
+    const sourceIndex = loaded ? loaded[phaseIndex].index : phaseIndex;
     const nextSrc = './' + assets[phaseIndex];
     const isArabic = document.documentElement.lang === 'ar';
     const phaseName = isArabic
-      ? (phaseIndex === 0 ? 'البداية' : 'النهاية')
-      : (phaseIndex === 0 ? 'Start' : 'Finish');
+      ? (sourceIndex === 0 ? 'البداية' : 'النهاية')
+      : (sourceIndex === 0 ? 'Start' : 'Finish');
     const baseAlt = item?.demo?.alt?.[isArabic ? 'ar' : 'en'] || '';
     // Avoid redundant WebView image work on the API31 Samsung lane.
     if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
@@ -146,8 +148,8 @@ window.THF_MOTION_MANIFEST = {
       // the current phase remains available in the image's descriptive alt text.
       phase.setAttribute('aria-hidden', 'true');
       phase.textContent = isArabic
-        ? `${phaseIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
-        : `${phaseIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
+        ? `${sourceIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
+        : `${sourceIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
     }
   }
 
@@ -196,7 +198,9 @@ window.THF_MOTION_MANIFEST = {
       if (pendingExerciseId === item.id) pendingExerciseId = null;
       return;
     }
-    const readyFrames = item.demo.assets.filter((asset, index) => results[index]);
+    const readyFrames = item.demo.assets
+      .map((asset, index) => ({asset, index}))
+      .filter((frame, index) => results[index]);
     loadedFrames.set(item.id, readyFrames);
     frameIndex = 0;
     if (readyFrames.length === 0) {
