@@ -129,9 +129,16 @@ window.THF_MOTION_MANIFEST = {
     // Avoid redundant WebView image work on the API31 Samsung lane.
     if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
     image.alt = `${baseAlt} — ${phaseName}`;
+    const reduced = reduceMotion();
+    const status = byId('activeDemoStatus');
+    if (status) {
+      const nextStatus = reduced
+        ? (isArabic ? 'تقليل الحركة مفعّل؛ تظهر صورة ثابتة للتمرين.' : 'Reduced motion is on; a static exercise image is shown.')
+        : '';
+      if (status.textContent !== nextStatus) status.textContent = nextStatus;
+    }
     const phase = byId('activeDemoPhase');
     if (phase) {
-      const reduced = reduceMotion();
       // Keep the visible fast-changing label out of live screen-reader output;
       // the current phase remains available in the image's descriptive alt text.
       phase.setAttribute('aria-hidden', 'true');
