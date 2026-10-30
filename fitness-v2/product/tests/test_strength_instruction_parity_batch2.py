@@ -15,16 +15,16 @@ BUILDER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BUILDER)
 
 EXPECTED = {
-    "Dips_-_Triceps_Version": ("dips---triceps-version", "elbows should stay close", "المرفقين قريبين"),
+    "Dips_-_Triceps_Version": ("dips---triceps-version", "elbows close to your sides", "المرفقين قريبين"),
     "Barbell_Step_Ups": ("barbell-step-ups", "elevated platform", "الصندوق"),
     "Platform_Hamstring_Slides": ("platform-hamstring-slides", "gym towel", "الكعبين"),
     "Standing_Dumbbell_Calf_Raise": ("standing-dumbbell-calf-raise", "contracting the calves", "السمانة"),
     "Cable_Crossover": ("cable-crossover", "pulleys", "البكرتين"),
     "Close-Grip_Front_Lat_Pulldown": ("close-grip-front-lat-pulldown", "knee pad", "وسادة الفخذين"),
-    "Dip_Machine": ("dip-machine", "dip machine", "مقابض الجهاز"),
+    "Dip_Machine": ("dip-machine", "press the handles down", "مقابض الجهاز"),
     "Face_Pull": ("face-pull", "forehead", "الجبهة"),
     "Front_Barbell_Squat": ("front-barbell-squat", "squat rack", "مسامير الأمان"),
-    "Hammer_Curls": ("hammer-curls", "elbows should be close to the torso", "الكفان في وضع محايد"),
+    "Hammer_Curls": ("hammer-curls", "elbows close to your torso", "الكفان في وضع محايد"),
 }
 
 RENAMED_AND_RECATEGORIZED = {

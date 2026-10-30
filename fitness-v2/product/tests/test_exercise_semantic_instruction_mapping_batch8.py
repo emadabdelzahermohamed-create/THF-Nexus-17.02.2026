@@ -73,7 +73,7 @@ class ExerciseSemanticInstructionMappingTest(unittest.TestCase):
         self.assertEqual(EXPECTED_ARABIC[item["id"]], item["steps"]["ar"])
         self.assertEqual(len(item["steps"]["en"]), len(item["steps"]["ar"]))
         self.assertIn("أطلق الكرة خلفك", item["steps"]["ar"][2])
-        self.assertIn("خلو المساحة", item["steps"]["ar"][2])
+        self.assertIn("مساحة خالية", item["steps"]["ar"][2])
         self.assertNotEqual(item["steps"]["ar"], self.by_id["kettlebell-one-legged-deadlift"]["steps"]["ar"])
         self.assertNotEqual(item["steps"]["ar"], self.by_id["one-arm-kettlebell-swings"]["steps"]["ar"])
 
