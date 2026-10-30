@@ -18,6 +18,18 @@ MANIFEST_PATH = ROOT / "fitness-v2" / "product" / "PROGRAMS_MANIFEST.json"
 
 SOURCE_COMMIT = "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5"
 
+# Program-only timed holds intentionally override the catalog's rep-based Superman dose.
+# Keys are (program id, 1-based session number, exercise id); all other timed doses
+# inherit the authoritative exercise catalog prescription below.
+PROGRAM_DURATION_OVERRIDES = {
+    ("home-progressive-strength", 3, "superman"): 30,
+    ("home-progressive-strength", 4, "superman"): 30,
+    ("calisthenics-foundations", 1, "superman"): 30,
+    ("calisthenics-foundations", 2, "superman"): 30,
+    ("calisthenics-skills", 1, "superman"): 30,
+    ("boxing-power-core", 4, "superman"): 30,
+}
+
 # Two real programs per first-class Train section. Names and prescriptions are
 # original THF editorial composition; referenced exercise data/media retain the
 # pinned public-domain source provenance recorded in the exercise catalog.
@@ -267,12 +279,21 @@ def build() -> list[dict]:
             prescriptions = []
             for exercise_index, item in enumerate(picks):
                 source = item["prescription"]
+                duration_override = PROGRAM_DURATION_OVERRIDES.get(
+                    (program_id, session_index + 1, item["id"])
+                )
+                duration_seconds = (
+                    duration_override
+                    if duration_override is not None
+                    else source.get("durationSeconds")
+                )
+                reps = None if duration_seconds else source.get("reps")
                 prescriptions.append({
                     "exerciseId": item["id"],
                     "role": "warmup" if exercise_index == 0 else "working",
                     "sets": 2 if exercise_index == 0 else max(2, int(source.get("sets") or 3)),
-                    "reps": source.get("reps"),
-                    "durationSeconds": source.get("durationSeconds"),
+                    "reps": reps,
+                    "durationSeconds": duration_seconds,
                     "restSeconds": min(150, max(30, int(source.get("restSeconds") or 60))),
                     "targetRpe": 5 if exercise_index == 0 else (7 if level == "beginner" else 8),
                     "targetRir": 4 if exercise_index == 0 else (3 if level == "beginner" else 2),
