@@ -73,7 +73,7 @@
     "health_policy_privacy": "OPEN",
     "production": "NOT_VERIFIED"
   },
-  "next_action": "Obtain a supported way to trigger and independently list/read the push-triggered candidate workflow run and artifact. Then atomically update fitness-v2/android/app/build.gradle plus .github/workflows/fitness-sensor-candidate.yml to unique 51020; run full acceptance once on that final SHA; only after exact run/artifact/digest are available, pin .github/workflows/fitness-51008-internal-promote.yml to the new source run/SHA and exact unsigned AAB digest, sign/upload, and independently read back Internal track/version/source. Do not upload validation artifact 12912522684, rebuild/reupload unchanged 51019 bytes, or promote Production. Physical P0 remains blocked while the authorized device is offline; PR #93/#98 remain HOLD; Free scheduler consolidation remains blocked until a supported timing_mode control exists.",
+  "next_action": "Prioritize PR #202: resolve the synchronous ACTION_RESTORE_ACTIVITY service-start failure so MainActivity cannot report a restored session when no foreground service was started; then obtain exact-head Android unit/lint/APK/AAB CI PASS. No exact-head workflow runs/status checks exist yet. After green P0 integration, solve the supported push-triggered candidate run/artifact readback path, allocate one unique versionCode >51019, accept/sign/upload the exact AAB and independently read back Internal. Physical P0 remains blocked while the authorized phone is offline; PR #93/#98 remain HOLD; Free scheduler consolidation remains blocked because the update control cannot change timing_mode. Do not merge untested handoffs, rebuild/reupload unchanged 51019, or promote Production.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -137,5 +137,93 @@
     "next_release_version_code": 51020,
     "status": "BLOCKED_BEFORE_VERSION_ALLOCATION",
     "blocker": "Available GitHub connector has no workflow-dispatch or push-run-listing action. fetch_commit_workflow_runs returns PR-triggered runs only, so exact run/artifact from the canonical push-triggered candidate workflow cannot currently be discovered/read back."
+  },
+  "integrator_recheck": {
+    "observed_at": "2026-10-30T17:02:40Z",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "root_agents_md_read_from_main": "33f47d6052e897dac5027b9596f5353ed7f62765",
+    "canonical_branch_agents_md": "NOT_FOUND",
+    "ai_swarm_protocol_state": "NOT_FOUND",
+    "leases_json_and_md": "NOT_FOUND",
+    "p0_handoff": {
+      "pr": 202,
+      "head_sha": "f44302861c852adca80c177f8878b6d5a516a360",
+      "base_sha": "3b8a27ea00e6dfadec218cdc90563b71ad12d440",
+      "workflow_runs": 0,
+      "combined_status_checks": 0,
+      "merge": "NOT_MERGED",
+      "review_id": 5715869752,
+      "review_blocker": "startForegroundCompat failure is swallowed after publishing an active snapshot; explicit failure/retry handling and regression required"
+    },
+    "other_handoffs": {
+      "117": {
+        "head_sha": "e0150b84171490065af94bff342da65ab47873f8",
+        "workflow_runs": 0,
+        "status_checks": 0
+      },
+      "118": {
+        "head_sha": "1dee6b430ac63a344d1ca5bd2b8fd5901dd84d46",
+        "workflow_runs": 0,
+        "status_checks": 0
+      },
+      "137": {
+        "head_sha": "551cccdbf74b17001dfcad8ccc94ca340faafd72",
+        "workflow_runs": 0,
+        "status_checks": 0
+      },
+      "141": {
+        "head_sha": "60a445dc0de8167069c3a8f824b90fcdef037514",
+        "workflow_runs": 0,
+        "status_checks": 0
+      },
+      "188": {
+        "head_sha": "872921f52c6637bcf8ab338b87bc2ded281c1598",
+        "workflow_runs": 0,
+        "status_checks": 0,
+        "draft": true
+      }
+    },
+    "last_play_evidence": {
+      "track": "internal",
+      "version_code": 51019,
+      "source_sha": "76053bd9127c38d8065eb7ac250bdeb34ab67854",
+      "build_run": 40516382792,
+      "build_artifact": 12739543484,
+      "unsigned_aab_sha256": "aa4ecfdfcbab20587b69ae59b75e09c47827f2ecce3c272199afc3c347ffce93",
+      "signed_aab_sha256": "5dc7d0077ecfddd3224ca8557a3b4f6d0a5524cf194c0e547fc8b1605c7ba9c5",
+      "promotion_readback_run": 40518110062,
+      "evidence_artifact": 12739484276,
+      "committed": true,
+      "re_read_live_play_in_this_run": false
+    },
+    "phone": {
+      "last_verified_installed_version": 51018,
+      "observed_at": "2026-10-27T10:17:49+03:00",
+      "adb": "NOT_CONNECTED",
+      "desktop_commander": "OFFLINE_LAST_SEEN_55H",
+      "physical_p0": "BLOCKED_NOT_RUN"
+    },
+    "scheduler": {
+      "enabled_task_count": 4,
+      "enabled_task_ids": [
+        "6ad3132659e48191988b0b01e1712f26",
+        "6ad61d7995988191981933f81525495f",
+        "6ad718befb5c81919ffcc399dff852e1",
+        "6ab1a9559918819188d130896222ce58"
+      ],
+      "disabled_task_ids": [
+        "6ab1a95267a481919ff85c80e3004b07"
+      ],
+      "replacement_timing_modes": "exact_schedule",
+      "unsupported_byhour_present": true,
+      "transition": "BLOCKED"
+    },
+    "release_decision": {
+      "pr_merged": false,
+      "version_code_51020_allocated": false,
+      "build_run_started": false,
+      "play_changed": false,
+      "production": "NOT_VERIFIED"
+    }
   }
 }
