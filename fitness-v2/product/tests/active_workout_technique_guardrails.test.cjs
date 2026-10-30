@@ -143,6 +143,8 @@ test('active workout rerender refreshes coaching when the exercise or language c
   assert.match(APP, /renderActiveCoaching\(item\)/);
   assert.match(APP, /if \(state\.active\) renderActiveWorkout\(\)/);
   assert.match(APP, /state\.lang/);
+  assert.match(APP, /techniqueGuardrails:'إرشادات الأداء'/);
+  assert.match(APP, /techniqueGuardrails:'Technique guardrails'/);
 });
 
 test('expandable coaching panel is semantic, keyboard-focusable and motion-sensitive', () => {
