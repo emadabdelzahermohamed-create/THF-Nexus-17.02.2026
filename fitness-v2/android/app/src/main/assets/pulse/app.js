@@ -7,7 +7,7 @@
   const $ = id => document.getElementById(id);
   const store = (() => {
     try { localStorage.setItem('__thf_probe', '1'); localStorage.removeItem('__thf_probe'); return localStorage; }
-    catch { const memory = new Map(); return {getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,String(value)),removeItem:key=>memory.delete(key)}; }
+    catch { const memory = new Map(); return {persistent:false,getItem:key=>memory.get(key)||null,setItem:(key,value)=>memory.set(key,String(value)),removeItem:key=>memory.delete(key)}; }
   })();
   const voiceGuidance = window.THFVoiceGuidance.createVoiceGuidance({
     storage: store,
@@ -36,8 +36,8 @@
   };
   Object.assign(COPY.ar, {techniqueGuardrails:'إرشادات الأداء',videoFallback:'تعذر تشغيل الفيديو؛ يعرض التطبيق تسلسل الصور المرجعية تلقائيًا.'});
   Object.assign(COPY.en, {techniqueGuardrails:'Technique guardrails',videoFallback:'Video unavailable; showing the automatic reference-frame sequence.'});
-  Object.assign(COPY.ar, {activeWorkoutSaved:'لديك جلسة غير مكتملة محفوظة',resumeWorkout:'استئناف التمرين',resumeWorkoutHint:'ستكمل من نفس التمرين والمجموعات المحفوظة دون بدء جلسة جديدة.',resumeWorkoutProgress:'{done} من {total} مجموعات مكتملة',resumeBeforeNew:'استأنف الجلسة الحالية أولًا',resumeUnavailable:'تعذر استئناف الجلسة المحفوظة',resumeUnavailableHint:'احتفظنا ببيانات الجلسة، لكن التمرين المرتبط بها غير موجود في المكتبة الحالية.'});
-  Object.assign(COPY.en, {activeWorkoutSaved:'You have an unfinished workout saved',resumeWorkout:'Resume workout',resumeWorkoutHint:'Continue the same exercise and saved sets without starting a new session.',resumeWorkoutProgress:'{done} of {total} sets complete',resumeBeforeNew:'Resume the current session first',resumeUnavailable:'Saved workout cannot be resumed',resumeUnavailableHint:'Your session data is preserved, but its exercise is not in the current library.'});
+  Object.assign(COPY.ar, {activeWorkoutSaved:'لديك جلسة غير مكتملة محفوظة',resumeWorkout:'استئناف التمرين',resumeWorkoutHint:'ستكمل من نفس التمرين والمجموعات المحفوظة دون بدء جلسة جديدة.',resumeWorkoutProgress:'{done} من {total} مجموعات مكتملة',resumeBeforeNew:'استأنف الجلسة الحالية أولًا',resumeUnavailable:'تعذر استئناف الجلسة المحفوظة',resumeUnavailableHint:'احتفظنا ببيانات الجلسة، لكن بيانات التمرين أو المجموعات غير مكتملة ولا يمكن استئنافها الآن.',archiveStaleTitle:'استعادة مساحة لتمرين جديد',archiveStaleBody:'هذه الجلسة لا يمكن استئنافها حاليًا. ستُحفظ نسخة من بياناتها في سجل استرداد منفصل على الجهاز، ثم يُفتح بدء تمرين جديد. لن نحذف النسخة المؤرشفة.',archiveStaleAction:'أرشفة النسخة للسماح ببدء تمرين جديد',archiveStaleSuccess:'تم حفظ نسخة استرداد محلية؛ يمكنك الآن بدء تمرين جديد. ({count} نسخ محفوظة)',archiveStaleFailed:'تعذر حفظ نسخة الاسترداد؛ لم نحذف الجلسة الحالية.',archiveStalePartial:'حُفظت نسخة الاسترداد، لكن تعذر إخلاء الجلسة الحالية؛ بياناتك ما زالت محفوظة.',archiveStaleNotNeeded:'هذه الجلسة قابلة للاستئناف؛ استخدم زر الاستئناف بدل أرشفتها.',archiveStaleStorageUnavailable:'التخزين المحلي الدائم غير متاح؛ أبقينا الجلسة كما هي ولم نؤرشفها.'});
+  Object.assign(COPY.en, {activeWorkoutSaved:'You have an unfinished workout saved',resumeWorkout:'Resume workout',resumeWorkoutHint:'Continue the same exercise and saved sets without starting a new session.',resumeWorkoutProgress:'{done} of {total} sets complete',resumeBeforeNew:'Resume the current session first',resumeUnavailable:'Saved workout cannot be resumed',resumeUnavailableHint:'Your session data is preserved, but its exercise or saved set data is incomplete and cannot be resumed right now.',archiveStaleTitle:'Make room for a new workout',archiveStaleBody:'This session cannot currently be resumed. Archiving stores its exact saved data in a separate on-device recovery list, then unlocks a new workout. The archived copy is retained.',archiveStaleAction:'Archive the copy to unlock a new workout',archiveStaleSuccess:'Recovery copy saved. You can start a new workout now. ({count} copies retained)',archiveStaleFailed:'The recovery copy could not be saved; the current session was not removed.',archiveStalePartial:'A recovery copy was saved, but the active slot could not be cleared. Your session remains preserved.',archiveStaleNotNeeded:'This session can be resumed. Use Resume instead of archiving it.',archiveStaleStorageUnavailable:'Persistent local storage is unavailable; the session was kept and not archived.'});
   Object.assign(COPY.ar, {startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة',foundingHeroEyebrow:'حزمة تجميلية لمرة واحدة',foundingHeroTitle:'البطل المؤسس',foundingHeroBadge:'البطل المؤسس',foundingHeroBody:'شراء رقمي لمرة واحدة يضيف شارة البطل المؤسس ولمسة ذهبية لملفك.',foundingHeroScope:'شارة تجميلية فقط؛ لا تحجب التمارين أو الصحة، ولا تمنح أفضلية تنافسية أو توكنات أو عائدًا ماليًا.',foundingHeroLoading:'جارٍ التحقق من Google Play…',foundingHeroBuy:'احصل على الحزمة',foundingHeroRestore:'استعادة الشراء',foundingHeroOwned:'حزمة البطل المؤسس مفعلة على هذا الحساب.',foundingHeroPending:'عملية الشراء معلقة؛ ستتفعل الشارة بعد تأكيد Google Play.',foundingHeroUnavailable:'المنتج غير متاح في هذه النسخة بعد. لم يتم تحصيل أي مبلغ.',foundingHeroConfigure:'يلزم ربط مفتاح الترخيص العام ومنتج Play قبل إتاحة الشراء.',foundingHeroAndroidOnly:'متاح داخل نسخة Android المثبتة من Google Play.',foundingHeroCanceled:'تم إلغاء نافذة الشراء ولم يتم تحصيل مبلغ.'});
   Object.assign(COPY.en, {startSession:'Start session',saveNext:'Save and continue',finishSession:'Finish and save session',exerciseOf:'Exercise {current} of {total}',nextExercise:'Exercise saved. Next: {name}',sessionComplete:'Session complete and saved.',signInSync:'Sign in to sync',syncConnected:'Sync connected',syncConnecting:'Connecting account',offlineReady:'Offline ready',syncUnavailable:'Sync not configured',foundingHeroEyebrow:'One-time cosmetic pack',foundingHeroTitle:'Founding Hero',foundingHeroBadge:'Founding Hero',foundingHeroBody:'A one-time digital purchase that adds the Founding Hero badge and a gold profile accent.',foundingHeroScope:'Cosmetic badge only; workouts and Health remain free, with no competitive advantage, tokens, or financial return.',foundingHeroLoading:'Checking Google Play…',foundingHeroBuy:'Get the pack',foundingHeroRestore:'Restore purchase',foundingHeroOwned:'The Founding Hero pack is active for this account.',foundingHeroPending:'Purchase pending; the badge activates after Google Play confirms payment.',foundingHeroUnavailable:'This product is not available in this build yet. No charge was made.',foundingHeroConfigure:'Connect the public Play license key and Play product before enabling purchases.',foundingHeroAndroidOnly:'Available in the Android app installed through Google Play.',foundingHeroCanceled:'The purchase sheet was canceled and no charge was made.'});
   Object.assign(COPY.ar, {onboardingBrand:'خطتك تبدأ منك',onboardingStep:'إعداد سريع · يعمل أوفلاين',onboardingTitle:'ابنِ خطتك الأولى',onboardingIntro:'اختر هدفك وخبرتك وما يتوفر لديك. سنضع جلسة واضحة في «اليوم» ويمكنك تعديل كل شيء لاحقًا.',onboardingBenefitOffline:'دليل مصور أوفلاين',onboardingBenefitSafe:'تدرج وتعليمات سلامة',onboardingBenefitFlexible:'تعديل الخطة في أي وقت',onboardingPrivacy:'يُحفظ هذا الاختيار على جهازك أولًا. لا يلزم حساب للبدء.',createMyPlan:'أنشئ خطتي وابدأ',planReady:'خطتك جاهزة. ابدأ من جلسة اليوم.'});
@@ -368,6 +368,35 @@
     showScreen('activeWorkoutScreen', false);
     return true;
   }
+  function archiveUnavailableWorkout() {
+    if (store.persistent === false) {
+      toast(t('archiveStaleStorageUnavailable'));
+      return false;
+    }
+    if (!resumePolicy.hasSession(state.active) || resumePolicy.isResumable(state.active, EXERCISES)) {
+      toast(t('archiveStaleNotNeeded'));
+      return false;
+    }
+    pauseActiveDurationTimer();
+    const motionEvidence = endNativeMotionSession();
+    if (motionEvidence?.available && state.active && typeof state.active === 'object' && !Array.isArray(state.active)) {
+      state.active.motionEvidence = motionEvidence;
+      persistActive();
+    }
+    stopMotionPolling();
+    stopRest();
+    const result = resumePolicy.archiveUnresumableSession(store, EXERCISES);
+    if (!result.ok) {
+      toast(result.archived ? t('archiveStalePartial') : t('archiveStaleFailed'));
+      return false;
+    }
+    state.active = null;
+    renderToday();
+    showScreen('todayScreen');
+    toast(t('archiveStaleSuccess').replace('{count}', result.archiveCount));
+    return true;
+  }
+
   function speakExercise(item, options) {
     if (!item) return false;
     return voiceGuidance.speak({
@@ -726,6 +755,7 @@
     const canResume = resumePolicy.isResumable(state.active, EXERCISES);
     const resumeCard = $('resumeWorkoutCard');
     resumeCard.classList.toggle('hidden', !hasActiveSession);
+    $('resumeRecoveryActions').classList.toggle('hidden', !hasActiveSession || canResume);
     if (hasActiveSession) {
       const activeItem = canResume ? activeExercise() : null;
       const progress = resumePolicy.progress(state.active);
@@ -873,6 +903,7 @@
     $('closeDetail').addEventListener('click',closeDetail);$('detailCloseButton').addEventListener('click',closeDetail);$('startExerciseBtn').addEventListener('click',()=>startExercise(state.selected));
     $('closeProgramDetail').addEventListener('click',closeProgramDetail);$('programDetailCloseButton').addEventListener('click',closeProgramDetail);$('useProgramBtn').addEventListener('click',()=>useProgram($('useProgramBtn').dataset.program));
     $('resumeWorkoutBtn').addEventListener('click', resumeActiveWorkout);
+    $('archiveStaleWorkoutBtn').addEventListener('click', archiveUnavailableWorkout);
     $('startTodayBtn').addEventListener('click',()=>{if(resumePolicy.hasSession(state.active)){resumeActiveWorkout();return;}const button=$('startTodayBtn');if(button.dataset.program&&button.dataset.session){startProgramSession(button.dataset.program,button.dataset.session);return;}const item=EXERCISES.find(exercise=>exercise.id===button.dataset.exercise);if(item)startExercise(item);});
     $('addSetBtn').addEventListener('click',addSet);$('finishWorkoutBtn').addEventListener('click',finishWorkout);$('skipRest').addEventListener('click',stopRest);$('exitWorkoutBtn').addEventListener('click',()=>{persistActive();showScreen('trainScreen');});
     $('speakCue').addEventListener('click',()=>speakExercise(activeExercise(),{force:true}));
