@@ -149,9 +149,11 @@ test('one stalled frame is bounded while another frame loads normally', async ()
 
 test('the timeout remains bounded and only successfully loaded frames animate', () => {
   assert.match(MOTION, /const PRELOAD_TIMEOUT_MS = 1200;/);
-  assert.match(MOTION, /const results = await preloadFrames\(item\);[\s\S]*?const readyFrames = item\.demo\.assets\.filter\(\(asset, index\) => results\[index\]\);/);
+  assert.match(MOTION, /const results = await preloadFrames\(item\);[\s\S]*?const readyFrames = item\.demo\.assets[\s\S]*?\.map\(\(asset, index\) => \(\{asset, index\}\)\)[\s\S]*?\.filter\(\(frame, index\) => results\[index\]\);/);
   assert.match(MOTION, /if \(readyFrames\.length < 2\)[\s\S]*?showing a static view/);
   assert.match(MOTION, /const frames = loadedFrames\.get\(latest\.id\) \|\| latest\.demo\.assets;[\s\S]*?frameIndex = \(frameIndex \+ 1\) % frames\.length/);
+  assert.match(MOTION, /const sourceIndex = loaded \? loaded\[phaseIndex\]\.index : phaseIndex;/);
+  assert.match(MOTION, /sourceIndex === 0 \? 'Start' : 'Finish'/);
 });
 
 test('the complete motion manifest parses as one JavaScript asset', () => {
