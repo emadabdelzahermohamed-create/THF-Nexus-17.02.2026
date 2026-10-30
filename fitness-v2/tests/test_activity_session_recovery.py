@@ -54,8 +54,8 @@ class ActivitySessionRecoveryContractTest(unittest.TestCase):
         self.assertIn("ACTION_RESTORE_ACTIVITY", source)
         self.assertIn("Settings.Global.BOOT_COUNT", source)
         self.assertIn("bootCount = readBootCount(this)", source)
-        self.assertIn("currentBootCount = readBootCount(this)", source)
-        self.assertIn("ActivitySessionCheckpointCodec.canRestore", source)
+        self.assertIn("readBootCount(context)", source)
+        self.assertIn("canRestore(checkpoint, nowElapsed, bootCount)", source)
 
 
 if __name__ == "__main__":
