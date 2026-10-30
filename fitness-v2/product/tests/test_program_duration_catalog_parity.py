@@ -49,6 +49,40 @@ class ProgramDurationCatalogParityTest(unittest.TestCase):
             self.assertEqual(reference["durationSeconds"], duration)
             self.assertIsNone(reference["reps"])
 
+    def test_catalog_rep_doses_match_every_non_timed_program_reference(self):
+        by_id = {item["id"]: item for item in EXERCISES}
+        mismatches = []
+        for program in PROGRAMS:
+            for session in program["sessions"]:
+                for reference in session["exercises"]:
+                    exercise = by_id[reference["exerciseId"]]
+                    if reference.get("durationSeconds") is not None:
+                        continue  # Explicit timed holds are covered by the duration tests above.
+                    expected_reps = exercise["prescription"].get("reps")
+                    if expected_reps is not None and reference.get("reps") != expected_reps:
+                        mismatches.append((
+                            program["id"], session["id"], reference["exerciseId"],
+                            reference.get("reps"), expected_reps,
+                        ))
+        self.assertEqual([], mismatches)
+
+    def test_program_builder_preserves_catalog_rep_doses(self):
+        generated = BUILDER.build()
+        by_id = {item["id"]: item for item in EXERCISES}
+        mismatches = []
+        for program in generated:
+            for session in program["sessions"]:
+                for reference in session["exercises"]:
+                    if reference.get("durationSeconds") is not None:
+                        continue
+                    expected_reps = by_id[reference["exerciseId"]]["prescription"].get("reps")
+                    if expected_reps is not None and reference.get("reps") != expected_reps:
+                        mismatches.append((
+                            program["id"], session["id"], reference["exerciseId"],
+                            reference.get("reps"), expected_reps,
+                        ))
+        self.assertEqual([], mismatches)
+
     def test_program_builder_keeps_catalog_timed_doses(self):
         generated = BUILDER.build()
         by_id = {item["id"]: item for item in EXERCISES}
