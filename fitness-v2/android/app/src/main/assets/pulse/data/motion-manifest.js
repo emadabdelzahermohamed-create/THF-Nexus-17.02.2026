@@ -81,6 +81,7 @@ window.THF_MOTION_MANIFEST = {
 (() => {
   'use strict';
   const FRAME_MS = 850;
+  const PRELOAD_TIMEOUT_MS = 1200;
   let timer = null;
   let observer = null;
   let activeExerciseId = null;
@@ -144,25 +145,33 @@ window.THF_MOTION_MANIFEST = {
       phase.setAttribute('aria-hidden', 'true');
       phase.textContent = isArabic
         ? `${phaseIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
-        : `${phaseIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
-    }
-  }
-
-  function preloadFrames(item) {
+        : `${phaseIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic  function preloadFrames(item) {
     if (preloadPromises.has(item.id)) return preloadPromises.get(item.id);
     const framePromises = item.demo.assets.map(asset => {
       return new Promise(resolve => {
         const preload = new Image();
         preload.decoding = 'async';
-        preload.addEventListener('load', resolve, {once: true});
-        // A missing audited asset must not hold the workout UI indefinitely.
-        // The normal renderer will retain the first valid frame.
-        preload.addEventListener('error', resolve, {once: true});
+        let settled = false;
+        let timeoutId;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+          preload.removeEventListener('load', finish);
+          preload.removeEventListener('error', finish);
+          resolve();
+        };
+        preload.addEventListener('load', finish, {once: true});
+        preload.addEventListener('error', finish, {once: true});
+        // A stalled WebView decode must not block the automatic offline loop forever.
+        timeoutId = window.setTimeout(finish, PRELOAD_TIMEOUT_MS);
         preload.src = './' + asset;
       });
     });
     const ready = Promise.all(framePromises);
     preloadPromises.set(item.id, ready);
+    return ready;
+  }m.id, ready);
     return ready;
   }
 
