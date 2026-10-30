@@ -701,6 +701,11 @@
     }
   }
 
+  function bindDurationLifecycleEvents() {
+    document.addEventListener('freeze',pauseActiveDurationTimer);
+    window.addEventListener('pagehide',pauseActiveDurationTimer);
+  }
+
   function bind(){
     $('languageToggle').addEventListener('click',toggleLanguage);
     $('onboardingLanguageToggle').addEventListener('click',()=>{captureOnboardingDraft();toggleLanguage();});
@@ -736,7 +741,7 @@
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
     document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden){pauseActiveDurationTimer();video.pause();}else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden')&&!preferredReducedMotion())video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
-    window.addEventListener('pagehide',pauseActiveDurationTimer);
+    bindDurationLifecycleEvents();
     window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
   }
 
