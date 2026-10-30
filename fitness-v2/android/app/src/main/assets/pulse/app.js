@@ -270,15 +270,15 @@
     const sets = []; const count = Math.max(1, Number(item.prescription.sets) || 1); const tracked = item.tracking.load;
     const durationSeconds = Number(item.prescription.durationSeconds) || null;
     const timed = durationSeconds ? {durationSeconds,durationRemainingMs:durationSeconds*1000,durationRunning:false,durationElapsed:false} : {};
-    if (item.prescription.setTypes.includes('warmup') && tracked) sets.push({type:'warmup',load:0,reps:item.prescription.reps ? 8 : 0,rpe:4,rir:5,restSeconds:item.prescription.restSeconds||60,...timed,complete:false});
-    for (let index=0;index<count;index++) sets.push({type:'working',load:0,reps:durationSeconds?0:(item.prescription.reps ? Number(String(item.prescription.reps).split(/[–-]/)[0]) || 8 : 0),rpe:7,rir:3,restSeconds:item.prescription.restSeconds||60,...timed,complete:false});
+    if (item.prescription.setTypes.includes('warmup') && tracked) sets.push({type:'warmup',load:0,reps:item.prescription.reps ? 8 : 0,rpe:4,rir:window.THF_SET_RIR_POLICY.defaultValue(item,durationSeconds,5),restSeconds:item.prescription.restSeconds||60,...timed,complete:false});
+    for (let index=0;index<count;index++) sets.push({type:'working',load:0,reps:durationSeconds?0:(item.prescription.reps ? Number(String(item.prescription.reps).split(/[–-]/)[0]) || 8 : 0),rpe:7,rir:window.THF_SET_RIR_POLICY.defaultValue(item,durationSeconds,3),restSeconds:item.prescription.restSeconds||60,...timed,complete:false});
     return sets;
   }
   function makeProgramSets(reference,item) {
     const durationSeconds=Number(reference.durationSeconds)||null;
     const reps=durationSeconds?0:(Number(String(reference.reps||'').split(/[–-]/)[0])||0);
     const timed=durationSeconds?{durationSeconds,durationRemainingMs:durationSeconds*1000,durationRunning:false,durationElapsed:false}:{};
-    return Array.from({length:Math.max(1,Number(reference.sets)||1)},()=>({type:reference.role==='warmup'?'warmup':'working',load:0,reps,rpe:reference.targetRpe,rir:reference.targetRir,restSeconds:reference.restSeconds||60,...timed,complete:false}));
+    return Array.from({length:Math.max(1,Number(reference.sets)||1)},()=>({type:reference.role==='warmup'?'warmup':'working',load:0,reps,rpe:reference.targetRpe,rir:window.THF_SET_RIR_POLICY.defaultValue(item,durationSeconds,reference.targetRir),restSeconds:reference.restSeconds||60,...timed,complete:false}));
   }
   function makeClientId() { return 'thf-v2-' + (globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`); }
   function sensorProfileForExercise(item) {
@@ -494,6 +494,11 @@
     const done = state.active.sets.filter(set=>set.complete).length; $('setProgressTitle').textContent = t('setProgress').replace('{done}',done).replace('{total}',state.active.sets.length); $('sessionVolume').textContent = `${Math.round(sessionVolume())} kg`;
     $('finishWorkoutBtn').textContent=programSession?(programIndex<programSession.exercises.length-1?t('saveNext'):t('finishSession')):t('finishWorkout');
     const hasTimedSets=state.active.sets.some(set=>Number(set.durationSeconds)>0);
+    const showRir = window.THF_SET_RIR_POLICY.shouldShow(item, state.active.sets);
+    if (!showRir && window.THF_SET_RIR_POLICY.clear(state.active.sets)) persistActive();
+    const rirHeader = $('setRirHeader'); if (rirHeader) rirHeader.hidden = !showRir;
+    $('setTableHead')?.classList.toggle('no-rir', !showRir);
+    $('setRows')?.classList.toggle('no-rir', !showRir);
     const repsHeader=$('setRepsHeader');if(repsHeader)repsHeader.textContent=hasTimedSets?t('time'):t('reps');
     $('setRows').innerHTML = state.active.sets.map((set,index)=>{
       const durationSeconds=Number(set.durationSeconds)||0;
@@ -503,7 +508,8 @@
       const timeField=durationSeconds
         ? `<div class="duration-control"><strong class="duration-countdown" data-duration-display="${index}">${formatDuration(Math.ceil(remainingMs/1000))}</strong><small>${escapeHtml(t('target'))}: ${formatDuration(durationSeconds)}</small><div class="duration-progress" data-duration-progress="${index}" role="progressbar" aria-label="${escapeHtml(t('timerProgress'))}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress.percent}" aria-valuetext="${escapeHtml(progressText)}"><span class="duration-progress-fill" style="width:${progress.percent}%"></span></div><button class="duration-toggle" type="button" data-duration-toggle="${index}" aria-label="${escapeHtml(set.durationRunning?t('pauseTimer'):set.durationElapsed?t('timeReached'):t('startTimer'))}" aria-pressed="${Boolean(set.durationRunning)}" ${set.complete||set.durationElapsed?'disabled':''}>${escapeHtml(set.durationRunning?t('pauseTimer'):set.durationElapsed?t('timeReached'):t('startTimer'))}</button></div>`
         : `<input class="set-input" data-field="reps" inputmode="numeric" type="number" min="0" max="999" value="${Number(set.reps)||0}" aria-label="${escapeHtml(t('reps'))}">`;
-      return `<div class="set-row${set.complete?' complete':''}" data-index="${index}"><span class="set-number"><b>${index+1}</b>${escapeHtml(t(set.type))}</span><label class="set-field"><span>${escapeHtml(t('load'))}</span><input class="set-input" data-field="load" inputmode="decimal" type="number" min="0" step="0.5" value="${Number(set.load)||0}" ${item.tracking.load?'':'disabled'} aria-label="${escapeHtml(t('load'))}"></label><label class="set-field"><span>${escapeHtml(durationSeconds?t('time'):t('reps'))}</span>${timeField}</label><label class="set-field"><span>RPE</span><input class="set-input" data-field="rpe" inputmode="decimal" type="number" min="1" max="10" step="0.5" value="${Number(set.rpe)||7}" aria-label="RPE"></label><label class="set-field"><span>RIR</span><input class="set-input" data-field="rir" inputmode="numeric" type="number" min="0" max="10" value="${Number(set.rir)||0}" ${item.tracking.rir?'':'disabled'} aria-label="RIR"></label><button class="set-complete" type="button" aria-label="${escapeHtml(t('completed'))}">${set.complete?'✓':'○'}</button></div>`;
+      const rirField = showRir ? `<label class="set-field"><span>RIR</span><input class="set-input" data-field="rir" inputmode="numeric" type="number" min="0" max="10" value="${Number(set.rir)||0}" aria-label="RIR"></label>` : '';
+      return `<div class="set-row${set.complete?' complete':''}" data-index="${index}"><span class="set-number"><b>${index+1}</b>${escapeHtml(t(set.type))}</span><label class="set-field"><span>${escapeHtml(t('load'))}</span><input class="set-input" data-field="load" inputmode="decimal" type="number" min="0" step="0.5" value="${Number(set.load)||0}" ${item.tracking.load?'':'disabled'} aria-label="${escapeHtml(t('load'))}"></label><label class="set-field"><span>${escapeHtml(durationSeconds?t('time'):t('reps'))}</span>${timeField}</label><label class="set-field"><span>RPE</span><input class="set-input" data-field="rpe" inputmode="decimal" type="number" min="1" max="10" step="0.5" value="${Number(set.rpe)||7}" aria-label="RPE"></label>${rirField}<button class="set-complete" type="button" aria-label="${escapeHtml(t('completed'))}">${set.complete?'✓':'○'}</button></div>`;
     }).join('');
     $('setRows').querySelectorAll('.set-row').forEach(row => {
       row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => {
@@ -659,7 +665,7 @@
     }
     clearInterval(state.restTick);$('restPanel').classList.remove('hidden');renderRest();state.restTick=setInterval(renderRest,1000);
   }
-  function addSet(){ const item=activeExercise();const durationSeconds=Number(state.active.sets[0]?.durationSeconds)||Number(item?.prescription?.durationSeconds)||null;state.active.sets.push({type:'working',load:0,reps:durationSeconds?0:8,rpe:7,rir:3,restSeconds:item?.prescription?.restSeconds||60,...(durationSeconds?{durationSeconds,durationRemainingMs:durationSeconds*1000,durationRunning:false,durationElapsed:false}:{}),complete:false});persistActive();renderActiveWorkout(); }
+  function addSet(){ const item=activeExercise();const durationSeconds=Number(state.active.sets[0]?.durationSeconds)||Number(item?.prescription?.durationSeconds)||null;state.active.sets.push({type:'working',load:0,reps:durationSeconds?0:8,rpe:7,rir:window.THF_SET_RIR_POLICY.defaultValue(item,durationSeconds,3),restSeconds:item?.prescription?.restSeconds||60,...(durationSeconds?{durationSeconds,durationRemainingMs:durationSeconds*1000,durationRunning:false,durationElapsed:false}:{}),complete:false});persistActive();renderActiveWorkout(); }
   function finishWorkout() {
     pauseActiveDurationTimer();
     const item=activeExercise();if(!item)return;const now=Date.now();const currentEntry={exerciseId:item.id,exerciseName:item.name,sport:item.sport,sets:state.active.sets.map((set,index)=>({...set,exerciseId:item.id,ordinal:index+1}))};const entries=[...(state.active.programEntries||[]),currentEntry];
