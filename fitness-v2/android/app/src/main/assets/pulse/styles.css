@@ -59,4 +59,4 @@
 .duration-control small{color:var(--muted);font-size:9px;white-space:nowrap}
 .duration-toggle{min-height:30px;padding:5px 8px;border:1px solid #4b626a;border-radius:9px;background:#10252c;color:#fff;font-size:10px;font-weight:800;white-space:nowrap}
 .duration-toggle:disabled{opacity:.58;cursor:default}
-.program-time-warning{margin:10px 0 0;padding:12px 14px;border:1px solid #8b7138;border-radius:13px;background:#2c2515;color:#f4d98e;font-size:12px;line-height:1.65}
+
