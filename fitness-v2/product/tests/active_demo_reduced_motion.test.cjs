@@ -11,23 +11,23 @@ const appSource = fs.readFileSync(path.join(pulse, 'app.js'), 'utf8');
 const motionSource = fs.readFileSync(path.join(pulse, 'data/motion-manifest.js'), 'utf8');
 
 function extractFunction(source, name, nextName) {
-  const start = source.indexOf(\`  function \${name}(\`);
-  const end = source.indexOf(\`  function \${nextName}(\`, start);
-  assert.notEqual(start, -1, \`missing function \${name}\`);
-  assert.notEqual(end, -1, \`missing function boundary \${nextName}\`);
+  const start = source.indexOf('  function ' + name + '(');
+  const end = source.indexOf('  function ' + nextName + '(', start);
+  assert.notEqual(start, -1, 'missing function ' + name);
+  assert.notEqual(end, -1, 'missing function boundary ' + nextName);
   return source.slice(start, end).trim();
 }
 
 function loadFunction(source, name, nextName, sandbox) {
-  return vm.runInNewContext(\`(\${extractFunction(source, name, nextName)})\`, sandbox);
+  return vm.runInNewContext('(' + extractFunction(source, name, nextName) + ')', sandbox);
 }
 
-function fakeElement({ hidden = false, active = false } = {}) {
+function fakeElement(options = {}) {
   const classes = new Set();
   const attributes = new Map();
-  if (hidden) classes.add('hidden');
-  if (active) classes.add('active');
-  const element = {
+  if (options.hidden) classes.add('hidden');
+  if (options.active) classes.add('active');
+  return {
     classList: {
       contains(name) { return classes.has(name); },
       add(name) { classes.add(name); },
@@ -58,10 +58,9 @@ function fakeElement({ hidden = false, active = false } = {}) {
     alt: '',
     href: ''
   };
-  return element;
 }
 
-function activeDemoHarness(reduced, lang = 'en') {
+function activeDemoHarness(reduced, lang) {
   const elements = {
     activeDemoVideo: fakeElement(),
     activeDemoImage: fakeElement({ hidden: true }),
@@ -94,12 +93,14 @@ function activeDemoHarness(reduced, lang = 'en') {
   return { elements, item, sandbox };
 }
 
-test('full-motion video is replaced by a static local reference frame when reduced motion is enabled', () => {
+test('full-motion video becomes a static local Arabic reference frame when reduced motion is enabled', () => {
   const h = activeDemoHarness(true, 'ar');
   const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
   render(h.item);
 
   assert.equal(h.elements.activeDemoVideo.pauseCount, 1);
+  assert.equal(h.elements.activeDemoVideo.getAttribute('src'), null);
+  assert.equal(h.elements.activeDemoVideo.loadCount, 1);
   assert.equal(h.elements.activeDemoVideo.classList.contains('hidden'), true);
   assert.equal(h.elements.activeDemoImage.classList.contains('hidden'), false);
   assert.equal(h.elements.activeDemoImage.src, './media/free-exercise-db/Pushups/0.jpg');
@@ -108,7 +109,7 @@ test('full-motion video is replaced by a static local reference frame when reduc
   assert.match(h.elements.activeDemoPhase.textContent, /صورة ثابتة — تقليل الحركة/);
 });
 
-test('full-motion video remains automatic when reduced motion is disabled', () => {
+test('full-motion video remains automatic with source credit when reduced motion is disabled', () => {
   const h = activeDemoHarness(false, 'en');
   const render = loadFunction(appSource, 'renderActiveMotion', 'renderActiveWorkout', h.sandbox);
   render(h.item);
@@ -121,35 +122,35 @@ test('full-motion video remains automatic when reduced motion is disabled', () =
   assert.match(h.elements.activeDemoPhase.textContent, /Automatic full movement/);
 });
 
-test('active-workout navigation pauses rather than autoplaying a video for reduced-motion users', () => {
-  const video = fakeElement();
-  const primaryNav = fakeElement();
-  const activeScreen = fakeElement();
-  const body = fakeElement();
-  const sandbox = {
-    document: {
-      querySelectorAll(selector) {
-        if (selector === '.screen') return [activeScreen];
-        if (selector === '#primaryNav button') return [];
-        return [];
+test('active-workout navigation never autoplays a full-motion video for reduced-motion users', () => {
+  for (const reduced of [true, false]) {
+    const video = fakeElement();
+    const primaryNav = fakeElement();
+    const activeScreen = fakeElement();
+    const body = fakeElement();
+    const sandbox = {
+      document: {
+        querySelectorAll(selector) {
+          if (selector === '.screen') return [activeScreen];
+          if (selector === '#primaryNav button') return [];
+          return [];
+        },
+        body
       },
-      body
-    },
-    window: { scrollTo() {} },
-    $: id => ({ primaryNav, activeDemoVideo: video }[id]),
-    preferredReducedMotion: () => true,
-    renderProgress() {},
-    renderHealthStatus() {},
-    renderActivity() {},
-    readActivitySnapshot() {},
-    startActivityPolling() {},
-    t: key => key
-  };
-  const showScreen = loadFunction(appSource, 'showScreen', 'applyLanguage', sandbox);
-  showScreen('activeWorkoutScreen', false);
-
-  assert.equal(video.playCount || 0, 0);
-  assert.equal(video.pauseCount, 1);
+      window: { scrollTo() {} },
+      $: id => ({ primaryNav, activeDemoVideo: video }[id]),
+      preferredReducedMotion: () => reduced,
+      renderProgress() {},
+      renderHealthStatus() {},
+      renderActivity() {},
+      readActivitySnapshot() {},
+      startActivityPolling() {}
+    };
+    const showScreen = loadFunction(appSource, 'showScreen', 'applyLanguage', sandbox);
+    showScreen('activeWorkoutScreen', false);
+    assert.equal(video.playCount || 0, reduced ? 0 : 1);
+    assert.equal(video.pauseCount || 0, reduced ? 1 : 0);
+  }
 });
 
 test('changing the saved motion preference refreshes the active workout demo immediately', () => {
@@ -175,7 +176,9 @@ test('changing the saved motion preference refreshes the active workout demo imm
   assert.equal(checkbox.checked, false);
   assert.equal(css['--motion'], '1');
   assert.equal(saved.get('pulse.v2.reduceMotion'), '0');
-  assert.deepEqual(renders, [item, item]);
+  assert.equal(renders.length, 2);
+  assert.equal(renders[0], item);
+  assert.equal(renders[1], item);
 });
 
 test('OS reduced-motion changes are wired to active video and reference-frame reconciliation', () => {
