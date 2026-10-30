@@ -92,7 +92,7 @@ test('successful frame loads clear their bounded preload timers', async () => {
   assert.deepEqual([...h.timers.values()].map(value => value.delay), [PRELOAD_TIMEOUT_MS, PRELOAD_TIMEOUT_MS]);
   assert.equal(h.images[0].emit('load'), true);
   assert.equal(h.images[1].emit('load'), true);
-  assert.deepEqual(await ready, [true, true]);
+  assert.deepEqual(Array.from(await ready), [true, true]);
   assert.equal(h.timers.size, 0);
 });
 
@@ -101,7 +101,7 @@ test('missing frame errors settle without waiting for the timeout', async () => 
   const ready = h.api.preloadFrames(item('pushups'));
   h.images[0].emit('error');
   h.images[1].emit('load');
-  assert.deepEqual(await ready, [false, true]);
+  assert.deepEqual(Array.from(await ready), [false, true]);
   assert.equal(h.timers.size, 0);
 });
 
@@ -110,7 +110,7 @@ test('a WebView image that emits neither load nor error cannot block the loop in
   const ready = h.api.preloadFrames(item('romanian-deadlift'));
   assert.equal(h.timers.size, 2);
   for (const timer of [...h.timers.values()]) timer.callback();
-  assert.deepEqual(await ready, [false, false]);
+  assert.deepEqual(Array.from(await ready), [false, false]);
   assert.equal(h.timers.size, 0);
 });
 
@@ -121,7 +121,7 @@ test('late load/error events after timeout are idempotent', async () => {
   callbacks.forEach(callback => callback());
   assert.equal(h.images[0].emit('load'), false);
   assert.equal(h.images[1].emit('error'), false);
-  assert.deepEqual(await ready, [false, false]);
+  assert.deepEqual(Array.from(await ready), [false, false]);
   assert.equal(h.timers.size, 0);
 });
 
@@ -134,7 +134,7 @@ test('concurrent callers share one preload operation per exercise', async () => 
   assert.equal(h.images.length, 2);
   assert.equal(h.timers.size, 2);
   h.images.forEach(image => image.emit('load'));
-  assert.deepEqual(await first, [true, true]);
+  assert.deepEqual(Array.from(await first), [true, true]);
 });
 
 test('one stalled frame is bounded while another frame loads normally', async () => {
@@ -143,7 +143,7 @@ test('one stalled frame is bounded while another frame loads normally', async ()
   h.images[0].emit('load');
   assert.equal(h.timers.size, 1);
   [...h.timers.values()][0].callback();
-  assert.deepEqual(await ready, [true, false]);
+  assert.deepEqual(Array.from(await ready), [true, false]);
   assert.equal(h.timers.size, 0);
 });
 
