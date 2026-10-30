@@ -139,9 +139,9 @@ window.THF_MOTION_MANIFEST = {
     if (image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);
     image.alt = `${baseAlt} — ${phaseName}`;
     const reduced = reduceMotion();
+    const loadedCount = Array.isArray(loaded) ? loaded.length : null;
     const status = byId('activeDemoStatus');
     if (status) {
-      const loadedCount = Array.isArray(loaded) ? loaded.length : null;
       const nextStatus = reduced
         ? (isArabic ? 'تقليل الحركة مفعّل؛ تظهر صورة ثابتة للتمرين.' : 'Reduced motion is on; a static exercise image is shown.')
         : loadedCount === 1
@@ -154,9 +154,12 @@ window.THF_MOTION_MANIFEST = {
       // Keep the visible fast-changing label out of live screen-reader output;
       // the current phase remains available in the image's descriptive alt text.
       phase.setAttribute('aria-hidden', 'true');
-      phase.textContent = isArabic
-        ? `${sourceIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
-        : `${sourceIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
+      const phaseStatus = reduced
+        ? (isArabic ? 'صورة ثابتة — تقليل الحركة' : 'Static image — reduced motion')
+        : loadedCount === 1
+          ? (isArabic ? 'إطار مرجعي ثابت' : 'Static reference frame')
+          : (isArabic ? 'تسلسل مرجعي تلقائي' : 'Automatic reference sequence');
+      phase.textContent = phaseName + ' · ' + phaseStatus;
     }
   }
 

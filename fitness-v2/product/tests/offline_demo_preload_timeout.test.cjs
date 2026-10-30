@@ -183,8 +183,10 @@ test('one stalled frame is bounded while another frame loads normally', async ()
 test('the timeout remains bounded and only successfully loaded frames animate', () => {
   assert.match(MOTION, /const PRELOAD_TIMEOUT_MS = 1200;/);
   assert.match(MOTION, /const results = await preloadFrames\(item\);[\s\S]*?const readyFrames = item\.demo\.assets[\s\S]*?\.map\(\(asset, index\) => \(\{asset, index\}\)\)[\s\S]*?\.filter\(\(frame, index\) => results\[index\]\);/);
-  assert.match(MOTION, /if \(readyFrames\.length < 2\)[\s\S]*?showing a static view/);
-  assert.match(MOTION, /const frames = loadedFrames\.get\(latest\.id\) \|\| latest\.demo\.assets;[\s\S]*?frameIndex = \(frameIndex \+ 1\) % frames\.length/);
+  assert.match(MOTION, /const loadedCount = Array\.isArray\(loaded\) \? loaded\.length : null;/);
+  assert.match(MOTION, /loadedCount === 1[\s\S]*?Only one reference frame loaded; showing a static view/);
+  assert.match(MOTION, /if \(readyFrames\.length < 2\) \{[\s\S]*?staticExerciseId = item\.id;[\s\S]*?return;/);
+  assert.match(MOTION, /const frames = loadedFrames\.get\(latest\.id\) \|\| latest\.demo\.assets;[\s\S]*?if \(frames\.length < 2\) return;[\s\S]*?frameIndex = \(frameIndex \+ 1\) % frames\.length/);
   assert.match(MOTION, /const sourceIndex = loaded \? loaded\[phaseIndex\]\.index : phaseIndex;/);
   assert.match(MOTION, /sourceIndex === 0 \? 'Start' : 'Finish'/);
 });
@@ -205,4 +207,15 @@ test('a surviving second Arabic frame keeps its النهاية label', () => {
 
 test('the complete motion manifest parses as one JavaScript asset', () => {
   assert.doesNotThrow(() => new vm.Script(MOTION, {filename: 'motion-manifest.js'}));
+});
+
+test('a single surviving frame is labeled as static in both languages', () => {
+  const english = renderFrameFor('en', [{asset: 'media/start.jpg', index: 0}]);
+  assert.match(english.activeDemoStatus.textContent, /Only one reference frame loaded/);
+  assert.match(english.activeDemoPhase.textContent, /Static reference frame/);
+
+  const arabic = renderFrameFor('ar', [{asset: 'media/finish.jpg', index: 1}]);
+  assert.match(arabic.activeDemoStatus.textContent, /تم تحميل صورة مرجعية واحدة فقط/);
+  assert.match(arabic.activeDemoPhase.textContent, /إطار مرجعي ثابت/);
+  assert.match(arabic.activeDemoPhase.textContent, /^النهاية/);
 });
