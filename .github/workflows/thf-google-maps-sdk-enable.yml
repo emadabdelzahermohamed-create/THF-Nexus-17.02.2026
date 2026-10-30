@@ -1,0 +1,50 @@
+name: THF Google Maps SDK Enablement
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+
+jobs:
+  enable-maps-sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Authenticate to existing THF Google Cloud project
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Verify existing billing linkage before enabling Maps
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud billing projects describe "$GCP_PROJECT_ID" --format=json > "$RUNNER_TEMP/thf-billing.json"
+          python - "$RUNNER_TEMP/thf-billing.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1]))
+          print('PROJECT_ID='+x.get('projectId',''))
+          print('BILLING_ENABLED='+str(x.get('billingEnabled',False)).lower())
+          print('BILLING_ACCOUNT_LINKED='+str(bool(x.get('billingAccountName'))).lower())
+          if not x.get('billingEnabled') or not x.get('billingAccountName'):
+              raise SystemExit('STOP: existing project has no active billing link; no billing changes were made')
+          PY
+      - name: Enable Maps SDK for Android in the existing project
+        run: |
+          set -euo pipefail
+          gcloud services enable maps-android-backend.googleapis.com --project "$GCP_PROJECT_ID"
+          gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=maps-android-backend.googleapis.com' --format='value(config.name)' | grep -x 'maps-android-backend.googleapis.com'
+      - name: Record safe project/API evidence
+        run: |
+          echo "PROJECT_ID=$GCP_PROJECT_ID"
+          echo 'MAPS_ANDROID_BACKEND_API=ENABLED'
+          echo 'API_KEY=NOT_CREATED_PENDING_PLAY_APP_SIGNING_CERTIFICATE'
