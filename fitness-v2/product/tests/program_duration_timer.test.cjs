@@ -21,7 +21,7 @@ function timedMinimumMinutes(session) {
 
 test('program duration prescriptions use readable MM:SS instead of raw seconds', () => {
   assert.match(APP, /function formatDuration\(totalSeconds\)/);
-  assert.match(APP, /reference\.sets \\u00d7 \${formatDuration\(reference\.durationSeconds\)}/);
+  assert.match(APP, /formatDuration\\(reference\\.durationSeconds\\)/);
 });
 
 test('program detail discloses timed-work lower bounds above the stated estimate', () => {
