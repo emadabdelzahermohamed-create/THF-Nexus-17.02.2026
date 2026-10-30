@@ -111,7 +111,7 @@ STEP_OVERRIDES = {
             "For this exercise you will need a medicine ball and a partner. Stand back to back with your partner, spaced 2-3 feet apart. This will be your starting position.",
             "Hold the ball in front of the trunk. Open the hips and turn the shoulders at the same time as your partner.",
             "For full rotation, you and your partner should twist in the same direction, i.e. counter-clockwise.",
-            "Pass the ball to your partner, and both of you can now twist in the opposite direction to repeat the procedure."
+            "Pass the ball to your partner at chest height. Both partners turn the shoulders and hips together in the opposite direction to receive the next pass; let the feet pivot naturally, keep the knees soft, and stop if balance or comfort is lost."
         ],
         "ar": [
             "قف مع شريكك على مسافة مناسبة وامسك الكرة أمام الصدر مع تثبيت القدمين.",
