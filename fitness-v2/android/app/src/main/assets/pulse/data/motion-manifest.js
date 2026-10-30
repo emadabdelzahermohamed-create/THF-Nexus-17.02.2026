@@ -86,6 +86,7 @@ window.THF_MOTION_MANIFEST = {
   let observer = null;
   let activeExerciseId = null;
   let pendingExerciseId = null;
+  let staticExerciseId = null;
   let frameIndex = 0;
   const preloadPromises = new Map();
   const loadedFrames = new Map();
@@ -115,7 +116,10 @@ window.THF_MOTION_MANIFEST = {
     timer = null;
     pendingExerciseId = null;
     frameIndex = 0;
-    if (resetExercise) activeExerciseId = null;
+    if (resetExercise) {
+      activeExerciseId = null;
+      staticExerciseId = null;
+    }
   }
 
   function renderFrame(item) {
@@ -137,9 +141,12 @@ window.THF_MOTION_MANIFEST = {
     const reduced = reduceMotion();
     const status = byId('activeDemoStatus');
     if (status) {
+      const loadedCount = Array.isArray(loaded) ? loaded.length : null;
       const nextStatus = reduced
         ? (isArabic ? 'تقليل الحركة مفعّل؛ تظهر صورة ثابتة للتمرين.' : 'Reduced motion is on; a static exercise image is shown.')
-        : '';
+        : loadedCount === 1
+          ? (isArabic ? 'تم تحميل صورة مرجعية واحدة فقط؛ تعرض بصورة ثابتة.' : 'Only one reference frame loaded; showing a static view.')
+          : '';
       if (status.textContent !== nextStatus) status.textContent = nextStatus;
     }
     const phase = byId('activeDemoPhase');
@@ -151,6 +158,26 @@ window.THF_MOTION_MANIFEST = {
         ? `${sourceIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
         : `${sourceIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
     }
+  }
+
+  function renderStaticFallback(item) {
+    const frames = loadedFrames.get(item.id) || [];
+    if (frames.length === 0) {
+      const image = byId('activeDemoImage');
+      if (image?.getAttribute('src')) image.removeAttribute('src');
+      if (image && image.alt) image.alt = '';
+      const isArabic = document.documentElement.lang === 'ar';
+      const status = byId('activeDemoStatus');
+      const message = isArabic
+        ? 'تعذر تحميل صور الحركة لهذا التمرين دون اتصال.'
+        : 'Exercise reference frames could not be loaded offline.';
+      if (status && status.textContent !== message) status.textContent = message;
+      const phase = byId('activeDemoPhase');
+      if (phase && phase.textContent !== '') phase.textContent = '';
+      return;
+    }
+    frameIndex = 0;
+    renderFrame(item);
   }
 
   function preloadFrames(item) {
@@ -187,6 +214,7 @@ window.THF_MOTION_MANIFEST = {
     stop();
     activeExerciseId = item.id;
     pendingExerciseId = item.id;
+    staticExerciseId = null;
     renderFrame(item);
     if (reduceMotion() || document.hidden) {
       pendingExerciseId = null;
@@ -204,20 +232,14 @@ window.THF_MOTION_MANIFEST = {
     loadedFrames.set(item.id, readyFrames);
     frameIndex = 0;
     if (readyFrames.length === 0) {
-      byId('activeDemoImage')?.removeAttribute('src');
-      const status = byId('activeDemoStatus');
-      if (status) status.textContent = document.documentElement.lang === 'ar'
-        ? 'تعذر تحميل صور الحركة لهذا التمرين دون اتصال.'
-        : 'Exercise reference frames could not be loaded offline.';
+      staticExerciseId = item.id;
+      renderStaticFallback(item);
       pendingExerciseId = null;
       return;
     }
     renderFrame(item);
     if (readyFrames.length < 2) {
-      const status = byId('activeDemoStatus');
-      if (status) status.textContent = document.documentElement.lang === 'ar'
-        ? 'تم تحميل صورة مرجعية واحدة فقط؛ تعرض بصورة ثابتة.'
-        : 'Only one reference frame loaded; showing a static view.';
+      staticExerciseId = item.id;
       pendingExerciseId = null;
       return;
     }
@@ -262,13 +284,36 @@ window.THF_MOTION_MANIFEST = {
       if (timer || pendingExerciseId) stop();
       return;
     }
+    if (item.id === staticExerciseId) {
+      renderStaticFallback(item);
+      return;
+    }
     if (item.id !== activeExerciseId || (!timer && pendingExerciseId !== item.id)) start(item);
   }
 
   window.addEventListener('load', () => {
     const root = byId('activeWorkoutScreen');
     if (!root) return;
-    observer = new MutationObserver(reconcile);
+    const isMotionOutputTarget = target => {
+      const element = target?.nodeType === 1 ? target : target?.parentElement;
+      return Boolean(element?.closest?.('#activeDemoImage, #activeDemoStatus, #activeDemoPhase'));
+    };
+    observer = new MutationObserver(records => {
+      const languageChanged = records?.some(record =>
+        record.target === document.documentElement && record.attributeName === 'lang'
+      );
+      const stateChanged = !records?.length || records.some(record =>
+        record.target !== document.documentElement && !isMotionOutputTarget(record.target)
+      );
+      if (languageChanged && activeExerciseId) {
+        const item = currentExercise();
+        if (item) {
+          if (item.id === staticExerciseId) renderStaticFallback(item);
+          else renderFrame(item);
+        }
+      }
+      if (stateChanged) reconcile();
+    });
     observer.observe(root, {
       subtree: true,
       childList: true,
@@ -277,6 +322,10 @@ window.THF_MOTION_MANIFEST = {
       // Frame src changes are renderer output, not state inputs. Observing them wakes
       // reconcile on every animation frame and creates avoidable WebView main-thread work.
       attributeFilter: ['class', 'data-exercise-id']
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['lang']
     });
     byId('reduceMotion')?.addEventListener('change', reconcile);
     const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
