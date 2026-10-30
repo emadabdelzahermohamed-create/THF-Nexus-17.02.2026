@@ -362,10 +362,8 @@
     }
     $('activeDemoCredit')?.classList.add('hidden');
     video.pause();
-    if (!motion?.asset) {
-      video.removeAttribute('src');
-      video.load();
-    }
+    video.removeAttribute('src');
+    video.load();
     video.classList.add('hidden');
     image.classList.remove('hidden');
     image.src = './' + item.demo.assets[0];
