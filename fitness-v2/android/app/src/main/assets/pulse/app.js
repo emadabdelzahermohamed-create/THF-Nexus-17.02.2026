@@ -20,6 +20,7 @@
     } : null,
   });
   const restTimer = window.THFRestTimer.createRestTimer();
+  const resumePolicy = window.THF_ACTIVE_WORKOUT_RESUME_POLICY;
   const parse = (value, fallback) => { try { return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[match]));
   const locale = () => state.lang === 'ar' ? 'ar-EG' : 'en-US';
@@ -35,6 +36,8 @@
   };
   Object.assign(COPY.ar, {techniqueGuardrails:'إرشادات الأداء',videoFallback:'تعذر تشغيل الفيديو؛ يعرض التطبيق تسلسل الصور المرجعية تلقائيًا.'});
   Object.assign(COPY.en, {techniqueGuardrails:'Technique guardrails',videoFallback:'Video unavailable; showing the automatic reference-frame sequence.'});
+  Object.assign(COPY.ar, {activeWorkoutSaved:'لديك جلسة غير مكتملة محفوظة',resumeWorkout:'استئناف التمرين',resumeWorkoutHint:'ستكمل من نفس التمرين والمجموعات المحفوظة دون بدء جلسة جديدة.',resumeWorkoutProgress:'{done} من {total} مجموعات مكتملة',resumeBeforeNew:'استأنف الجلسة الحالية أولًا',resumeUnavailable:'تعذر استئناف الجلسة المحفوظة',resumeUnavailableHint:'احتفظنا ببيانات الجلسة، لكن التمرين المرتبط بها غير موجود في المكتبة الحالية.'});
+  Object.assign(COPY.en, {activeWorkoutSaved:'You have an unfinished workout saved',resumeWorkout:'Resume workout',resumeWorkoutHint:'Continue the same exercise and saved sets without starting a new session.',resumeWorkoutProgress:'{done} of {total} sets complete',resumeBeforeNew:'Resume the current session first',resumeUnavailable:'Saved workout cannot be resumed',resumeUnavailableHint:'Your session data is preserved, but its exercise is not in the current library.'});
   Object.assign(COPY.ar, {startSession:'ابدأ الجلسة',saveNext:'احفظ وانتقل للتمرين التالي',finishSession:'أنهِ الجلسة واحفظها',exerciseOf:'تمرين {current} من {total}',nextExercise:'تم حفظ التمرين. التالي: {name}',sessionComplete:'اكتملت الجلسة وحُفظت.',signInSync:'سجّل للدخول والمزامنة',syncConnected:'المزامنة متصلة',syncConnecting:'جارٍ ربط الحساب',offlineReady:'أوفلاين جاهز',syncUnavailable:'المزامنة غير مهيأة',foundingHeroEyebrow:'حزمة تجميلية لمرة واحدة',foundingHeroTitle:'البطل المؤسس',foundingHeroBadge:'البطل المؤسس',foundingHeroBody:'شراء رقمي لمرة واحدة يضيف شارة البطل المؤسس ولمسة ذهبية لملفك.',foundingHeroScope:'شارة تجميلية فقط؛ لا تحجب التمارين أو الصحة، ولا تمنح أفضلية تنافسية أو توكنات أو عائدًا ماليًا.',foundingHeroLoading:'جارٍ التحقق من Google Play…',foundingHeroBuy:'احصل على الحزمة',foundingHeroRestore:'استعادة الشراء',foundingHeroOwned:'حزمة البطل المؤسس مفعلة على هذا الحساب.',foundingHeroPending:'عملية الشراء معلقة؛ ستتفعل الشارة بعد تأكيد Google Play.',foundingHeroUnavailable:'المنتج غير متاح في هذه النسخة بعد. لم يتم تحصيل أي مبلغ.',foundingHeroConfigure:'يلزم ربط مفتاح الترخيص العام ومنتج Play قبل إتاحة الشراء.',foundingHeroAndroidOnly:'متاح داخل نسخة Android المثبتة من Google Play.',foundingHeroCanceled:'تم إلغاء نافذة الشراء ولم يتم تحصيل مبلغ.'});
   Object.assign(COPY.en, {startSession:'Start session',saveNext:'Save and continue',finishSession:'Finish and save session',exerciseOf:'Exercise {current} of {total}',nextExercise:'Exercise saved. Next: {name}',sessionComplete:'Session complete and saved.',signInSync:'Sign in to sync',syncConnected:'Sync connected',syncConnecting:'Connecting account',offlineReady:'Offline ready',syncUnavailable:'Sync not configured',foundingHeroEyebrow:'One-time cosmetic pack',foundingHeroTitle:'Founding Hero',foundingHeroBadge:'Founding Hero',foundingHeroBody:'A one-time digital purchase that adds the Founding Hero badge and a gold profile accent.',foundingHeroScope:'Cosmetic badge only; workouts and Health remain free, with no competitive advantage, tokens, or financial return.',foundingHeroLoading:'Checking Google Play…',foundingHeroBuy:'Get the pack',foundingHeroRestore:'Restore purchase',foundingHeroOwned:'The Founding Hero pack is active for this account.',foundingHeroPending:'Purchase pending; the badge activates after Google Play confirms payment.',foundingHeroUnavailable:'This product is not available in this build yet. No charge was made.',foundingHeroConfigure:'Connect the public Play license key and Play product before enabling purchases.',foundingHeroAndroidOnly:'Available in the Android app installed through Google Play.',foundingHeroCanceled:'The purchase sheet was canceled and no charge was made.'});
   Object.assign(COPY.ar, {onboardingBrand:'خطتك تبدأ منك',onboardingStep:'إعداد سريع · يعمل أوفلاين',onboardingTitle:'ابنِ خطتك الأولى',onboardingIntro:'اختر هدفك وخبرتك وما يتوفر لديك. سنضع جلسة واضحة في «اليوم» ويمكنك تعديل كل شيء لاحقًا.',onboardingBenefitOffline:'دليل مصور أوفلاين',onboardingBenefitSafe:'تدرج وتعليمات سلامة',onboardingBenefitFlexible:'تعديل الخطة في أي وقت',onboardingPrivacy:'يُحفظ هذا الاختيار على جهازك أولًا. لا يلزم حساب للبدء.',createMyPlan:'أنشئ خطتي وابدأ',planReady:'خطتك جاهزة. ابدأ من جلسة اليوم.'});
@@ -84,6 +87,7 @@
     });
     $('primaryNav').classList.toggle('hidden', id === 'activeWorkoutScreen' || id === 'activityScreen');
     document.body.classList.toggle('workout-active', id === 'activeWorkoutScreen');
+    if (id === 'todayScreen') renderToday();
     const demoVideo = $('activeDemoVideo');
     if (id === 'activeWorkoutScreen' && !demoVideo.classList.contains('hidden') && !preferredReducedMotion()) demoVideo.play().catch(() => {});
     else demoVideo.pause();
@@ -326,12 +330,24 @@
   }
   function stopMotionPolling() { if(state.motionPoll){clearInterval(state.motionPoll);state.motionPoll=null;} }
   function startExercise(item) {
+    if (resumePolicy.hasSession(state.active)) {
+      closeDetail();
+      if (resumePolicy.isResumable(state.active, EXERCISES)) resumeActiveWorkout();
+      else toast(t('resumeUnavailable'));
+      return;
+    }
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
     state.active = {clientRecordId,exerciseId:item.id,startedAt:Date.now(),sets:makeSets(item),sensorProfile,motionSessionId}; state.demoFrame=0;
     store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail();
     beginNativeMotionSession(motionSessionId,sensorProfile); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false); speakExercise(item);
   }
   function startProgramSession(programId,sessionId) {
+    if (resumePolicy.hasSession(state.active)) {
+      closeProgramDetail();
+      if (resumePolicy.isResumable(state.active, EXERCISES)) resumeActiveWorkout();
+      else toast(t('resumeUnavailable'));
+      return;
+    }
     const program=PROGRAMS.find(value=>value.id===programId);const sessionIndex=program?.sessions.findIndex(value=>value.id===sessionId)??-1;const session=program?.sessions[sessionIndex];const reference=session?.exercises[0];const item=reference?exerciseFor(reference):null;if(!program||!session||!item)return;
     const now=Date.now();store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex,selectedAt:new Date(now).toISOString()}));
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
@@ -339,6 +355,19 @@
     persistActive();closeProgramDetail();closeDetail();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);speakExercise(item);
   }
   function activeExercise() { return EXERCISES.find(item => item.id === state.active?.exerciseId); }
+  function resumeActiveWorkout() {
+    const item = activeExercise();
+    if (!resumePolicy.isResumable(state.active, EXERCISES) || !item) { toast(t('resumeUnavailable')); return false; }
+    closeDetail(); closeProgramDetail();
+    state.active.sensorProfile = state.active.sensorProfile || sensorProfileForExercise(item);
+    state.active.motionSessionId = state.active.motionSessionId || `${state.active.clientRecordId}:${Number(state.active.programExerciseIndex)||0}:${item.id}`;
+    persistActive();
+    renderActiveWorkout();
+    resumeRest();
+    startMotionPolling();
+    showScreen('activeWorkoutScreen', false);
+    return true;
+  }
   function speakExercise(item, options) {
     if (!item) return false;
     return voiceGuidance.speak({
@@ -691,6 +720,28 @@
     const suggested=session?exerciseFor(session.exercises[0]):(EXERCISES.find(item=>item.goal.id===profile.goal&&item.level.id===profile.level&&profile.equipment.includes(item.equipment.id)) || EXERCISES.find(item=>item.section.id==='home') || EXERCISES[0]);
     if(program&&session&&suggested){$('todayPlanTag').textContent=local(program.section);$('todayWorkoutName').textContent=local(session.name);$('todayWorkoutMeta').textContent=`${local(program.name)} · ${session.exercises.length} ${t('exerciseCount')} · ${session.estimatedMinutes} ${t('min')}`;$('startTodayBtn').dataset.exercise=suggested.id;$('startTodayBtn').dataset.program=program.id;$('startTodayBtn').dataset.session=session.id;}
     else if(suggested){$('todayPlanTag').textContent=local(suggested.section);$('todayWorkoutName').textContent=local(suggested.name);$('todayWorkoutMeta').textContent=`${t('profilePlan')} · ${local(suggested.level)} · ${suggested.prescription.sets} ${t('setsLabel')}`;$('startTodayBtn').dataset.exercise=suggested.id;}
+    const hasActiveSession = resumePolicy.hasSession(state.active);
+    const canResume = resumePolicy.isResumable(state.active, EXERCISES);
+    const resumeCard = $('resumeWorkoutCard');
+    resumeCard.classList.toggle('hidden', !hasActiveSession);
+    if (hasActiveSession) {
+      const activeItem = canResume ? activeExercise() : null;
+      const progress = resumePolicy.progress(state.active);
+      const activeProgram = PROGRAMS.find(value => value.id === state.active?.programId);
+      const activeSession = activeProgram?.sessions.find(value => value.id === state.active?.programSessionId);
+      $('resumeWorkoutName').textContent = activeItem ? local(activeItem.name) : t('resumeUnavailable');
+      $('resumeWorkoutProgress').textContent = activeItem ? t('resumeWorkoutProgress').replace('{done}', progress.completed).replace('{total}', progress.total) : '';
+      $('resumeWorkoutMeta').textContent = activeItem ? (activeSession ? `${local(activeProgram.name)} · ${local(activeSession.name)}` : t('activeWorkoutSaved')) : t('resumeUnavailableHint');
+      $('resumeWorkoutHint').textContent = activeItem ? t('resumeWorkoutHint') : t('resumeUnavailableHint');
+      const resumeButton = $('resumeWorkoutBtn');
+      resumeButton.disabled = !activeItem;
+      resumeButton.textContent = activeItem ? t('resumeWorkout') : t('resumeUnavailable');
+    }
+    const startButton = $('startTodayBtn');
+    startButton.disabled = hasActiveSession;
+    startButton.textContent = hasActiveSession ? t('resumeBeforeNew') : t('startWorkout');
+    if (hasActiveSession) startButton.setAttribute('aria-describedby', 'resumeWorkoutHint');
+    else startButton.removeAttribute('aria-describedby');
     $('todayDate').textContent=new Intl.DateTimeFormat(locale(),{weekday:'short',day:'numeric',month:'short'}).format(new Date());
     const entries=history(), today=new Date().toISOString().slice(0,10), todays=entries.filter(entry=>(entry.date||'').startsWith(today));
     $('todaySessions').textContent=todays.length;$('todayMinutes').textContent=todays.reduce((sum,e)=>sum+(e.durationMin||0),0);$('todayVolume').textContent=Math.round(todays.reduce((sum,e)=>sum+(e.volumeKg||0),0));
@@ -819,7 +870,8 @@
     $('resetFilters').addEventListener('click',()=>resetFilters());$('emptyReset').addEventListener('click',()=>resetFilters());$('filterToggle').addEventListener('click',()=>{const panel=$('filterPanel'),collapsed=panel.classList.toggle('collapsed');$('filterToggle').setAttribute('aria-expanded',String(!collapsed));});
     $('closeDetail').addEventListener('click',closeDetail);$('detailCloseButton').addEventListener('click',closeDetail);$('startExerciseBtn').addEventListener('click',()=>startExercise(state.selected));
     $('closeProgramDetail').addEventListener('click',closeProgramDetail);$('programDetailCloseButton').addEventListener('click',closeProgramDetail);$('useProgramBtn').addEventListener('click',()=>useProgram($('useProgramBtn').dataset.program));
-    $('startTodayBtn').addEventListener('click',()=>{const button=$('startTodayBtn');if(button.dataset.program&&button.dataset.session){startProgramSession(button.dataset.program,button.dataset.session);return;}const item=EXERCISES.find(exercise=>exercise.id===button.dataset.exercise);if(item)startExercise(item);});
+    $('resumeWorkoutBtn').addEventListener('click', resumeActiveWorkout);
+    $('startTodayBtn').addEventListener('click',()=>{if(resumePolicy.hasSession(state.active)){resumeActiveWorkout();return;}const button=$('startTodayBtn');if(button.dataset.program&&button.dataset.session){startProgramSession(button.dataset.program,button.dataset.session);return;}const item=EXERCISES.find(exercise=>exercise.id===button.dataset.exercise);if(item)startExercise(item);});
     $('addSetBtn').addEventListener('click',addSet);$('finishWorkoutBtn').addEventListener('click',finishWorkout);$('skipRest').addEventListener('click',stopRest);$('exitWorkoutBtn').addEventListener('click',()=>{persistActive();showScreen('trainScreen');});
     $('speakCue').addEventListener('click',()=>speakExercise(activeExercise(),{force:true}));
     document.querySelectorAll('[data-activity-mode]').forEach(button=>button.addEventListener('click',()=>startActivity(button.dataset.activityMode)));
