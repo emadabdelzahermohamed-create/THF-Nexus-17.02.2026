@@ -155,7 +155,9 @@ const exerciseContext = {window: {}};
 vm.runInNewContext(EXERCISES_JS, exerciseContext);
 const EXERCISES = exerciseContext.window.THF_EXERCISES || [];
 const manifestContext = {window: {}};
-vm.runInNewContext(MOTION.split('/* Offline reference-motion fallback.')[0], manifestContext);
+const manifestEnd = MOTION.indexOf('\n/*');
+assert.notEqual(manifestEnd, -1, 'missing motion manifest boundary');
+vm.runInNewContext(MOTION.slice(0, manifestEnd), manifestContext);
 const MOTION_MANIFEST = manifestContext.window.THF_MOTION_MANIFEST || {};
 
 test('autoplay rejection falls back to the first offline frame and announces the fallback', async () => {
