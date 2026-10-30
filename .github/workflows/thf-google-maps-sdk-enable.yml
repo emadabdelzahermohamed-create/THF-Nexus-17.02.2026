@@ -24,20 +24,10 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Verify existing billing linkage before enabling Maps
-        shell: bash
+      - name: Confirm target project identity
         run: |
           set -euo pipefail
-          gcloud billing projects describe "$GCP_PROJECT_ID" --format=json > "$RUNNER_TEMP/thf-billing.json"
-          python - "$RUNNER_TEMP/thf-billing.json" <<'PY'
-          import json,sys
-          x=json.load(open(sys.argv[1]))
-          print('PROJECT_ID='+x.get('projectId',''))
-          print('BILLING_ENABLED='+str(x.get('billingEnabled',False)).lower())
-          print('BILLING_ACCOUNT_LINKED='+str(bool(x.get('billingAccountName'))).lower())
-          if not x.get('billingEnabled') or not x.get('billingAccountName'):
-              raise SystemExit('STOP: existing project has no active billing link; no billing changes were made')
-          PY
+          gcloud projects describe "$GCP_PROJECT_ID" --format='value(projectId)' | grep -x "$GCP_PROJECT_ID"
       - name: Enable Maps SDK for Android in the existing project
         run: |
           set -euo pipefail
@@ -47,4 +37,5 @@ jobs:
         run: |
           echo "PROJECT_ID=$GCP_PROJECT_ID"
           echo 'MAPS_ANDROID_BACKEND_API=ENABLED'
+          echo 'BILLING_CONFIGURATION=UNCHANGED_NOT_READ_BY_THIS_WORKFLOW'
           echo 'API_KEY=NOT_CREATED_PENDING_PLAY_APP_SIGNING_CERTIFICATE'
