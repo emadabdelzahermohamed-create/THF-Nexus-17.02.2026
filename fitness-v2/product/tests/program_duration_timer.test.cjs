@@ -20,13 +20,13 @@ function timedMinimumMinutes(session) {
 }
 
 test('program duration prescriptions use readable MM:SS instead of raw seconds', () => {
-  assert.match(APP, /formatDuration\(reference\.durationSeconds\)/);
-  assert.match(APP, /formatDuration\\(reference\\.durationSeconds\\)/);
+  assert.ok(APP.includes('function formatDuration(totalSeconds)'));
+  assert.ok(APP.includes('formatDuration(reference.durationSeconds)'));
 });
 
 test('program detail discloses timed-work lower bounds above the stated estimate', () => {
-  assert.match(APP, /function timedMinimumMinutes\(session\)/);
-  assert.match(APP, /programTimeWarning/);
+  assert.ok(APP.includes('function timedMinimumMinutes(session)'));
+  assert.ok(APP.includes('programTimeWarning'));
   const program = PROGRAMS.find(item => item.id === 'walk-run-foundation');
   const session = program.sessions.find(item => item.id === 'walk-run-foundation-session-1');
   assert.equal(timedMinimumMinutes(session), 126);
@@ -34,31 +34,31 @@ test('program detail discloses timed-work lower bounds above the stated estimate
 });
 
 test('program timed sets seed independent remaining-time state', () => {
-  assert.match(APP, /durationRemainingMs:durationSeconds\*1000/);
-  assert.match(APP, /durationRunning:false,durationElapsed:false/);
+  assert.ok(APP.includes('durationRemainingMs:durationSeconds*1000'));
+  assert.ok(APP.includes('durationRunning:false,durationElapsed:false'));
 });
 
 test('active workout renders a timer control instead of a zero-reps field for timed sets', () => {
-  assert.match(APP, /data-duration-toggle/);
-  assert.match(APP, /hasTimedSets\?t\('time'\):t\('reps'\)/);
-  assert.match(APP, /durationSeconds\?t\('time'\):t\('reps'\)/);
-  assert.match(HTML, /id="setRepsHeader"/);
-  assert.match(HTML, /id="durationAnnouncement" class="sr-only" aria-live="polite" aria-atomic="true"/);
+  assert.ok(APP.includes('data-duration-toggle'));
+  assert.ok(APP.includes("hasTimedSets?t('time'):t('reps')"));
+  assert.ok(APP.includes("durationSeconds?t('time'):t('reps')"));
+  assert.ok(HTML.includes('id="setRepsHeader"'));
+  assert.ok(HTML.includes('id="durationAnnouncement" class="sr-only" aria-live="polite" aria-atomic="true"'));
 });
 
 test('duration timer supports start, pause, persisted restore and background pause', () => {
   for (const name of ['startDurationTimer','pauseDurationTimer','tickDurationTimer','restoreDurationTimerState']) {
     assert.ok(APP.includes(`function ${name}(`), `missing ${name}`);
   }
-  assert.match(APP, /if\(document\.hidden\)\{pauseActiveDurationTimer\(\);video\.pause\(\);\}/);
-  assert.match(APP, /window\.addEventListener\('pagehide',pauseActiveDurationTimer\)/);
-  assert.match(APP, /if \(id !== 'activeWorkoutScreen'\) pauseActiveDurationTimer\(\)/);
+  assert.ok(APP.includes('if(document.hidden){pauseActiveDurationTimer();video.pause();}'));
+  assert.ok(APP.includes("window.addEventListener('pagehide',pauseActiveDurationTimer)"));
+  assert.ok(APP.includes("if (id !== 'activeWorkoutScreen') pauseActiveDurationTimer()"));
 });
 
 test('reaching the target announces completion but does not auto-complete the set', () => {
-  assert.match(APP, /set\.durationElapsed=true/);
-  assert.match(APP, /durationAnnouncement/);
-  assert.doesNotMatch(APP, /set\.complete=true/);
+  assert.ok(APP.includes('set.durationElapsed=true'));
+  assert.ok(APP.includes('durationAnnouncement'));
+  assert.equal(APP.includes('set.complete=true'), false);
 });
 
 test('timer and program-time warning copy is bilingual', () => {
