@@ -88,6 +88,7 @@ window.THF_MOTION_MANIFEST = {
   let pendingExerciseId = null;
   let frameIndex = 0;
   const preloadPromises = new Map();
+  const loadedFrames = new Map();
 
   const byId = id => document.getElementById(id);
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -119,9 +120,10 @@ window.THF_MOTION_MANIFEST = {
 
   function renderFrame(item) {
     const image = byId('activeDemoImage');
-    if (!image || !Array.isArray(item?.demo?.assets) || item.demo.assets.length < 2) return;
-    const phaseIndex = frameIndex % item.demo.assets.length;
-    const nextSrc = './' + item.demo.assets[phaseIndex];
+    const assets = loadedFrames.get(item.id) || item?.demo?.assets;
+    if (!image || !Array.isArray(assets) || assets.length < 1) return;
+    const phaseIndex = frameIndex % assets.length;
+    const nextSrc = './' + assets[phaseIndex];
     const isArabic = document.documentElement.lang === 'ar';
     const phaseName = isArabic
       ? (phaseIndex === 0 ? 'البداية' : 'النهاية')
@@ -145,7 +147,11 @@ window.THF_MOTION_MANIFEST = {
       phase.setAttribute('aria-hidden', 'true');
       phase.textContent = isArabic
         ? `${phaseIndex === 0 ? 'البداية' : 'النهاية'} · ${reduced ? 'صورة ثابتة — تقليل الحركة' : 'تسلسل مرجعي تلقائي'}`
-        : `${phaseIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic  function preloadFrames(item) {
+        : `${phaseIndex === 0 ? 'Start' : 'Finish'} · ${reduced ? 'Static image — reduced motion' : 'Automatic reference sequence'}`;
+    }
+  }
+
+  function preloadFrames(item) {
     if (preloadPromises.has(item.id)) return preloadPromises.get(item.id);
     const framePromises = item.demo.assets.map(asset => {
       return new Promise(resolve => {
@@ -153,25 +159,25 @@ window.THF_MOTION_MANIFEST = {
         preload.decoding = 'async';
         let settled = false;
         let timeoutId;
-        const finish = () => {
+        const finish = loaded => {
           if (settled) return;
           settled = true;
           if (timeoutId !== undefined) window.clearTimeout(timeoutId);
-          preload.removeEventListener('load', finish);
-          preload.removeEventListener('error', finish);
-          resolve();
+          preload.removeEventListener('load', onLoad);
+          preload.removeEventListener('error', onError);
+          resolve(loaded);
         };
-        preload.addEventListener('load', finish, {once: true});
-        preload.addEventListener('error', finish, {once: true});
+        const onLoad = () => finish(true);
+        const onError = () => finish(false);
+        preload.addEventListener('load', onLoad, {once: true});
+        preload.addEventListener('error', onError, {once: true});
         // A stalled WebView decode must not block the automatic offline loop forever.
-        timeoutId = window.setTimeout(finish, PRELOAD_TIMEOUT_MS);
+        timeoutId = window.setTimeout(() => finish(false), PRELOAD_TIMEOUT_MS);
         preload.src = './' + asset;
       });
     });
     const ready = Promise.all(framePromises);
     preloadPromises.set(item.id, ready);
-    return ready;
-  }m.id, ready);
     return ready;
   }
 
@@ -184,17 +190,40 @@ window.THF_MOTION_MANIFEST = {
       pendingExerciseId = null;
       return;
     }
-    await preloadFrames(item);
+    const results = await preloadFrames(item);
     if (activeExerciseId !== item.id || pendingExerciseId !== item.id
         || reduceMotion() || document.hidden) {
       if (pendingExerciseId === item.id) pendingExerciseId = null;
+      return;
+    }
+    const readyFrames = item.demo.assets.filter((asset, index) => results[index]);
+    loadedFrames.set(item.id, readyFrames);
+    frameIndex = 0;
+    if (readyFrames.length === 0) {
+      byId('activeDemoImage')?.removeAttribute('src');
+      const status = byId('activeDemoStatus');
+      if (status) status.textContent = document.documentElement.lang === 'ar'
+        ? 'تعذر تحميل صور الحركة لهذا التمرين دون اتصال.'
+        : 'Exercise reference frames could not be loaded offline.';
+      pendingExerciseId = null;
+      return;
+    }
+    renderFrame(item);
+    if (readyFrames.length < 2) {
+      const status = byId('activeDemoStatus');
+      if (status) status.textContent = document.documentElement.lang === 'ar'
+        ? 'تم تحميل صورة مرجعية واحدة فقط؛ تعرض بصورة ثابتة.'
+        : 'Only one reference frame loaded; showing a static view.';
+      pendingExerciseId = null;
       return;
     }
     pendingExerciseId = null;
     timer = window.setInterval(() => {
       const latest = currentExercise();
       if (!latest || document.hidden || reduceMotion()) return;
-      frameIndex = (frameIndex + 1) % latest.demo.assets.length;
+      const frames = loadedFrames.get(latest.id) || latest.demo.assets;
+      if (frames.length < 2) return;
+      frameIndex = (frameIndex + 1) % frames.length;
       renderFrame(latest);
     }, FRAME_MS);
   }
