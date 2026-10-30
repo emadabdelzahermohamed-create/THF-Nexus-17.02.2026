@@ -35,7 +35,7 @@
 .activity-map.leaflet-ready #activityMapFallback{display:none}
 #activityMapEmpty{position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:24px;text-align:center;color:#e4edf0;font-size:13px;font-weight:800;background:linear-gradient(180deg,#08182055,#08182099);pointer-events:none}
 .activity-map-control{position:absolute;z-index:500;min-height:36px;padding:7px 10px;border:1px solid #36545f;border-radius:11px;background:#081820e8;color:#f4f8f9;font:700 11px system-ui,sans-serif;text-decoration:none;box-shadow:0 2px 10px #0005}
-.activity-map-control:disabled{opacity:.45}.activity-map-recenter{left:10px;top:10px}.activity-map-google{right:10px;top:10px}.activity-map .leaflet-container{font:12px system-ui,sans-serif;background:#d9e3e6}.activity-map .leaflet-control-attribution{font-size:9px}.activity-map .leaflet-control-zoom a{color:#102832}
+.activity-map-control:disabled{opacity:.45}.activity-map-recenter{left:10px;top:10px}.activity-map-google{right:10px;top:54px}.activity-map .leaflet-container{font:12px system-ui,sans-serif;background:#d9e3e6}.activity-map .leaflet-control-attribution{font-size:9px}.activity-map .leaflet-control-zoom a{color:#102832}
 .activity-metrics{grid-template-columns:repeat(3,1fr)}
 .activity-live-panel .button.danger{background:linear-gradient(180deg,#5b2525,#351717);border-color:#8a4545;color:#ffd9d7}
 .profile-form input[type=number],.onboarding-form input[type=number]{min-height:44px;padding:8px 10px;border:1px solid #3e5b66;border-radius:12px;background:#0e242d;color:var(--text);width:100%}
