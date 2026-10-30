@@ -238,7 +238,7 @@ test('offline frame fallback announces reduced motion once without exposing the 
 
 test('active workout contains a persistent polite live region separate from the changing phase label', () => {
   assert.match(htmlSource, /id="activeDemoStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"/);
-  assert.match(htmlSource, /id="activeDemoPhase" class="phase-label"[^>]*><\\/span><span id="activeDemoStatus"/);
+  assert.ok(htmlSource.includes('id="activeDemoPhase" class="phase-label">دليل الحركة</span><span id="activeDemoStatus"'));
 });
 
 test('OS reduced-motion changes are wired to active video and reference-frame reconciliation', () => {
