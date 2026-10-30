@@ -257,6 +257,18 @@ test('a different active workout blocks archive restoration controls until its s
   assert.match(harness.nodes.archivedWorkoutsList.innerHTML, /Another workout is active/);
 });
 
+test('a persisted active key blocks restoration controls even when the in-memory state is empty', () => {
+  const storage = makeStorage({
+    [ACTIVE_KEY]: '{malformed-but-present',
+    [ARCHIVE_KEY]: JSON.stringify([{ rawSession: RAW_SESSION }])
+  });
+  const harness = renderSandbox(storage, CATALOG, null);
+  const render = vm.runInNewContext('(' + extractFunction(APP, 'renderArchivedWorkouts') + ')', harness.sandbox);
+  render();
+  assert.doesNotMatch(harness.nodes.archivedWorkoutsList.innerHTML, /data-restore-archive=/);
+  assert.match(harness.nodes.archivedWorkoutsList.innerHTML, /Another workout is active/);
+});
+
 test('the UI restore action restores into Today without auto-starting the workout', () => {
   const storage = makeStorage({ [ARCHIVE_KEY]: JSON.stringify([{ rawSession: RAW_SESSION }]) });
   const state = { active: null };

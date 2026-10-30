@@ -465,6 +465,15 @@
     card.classList.remove('hidden');
     status.textContent = t('archivedWorkoutsCount').replace('{count}', String(result.entries.length));
     const completedIds = new Set(history().map(entry => entry?.clientRecordId).filter(Boolean));
+    let activeSlotOccupied = resumePolicy.hasSession(state.active);
+    if (!activeSlotOccupied) {
+      try {
+        const rawActive = store.getItem('pulse.v2.active');
+        activeSlotOccupied = rawActive !== null && rawActive !== '';
+      } catch {
+        activeSlotOccupied = true;
+      }
+    }
     list.innerHTML = result.entries.map(entry => {
       const session = entry.session;
       const item = session ? EXERCISES.find(exercise => exercise.id === session.exerciseId) : null;
@@ -479,7 +488,7 @@
         .replace('{total}', String(progress.total));
       const alreadyActive = Boolean(session?.clientRecordId && session.clientRecordId === state.active?.clientRecordId);
       const alreadyCompleted = Boolean(session?.clientRecordId && completedIds.has(session.clientRecordId));
-      const anotherWorkoutActive = resumePolicy.hasSession(state.active) && !alreadyActive;
+      const anotherWorkoutActive = activeSlotOccupied && !alreadyActive;
       const stateText = !entry.valid
         ? t('archiveRecordInvalid')
         : alreadyActive
@@ -491,7 +500,7 @@
               : entry.resumable
                 ? t('archiveReady')
                 : t('archiveNotRecoverable');
-      const canRestore = entry.resumable && !resumePolicy.hasSession(state.active) && !alreadyActive && !alreadyCompleted;
+      const canRestore = entry.resumable && !activeSlotOccupied && !alreadyActive && !alreadyCompleted;
       const action = canRestore
         ? '<button class="button secondary archived-workout-restore" type="button" data-restore-archive="' + entry.index + '">' + escapeHtml(t('archiveRestoreAction')) + '</button>'
         : '';
