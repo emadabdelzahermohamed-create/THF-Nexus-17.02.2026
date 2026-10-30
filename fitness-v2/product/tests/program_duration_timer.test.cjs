@@ -20,7 +20,7 @@ function timedMinimumMinutes(session) {
 }
 
 test('program duration prescriptions use readable MM:SS instead of raw seconds', () => {
-  assert.match(APP, /function formatDuration\(totalSeconds\)/);
+  assert.match(APP, /formatDuration\(reference\.durationSeconds\)/);
   assert.match(APP, /formatDuration\\(reference\\.durationSeconds\\)/);
 });
 
