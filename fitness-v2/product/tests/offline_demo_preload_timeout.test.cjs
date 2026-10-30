@@ -107,7 +107,7 @@ function renderFrameFor(lang, loaded) {
     loadedFrames: new Map([['test-demo', loaded]]),
     frameIndex: 0
   };
-  vm.runInNewContext(extractFunction(MOTION, 'renderFrame') + '\\nglobalThis.api = {renderFrame};', context);
+  vm.runInNewContext(extractFunction(MOTION, 'renderFrame') + '\nglobalThis.api = {renderFrame};', context);
   context.api.renderFrame({
     id: 'test-demo',
     demo: {
