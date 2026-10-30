@@ -73,8 +73,8 @@ function harness({ monotonic = 1000, wall = 100000, remainingMs = 30000, running
     t(key) { return key === 'timerProgress' ? 'Timer progress' : key; }
   };
   const names = ['durationClockNow', 'remainingDurationMs', 'durationProgressState', 'renderDurationControls'];
-  const functions = names.map(name => extractFunction(APP, name)).join('\\n');
-  vm.runInNewContext(`${functions}\\nglobalThis.api = { durationClockNow, remainingDurationMs, durationProgressState, renderDurationControls };`, context);
+  const functions = names.map(name => extractFunction(APP, name)).join('\n');
+  vm.runInNewContext(`${functions}\nglobalThis.api = { durationClockNow, remainingDurationMs, durationProgressState, renderDurationControls };`, context);
   return { api: context.api, set, attributes, fill, display, button, monotonicNow, wallNow };
 }
 
@@ -134,7 +134,7 @@ test('corrupt remaining values are clamped to a truthful zero-to-one-hundred ran
 });
 
 test('timed-set markup uses a named determinate progressbar without a per-second live region', () => {
-  const match = APP.match(/<div class="duration-progress"[\\s\\S]*?<\\/div>/);
+  const match = APP.match(/<div class="duration-progress"[\s\S]*?<\/div>/);
   assert.ok(match, 'duration progress markup is missing');
   assert.match(match[0], /data-duration-progress=/);
   assert.match(match[0], /role="progressbar"/);
@@ -148,7 +148,7 @@ test('timed-set markup uses a named determinate progressbar without a per-second
 test('progressbar has bilingual accessible naming and a reduced-motion-aware visual track', () => {
   assert.match(APP, /timerProgress:'تقدم المؤقت'/);
   assert.match(APP, /timerProgress:'Timer progress'/);
-  assert.match(CSS, /\\.duration-progress\\{[^}]*width:100%/);
-  assert.match(CSS, /\\.duration-progress-fill\\{[^}]*transition:width \.25s linear/);
+  assert.match(CSS, /\.duration-progress\{[^}]*width:100%/);
+  assert.match(CSS, /\.duration-progress-fill\{[^}]*transition:width \.25s linear/);
   assert.match(CSS, /prefers-reduced-motion:reduce/);
 });
