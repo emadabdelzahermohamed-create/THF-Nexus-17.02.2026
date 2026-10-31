@@ -81,11 +81,31 @@
     return result;
   }
 
+  function setCardUnavailable(state, unavailable) {
+    if (!state?.media || !state.image) return;
+    state.media.classList.toggle('demo-unavailable', Boolean(unavailable));
+    if (unavailable) {
+      state.image.setAttribute('hidden', '');
+      state.image.classList.remove('demo-frame-swap');
+    } else {
+      state.image.removeAttribute('hidden');
+    }
+  }
+
+  function cardReferenceAlt(state) {
+    const lang = document.documentElement?.lang === 'ar' ? 'ar' : 'en';
+    const name = state.item?.name?.[lang] || state.item?.name?.en || '';
+    return lang === 'ar' ? `صورة مرجعية لتمرين ${name}` : `Reference image for ${name}`;
+  }
+
   function setCardFrame(state, index) {
     const frames = Array.isArray(state.frames) ? state.frames : state.item.demo.assets;
     const asset = frames[index];
     const url = localAsset(asset);
     if (!url || !state.image) return;
+    setCardUnavailable(state, false);
+    const alt = frames.length === 1 ? cardReferenceAlt(state) : state.originalAlt;
+    if (alt && state.image.getAttribute('alt') !== alt) state.image.setAttribute('alt', alt);
     state.index = index;
     if (state.image.getAttribute('src') !== url) {
       state.image.classList.remove('demo-frame-swap');
@@ -99,9 +119,16 @@
   function resetCard(state) {
     if (!state || !state.item?.demo?.assets?.length) return;
     state.index = 0;
-    const firstFrame = Array.isArray(state.frames) ? state.frames[0] : state.item.demo.assets[0];
-    const url = localAsset(firstFrame);
+    const frames = Array.isArray(state.frames) ? state.frames : state.item.demo.assets;
+    if (!frames.length) {
+      if (state.settled) setCardUnavailable(state, true);
+      return;
+    }
+    setCardUnavailable(state, false);
+    const url = localAsset(frames[0]);
     if (url && state.image && state.image.getAttribute('src') !== url) state.image.setAttribute('src', url);
+    const alt = frames.length === 1 ? cardReferenceAlt(state) : state.originalAlt;
+    if (alt && state.image && state.image.getAttribute('alt') !== alt) state.image.setAttribute('alt', alt);
     state.image?.classList.remove('demo-frame-swap');
     if (state.image) state.image.dataset.demoFrame = '0';
   }
@@ -110,14 +137,14 @@
     if (state.ready || state.loading || state.settled || state.item.demo.assets.length < 2) return;
     state.loading = true;
     const assets = state.item.demo.assets;
-    Promise.all(assets.slice(1).map(preloadAsset)).then(results => {
+    // Validate the initial image too; a broken frame 0 must never re-enter the loop.
+    Promise.all(assets.map(preloadAsset)).then(results => {
       state.loading = false;
-      // Keep every successfully decoded local frame. One damaged secondary
-      // asset must not disable motion when two or more reviewed frames remain.
-      state.frames = [assets[0], ...assets.slice(1).filter((_, index) => results[index])];
+      state.frames = assets.filter((asset, index) => Boolean(results[index]) && Boolean(localAsset(asset)));
       state.ready = state.frames.length > 1;
       state.settled = true;
-      if (!state.ready) resetCard(state);
+      // A single survivor becomes a static reference; no survivors use the localized fallback.
+      resetCard(state);
       syncTimer();
     });
   }
@@ -134,20 +161,21 @@
     for (const card of cards) {
       if (states.has(card)) continue;
       const item = itemById(card.dataset.id);
+      const media = card.querySelector('.media');
       const image = card.querySelector('.media img');
       const assets = item?.demo?.assets;
-      if (!item || item.demo?.offline === false || !Array.isArray(assets) || assets.length < 2 || !image) continue;
-      const state = { card, item, image, index: 0, frames: null, visible: false, ready: false, loading: false, settled: false };
+      if (!item || item.demo?.offline === false || !Array.isArray(assets) || assets.length < 2 || !media || !image) continue;
+      const state = { card, item, media, image, originalAlt: image.getAttribute('alt') || item.demo.alt?.en || '', index: 0, frames: null, visible: false, ready: false, loading: false, settled: false };
       states.set(card, state);
       if (cardObserver) cardObserver.observe(card);
       else state.visible = visibleInViewport(card);
-      if (state.visible && !reduceMotion() && !document.hidden) loadCardFrames(state);
+      if (state.visible && !document.hidden) loadCardFrames(state);
     }
     for (const state of states.values()) {
       if (!cardObserver) state.visible = visibleInViewport(state.card);
-      // Also preload cards that were already visible when reduced motion was enabled.
-      // This lets animation resume immediately when the user turns it back off.
-      if (state.visible && !reduceMotion() && !document.hidden) loadCardFrames(state);
+      // Validate visible references even with reduced motion, so a broken first
+      // frame can fall back to a valid static image without starting animation.
+      if (state.visible && !document.hidden) loadCardFrames(state);
     }
   }
 
@@ -383,7 +411,7 @@
           const state = states.get(entry.target);
           if (!state) continue;
           state.visible = Boolean(entry.isIntersecting && entry.intersectionRatio > 0);
-          if (state.visible && !reduceMotion() && !document.hidden) loadCardFrames(state);
+          if (state.visible && !document.hidden) loadCardFrames(state);
         }
         syncTimer();
       }, { rootMargin: '64px', threshold: 0.01 });
