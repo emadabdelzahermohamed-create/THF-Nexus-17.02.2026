@@ -412,6 +412,7 @@ test('detail animation skips a failed local frame and cycles only decoded frames
   assert.equal(h.frame1.getAttribute('aria-hidden'), 'true');
   assert.equal(h.frame2.getAttribute('hidden'), null);
   assert.equal(h.detailDemo.classList.contains('auto-sequence'), true);
+  assert.equal(h.detailDemo.classList.contains('single-reference'), false);
   h.tick();
   assert.equal(h.frame2.classList.contains('is-active'), true);
   assert.equal(h.frame1.classList.contains('is-active'), false);
@@ -427,6 +428,7 @@ test('detail with no decoded secondary frames stays on the accessible reference 
   h.fireMutation(h.detailRoot);
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.detailDemo.classList.contains('auto-sequence'), false);
+  assert.equal(h.detailDemo.classList.contains('single-reference'), true);
   assert.equal(h.frame0.getAttribute('aria-hidden'), null);
   assert.equal(h.frame1.getAttribute('hidden'), '');
   assert.equal(h.frame2.getAttribute('hidden'), '');
