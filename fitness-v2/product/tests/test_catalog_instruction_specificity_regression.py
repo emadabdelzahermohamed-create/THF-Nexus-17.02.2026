@@ -67,6 +67,20 @@ EXPECTED_OVERHEAD_SLAM_STEPS = {
     ]
 }
 
+HEAVY_BAG_THRUST_SOURCE_ID = "Heavy_Bag_Thrust"
+EXPECTED_HEAVY_BAG_THRUST_STEPS = {
+    "en": [
+        "Stand in a balanced staggered stance facing a securely hung heavy bag; keep the area around it clear and bring the working hand to chest height with the wrist straight.",
+        "Turn through the hips and torso together within a comfortable range, allowing the feet to pivot naturally; drive the working hand into the bag with a controlled thrust. Keep the wrist aligned with the forearm and avoid twisting sharply through the lower back.",
+        "Let the bag swing back without chasing it; soften the elbow and knees, regain balance, and repeat only when the bag is steady. Stop if you feel wrist, shoulder, or back pain."
+    ],
+    "ar": [
+        "قف بوقفة متدرجة ومتوازنة أمام كيس ملاكمة معلّق بإحكام؛ أخلِ المساحة حوله وارفع اليد العاملة إلى مستوى الصدر مع استقامة الرسغ.",
+        "أدر الوركين والجذع معًا ضمن مدى مريح، مع السماح للقدمين بالدوران الطبيعي؛ ادفع اليد العاملة نحو الكيس بدفعة متحكم بها. حافظ على محاذاة الرسغ مع الساعد وتجنب الالتواء الحاد بأسفل الظهر.",
+        "دع الكيس يتأرجح عائدًا دون ملاحقته؛ ليّن المرفقين والركبتين واستعد للتوازن، ولا تكرر إلا بعد استقرار الكيس. توقف إذا شعرت بألم في الرسغ أو الكتف أو الظهر."
+    ]
+}
+
 GENERIC_ENGLISH_FILLER = (
     re.compile(r"\brepeat the procedure\b", re.IGNORECASE),
     re.compile(r"\bperform the (?:amount|number) of repetitions\b", re.IGNORECASE),
@@ -154,6 +168,18 @@ class CatalogInstructionSpecificityRegressionTest(unittest.TestCase):
         self.assertIn("اتركها تستقر", item["steps"]["ar"][3])
         self.assertNotIn("as hard as you can", " ".join(item["steps"]["en"]).lower())
         self.assertNotIn("repeat the movement", " ".join(item["steps"]["en"]).lower())
+
+    def test_heavy_bag_thrust_has_controlled_bilingual_thrust_and_recovery_cues(self):
+        item = self.by_source_id[HEAVY_BAG_THRUST_SOURCE_ID]
+        self.assertEqual(EXPECTED_HEAVY_BAG_THRUST_STEPS, item["steps"])
+        self.assertEqual(item["steps"], BUILDER.STEP_OVERRIDES[HEAVY_BAG_THRUST_SOURCE_ID])
+        self.assertEqual(len(item["steps"]["en"]), 3)
+        self.assertEqual(len(item["steps"]["en"]), len(item["steps"]["ar"]))
+        self.assertIn("allowing the feet to pivot naturally", item["steps"]["en"][1])
+        self.assertIn("السماح للقدمين بالدوران الطبيعي", item["steps"]["ar"][1])
+        self.assertIn("Stop if you feel wrist, shoulder, or back pain.", item["steps"]["en"][2])
+        self.assertIn("توقف إذا شعرت بألم في الرسغ أو الكتف أو الظهر", item["steps"]["ar"][2])
+        self.assertNotIn("as hard as possible", " ".join(item["steps"]["en"]).lower())
 
 if __name__ == "__main__":
     unittest.main()
