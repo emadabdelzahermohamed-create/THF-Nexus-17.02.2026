@@ -58,3 +58,8 @@
 .detail-demo.single-reference{display:block;aspect-ratio:4/3;background:#061118}
 .detail-demo.single-reference .detail-frame{aspect-ratio:4/3}
 .detail-demo.single-reference .detail-frame img{display:block}
+
+
+/* Visible, polite status for offline exercise-detail demo availability and motion state. */
+.detail-demo-status{margin:0;padding:10px 14px;border-top:1px solid #29434e;background:#091920;color:var(--muted);font-size:12px;line-height:1.6;text-align:center}
+.detail-demo-status:empty{display:none}

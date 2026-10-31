@@ -10,6 +10,7 @@
   const grid = document.getElementById('exerciseGrid');
   const detailRoot = document.getElementById('exerciseDetail');
   const detailDemo = document.getElementById('detailDemo');
+  const detailStatus = document.getElementById('detailDemoStatus');
   const states = new Map();
   const preloadCache = new Map();
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -172,11 +173,41 @@
     return exercises().find(item => localAsset(item.demo?.assets?.[0]) === src) || null;
   }
 
+  const detailStatusLabels = {
+    loading: {en: 'Loading offline exercise demonstration…', ar: 'جارٍ تحميل العرض الحركي دون إنترنت…'},
+    playing: {en: 'Offline demonstration is playing automatically.', ar: 'العرض دون إنترنت يعمل تلقائيًا.'},
+    reduced: {en: 'Reduced motion is enabled; static reference frames are shown.', ar: 'تقليل الحركة مفعّل؛ تُعرض صور مرجعية ثابتة.'},
+    paused: {en: 'Demonstration paused while the app is in the background.', ar: 'تم إيقاف العرض مؤقتًا أثناء وجود التطبيق في الخلفية.'},
+    static: {en: 'Showing static offline reference frames.', ar: 'تُعرض صور مرجعية ثابتة دون حركة.'},
+    single: {en: 'Motion unavailable; showing the one available reference frame.', ar: 'الحركة غير متاحة؛ تُعرض الصورة المرجعية الوحيدة المتاحة.'},
+    unavailable: {en: 'Offline demonstration unavailable — no local frame could be loaded.', ar: 'العرض دون إنترنت غير متاح — تعذر تحميل أي إطار محلي.'}
+  };
+
+  function setDetailStatus(key) {
+    if (!detailStatus) return;
+    const lang = document.documentElement?.lang === 'ar' ? 'ar' : 'en';
+    const label = key ? (detailStatusLabels[key]?.[lang] || '') : '';
+    if (detailStatus.textContent !== label) detailStatus.textContent = label;
+  }
+
   function loadDetailFrames() {
     const item = detailExercise();
     const frames = allDetailFrames();
     const assets = Array.isArray(item?.demo?.assets) ? item.demo.assets : [];
-    if (!detailRoot || detailRoot.classList.contains('hidden') || !item || frames.length < 2 || assets.length < 2) return;
+    if (!detailRoot || detailRoot.classList.contains('hidden')) {
+      setDetailStatus('');
+      return;
+    }
+    if (!item || frames.length < 1 || assets.length < 1 || frames.length !== assets.length) {
+      for (const frame of frames) {
+        frame.setAttribute('data-demo-playable', 'false');
+        frame.setAttribute('hidden', '');
+        frame.setAttribute('aria-hidden', 'true');
+      }
+      detailLoad = item ? {id: item.id, frames, settled: true} : null;
+      setDetailStatus('unavailable');
+      return;
+    }
 
     const sameFrames = detailLoad && detailLoad.id === item.id
       && detailLoad.frames.length === frames.length
@@ -185,34 +216,24 @@
 
     const token = { id: item.id, frames, settled: false };
     detailLoad = token;
-    frames.forEach((frame, index) => {
-      if (index === 0 && localAsset(assets[index])) {
-        frame.setAttribute('data-demo-playable', 'true');
-        frame.removeAttribute('hidden');
-        frame.removeAttribute('aria-hidden');
-      } else if (index < assets.length && localAsset(assets[index])) {
-        frame.setAttribute('data-demo-playable', 'pending');
-        frame.setAttribute('hidden', '');
-        frame.setAttribute('aria-hidden', 'true');
-      } else {
-        frame.setAttribute('data-demo-playable', 'false');
-        frame.setAttribute('hidden', '');
-        frame.setAttribute('aria-hidden', 'true');
-      }
+    frames.forEach(frame => {
+      frame.setAttribute('data-demo-playable', 'pending');
+      frame.setAttribute('hidden', '');
+      frame.setAttribute('aria-hidden', 'true');
     });
+    setDetailStatus('loading');
 
-    const pending = frames.slice(1).map((_, index) => {
-      const asset = assets[index + 1];
-      return localAsset(asset) ? preloadAsset(asset) : Promise.resolve(false);
-    });
+    // Validate every frame, including the initial frame already present in the DOM.
+    // A broken first image must not remain the assumed reference when later frames work.
+    const pending = assets.map(asset => localAsset(asset) ? preloadAsset(asset) : Promise.resolve(false));
     Promise.all(pending).then(results => {
       if (detailLoad !== token) return;
       const currentFrames = allDetailFrames();
       if (currentFrames.length !== token.frames.length
         || currentFrames.some((frame, index) => frame !== token.frames[index])) return;
 
-      for (let index = 1; index < frames.length; index++) {
-        const loaded = Boolean(results[index - 1]) && Boolean(localAsset(assets[index]));
+      for (let index = 0; index < frames.length; index++) {
+        const loaded = Boolean(results[index]) && Boolean(localAsset(assets[index]));
         if (loaded) {
           frames[index].setAttribute('data-demo-playable', 'true');
           frames[index].removeAttribute('hidden');
@@ -233,27 +254,55 @@
   function renderDetailSequence(animate) {
     const allFrames = allDetailFrames();
     const frames = detailFrames();
-    if (!detailDemo || frames.length < 2) {
+    if (!detailRoot || detailRoot.classList.contains('hidden')) {
+      detailDemo?.classList.remove('auto-sequence');
+      detailDemo?.classList.remove('single-reference');
+      for (const frame of allFrames) frame.classList.remove('is-active');
+      setDetailStatus('');
+      return;
+    }
+    if (detailLoad && !detailLoad.settled && detailLoad.id === detailExercise()?.id) {
+      detailDemo?.classList.remove('auto-sequence');
+      detailDemo?.classList.remove('single-reference');
+      setDetailStatus('loading');
+      return;
+    }
+    if (frames.length < 2) {
       detailDemo?.classList.remove('auto-sequence');
       detailDemo?.classList.toggle('single-reference', frames.length === 1);
+      const playable = new Set(frames);
       for (const frame of allFrames) {
         frame.classList.remove('is-active');
-        if (frame.getAttribute('data-demo-playable') === 'false'
-          || frame.getAttribute('data-demo-playable') === 'pending') frame.setAttribute('aria-hidden', 'true');
-        else frame.removeAttribute('aria-hidden');
+        if (playable.has(frame)) {
+          frame.removeAttribute('hidden');
+          frame.removeAttribute('aria-hidden');
+        } else {
+          frame.setAttribute('hidden', '');
+          frame.setAttribute('aria-hidden', 'true');
+        }
       }
+      setDetailStatus(frames.length === 1 ? 'single' : 'unavailable');
       return;
     }
     const active = Boolean(animate && detailIsOpen() && !reduceMotion() && !document.hidden);
     detailDemo.classList.remove('single-reference');
     detailDemo.classList.toggle('auto-sequence', active);
     if (!active) detailIndex = 0;
+    const playable = new Set(frames);
     frames.forEach((frame, index) => {
+      frame.removeAttribute('hidden');
       const isActive = active && index === detailIndex;
       frame.classList.toggle('is-active', isActive);
       if (active && !isActive) frame.setAttribute('aria-hidden', 'true');
       else frame.removeAttribute('aria-hidden');
     });
+    for (const frame of allFrames) {
+      if (playable.has(frame)) continue;
+      frame.classList.remove('is-active');
+      frame.setAttribute('hidden', '');
+      frame.setAttribute('aria-hidden', 'true');
+    }
+    setDetailStatus(active ? 'playing' : reduceMotion() ? 'reduced' : document.hidden ? 'paused' : 'static');
   }
 
   function stopTimer() {
@@ -292,7 +341,7 @@
       const item = detailExercise();
       const frames = detailFrames();
       if (item && frames.length > 1) {
-        detailIndex = (detailIndex + 1) % Math.min(frames.length, item.demo.assets.length);
+        detailIndex = (detailIndex + 1) % frames.length;
         renderDetailSequence(true);
       }
     }

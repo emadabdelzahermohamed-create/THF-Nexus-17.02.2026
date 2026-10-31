@@ -105,6 +105,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
   const frame1 = detailFrames[1];
   const frame2 = detailFrames[2] || null;
   const detailDemo = new FakeElement({ id: 'detailDemo' });
+  const detailStatus = new FakeElement({ id: 'detailDemoStatus' });
   detailDemo.children = detailFrames;
   const detailRoot = new FakeElement({ id: 'exerciseDetail', classes: ['hidden'] });
   const reduceControl = new FakeElement({ id: 'reduceMotion' });
@@ -115,12 +116,13 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     hidden: false,
     documentElement: { lang: 'en', clientWidth: 400, clientHeight: 800 },
     getElementById(id) {
-      return ({ exerciseGrid: grid, exerciseDetail: detailRoot, detailDemo, reduceMotion: reduceControl })[id] || null;
+      return ({ exerciseGrid: grid, exerciseDetail: detailRoot, detailDemo, detailDemoStatus: detailStatus, reduceMotion: reduceControl })[id] || null;
     },
     addEventListener(type, callback) {
       if (!documentListeners.has(type)) documentListeners.set(type, []);
       documentListeners.get(type).push(callback);
-    }
+    },
+    dispatch(type) { for (const callback of documentListeners.get(type) || []) callback({ type }); }
   };
   const window = {
     THF_EXERCISES: [exercise],
@@ -208,7 +210,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     animationFrames.clear();
     callbacks.forEach(callback => callback());
   };
-  return { timers, timeouts, images, animationFrames, grid, card, cardImage, detailRoot, detailDemo, detailFrames, frame0, frame1, frame2, reduceControl, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
+  return { timers, timeouts, images, animationFrames, grid, card, cardImage, detailRoot, detailDemo, detailStatus, detailFrames, frame0, frame1, frame2, reduceControl, document, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
 }
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
@@ -418,10 +420,48 @@ test('detail animation skips a failed local frame and cycles only decoded frames
   assert.equal(h.frame1.classList.contains('is-active'), false);
 });
 
-test('detail with no decoded secondary frames stays on the accessible reference frame', async () => {
+test('detail skips a failed first frame and animates only decoded later frames', async () => {
   const h = buildHarness({
+    visible: false,
     exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg', 'media/demo-test/2.jpg'],
-    imageLoadMode: 'error'
+    imageLoadMode: src => src.endsWith('/0.jpg') ? 'error' : 'load'
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.frame0.getAttribute('data-demo-playable'), 'false');
+  assert.equal(h.frame0.getAttribute('hidden'), '');
+  assert.equal(h.frame1.getAttribute('data-demo-playable'), 'true');
+  assert.equal(h.frame2.getAttribute('data-demo-playable'), 'true');
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), true);
+  assert.equal(h.detailStatus.textContent, 'Offline demonstration is playing automatically.');
+  h.tick();
+  assert.equal(h.frame2.classList.contains('is-active'), true);
+});
+
+test('detail with no decoded frames hides broken images and reports unavailable', async () => {
+  const h = buildHarness({ visible: false, imageLoadMode: 'error' });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), false);
+  assert.equal(h.detailDemo.classList.contains('single-reference'), false);
+  for (const frame of h.detailFrames) {
+    assert.equal(frame.getAttribute('hidden'), '');
+    assert.equal(frame.getAttribute('aria-hidden'), 'true');
+  }
+  assert.equal(h.detailStatus.textContent, 'Offline demonstration unavailable — no local frame could be loaded.');
+  assert.equal(h.timers.size, 0);
+});
+
+test('detail keeps the only decoded frame as a static accessible reference', async () => {
+  const h = buildHarness({
+    visible: false,
+    exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg', 'media/demo-test/2.jpg'],
+    imageLoadMode: src => src.endsWith('/1.jpg') ? 'load' : 'error'
   });
   await new Promise(resolve => setImmediate(resolve));
   h.detailRoot.classList.remove('hidden');
@@ -429,8 +469,38 @@ test('detail with no decoded secondary frames stays on the accessible reference 
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.detailDemo.classList.contains('auto-sequence'), false);
   assert.equal(h.detailDemo.classList.contains('single-reference'), true);
-  assert.equal(h.frame0.getAttribute('aria-hidden'), null);
-  assert.equal(h.frame1.getAttribute('hidden'), '');
+  assert.equal(h.frame0.getAttribute('hidden'), '');
+  assert.equal(h.frame1.getAttribute('hidden'), null);
+  assert.equal(h.frame1.getAttribute('aria-hidden'), null);
   assert.equal(h.frame2.getAttribute('hidden'), '');
+  assert.equal(h.detailStatus.textContent, 'Motion unavailable; showing the one available reference frame.');
   assert.equal(h.timers.size, 0);
+});
+
+test('detail status reports reduced motion and background pause, then resumes in Arabic', async () => {
+  const h = buildHarness({ visible: false });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.detailStatus.textContent, 'Offline demonstration is playing automatically.');
+  h.setStoredPreference('1');
+  assert.equal(h.detailStatus.textContent, 'Reduced motion is enabled; static reference frames are shown.');
+  assert.equal(h.timers.size, 0);
+  h.setStoredPreference('0');
+  assert.equal(h.detailStatus.textContent, 'Offline demonstration is playing automatically.');
+  assert.equal(h.timers.size, 1);
+  h.document.hidden = true;
+  h.document.dispatch('visibilitychange');
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused while the app is in the background.');
+  assert.equal(h.timers.size, 0);
+  h.document.hidden = false;
+  h.document.documentElement.lang = 'ar';
+  h.document.dispatch('visibilitychange');
+  assert.equal(h.detailStatus.textContent, 'العرض دون إنترنت يعمل تلقائيًا.');
+  assert.equal(h.timers.size, 1);
+});
+
+test('detail demo status is a dedicated polite live region in the UI', () => {
+  assert.match(indexSource, /id="detailDemoStatus" class="detail-demo-status" role="status" aria-live="polite" aria-atomic="true"/);
 });
