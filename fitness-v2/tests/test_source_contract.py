@@ -587,5 +587,26 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn('id="motionSourceBadge"', html)
 
 
+    def test_exercise_and_program_dialogs_restore_focus_and_trap_tab(self):
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        for marker in (
+            "function restoreDialogFocus(target, fallbackSelector)",
+            "function trapDialogFocus(event, dialog)",
+            "let exerciseDetailReturnFocus = null",
+            "let programDetailReturnFocus = null",
+            "restoreDialogFocus(exerciseDetailReturnFocus, '#exerciseSearch')",
+            "restoreDialogFocus(programDetailReturnFocus, '#programGrid .program-card')",
+            "if (event.key !== 'Tab') return;",
+            "trapDialogFocus(event,activeDialog)",
+            "closeProgramDetail(false,true)",
+            "openDetail(id,returnFocus)",
+        ):
+            self.assertIn(marker, app)
+        self.assertGreaterEqual(html.count('role="dialog" aria-modal="true"'), 2)
+        self.assertIn('aria-labelledby="detailName"', html)
+        self.assertIn('aria-labelledby="programDetailName"', html)
+
+
 if __name__ == "__main__":
     unittest.main()

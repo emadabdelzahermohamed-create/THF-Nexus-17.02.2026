@@ -164,12 +164,43 @@
     $('programGrid').querySelectorAll('.program-card').forEach(card => card.addEventListener('click', () => openProgramDetail(card.dataset.program)));
   }
 
+  let exerciseDetailReturnFocus = null;
+  let programDetailReturnFocus = null;
+
+  function restoreDialogFocus(target, fallbackSelector) {
+    const usableTarget = target && target.isConnected && !target.closest('.hidden') && !target.closest('[aria-hidden="true"]');
+    const destination = usableTarget ? target : (document.querySelector(fallbackSelector) || document.querySelector('#exerciseSearch'));
+    if (destination && typeof destination.focus === 'function') destination.focus({preventScroll:true});
+  }
+
+  function trapDialogFocus(event, dialog) {
+    if (event.key !== 'Tab') return;
+    const candidates = [...dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+      .filter(node => !node.closest('.hidden') && !node.closest('[aria-hidden="true"]') && !node.disabled);
+    if (!candidates.length) {
+      event.preventDefault();
+      dialog.querySelector('button')?.focus();
+      return;
+    }
+    const first = candidates[0], last = candidates[candidates.length - 1];
+    if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+      event.preventDefault(); first.focus();
+    }
+  }
+
   function openProgramDetail(id) {
     state.selectedProgram = PROGRAMS.find(program => program.id === id); if (!state.selectedProgram) return;
+    programDetailReturnFocus = document.activeElement;
     renderProgramDetail(state.selectedProgram); $('programDetail').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('programDetailCloseButton').focus();
   }
 
-  function closeProgramDetail() { $('programDetail').classList.add('hidden'); document.body.style.overflow = ''; }
+  function closeProgramDetail(restoreFocus = true, preserveReturnFocus = false) {
+    $('programDetail').classList.add('hidden'); document.body.style.overflow = '';
+    if (restoreFocus) restoreDialogFocus(programDetailReturnFocus, '#programGrid .program-card');
+    if (!preserveReturnFocus) programDetailReturnFocus = null;
+  }
 
   function prescriptionText(reference) {
     const dose = reference.durationSeconds ? `${reference.sets} × ${reference.durationSeconds}s` : `${reference.sets} × ${reference.reps || '—'}`;
@@ -180,7 +211,7 @@
     $('programDetailSection').textContent = local(program.section); $('programDetailName').textContent = local(program.name); $('programDetailSummary').textContent = local(program.summary);
     $('programDetailMeta').innerHTML = `<span class="tag">${program.weeks} ${escapeHtml(t('weeks'))}</span><span class="tag">${program.daysPerWeek} ${escapeHtml(t('daysWeekly'))}</span><span class="tag">${program.estimatedSessionMinutes} ${escapeHtml(t('min'))}</span><span class="tag">${escapeHtml(local(program.level))}</span><span class="tag">✓ ${escapeHtml(t('offline'))}</span>`;
     $('programSessions').innerHTML = `<div class="results-heading"><h2>${escapeHtml(t('programSessions'))}</h2><span class="count-badge">${program.sessions.length}</span></div>` + program.sessions.map((session,index) => `<article class="program-session"><div class="card-heading"><div><p class="eyebrow">${escapeHtml(t('session'))} ${index+1}</p><h3>${escapeHtml(local(session.name))}</h3></div><div class="program-session-actions"><span class="count-badge">${session.exercises.length} ${escapeHtml(t('exerciseCount'))}</span><button class="button secondary compact" type="button" data-start-program="${escapeHtml(program.id)}" data-start-session="${escapeHtml(session.id)}">${escapeHtml(t('startSession'))}</button></div></div><div class="session-exercises">${session.exercises.map(reference => { const exercise=exerciseFor(reference); return exercise?`<button type="button" data-exercise="${escapeHtml(exercise.id)}"><span><b>${escapeHtml(local(exercise.name))}</b><small>${escapeHtml(prescriptionText(reference))}</small></span><span aria-hidden="true">›</span></button>`:''; }).join('')}</div></article>`).join('');
-    $('programSessions').querySelectorAll('[data-exercise]').forEach(button => button.addEventListener('click', () => { const id=button.dataset.exercise; closeProgramDetail(); openDetail(id); }));
+    $('programSessions').querySelectorAll('[data-exercise]').forEach(button => button.addEventListener('click', () => { const id=button.dataset.exercise; const returnFocus=programDetailReturnFocus; closeProgramDetail(false,true); openDetail(id,returnFocus); }));
     $('programSessions').querySelectorAll('[data-start-program]').forEach(button => button.addEventListener('click', () => startProgramSession(button.dataset.startProgram, button.dataset.startSession)));
     $('programProgression').innerHTML = program.progression[state.lang].map(step => `<li>${escapeHtml(step)}</li>`).join('');
     $('programSafety').textContent = local(program.safety); $('programSource').textContent = t('programSource'); $('useProgramBtn').dataset.program = program.id;
@@ -189,7 +220,7 @@
   function useProgram(id) {
     const program = PROGRAMS.find(item => item.id === id); if (!program) return;
     store.setItem('pulse.v2.program', JSON.stringify({programId:id, sessionIndex:0, selectedAt:new Date().toISOString()}));
-    closeProgramDetail(); renderToday(); showScreen('todayScreen'); toast(t('programSelected'));
+    closeProgramDetail(false); renderToday(); showScreen('todayScreen'); toast(t('programSelected'));
   }
 
   function uniqueOptions(items, getter, labeler) {
@@ -313,11 +344,17 @@
     if (render) { populateFilters(); renderExercises(); }
   }
 
-  function openDetail(id) {
+  function openDetail(id, returnFocus = document.activeElement) {
     state.selected = EXERCISES.find(item => item.id === id); if (!state.selected) return;
+    exerciseDetailReturnFocus = returnFocus;
     renderDetail(state.selected); $('exerciseDetail').classList.remove('hidden'); document.body.style.overflow = 'hidden'; $('detailCloseButton').focus();
   }
-  function closeDetail() { $('exerciseDetail').classList.add('hidden'); document.body.style.overflow = ''; }
+  function closeDetail(restoreFocus = true) {
+    $('exerciseDetail').classList.add('hidden'); document.body.style.overflow = '';
+    if (restoreFocus) restoreDialogFocus(exerciseDetailReturnFocus, '#exerciseSearch');
+    exerciseDetailReturnFocus = null;
+    programDetailReturnFocus = null;
+  }
   function list(items, ordered = false) { const tag = ordered ? 'ol' : 'ul'; return `<${tag}>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</${tag}>`; }
   function renderDetail(item) {
     $('detailDemo').innerHTML = motionPlayer(item, 'detail') + motionCredit(item);
@@ -388,7 +425,7 @@
   function startExercise(item) {
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
     state.active = {clientRecordId,exerciseId:item.id,startedAt:Date.now(),sets:makeSets(item),sensorProfile,motionSessionId}; state.demoFrame=0;
-    store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail();
+    store.setItem('pulse.v2.active', JSON.stringify(state.active)); closeDetail(false);
     beginNativeMotionSession(motionSessionId,sensorProfile); startMotionPolling(); renderActiveWorkout(); showScreen('activeWorkoutScreen', false); speakExercise(item);
   }
   function startProgramSession(programId,sessionId) {
@@ -396,7 +433,7 @@
     const now=Date.now();store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex,selectedAt:new Date(now).toISOString()}));
     const clientRecordId=makeClientId(),sensorProfile=sensorProfileForExercise(item),motionSessionId=`${clientRecordId}:0:${item.id}`;
     state.active={clientRecordId,exerciseId:item.id,startedAt:now,sets:makeProgramSets(reference,item),programId:program.id,programSessionId:session.id,programSessionIndex:sessionIndex,programExerciseIndex:0,programStartedAt:now,programEntries:[],sensorProfile,motionSessionId};state.demoFrame=0;
-    persistActive();closeProgramDetail();closeDetail();beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);speakExercise(item);
+    persistActive();closeProgramDetail(false);closeDetail(false);beginNativeMotionSession(motionSessionId,sensorProfile);startMotionPolling();renderActiveWorkout();showScreen('activeWorkoutScreen',false);speakExercise(item);
   }
   function activeExercise() { return EXERCISES.find(item => item.id === state.active?.exerciseId); }
   function speakExercise(item, options) {
@@ -671,7 +708,16 @@
     window.addEventListener('thf:backend-auth',event=>{renderNativeStatus();if(event.detail?.error)toast(event.detail.error);});window.addEventListener('thf:backend-sync',event=>{renderNativeStatus();if(event.detail?.lastError)toast(event.detail.lastError);});window.addEventListener('thf:backend-history',event=>{const detail=event.detail||{};if(detail.lastError){toast((state.lang==='ar'?'تعذرت استعادة سجل الحساب: ':'Account history restore failed: ')+detail.lastError);return;}const remote=Array.isArray(detail.items)?detail.items:[];const merged=new Map(history().map(item=>[item.clientRecordId,item]));for(const workout of remote){const id=String(workout.clientRecordId||'');if(!/^[A-Za-z0-9._:-]{8,120}$/.test(id)||merged.has(id))continue;const startedAtMs=Date.parse(workout.startedAt||'');const endedAtMs=Date.parse(workout.endedAt||'');if(!Number.isFinite(startedAtMs)||!Number.isFinite(endedAtMs)||endedAtMs<=startedAtMs)continue;const sets=(Array.isArray(workout.sets)?workout.sets:[]).map(set=>({exerciseId:String(set.exerciseId||workout.sport||'other'),type:String(set.setType||'working'),load:Number(set.loadKg)||0,reps:Number(set.reps)||0,restSeconds:Number(set.restSeconds)||0,rpe:set.rpe??null,rir:set.rir??null,complete:true}));const exercise=String(sets[0]?.exerciseId||workout.sport||'Workout');merged.set(id,{clientRecordId:id,recordVersion:Number(workout.clientRecordVersion)||1,id:exercise,exercise,exerciseName:exercise,sport:String(workout.sport||'other'),startedAtMs,endedAtMs,date:new Date(endedAtMs).toISOString(),durationMin:Math.max(1,Math.round((endedAtMs-startedAtMs)/60000)),reps:sets.reduce((sum,set)=>sum+set.reps,0),volumeKg:Number(workout.volumeKg)||sets.reduce((sum,set)=>sum+set.load*set.reps,0),sets,completed:true,steps:0,motionEvidence:null,measurementSource:'SERVER_RESTORED_UNVERIFIED',restoredFromAccount:true});}const next=[...merged.values()].sort((a,b)=>(a.endedAtMs||Date.parse(a.date)||0)-(b.endedAtMs||Date.parse(b.date)||0)).slice(-200);store.setItem('pulse.v2.history',JSON.stringify(next));renderToday();renderProgress();if(remote.length)toast(state.lang==='ar'?`تمت استعادة ${remote.length} جلسة من حسابك`:`Restored ${remote.length} workouts from your account`);});
     window.addEventListener('thf:billing-status',event=>renderFoundingHero(event.detail||{}));
     document.addEventListener('visibilitychange',()=>{const video=$('activeDemoVideo');if(document.hidden)video.pause();else{if($('activeWorkoutScreen').classList.contains('active')&&!video.classList.contains('hidden'))video.play().catch(()=>{});if(state.active?.restEndsAtMs)renderRest();if($('activityScreen').classList.contains('active'))renderActivity(readActivitySnapshot());}});
-    window.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(!$('exerciseDetail').classList.contains('hidden'))closeDetail();else if(!$('programDetail').classList.contains('hidden'))closeProgramDetail();});
+    window.addEventListener('keydown',event=>{
+      const exerciseDialog=$('exerciseDetail'), programDialog=$('programDetail');
+      if(event.key==='Escape'){
+        if(!exerciseDialog.classList.contains('hidden'))closeDetail();
+        else if(!programDialog.classList.contains('hidden'))closeProgramDetail();
+        return;
+      }
+      const activeDialog=!exerciseDialog.classList.contains('hidden')?exerciseDialog:(!programDialog.classList.contains('hidden')?programDialog:null);
+      if(activeDialog)trapDialogFocus(event,activeDialog);
+    });
   }
 
   const shouldOnboard = !store.getItem('pulse.v2.profile') && !state.active;
