@@ -99,3 +99,18 @@
 .resume-recovery-actions p{line-height:1.65}
 .resume-recovery-actions .button{margin-top:8px}
 .resume-recovery-actions .button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+
+
+/* Archived workout recovery: restore only when the catalog makes the exact session valid again. */
+.archived-workouts-card{display:grid;gap:10px}
+.archived-workouts-card .card-heading h2{margin:0;font-size:clamp(17px,3vw,22px)}
+.archived-workouts-list{display:grid;gap:9px}
+.archived-workout-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #36505a;border-radius:14px;background:rgba(255,255,255,.025)}
+.archived-workout-copy{display:grid;gap:4px;min-width:0}
+.archived-workout-copy h3{margin:0;font-size:15px;overflow-wrap:anywhere}
+.archived-workout-copy p{margin:0;line-height:1.5}
+.archived-workout-state{color:var(--muted)}
+.archived-workout-restore{flex:0 0 auto;min-height:40px}
+@media(max-width:520px){.archived-workout-row{align-items:stretch;flex-direction:column}.archived-workout-restore{width:100%}}
+.archived-workout-restore:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.archived-workout-row,.archived-workout-restore{scroll-behavior:auto;transition:none}}
