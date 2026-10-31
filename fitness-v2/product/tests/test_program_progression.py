@@ -41,6 +41,31 @@ class ProgramProgressionTest(unittest.TestCase):
             self.assertNotIn("load", " ".join(progression["en"]).lower())
             self.assertNotIn("الحمل", " ".join(progression["ar"]))
 
+    def test_bodyweight_programs_progress_without_external_load(self):
+        programs = BUILDER.build()
+        bodyweight_sections = {"home", "calisthenics"}
+
+        for program in programs:
+            if program["section"]["id"] not in bodyweight_sections:
+                continue
+            with self.subTest(program=program["id"]):
+                equipment_ids = {item["id"] for item in program["equipment"]}
+                self.assertLessEqual(equipment_ids, {"body only", "other"})
+                english = " ".join(program["progression"]["en"]).lower()
+                arabic = " ".join(program["progression"]["ar"])
+                self.assertIn("do not add external load", english)
+                self.assertIn("دون إضافة حمل خارجي", arabic)
+                self.assertNotIn("2–5% load", english)
+                self.assertNotIn("الحمل 2–5%", arabic)
+                self.assertEqual(
+                    BUILDER.progression_for(
+                        program["section"]["id"],
+                        program["weeks"],
+                        program["level"]["id"],
+                    ),
+                    program["progression"],
+                )
+
     def test_every_program_uses_its_section_progression(self):
         programs = BUILDER.build()
 
