@@ -21,7 +21,7 @@ function classList(initial = []) {
   };
 }
 
-function createHarness(active = true) {
+function createHarness(active = true, includeStatus = true) {
   const probes = [];
   const intervals = new Map();
   const timeouts = new Map();
@@ -37,11 +37,13 @@ function createHarness(active = true) {
   };
   const video = {classList: classList(['hidden'])};
   const phase = {textContent: ''};
+  const status = {textContent: ''};
   const reduceMotion = {
     checked: false, handlers: [],
     addEventListener(name, callback) { if (name === 'change') this.handlers.push(callback); }
   };
-  const elements = {activeWorkoutScreen: root, activeDemoImage: image, activeDemoVideo: video, activeDemoPhase: phase, reduceMotion};
+  const elements = {activeWorkoutScreen: root, activeDemoImage: image, activeDemoVideo: video, activeDemoPhase: phase, activeDemoStatus: status, reduceMotion};
+  if (!includeStatus) delete elements.activeDemoStatus;
   const document = {
     hidden: false,
     getElementById(id) { return elements[id] || null; },
@@ -79,7 +81,7 @@ function createHarness(active = true) {
   }
   new Function('window', 'document', 'Image', source)(window, document, FakeImage);
   return {
-    api: window.THFActiveWorkoutDemoMotion, document, root, image, video, phase, probes, intervals, timeouts,
+    api: window.THFActiveWorkoutDemoMotion, document, root, image, video, phase, status, probes, intervals, timeouts,
     runInterval() { for (const value of [...intervals.values()]) value.callback(); },
     runTimeouts() {
       for (const [id, value] of [...timeouts.entries()]) {
@@ -246,4 +248,42 @@ test('invalid non-local demo paths do not leave the previous or broken image vis
   assert.equal(h.image.getAttribute('src'), null);
   assert.equal(h.image.alt, '');
   assert.match(h.phase.textContent, /no local image could be decoded/);
+});
+
+
+test('screen-reader status announces bilingual state changes without per-frame chatter', async () => {
+  const h = createHarness(); const item = sampleItem();
+  h.api.render(item, 'en', false);
+  h.probes[0].emit('load'); h.probes[1].emit('load'); await flushPromises();
+  assert.equal(h.status.textContent, 'Automatic reference sequence');
+  h.runInterval();
+  assert.equal(h.status.textContent, 'Automatic reference sequence');
+  h.api.render(item, 'ar', false);
+  assert.equal(h.status.textContent, 'تسلسل مرجعي تلقائي');
+  assert.equal(h.phase.textContent, 'تسلسل مرجعي تلقائي');
+  assert.equal(h.intervals.size, 1);
+});
+
+test('screen-reader status announces pause, reduced-motion, and unavailable states', async () => {
+  const h = createHarness(); const item = sampleItem();
+  h.api.render(item, 'en', false);
+  h.probes[0].emit('load'); h.probes[1].emit('load'); await flushPromises();
+  h.document.hidden = true; h.document.dispatch('visibilitychange');
+  assert.equal(h.status.textContent, 'Demo paused while workout is hidden');
+  h.document.hidden = false; h.document.dispatch('visibilitychange');
+  assert.equal(h.status.textContent, 'Automatic reference sequence');
+  h.api.render(item, 'ar', true);
+  assert.equal(h.status.textContent, 'صورة ثابتة — تقليل الحركة');
+  const failed = createHarness();
+  failed.api.render(item, 'en', false);
+  failed.probes[0].emit('error'); failed.probes[1].emit('error'); await flushPromises();
+  assert.equal(failed.status.textContent, 'Offline demo unavailable — no local image could be decoded');
+});
+
+test('active demo remains usable when the optional screen-reader status node is absent', async () => {
+  const h = createHarness(true, false);
+  h.api.render(sampleItem(), 'en', false);
+  h.probes[0].emit('load'); h.probes[1].emit('load'); await flushPromises();
+  assert.equal(h.phase.textContent, 'Automatic reference sequence');
+  assert.equal(h.intervals.size, 1);
 });

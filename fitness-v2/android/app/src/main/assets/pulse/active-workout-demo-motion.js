@@ -6,6 +6,7 @@
   const image = document.getElementById('activeDemoImage');
   const video = document.getElementById('activeDemoVideo');
   const phase = document.getElementById('activeDemoPhase');
+  const status = document.getElementById('activeDemoStatus');
   const preloadCache = new Map();
   let current = null;
   let timer = null;
@@ -29,7 +30,7 @@
   function hasNoFrames(state) { return Array.isArray(state.frames) && state.frames.length === 0; }
   function screenActive() { return Boolean(root && root.classList.contains('active') && !document.hidden); }
   function setPhase(key, state) {
-    if (!phase || !state) return;
+    if (!state) return;
     const labels = {
       preparing: {en: 'Preparing offline demo…', ar: 'جارٍ تجهيز العرض دون إنترنت…'},
       playing: {en: 'Automatic reference sequence', ar: 'تسلسل مرجعي تلقائي'},
@@ -39,7 +40,10 @@
       unavailable: {en: 'Static reference image — motion unavailable', ar: 'صورة مرجعية ثابتة — الحركة غير متاحة'},
       missing: {en: 'Offline demo unavailable — no local image could be decoded', ar: 'تعذر عرض التمرين دون إنترنت — لم يمكن فك أي صورة'}
     };
-    phase.textContent = labels[key]?.[state.lang] || labels[key]?.en || '';
+    const label = labels[key]?.[state.lang] || labels[key]?.en || '';
+    state.phaseKey = key;
+    if (phase && phase.textContent !== label) phase.textContent = label;
+    if (status && status.textContent !== label) status.textContent = label;
   }
   function renderFrame(state, index) {
     if (!image || !state) return;
@@ -160,9 +164,12 @@
       stop();
       current = {item, lang: lang === 'ar' ? 'ar' : 'en', reduced: Boolean(reduced), frames: null, index: 0, pending: false};
     } else {
+      const nextLang = lang === 'ar' ? 'ar' : 'en';
+      const languageChanged = current.lang !== nextLang;
       current.item = item;
-      current.lang = lang === 'ar' ? 'ar' : 'en';
+      current.lang = nextLang;
       current.reduced = Boolean(reduced);
+      if (languageChanged && current.phaseKey) setPhase(current.phaseKey, current);
     }
     const state = current;
     renderFrame(state, state.index);
