@@ -18,10 +18,14 @@ data class SportEvidence(
 
 object WearableProvenancePolicy {
     private val wearableDeviceTypes = setOf("watch", "smartwatch", "fitness_band", "fitness_tracker", "wearable")
+    private val reconcilableSports = setOf(SportKind.WALKING, SportKind.RUNNING, SportKind.CYCLING)
 
     private fun hasWearableDeviceProvenance(evidence: SportEvidence): Boolean =
         !evidence.sourcePackage.isNullOrBlank() &&
             evidence.deviceType?.trim()?.lowercase() in wearableDeviceTypes
+
+    private fun isHealthOrigin(origin: EvidenceOrigin): Boolean =
+        origin == EvidenceOrigin.HEALTH_WEARABLE || origin == EvidenceOrigin.HEALTH_IMPORTED
 
     fun classify(evidence: SportEvidence): CompetitionTrust {
         if (evidence.anomalyRejected || evidence.endEpochMillis <= evidence.startEpochMillis) {
@@ -50,7 +54,19 @@ object WearableProvenancePolicy {
 
     fun isDuplicate(a: SportEvidence, b: SportEvidence, toleranceMillis: Long = 120_000L): Boolean {
         if (a.sport != b.sport) return false
+
+        // A stable Health record identity is authoritative only within the same source package.
         if (!a.recordId.isNullOrBlank() && a.recordId == b.recordId && a.sourcePackage == b.sourcePackage) return true
+
+        // Time proximity is deliberately limited to the P0 reconciliation case: the same
+        // walking/running/cycling session observed by the phone and by Health/watch. Treating
+        // arbitrary same-sport records as duplicates can silently erase two legitimate sessions.
+        if (a.sport !in reconcilableSports) return false
+        val phoneHealthPair =
+            (a.origin == EvidenceOrigin.PHONE_MEASURED && isHealthOrigin(b.origin)) ||
+                (b.origin == EvidenceOrigin.PHONE_MEASURED && isHealthOrigin(a.origin))
+        if (!phoneHealthPair) return false
+
         val startClose = kotlin.math.abs(a.startEpochMillis - b.startEpochMillis) <= toleranceMillis
         val endClose = kotlin.math.abs(a.endEpochMillis - b.endEpochMillis) <= toleranceMillis
         return startClose && endClose
