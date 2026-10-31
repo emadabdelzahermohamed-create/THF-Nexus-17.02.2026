@@ -18,6 +18,23 @@ EXPECTED_FINAL_ENGLISH_CUE = (
     "together in the opposite direction to receive the next pass; let the feet pivot naturally, "
     "keep the knees soft, and stop if balance or comfort is lost."
 )
+
+DANCERS_STRETCH_SOURCE_ID = "Dancers_Stretch"
+EXPECTED_DANCERS_STRETCH_STEPS = {
+    "en": [
+        "Sit tall on the floor with both legs extended in front of you.",
+        "Cross your right leg over your left, bend the right knee, and place the right foot flat beside the left knee.",
+        "Place the left arm outside the right thigh and the right hand behind you for support; do not pull the knee to force the twist.",
+        "Rotate your chest gently to the right within a comfortable range and hold for 10–20 seconds. Return to center, then switch sides."
+    ],
+    "ar": [
+        "اجلس منتصبًا على الأرض مع إطالة الساقين أمامك.",
+        "اعبر الساق اليمنى فوق اليسرى مع ثني الركبة وتثبيت القدم اليمنى على الأرض بجوار الركبة اليسرى.",
+        "ضع الذراع اليسرى خارج الفخذ الأيمن واليد اليمنى خلفك للدعم؛ لا تسحب الركبة لفرض الالتواء.",
+        "أدر الصدر برفق إلى اليمين ضمن مدى مريح واثبت 10–20 ثانية. عد للوسط ثم بدّل الجهة."
+    ]
+}
+
 GENERIC_ENGLISH_FILLER = (
     re.compile(r"\brepeat the procedure\b", re.IGNORECASE),
     re.compile(r"\bperform the (?:amount|number) of repetitions\b", re.IGNORECASE),
@@ -64,6 +81,17 @@ class CatalogInstructionSpecificityRegressionTest(unittest.TestCase):
         digest = hashlib.sha256(CATALOG_PATH.read_bytes()).hexdigest()
         self.assertEqual(digest, self.manifest["catalogSha256"])
 
+
+    def test_dancers_stretch_steps_are_bilingual_and_do_not_force_the_knee(self):
+        item = self.by_source_id[DANCERS_STRETCH_SOURCE_ID]
+        self.assertEqual(EXPECTED_DANCERS_STRETCH_STEPS, item["steps"])
+        self.assertEqual(item["steps"], BUILDER.STEP_OVERRIDES[DANCERS_STRETCH_SOURCE_ID])
+        self.assertEqual(len(item["steps"]["en"]), len(item["steps"]["ar"]))
+        self.assertEqual(len(item["steps"]["en"]), 4)
+        self.assertIn("do not pull the knee", item["steps"]["en"][2])
+        self.assertIn("لا تسحب الركبة", item["steps"]["ar"][2])
+        self.assertIn("Return to center", item["steps"]["en"][3])
+        self.assertIn("عد للوسط", item["steps"]["ar"][3])
 
 if __name__ == "__main__":
     unittest.main()
