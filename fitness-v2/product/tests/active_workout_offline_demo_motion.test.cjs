@@ -189,6 +189,16 @@ test('a reviewed video demo never starts the fallback image timer', () => {
   assert.equal(h.intervals.size, 0);
 });
 
+test('reduced motion enabled during preload remains static after frames resolve', async () => {
+  const h = createHarness(); const item = sampleItem();
+  h.api.render(item, 'en', false);
+  h.api.render(item, 'ar', true);
+  h.probes[0].emit('load'); h.probes[1].emit('load'); await flushPromises();
+  assert.equal(h.intervals.size, 0);
+  assert.equal(h.image.getAttribute('src'), './media/demo/0.jpg');
+  assert.match(h.phase.textContent, /تقليل الحركة/);
+});
+
 test('a hidden workout screen defers preload until the screen becomes active', async () => {
   const h = createHarness(false);
   h.api.render(sampleItem(), 'en', false);
