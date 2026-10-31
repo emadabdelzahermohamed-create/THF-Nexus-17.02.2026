@@ -20,6 +20,13 @@
     return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
   function videoVisible() { return Boolean(video && !video.classList.contains('hidden')); }
+  function clearReferenceFrame() {
+    if (!image) return;
+    image.classList.add('hidden');
+    image.removeAttribute('src');
+    image.alt = '';
+  }
+  function hasNoFrames(state) { return Array.isArray(state.frames) && state.frames.length === 0; }
   function screenActive() { return Boolean(root && root.classList.contains('active') && !document.hidden); }
   function setPhase(key, state) {
     if (!phase || !state) return;
@@ -29,18 +36,20 @@
       ready: {en: 'Offline demo ready', ar: 'العرض دون إنترنت جاهز'},
       paused: {en: 'Demo paused while workout is hidden', ar: 'العرض متوقف مؤقتًا عند إخفاء التمرين'},
       reduced: {en: 'Static image — reduced motion', ar: 'صورة ثابتة — تقليل الحركة'},
-      unavailable: {en: 'Static reference image — motion unavailable', ar: 'صورة مرجعية ثابتة — الحركة غير متاحة'}
+      unavailable: {en: 'Static reference image — motion unavailable', ar: 'صورة مرجعية ثابتة — الحركة غير متاحة'},
+      missing: {en: 'Offline demo unavailable — no local image could be decoded', ar: 'تعذر عرض التمرين دون إنترنت — لم يمكن فك أي صورة'}
     };
     phase.textContent = labels[key]?.[state.lang] || labels[key]?.en || '';
   }
   function renderFrame(state, index) {
     if (!image || !state) return;
     const assets = state.item?.demo?.assets || [];
-    const entry = Array.isArray(state.frames) && state.frames.length
+    if (hasNoFrames(state)) { clearReferenceFrame(); return; }
+    const entry = Array.isArray(state.frames)
       ? state.frames[index % state.frames.length]
       : {asset: assets[0], originalIndex: 0};
     const url = localAsset(entry?.asset);
-    if (!url) return;
+    if (!url) { clearReferenceFrame(); return; }
     if (image.getAttribute('src') !== url) image.setAttribute('src', url);
     image.classList.remove('hidden');
     const isArabic = state.lang === 'ar';
@@ -117,7 +126,8 @@
       .filter(entry => localAsset(entry.asset));
     if (!entries.length) {
       state.frames = [];
-      setPhase('unavailable', state);
+      renderFrame(state, 0);
+      setPhase('missing', state);
       return;
     }
     state.pending = true;
@@ -128,6 +138,7 @@
       state.frames = entries.filter((entry, index) => results[index]);
       state.index = 0;
       renderFrame(state, 0);
+      if (hasNoFrames(state)) { setPhase('missing', state); return; }
       if (state.reduced || reducedMotion()) {
         pauseAndReset();
         setPhase('reduced', state);
@@ -155,6 +166,7 @@
     }
     const state = current;
     renderFrame(state, state.index);
+    if (hasNoFrames(state)) { setPhase('missing', state); return; }
     if (state.reduced || reducedMotion()) {
       pauseAndReset();
       setPhase('reduced', state);
@@ -176,6 +188,7 @@
     if (!current) return;
     const state = current;
     if (videoVisible()) { stop(); return; }
+    if (hasNoFrames(state)) { setPhase('missing', state); return; }
     if (state.reduced || reducedMotion()) {
       pauseAndReset();
       setPhase('reduced', state);
@@ -200,7 +213,7 @@
     if (current) { current.reduced = reducedMotion(); reconcile(); }
   });
   window.addEventListener('pagehide', () => {
-    if (current) { pauseAndReset(); setPhase('paused', current); }
+    if (current) { pauseAndReset(); setPhase(hasNoFrames(current) ? 'missing' : 'paused', current); }
   });
   window.addEventListener('pageshow', reconcile);
   window.THFActiveWorkoutDemoMotion = {render, reconcile, stop};
