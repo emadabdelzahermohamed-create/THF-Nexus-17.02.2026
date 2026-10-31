@@ -62,11 +62,11 @@ test('invalid dates and empty history fail closed', () => {
 
 test('app persists local calendar keys locally but keeps the native summary payload unchanged', () => {
   const app = fs.readFileSync(path.join(pulseDir, 'app.js'), 'utf8');
-  assert.match(app, /const workoutCalendar = window\\.THFWorkoutLocalCalendar;/);
-  assert.match(app, /localDate:workoutCalendar\\.localDateKey\\(now\\)/);
-  assert.match(app, /sessionsForLocalDay\\(entries,Date\\.now\\(\\)\\)/);
-  assert.match(app, /currentStreak\\(entries,Date\\.now\\(\\)\\)/);
-  assert.match(app, /N\\?\\.saveSummary\\?\\.\\(JSON\\.stringify\\(summary\\)\\)/);
+  assert.ok(app.includes('const workoutCalendar = window.THFWorkoutLocalCalendar;'));
+  assert.ok(app.includes('localDate:workoutCalendar.localDateKey(now)'));
+  assert.ok(app.includes('sessionsForLocalDay(entries,Date.now())'));
+  assert.ok(app.includes('currentStreak(entries,Date.now())'));
+  assert.ok(app.includes('N?.saveSummary?.(JSON.stringify(summary))'));
 });
 
 test('the local calendar module loads before app.js in the offline asset page', () => {
