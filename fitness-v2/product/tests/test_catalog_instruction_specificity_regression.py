@@ -13,72 +13,19 @@ MANIFEST_PATH = ROOT / "fitness-v2" / "product" / "CATALOG_MANIFEST.json"
 BUILDER_PATH = ROOT / "fitness-v2" / "product" / "tools" / "build_catalog.py"
 
 SOURCE_ID = "Medicine_Ball_Full_Twist"
-EXPECTED_FINAL_ENGLISH_CUE = (
-    "Pass the ball to your partner at chest height. Both partners turn the shoulders and hips "
-    "together in the opposite direction to receive the next pass; let the feet pivot naturally, "
-    "keep the knees soft, and stop if balance or comfort is lost."
-)
-
-DANCERS_STRETCH_SOURCE_ID = "Dancers_Stretch"
-EXPECTED_DANCERS_STRETCH_STEPS = {
+EXPECTED_MEDICINE_BALL_FULL_TWIST_STEPS = {
     "en": [
-        "Sit tall on the floor with both legs extended in front of you.",
-        "Cross your right leg over your left, bend the right knee, and place the right foot flat beside the left knee.",
-        "Place the left arm outside the right thigh and the right hand behind you for support; do not pull the knee to force the twist.",
-        "Rotate your chest gently to the right within a comfortable range and hold for 10–20 seconds. Return to center, then switch sides."
+        "Stand back-to-back with your partner about 2–3 feet apart, feet hip-width and knees soft. Hold a light medicine ball at chest height.",
+        "Brace gently and turn your shoulders and hips together toward the agreed passing side. Let your feet pivot as needed, keep the range comfortable, and avoid twisting only through the lower back.",
+        "Pass the ball at chest height without throwing it. Your partner receives it with both hands, then turns smoothly to bring the ball around to the next passing side.",
+        "Alternate the passing side on each exchange so both partners rotate to each side. Keep the ball close and your balance steady; stop if either partner feels pain or loses control.",
     ],
     "ar": [
-        "اجلس منتصبًا على الأرض مع إطالة الساقين أمامك.",
-        "اعبر الساق اليمنى فوق اليسرى مع ثني الركبة وتثبيت القدم اليمنى على الأرض بجوار الركبة اليسرى.",
-        "ضع الذراع اليسرى خارج الفخذ الأيمن واليد اليمنى خلفك للدعم؛ لا تسحب الركبة لفرض الالتواء.",
-        "أدر الصدر برفق إلى اليمين ضمن مدى مريح واثبت 10–20 ثانية. عد للوسط ثم بدّل الجهة."
-    ]
-}
-
-STANDING_HIP_CIRCLES_SOURCE_ID = "Standing_Hip_Circles"
-EXPECTED_STANDING_HIP_CIRCLES_STEPS = {
-    "en": [
-        "Stand on one leg beside a stable support and hold it lightly; keep the standing knee soft.",
-        "Lift the free knee toward hip height only as high as comfortable, keeping your torso tall and pelvis level.",
-        "Draw a small, controlled circle from the hip; keep your trunk steady and stay within a comfortable range.",
-        "Continue slowly for the set duration, then lower the foot with control and switch legs; reverse the circle direction on the other side.",
+        "قف مع شريكك وظهركما متقابل، على مسافة نحو 60–90 سم، والقدمان بعرض الحوض والركبتان مرتخيتان. أمسك كرة طبية خفيفة عند مستوى الصدر.",
+        "شدّ عضلات الجذع برفق وأدر الكتفين والوركين معًا نحو جهة التمرير المتفق عليها. اسمح للقدمين بالدوران عند الحاجة، واختر مدى مريحًا، ولا تحصر الالتواء في أسفل الظهر.",
+        "مرّر الكرة عند مستوى الصدر دون قذفها. يستقبلها الشريك بكلتا اليدين، ثم يدور بسلاسة لجلب الكرة إلى جهة التمرير التالية.",
+        "بدّلا جهة التمرير في كل تبادل حتى يدور كلاكما إلى الجهتين. أبقيا الكرة قريبة وحافظا على التوازن؛ وتوقفا إذا شعر أحدكما بألم أو فقد السيطرة.",
     ],
-    "ar": [
-        "قف على ساق واحدة بجوار دعامة ثابتة واستند إليها بخفة، مع ثني بسيط لركبة الارتكاز.",
-        "ارفع الركبة الحرة باتجاه ارتفاع الورك بالقدر المريح فقط، مع إبقاء الجذع منتصبًا والحوض مستويًا.",
-        "ارسم دائرة صغيرة ومتحكمًا بها من مفصل الورك؛ ثبّت الجذع واستخدم مدى مريحًا فقط.",
-        "استمر ببطء طوال مدة المجموعة، ثم أنزل القدم بتحكم وبدّل الساق؛ اعكس اتجاه الدائرة في الجهة الأخرى.",
-    ]
-}
-
-OVERHEAD_SLAM_SOURCE_ID = "Overhead_Slam"
-EXPECTED_OVERHEAD_SLAM_STEPS = {
-    "en": [
-        "Use a medicine ball intended for slams; stand with feet shoulder-width apart and clear the floor area in front.",
-        "Raise the ball overhead while extending through the hips and knees; keep your ribs stacked over your pelvis and avoid arching your lower back.",
-        "Hinge at the hips and bend your knees as you drive the ball firmly into the clear floor area in front; keep the slam controlled rather than chasing maximum force.",
-        "Catch the rebound only if the ball is designed to bounce and the return is controlled; otherwise let it settle before retrieving it. Reset your stance before the next slam."
-    ],
-    "ar": [
-        "استخدم كرة طبية مخصصة للرمي الأرضي، وقف والقدمان بعرض الكتفين مع إخلاء مساحة الأرض أمامك.",
-        "ارفع الكرة فوق الرأس مع مد الوركين والركبتين؛ أبقِ القفص الصدري فوق الحوض وتجنب تقويس أسفل الظهر.",
-        "اثنِ الوركين والركبتين وأرسل الكرة بقوة مضبوطة إلى المساحة الخالية أمامك؛ حافظ على التحكم بدل مطاردة أقصى قوة.",
-        "التقط ارتداد الكرة فقط إذا كانت مصممة للارتداد وكان مسارها تحت السيطرة؛ وإلا فاتركها تستقر قبل التقاطها. أعد ضبط وقفتك قبل الرمية التالية."
-    ]
-}
-
-HEAVY_BAG_THRUST_SOURCE_ID = "Heavy_Bag_Thrust"
-EXPECTED_HEAVY_BAG_THRUST_STEPS = {
-    "en": [
-        "Stand in a balanced staggered stance facing a securely hung heavy bag; keep the area around it clear and bring the working hand to chest height with the wrist straight.",
-        "Turn through the hips and torso together within a comfortable range, allowing the feet to pivot naturally; drive the working hand into the bag with a controlled thrust. Keep the wrist aligned with the forearm and avoid twisting sharply through the lower back.",
-        "Let the bag swing back without chasing it; soften the elbow and knees, regain balance, and repeat only when the bag is steady. Stop if you feel wrist, shoulder, or back pain."
-    ],
-    "ar": [
-        "قف بوقفة متدرجة ومتوازنة أمام كيس ملاكمة معلّق بإحكام؛ أخلِ المساحة حوله وارفع اليد العاملة إلى مستوى الصدر مع استقامة الرسغ.",
-        "أدر الوركين والجذع معًا ضمن مدى مريح، مع السماح للقدمين بالدوران الطبيعي؛ ادفع اليد العاملة نحو الكيس بدفعة متحكم بها. حافظ على محاذاة الرسغ مع الساعد وتجنب الالتواء الحاد بأسفل الظهر.",
-        "دع الكيس يتأرجح عائدًا دون ملاحقته؛ ليّن المرفقين والركبتين واستعد للتوازن، ولا تكرر إلا بعد استقرار الكيس. توقف إذا شعرت بألم في الرسغ أو الكتف أو الظهر."
-    ]
 }
 
 GENERIC_ENGLISH_FILLER = (
@@ -105,12 +52,18 @@ class CatalogInstructionSpecificityRegressionTest(unittest.TestCase):
         cls.manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
         cls.by_source_id = {item["sourceItemId"]: item for item in cls.catalog}
 
-    def test_medicine_ball_full_twist_final_cue_is_movement_specific_and_bilingual(self):
+    def test_medicine_ball_full_twist_has_coordinated_bilingual_partner_pass_cues(self):
         item = self.by_source_id[SOURCE_ID]
-        self.assertEqual(EXPECTED_FINAL_ENGLISH_CUE, item["steps"]["en"][-1])
+        self.assertEqual(EXPECTED_MEDICINE_BALL_FULL_TWIST_STEPS, item["steps"])
         self.assertEqual(item["steps"], BUILDER.STEP_OVERRIDES[SOURCE_ID])
+        self.assertEqual(4, len(item["steps"]["en"]))
         self.assertEqual(len(item["steps"]["en"]), len(item["steps"]["ar"]))
-        self.assertIn("توقف", item["steps"]["ar"][-1])
+        self.assertIn("feet pivot as needed", item["steps"]["en"][1])
+        self.assertIn("اسمح للقدمين بالدوران", item["steps"]["ar"][1])
+        self.assertIn("without throwing it", item["steps"]["en"][2])
+        self.assertIn("دون قذفها", item["steps"]["ar"][2])
+        self.assertNotIn("counter-clockwise", " ".join(item["steps"]["en"]).lower())
+        self.assertNotIn("ثبّت القدمين", " ".join(item["steps"]["ar"]))
 
     def test_generic_repetition_filler_is_absent_from_english_catalog_steps(self):
         offenders = [
