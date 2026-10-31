@@ -58,3 +58,9 @@
 .detail-demo.single-reference{display:block;aspect-ratio:4/3;background:#061118}
 .detail-demo.single-reference .detail-frame{aspect-ratio:4/3}
 .detail-demo.single-reference .detail-frame img{display:block}
+
+/* Active-workout target muscles are separated by training role. */
+.active-muscle-groups{display:grid;gap:10px;margin-top:12px}
+.active-muscle-group{display:grid;gap:6px;min-width:0}
+.active-muscle-label{margin:0;color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.04em}
+.active-muscle-group--primary .active-muscle-label{color:var(--gold)}
