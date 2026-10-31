@@ -89,13 +89,24 @@ object DailyStepLedger {
         }
 
         val previousDay = state.lastEpochDay
-        if (previousDay != null && epochDay < previousDay) {
-            return DailyStepLedgerUpdate(state, DailyStepRecordStatus.REJECTED_OUT_OF_ORDER, 0L)
-        }
-
         val previousCounter = state.lastCounterValue
         val previousElapsed = state.lastElapsedRealtimeMs
         val previousBoot = state.lastBootCount
+
+        // Local calendar dates can move backward when the user changes time zone. Only permit
+        // that day-key rollback when the monotonic clock proves a newer sample from the same boot;
+        // then the ordinary day-boundary path rebases and discards the ambiguous delta.
+        if (previousDay != null && epochDay < previousDay) {
+            val elapsedAdvanced = previousElapsed != null && elapsedRealtimeMs > previousElapsed
+            val sameBootEvidence = when {
+                previousBoot != null && bootCount != null -> previousBoot == bootCount
+                previousBoot == null && bootCount == null -> elapsedAdvanced
+                else -> false
+            }
+            if (!sameBootEvidence || !elapsedAdvanced) {
+                return DailyStepLedgerUpdate(state, DailyStepRecordStatus.REJECTED_OUT_OF_ORDER, 0L)
+            }
+        }
         val hasBaseline = previousCounter != null &&
             previousDay != null &&
             previousElapsed != null &&
