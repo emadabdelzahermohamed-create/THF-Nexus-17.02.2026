@@ -153,4 +153,26 @@ class DailyStepLedgerTest {
         assertEquals(DailyStepRecordStatus.REJECTED_INVALID, invalid.status)
         assertEquals(first.state, invalid.state)
     }
+    @Test
+    fun localDayMovingBackwardAfterTimezoneChangeRebasesWithoutStalling() {
+        val first = record(DailyStepLedgerState(), day = 20_001L, elapsed = 10_000L, raw = 100L)
+        val timezoneShift = record(first.state, day = 20_000L, wall = 1_800_000_030_000L, elapsed = 40_000L, raw = 200L)
+        val later = record(timezoneShift.state, day = 20_000L, wall = 1_800_000_060_000L, elapsed = 70_000L, raw = 230L)
+
+        assertEquals(DailyStepRecordStatus.DAY_BOUNDARY_REBASE, timezoneShift.status)
+        assertEquals(0L, timezoneShift.delta)
+        assertEquals(0L, timezoneShift.state.days.first { it.epochDay == 20_000L }.steps)
+        assertEquals(30L, later.delta)
+        assertEquals(30L, later.state.days.first { it.epochDay == 20_000L }.steps)
+    }
+
+    @Test
+    fun earlierLocalDayWithStaleElapsedTimestampIsRejected() {
+        val first = record(DailyStepLedgerState(), day = 20_001L, elapsed = 10_000L, raw = 100L)
+        val stale = record(first.state, day = 20_000L, elapsed = 9_000L, raw = 200L)
+
+        assertEquals(DailyStepRecordStatus.REJECTED_OUT_OF_ORDER, stale.status)
+        assertEquals(first.state, stale.state)
+    }
+
 }
