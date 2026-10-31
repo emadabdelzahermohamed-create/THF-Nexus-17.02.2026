@@ -201,10 +201,14 @@ object DailyStepLedger {
             val header = lines.firstOrNull()?.removeSuffix("\r")?.split('|') ?: return null
             if (header.size != 6 || header[0] != CODEC_VERSION) return null
 
-            fun optionalLong(value: String): Long? =
-                if (value.isEmpty()) null else value.toLongOrNull() ?: return null
-            fun optionalInt(value: String): Int? =
-                if (value.isEmpty()) null else value.toIntOrNull() ?: return null
+            fun optionalLong(value: String): Long? {
+                if (value.isEmpty()) return null
+                return value.toLongOrNull() ?: throw IllegalArgumentException("Invalid optional long")
+            }
+            fun optionalInt(value: String): Int? {
+                if (value.isEmpty()) return null
+                return value.toIntOrNull() ?: throw IllegalArgumentException("Invalid optional int")
+            }
 
             val days = mutableListOf<DailyStepDay>()
             val seenDays = mutableSetOf<Long>()
