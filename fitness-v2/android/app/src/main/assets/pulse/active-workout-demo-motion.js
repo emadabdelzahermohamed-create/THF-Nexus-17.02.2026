@@ -128,6 +128,11 @@
       state.frames = entries.filter((entry, index) => results[index]);
       state.index = 0;
       renderFrame(state, 0);
+      if (state.reduced || reducedMotion()) {
+        pauseAndReset();
+        setPhase('reduced', state);
+        return;
+      }
       if (state.frames.length < 2) { setPhase('unavailable', state); return; }
       if (motionAllowed(state)) startTimer(state);
       else setPhase('ready', state);
