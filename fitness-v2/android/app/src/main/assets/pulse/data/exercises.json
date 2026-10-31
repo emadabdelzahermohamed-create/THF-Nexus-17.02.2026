@@ -9651,8 +9651,8 @@
     "tracking": {
       "load": false,
       "rpe": true,
-      "rir": true,
-      "volume": true
+      "rir": false,
+      "volume": false
     },
     "provenance": {
       "source": "free-exercise-db",
@@ -14483,8 +14483,8 @@
     "tracking": {
       "load": false,
       "rpe": true,
-      "rir": true,
-      "volume": true
+      "rir": false,
+      "volume": false
     },
     "provenance": {
       "source": "free-exercise-db",
