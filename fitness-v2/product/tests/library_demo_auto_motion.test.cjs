@@ -10,6 +10,10 @@ const sourcePath = path.resolve(__dirname, '../../android/app/src/main/assets/pu
 const source = fs.readFileSync(sourcePath, 'utf8');
 const indexPath = path.resolve(__dirname, '../../android/app/src/main/assets/pulse/index.html');
 const indexSource = fs.readFileSync(indexPath, 'utf8');
+const appPath = path.resolve(__dirname, '../../android/app/src/main/assets/pulse/app.js');
+const appSource = fs.readFileSync(appPath, 'utf8');
+const stylesPath = path.resolve(__dirname, '../../android/app/src/main/assets/pulse/styles.css');
+const stylesSource = fs.readFileSync(stylesPath, 'utf8');
 
 class FakeClassList {
   constructor(initial = []) { this.values = new Set(initial); }
@@ -45,6 +49,7 @@ class FakeElement {
   getAttribute(name) { return this.attributes.has(name) ? this.attributes.get(name) : null; }
   removeAttribute(name) { this.attributes.delete(name); }
   querySelector(selector) {
+    if (selector === '.media') return this.media || null;
     if (selector === '.media img') return this.image || null;
     if (selector === '.detail-frame img') return this.children[0]?.image || null;
     return null;
@@ -58,7 +63,7 @@ class FakeElement {
   getClientRects() { return this.rect.width > 0 && this.rect.height > 0 ? [{}] : []; }
 }
 
-function buildHarness({ reduced = false, visible = true, intersectionObserver = true, imageLoadMode = 'load', exerciseAssets = null } = {}) {
+function buildHarness({ reduced = false, visible = true, intersectionObserver = true, imageLoadMode = 'load', exerciseAssets = null, lang = 'en' } = {}) {
   const timers = new Map();
   const timeouts = new Map();
   const images = [];
@@ -88,10 +93,16 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     }
   };
   const cardImage = imageFor('./media/demo-test/0.jpg', exercise.demo.alt.en);
+  const media = new FakeElement({ classes: ['media'] });
+  const fallbackLabel = new FakeElement({ classes: ['demo-unavailable-label'] });
+  fallbackLabel.textContent = lang === 'ar' ? 'العرض غير متاح' : 'Demonstration unavailable';
+  media.image = cardImage;
+  media.fallbackLabel = fallbackLabel;
   const card = new FakeElement({ classes: ['exercise-card'], dataset: { id: exercise.id }, rect: visible
     ? { top: 0, left: 0, right: 120, bottom: 90, width: 120, height: 90 }
     : { top: 500, left: 0, right: 0, bottom: 500, width: 0, height: 0 } });
   card.image = cardImage;
+  card.media = media;
   const grid = new FakeElement({ id: 'exerciseGrid' });
   grid.children = [card];
 
@@ -114,7 +125,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
   const documentListeners = new Map();
   const document = {
     hidden: false,
-    documentElement: { lang: 'en', clientWidth: 400, clientHeight: 800 },
+    documentElement: { lang, clientWidth: 400, clientHeight: 800 },
     getElementById(id) {
       return ({ exerciseGrid: grid, exerciseDetail: detailRoot, detailDemo, detailDemoStatus: detailStatus, reduceMotion: reduceControl })[id] || null;
     },
@@ -210,7 +221,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     animationFrames.clear();
     callbacks.forEach(callback => callback());
   };
-  return { timers, timeouts, images, animationFrames, grid, card, cardImage, detailRoot, detailDemo, detailStatus, detailFrames, frame0, frame1, frame2, reduceControl, document, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
+  return { timers, timeouts, images, animationFrames, grid, card, cardImage, media, fallbackLabel, detailRoot, detailDemo, detailStatus, detailFrames, frame0, frame1, frame2, reduceControl, document, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
 }
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
@@ -337,25 +348,30 @@ test('successful local frame preload clears its timeout before animation starts'
   assert.ok(h.timers.size > 0);
 });
 
-test('a stalled local frame preload settles at 1200 ms and keeps the first frame stable', async () => {
+test('stalled card frame validation settles at 1200 ms and shows an unavailable fallback', async () => {
   const h = buildHarness({ imageLoadMode: 'stall' });
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(h.timeouts.size, 1);
-  assert.equal(Array.from(h.timeouts.values())[0].delay, 1200);
+  assert.equal(h.timeouts.size, 2);
+  assert.ok(Array.from(h.timeouts.values()).every(entry => entry.delay === 1200));
   assert.equal(h.timers.size, 0);
   h.fireTimeouts();
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.timeouts.size, 0);
   assert.equal(h.timers.size, 0);
-  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+  assert.equal(h.cardImage.getAttribute('hidden'), '');
+  assert.equal(h.media.classList.contains('demo-unavailable'), true);
+  assert.equal(h.fallbackLabel.textContent, 'Demonstration unavailable');
 });
 
-test('an image error clears the preload timeout and leaves the first frame visible', async () => {
+test('failed card frames hide the broken image and expose the unavailable fallback', async () => {
   const h = buildHarness({ imageLoadMode: 'error' });
   await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.images.length, 2);
   assert.equal(h.timeouts.size, 0);
   assert.equal(h.timers.size, 0);
-  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+  assert.equal(h.cardImage.getAttribute('hidden'), '');
+  assert.equal(h.media.classList.contains('demo-unavailable'), true);
+  assert.equal(h.fallbackLabel.textContent, 'Demonstration unavailable');
 });
 
 test('a late image event after timeout cannot restart a failed card preload', async () => {
@@ -367,7 +383,8 @@ test('a late image event after timeout cannot restart a failed card preload', as
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.timeouts.size, 0);
   assert.equal(h.timers.size, 0);
-  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+  assert.equal(h.cardImage.getAttribute('hidden'), '');
+  assert.equal(h.media.classList.contains('demo-unavailable'), true);
 });
 
 
@@ -377,7 +394,7 @@ test('a failed secondary frame does not disable animation when another local fra
     imageLoadMode: src => src.endsWith('/1.jpg') ? 'error' : 'load'
   });
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(h.images.length, 2);
+  assert.equal(h.images.length, 3);
   assert.equal(h.timers.size, 1);
   h.tick();
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/2.jpg');
@@ -386,19 +403,69 @@ test('a failed secondary frame does not disable animation when another local fra
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
 });
 
-test('all failed secondary frames settle to a stable static card without repeated preloads', async () => {
+test('all failed card frames settle to a visible unavailable fallback without repeated preloads', async () => {
   const h = buildHarness({
     exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg', 'media/demo-test/2.jpg'],
     imageLoadMode: 'error'
   });
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(h.images.length, 2);
+  assert.equal(h.images.length, 3);
   assert.equal(h.timers.size, 0);
+  assert.equal(h.cardImage.getAttribute('hidden'), '');
+  assert.equal(h.media.classList.contains('demo-unavailable'), true);
   h.fireMutation(h.grid);
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(h.images.length, 2);
+  assert.equal(h.images.length, 3);
   assert.equal(h.timers.size, 0);
-  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+  assert.equal(h.fallbackLabel.textContent, 'Demonstration unavailable');
+});
+
+
+test('a failed first card frame is skipped and the decoded later frames animate', async () => {
+  const h = buildHarness({
+    exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg', 'media/demo-test/2.jpg'],
+    imageLoadMode: src => src.endsWith('/0.jpg') ? 'error' : 'load'
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.images.length, 3);
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/1.jpg');
+  assert.equal(h.cardImage.getAttribute('hidden'), null);
+  assert.equal(h.media.classList.contains('demo-unavailable'), false);
+  assert.equal(h.cardImage.dataset.demoFrame, '0');
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/2.jpg');
+  h.tick();
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/1.jpg');
+});
+
+test('a card with one surviving later frame shows a static reference with a specific alt', async () => {
+  const h = buildHarness({
+    exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg'],
+    imageLoadMode: src => src.endsWith('/0.jpg') ? 'error' : 'load'
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/1.jpg');
+  assert.equal(h.cardImage.getAttribute('alt'), 'Reference image for demo test');
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.cardImage.getAttribute('hidden'), null);
+});
+
+test('an unavailable card fallback is localized in Arabic', async () => {
+  const h = buildHarness({ imageLoadMode: 'error', lang: 'ar' });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.cardImage.getAttribute('hidden'), '');
+  assert.equal(h.media.classList.contains('demo-unavailable'), true);
+  assert.equal(h.fallbackLabel.textContent, 'العرض غير متاح');
+  assert.equal(h.timers.size, 0);
+});
+
+test('exercise cards include localized fallback copy and styling', () => {
+  assert.ok(appSource.includes("demoUnavailable:'العرض غير متاح'"));
+  assert.ok(appSource.includes("demoUnavailable:'Demonstration unavailable'"));
+  assert.ok(appSource.includes('demo-unavailable-label'));
+  assert.ok(stylesSource.includes('.exercise-card .media.demo-unavailable img{display:none}'));
+  assert.ok(stylesSource.includes('.exercise-card .media.demo-unavailable .demo-unavailable-label{display:flex}'));
 });
 
 test('detail animation skips a failed local frame and cycles only decoded frames', async () => {
