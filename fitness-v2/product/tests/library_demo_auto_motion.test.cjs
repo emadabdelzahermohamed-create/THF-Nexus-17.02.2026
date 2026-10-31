@@ -58,14 +58,17 @@ class FakeElement {
   getClientRects() { return this.rect.width > 0 && this.rect.height > 0 ? [{}] : []; }
 }
 
-function buildHarness({ reduced = false, visible = true, intersectionObserver = true } = {}) {
+function buildHarness({ reduced = false, visible = true, intersectionObserver = true, imageLoadMode = 'load' } = {}) {
   const timers = new Map();
+  const timeouts = new Map();
+  const images = [];
   const mutationObservers = [];
   const intersectionObservers = [];
   const mediaListeners = new Map();
   const windowListeners = new Map();
   const animationFrames = new Map();
   let nextTimer = 1;
+  let nextTimeout = 1;
   let nextFrame = 1;
   let storedPreference = null;
 
@@ -123,6 +126,8 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     localStorage: { getItem() { return storedPreference; } },
     setInterval(callback, delay) { const id = nextTimer++; timers.set(id, { callback, delay }); return id; },
     clearInterval(id) { timers.delete(id); },
+    setTimeout(callback, delay) { const id = nextTimeout++; timeouts.set(id, { callback, delay }); return id; },
+    clearTimeout(id) { timeouts.delete(id); },
     addEventListener(type, callback) {
       if (!windowListeners.has(type)) windowListeners.set(type, []);
       windowListeners.get(type).push(callback);
@@ -146,8 +151,22 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
       };
     },
     Image: class {
-      addEventListener(type, callback) { this[type] = callback; }
-      set src(value) { this._src = value; queueMicrotask(() => this.load?.()); }
+      constructor() { this.listeners = new Map(); images.push(this); }
+      addEventListener(type, callback) {
+        if (!this.listeners.has(type)) this.listeners.set(type, []);
+        this.listeners.get(type).push(callback);
+      }
+      removeEventListener(type, callback) {
+        this.listeners.set(type, (this.listeners.get(type) || []).filter(listener => listener !== callback));
+      }
+      dispatch(type) {
+        for (const callback of [...(this.listeners.get(type) || [])]) callback({ type, target: this });
+      }
+      set src(value) {
+        this._src = value;
+        if (imageLoadMode === 'load') queueMicrotask(() => this.dispatch('load'));
+        else if (imageLoadMode === 'error') queueMicrotask(() => this.dispatch('error'));
+      }
       get src() { return this._src; }
     },
     IntersectionObserver: class {
@@ -177,6 +196,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     active.callback();
   };
   const setStoredPreference = value => { storedPreference = value; (mediaListeners.get('change') || []).forEach(callback => callback({ matches: value === '1' })); };
+  const fireTimeouts = () => { for (const entry of Array.from(timeouts.values())) entry.callback(); };
 
   const fireWindow = type => { for (const callback of windowListeners.get(type) || []) callback({ type }); };
   const flushAnimationFrames = () => {
@@ -184,7 +204,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     animationFrames.clear();
     callbacks.forEach(callback => callback());
   };
-  return { timers, animationFrames, grid, card, cardImage, detailRoot, detailDemo, frame0, frame1, reduceControl, fireMutation, fireWindow, flushAnimationFrames, tick, setStoredPreference };
+  return { timers, timeouts, images, animationFrames, grid, card, cardImage, detailRoot, detailDemo, frame0, frame1, reduceControl, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
 }
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
@@ -297,6 +317,47 @@ test('checkbox change waits for the app preference write before reconciling', as
   h.reduceControl.addEventListener('change', () => h.setStoredPreference('1'));
   h.reduceControl.dispatch('change');
   await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+});
+
+
+test('successful local frame preload clears its timeout before animation starts', async () => {
+  const h = buildHarness();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timeouts.size, 0);
+  assert.ok(h.timers.size > 0);
+});
+
+test('a stalled local frame preload settles at 1200 ms and keeps the first frame stable', async () => {
+  const h = buildHarness({ imageLoadMode: 'stall' });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timeouts.size, 1);
+  assert.equal(Array.from(h.timeouts.values())[0].delay, 1200);
+  assert.equal(h.timers.size, 0);
+  h.fireTimeouts();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timeouts.size, 0);
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+});
+
+test('an image error clears the preload timeout and leaves the first frame visible', async () => {
+  const h = buildHarness({ imageLoadMode: 'error' });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timeouts.size, 0);
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+});
+
+test('a late image event after timeout cannot restart a failed card preload', async () => {
+  const h = buildHarness({ imageLoadMode: 'stall' });
+  await new Promise(resolve => setImmediate(resolve));
+  h.fireTimeouts();
+  await new Promise(resolve => setImmediate(resolve));
+  h.images[0].dispatch('load');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.timeouts.size, 0);
   assert.equal(h.timers.size, 0);
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
 });
