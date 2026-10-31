@@ -80,7 +80,8 @@
   }
 
   function setCardFrame(state, index) {
-    const asset = state.item.demo.assets[index];
+    const frames = Array.isArray(state.frames) ? state.frames : state.item.demo.assets;
+    const asset = frames[index];
     const url = localAsset(asset);
     if (!url || !state.image) return;
     state.index = index;
@@ -96,18 +97,24 @@
   function resetCard(state) {
     if (!state || !state.item?.demo?.assets?.length) return;
     state.index = 0;
-    const url = localAsset(state.item.demo.assets[0]);
+    const firstFrame = Array.isArray(state.frames) ? state.frames[0] : state.item.demo.assets[0];
+    const url = localAsset(firstFrame);
     if (url && state.image && state.image.getAttribute('src') !== url) state.image.setAttribute('src', url);
     state.image?.classList.remove('demo-frame-swap');
     if (state.image) state.image.dataset.demoFrame = '0';
   }
 
   function loadCardFrames(state) {
-    if (state.ready || state.loading || state.item.demo.assets.length < 2) return;
+    if (state.ready || state.loading || state.settled || state.item.demo.assets.length < 2) return;
     state.loading = true;
-    Promise.all(state.item.demo.assets.slice(1).map(preloadAsset)).then(results => {
+    const assets = state.item.demo.assets;
+    Promise.all(assets.slice(1).map(preloadAsset)).then(results => {
       state.loading = false;
-      state.ready = results.every(Boolean);
+      // Keep every successfully decoded local frame. One damaged secondary
+      // asset must not disable motion when two or more reviewed frames remain.
+      state.frames = [assets[0], ...assets.slice(1).filter((_, index) => results[index])];
+      state.ready = state.frames.length > 1;
+      state.settled = true;
       if (!state.ready) resetCard(state);
       syncTimer();
     });
@@ -128,7 +135,7 @@
       const image = card.querySelector('.media img');
       const assets = item?.demo?.assets;
       if (!item || item.demo?.offline === false || !Array.isArray(assets) || assets.length < 2 || !image) continue;
-      const state = { card, item, image, index: 0, visible: false, ready: false, loading: false };
+      const state = { card, item, image, index: 0, frames: null, visible: false, ready: false, loading: false, settled: false };
       states.set(card, state);
       if (cardObserver) cardObserver.observe(card);
       else state.visible = visibleInViewport(card);
@@ -202,8 +209,9 @@
       for (const state of states.values()) state.visible = visibleInViewport(state.card);
     }
     for (const state of states.values()) {
-      if (!state.visible || !state.ready || state.item.demo.assets.length < 2) continue;
-      setCardFrame(state, (state.index + 1) % state.item.demo.assets.length);
+      const frames = Array.isArray(state.frames) ? state.frames : state.item.demo.assets;
+      if (!state.visible || !state.ready || frames.length < 2) continue;
+      setCardFrame(state, (state.index + 1) % frames.length);
     }
     if (detailIsOpen()) {
       const item = detailExercise();
