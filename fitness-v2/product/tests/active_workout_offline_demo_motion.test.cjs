@@ -234,12 +234,14 @@ test('a surviving later frame remains visible as a truthful static fallback when
   assert.match(h.phase.textContent, /motion unavailable/);
 });
 
-test('invalid non-local demo paths do not leave the previous or broken image visible', () => {
+test('invalid non-local demo paths do not leave the previous or broken image visible', async () => {
   const h = createHarness();
   h.api.render(sampleItem(), 'en', false);
+  h.probes[0].emit('load'); h.probes[1].emit('load'); await flushPromises();
+  const priorProbeCount = h.probes.length;
   const invalid = {...sampleItem(), id: 'invalid-path', demo: {...sampleItem().demo, assets: ['https://example.invalid/demo.jpg']}};
   h.api.render(invalid, 'en', false);
-  assert.equal(h.probes.length, 0);
+  assert.equal(h.probes.length, priorProbeCount);
   assert.equal(h.image.classList.contains('hidden'), true);
   assert.equal(h.image.getAttribute('src'), null);
   assert.equal(h.image.alt, '');
