@@ -66,6 +66,29 @@ class ProgramProgressionTest(unittest.TestCase):
                     program["progression"],
                 )
 
+    def test_bodyweight_progression_covers_rep_and_timed_sets(self):
+        programs = BUILDER.build()
+        bodyweight_sections = {"home", "calisthenics"}
+
+        for program in programs:
+            if program["section"]["id"] not in bodyweight_sections:
+                continue
+            with self.subTest(program=program["id"]):
+                progression = program["progression"]
+                english = " ".join(progression["en"])
+                arabic = " ".join(progression["ar"])
+                references = [
+                    item
+                    for session in program["sessions"]
+                    for item in session["exercises"]
+                ]
+                self.assertTrue(any(item["durationSeconds"] is not None for item in references))
+                self.assertTrue(any(item["durationSeconds"] is None and item["reps"] is not None for item in references))
+                self.assertIn("one controlled repetition to rep-based sets", english)
+                self.assertIn("5 seconds to timed sets", english)
+                self.assertIn("عدة مضبوطة واحدة إلى المجموعات المعتمدة على التكرار", arabic)
+                self.assertIn("5 ثوانٍ إلى المجموعات الزمنية", arabic)
+
     def test_every_program_uses_its_section_progression(self):
         programs = BUILDER.build()
 
