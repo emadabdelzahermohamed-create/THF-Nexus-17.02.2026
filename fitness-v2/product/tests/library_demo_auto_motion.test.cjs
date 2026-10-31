@@ -58,7 +58,7 @@ class FakeElement {
   getClientRects() { return this.rect.width > 0 && this.rect.height > 0 ? [{}] : []; }
 }
 
-function buildHarness({ reduced = false, visible = true, intersectionObserver = true, imageLoadMode = 'load' } = {}) {
+function buildHarness({ reduced = false, visible = true, intersectionObserver = true, imageLoadMode = 'load', exerciseAssets = null } = {}) {
   const timers = new Map();
   const timeouts = new Map();
   const images = [];
@@ -83,7 +83,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     demo: {
       type: 'two_frame_image_sequence',
       offline: true,
-      assets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg'],
+      assets: exerciseAssets || ['media/demo-test/0.jpg', 'media/demo-test/1.jpg'],
       alt: { en: 'Start and finish positions for demo test', ar: 'وضعا البداية والنهاية لتمرين تجريبي' }
     }
   };
@@ -164,8 +164,9 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
       }
       set src(value) {
         this._src = value;
-        if (imageLoadMode === 'load') queueMicrotask(() => this.dispatch('load'));
-        else if (imageLoadMode === 'error') queueMicrotask(() => this.dispatch('error'));
+        const mode = typeof imageLoadMode === 'function' ? imageLoadMode(value) : imageLoadMode;
+        if (mode === 'load') queueMicrotask(() => this.dispatch('load'));
+        else if (mode === 'error') queueMicrotask(() => this.dispatch('error'));
       }
       get src() { return this._src; }
     },
@@ -358,6 +359,37 @@ test('a late image event after timeout cannot restart a failed card preload', as
   h.images[0].dispatch('load');
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.timeouts.size, 0);
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+});
+
+
+test('a failed secondary frame does not disable animation when another local frame loads', async () => {
+  const h = buildHarness({
+    exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg', 'media/demo-test/2.jpg'],
+    imageLoadMode: src => src.endsWith('/1.jpg') ? 'error' : 'load'
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.images.length, 2);
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/2.jpg');
+  assert.equal(h.cardImage.dataset.demoFrame, '1');
+  h.tick();
+  assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+});
+
+test('all failed secondary frames settle to a stable static card without repeated preloads', async () => {
+  const h = buildHarness({
+    exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg', 'media/demo-test/2.jpg'],
+    imageLoadMode: 'error'
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.images.length, 2);
+  assert.equal(h.timers.size, 0);
+  h.fireMutation(h.grid);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.images.length, 2);
   assert.equal(h.timers.size, 0);
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
 });
