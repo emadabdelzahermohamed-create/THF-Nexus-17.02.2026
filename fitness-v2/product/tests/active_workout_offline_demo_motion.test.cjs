@@ -116,9 +116,15 @@ test('starts cycling automatically after local frames load, without a user tap',
   await flushPromises();
   assert.equal(h.intervals.size, 1);
   assert.equal(h.phase.textContent, 'Automatic reference sequence');
+  const stableAlt = h.image.alt;
+  assert.equal(stableAlt, 'Start and finish positions for Offline Demo');
   h.runInterval();
   assert.equal(h.image.getAttribute('src'), './media/demo/1.jpg');
-  assert.match(h.image.alt, /Finish/);
+  assert.equal(h.image.alt, stableAlt);
+  h.runInterval();
+  assert.equal(h.image.getAttribute('src'), './media/demo/0.jpg');
+  assert.equal(h.image.alt, stableAlt);
+  assert.equal(h.status.textContent, 'Automatic reference sequence');
 });
 
 test('language rerender updates alt text without restarting the active frame timer', async () => {
@@ -129,7 +135,10 @@ test('language rerender updates alt text without restarting the active frame tim
   const currentSrc = h.image.getAttribute('src');
   h.api.render(item, 'ar', false);
   assert.equal(h.image.getAttribute('src'), currentSrc);
-  assert.match(h.image.alt, /النهاية/);
+  const arabicAlt = 'وضعا البداية والنهاية لعرض أوفلاين';
+  assert.equal(h.image.alt, arabicAlt);
+  h.runInterval();
+  assert.equal(h.image.alt, arabicAlt);
   assert.equal(h.intervals.size, 1);
 });
 
@@ -140,6 +149,7 @@ test('reduced motion stops cycling and restores the first static frame', async (
   h.api.render(item, 'ar', true);
   assert.equal(h.intervals.size, 0);
   assert.equal(h.image.getAttribute('src'), './media/demo/0.jpg');
+  assert.equal(h.image.alt, 'وضعا البداية والنهاية لعرض أوفلاين — البداية');
   assert.match(h.phase.textContent, /تقليل الحركة/);
 });
 
