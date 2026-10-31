@@ -338,106 +338,106 @@ STEP_OVERRIDES = {
     },
     "Fast_Skipping": {
         "en": [
-            "Start in a relaxed position with one leg slightly forward. This will be your starting position.",
-            "Skip by executing a step-hop pattern of right-right-step to left-left-step, and so on, alternating back and forth.",
-            "Perform fast skips by maintaining close contact with the ground and reduce air time, moving as quickly as possible."
+            "Stand tall with feet under the hips and one foot slightly forward; keep the knees soft and the area clear.",
+            "Use an alternating step-hop pattern—right-right-step, then left-left-step—with small, quiet contacts and relaxed arms.",
+            "Begin at a cadence you can control; increase it only while contacts stay quiet and balance remains steady. Stop if coordination or landing quality slips.",
         ],
         "ar": [
-            "ابدأ في وضع مريح مع تقديم إحدى القدمين قليلًا.",
-            "نفّذ نمط خطوة وقفزة بالتبادل: يمين–يمين–خطوة انتقال، ثم يسار–يسار–خطوة انتقال.",
-            "زد سرعة القفز مع إبقاء زمن الطيران قصيرًا والقدمين قريبين من الأرض."
+            "قف باستقامة والقدمان تحت الوركين مع تقديم إحدى القدمين قليلًا؛ أبقِ الركبتين مرتخيتين والمساحة خالية.",
+            "نفّذ نمط خطوة وقفزة بالتبادل: يمين–يمين–خطوة انتقال، ثم يسار–يسار–خطوة انتقال، بملامسات قصيرة وهادئة وذراعين مرتخيتين.",
+            "ابدأ بإيقاع تتحكم فيه، وزده فقط ما دامت الملامسات هادئة والتوازن ثابتًا. توقف إذا اختل التناسق أو جودة الهبوط.",
         ]
     },
     "Box_Skip": {
         "en": [
-            "You will need several boxes lined up about 8 feet apart.",
-            "Begin facing the first box with one leg slightly behind the other.",
-            "Drive off the back leg, attempting to gain as much height with the hips as possible.",
-            "Immediately upon landing on the box, drive the other leg forward and upward to gain height and distance, leaping from the box. Land between the first two boxes with the same leg that landed on the first box.",
-            "Then, step to the next box and repeat."
+            "Use a low, stable box on a nonslip surface with clear space around it; begin with one box before adding more.",
+            "Stand facing the box in a staggered stance, with soft knees and eyes on the landing surface.",
+            "Push from the back foot to hop onto the box; choose a height that allows a controlled landing rather than reaching for maximum height.",
+            "Land softly with the whole foot and the knee tracking over the toes; pause until balance returns.",
+            "Step down carefully and reset; add another box or speed only after every landing is controlled. Stop if balance is lost.",
         ],
         "ar": [
-            "رتّب عدة صناديق ثابتة في صف، واترك نحو 2.4 متر بين كل صندوق وآخر.",
-            "قف أمام الصندوق الأول مع وضع إحدى القدمين خلف الأخرى قليلًا.",
-            "ادفع بالأرض من القدم الخلفية لرفع الورك واكتساب ارتفاع نحو الصندوق.",
-            "عند الهبوط على الصندوق، ادفع الرجل الأخرى للأمام والأعلى ثم اقفز نحو الصندوق التالي؛ اهبط بين الصندوقين على القدم نفسها التي هبطت بها على الأول.",
-            "انتقل إلى الصندوق التالي وكرر التسلسل، مع التأكد من ثبات الهبوط قبل القفزة التالية."
+            "استخدم صندوقًا منخفضًا وثابتًا على سطح غير زلق، مع مساحة خالية حوله؛ ابدأ بصندوق واحد قبل إضافة غيره.",
+            "قف أمام الصندوق بوقفة متدرجة، مع ثني بسيط للركبتين والنظر إلى سطح الهبوط.",
+            "ادفع بالقدم الخلفية للوثب إلى الصندوق؛ اختر ارتفاعًا يسمح بهبوط متحكم فيه بدل السعي إلى أقصى ارتفاع.",
+            "اهبط بهدوء بكامل القدم مع توجيه الركبة نحو أصابع القدم، ثم انتظر حتى يستعيد الجسم توازنه.",
+            "انزل خطوة خطوة وأعد ضبط الوقفة؛ لا تضف صندوقًا آخر أو تسرّع التسلسل إلا بعد ثبات كل هبوط. توقف إذا اختل التوازن.",
         ]
     },
     "Front_Cone_Hops_or_hurdle_hops": {
         "en": [
-            "Set up a row of cones or other small barriers, placing them a few feet apart.",
-            "Stand in front of the first cone with your feet shoulder width apart. This will be your starting position.",
-            "Begin by jumping with both feet over the first cone, swinging both arms as you jump.",
-            "Absorb the impact of landing by bending the knees, rebounding out of the first leap by jumping over the next cone.",
-            "Continue until you have jumped over all of the cones."
+            "Set low cones or soft barriers at a spacing you can clear comfortably; keep the landing area open.",
+            "Stand facing the first barrier with feet about hip-width apart and knees soft.",
+            "Hop over the first barrier with both feet, using a small, controlled clearance and a natural arm swing.",
+            "Land quietly with knees tracking over the toes; pause to regain balance before the next hop.",
+            "Continue only while each landing stays quiet and stable; stop if knee alignment or balance slips.",
         ],
         "ar": [
-            "رتّب صفًا من الأقماع أو الحواجز المنخفضة، مع ترك بضعة أقدام بين كل حاجز وآخر.",
-            "قف أمام أول حاجز والقدمان بعرض الكتفين.",
-            "اقفز بكلتا القدمين معًا فوق الحاجز، وحرّك الذراعين للمساعدة في الدفع.",
-            "امتص الهبوط بثني الركبتين ثم ارتدّ للقفز فوق الحاجز التالي.",
-            "واصل حتى تتجاوز الصف كاملًا، وتوقف إذا أصبح الهبوط صلبًا أو اختل اتجاه الركبتين."
+            "رتّب أقماعًا منخفضة أو حواجز لينة بمسافة تسمح بتجاوزها براحة، وأخلِ منطقة الهبوط.",
+            "قف أمام أول حاجز والقدمان بعرض الوركين تقريبًا مع ثني بسيط للركبتين.",
+            "اقفز فوق الحاجز بكلتا القدمين مع ارتفاع صغير ومتحكم فيه وحركة طبيعية للذراعين.",
+            "اهبط بهدوء مع توجيه الركبتين نحو أصابع القدم، وانتظر حتى تستعيد توازنك قبل القفزة التالية.",
+            "واصل فقط ما دام كل هبوط هادئًا وثابتًا؛ توقف إذا اختلت محاذاة الركبتين أو التوازن.",
         ]
     },
     "Lateral_Cone_Hops": {
         "en": [
-            "Position a number of cones in a row several feet apart.",
-            "Stand next to the end of the cones, facing 90 degrees to the direction of travel. This will be your starting position.",
-            "Begin the jump by dipping with the knees to initiate a stretch reflex, and immediately reverse direction to push off the ground, jumping up and sideways over the cone.",
-            "Use your legs to absorb impact upon landing, and rebound into the next jump, continuing down the row of cones."
+            "Set low cones with enough side-to-side clearance and keep both landing sides open.",
+            "Stand side-on to the direction of travel with feet hip-width apart and knees soft.",
+            "Hop laterally over one cone with a small, controlled height; keep the trunk steady and knees aligned.",
+            "Land softly, regain balance before the next cone, and stop if foot placement or knee alignment breaks down.",
         ],
         "ar": [
-            "ضع عدة أقماع في صف يفصل بينها بضعة أقدام.",
-            "قف بجانب طرف الصف واجعل جسمك متعامدًا مع اتجاه الانتقال.",
-            "اثنِ الركبتين قليلًا ثم ادفع الأرض فورًا للقفز جانبيًا فوق القمع.",
-            "امتص الهبوط بالساقين ثم انتقل مباشرة إلى القفزة التالية حتى نهاية الصف."
+            "ضع أقماعًا منخفضة مع مسافة كافية للقفز الجانبي، وأخلِ جانبي منطقة الهبوط.",
+            "قف بجانب الصف وجسمك متعامد مع اتجاه الحركة، والقدمان بعرض الوركين والركبتان مرتخيتان.",
+            "اقفز جانبيًا فوق قمع واحد بارتفاع صغير ومتحكم فيه، مع ثبات الجذع ومحاذاة الركبتين.",
+            "اهبط بهدوء واستعد توازنك قبل القمع التالي، وتوقف إذا اختل موضع القدم أو محاذاة الركبة.",
         ]
     },
     "Side_Hop-Sprint": {
         "en": [
-            "Stand to the side of a cone or hurdle.",
-            "Begin this drill by hopping sideways over the obstacle, rebounding out of your landing to hop back to where you started.",
-            "Hop for a prescribed number or repetitions as quickly as possible, and finish this drill by sprinting a short distance upon landing the last hop."
+            "Place a low cone or hurdle beside you and clear a short sprint lane; begin in a balanced stance.",
+            "Hop sideways over and back with quiet landings; pause and reset between directions instead of rebounding immediately.",
+            "After the prescribed hops, accelerate into a short sprint only when the final landing is stable. Stop if balance or coordination deteriorates.",
         ],
         "ar": [
-            "قف إلى جانب قمع أو حاجز منخفض.",
-            "اقفز جانبيًا فوق الحاجز ثم استخدم الهبوط للارتداد والعودة إلى نقطة البداية.",
-            "كرر العدد المحدد بأسرع إيقاع يمكن التحكم فيه، ثم انطلق لمسافة قصيرة بعد آخر هبوط."
+            "ضع قمعًا أو حاجزًا منخفضًا بجانبك وأخلِ مسار انطلاق قصيرًا؛ ابدأ بوقفة متوازنة.",
+            "اقفز جانبيًا فوق الحاجز ثم عد بهبوط هادئ، وتوقف لحظة لإعادة ضبط الوقفة بين الاتجاهين بدل الارتداد الفوري.",
+            "بعد عدد القفزات المحدد، انطلق لمسافة قصيرة فقط بعد ثبات الهبوط الأخير. توقف إذا تدهور التوازن أو التناسق.",
         ]
     },
     "Freehand_Jump_Squat": {
         "en": [
-            "Cross your arms over your chest.",
-            "With your head up and your back straight, position your feet at shoulder width.",
-            "Keeping your back straight and chest up, squat down as you inhale until your upper thighs are parallel, or lower, to the floor.",
-            "Now pressing mainly with the ball of your feet, jump straight up in the air as high as possible, using the thighs like springs. Exhale during this portion of the movement.",
-            "When you touch the floor again, immediately squat down and jump again.",
-            "Repeat for the recommended amount of repetitions."
+            "Stand with feet shoulder-width apart, arms crossed over the chest, and knees soft.",
+            "Brace the trunk and squat to a comfortable depth with the hips back and knees tracking over the toes.",
+            "Push through the whole foot to jump vertically with a height you can control; exhale on takeoff.",
+            "Land quietly with hips and knees flexed to absorb impact, keeping the knees aligned.",
+            "Pause to regain balance and reset your stance; do not rebound immediately.",
+            "Repeat the prescribed reps and stop if landings become loud or alignment slips.",
         ],
         "ar": [
-            "اعقد الذراعين أمام الصدر.",
-            "قف والقدمان بعرض الكتفين، والرأس مرفوع والظهر مستقيم.",
-            "اخفض الوركين في سكوات مع الشهيق حتى يصبح الفخذان موازيين للأرض أو أدنى، مع إبقاء الصدر مرفوعًا.",
-            "ادفع بمقدمة القدمين واقفز عموديًا بأعلى ارتفاع يمكنك التحكم فيه، مع الزفير.",
-            "عند ملامسة الأرض، اثنِ الوركين والركبتين لامتصاص الهبوط والعودة فورًا إلى وضع السكوات.",
-            "كرر العدد المطلوب مع الحفاظ على محاذاة الركبتين وهبوط هادئ؛ توقف إذا فقدت السيطرة."
+            "قف والقدمان بعرض الكتفين والذراعان متقاطعتان أمام الصدر، مع ثني بسيط للركبتين.",
+            "شد الجذع واخفض الوركين إلى سكوات بعمق مريح، مع توجيه الركبتين نحو أصابع القدم.",
+            "ادفع بكامل القدم للقفز عموديًا بارتفاع تستطيع التحكم فيه، وازفر عند الدفع.",
+            "اهبط بهدوء مع ثني الوركين والركبتين لامتصاص الصدمة، مع الحفاظ على محاذاة الركبتين.",
+            "توقف لاستعادة التوازن وأعد ضبط الوقفة؛ لا ترتد فورًا إلى القفزة التالية.",
+            "كرر العدد المحدد وتوقف إذا أصبح الهبوط صاخبًا أو اختلت المحاذاة.",
         ]
     },
     "Lateral_Bound": {
         "en": [
-            "Assume a half squat position facing 90 degrees from your direction of travel. This will be your starting position.",
-            "Allow your lead leg to do a countermovement inward as you shift your weight to the outside leg.",
-            "Immediately push off and extend, attempting to bound to the side as far as possible.",
-            "Upon landing, immediately push off in the opposite direction, returning to your original start position.",
-            "Continue back and forth for several repetitions."
+            "Start in a half squat facing perpendicular to the travel direction; clear space on both sides.",
+            "Shift weight to the outside leg with a small, controlled countermovement; keep the knee aligned.",
+            "Push off laterally only as far as you can land under control, not for maximum distance.",
+            "Land on the opposite foot with the knee tracking over the toes; flex the hip and knee to absorb impact, then pause.",
+            "Return only after balance is restored; alternate while landings stay quiet and stop if alignment slips.",
         ],
         "ar": [
-            "ابدأ بنصف سكوات، واجعل جسمك متعامدًا مع اتجاه الوثب.",
-            "حرّك الساق القائدة قليلًا إلى الداخل وانقل وزنك إلى الساق الخارجية.",
-            "ادفع الأرض وامدد الورك والركبة للوثب جانبيًا إلى أبعد مسافة تستطيع التحكم بها.",
-            "عند الهبوط، ادفع فورًا بالاتجاه المعاكس للعودة إلى موضع البداية.",
-            "واصل الوثب ذهابًا وإيابًا لعدة تكرارات، مع امتصاص الهبوط والحفاظ على اتجاه الركبتين."
+            "ابدأ بنصف سكوات وجسمك متعامد مع اتجاه الحركة، وأخلِ المساحة على الجانبين.",
+            "انقل الوزن إلى الساق الخارجية بحركة تمهيدية صغيرة ومتحكم فيها، مع الحفاظ على محاذاة الركبة.",
+            "ادفع جانبيًا لمسافة تستطيع الهبوط بعدها بتحكم، لا لأقصى مسافة ممكنة.",
+            "اهبط على القدم المقابلة مع توجيه الركبة نحو أصابع القدم وثني الورك والركبة لامتصاص الصدمة، ثم توقف لحظة.",
+            "لا تعد إلا بعد استعادة التوازن؛ بدّل الجهة ما دام الهبوط هادئًا، وتوقف إذا اختلت المحاذاة.",
         ]
     },
     "Side_to_Side_Box_Shuffle": {
