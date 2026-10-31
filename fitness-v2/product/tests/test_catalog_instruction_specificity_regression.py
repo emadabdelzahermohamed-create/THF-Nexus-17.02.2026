@@ -35,9 +35,26 @@ EXPECTED_DANCERS_STRETCH_STEPS = {
     ]
 }
 
+STANDING_HIP_CIRCLES_SOURCE_ID = "Standing_Hip_Circles"
+EXPECTED_STANDING_HIP_CIRCLES_STEPS = {
+    "en": [
+        "Stand on one leg beside a stable support and hold it lightly; keep the standing knee soft.",
+        "Lift the free knee toward hip height only as high as comfortable, keeping your torso tall and pelvis level.",
+        "Draw a small, controlled circle from the hip; keep your trunk steady and stay within a comfortable range.",
+        "Continue slowly for the set duration, then lower the foot with control and switch legs; reverse the circle direction on the other side.",
+    ],
+    "ar": [
+        "قف على ساق واحدة بجوار دعامة ثابتة واستند إليها بخفة، مع ثني بسيط لركبة الارتكاز.",
+        "ارفع الركبة الحرة باتجاه ارتفاع الورك بالقدر المريح فقط، مع إبقاء الجذع منتصبًا والحوض مستويًا.",
+        "ارسم دائرة صغيرة ومتحكمًا بها من مفصل الورك؛ ثبّت الجذع واستخدم مدى مريحًا فقط.",
+        "استمر ببطء طوال مدة المجموعة، ثم أنزل القدم بتحكم وبدّل الساق؛ اعكس اتجاه الدائرة في الجهة الأخرى.",
+    ]
+}
+
 GENERIC_ENGLISH_FILLER = (
     re.compile(r"\brepeat the procedure\b", re.IGNORECASE),
     re.compile(r"\bperform the (?:amount|number) of repetitions\b", re.IGNORECASE),
+    re.compile(r"\bfor a number of repetitions\b", re.IGNORECASE),
 )
 
 
@@ -92,6 +109,18 @@ class CatalogInstructionSpecificityRegressionTest(unittest.TestCase):
         self.assertIn("لا تسحب الركبة", item["steps"]["ar"][2])
         self.assertIn("Return to center", item["steps"]["en"][3])
         self.assertIn("عد للوسط", item["steps"]["ar"][3])
+
+    def test_standing_hip_circles_uses_controlled_timed_bilingual_steps(self):
+        item = self.by_source_id[STANDING_HIP_CIRCLES_SOURCE_ID]
+        self.assertEqual(EXPECTED_STANDING_HIP_CIRCLES_STEPS, item["steps"])
+        self.assertEqual(item["steps"], BUILDER.STEP_OVERRIDES[STANDING_HIP_CIRCLES_SOURCE_ID])
+        self.assertEqual(30, item["prescription"]["durationSeconds"])
+        self.assertIsNone(item["prescription"]["reps"])
+        self.assertIn("comfortable range", item["steps"]["en"][2])
+        self.assertIn("مدى مريح", item["steps"]["ar"][2])
+        self.assertNotIn("as far as possible", item["steps"]["en"][2])
+        self.assertNotIn("number of repetitions", item["steps"]["en"][3])
+        self.assertIn("بدّل الساق", item["steps"]["ar"][3])
 
 if __name__ == "__main__":
     unittest.main()
