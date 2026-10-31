@@ -61,3 +61,17 @@ test('the active workout loads and renders the bilingual work summary helper', (
   assert.match(html, /id="sessionWorkSummary"/);
   assert.doesNotMatch(app, /\$\('sessionVolume'\)\.textContent =/);
 });
+
+test('legacy timed sets with stale repetition fields do not inflate kilogram volume', () => {
+  const result = summary.summarize([], [
+    { complete: true, load: 20, reps: 10, durationSeconds: 30, durationRemainingMs: 0 },
+    { complete: true, load: 10, reps: 5 }
+  ], elapsedMs);
+  assert.deepEqual(result, { volumeKg: 50, timeSeconds: 30, timedSetCount: 1 });
+  assert.equal(summary.format(result, 'Time', formatDuration), '50 kg · Time: 00:30');
+
+  const timedOnly = summary.summarize([], [
+    { complete: true, load: 20, reps: 10, durationSeconds: 30, durationRemainingMs: 0 }
+  ], elapsedMs);
+  assert.equal(summary.format(timedOnly, 'Time', formatDuration), 'Time: 00:30');
+});
