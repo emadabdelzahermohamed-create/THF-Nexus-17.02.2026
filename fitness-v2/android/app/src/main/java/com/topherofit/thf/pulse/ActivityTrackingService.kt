@@ -22,6 +22,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.SystemClock
+import android.provider.Settings
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.location.Granularity
@@ -44,6 +45,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         const val ACTION_START_ACTIVITY = "com.topherofit.thf.pulse.START_ACTIVITY"
         const val ACTION_START_WORKOUT = "com.topherofit.thf.pulse.START_WORKOUT"
         const val ACTION_STOP_TRACKING = "com.topherofit.thf.pulse.STOP_TRACKING"
+        const val ACTION_RESTORE_ACTIVITY = "com.topherofit.thf.pulse.RESTORE_ACTIVITY"
         private const val PENDING_FINISHED_ACTIVITY_KEY = "pending_finished_activity_json"
         const val ACTION_PAUSE_TRACKING = "com.topherofit.thf.pulse.PAUSE_TRACKING"
         const val ACTION_RESUME_TRACKING = "com.topherofit.thf.pulse.RESUME_TRACKING"
@@ -79,6 +81,51 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         @Volatile private var lastWorkoutEvidence: MotionEvidence? = null
 
         fun hasActiveTracking(): Boolean = instance?.hasLiveSession() == true
+
+        /**
+         * Re-open a valid persisted activity when Android did not restart the sticky service.
+         * Called only while MainActivity is foregrounded; it never starts a new workout or resets
+         * an existing live session.
+         */
+        fun restorePersistedActivityIfAvailable(context: Context): Boolean {
+            if (instance?.hasLiveSession() == true) return true
+            val prefs = context.getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, Context.MODE_PRIVATE)
+            val raw = prefs.getString(ACTIVITY_CHECKPOINT_KEY, null)
+            if (raw.isNullOrBlank()) return false
+            val checkpoint = ActivitySessionCheckpointCodec.decode(raw)
+            val nowElapsed = SystemClock.elapsedRealtime()
+            val bootCount = readBootCount(context)
+            if (checkpoint == null || !ActivitySessionCheckpointCodec.canRestore(checkpoint, nowElapsed, bootCount)) {
+                prefs.edit().remove(ACTIVITY_CHECKPOINT_KEY).remove("activity_paused").apply()
+                return false
+            }
+
+            val paused = prefs.getBoolean("activity_paused", false)
+            lastActivitySnapshot = ActivitySnapshotPolicy.build(
+                sessionActive = true,
+                phase = checkpoint.phase,
+                mode = checkpoint.mode,
+                armedStartedAtWallMs = checkpoint.startedAtWallMs,
+                activatedAtWallMs = checkpoint.activatedAtWallMs,
+                activatedAtElapsedMs = ActivitySessionCheckpointCodec.adjustedActivatedAtElapsedMs(checkpoint, nowElapsed),
+                nowElapsedMs = nowElapsed,
+                measuredDistanceMetres = checkpoint.distanceMetres,
+                measuredStepDelta = checkpoint.stepDelta,
+                currentSpeedKph = 0.0,
+                weightKg = checkpoint.weightKg,
+                acceptedRoute = if (checkpoint.phase == ActivitySessionPhase.ACTIVE) checkpoint.route else emptyList(),
+                lastAccuracyMetres = checkpoint.lastAccuracyMetres,
+            ).copy(paused = paused, currentSpeedKph = 0.0, gpsFixState = "acquiring")
+
+            val intent = Intent(context, ActivityTrackingService::class.java).setAction(ACTION_RESTORE_ACTIVITY)
+            runCatching { startForegroundCompat(context, intent) }
+            return true
+        }
+
+        private fun readBootCount(context: Context): Int? = runCatching {
+            Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT)
+        }.getOrNull()?.takeIf { it >= 0 }
+
         fun activitySnapshot(): ActivitySnapshot = instance?.buildActivitySnapshot(active = true) ?: lastActivitySnapshot
         fun workoutSnapshot(): MotionEvidence? = instance?.workoutEngine?.snapshot() ?: lastWorkoutEvidence
 
@@ -201,6 +248,12 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                 }
             }
             ACTION_STOP_TRACKING -> finishFromNotification()
+            ACTION_RESTORE_ACTIVITY -> {
+                if (!restorePersistedActivity()) {
+                    stopSelf(startId)
+                    return START_NOT_STICKY
+                }
+            }
             ACTION_PAUSE_TRACKING -> pauseActivityInternal()
             ACTION_RESUME_TRACKING -> resumeActivityInternal()
         }
@@ -623,6 +676,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             phase = activityPhase,
             activatedAtWallMs = activityActivatedAtWallMs,
             activatedAtElapsedMs = activityActivatedAtElapsedMs,
+            bootCount = readBootCount(this),
         )
         getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE)
             .edit()
@@ -645,7 +699,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             .getString(ACTIVITY_CHECKPOINT_KEY, null)
         val checkpoint = ActivitySessionCheckpointCodec.decode(raw)
         val nowElapsed = SystemClock.elapsedRealtime()
-        if (checkpoint == null || !ActivitySessionCheckpointCodec.canRestore(checkpoint, nowElapsed)) {
+        if (checkpoint == null || !ActivitySessionCheckpointCodec.canRestore(checkpoint, nowElapsed, readBootCount(this))) {
             clearActivityCheckpoint()
             return false
         }

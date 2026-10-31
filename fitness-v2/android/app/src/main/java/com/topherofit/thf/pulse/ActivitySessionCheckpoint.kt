@@ -14,6 +14,7 @@ data class ActivitySessionCheckpoint(
     val phase: ActivitySessionPhase = ActivitySessionPhase.ACTIVE,
     val activatedAtWallMs: Long? = startedAtWallMs,
     val activatedAtElapsedMs: Long? = startedAtElapsedMs,
+    val bootCount: Int? = null,
 )
 
 /**
@@ -24,14 +25,17 @@ data class ActivitySessionCheckpoint(
 object ActivitySessionCheckpointCodec {
     private const val VERSION_V1 = "1"
     private const val VERSION_V2 = "2"
+    private const val VERSION_V3 = "3"
     private const val V1_HEADER_FIELDS = 10
     private const val V2_HEADER_FIELDS = 13
+    private const val V3_HEADER_FIELDS = 14
     private const val MAX_ROUTE_POINTS = 1200
-    private const val MAX_RESTORE_GAP_MS = 120_000L
+    private const val MAX_RESTORE_GAP_MS = 24L * 60L * 60L * 1_000L
+    private const val LEGACY_MAX_RESTORE_GAP_MS = 120_000L
 
     fun encode(checkpoint: ActivitySessionCheckpoint): String {
         val header = listOf(
-            VERSION_V2,
+            VERSION_V3,
             checkpoint.mode.wireName,
             checkpoint.weightKg.toString(),
             checkpoint.startedAtWallMs.toString(),
@@ -44,6 +48,7 @@ object ActivitySessionCheckpointCodec {
             checkpoint.phase.wireName,
             checkpoint.activatedAtWallMs?.toString().orEmpty(),
             checkpoint.activatedAtElapsedMs?.toString().orEmpty(),
+            checkpoint.bootCount?.toString().orEmpty(),
         ).joinToString("|")
         val encodedRoute = checkpoint.route.takeLast(MAX_ROUTE_POINTS).joinToString(";") { point ->
             listOf(
@@ -65,7 +70,8 @@ object ActivitySessionCheckpointCodec {
             val version = fields.firstOrNull() ?: return null
             if (version == VERSION_V1 && fields.size != V1_HEADER_FIELDS) return null
             if (version == VERSION_V2 && fields.size != V2_HEADER_FIELDS) return null
-            if (version != VERSION_V1 && version != VERSION_V2) return null
+            if (version == VERSION_V3 && fields.size != V3_HEADER_FIELDS) return null
+            if (version != VERSION_V1 && version != VERSION_V2 && version != VERSION_V3) return null
 
             val mode = ActivityMode.fromWire(fields[1]) ?: return null
             val weightKg = fields[2].toDouble()
@@ -83,6 +89,7 @@ object ActivitySessionCheckpointCodec {
             }
             val activatedAtWallMs = if (version == VERSION_V1) startedAtWallMs else fields[11].takeIf { it.isNotEmpty() }?.toLong()
             val activatedAtElapsedMs = if (version == VERSION_V1) startedAtElapsedMs else fields[12].takeIf { it.isNotEmpty() }?.toLong()
+            val bootCount = if (version == VERSION_V3) fields[13].takeIf { it.isNotEmpty() }?.toInt() else null
 
             if (!weightKg.isFinite() || weightKg !in 30.0..250.0) return null
             if (startedAtWallMs <= 0L || startedAtElapsedMs <= 0L || savedAtElapsedMs < startedAtElapsedMs) return null
@@ -90,6 +97,7 @@ object ActivitySessionCheckpointCodec {
             if (stepBaseline != null && (!stepBaseline.isFinite() || stepBaseline < 0f)) return null
             if (stepDelta < 0) return null
             if (lastAccuracyMetres != null && (!lastAccuracyMetres.isFinite() || lastAccuracyMetres < 0f)) return null
+            if (bootCount != null && bootCount < 0) return null
             if (phase == ActivitySessionPhase.ARMED && (activatedAtWallMs != null || activatedAtElapsedMs != null)) return null
             if (phase == ActivitySessionPhase.ACTIVE) {
                 if (activatedAtWallMs == null || activatedAtElapsedMs == null) return null
@@ -111,6 +119,7 @@ object ActivitySessionCheckpointCodec {
                 phase = phase,
                 activatedAtWallMs = activatedAtWallMs,
                 activatedAtElapsedMs = activatedAtElapsedMs,
+                bootCount = bootCount,
             )
         }.getOrNull()
     }
@@ -136,9 +145,17 @@ object ActivitySessionCheckpointCodec {
         }
     }
 
-    fun canRestore(checkpoint: ActivitySessionCheckpoint, nowElapsedMs: Long): Boolean {
+    fun canRestore(
+        checkpoint: ActivitySessionCheckpoint,
+        nowElapsedMs: Long,
+        currentBootCount: Int? = null,
+    ): Boolean {
         if (nowElapsedMs <= 0L || nowElapsedMs < checkpoint.savedAtElapsedMs) return false
-        if (nowElapsedMs - checkpoint.savedAtElapsedMs > MAX_RESTORE_GAP_MS) return false
+        val restoreGapMs = nowElapsedMs - checkpoint.savedAtElapsedMs
+        val bootIdentityAvailable = checkpoint.bootCount != null && currentBootCount != null
+        if (bootIdentityAvailable && checkpoint.bootCount != currentBootCount) return false
+        val maxRestoreGapMs = if (bootIdentityAvailable) MAX_RESTORE_GAP_MS else LEGACY_MAX_RESTORE_GAP_MS
+        if (restoreGapMs > maxRestoreGapMs) return false
         val lastRouteElapsed = checkpoint.route.lastOrNull()?.elapsedMs ?: 0L
         return lastRouteElapsed <= checkpoint.savedAtElapsedMs - checkpoint.startedAtElapsedMs
     }
