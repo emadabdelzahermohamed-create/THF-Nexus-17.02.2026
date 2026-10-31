@@ -54,6 +54,7 @@
     archiveRestoreAction:'استعادة الجلسة',
     archiveRestoreSuccess:'تمت استعادة الجلسة. راجع بطاقة الاستئناف للمتابعة.',
     archiveRestoreCopyRetained:'تمت الاستعادة، واحتفظنا بنسخة إضافية في سجل الاسترداد.',
+    archiveRestoreCleanupUnverified:'تمت استعادة الجلسة، لكن تعذّر التحقق من تحديث سجل الاسترداد. راجع النسخ المحفوظة قبل إعادة المحاولة.',
     archiveRestoreFailed:'تعذرت استعادة الجلسة؛ لم نستبدل أي جلسة نشطة.',
     archiveRestoreStorageUnavailable:'التخزين الدائم غير متاح؛ لم نغيّر النسخة المحفوظة.',
     archiveListReadFailed:'تعذر قراءة سجل الاسترداد. لم نعدّل أي نسخة.'
@@ -74,6 +75,7 @@
     archiveRestoreAction:'Restore workout',
     archiveRestoreSuccess:'Workout restored. Use the Resume card to continue.',
     archiveRestoreCopyRetained:'Workout restored; an extra recovery copy was retained.',
+    archiveRestoreCleanupUnverified:'Workout restored, but the recovery archive update could not be verified. Check saved copies before trying again.',
     archiveRestoreFailed:'The workout could not be restored; no active workout was replaced.',
     archiveRestoreStorageUnavailable:'Persistent storage is unavailable; the recovery copy was not changed.',
     archiveListReadFailed:'The recovery archive could not be read. No copy was changed.'
@@ -525,7 +527,12 @@
     }
     state.active = result.session;
     showScreen('todayScreen');
-    toast(result.archiveRetained ? t('archiveRestoreCopyRetained') : t('archiveRestoreSuccess'));
+    const restoreMessage = result.archiveState === 'retained'
+      ? 'archiveRestoreCopyRetained'
+      : result.archiveState === 'unverified'
+        ? 'archiveRestoreCleanupUnverified'
+        : 'archiveRestoreSuccess';
+    toast(t(restoreMessage));
     return true;
   }
 

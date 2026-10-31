@@ -189,30 +189,28 @@
 
     const next = archived.filter((_, archivedIndex) => archivedIndex !== index);
     const serialized = JSON.stringify(next);
-    let archiveRetained = true;
+    const inspectArchiveState = () => {
+      try {
+        const observed = storage.getItem(archiveKey);
+        if (observed === serialized) return 'removed';
+        if (typeof observed !== 'string' || observed.length === 0) return 'unverified';
+        const current = JSON.parse(observed);
+        if (!Array.isArray(current)) return 'unverified';
+        return current.some(value => value?.rawSession === entry.rawSession) ? 'retained' : 'removed';
+      } catch {
+        return 'unverified';
+      }
+    };
+
+    let archiveState = 'unverified';
     try {
       storage.setItem(archiveKey, serialized);
-      const observed = storage.getItem(archiveKey);
-      if (observed === serialized) {
-        archiveRetained = false;
-      } else {
-        try {
-          const current = JSON.parse(observed || '[]');
-          archiveRetained = Array.isArray(current) && current.some(value => value?.rawSession === entry.rawSession);
-        } catch {
-          archiveRetained = true;
-        }
-      }
+      archiveState = inspectArchiveState();
     } catch {
-      try {
-        const current = JSON.parse(storage.getItem(archiveKey) || '[]');
-        archiveRetained = Array.isArray(current) && current.some(value => value?.rawSession === entry.rawSession);
-      } catch {
-        archiveRetained = true;
-      }
+      archiveState = inspectArchiveState();
     }
 
-    return { ok: true, session, archiveRetained };
+    return { ok: true, session, archiveState };
   }
 
   return Object.freeze({

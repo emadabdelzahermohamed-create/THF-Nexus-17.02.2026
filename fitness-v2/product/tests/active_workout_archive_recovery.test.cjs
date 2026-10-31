@@ -142,7 +142,7 @@ test('restore writes and verifies the active session before removing only the se
   const storage = makeStorage({ [ARCHIVE_KEY]: JSON.stringify([older, selected]) });
   const result = POLICY.restoreArchivedSession(storage, CATALOG, 1);
   assert.equal(result.ok, true);
-  assert.equal(result.archiveRetained, false);
+  assert.equal(result.archiveState, 'removed');
   assert.equal(storage.getItem(ACTIVE_KEY), RAW_SESSION);
   assert.deepEqual(JSON.parse(storage.getItem(ARCHIVE_KEY)), [older]);
   assert.deepEqual(result.session, SESSION);
@@ -192,7 +192,7 @@ test('archive update failure restores the active session but retains the recover
   };
   const result = POLICY.restoreArchivedSession(storage, CATALOG, 0);
   assert.equal(result.ok, true);
-  assert.equal(result.archiveRetained, true);
+  assert.equal(result.archiveState, 'retained');
   assert.equal(storage.getItem(ACTIVE_KEY), RAW_SESSION);
   assert.equal(storage.getItem(ARCHIVE_KEY), archive);
 });
@@ -209,9 +209,30 @@ test('restore reports a retained copy only when read-back still contains the sel
   storage.getItem = key => originalGet(key);
   const result = POLICY.restoreArchivedSession(storage, CATALOG, 0);
   assert.equal(result.ok, true);
-  assert.equal(result.archiveRetained, true);
+  assert.equal(result.archiveState, 'retained');
   assert.equal(storage.getItem(ACTIVE_KEY), RAW_SESSION);
   assert.equal(JSON.parse(storage.getItem(ARCHIVE_KEY))[0].rawSession, RAW_SESSION);
+});
+
+test('archive cleanup is reported as unverified when the write and read-back both fail', () => {
+  const archive = JSON.stringify([{ rawSession: RAW_SESSION }]);
+  const storage = makeStorage({ [ARCHIVE_KEY]: archive });
+  const originalGet = storage.getItem.bind(storage);
+  let archiveReads = 0;
+  storage.getItem = key => {
+    if (key === ARCHIVE_KEY && ++archiveReads > 1) throw new Error('read unavailable');
+    return originalGet(key);
+  };
+  storage.setItem = (key, value) => {
+    if (key === ARCHIVE_KEY) throw new Error('quota');
+    storage.values.set(key, String(value));
+  };
+
+  const result = POLICY.restoreArchivedSession(storage, CATALOG, 0);
+  assert.equal(result.ok, true);
+  assert.equal(result.archiveState, 'unverified');
+  assert.equal(storage.getItem(ACTIVE_KEY), RAW_SESSION);
+  assert.equal(archiveReads, 2);
 });
 
 test('Today recovery list shows a safely escaped restore action only for valid available sessions', () => {
@@ -289,6 +310,50 @@ test('the UI restore action restores into Today without auto-starting the workou
   assert.ok(events.includes('show:todayScreen'));
   assert.ok(events.includes('toast:Restored'));
   assert.equal(events.some(value => value === 'show:activeWorkoutScreen'), false);
+});
+
+test('the UI does not claim the recovery copy was retained when archive cleanup cannot be verified', () => {
+  const state = { active: null };
+  const events = [];
+  const sandbox = {
+    store: {
+      persistent: true,
+      getItem(key) {
+        if (key === ACTIVE_KEY) return this.active ?? null;
+        if (key === ARCHIVE_KEY) return JSON.stringify([{ rawSession: RAW_SESSION }]);
+        return null;
+      },
+      setItem(key, value) {
+        if (key === ACTIVE_KEY) this.active = String(value);
+        else throw new Error('archive write unavailable');
+      },
+      removeItem() {},
+    },
+    state,
+    EXERCISES: CATALOG,
+    resumePolicy: {
+      hasSession: POLICY.hasSession,
+      restoreArchivedSession(storage, exercises, index) {
+        const result = POLICY.restoreArchivedSession(storage, exercises, index);
+        return result;
+      }
+    },
+    toast(message) { events.push('toast:' + message); },
+    t(key) { return key; },
+    renderArchivedWorkouts() {},
+    showScreen(id) { events.push('show:' + id); }
+  };
+  const originalGet = sandbox.store.getItem.bind(sandbox.store);
+  let archiveReads = 0;
+  sandbox.store.getItem = key => {
+    if (key === ARCHIVE_KEY && ++archiveReads > 1) throw new Error('archive read unavailable');
+    return originalGet(key);
+  };
+  const restore = vm.runInNewContext('(' + extractFunction(APP, 'restoreArchivedWorkout') + ')', sandbox);
+  assert.equal(restore(0), true);
+  assert.ok(events.includes('toast:archiveRestoreCleanupUnverified'));
+  assert.ok(!events.includes('toast:archiveRestoreCopyRetained'));
+  assert.equal(state.active.clientRecordId, SESSION.clientRecordId);
 });
 
 test('the Today recovery panel and delegated restore control are wired', () => {
