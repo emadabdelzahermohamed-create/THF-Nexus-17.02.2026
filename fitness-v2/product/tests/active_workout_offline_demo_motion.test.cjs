@@ -208,3 +208,40 @@ test('a hidden workout screen defers preload until the screen becomes active', a
   h.probes[0].emit('load'); h.probes[1].emit('load'); await flushPromises();
   assert.equal(h.intervals.size, 1);
 });
+
+test('all local frames failing hides the broken image and announces unavailable in both languages', async () => {
+  const h = createHarness(); const item = sampleItem();
+  h.api.render(item, 'en', false);
+  h.probes[0].emit('error'); h.probes[1].emit('error'); await flushPromises();
+  assert.equal(h.intervals.size, 0);
+  assert.equal(h.image.classList.contains('hidden'), true);
+  assert.equal(h.image.getAttribute('src'), null);
+  assert.equal(h.image.alt, '');
+  assert.equal(h.phase.textContent, 'Offline demo unavailable — no local image could be decoded');
+  h.api.render(item, 'ar', false);
+  assert.equal(h.image.classList.contains('hidden'), true);
+  assert.equal(h.phase.textContent, 'تعذر عرض التمرين دون إنترنت — لم يمكن فك أي صورة');
+});
+
+test('a surviving later frame remains visible as a truthful static fallback when the first fails', async () => {
+  const h = createHarness();
+  h.api.render(sampleItem(), 'en', false);
+  h.probes[0].emit('error'); h.probes[1].emit('load'); await flushPromises();
+  assert.equal(h.intervals.size, 0);
+  assert.equal(h.image.classList.contains('hidden'), false);
+  assert.equal(h.image.getAttribute('src'), './media/demo/1.jpg');
+  assert.match(h.image.alt, /Finish/);
+  assert.match(h.phase.textContent, /motion unavailable/);
+});
+
+test('invalid non-local demo paths do not leave the previous or broken image visible', () => {
+  const h = createHarness();
+  h.api.render(sampleItem(), 'en', false);
+  const invalid = {...sampleItem(), id: 'invalid-path', demo: {...sampleItem().demo, assets: ['https://example.invalid/demo.jpg']}};
+  h.api.render(invalid, 'en', false);
+  assert.equal(h.probes.length, 0);
+  assert.equal(h.image.classList.contains('hidden'), true);
+  assert.equal(h.image.getAttribute('src'), null);
+  assert.equal(h.image.alt, '');
+  assert.match(h.phase.textContent, /no local image could be decoded/);
+});
