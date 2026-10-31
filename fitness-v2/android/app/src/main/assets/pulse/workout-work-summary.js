@@ -6,7 +6,7 @@
   "use strict";
 
   function completedVolume(sets) {
-    return (sets || []).filter(set => set && set.complete).reduce((sum, set) => {
+    return (sets || []).filter(set => set && set.complete && !(Number(set.durationSeconds) > 0)).reduce((sum, set) => {
       return sum + Math.max(0, Number(set.load) || 0) * Math.max(0, Number(set.reps) || 0);
     }, 0);
   }
