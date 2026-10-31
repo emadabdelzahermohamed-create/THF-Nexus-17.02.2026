@@ -64,7 +64,10 @@
         ? (isArabic ? 'النهاية' : 'Finish')
         : (isArabic ? 'الإطار ' + (originalIndex + 1) + ' من ' + assets.length : 'Frame ' + (originalIndex + 1) + ' of ' + assets.length);
     const baseAlt = state.item?.demo?.alt?.[state.lang] || state.item?.name?.[state.lang] || '';
-    image.alt = String(baseAlt) + ' — ' + phaseName;
+    // Keep the accessible name stable while frames autoplay; state changes are
+    // announced by the dedicated status region, not by per-frame alt mutations.
+    const animated = motionAllowed(state);
+    image.alt = String(baseAlt) + (animated ? '' : ' — ' + phaseName);
   }
   function stopTimer() {
     if (timer !== null) window.clearInterval(timer);
