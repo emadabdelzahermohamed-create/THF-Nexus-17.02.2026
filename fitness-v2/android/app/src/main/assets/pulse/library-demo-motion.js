@@ -235,6 +235,7 @@
     const frames = detailFrames();
     if (!detailDemo || frames.length < 2) {
       detailDemo?.classList.remove('auto-sequence');
+      detailDemo?.classList.toggle('single-reference', frames.length === 1);
       for (const frame of allFrames) {
         frame.classList.remove('is-active');
         if (frame.getAttribute('data-demo-playable') === 'false'
@@ -244,6 +245,7 @@
       return;
     }
     const active = Boolean(animate && detailIsOpen() && !reduceMotion() && !document.hidden);
+    detailDemo.classList.remove('single-reference');
     detailDemo.classList.toggle('auto-sequence', active);
     if (!active) detailIndex = 0;
     frames.forEach((frame, index) => {
