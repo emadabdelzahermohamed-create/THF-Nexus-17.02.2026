@@ -1,0 +1,41 @@
+name: THF Google Maps SDK Enablement
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+
+jobs:
+  enable-maps-sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Authenticate to existing THF Google Cloud project
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Confirm target project identity
+        run: |
+          set -euo pipefail
+          gcloud projects describe "$GCP_PROJECT_ID" --format='value(projectId)' | grep -x "$GCP_PROJECT_ID"
+      - name: Enable Maps SDK for Android in the existing project
+        run: |
+          set -euo pipefail
+          gcloud services enable maps-android-backend.googleapis.com --project "$GCP_PROJECT_ID"
+          gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=maps-android-backend.googleapis.com' --format='value(config.name)' | grep -x 'maps-android-backend.googleapis.com'
+      - name: Record safe project/API evidence
+        run: |
+          echo "PROJECT_ID=$GCP_PROJECT_ID"
+          echo 'MAPS_ANDROID_BACKEND_API=ENABLED'
+          echo 'BILLING_CONFIGURATION=UNCHANGED_NOT_READ_BY_THIS_WORKFLOW'
+          echo 'API_KEY=NOT_CREATED_PENDING_PLAY_APP_SIGNING_CERTIFICATE'

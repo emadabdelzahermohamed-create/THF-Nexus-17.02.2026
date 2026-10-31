@@ -290,10 +290,15 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         registerStepSource(mode)
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1_000L)
             .setMinUpdateIntervalMillis(1_000L)
+            // Never seed a new session with a cached last-known fix from before Start.
+            .setMaxUpdateAgeMillis(0L)
             .setMinUpdateDistanceMeters(1f)
-            .setMaxUpdateDelayMillis(2_000L)
+            // Outdoor activity tracking is latency-sensitive: avoid batched fixes so the
+            // route and live pace stay responsive, and let FLP briefly prefer a precise
+            // first fix instead of immediately surfacing a coarse initial estimate.
+            .setMaxUpdateDelayMillis(0L)
             .setGranularity(Granularity.GRANULARITY_FINE)
-            .setWaitForAccurateLocation(false)
+            .setWaitForAccurateLocation(true)
             .build()
         val playServicesReady = GoogleApiAvailability.getInstance()
             .isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS
