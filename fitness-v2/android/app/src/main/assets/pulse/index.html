@@ -143,7 +143,7 @@
         <div id="setRows" class="set-rows" role="region" aria-labelledby="setProgressTitle"></div>
         <button id="addSetBtn" class="button secondary full" type="button" data-i18n="addSet">+ إضافة مجموعة</button>
       </article>
-      <article id="restPanel" class="rest-panel hidden" role="timer" aria-labelledby="restLabel restTimer"><span id="restLabel" data-i18n="rest">راحة</span><strong id="restTimer">01:30</strong><button id="skipRest" class="text-button" type="button" data-i18n="skipRest">تخطّي</button></article>
+      <article id="restPanel" class="rest-panel hidden" role="group" aria-labelledby="restLabel"><span id="restLabel" data-i18n="rest">راحة</span><strong id="restTimer" role="timer" aria-live="off" aria-label="مؤقت الراحة" data-i18n-aria-label="restTimerLabel">01:30</strong><div class="rest-controls" role="group" aria-label="ضبط وقت الراحة" data-i18n-aria-label="adjustRest"><button id="shortenRest" class="rest-adjust" type="button" aria-label="تقليل الراحة 15 ثانية" data-i18n="shortenRest" data-i18n-aria-label="shortenRestLabel">−15 ث</button><button id="extendRest" class="rest-adjust" type="button" aria-label="زيادة الراحة 15 ثانية" data-i18n="extendRest" data-i18n-aria-label="extendRestLabel">+15 ث</button></div><button id="skipRest" class="text-button" type="button" data-i18n="skipRest">تخطّي</button></article>
       <article class="surface safety-card"><b data-i18n="safety">السلامة أولًا</b><p id="activeSafety"></p></article>
       <div class="workout-actions"><button id="finishWorkoutBtn" class="button primary large full" type="button" data-i18n="finishWorkout">إنهاء التمرين وحفظه</button></div>
     </section>

@@ -440,7 +440,8 @@ class ProductCatalogTest(unittest.TestCase):
         expected = {
             "readinessToday", "todaySummary", "trainContentType", "programSections",
             "clearSearch", "trainingSections", "voiceGuidance", "volumeChartLabel",
-            "onboardingBenefitsLabel", "close",
+            "onboardingBenefitsLabel", "close", "restTimerLabel", "adjustRest",
+            "shortenRestLabel", "extendRestLabel",
         }
         bound = set(re.findall(r'data-i18n-aria-label="([^"]+)"', html))
         self.assertEqual(expected, bound)
