@@ -41,6 +41,54 @@ class ProgramProgressionTest(unittest.TestCase):
             self.assertNotIn("load", " ".join(progression["en"]).lower())
             self.assertNotIn("الحمل", " ".join(progression["ar"]))
 
+    def test_bodyweight_programs_progress_without_external_load(self):
+        programs = BUILDER.build()
+        bodyweight_sections = {"home", "calisthenics"}
+
+        for program in programs:
+            if program["section"]["id"] not in bodyweight_sections:
+                continue
+            with self.subTest(program=program["id"]):
+                equipment_ids = {item["id"] for item in program["equipment"]}
+                self.assertLessEqual(equipment_ids, {"body only", "other"})
+                english = " ".join(program["progression"]["en"]).lower()
+                arabic = " ".join(program["progression"]["ar"])
+                self.assertIn("do not add external load", english)
+                self.assertIn("دون إضافة حمل خارجي", arabic)
+                self.assertNotIn("2–5% load", english)
+                self.assertNotIn("الحمل 2–5%", arabic)
+                self.assertEqual(
+                    BUILDER.progression_for(
+                        program["section"]["id"],
+                        program["weeks"],
+                        program["level"]["id"],
+                    ),
+                    program["progression"],
+                )
+
+    def test_bodyweight_progression_covers_rep_and_timed_sets(self):
+        programs = BUILDER.build()
+        bodyweight_sections = {"home", "calisthenics"}
+
+        for program in programs:
+            if program["section"]["id"] not in bodyweight_sections:
+                continue
+            with self.subTest(program=program["id"]):
+                progression = program["progression"]
+                english = " ".join(progression["en"])
+                arabic = " ".join(progression["ar"])
+                references = [
+                    item
+                    for session in program["sessions"]
+                    for item in session["exercises"]
+                ]
+                self.assertTrue(any(item["durationSeconds"] is not None for item in references))
+                self.assertTrue(any(item["durationSeconds"] is None and item["reps"] is not None for item in references))
+                self.assertIn("one controlled repetition to rep-based sets", english)
+                self.assertIn("5 seconds to timed sets", english)
+                self.assertIn("عدة مضبوطة واحدة إلى المجموعات المعتمدة على التكرار", arabic)
+                self.assertIn("5 ثوانٍ إلى المجموعات الزمنية", arabic)
+
     def test_every_program_uses_its_section_progression(self):
         programs = BUILDER.build()
 
