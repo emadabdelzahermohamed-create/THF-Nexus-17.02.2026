@@ -6,6 +6,7 @@
   'use strict';
 
   const FRAME_MS = 900;
+  const PRELOAD_TIMEOUT_MS = 1200;
   const grid = document.getElementById('exerciseGrid');
   const detailRoot = document.getElementById('exerciseDetail');
   const detailDemo = document.getElementById('detailDemo');
@@ -57,8 +58,21 @@
     if (preloadCache.has(url)) return preloadCache.get(url);
     const result = new Promise(resolve => {
       const image = new window.Image();
-      image.addEventListener('load', () => resolve(true), { once: true });
-      image.addEventListener('error', () => resolve(false), { once: true });
+      let settled = false;
+      let timeoutId = null;
+      const finish = loaded => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId !== null) window.clearTimeout(timeoutId);
+        image.removeEventListener?.('load', onLoad);
+        image.removeEventListener?.('error', onError);
+        resolve(loaded);
+      };
+      const onLoad = () => finish(true);
+      const onError = () => finish(false);
+      image.addEventListener('load', onLoad);
+      image.addEventListener('error', onError);
+      timeoutId = window.setTimeout(() => finish(false), PRELOAD_TIMEOUT_MS);
       image.src = url;
     });
     preloadCache.set(url, result);
