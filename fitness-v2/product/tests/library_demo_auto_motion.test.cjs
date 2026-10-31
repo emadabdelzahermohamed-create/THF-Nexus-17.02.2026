@@ -95,14 +95,17 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
   const grid = new FakeElement({ id: 'exerciseGrid' });
   grid.children = [card];
 
-  const detailImage0 = imageFor('./media/demo-test/0.jpg', exercise.demo.alt.en);
-  const detailImage1 = imageFor('./media/demo-test/1.jpg', exercise.demo.alt.en);
-  const frame0 = new FakeElement({ classes: ['detail-frame'] });
-  const frame1 = new FakeElement({ classes: ['detail-frame'] });
-  frame0.image = detailImage0;
-  frame1.image = detailImage1;
+  const detailFrames = exercise.demo.assets.map(asset => {
+    const image = imageFor('./' + asset, exercise.demo.alt.en);
+    const frame = new FakeElement({ classes: ['detail-frame'] });
+    frame.image = image;
+    return frame;
+  });
+  const frame0 = detailFrames[0];
+  const frame1 = detailFrames[1];
+  const frame2 = detailFrames[2] || null;
   const detailDemo = new FakeElement({ id: 'detailDemo' });
-  detailDemo.children = [frame0, frame1];
+  detailDemo.children = detailFrames;
   const detailRoot = new FakeElement({ id: 'exerciseDetail', classes: ['hidden'] });
   const reduceControl = new FakeElement({ id: 'reduceMotion' });
   reduceControl.checked = false;
@@ -205,7 +208,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     animationFrames.clear();
     callbacks.forEach(callback => callback());
   };
-  return { timers, timeouts, images, animationFrames, grid, card, cardImage, detailRoot, detailDemo, frame0, frame1, reduceControl, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
+  return { timers, timeouts, images, animationFrames, grid, card, cardImage, detailRoot, detailDemo, detailFrames, frame0, frame1, frame2, reduceControl, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
 }
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
@@ -224,6 +227,7 @@ test('exercise detail shows one frame at a time and advances automatically', asy
   await new Promise(resolve => setImmediate(resolve));
   h.detailRoot.classList.remove('hidden');
   h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(h.detailDemo.classList.contains('auto-sequence'), true);
   assert.equal(h.frame0.classList.contains('is-active'), true);
   assert.equal(h.frame1.getAttribute('aria-hidden'), 'true');
@@ -238,6 +242,7 @@ test('reduced motion stops timers and restores the static two-frame detail', asy
   await new Promise(resolve => setImmediate(resolve));
   h.detailRoot.classList.remove('hidden');
   h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
   assert.ok(h.timers.size > 0);
   h.setStoredPreference('1');
   assert.equal(h.timers.size, 0);
@@ -392,4 +397,40 @@ test('all failed secondary frames settle to a stable static card without repeate
   assert.equal(h.images.length, 2);
   assert.equal(h.timers.size, 0);
   assert.equal(h.cardImage.getAttribute('src'), './media/demo-test/0.jpg');
+});
+
+test('detail animation skips a failed local frame and cycles only decoded frames', async () => {
+  const h = buildHarness({
+    exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg', 'media/demo-test/2.jpg'],
+    imageLoadMode: src => src.endsWith('/1.jpg') ? 'error' : 'load'
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.frame1.getAttribute('hidden'), '');
+  assert.equal(h.frame1.getAttribute('aria-hidden'), 'true');
+  assert.equal(h.frame2.getAttribute('hidden'), null);
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), true);
+  assert.equal(h.detailDemo.classList.contains('single-reference'), false);
+  h.tick();
+  assert.equal(h.frame2.classList.contains('is-active'), true);
+  assert.equal(h.frame1.classList.contains('is-active'), false);
+});
+
+test('detail with no decoded secondary frames stays on the accessible reference frame', async () => {
+  const h = buildHarness({
+    exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg', 'media/demo-test/2.jpg'],
+    imageLoadMode: 'error'
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), false);
+  assert.equal(h.detailDemo.classList.contains('single-reference'), true);
+  assert.equal(h.frame0.getAttribute('aria-hidden'), null);
+  assert.equal(h.frame1.getAttribute('hidden'), '');
+  assert.equal(h.frame2.getAttribute('hidden'), '');
+  assert.equal(h.timers.size, 0);
 });

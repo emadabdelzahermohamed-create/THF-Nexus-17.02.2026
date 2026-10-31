@@ -19,6 +19,7 @@
   let detailFramesObserver = null;
   let timer = null;
   let detailIndex = 0;
+  let detailLoad = null;
   let scrollRefreshPending = false;
 
   const itemById = id => exercises().find(item => item.id === id);
@@ -149,8 +150,15 @@
     }
   }
 
-  function detailFrames() {
+  function allDetailFrames() {
     return detailDemo ? Array.from(detailDemo.querySelectorAll('.detail-frame')) : [];
+  }
+
+  function detailFrames() {
+    return allDetailFrames().filter(frame => {
+      const state = frame.getAttribute('data-demo-playable');
+      return state !== 'pending' && state !== 'false';
+    });
   }
 
   function detailIsOpen() {
@@ -164,13 +172,80 @@
     return exercises().find(item => localAsset(item.demo?.assets?.[0]) === src) || null;
   }
 
+  function loadDetailFrames() {
+    const item = detailExercise();
+    const frames = allDetailFrames();
+    const assets = Array.isArray(item?.demo?.assets) ? item.demo.assets : [];
+    if (!detailRoot || detailRoot.classList.contains('hidden') || !item || frames.length < 2 || assets.length < 2) return;
+
+    const sameFrames = detailLoad && detailLoad.id === item.id
+      && detailLoad.frames.length === frames.length
+      && detailLoad.frames.every((frame, index) => frame === frames[index]);
+    if (sameFrames) return;
+
+    const token = { id: item.id, frames, settled: false };
+    detailLoad = token;
+    frames.forEach((frame, index) => {
+      if (index === 0 && localAsset(assets[index])) {
+        frame.setAttribute('data-demo-playable', 'true');
+        frame.removeAttribute('hidden');
+        frame.removeAttribute('aria-hidden');
+      } else if (index < assets.length && localAsset(assets[index])) {
+        frame.setAttribute('data-demo-playable', 'pending');
+        frame.setAttribute('hidden', '');
+        frame.setAttribute('aria-hidden', 'true');
+      } else {
+        frame.setAttribute('data-demo-playable', 'false');
+        frame.setAttribute('hidden', '');
+        frame.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    const pending = frames.slice(1).map((_, index) => {
+      const asset = assets[index + 1];
+      return localAsset(asset) ? preloadAsset(asset) : Promise.resolve(false);
+    });
+    Promise.all(pending).then(results => {
+      if (detailLoad !== token) return;
+      const currentFrames = allDetailFrames();
+      if (currentFrames.length !== token.frames.length
+        || currentFrames.some((frame, index) => frame !== token.frames[index])) return;
+
+      for (let index = 1; index < frames.length; index++) {
+        const loaded = Boolean(results[index - 1]) && Boolean(localAsset(assets[index]));
+        if (loaded) {
+          frames[index].setAttribute('data-demo-playable', 'true');
+          frames[index].removeAttribute('hidden');
+          frames[index].removeAttribute('aria-hidden');
+        } else {
+          frames[index].setAttribute('data-demo-playable', 'false');
+          frames[index].setAttribute('hidden', '');
+          frames[index].setAttribute('aria-hidden', 'true');
+        }
+      }
+      token.settled = true;
+      detailIndex = 0;
+      renderDetailSequence(!reduceMotion() && !document.hidden);
+      syncTimer();
+    });
+  }
+
   function renderDetailSequence(animate) {
+    const allFrames = allDetailFrames();
     const frames = detailFrames();
     if (!detailDemo || frames.length < 2) {
       detailDemo?.classList.remove('auto-sequence');
+      detailDemo?.classList.toggle('single-reference', frames.length === 1);
+      for (const frame of allFrames) {
+        frame.classList.remove('is-active');
+        if (frame.getAttribute('data-demo-playable') === 'false'
+          || frame.getAttribute('data-demo-playable') === 'pending') frame.setAttribute('aria-hidden', 'true');
+        else frame.removeAttribute('aria-hidden');
+      }
       return;
     }
     const active = Boolean(animate && detailIsOpen() && !reduceMotion() && !document.hidden);
+    detailDemo.classList.remove('single-reference');
     detailDemo.classList.toggle('auto-sequence', active);
     if (!active) detailIndex = 0;
     frames.forEach((frame, index) => {
@@ -226,6 +301,7 @@
 
   function refresh() {
     scanCards();
+    loadDetailFrames();
     if (reduceMotion() || document.hidden) {
       stopTimer();
       for (const state of states.values()) resetCard(state);
