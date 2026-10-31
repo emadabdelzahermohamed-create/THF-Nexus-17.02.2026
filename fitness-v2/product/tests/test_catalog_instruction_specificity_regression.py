@@ -28,6 +28,68 @@ EXPECTED_MEDICINE_BALL_FULL_TWIST_STEPS = {
     ],
 }
 
+DANCERS_STRETCH_SOURCE_ID = "Dancers_Stretch"
+EXPECTED_DANCERS_STRETCH_STEPS = {
+    "en": [
+        "Sit tall on the floor with both legs extended in front of you.",
+        "Cross your right leg over your left, bend the right knee, and place the right foot flat beside the left knee.",
+        "Place the left arm outside the right thigh and the right hand behind you for support; do not pull the knee to force the twist.",
+        "Rotate your chest gently to the right within a comfortable range and hold for 10–20 seconds. Return to center, then switch sides."
+    ],
+    "ar": [
+        "اجلس منتصبًا على الأرض مع إطالة الساقين أمامك.",
+        "اعبر الساق اليمنى فوق اليسرى مع ثني الركبة وتثبيت القدم اليمنى على الأرض بجوار الركبة اليسرى.",
+        "ضع الذراع اليسرى خارج الفخذ الأيمن واليد اليمنى خلفك للدعم؛ لا تسحب الركبة لفرض الالتواء.",
+        "أدر الصدر برفق إلى اليمين ضمن مدى مريح واثبت 10–20 ثانية. عد للوسط ثم بدّل الجهة."
+    ]
+}
+
+STANDING_HIP_CIRCLES_SOURCE_ID = "Standing_Hip_Circles"
+EXPECTED_STANDING_HIP_CIRCLES_STEPS = {
+    "en": [
+        "Stand on one leg beside a stable support and hold it lightly; keep the standing knee soft.",
+        "Lift the free knee toward hip height only as high as comfortable, keeping your torso tall and pelvis level.",
+        "Draw a small, controlled circle from the hip; keep your trunk steady and stay within a comfortable range.",
+        "Continue slowly for the set duration, then lower the foot with control and switch legs; reverse the circle direction on the other side.",
+    ],
+    "ar": [
+        "قف على ساق واحدة بجوار دعامة ثابتة واستند إليها بخفة، مع ثني بسيط لركبة الارتكاز.",
+        "ارفع الركبة الحرة باتجاه ارتفاع الورك بالقدر المريح فقط، مع إبقاء الجذع منتصبًا والحوض مستويًا.",
+        "ارسم دائرة صغيرة ومتحكمًا بها من مفصل الورك؛ ثبّت الجذع واستخدم مدى مريحًا فقط.",
+        "استمر ببطء طوال مدة المجموعة، ثم أنزل القدم بتحكم وبدّل الساق؛ اعكس اتجاه الدائرة في الجهة الأخرى.",
+    ]
+}
+
+OVERHEAD_SLAM_SOURCE_ID = "Overhead_Slam"
+EXPECTED_OVERHEAD_SLAM_STEPS = {
+    "en": [
+        "Use a medicine ball intended for slams; stand with feet shoulder-width apart and clear the floor area in front.",
+        "Raise the ball overhead while extending through the hips and knees; keep your ribs stacked over your pelvis and avoid arching your lower back.",
+        "Hinge at the hips and bend your knees as you drive the ball firmly into the clear floor area in front; keep the slam controlled rather than chasing maximum force.",
+        "Catch the rebound only if the ball is designed to bounce and the return is controlled; otherwise let it settle before retrieving it. Reset your stance before the next slam."
+    ],
+    "ar": [
+        "استخدم كرة طبية مخصصة للرمي الأرضي، وقف والقدمان بعرض الكتفين مع إخلاء مساحة الأرض أمامك.",
+        "ارفع الكرة فوق الرأس مع مد الوركين والركبتين؛ أبقِ القفص الصدري فوق الحوض وتجنب تقويس أسفل الظهر.",
+        "اثنِ الوركين والركبتين وأرسل الكرة بقوة مضبوطة إلى المساحة الخالية أمامك؛ حافظ على التحكم بدل مطاردة أقصى قوة.",
+        "التقط ارتداد الكرة فقط إذا كانت مصممة للارتداد وكان مسارها تحت السيطرة؛ وإلا فاتركها تستقر قبل التقاطها. أعد ضبط وقفتك قبل الرمية التالية."
+    ]
+}
+
+HEAVY_BAG_THRUST_SOURCE_ID = "Heavy_Bag_Thrust"
+EXPECTED_HEAVY_BAG_THRUST_STEPS = {
+    "en": [
+        "Stand in a balanced staggered stance facing a securely hung heavy bag; keep the area around it clear and bring the working hand to chest height with the wrist straight.",
+        "Turn through the hips and torso together within a comfortable range, allowing the feet to pivot naturally; drive the working hand into the bag with a controlled thrust. Keep the wrist aligned with the forearm and avoid twisting sharply through the lower back.",
+        "Let the bag swing back without chasing it; soften the elbow and knees, regain balance, and repeat only when the bag is steady. Stop if you feel wrist, shoulder, or back pain."
+    ],
+    "ar": [
+        "قف بوقفة متدرجة ومتوازنة أمام كيس ملاكمة معلّق بإحكام؛ أخلِ المساحة حوله وارفع اليد العاملة إلى مستوى الصدر مع استقامة الرسغ.",
+        "أدر الوركين والجذع معًا ضمن مدى مريح، مع السماح للقدمين بالدوران الطبيعي؛ ادفع اليد العاملة نحو الكيس بدفعة متحكم بها. حافظ على محاذاة الرسغ مع الساعد وتجنب الالتواء الحاد بأسفل الظهر.",
+        "دع الكيس يتأرجح عائدًا دون ملاحقته؛ ليّن المرفقين والركبتين واستعد للتوازن، ولا تكرر إلا بعد استقرار الكيس. توقف إذا شعرت بألم في الرسغ أو الكتف أو الظهر."
+    ]
+}
+
 GENERIC_ENGLISH_FILLER = (
     re.compile(r"\brepeat the procedure\b", re.IGNORECASE),
     re.compile(r"\bperform the (?:amount|number) of repetitions\b", re.IGNORECASE),
