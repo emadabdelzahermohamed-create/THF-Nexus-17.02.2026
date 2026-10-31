@@ -384,8 +384,14 @@
   }
 
 
-  function completedVolume(sets) { return (sets||[]).filter(set=>set.complete).reduce((sum,set)=>sum + Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0); }
-  function sessionVolume() { return completedVolume(state.active?.sets) + (state.active?.programEntries||[]).reduce((sum,entry)=>sum+completedVolume(entry.sets),0); }
+  function sessionWorkSummaryText() {
+    const summary = window.THF_WORKOUT_WORK_SUMMARY.summarize(
+      state.active?.programEntries || [],
+      state.active?.sets || [],
+      set => durationProgressState(set).elapsedMs
+    );
+    return window.THF_WORKOUT_WORK_SUMMARY.format(summary, t('time'), formatDuration);
+  }
   function persistActive() { store.setItem('pulse.v2.active', JSON.stringify(state.active)); }
   function fallbackActiveMotionToFrames(exerciseId, expectedSource) {
     const item = activeExercise();
@@ -491,7 +497,7 @@
     $('activeExerciseCue').textContent = local(item.setup); $('activeMuscles').innerHTML = renderActiveMuscleGroups(item);
     $('activeSteps').innerHTML = item.steps[state.lang].map(step=>`<li>${escapeHtml(step)}</li>`).join(''); $('activeBreathing').textContent = local(item.breathing); $('activeSafety').textContent = local(item.safety); renderActiveCoaching(item);
     renderMotionEvidence(state.motionEvidence||readMotionSnapshot());
-    const done = state.active.sets.filter(set=>set.complete).length; $('setProgressTitle').textContent = t('setProgress').replace('{done}',done).replace('{total}',state.active.sets.length); $('sessionVolume').textContent = `${Math.round(sessionVolume())} kg`;
+    const done = state.active.sets.filter(set=>set.complete).length; $('setProgressTitle').textContent = t('setProgress').replace('{done}',done).replace('{total}',state.active.sets.length); $('sessionWorkSummary').textContent = sessionWorkSummaryText();
     $('finishWorkoutBtn').textContent=programSession?(programIndex<programSession.exercises.length-1?t('saveNext'):t('finishSession')):t('finishWorkout');
     const hasTimedSets=state.active.sets.some(set=>Number(set.durationSeconds)>0);
     const showRir = window.THF_SET_RIR_POLICY.shouldShow(item, state.active.sets);
