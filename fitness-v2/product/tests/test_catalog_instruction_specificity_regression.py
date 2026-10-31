@@ -51,6 +51,22 @@ EXPECTED_STANDING_HIP_CIRCLES_STEPS = {
     ]
 }
 
+OVERHEAD_SLAM_SOURCE_ID = "Overhead_Slam"
+EXPECTED_OVERHEAD_SLAM_STEPS = {
+    "en": [
+        "Use a medicine ball intended for slams; stand with feet shoulder-width apart and clear the floor area in front.",
+        "Raise the ball overhead while extending through the hips and knees; keep your ribs stacked over your pelvis and avoid arching your lower back.",
+        "Hinge at the hips and bend your knees as you drive the ball firmly into the clear floor area in front; keep the slam controlled rather than chasing maximum force.",
+        "Catch the rebound only if the ball is designed to bounce and the return is controlled; otherwise let it settle before retrieving it. Reset your stance before the next slam."
+    ],
+    "ar": [
+        "استخدم كرة طبية مخصصة للرمي الأرضي، وقف والقدمان بعرض الكتفين مع إخلاء مساحة الأرض أمامك.",
+        "ارفع الكرة فوق الرأس مع مد الوركين والركبتين؛ أبقِ القفص الصدري فوق الحوض وتجنب تقويس أسفل الظهر.",
+        "اثنِ الوركين والركبتين وأرسل الكرة بقوة مضبوطة إلى المساحة الخالية أمامك؛ حافظ على التحكم بدل مطاردة أقصى قوة.",
+        "التقط ارتداد الكرة فقط إذا كانت مصممة للارتداد وكان مسارها تحت السيطرة؛ وإلا فاتركها تستقر قبل التقاطها. أعد ضبط وقفتك قبل الرمية التالية."
+    ]
+}
+
 GENERIC_ENGLISH_FILLER = (
     re.compile(r"\brepeat the procedure\b", re.IGNORECASE),
     re.compile(r"\bperform the (?:amount|number) of repetitions\b", re.IGNORECASE),
@@ -121,6 +137,23 @@ class CatalogInstructionSpecificityRegressionTest(unittest.TestCase):
         self.assertNotIn("as far as possible", item["steps"]["en"][2])
         self.assertNotIn("number of repetitions", item["steps"]["en"][3])
         self.assertIn("بدّل الساق", item["steps"]["ar"][3])
+
+    def test_overhead_slam_has_controlled_bilingual_rebound_cues(self):
+        item = self.by_source_id[OVERHEAD_SLAM_SOURCE_ID]
+        self.assertEqual(EXPECTED_OVERHEAD_SLAM_STEPS, item["steps"])
+        self.assertEqual(item["steps"], BUILDER.STEP_OVERRIDES[OVERHEAD_SLAM_SOURCE_ID])
+        self.assertEqual(4, len(item["steps"]["en"]))
+        self.assertEqual(len(item["steps"]["en"]), len(item["steps"]["ar"]))
+        self.assertIn("intended for slams", item["steps"]["en"][0])
+        self.assertIn("controlled rather than chasing maximum force", item["steps"]["en"][2])
+        self.assertIn("designed to bounce", item["steps"]["en"][3])
+        self.assertIn("let it settle", item["steps"]["en"][3])
+        self.assertIn("مخصصة للرمي الأرضي", item["steps"]["ar"][0])
+        self.assertIn("قوة مضبوطة", item["steps"]["ar"][2])
+        self.assertIn("مصممة للارتداد", item["steps"]["ar"][3])
+        self.assertIn("اتركها تستقر", item["steps"]["ar"][3])
+        self.assertNotIn("as hard as you can", " ".join(item["steps"]["en"]).lower())
+        self.assertNotIn("repeat the movement", " ".join(item["steps"]["en"]).lower())
 
 if __name__ == "__main__":
     unittest.main()

@@ -306,16 +306,16 @@ STEP_OVERRIDES = {
     },
     "Overhead_Slam": {
         "en": [
-            "Hold a medicine ball with both hands and stand with your feet at shoulder width. This will be your starting position.",
-            "Initiate the countermovement by raising the ball above your head and fully extending your body.",
-            "Reverse the motion, slamming the ball into the ground directly in front of you as hard as you can.",
-            "Receive the ball with both hands on the bounce and repeat the movement."
+            "Use a medicine ball intended for slams; stand with feet shoulder-width apart and clear the floor area in front.",
+            "Raise the ball overhead while extending through the hips and knees; keep your ribs stacked over your pelvis and avoid arching your lower back.",
+            "Hinge at the hips and bend your knees as you drive the ball firmly into the clear floor area in front; keep the slam controlled rather than chasing maximum force.",
+            "Catch the rebound only if the ball is designed to bounce and the return is controlled; otherwise let it settle before retrieving it. Reset your stance before the next slam."
         ],
         "ar": [
-            "قف والقدمان بعرض الكتفين وامسك الكرة الطبية بكلتا اليدين أمام الجسم.",
-            "ارفع الكرة فوق الرأس مع مد الجسم دون المبالغة في تقويس أسفل الظهر.",
-            "ادفع الكرة بقوة إلى الأرض أمامك بثني الورك والركبتين مع بقاء الحركة تحت السيطرة.",
-            "التقط الكرة بعد ارتدادها وأعد الوقفة قبل التكرار التالي."
+            "استخدم كرة طبية مخصصة للرمي الأرضي، وقف والقدمان بعرض الكتفين مع إخلاء مساحة الأرض أمامك.",
+            "ارفع الكرة فوق الرأس مع مد الوركين والركبتين؛ أبقِ القفص الصدري فوق الحوض وتجنب تقويس أسفل الظهر.",
+            "اثنِ الوركين والركبتين وأرسل الكرة بقوة مضبوطة إلى المساحة الخالية أمامك؛ حافظ على التحكم بدل مطاردة أقصى قوة.",
+            "التقط ارتداد الكرة فقط إذا كانت مصممة للارتداد وكان مسارها تحت السيطرة؛ وإلا فاتركها تستقر قبل التقاطها. أعد ضبط وقفتك قبل الرمية التالية."
         ]
     },
     "Air_Bike": {
