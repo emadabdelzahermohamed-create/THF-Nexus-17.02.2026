@@ -1,4 +1,6 @@
+import hashlib
 import importlib.util
+import json
 import unittest
 from pathlib import Path
 
@@ -40,6 +42,70 @@ class ProgramProgressionTest(unittest.TestCase):
         for progression in (endurance, conditioning, mobility):
             self.assertNotIn("load", " ".join(progression["en"]).lower())
             self.assertNotIn("الحمل", " ".join(progression["ar"]))
+
+    def test_long_source_duration_blocks_fit_session_time_budgets(self):
+        source_catalog = json.loads(BUILDER.EXERCISES_PATH.read_text(encoding="utf-8"))
+        source_by_id = {item["id"]: item["prescription"] for item in source_catalog}
+        adjusted = 0
+
+        for program in BUILDER.build():
+            for session in program["sessions"]:
+                planned_timed_seconds = 0
+                for entry in session["exercises"]:
+                    source_duration = source_by_id[entry["exerciseId"]].get("durationSeconds")
+                    if source_duration is not None and int(source_duration) >= 600:
+                        adjusted += 1
+                        self.assertEqual(1, entry["sets"])
+                        self.assertEqual(
+                            300 if entry["role"] == "warmup" else 600,
+                            entry["durationSeconds"],
+                        )
+                    if entry["durationSeconds"] is not None:
+                        planned_timed_seconds += int(entry["sets"]) * int(entry["durationSeconds"])
+
+                self.assertLessEqual(
+                    planned_timed_seconds,
+                    int(session["estimatedMinutes"]) * 60,
+                    f"{program['id']}/{session['id']} timed work exceeds its advertised session estimate",
+                )
+
+        self.assertGreater(adjusted, 0)
+
+    def test_checked_in_program_json_js_and_manifest_stay_in_sync(self):
+        json_text = BUILDER.PROGRAMS_PATH.read_text(encoding="utf-8")
+        checked_in = json.loads(json_text)
+        generated = BUILDER.build()
+        self.assertEqual(generated, checked_in)
+
+        js_text = BUILDER.PROGRAMS_JS_PATH.read_text(encoding="utf-8")
+        js_payload = js_text.partition("=")[2].strip()
+        self.assertTrue(js_payload.endswith(";"))
+        self.assertEqual(checked_in, json.loads(js_payload[:-1].rstrip()))
+
+        manifest = json.loads(BUILDER.MANIFEST_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(
+            hashlib.sha256(json_text.encode("utf-8")).hexdigest(),
+            manifest["programsSha256"],
+        )
+
+    def test_program_exercises_never_exceed_program_level(self):
+        catalog = json.loads(BUILDER.EXERCISES_PATH.read_text(encoding="utf-8"))
+        by_id = {item["id"]: item for item in catalog}
+
+        for program in BUILDER.build():
+            program_rank = BUILDER.LEVEL_RANK[program["level"]["id"]]
+            for session in program["sessions"]:
+                own_section_count = 0
+                for entry in session["exercises"]:
+                    exercise = by_id[entry["exerciseId"]]
+                    with self.subTest(program=program["id"], session=session["id"], exercise=exercise["id"]):
+                        self.assertLessEqual(
+                            BUILDER.LEVEL_RANK[exercise["level"]["id"]],
+                            program_rank,
+                            "program must not prescribe an exercise above its advertised level",
+                        )
+                    own_section_count += exercise["section"]["id"] == program["section"]["id"]
+                self.assertGreaterEqual(own_section_count, 2, f"{program['id']}/{session['id']} lost its section focus")
 
     def test_every_program_uses_its_section_progression(self):
         programs = BUILDER.build()
