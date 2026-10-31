@@ -449,5 +449,22 @@ class ProductCatalogTest(unittest.TestCase):
             self.assertRegex(script, r"(?:^|[,{])" + re.escape(key) + r":")
 
 
+    def test_tracking_metadata_matches_builder_and_disables_rep_metrics_for_timed_work(self):
+        timed_count = 0
+        for item in self.catalog:
+            generated = CATALOG_BUILDER.tracking_for(
+                {"id": item["sourceItemId"]},
+                item["movement"]["id"],
+            )
+            self.assertEqual(generated, item["tracking"], item["id"])
+            if (item["prescription"].get("durationSeconds") or 0) > 0:
+                timed_count += 1
+                self.assertFalse(item["tracking"]["rir"], item["id"])
+                self.assertFalse(item["tracking"]["volume"], item["id"])
+
+        self.assertEqual(36, timed_count)
+
+
+
 if __name__ == "__main__":
     unittest.main()

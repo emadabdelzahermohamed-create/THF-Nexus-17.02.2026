@@ -2183,12 +2183,12 @@ LOADLESS_EXERCISE_IDS = {
 
 def tracking_for(item: dict, pattern: str) -> dict[str, bool]:
     source_id = item["id"]
-    timed_hold = source_id in {"Side_Bridge", "Downward_Facing_Balance"}
+    timed = (prescription(item, pattern).get("durationSeconds") or 0) > 0
     return {
         "load": source_id not in LOADLESS_EXERCISE_IDS and pattern not in {"mobility", "recovery", "locomotion", "jump"},
         "rpe": True,
-        "rir": not timed_hold and pattern not in {"mobility", "recovery", "locomotion"},
-        "volume": not timed_hold and pattern not in {"mobility", "recovery", "locomotion"},
+        "rir": not timed and pattern not in {"mobility", "recovery", "locomotion"},
+        "volume": not timed and pattern not in {"mobility", "recovery", "locomotion"},
     }
 
 
