@@ -120,6 +120,7 @@
     }));
     const section = sectionSummary(state.section);
     $('resultsTitle').textContent = section.label;
+    $('gymCount').textContent = String(sectionSummary('gym').items.length);
     $('gymIntro').classList.toggle('hidden', state.section !== 'gym');
   }
 
