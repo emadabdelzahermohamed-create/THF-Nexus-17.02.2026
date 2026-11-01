@@ -87,6 +87,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
   };
   const exercise = {
     id: 'demo-test',
+    name: { en: 'demo test', ar: 'تمرين تجريبي' },
     demo: {
       type: 'two_frame_image_sequence',
       offline: true,
@@ -125,6 +126,12 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
   detailSpeedNormal.setAttribute('aria-pressed', 'true');
   const detailSpeedSlow = new FakeElement({ id: 'detailDemoSpeedSlow' });
   detailSpeedSlow.setAttribute('aria-pressed', 'false');
+  const detailPlaybackControl = new FakeElement({ id: 'detailDemoPlayback' });
+  detailPlaybackControl.hidden = true;
+  const detailPauseButton = new FakeElement({ id: 'detailDemoPause' });
+  detailPauseButton.disabled = true;
+  const detailResumeButton = new FakeElement({ id: 'detailDemoResume' });
+  detailResumeButton.disabled = true;
   detailDemo.children = detailFrames;
   const detailRoot = new FakeElement({ id: 'exerciseDetail', classes: ['hidden'] });
   const reduceControl = new FakeElement({ id: 'reduceMotion' });
@@ -135,7 +142,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     hidden: false,
     documentElement: { lang, clientWidth: 400, clientHeight: 800 },
     getElementById(id) {
-      return ({ exerciseGrid: grid, exerciseDetail: detailRoot, detailDemo, detailDemoStatus: detailStatus, detailDemoSpeed: detailSpeedControl, detailDemoSpeedNormal: detailSpeedNormal, detailDemoSpeedSlow: detailSpeedSlow, reduceMotion: reduceControl })[id] || null;
+      return ({ exerciseGrid: grid, exerciseDetail: detailRoot, detailDemo, detailDemoStatus: detailStatus, detailDemoSpeed: detailSpeedControl, detailDemoSpeedNormal: detailSpeedNormal, detailDemoSpeedSlow: detailSpeedSlow, detailDemoPlayback: detailPlaybackControl, detailDemoPause: detailPauseButton, detailDemoResume: detailResumeButton, reduceMotion: reduceControl })[id] || null;
     },
     addEventListener(type, callback) {
       if (!documentListeners.has(type)) documentListeners.set(type, []);
@@ -229,7 +236,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     animationFrames.clear();
     callbacks.forEach(callback => callback());
   };
-  return { timers, timeouts, images, animationFrames, grid, card, cardImage, media, fallbackLabel, detailRoot, detailDemo, detailStatus, detailSpeedControl, detailSpeedNormal, detailSpeedSlow, detailFrames, frame0, frame1, frame2, reduceControl, document, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
+  return { timers, timeouts, images, animationFrames, grid, card, cardImage, media, fallbackLabel, detailRoot, detailDemo, detailStatus, detailSpeedControl, detailSpeedNormal, detailSpeedSlow, detailPlaybackControl, detailPauseButton, detailResumeButton, detailFrames, frame0, frame1, frame2, reduceControl, document, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
 }
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
@@ -653,4 +660,82 @@ test('detail demo alt identifies the specific start and finish frame in both lan
   assert.equal(detailFrameAlt(item, 1, 3), 'الإطار 2 من 3: تمرين الضغط');
   assert.equal(detailFrameAlt(item, 0, 1), 'صورة مرجعية: تمرين الضغط');
   assert.ok(appSource.includes('alt="${escapeHtml(detailFrameAlt(item,index,item.demo.assets.length))}"'));
+});
+
+test('detail playback controls pause on the current frame and resume automatic motion', async () => {
+  const h = buildHarness({ visible: false });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.detailPlaybackControl.hidden, false);
+  assert.equal(h.detailPauseButton.disabled, false);
+  assert.equal(h.detailResumeButton.disabled, true);
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), true);
+  h.detailPauseButton.dispatch('click');
+  assert.equal(h.detailPauseButton.disabled, true);
+  assert.equal(h.detailResumeButton.disabled, false);
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused by you.');
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), true);
+  assert.equal(h.frame0.classList.contains('is-active'), true);
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.frame1.classList.contains('is-active'), false);
+  h.detailResumeButton.dispatch('click');
+  assert.equal(h.detailPauseButton.disabled, false);
+  assert.equal(h.detailResumeButton.disabled, true);
+  assert.equal(h.detailStatus.textContent, 'Offline demonstration is playing automatically.');
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+});
+
+test('user pause survives background and foreground transitions until Resume is selected', async () => {
+  const h = buildHarness({ visible: false });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailPauseButton.dispatch('click');
+  h.document.hidden = true;
+  h.document.dispatch('visibilitychange');
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused while the app is in the background.');
+  assert.equal(h.timers.size, 0);
+  h.document.hidden = false;
+  h.document.dispatch('visibilitychange');
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused by you.');
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.frame0.classList.contains('is-active'), true);
+  h.detailResumeButton.dispatch('click');
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+});
+
+test('reduced motion disables playback controls without silently clearing a user pause', async () => {
+  const h = buildHarness({ visible: false });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailPauseButton.dispatch('click');
+  h.setStoredPreference('1');
+  assert.equal(h.detailPauseButton.disabled, true);
+  assert.equal(h.detailResumeButton.disabled, true);
+  assert.equal(h.detailStatus.textContent, 'Reduced motion is enabled; static reference frames are shown.');
+  h.setStoredPreference('0');
+  assert.equal(h.detailPauseButton.disabled, true);
+  assert.equal(h.detailResumeButton.disabled, false);
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused by you.');
+});
+
+test('detail playback controls are localized and grouped for assistive technology', () => {
+  assert.match(indexSource, /id="detailDemoPlayback" class="detail-demo-playback" role="group" aria-label="التحكم في العرض" data-i18n-aria-label="demoPlayback"/);
+  assert.match(indexSource, /id="detailDemoPause"[^>]*data-i18n="pauseDemo"/);
+  assert.match(indexSource, /id="detailDemoResume"[^>]*data-i18n="resumeDemo"/);
+  assert.ok(appSource.includes("demoPlayback:'التحكم في العرض'"));
+  assert.ok(appSource.includes("demoPlayback:'Playback controls'"));
+  assert.ok(appSource.includes("pauseDemo:'إيقاف مؤقت'"));
+  assert.ok(appSource.includes("pauseDemo:'Pause'"));
+  assert.ok(appSource.includes("resumeDemo:'استئناف'"));
+  assert.ok(appSource.includes("resumeDemo:'Resume'"));
 });
