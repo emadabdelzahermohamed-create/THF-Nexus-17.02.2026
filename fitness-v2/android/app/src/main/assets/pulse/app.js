@@ -244,8 +244,21 @@
   }
   function closeDetail() { $('exerciseDetail').classList.add('hidden'); document.body.style.overflow = ''; }
   function list(items, ordered = false) { const tag = ordered ? 'ol' : 'ul'; return `<${tag}>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</${tag}>`; }
+  function detailFrameAlt(item, index, total) {
+    const name = local(item.name);
+    if (state.lang === 'ar') {
+      if (total <= 1) return `صورة مرجعية: ${name}`;
+      if (index === 0) return `وضع البداية: ${name}`;
+      if (index === total - 1) return `وضع النهاية: ${name}`;
+      return `الإطار ${index + 1} من ${total}: ${name}`;
+    }
+    if (total <= 1) return `Reference image: ${name}`;
+    if (index === 0) return `Starting position: ${name}`;
+    if (index === total - 1) return `Finishing position: ${name}`;
+    return `Frame ${index + 1} of ${total}: ${name}`;
+  }
   function renderDetail(item) {
-    $('detailDemo').innerHTML = item.demo.assets.map((asset,index) => `<div class="detail-frame"><img src="./${escapeHtml(asset)}" alt="${escapeHtml(item.demo.alt[state.lang])}"><span>${escapeHtml(t(index ? 'finish' : 'start'))}</span></div>`).join('');
+    $('detailDemo').innerHTML = item.demo.assets.map((asset,index) => `<div class="detail-frame"><img src="./${escapeHtml(asset)}" alt="${escapeHtml(detailFrameAlt(item,index,item.demo.assets.length))}"><span>${escapeHtml(t(index ? 'finish' : 'start'))}</span></div>`).join('');
     $('detailBadges').innerHTML = `<span class="pill gold">${escapeHtml(local(item.section))}</span><span class="pill">✓ ${escapeHtml(t('offline'))}</span><span class="pill">${escapeHtml(local(item.level))}</span>`;
     $('detailName').textContent = local(item.name); $('detailMeta').textContent = `${local(item.equipment)} · ${local(item.movement)} · ${local(item.goal)}`;
     $('detailMuscles').innerHTML = item.muscles.primary[state.lang].concat(item.muscles.secondary[state.lang]).map(value => `<span class="tag">${escapeHtml(value)}</span>`).join('');

@@ -571,3 +571,24 @@ test('detail status reports reduced motion and background pause, then resumes in
 test('detail demo status is a dedicated polite live region in the UI', () => {
   assert.match(indexSource, /id="detailDemoStatus" class="detail-demo-status" role="status" aria-live="polite" aria-atomic="true"/);
 });
+
+test('detail demo alt identifies the specific start and finish frame in both languages', () => {
+  const start = appSource.indexOf('function detailFrameAlt(');
+  const end = appSource.indexOf('\n  function renderDetail(item)', start);
+  assert.ok(start >= 0 && end > start);
+  const fnSource = appSource.slice(start, end).trim();
+  const state = { lang: 'en' };
+  const local = value => value[state.lang] || value.en || '';
+  const detailFrameAlt = vm.runInNewContext('(' + fnSource + ')', { state, local });
+  const item = { name: { en: 'Pushups', ar: 'تمرين الضغط' } };
+  assert.equal(detailFrameAlt(item, 0, 2), 'Starting position: Pushups');
+  assert.equal(detailFrameAlt(item, 1, 2), 'Finishing position: Pushups');
+  assert.equal(detailFrameAlt(item, 1, 3), 'Frame 2 of 3: Pushups');
+  assert.equal(detailFrameAlt(item, 0, 1), 'Reference image: Pushups');
+  state.lang = 'ar';
+  assert.equal(detailFrameAlt(item, 0, 2), 'وضع البداية: تمرين الضغط');
+  assert.equal(detailFrameAlt(item, 1, 2), 'وضع النهاية: تمرين الضغط');
+  assert.equal(detailFrameAlt(item, 1, 3), 'الإطار 2 من 3: تمرين الضغط');
+  assert.equal(detailFrameAlt(item, 0, 1), 'صورة مرجعية: تمرين الضغط');
+  assert.ok(appSource.includes('alt="${escapeHtml(detailFrameAlt(item,index,item.demo.assets.length))}"'));
+});
