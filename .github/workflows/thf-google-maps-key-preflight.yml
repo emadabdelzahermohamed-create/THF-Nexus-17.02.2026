@@ -33,7 +33,11 @@ jobs:
           apikeys_enabled="$(gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=apikeys.googleapis.com' --format='value(config.name)')"
           if [[ "$apikeys_enabled" == "apikeys.googleapis.com" ]]; then
             echo 'API_KEYS_API=ENABLED'
-            gcloud services api-keys list --project "$GCP_PROJECT_ID" --format='table(displayName,name,restrictions.apiTargets[].service,restrictions.androidKeyRestrictions.allowedApplications[].packageName)'
+            if gcloud services api-keys list --project "$GCP_PROJECT_ID" --format='table(displayName,name,restrictions.apiTargets[].service,restrictions.androidKeyRestrictions.allowedApplications[].packageName)'; then
+              echo 'API_KEYS_LIST=READABLE'
+            else
+              echo 'API_KEYS_LIST=PERMISSION_DENIED'
+            fi
           else
             echo 'API_KEYS_API=NOT_ENABLED'
           fi
