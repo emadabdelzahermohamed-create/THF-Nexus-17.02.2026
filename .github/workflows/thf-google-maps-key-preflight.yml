@@ -9,8 +9,6 @@ permissions:
 
 env:
   GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
-  THF_MAPS_PACKAGE: com.topherofit.thf.pulse
-  THF_PLAY_SIGNING_SHA1: AB:03:36:C7:CC:5C:CA:38:08:3D:69:A2:7A:C6:3D:1D:C8:0E:E1:82
 
 jobs:
   inspect-prerequisites:
@@ -26,31 +24,16 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-      - name: Confirm project and Maps SDK state
+      - name: Confirm Maps SDK and API Keys API status
         run: |
           set -euo pipefail
           gcloud projects describe "$GCP_PROJECT_ID" --format='value(projectId)' | grep -x "$GCP_PROJECT_ID"
           gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=maps-android-backend.googleapis.com' --format='value(config.name)' | grep -x 'maps-android-backend.googleapis.com'
           echo 'MAPS_ANDROID_BACKEND_API=ENABLED'
-      - name: Inspect API Keys API and existing secret (read only)
-        run: |
-          set -euo pipefail
           apikeys_enabled="$(gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=apikeys.googleapis.com' --format='value(config.name)')"
           if [[ "$apikeys_enabled" == "apikeys.googleapis.com" ]]; then
             echo 'API_KEYS_API=ENABLED'
-            if gcloud services api-keys list --project "$GCP_PROJECT_ID" --format='table(displayName,name,restrictions.apiTargets[].service,restrictions.androidKeyRestrictions.allowedApplications[].packageName)'; then
-              echo 'API_KEYS_LIST=READABLE'
-            else
-              echo 'API_KEYS_LIST=PERMISSION_DENIED_OR_UNAVAILABLE'
-            fi
           else
             echo 'API_KEYS_API=NOT_ENABLED'
           fi
-          if gcloud secrets describe thf-google-maps-android-api-key --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
-            echo 'MAPS_KEY_SECRET=EXISTS'
-          else
-            echo 'MAPS_KEY_SECRET=MISSING_OR_NOT_VISIBLE_TO_BUILDER'
-          fi
-          echo "EXPECTED_ANDROID_PACKAGE=$THF_MAPS_PACKAGE"
-          echo "EXPECTED_PLAY_SIGNING_SHA1=$THF_PLAY_SIGNING_SHA1"
-          echo 'NO_BILLING_OR_SECRET_CONFIGURATION_CHANGED=TRUE'
+          echo 'NO_BILLING_CONFIGURATION_CHANGED=TRUE'
