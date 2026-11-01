@@ -247,3 +247,24 @@ test('invalid non-local demo paths do not leave the previous or broken image vis
   assert.equal(h.image.alt, '');
   assert.match(h.phase.textContent, /no local image could be decoded/);
 });
+
+test('an unconfigured demo clears the previous frame and announces unavailable in both languages', async () => {
+  const h = createHarness();
+  h.api.render(sampleItem(), 'en', false);
+  h.probes[0].emit('load'); h.probes[1].emit('load'); await flushPromises();
+  h.runInterval();
+
+  h.api.render({id: 'no-demo', name: {en: 'No demo', ar: 'بدون عرض'}, demo: {assets: []}}, 'en', false);
+  assert.equal(h.intervals.size, 0);
+  assert.equal(h.image.classList.contains('hidden'), true);
+  assert.equal(h.image.getAttribute('src'), null);
+  assert.equal(h.image.alt, '');
+  assert.equal(h.phase.textContent, 'Offline demo unavailable — no local reference images are configured');
+
+  h.api.render(null, 'ar', false);
+  assert.equal(h.intervals.size, 0);
+  assert.equal(h.image.classList.contains('hidden'), true);
+  assert.equal(h.image.getAttribute('src'), null);
+  assert.equal(h.image.alt, '');
+  assert.equal(h.phase.textContent, 'العرض دون إنترنت غير متاح — لا توجد صور مرجعية محلية');
+});
