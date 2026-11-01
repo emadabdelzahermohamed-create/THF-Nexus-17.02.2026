@@ -445,6 +445,37 @@ STEP_GUIDANCE = {
     "safety_ar": "استخدم سطحًا خاليًا وغير زلق، وثبّت القدم العاملة كاملة، وتوقف عند ألم الركبة أو فقدان التوازن.",
 }
 
+STEP_INSTRUCTION_OVERRIDES = {
+    "Barbell_Step_Ups": {
+        "en": [
+            "Set a low, stable, non-slip box in a clear area. Secure the bar across the upper back—not the neck—and brace before stepping.",
+            "Place the whole lead foot on the box, keeping the knee aligned with the toes; drive through that planted foot rather than pushing hard from the trailing leg.",
+            "Stand tall with control, then bring the trailing foot up only after balance is steady. Step down one foot at a time.",
+            "Complete the planned reps on one lead leg, then switch. Lower the box or load, or use stable support, if balance or knee alignment slips; stop for pain."
+        ],
+        "ar": [
+            "ضع صندوقًا منخفضًا وثابتًا وغير زلق في مساحة خالية. ثبّت البار على أعلى الظهر بعيدًا عن الرقبة، وشد الجذع قبل الصعود.",
+            "ضع كامل القدم القائدة على الصندوق مع توجيه الركبة نحو أصابع القدم؛ ادفع بالقدم المرتكزة بدلًا من الدفع القوي بالساق الخلفية.",
+            "قف باستقامة بتحكم، ثم ارفع القدم الخلفية بعد ثبات التوازن. انزل بقدم واحدة في كل مرة.",
+            "أكمل العدات المقررة على ساق قائدة ثم بدّل. خفّض الصندوق أو الحمل أو استخدم دعمًا ثابتًا إذا اختل التوازن أو اتجاه الركبة، وتوقف عند الألم."
+        ]
+    },
+    "Step-up_with_Knee_Raise": {
+        "en": [
+            "Choose a low, stable, non-slip step in a clear area; stand close with feet hip-width apart and brace the trunk.",
+            "Place the whole lead foot on the step and rise by pressing through it; keep the knee tracking over the toes and avoid a forceful push from the trailing foot.",
+            "At the top, lift the opposite knee only as high as balance allows, keeping the pelvis level and torso upright; pause briefly.",
+            "Lower the raised foot, then step down one foot at a time under control. Alternate lead legs; reduce height or use support if balance or knee alignment slips, and stop for pain."
+        ],
+        "ar": [
+            "اختر درجة منخفضة وثابتة وغير زلقة في مساحة خالية، وقف قريبًا والقدمان بعرض الورك مع شد الجذع.",
+            "ضع كامل القدم القائدة على الدرجة واصعد بالدفع عبرها؛ اجعل الركبة في اتجاه أصابع القدم وتجنب الدفع القوي بالساق الخلفية.",
+            "في الأعلى، ارفع الركبة المقابلة بقدر ما يسمح به التوازن، مع إبقاء الحوض مستويًا والجذع منتصبًا؛ اثبت لحظة.",
+            "اخفض القدم المرفوعة ثم انزل بقدم واحدة في كل مرة بتحكم. بدّل الساق القائدة، وقلّل الارتفاع أو استخدم دعمًا إذا اختل التوازن أو اتجاه الركبة، وتوقف عند الألم."
+        ]
+    }
+}
+
 THROW_GUIDANCE_IDS = {
     "One-Arm_Medicine_Ball_Slam",
     "Overhead_Slam",
@@ -687,7 +718,10 @@ def build(source: Path, repo: Path) -> None:
             "movement": {"id": pattern, "en": pattern.replace("_", " ").title(), "ar": PATTERN_AR[pattern]},
             "goal": {"id": goal, "en": goal.replace("_", " ").title(), "ar": GOAL_AR[goal]},
             "setup": {"en": family["setup_en"], "ar": family["setup_ar"]},
-            "steps": {"en": clean_instructions(item.get("instructions") or []) or ENGLISH_STEPS[pattern], "ar": family["steps_ar"]},
+            "steps": {
+                "en": STEP_INSTRUCTION_OVERRIDES.get(source_id, {}).get("en") or clean_instructions(item.get("instructions") or []) or ENGLISH_STEPS[pattern],
+                "ar": STEP_INSTRUCTION_OVERRIDES.get(source_id, {}).get("ar") or family["steps_ar"],
+            },
             "breathing": {"en": family["breathing_en"], "ar": family["breathing_ar"]},
             "prescription": prescription(item, pattern),
             "commonMistakes": {"en": family["mistakes_en"], "ar": family["mistakes_ar"]},
