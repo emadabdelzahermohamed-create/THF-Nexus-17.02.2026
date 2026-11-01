@@ -52,6 +52,8 @@
   Object.assign(COPY.ar, {restartDemo:'إعادة من البداية'});
   Object.assign(COPY.ar, {favoritesOnly:'المفضلة فقط', addFavorite:'أضف للمفضلة', removeFavorite:'إزالة من المفضلة', savedExercise:'مفضل'});
   Object.assign(COPY.en, {favoritesOnly:'Favorites only', addFavorite:'Add to favorites', removeFavorite:'Remove from favorites', savedExercise:'Saved'});
+  Object.assign(COPY.ar, {openExerciseDetails:'افتح تفاصيل التمرين'});
+  Object.assign(COPY.en, {openExerciseDetails:'Open exercise details'});
 
   const SECTION_ORDER = ['gym','home','running','cycling','football','swimming','yoga','calisthenics','boxing','hiit','mobility','recovery','team_sports'];
   const favoriteStore = window.THFExerciseFavorites.createExerciseFavorites(store, EXERCISES);
@@ -220,9 +222,15 @@
   function toggleFavorite(id) {
     const item = EXERCISES.find(exercise => exercise.id === id);
     if (!item) return;
+    const restoreCardFocus = document.activeElement?.classList?.contains('exercise-card-favorite');
     state.favorites.toggle(id);
     renderFavoriteControl(item);
     renderExercises();
+    if (restoreCardFocus) {
+      const buttons = [...$('exerciseGrid').querySelectorAll('.exercise-card-favorite')];
+      const target = buttons.find(button => button.dataset.id === id) || buttons[0] || ($('exerciseGrid').children.length ? $('exerciseSearch') : $('emptyReset'));
+      target?.focus();
+    }
   }
 
   function populateFilters() {
@@ -256,8 +264,9 @@
     $('resultsCount').textContent = String(results.length);
     $('emptyResults').classList.toggle('hidden', results.length > 0);
     $('activeFilterCount').textContent = String(Object.values(state.filters).filter(Boolean).length);
-    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span><span class="demo-unavailable-label">${escapeHtml(t('demoUnavailable'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span>${state.favorites.has(item.id) ? `<span class="pill gold saved-exercise-badge">${escapeHtml(t('savedExercise'))}</span>` : ''}<h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
-    $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => card.addEventListener('click', () => openDetail(card.dataset.id)));
+    $('exerciseGrid').innerHTML = results.map(item => window.THFExerciseCard.renderExerciseCard(item, {saved:state.favorites.has(item.id),lang:state.lang,t,local,escapeHtml})).join('');
+    $('exerciseGrid').querySelectorAll('.exercise-card-open').forEach(button => button.addEventListener('click', () => openDetail(button.dataset.id)));
+    $('exerciseGrid').querySelectorAll('.exercise-card-favorite').forEach(button => button.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); toggleFavorite(button.dataset.id); }));
   }
 
   function resetFilters(render = true) {
