@@ -1,0 +1,69 @@
+name: THF Google Maps Restricted Android Key Bootstrap
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  actions: write
+
+env:
+  GCP_PROJECT_ID: project-b5e10d7e-8ce8-4aa4-a15
+  THF_MAPS_PACKAGE: com.topherofit.thf.pulse
+  THF_PLAY_SIGNING_SHA1: AB:03:36:C7:CC:5C:CA:38:08:3D:1D:C8:0E:E1:82
+
+jobs:
+  create-restricted-key:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Authenticate to existing THF Google Cloud project
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/1035420130588/locations/global/workloadIdentityPools/thf-github-pool/providers/thf-github-provider
+          service_account: thf-release-builder@project-b5e10d7e-8ce8-4aa4-a15.iam.gserviceaccount.com
+          create_credentials_file: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Create a restricted Maps SDK key and store it without logging the value
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=maps-android-backend.googleapis.com' --format='value(config.name)' | grep -x 'maps-android-backend.googleapis.com'
+          gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=apikeys.googleapis.com' --format='value(config.name)' | grep -x 'apikeys.googleapis.com'
+          if gh secret list --app actions --repo "$GITHUB_REPOSITORY" --json name --jq '.[].name' | grep -Fxq 'THF_GOOGLE_MAPS_ANDROID_API_KEY'; then
+            echo 'MAPS_KEY_SECRET_ALREADY_EXISTS=TRUE'
+            exit 0
+          fi
+          key_id='thf-top-hero-fit-android-maps-20261101'
+          key_resource=''
+          key_stored='false'
+          cleanup() {
+            if [[ -n "$key_resource" && "$key_stored" != 'true' ]]; then
+              gcloud services api-keys delete "$key_resource" --project "$GCP_PROJECT_ID" --quiet || true
+            fi
+          }
+          trap cleanup EXIT
+          key_resource="$(gcloud services api-keys create \
+            --project "$GCP_PROJECT_ID" \
+            --key-id "$key_id" \
+            --display-name 'Top Hero Fit Android Maps' \
+            --api-target=service=maps-android-backend.googleapis.com \
+            --allowed-application="sha1_fingerprint=$THF_PLAY_SIGNING_SHA1,package_name=$THF_MAPS_PACKAGE" \
+            --format='value(name)')"
+          test -n "$key_resource"
+          key_string="$(gcloud services api-keys get-key-string "$key_id" --project "$GCP_PROJECT_ID" --format='value(keyString)')"
+          test -n "$key_string"
+          echo "::add-mask::$key_string"
+          printf '%s' "$key_string" | gh secret set THF_GOOGLE_MAPS_ANDROID_API_KEY --repo "$GITHUB_REPOSITORY"
+          key_stored='true'
+          unset key_string
+          gh secret list --app actions --repo "$GITHUB_REPOSITORY" --json name --jq '.[].name' | grep -Fx 'THF_GOOGLE_MAPS_ANDROID_API_KEY'
+          echo 'MAPS_KEY_CREATED_AND_STORED=TRUE'
+          echo 'KEY_RESTRICTIONS=ANDROID_PACKAGE_AND_PLAY_SIGNING_SHA1_PLUS_MAPS_SDK_ONLY'
+          echo 'NO_BILLING_CONFIGURATION_CHANGED=TRUE'
