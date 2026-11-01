@@ -38,13 +38,15 @@ class FakeElement {
     this.rect = rect;
     this.isConnected = true;
     this.textContent = '';
+    this.disabled = false;
+    this.hidden = false;
     this.offsetWidth = 120;
   }
   addEventListener(type, callback) {
     if (!this.listeners.has(type)) this.listeners.set(type, []);
     this.listeners.get(type).push(callback);
   }
-  dispatch(type) { for (const callback of this.listeners.get(type) || []) callback({ type, target: this }); }
+  dispatch(type) { if (this.disabled) return; for (const callback of this.listeners.get(type) || []) callback({ type, target: this }); }
   setAttribute(name, value) { this.attributes.set(name, String(value)); }
   getAttribute(name) { return this.attributes.has(name) ? this.attributes.get(name) : null; }
   removeAttribute(name) { this.attributes.delete(name); }
@@ -117,6 +119,12 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
   const frame2 = detailFrames[2] || null;
   const detailDemo = new FakeElement({ id: 'detailDemo' });
   const detailStatus = new FakeElement({ id: 'detailDemoStatus' });
+  const detailSpeedControl = new FakeElement({ id: 'detailDemoSpeed' });
+  detailSpeedControl.hidden = true;
+  const detailSpeedNormal = new FakeElement({ id: 'detailDemoSpeedNormal' });
+  detailSpeedNormal.setAttribute('aria-pressed', 'true');
+  const detailSpeedSlow = new FakeElement({ id: 'detailDemoSpeedSlow' });
+  detailSpeedSlow.setAttribute('aria-pressed', 'false');
   detailDemo.children = detailFrames;
   const detailRoot = new FakeElement({ id: 'exerciseDetail', classes: ['hidden'] });
   const reduceControl = new FakeElement({ id: 'reduceMotion' });
@@ -127,7 +135,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     hidden: false,
     documentElement: { lang, clientWidth: 400, clientHeight: 800 },
     getElementById(id) {
-      return ({ exerciseGrid: grid, exerciseDetail: detailRoot, detailDemo, detailDemoStatus: detailStatus, reduceMotion: reduceControl })[id] || null;
+      return ({ exerciseGrid: grid, exerciseDetail: detailRoot, detailDemo, detailDemoStatus: detailStatus, detailDemoSpeed: detailSpeedControl, detailDemoSpeedNormal: detailSpeedNormal, detailDemoSpeedSlow: detailSpeedSlow, reduceMotion: reduceControl })[id] || null;
     },
     addEventListener(type, callback) {
       if (!documentListeners.has(type)) documentListeners.set(type, []);
@@ -221,7 +229,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     animationFrames.clear();
     callbacks.forEach(callback => callback());
   };
-  return { timers, timeouts, images, animationFrames, grid, card, cardImage, media, fallbackLabel, detailRoot, detailDemo, detailStatus, detailFrames, frame0, frame1, frame2, reduceControl, document, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
+  return { timers, timeouts, images, animationFrames, grid, card, cardImage, media, fallbackLabel, detailRoot, detailDemo, detailStatus, detailSpeedControl, detailSpeedNormal, detailSpeedSlow, detailFrames, frame0, frame1, frame2, reduceControl, document, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
 }
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
@@ -248,6 +256,60 @@ test('exercise detail shows one frame at a time and advances automatically', asy
   assert.equal(h.frame0.classList.contains('is-active'), false);
   assert.equal(h.frame1.classList.contains('is-active'), true);
   assert.equal(h.frame0.getAttribute('aria-hidden'), 'true');
+});
+
+test('detail speed control defaults to normal and slow mode advances every second timer tick', async () => {
+  const h = buildHarness();
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.detailSpeedControl.hidden, false);
+  assert.equal(h.detailSpeedNormal.getAttribute('aria-pressed'), 'true');
+  assert.equal(h.detailSpeedSlow.getAttribute('aria-pressed'), 'false');
+  assert.equal(h.detailSpeedSlow.disabled, false);
+  h.detailSpeedSlow.dispatch('click');
+  assert.equal(h.detailSpeedNormal.getAttribute('aria-pressed'), 'false');
+  assert.equal(h.detailSpeedSlow.getAttribute('aria-pressed'), 'true');
+  assert.equal(h.detailStatus.textContent, 'Offline demonstration is playing slowly.');
+  h.tick();
+  assert.equal(h.frame0.classList.contains('is-active'), true);
+  h.tick();
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+  h.detailSpeedNormal.dispatch('click');
+  assert.equal(h.detailStatus.textContent, 'Offline demonstration is playing automatically.');
+  h.tick();
+  assert.equal(h.frame0.classList.contains('is-active'), true);
+});
+
+test('reduced motion disables demo speed controls and preserves the selected slow mode', async () => {
+  const h = buildHarness();
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailSpeedSlow.dispatch('click');
+  h.setStoredPreference('1');
+  assert.equal(h.detailSpeedSlow.disabled, true);
+  assert.equal(h.detailStatus.textContent, 'Reduced motion is enabled; static reference frames are shown.');
+  assert.equal(h.timers.size, 0);
+  h.setStoredPreference('0');
+  assert.equal(h.detailSpeedSlow.disabled, false);
+  assert.equal(h.detailStatus.textContent, 'Offline demonstration is playing slowly.');
+  h.tick();
+  assert.equal(h.frame0.classList.contains('is-active'), true);
+  h.tick();
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+});
+
+test('detail demo speed controls are localized and grouped accessibly', () => {
+  assert.match(indexSource, /id="detailDemoSpeed" class="detail-demo-speed" role="group" aria-label="سرعة العرض" data-i18n-aria-label="demoSpeed"/);
+  assert.match(indexSource, /id="detailDemoSpeedNormal"[^>]*aria-pressed="true"/);
+  assert.match(indexSource, /id="detailDemoSpeedSlow"[^>]*aria-pressed="false"/);
+  assert.ok(appSource.includes("demoSpeed:'سرعة العرض'"));
+  assert.ok(appSource.includes("demoSpeed:'Demo speed'"));
+  assert.ok(appSource.includes("slowSpeed:'بطيء 0.5×'"));
+  assert.ok(appSource.includes("slowSpeed:'Slow · 0.5×'"));
 });
 
 test('reduced motion stops timers and restores the static two-frame detail', async () => {

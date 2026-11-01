@@ -67,3 +67,8 @@
 /* Visible, polite status for offline exercise-detail demo availability and motion state. */
 .detail-demo-status{margin:0;padding:10px 14px;border-top:1px solid #29434e;background:#091920;color:var(--muted);font-size:12px;line-height:1.6;text-align:center}
 .detail-demo-status:empty{display:none}
+.detail-demo-speed{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:9px 14px;border-top:1px solid #29434e;background:#091920}
+.detail-demo-speed[hidden]{display:none}
+.detail-demo-speed button{min-height:36px;padding:6px 12px;border:1px solid #38535e;border-radius:10px}
+.detail-demo-speed button[aria-pressed="true"]{border-color:var(--gold);background:#2c2514;color:#ffda84}
+.detail-demo-speed button:disabled{opacity:.45;cursor:not-allowed}

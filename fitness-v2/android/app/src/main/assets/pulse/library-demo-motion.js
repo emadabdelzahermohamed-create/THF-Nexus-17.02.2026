@@ -6,11 +6,15 @@
   'use strict';
 
   const FRAME_MS = 900;
+  const DETAIL_SLOW_TICK_MULTIPLIER = 2;
   const PRELOAD_TIMEOUT_MS = 1200;
   const grid = document.getElementById('exerciseGrid');
   const detailRoot = document.getElementById('exerciseDetail');
   const detailDemo = document.getElementById('detailDemo');
   const detailStatus = document.getElementById('detailDemoStatus');
+  const detailSpeedControl = document.getElementById('detailDemoSpeed');
+  const detailSpeedNormal = document.getElementById('detailDemoSpeedNormal');
+  const detailSpeedSlow = document.getElementById('detailDemoSpeedSlow');
   const states = new Map();
   const preloadCache = new Map();
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -20,6 +24,8 @@
   let detailFramesObserver = null;
   let timer = null;
   let detailIndex = 0;
+  let detailSlow = false;
+  let detailSlowTicks = 0;
   let detailLoad = null;
   let scrollRefreshPending = false;
 
@@ -204,6 +210,7 @@
   const detailStatusLabels = {
     loading: {en: 'Loading offline exercise demonstration…', ar: 'جارٍ تحميل العرض الحركي دون إنترنت…'},
     playing: {en: 'Offline demonstration is playing automatically.', ar: 'العرض دون إنترنت يعمل تلقائيًا.'},
+    playingSlow: {en: 'Offline demonstration is playing slowly.', ar: 'العرض دون إنترنت يعمل ببطء.'},
     reduced: {en: 'Reduced motion is enabled; static reference frames are shown.', ar: 'تقليل الحركة مفعّل؛ تُعرض صور مرجعية ثابتة.'},
     paused: {en: 'Demonstration paused while the app is in the background.', ar: 'تم إيقاف العرض مؤقتًا أثناء وجود التطبيق في الخلفية.'},
     static: {en: 'Showing static offline reference frames.', ar: 'تُعرض صور مرجعية ثابتة دون حركة.'},
@@ -216,6 +223,28 @@
     const lang = document.documentElement?.lang === 'ar' ? 'ar' : 'en';
     const label = key ? (detailStatusLabels[key]?.[lang] || '') : '';
     if (detailStatus.textContent !== label) detailStatus.textContent = label;
+  }
+
+  function updateDetailSpeedControls() {
+    const ready = Boolean(detailLoad?.settled && detailFrames().length > 1);
+    const disabled = !ready || reduceMotion();
+    if (detailSpeedControl) detailSpeedControl.hidden = !ready;
+    if (detailSpeedNormal) {
+      detailSpeedNormal.disabled = disabled;
+      detailSpeedNormal.setAttribute('aria-pressed', String(!detailSlow));
+    }
+    if (detailSpeedSlow) {
+      detailSpeedSlow.disabled = disabled;
+      detailSpeedSlow.setAttribute('aria-pressed', String(detailSlow));
+    }
+  }
+
+  function setDetailSpeed(slow) {
+    if (reduceMotion() || !detailLoad?.settled || detailFrames().length < 2) return;
+    detailSlow = Boolean(slow);
+    detailSlowTicks = 0;
+    updateDetailSpeedControls();
+    renderDetailSequence(true);
   }
 
   function loadDetailFrames() {
@@ -234,6 +263,7 @@
       }
       detailLoad = item ? {id: item.id, frames, settled: true} : null;
       setDetailStatus('unavailable');
+      updateDetailSpeedControls();
       return;
     }
 
@@ -244,12 +274,14 @@
 
     const token = { id: item.id, frames, settled: false };
     detailLoad = token;
+    detailSlowTicks = 0;
     frames.forEach(frame => {
       frame.setAttribute('data-demo-playable', 'pending');
       frame.setAttribute('hidden', '');
       frame.setAttribute('aria-hidden', 'true');
     });
     setDetailStatus('loading');
+    updateDetailSpeedControls();
 
     // Validate every frame, including the initial frame already present in the DOM.
     // A broken first image must not remain the assumed reference when later frames work.
@@ -280,9 +312,11 @@
   }
 
   function renderDetailSequence(animate) {
+    updateDetailSpeedControls();
     const allFrames = allDetailFrames();
     const frames = detailFrames();
     if (!detailRoot || detailRoot.classList.contains('hidden')) {
+      detailSlowTicks = 0;
       detailDemo?.classList.remove('auto-sequence');
       detailDemo?.classList.remove('single-reference');
       for (const frame of allFrames) frame.classList.remove('is-active');
@@ -296,6 +330,7 @@
       return;
     }
     if (frames.length < 2) {
+      detailSlowTicks = 0;
       detailDemo?.classList.remove('auto-sequence');
       detailDemo?.classList.toggle('single-reference', frames.length === 1);
       const playable = new Set(frames);
@@ -330,7 +365,7 @@
       frame.setAttribute('hidden', '');
       frame.setAttribute('aria-hidden', 'true');
     }
-    setDetailStatus(active ? 'playing' : reduceMotion() ? 'reduced' : document.hidden ? 'paused' : 'static');
+    setDetailStatus(active ? (detailSlow ? 'playingSlow' : 'playing') : reduceMotion() ? 'reduced' : document.hidden ? 'paused' : 'static');
   }
 
   function stopTimer() {
@@ -369,8 +404,12 @@
       const item = detailExercise();
       const frames = detailFrames();
       if (item && frames.length > 1) {
-        detailIndex = (detailIndex + 1) % frames.length;
-        renderDetailSequence(true);
+        const advance = !detailSlow || ++detailSlowTicks >= DETAIL_SLOW_TICK_MULTIPLIER;
+        if (advance) {
+          detailSlowTicks = 0;
+          detailIndex = (detailIndex + 1) % frames.length;
+          renderDetailSequence(true);
+        }
       }
     }
     syncTimer();
@@ -383,6 +422,7 @@
       stopTimer();
       for (const state of states.values()) resetCard(state);
       detailIndex = 0;
+      detailSlowTicks = 0;
       renderDetailSequence(false);
       return;
     }
@@ -436,6 +476,8 @@
         detailFramesObserver.observe(detailDemo, { childList: true });
       }
     }
+    detailSpeedNormal?.addEventListener('click', () => setDetailSpeed(false));
+    detailSpeedSlow?.addEventListener('click', () => setDetailSpeed(true));
     document.getElementById('reduceMotion')?.addEventListener('change', () => Promise.resolve().then(refresh));
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('resize', refresh, { passive: true });
