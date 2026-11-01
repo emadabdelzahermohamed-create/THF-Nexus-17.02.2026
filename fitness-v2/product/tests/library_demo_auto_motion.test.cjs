@@ -134,6 +134,9 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
   detailResumeButton.disabled = true;
   const detailReplayButton = new FakeElement({ id: 'detailDemoReplay' });
   detailReplayButton.disabled = true;
+  const detailPlayOnceButton = new FakeElement({ id: 'detailDemoPlayOnce' });
+  detailPlayOnceButton.disabled = true;
+  detailPlayOnceButton.hidden = true;
   detailDemo.children = detailFrames;
   const detailRoot = new FakeElement({ id: 'exerciseDetail', classes: ['hidden'] });
   const reduceControl = new FakeElement({ id: 'reduceMotion' });
@@ -144,7 +147,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     hidden: false,
     documentElement: { lang, clientWidth: 400, clientHeight: 800 },
     getElementById(id) {
-      return ({ exerciseGrid: grid, exerciseDetail: detailRoot, detailDemo, detailDemoStatus: detailStatus, detailDemoSpeed: detailSpeedControl, detailDemoSpeedNormal: detailSpeedNormal, detailDemoSpeedSlow: detailSpeedSlow, detailDemoPlayback: detailPlaybackControl, detailDemoPause: detailPauseButton, detailDemoResume: detailResumeButton, detailDemoReplay: detailReplayButton, reduceMotion: reduceControl })[id] || null;
+      return ({ exerciseGrid: grid, exerciseDetail: detailRoot, detailDemo, detailDemoStatus: detailStatus, detailDemoSpeed: detailSpeedControl, detailDemoSpeedNormal: detailSpeedNormal, detailDemoSpeedSlow: detailSpeedSlow, detailDemoPlayback: detailPlaybackControl, detailDemoPause: detailPauseButton, detailDemoResume: detailResumeButton, detailDemoReplay: detailReplayButton, detailDemoPlayOnce: detailPlayOnceButton, reduceMotion: reduceControl })[id] || null;
     },
     addEventListener(type, callback) {
       if (!documentListeners.has(type)) documentListeners.set(type, []);
@@ -238,7 +241,7 @@ function buildHarness({ reduced = false, visible = true, intersectionObserver = 
     animationFrames.clear();
     callbacks.forEach(callback => callback());
   };
-  return { timers, timeouts, images, animationFrames, grid, card, cardImage, media, fallbackLabel, detailRoot, detailDemo, detailStatus, detailSpeedControl, detailSpeedNormal, detailSpeedSlow, detailPlaybackControl, detailPauseButton, detailResumeButton, detailReplayButton, detailFrames, frame0, frame1, frame2, reduceControl, document, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
+  return { timers, timeouts, images, animationFrames, grid, card, cardImage, media, fallbackLabel, detailRoot, detailDemo, detailStatus, detailSpeedControl, detailSpeedNormal, detailSpeedSlow, detailPlaybackControl, detailPauseButton, detailResumeButton, detailReplayButton, detailPlayOnceButton, detailFrames, frame0, frame1, frame2, reduceControl, document, fireMutation, fireWindow, flushAnimationFrames, fireTimeouts, tick, setStoredPreference };
 }
 
 test('visible exercise cards cycle audited local frames automatically without a tap', async () => {
@@ -792,4 +795,129 @@ test('replay control is bilingual and disabled when reduced motion is active', a
   assert.match(indexSource, /id="detailDemoReplay"[^>]*data-i18n="restartDemo"/);
   assert.ok(appSource.includes("restartDemo:'إعادة من البداية'"));
   assert.ok(appSource.includes("restartDemo:'Restart from beginning'"));
+});
+
+
+test('reduced-motion users can explicitly play one offline detail demonstration and it stops on completion', async () => {
+  const h = buildHarness({ visible: false, reduced: true });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.detailPlayOnceButton.hidden, false);
+  assert.equal(h.detailPlayOnceButton.disabled, false);
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), false);
+  assert.equal(h.timers.size, 0);
+  h.detailPlayOnceButton.dispatch('click');
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), true);
+  assert.equal(h.frame0.classList.contains('is-active'), true);
+  assert.equal(h.detailStatus.textContent, 'Playing one demonstration by your request.');
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+  assert.equal(h.detailPlayOnceButton.disabled, true);
+  h.tick();
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), false);
+  assert.equal(h.detailStatus.textContent, 'One-time demonstration complete; static reference frames are shown.');
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.detailPlayOnceButton.disabled, false);
+});
+
+test('one-shot detail playback is cancelled on background and does not resume automatically', async () => {
+  const h = buildHarness({ visible: false, reduced: true });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailPlayOnceButton.dispatch('click');
+  h.tick();
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+  h.document.hidden = true;
+  h.document.dispatch('visibilitychange');
+  assert.equal(h.timers.size, 0);
+  h.document.hidden = false;
+  h.document.dispatch('visibilitychange');
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), false);
+  assert.equal(h.detailStatus.textContent, 'Reduced motion is enabled; static reference frames are shown.');
+  assert.equal(h.detailPlayOnceButton.disabled, false);
+  assert.equal(h.timers.size, 0);
+});
+
+test('one-shot detail playback is cancelled when the detail sheet closes', async () => {
+  const h = buildHarness({ visible: false, reduced: true });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailPlayOnceButton.dispatch('click');
+  assert.equal(h.timers.size, 1);
+  h.detailRoot.classList.add('hidden');
+  h.fireMutation(h.detailRoot);
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.detailDemo.classList.contains('auto-sequence'), false);
+  assert.equal(h.detailStatus.textContent, '');
+});
+
+test('turning reduced motion off cancels one-shot mode and restores normal autoplay', async () => {
+  const h = buildHarness({ visible: false, reduced: true });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailPlayOnceButton.dispatch('click');
+  h.tick();
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+  h.setStoredPreference('0');
+  assert.equal(h.detailPlayOnceButton.hidden, true);
+  assert.equal(h.detailStatus.textContent, 'Offline demonstration is playing automatically.');
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+});
+
+test('one-shot control and status are localized in Arabic and hidden for single-frame references', async () => {
+  const h = buildHarness({ visible: false, reduced: true, lang: 'ar' });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailPlayOnceButton.dispatch('click');
+  assert.equal(h.detailStatus.textContent, 'يعمل العرض مرة واحدة بناءً على طلبك.');
+  assert.match(indexSource, /id="detailDemoPlayOnce"[^>]*data-i18n="playDemoOnce"/);
+  assert.ok(appSource.includes("playDemoOnce:'شغّل العرض مرة واحدة'"));
+  assert.ok(appSource.includes("playDemoOnce:'Play demo once'"));
+  const single = buildHarness({ visible: false, reduced: true, exerciseAssets: ['media/demo-test/0.jpg'] });
+  await new Promise(resolve => setImmediate(resolve));
+  single.detailRoot.classList.remove('hidden');
+  single.fireMutation(single.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(single.detailPlayOnceButton.hidden, true);
+});
+
+
+test('one-shot preview restores a manual pause that existed before the reduced-motion override', async () => {
+  const h = buildHarness({ visible: false });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailPauseButton.dispatch('click');
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused by you.');
+  assert.equal(h.timers.size, 0);
+  h.setStoredPreference('1');
+  assert.equal(h.detailPlayOnceButton.hidden, false);
+  h.detailPlayOnceButton.dispatch('click');
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  h.tick();
+  assert.equal(h.detailStatus.textContent, 'One-time demonstration complete; static reference frames are shown.');
+  assert.equal(h.timers.size, 0);
+  h.setStoredPreference('0');
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused by you.');
+  assert.equal(h.detailResumeButton.disabled, false);
+  assert.equal(h.timers.size, 0);
+  h.detailResumeButton.dispatch('click');
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  assert.equal(h.frame0.classList.contains('is-active'), true);
 });

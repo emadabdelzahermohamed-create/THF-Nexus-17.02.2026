@@ -19,6 +19,7 @@
   const detailPauseButton = document.getElementById('detailDemoPause');
   const detailResumeButton = document.getElementById('detailDemoResume');
   const detailReplayButton = document.getElementById('detailDemoReplay');
+  const detailPlayOnceButton = document.getElementById('detailDemoPlayOnce');
   const states = new Map();
   const preloadCache = new Map();
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -31,6 +32,9 @@
   let detailSlow = false;
   let detailSlowTicks = 0;
   let detailPaused = false;
+  let detailOneShot = false;
+  let detailOneShotFinished = false;
+  let detailOneShotWasPaused = false;
   let detailLoad = null;
   let scrollRefreshPending = false;
 
@@ -216,6 +220,8 @@
     loading: {en: 'Loading offline exercise demonstration…', ar: 'جارٍ تحميل العرض الحركي دون إنترنت…'},
     playing: {en: 'Offline demonstration is playing automatically.', ar: 'العرض دون إنترنت يعمل تلقائيًا.'},
     playingSlow: {en: 'Offline demonstration is playing slowly.', ar: 'العرض دون إنترنت يعمل ببطء.'},
+    playingOnce: {en: 'Playing one demonstration by your request.', ar: 'يعمل العرض مرة واحدة بناءً على طلبك.'},
+    oneShotComplete: {en: 'One-time demonstration complete; static reference frames are shown.', ar: 'اكتمل العرض لمرة واحدة؛ تُعرض الصور المرجعية الثابتة.'},
     userPaused: {en: 'Demonstration paused by you.', ar: 'أوقفت العرض مؤقتًا.'},
     reduced: {en: 'Reduced motion is enabled; static reference frames are shown.', ar: 'تقليل الحركة مفعّل؛ تُعرض صور مرجعية ثابتة.'},
     paused: {en: 'Demonstration paused while the app is in the background.', ar: 'تم إيقاف العرض مؤقتًا أثناء وجود التطبيق في الخلفية.'},
@@ -255,11 +261,16 @@
 
   function updateDetailPlaybackControls() {
     const ready = Boolean(detailLoad?.settled && detailFrames().length > 1);
-    const disabled = !ready || reduceMotion();
+    const reduced = reduceMotion();
+    const disabled = !ready || reduced || detailOneShot;
     if (detailPlaybackControl) detailPlaybackControl.hidden = !ready;
     if (detailPauseButton) detailPauseButton.disabled = disabled || detailPaused;
     if (detailResumeButton) detailResumeButton.disabled = disabled || !detailPaused;
     if (detailReplayButton) detailReplayButton.disabled = disabled;
+    if (detailPlayOnceButton) {
+      detailPlayOnceButton.hidden = !ready || !reduced;
+      detailPlayOnceButton.disabled = !ready || !reduced || detailOneShot;
+    }
   }
 
   function setDetailPaused(paused) {
@@ -281,6 +292,20 @@
     syncTimer();
   }
 
+  function playDetailOneShot() {
+    if (!reduceMotion() || !detailLoad?.settled || detailFrames().length < 2
+      || !detailRoot || detailRoot.classList.contains('hidden') || document.hidden) return;
+    detailOneShotWasPaused = detailPaused;
+    detailPaused = false;
+    detailOneShot = true;
+    detailOneShotFinished = false;
+    detailIndex = 0;
+    detailSlowTicks = 0;
+    updateDetailPlaybackControls();
+    renderDetailSequence(true);
+    syncTimer();
+  }
+
   function loadDetailFrames() {
     const item = detailExercise();
     const frames = allDetailFrames();
@@ -290,6 +315,9 @@
       return;
     }
     if (!item || frames.length < 1 || assets.length < 1 || frames.length !== assets.length) {
+      detailOneShot = false;
+      detailOneShotFinished = false;
+      detailOneShotWasPaused = false;
       for (const frame of frames) {
         frame.setAttribute('data-demo-playable', 'false');
         frame.setAttribute('hidden', '');
@@ -311,6 +339,9 @@
     detailLoad = token;
     detailSlowTicks = 0;
     detailPaused = false;
+    detailOneShot = false;
+    detailOneShotFinished = false;
+    detailOneShotWasPaused = false;
     frames.forEach(frame => {
       frame.setAttribute('data-demo-playable', 'pending');
       frame.setAttribute('hidden', '');
@@ -355,6 +386,9 @@
     if (!detailRoot || detailRoot.classList.contains('hidden')) {
       detailSlowTicks = 0;
       detailPaused = false;
+      detailOneShot = false;
+      detailOneShotFinished = false;
+      detailOneShotWasPaused = false;
       updateDetailPlaybackControls();
       detailDemo?.classList.remove('auto-sequence');
       detailDemo?.classList.remove('single-reference');
@@ -371,6 +405,9 @@
     if (frames.length < 2) {
       detailSlowTicks = 0;
       detailPaused = false;
+      detailOneShot = false;
+      detailOneShotFinished = false;
+      detailOneShotWasPaused = false;
       updateDetailPlaybackControls();
       detailDemo?.classList.remove('auto-sequence');
       detailDemo?.classList.toggle('single-reference', frames.length === 1);
@@ -388,11 +425,11 @@
       setDetailStatus(frames.length === 1 ? 'single' : 'unavailable');
       return;
     }
-    const sequenceVisible = Boolean(animate && detailIsOpen() && !reduceMotion() && !document.hidden);
+    const sequenceVisible = Boolean(animate && detailIsOpen() && (!reduceMotion() || detailOneShot) && !document.hidden);
     const active = sequenceVisible && !detailPaused;
     detailDemo.classList.remove('single-reference');
     detailDemo.classList.toggle('auto-sequence', sequenceVisible);
-    if (!sequenceVisible && !detailPaused) detailIndex = 0;
+    if (!sequenceVisible && !detailPaused && !detailOneShotFinished) detailIndex = 0;
     const playable = new Set(frames);
     frames.forEach((frame, index) => {
       frame.removeAttribute('hidden');
@@ -407,7 +444,10 @@
       frame.setAttribute('hidden', '');
       frame.setAttribute('aria-hidden', 'true');
     }
-    setDetailStatus(active ? (detailSlow ? 'playingSlow' : 'playing') : reduceMotion() ? 'reduced' : document.hidden ? 'paused' : detailPaused ? 'userPaused' : 'static');
+    setDetailStatus(active
+      ? detailOneShot ? 'playingOnce' : detailSlow ? 'playingSlow' : 'playing'
+      : detailOneShotFinished && reduceMotion() ? 'oneShotComplete'
+        : reduceMotion() ? 'reduced' : document.hidden ? 'paused' : detailPaused ? 'userPaused' : 'static');
   }
 
   function stopTimer() {
@@ -416,42 +456,64 @@
   }
 
   function syncTimer() {
-    if (reduceMotion() || document.hidden) {
+    if (document.hidden) {
       stopTimer();
       return;
     }
-    if (!cardObserver) {
+    const reduced = reduceMotion();
+    if (!cardObserver && !reduced) {
       for (const state of states.values()) state.visible = visibleInViewport(state.card);
     }
-    const visibleReadyCard = Array.from(states.values()).some(state => state.visible && state.ready);
-    const shouldRun = visibleReadyCard || (detailIsOpen() && !detailPaused);
+    const visibleReadyCard = !reduced && Array.from(states.values()).some(state => state.visible && state.ready);
+    const detailMayRun = detailIsOpen() && !detailPaused && (!reduced || detailOneShot);
+    const shouldRun = visibleReadyCard || detailMayRun;
     if (shouldRun && timer === null) timer = window.setInterval(tick, FRAME_MS);
     else if (!shouldRun) stopTimer();
   }
 
   function tick() {
-    if (reduceMotion() || document.hidden) {
+    const reduced = reduceMotion();
+    if (document.hidden || (reduced && !detailOneShot)) {
       refresh();
       return;
     }
-    if (!cardObserver) {
+    if (!reduced && !cardObserver) {
       for (const state of states.values()) state.visible = visibleInViewport(state.card);
     }
-    for (const state of states.values()) {
-      const frames = Array.isArray(state.frames) ? state.frames : state.item.demo.assets;
-      if (!state.visible || !state.ready || frames.length < 2) continue;
-      setCardFrame(state, (state.index + 1) % frames.length);
+    if (!reduced) {
+      for (const state of states.values()) {
+        const frames = Array.isArray(state.frames) ? state.frames : state.item.demo.assets;
+        if (!state.visible || !state.ready || frames.length < 2) continue;
+        setCardFrame(state, (state.index + 1) % frames.length);
+      }
     }
-    if (detailIsOpen() && !detailPaused) {
+    if (detailIsOpen() && !detailPaused && (!reduced || detailOneShot)) {
       const item = detailExercise();
       const frames = detailFrames();
       if (item && frames.length > 1) {
         const advance = !detailSlow || ++detailSlowTicks >= DETAIL_SLOW_TICK_MULTIPLIER;
         if (advance) {
           detailSlowTicks = 0;
-          detailIndex = (detailIndex + 1) % frames.length;
-          renderDetailSequence(true);
+          if (detailOneShot && detailIndex >= frames.length - 1) {
+            detailPaused = detailOneShotWasPaused;
+            detailOneShotWasPaused = false;
+            detailOneShot = false;
+            detailOneShotFinished = true;
+            updateDetailPlaybackControls();
+            renderDetailSequence(false);
+          } else {
+            detailIndex = detailOneShot
+              ? Math.min(detailIndex + 1, frames.length - 1)
+              : (detailIndex + 1) % frames.length;
+            renderDetailSequence(true);
+          }
         }
+      } else if (detailOneShot) {
+        detailPaused = detailOneShotWasPaused;
+        detailOneShotWasPaused = false;
+        detailOneShot = false;
+        detailOneShotFinished = false;
+        renderDetailSequence(false);
       }
     }
     syncTimer();
@@ -460,12 +522,33 @@
   function refresh() {
     scanCards();
     loadDetailFrames();
-    if (reduceMotion() || document.hidden) {
+    if (document.hidden) {
+      if (detailOneShot) detailPaused = detailOneShotWasPaused;
+      detailOneShotWasPaused = false;
+      detailOneShot = false;
+      detailOneShotFinished = false;
+      detailIndex = 0;
+      detailSlowTicks = 0;
       stopTimer();
       for (const state of states.values()) resetCard(state);
-      if (!detailPaused) detailIndex = 0;
-      detailSlowTicks = 0;
       renderDetailSequence(false);
+      return;
+    }
+    if (!reduceMotion() && detailOneShot) {
+      detailPaused = detailOneShotWasPaused;
+      detailOneShotWasPaused = false;
+      detailOneShot = false;
+      detailOneShotFinished = false;
+      detailIndex = 0;
+      detailSlowTicks = 0;
+    }
+    if (reduceMotion()) {
+      stopTimer();
+      for (const state of states.values()) resetCard(state);
+      if (!detailPaused && !detailOneShotFinished && !detailOneShot) detailIndex = 0;
+      if (!detailOneShot) detailSlowTicks = 0;
+      renderDetailSequence(Boolean(detailOneShot));
+      syncTimer();
       return;
     }
     if (!detailIsOpen()) detailIndex = 0;
@@ -523,6 +606,7 @@
     detailPauseButton?.addEventListener('click', () => setDetailPaused(true));
     detailResumeButton?.addEventListener('click', () => setDetailPaused(false));
     detailReplayButton?.addEventListener('click', restartDetailSequence);
+    detailPlayOnceButton?.addEventListener('click', playDetailOneShot);
     document.getElementById('reduceMotion')?.addEventListener('change', () => Promise.resolve().then(refresh));
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('resize', refresh, { passive: true });
