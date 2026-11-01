@@ -169,7 +169,7 @@ test('a failed secondary frame leaves a stable static reference instead of a bro
   h.probes[0].emit('load'); h.probes[1].emit('error'); await flushPromises();
   assert.equal(h.intervals.size, 0);
   assert.equal(h.image.getAttribute('src'), './media/demo/0.jpg');
-  assert.match(h.phase.textContent, /Offline demo unavailable — no local image could be decoded/);
+  assert.match(h.phase.textContent, /motion unavailable/);
 });
 
 test('a stalled decoder times out and releases both event listeners', async () => {
@@ -177,7 +177,7 @@ test('a stalled decoder times out and releases both event listeners', async () =
   h.api.render(sampleItem(), 'en', false);
   h.runTimeouts(); await flushPromises();
   assert.equal(h.intervals.size, 0);
-  assert.match(h.phase.textContent, /motion unavailable/);
+  assert.match(h.phase.textContent, /Offline demo unavailable — no local image could be decoded/);
   assert.equal(h.probes.reduce((sum, probe) => sum + probe.listenerCount(), 0), 0);
 });
 
