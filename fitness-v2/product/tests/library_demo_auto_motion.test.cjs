@@ -872,7 +872,7 @@ test('turning reduced motion off cancels one-shot mode and restores normal autop
   assert.equal(h.detailStatus.textContent, 'Offline demonstration is playing automatically.');
   assert.equal(h.timers.size, 1);
   h.tick();
-  assert.equal(h.frame0.classList.contains('is-active'), true);
+  assert.equal(h.frame1.classList.contains('is-active'), true);
 });
 
 test('one-shot control and status are localized in Arabic and hidden for single-frame references', async () => {
