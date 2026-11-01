@@ -2063,6 +2063,15 @@ SLIDER_GUIDANCE = {
     "safety_ar": "اختبر سطح الانزلاق أولًا وأخلِ المسار، وتوقف عند تشنج خلفية الفخذ أو ألم الركبة أو فقدان ثبات الحوض.",
 }
 
+LEG_PRESS_GUIDANCE = {
+    "regression_en": "Reduce the load and range; keep the pelvis and lower back supported against the pad. Ask gym staff to adjust the seat or safety lock if the setup is unclear.",
+    "regression_ar": "خفّض الحمل ومدى الحركة، وأبقِ الحوض وأسفل الظهر مسنودين إلى الوسادة. اطلب من موظف الجيم ضبط المقعد أو قفل الأمان إذا لم يكن الإعداد واضحًا.",
+    "progression_en": "Increase load in small steps only after every rep stays controlled with the pelvis supported; change load or range one at a time.",
+    "progression_ar": "زد الحمل بخطوات صغيرة فقط بعد ثبات التحكم وإسناد الحوض في كل عدة؛ غيّر الحمل أو مدى الحركة واحدًا في كل مرة.",
+    "safety_en": "Check and set the machine’s safety lock before loading; keep the pelvis and lower back supported, avoid locking the knees, and stop if the pelvis lifts or knee/back pain occurs.",
+    "safety_ar": "تحقق من قفل الأمان واضبطه قبل تحميل الجهاز؛ أبقِ الحوض وأسفل الظهر مسنودين، وتجنب قفل الركبتين، وتوقف إذا ارتفع الحوض أو ظهر ألم في الركبة أو الظهر.",
+}
+
 EXPECTED_GUIDANCE_FAMILIES = frozenset({
     "squat", "hinge", "horizontal_push", "vertical_push",
     "horizontal_pull", "vertical_pull", "isolation", "core",
@@ -2098,6 +2107,8 @@ def guidance_for(source_id: str, pattern: str) -> dict:
         return THROW_GUIDANCE
     if source_id == "Platform_Hamstring_Slides":
         return SLIDER_GUIDANCE
+    if source_id == "Leg_Press":
+        return LEG_PRESS_GUIDANCE
     return GUIDANCE[GUIDANCE_FAMILY_OVERRIDES.get(source_id, pattern)]
 
 
