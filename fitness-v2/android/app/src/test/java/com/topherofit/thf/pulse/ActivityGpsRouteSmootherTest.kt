@@ -87,4 +87,63 @@ class ActivityGpsRouteSmootherTest {
         assertEquals(one, ActivityGpsRouteSmoother.smoothForDisplay(one, ActivityMode.WALK))
         assertEquals(two, ActivityGpsRouteSmoother.smoothForDisplay(two, ActivityMode.WALK))
     }
+
+    @Test fun handlesLongitudeWrapAtTheDateLine() {
+        val points = listOf(
+            ActivityRoutePoint(0.0, 179.9999, null, 2f, 0L),
+            ActivityRoutePoint(0.00005, -179.99995, null, 4f, 5_000L),
+            ActivityRoutePoint(0.0001, -179.9999, null, 2f, 10_000L),
+        )
+
+        val smoothed = ActivityGpsRouteSmoother.smoothForDisplay(points, ActivityMode.WALK)
+        val shift = ActivityMetrics.distanceMetres(
+            points[1].latitude, points[1].longitude,
+            smoothed[1].latitude, smoothed[1].longitude,
+        )
+
+        assertTrue(smoothed[1].longitude in -180.0..180.0)
+        assertTrue(shift > 0.1 && shift <= 2.01)
+    }
+
+    @Test fun usesFixTimestampSpacingForTheExpectedPoint() {
+        val points = listOf(
+            point(0, 0.0),
+            point(2, 10.0, eastMetres = 4.0, accuracyMetres = 4f),
+            point(10, 20.0),
+        )
+
+        val smoothed = ActivityGpsRouteSmoother.smoothForDisplay(points, ActivityMode.WALK)
+
+        assertTrue(smoothed[1].latitude < points[1].latitude)
+        assertTrue(smoothed[1].longitude < points[1].longitude)
+    }
+
+    @Test fun rejectsNonMonotonicLocalTimestamps() {
+        val points = listOf(
+            point(0, 0.0),
+            point(5, 10.0, eastMetres = 4.0, accuracyMetres = 4f),
+            point(4, 20.0),
+        )
+
+        assertEquals(points, ActivityGpsRouteSmoother.smoothForDisplay(points, ActivityMode.WALK))
+    }
+
+    @Test fun appliesTheCyclingAccuracyCeilingWithoutRelaxingWalkRun() {
+        val points = listOf(
+            point(0, 0.0),
+            point(5, 10.0, eastMetres = 4.0, accuracyMetres = 30f),
+            point(10, 20.0),
+        )
+
+        val cycling = ActivityGpsRouteSmoother.smoothForDisplay(points, ActivityMode.CYCLE)
+        val cyclingShift = ActivityMetrics.distanceMetres(
+            points[1].latitude, points[1].longitude,
+            cycling[1].latitude, cycling[1].longitude,
+        )
+
+        assertTrue(cyclingShift > 0.1 && cyclingShift <= 3.01)
+        assertEquals(points, ActivityGpsRouteSmoother.smoothForDisplay(points, ActivityMode.WALK))
+        assertEquals(points, ActivityGpsRouteSmoother.smoothForDisplay(points, ActivityMode.RUN))
+    }
+
 }
