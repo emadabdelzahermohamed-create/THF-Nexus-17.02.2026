@@ -33,7 +33,13 @@ jobs:
           apikeys_enabled="$(gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=apikeys.googleapis.com' --format='value(config.name)')"
           if [[ "$apikeys_enabled" == "apikeys.googleapis.com" ]]; then
             echo 'API_KEYS_API=ENABLED'
+            gcloud services api-keys list --project "$GCP_PROJECT_ID" --format='table(displayName,name,restrictions.apiTargets[].service,restrictions.androidKeyRestrictions.allowedApplications[].packageName)'
           else
             echo 'API_KEYS_API=NOT_ENABLED'
+          fi
+          if gcloud secrets describe thf-google-maps-android-api-key --project "$GCP_PROJECT_ID" >/dev/null 2>&1; then
+            echo 'MAPS_KEY_SECRET=EXISTS_AND_VISIBLE'
+          else
+            echo 'MAPS_KEY_SECRET=MISSING_OR_NOT_VISIBLE_TO_BUILDER'
           fi
           echo 'NO_BILLING_CONFIGURATION_CHANGED=TRUE'
