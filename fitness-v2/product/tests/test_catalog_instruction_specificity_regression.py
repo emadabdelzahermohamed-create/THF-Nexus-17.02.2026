@@ -91,6 +91,7 @@ EXPECTED_HEAVY_BAG_THRUST_STEPS = {
 }
 
 STANDING_CALF_RAISES_SOURCE_ID = "Standing_Calf_Raises"
+EXPECTED_STANDING_CALF_RAISES_FIRST_AR = "اضبط ارتفاع وسادة جهاز رفع السمانة بحيث تستقر الوسادة بأمان على كتفيك."
 EXPECTED_STANDING_CALF_RAISES_FINAL_AR = "كرر مع إبقاء الركبتين ثابتتين وتجنب الارتداد من أسفل الحركة؛ خفّف الحمل إذا فقدت التحكم، وتوقف إذا ظهر ألم."
 PREVIOUS_STANDING_CALF_RAISES_FINAL_AR = "كرر الحركة دون ارتداد أو تحميل يسبب ألمًا."
 
@@ -203,6 +204,7 @@ class CatalogInstructionSpecificityRegressionTest(unittest.TestCase):
 
     def test_standing_calf_raises_final_arabic_cue_is_specific_and_controlled(self):
         item = self.by_source_id[STANDING_CALF_RAISES_SOURCE_ID]
+        self.assertEqual(EXPECTED_STANDING_CALF_RAISES_FIRST_AR, item["steps"]["ar"][0])
         cue = item["steps"]["ar"][-1]
         self.assertEqual(EXPECTED_STANDING_CALF_RAISES_FINAL_AR, cue)
         self.assertEqual(item["steps"], BUILDER.STEP_OVERRIDES[STANDING_CALF_RAISES_SOURCE_ID])
