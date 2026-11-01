@@ -73,7 +73,7 @@ jobs:
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           test -s "$APK" && test -s "$AAB"
           "$AAPT" dump badging "$APK" | tee /tmp/badging.txt
-          grep -F "package: name='com.topherofit.thf.pulse' versionCode='51019'" /tmp/badging.txt
+          grep -F "package: name='com.topherofit.thf.pulse.qa' versionCode='51019'" /tmp/badging.txt
           grep -F "versionName='5.0.0-v2-alpha19-debug'" /tmp/badging.txt
           VERSION_CODE=$(sed -nE "s/.*versionCode='([0-9]+)'.*/\1/p" /tmp/badging.txt | head -1)
           VERSION_NAME=$(sed -nE "s/.*versionName='([^']+)'.*/\1/p" /tmp/badging.txt | head -1)
