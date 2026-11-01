@@ -893,3 +893,31 @@ test('one-shot control and status are localized in Arabic and hidden for single-
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(single.detailPlayOnceButton.hidden, true);
 });
+
+
+test('one-shot preview restores a manual pause that existed before the reduced-motion override', async () => {
+  const h = buildHarness({ visible: false });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailPauseButton.dispatch('click');
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused by you.');
+  assert.equal(h.timers.size, 0);
+  h.setStoredPreference('1');
+  assert.equal(h.detailPlayOnceButton.hidden, false);
+  h.detailPlayOnceButton.dispatch('click');
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  h.tick();
+  assert.equal(h.detailStatus.textContent, 'One-time demonstration complete; static reference frames are shown.');
+  assert.equal(h.timers.size, 0);
+  h.setStoredPreference('0');
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused by you.');
+  assert.equal(h.detailResumeButton.disabled, false);
+  assert.equal(h.timers.size, 0);
+  h.detailResumeButton.dispatch('click');
+  assert.equal(h.timers.size, 1);
+  h.tick();
+  assert.equal(h.frame0.classList.contains('is-active'), true);
+});
