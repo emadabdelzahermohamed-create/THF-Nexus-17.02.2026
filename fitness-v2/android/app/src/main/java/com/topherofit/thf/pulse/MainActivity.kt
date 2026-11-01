@@ -12,9 +12,11 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.io.ByteArrayInputStream
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.edit
@@ -178,9 +180,12 @@ class MainActivity : ComponentActivity() {
             domStorageEnabled = true
             allowFileAccess = true
             allowContentAccess = false
-            blockNetworkLoads = true
+            // External requests are disabled by an explicit host/path allowlist below.
+            // The activity map needs HTTPS raster tiles; all other HTTP(S) resources stay blocked.
+            blockNetworkLoads = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             mediaPlaybackRequiresUserGesture = false
+            userAgentString = "${userAgentString} TopHeroFit/5.0"
             @Suppress("DEPRECATION")
             allowFileAccessFromFileURLs = false
             @Suppress("DEPRECATION")
@@ -188,6 +193,21 @@ class MainActivity : ComponentActivity() {
         }
         web.addJavascriptInterface(PulseBridge(), "PulseNative")
         web.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+                val isAllowedTileRequest = request.method.equals("GET", ignoreCase = true) &&
+                    !WebViewNetworkPolicy.shouldBlockExternalResource(request.url.toString())
+                if (isAllowedTileRequest) return super.shouldInterceptRequest(view, request)
+                return WebResourceResponse(
+                    "text/plain",
+                    "UTF-8",
+                    ByteArrayInputStream(ByteArray(0)),
+                ).apply {
+                    statusCode = 403
+                    reasonPhrase = "Blocked by THF network policy"
+                    responseHeaders = mapOf("Cache-Control" to "no-store")
+                }
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 if (uri.scheme.equals("https", ignoreCase = true) &&

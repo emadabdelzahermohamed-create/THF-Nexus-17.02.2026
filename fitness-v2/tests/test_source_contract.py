@@ -266,7 +266,11 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             "AccountAuthRepository", "AccountAuthContract",
         ):
             self.assertIn(marker, source)
-        self.assertIn("blockNetworkLoads = true", source)
+        self.assertIn("blockNetworkLoads = false", source)
+        self.assertIn("WebViewNetworkPolicy.shouldBlockExternalResource", source)
+        network_policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "WebViewNetworkPolicy.kt").read_text()
+        self.assertIn('private const val MAP_TILE_HOST = "tile.openstreetmap.org"', network_policy)
+        self.assertIn('uri.scheme.equals("https"', network_policy)
         self.assertNotIn("putString(\"backend_access_token\"", source)
         self.assertNotIn("setBackendAccessToken", source)
         self.assertIn(
