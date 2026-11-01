@@ -48,7 +48,8 @@
   Object.assign(COPY.ar, {demoSpeed:'سرعة العرض',normalSpeed:'عادي',slowSpeed:'بطيء 0.5×'});
   Object.assign(COPY.en, {demoSpeed:'Demo speed',normalSpeed:'Normal',slowSpeed:'Slow · 0.5×'});
   Object.assign(COPY.ar, {demoPlayback:'التحكم في العرض',pauseDemo:'إيقاف مؤقت',resumeDemo:'استئناف'});
-  Object.assign(COPY.en, {demoPlayback:'Playback controls',pauseDemo:'Pause',resumeDemo:'Resume'});
+  Object.assign(COPY.en, {demoPlayback:'Playback controls',pauseDemo:'Pause',resumeDemo:'Resume',restartDemo:'Restart from beginning'});
+  Object.assign(COPY.ar, {restartDemo:'إعادة من البداية'});
 
   const SECTION_ORDER = ['gym','home','running','cycling','football','swimming','yoga','calisthenics','boxing','hiit','mobility','recovery','team_sports'];
   const state = {
