@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-10-29T16:15:00Z",
+  "observed_at": "2026-11-01T21:24:32Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -35,20 +35,56 @@
     "evidence_digest": "sha256:12492bdd85019eb8420858baf69bee480b22a462a03dd814f2c08524c717fc2c",
     "independent_readback_run": 40518110062,
     "independent_readback": "PASS",
-    "production": "NOT_VERIFIED"
+    "production": "NOT_VERIFIED",
+    "latest_state_probe": {
+      "run_id": 41351011557,
+      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41351011557",
+      "head_sha": "25292d6a7b28258ca9174ac3c5e72cb133e8eb48",
+      "observed_at": "2026-11-01T21:14:51Z",
+      "conclusion": "SUCCESS_READ_ONLY",
+      "artifact_id": 13101082135,
+      "artifact_digest": "sha256:2be8e401fb69c8acae539e57335f41205b6aed53accca40e3dac580508413b9c",
+      "upload_attempted": false,
+      "commit_attempted": false,
+      "tracks": [
+        {
+          "track": "internal",
+          "version_code": 51019,
+          "release_name": "THF Fitness 51019 Internal",
+          "status": "completed"
+        },
+        {
+          "track": "alpha",
+          "version_code": 51007,
+          "status": "draft"
+        }
+      ],
+      "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
+      "listing_summary": {
+        "ar": {
+          "title": "Top Hero Fit: لياقة ونشاط",
+          "short_description": "تمارين منزلية وجيم أوفلاين، دليل صوتي، وخطط للمشي والجري والدراجات."
+        },
+        "en": {
+          "title": "Top Hero Fit: Fitness & GPS",
+          "short_description": "Offline home workouts, voice guidance, and walking, running & cycling GPS."
+        },
+        "risk": "Current long descriptions also claim GPS/background-session/Health Connect capabilities; current physical P0 is not complete, so do not update or treat these claims as verified."
+      }
+    }
   },
   "phone": {
-    "last_verified_play_installed_version": 51018,
-    "version_name": "5.0.0-v2-alpha18",
-    "observed_at": "2026-10-27T10:17:49+03:00",
+    "last_verified_play_installed_version": 51019,
+    "version_name": "5.0.0-v2-alpha19",
+    "observed_at": "2026-11-01T21:24:32Z",
     "installer": "com.android.vending",
     "device": "Samsung SM-A217F",
-    "last_known_adb_serial": "192.168.8.6:44383",
+    "last_known_adb_serial": "CONNECTED; local network address withheld",
     "tracking_service_at_last_observation": "foreground=true; startRequested=true; owner session active/ambiguous",
     "keyguard_unlocked": "NOT_CONFIRMED",
-    "latest_read_only_preflight_at": "2026-10-27T18:56:03+03:00",
-    "latest_preflight_result": "adb devices -l returned no attached devices",
-    "candidate_51019": "NOT_TESTED_PHYSICAL",
+    "latest_read_only_preflight_at": "2026-11-01T21:24:32Z",
+    "latest_preflight_result": "ADB connected; Play-installed package identity 51019; location master enabled; ActivityTrackingService foreground and startRequested=true. No app launch, install, Stop, session action, or activity-data read.",
+    "candidate_51019": "IDENTITY_READ_ONLY_OBSERVED; PHYSICAL_P0_NOT_RUN",
     "pending": [
       "stationary walk/run/cycle false accumulation",
       "real movement and GPS jump/drift rejection",
@@ -60,7 +96,21 @@
       "compatible source-labelled heart-rate and wearable-verified swimming with real data only",
       "offline exercise motion and Arabic/English voice",
       "crash/ANR/logcat"
-    ]
+    ],
+    "lastUpdateTime_device_local": "2026-10-27 19:27:33",
+    "package_name": "com.topherofit.thf.pulse",
+    "base_apk_sha256": "102868add16d8f0daff1d043b0c164c08733637f33625e084a2051d910b9ffe7",
+    "location_master_enabled": true,
+    "activity_tracking_service": {
+      "component": "com.topherofit.thf.pulse/.ActivityTrackingService",
+      "foreground": true,
+      "start_requested": true,
+      "foreground_notification_id": 51009,
+      "created_elapsed_at_observation": "about 53 minutes",
+      "active_session_interrupted": false
+    },
+    "local_apksigner_verification": "INDETERMINATE: local apksigner lacks the ML-DSA KeyFactory required by the v3.2 signer; this is a verifier limitation, not an app-signature failure. No signature PASS inferred.",
+    "physical_p0": "BLOCKED_NOT_RUN_ACTIVE_SESSION"
   },
   "prior_known_good": {
     "version_code": 51014,
@@ -69,11 +119,13 @@
     "note": "Prior validated Internal evidence retained; no rollback or production action taken."
   },
   "release_gates": {
-    "physical_p0": "BLOCKED_NOT_RUN",
+    "physical_p0": "BLOCKED_NOT_RUN_ACTIVE_SESSION",
     "health_policy_privacy": "OPEN",
-    "production": "NOT_VERIFIED"
+    "production": "NOT_VERIFIED",
+    "maps_native_sdk_key": "BLOCKED_OWNER_KEY_AND_BILLING_PREREQUISITES",
+    "listing_truthfulness": "OPEN"
   },
-  "next_action": "Prioritize PR #202: resolve the synchronous ACTION_RESTORE_ACTIVITY service-start failure so MainActivity cannot report a restored session when no foreground service was started; then obtain exact-head Android unit/lint/APK/AAB CI PASS. No exact-head workflow runs/status checks exist yet. After green P0 integration, solve the supported push-triggered candidate run/artifact readback path, allocate one unique versionCode >51019, accept/sign/upload the exact AAB and independently read back Internal. Physical P0 remains blocked while the authorized phone is offline; PR #93/#98 remain HOLD; Free scheduler consolidation remains blocked because the update control cannot change timing_mode. Do not merge untested handoffs, rebuild/reupload unchanged 51019, or promote Production.",
+  "next_action": "Keep versionCode 51020 unallocated. Build one combined integration candidate from GPS #215 + process-death #202 after resolving their shared ActivityTrackingService.kt/MainActivity.kt changes; run exact-head Android CI on the combined SHA and produce a QA-suffixed APK. Do not install while the current tracking session is active. Complete physical P0 (stationary false-count, real GPS/route accuracy, background/screen-off/reopen, process-death restore, Stop and truthful metrics). Resolve owner Maps key/billing prerequisites without paid infrastructure. Only after those gates pass, allocate 51020, sign the exact AAB, upload to Internal and independently read back the committed track/version. Do not edit the Play listing until GPS/background/Health claims are verified.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -136,9 +188,254 @@
     "promotion_pins_old_source_sha": "76053bd9127c38d8065eb7ac250bdeb34ab67854",
     "next_release_version_code": 51020,
     "status": "BLOCKED_BEFORE_VERSION_ALLOCATION",
-    "blocker": "Available GitHub connector has no workflow-dispatch or push-run-listing action. fetch_commit_workflow_runs returns PR-triggered runs only, so exact run/artifact from the canonical push-triggered candidate workflow cannot currently be discovered/read back."
+    "blocker": "Do not allocate 51020: owner Maps key/billing prerequisite remains unresolved; physical P0 is not run; GPS PR #215 and process-death PR #202 overlap in ActivityTrackingService.kt and MainActivity.kt, so a combined integration SHA and CI are still required. Individual validation builds passed, but no combined candidate exists.",
+    "latest_validation_runs": [
+      {
+        "pr": 215,
+        "head_sha": "72f5068b4977c163320db7eb1937d992138e944a",
+        "run_id": 41350454201,
+        "conclusion": "PASS_VALIDATION_ONLY",
+        "artifact_id": 13101710252,
+        "artifact_digest": "sha256:e8c9ca9306bbc847cbc32f3a74c505bfe4b662512e17b3c23f6f4f56a4212068",
+        "debug_apk_sha256": "fda142d395048d47759a33ce9ceacff3fda01e000213137f3b61ecf7162d0e47",
+        "unsigned_aab_sha256": "dc80d96cf6eae9c56fce7cc11eacbbbcc3104780fcdf569b84a6969f437db235",
+        "package": "com.topherofit.thf.pulse.qa",
+        "version_code": 51019,
+        "signing": "NOT_RUN",
+        "play_upload": "NOT_RUN"
+      },
+      {
+        "pr": 202,
+        "head_sha": "dec85ca463301af03a02ce65b9aadde019b1b3bb",
+        "run_id": 41351522015,
+        "conclusion": "PASS_VALIDATION_ONLY",
+        "artifact_id": 13100943370,
+        "artifact_digest": "sha256:1567ae3e4e5251e42a5e2274caca68e916c8470bd7ad640d56d93fe82e831a2f",
+        "debug_apk_sha256": "55822ad68f4a56dba2273e4e63a88ae445450dd96ae6fda62140fea9e38fe89f",
+        "unsigned_aab_sha256": "c0c1090a1b28b7f5110c75310c8a4bc7380fd5800e6f122cf2b7edee7892dab7",
+        "package": "com.topherofit.thf.pulse",
+        "version_code": 51019,
+        "signing": "NOT_RUN",
+        "play_upload": "NOT_RUN",
+        "note": "Not safe to install beside Play app; use a QA-suffixed combined build for physical P0."
+      }
+    ],
+    "duplicate_dispatch_cancelled": {
+      "run_id": 41351370624,
+      "head_sha": "72f5068b4977c163320db7eb1937d992138e944a",
+      "status": "CANCELLED",
+      "before": "Android SDK install/build step",
+      "artifact_created": false,
+      "play_upload": false,
+      "note": "Existing exact-head run 41350454201 was reused; duplicate was cancelled."
+    }
   },
   "integrator_recheck": {
+    "observed_at": "2026-11-01T21:24:32Z",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "canonical_branch_head_before_checkpoint": "cbcdc51243bf82f8734723bcb99d272ce8b31b2d",
+    "checkpoint_branch": "agent/codex/integrator-release-evidence/20261102",
+    "checkpoint_workflow_commit": "0778e2f696dbff25f709b84da9611d4a58c371c2",
+    "checkpoint_workflow_blob_sha": "624c281c65f64fcc3a1e3c6e61558d12135f8fa9",
+    "workflow_safety_change": "Replaced the mutation-capable push-triggered publication workflow with the tested read-only main-branch probe; no listing update, commit, upload, or push trigger.",
+    "workflow_test_evidence": {
+      "run_id": 41351011557,
+      "head_sha": "25292d6a7b28258ca9174ac3c5e72cb133e8eb48",
+      "conclusion": "SUCCESS_READ_ONLY",
+      "artifact_id": 13101082135,
+      "artifact_digest": "sha256:2be8e401fb69c8acae539e57335f41205b6aed53accca40e3dac580508413b9c"
+    },
+    "branch_probe_dispatch": "NOT_RUN_GH_CLI_AUTH_MISSING; no interactive login/retry. The exact workflow blob is identical to the successful main probe.",
+    "maps_preflight": {
+      "run_id": 41351176796,
+      "head_sha": "25292d6a7b28258ca9174ac3c5e72cb133e8eb48",
+      "conclusion": "SUCCESS_PREFLIGHT",
+      "maps_android_backend_api": "ENABLED",
+      "api_keys_api": "ENABLED",
+      "key_inventory": "PERMISSION_DENIED",
+      "builder_secret": "MISSING_OR_NOT_VISIBLE_TO_BUILDER",
+      "billing": "Last GPS checkpoint says no billing account linked; this preflight did not read or change billing.",
+      "billing_configuration_changed": false
+    },
+    "lease_registry": {
+      "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
+      "note": "No lease registry was found in the canonical FitnessStandalone release directory/current recovery. Swarm/product.json is a product-lane manifest, not an exclusive lease; do not infer shared resources are free."
+    },
+    "current_prs": {
+      "gps_map": {
+        "pr": 215,
+        "head_sha": "72f5068b4977c163320db7eb1937d992138e944a",
+        "base_sha": "4e207c7de988372f5922924ccac49ade212c8a0b",
+        "draft": true,
+        "ci_run": 41350454201,
+        "ci": "PASS_VALIDATION_ONLY",
+        "merge": "HOLD_OVERLAPS_PR202_AND_PHYSICAL_P0_OPEN"
+      },
+      "session_recovery": {
+        "pr": 202,
+        "head_sha": "dec85ca463301af03a02ce65b9aadde019b1b3bb",
+        "base_sha": "3b8a27ea00e6dfadec218cdc90563b71ad12d440",
+        "draft": false,
+        "ci_run": 41351522015,
+        "ci": "PASS_VALIDATION_ONLY",
+        "merge": "HOLD_OVERLAPS_PR215; COMBINED_CI_AND_PHYSICAL_P0_REQUIRED"
+      },
+      "daily_step_ledger": {
+        "pr": 225,
+        "head_sha": "40f3a6cf1fa79a01fabfb783f8dcbd617e8403bb",
+        "base_sha": "4e207c7de988372f5922924ccac49ade212c8a0b",
+        "draft": true,
+        "ci_run": 41175248362,
+        "ci": "PASS_VALIDATION_ONLY",
+        "scope": "Pure core only; no all-day observer/dashboard wiring; hold per PR scope."
+      },
+      "active_workout_resume": {
+        "pr": 216,
+        "head_sha": "1ef915886fdac62c8fe1d5e50505fd354d989ee3",
+        "ci": "NO_EXACT_HEAD_CANDIDATE_CI",
+        "merge": "HOLD"
+      },
+      "timed_rir": {
+        "pr": 214,
+        "ci": "NO_EXACT_HEAD_CANDIDATE_CI",
+        "merge": "HOLD"
+      },
+      "program_duration": {
+        "pr": 213,
+        "ci": "NO_EXACT_HEAD_CANDIDATE_CI",
+        "merge": "HOLD"
+      },
+      "health": {
+        "prs": [
+          {
+            "pr": 93,
+            "head_sha": "1cc08cef7dae7f432275fd23960f4390a49db14c",
+            "draft": true,
+            "ci": "NO_EXACT_HEAD_CI"
+          },
+          {
+            "pr": 98,
+            "head_sha": "2483367811abcf68af740f24b2f55e0f04f211b3",
+            "draft": false,
+            "ci": "SIZE_POLICY_ONLY; NO_ANDROID_CI"
+          },
+          {
+            "pr": 117,
+            "head_sha": "e0150b84171490065af94bff342da65ab47873f8",
+            "draft": false,
+            "ci": "NO_EXACT_HEAD_CI"
+          },
+          {
+            "pr": 137,
+            "head_sha": "551cccdbf74b17001dfcad8ccc94ca340faafd72",
+            "draft": false,
+            "ci": "NO_EXACT_HEAD_CI"
+          },
+          {
+            "pr": 141,
+            "head_sha": "60a445dc0de8167069c3a8f824b90fcdef037514",
+            "draft": false,
+            "ci": "NO_EXACT_HEAD_CI"
+          },
+          {
+            "pr": 188,
+            "head_sha": "872921f52c6637bcf8ab338b87bc2ded281c1598",
+            "draft": true,
+            "ci": "NO_EXACT_HEAD_CI"
+          }
+        ],
+        "merge": "HOLD_PRIVACY_PERMISSION_AND_PROVENANCE_GATES"
+      },
+      "competitions": {
+        "open_pr_found": false,
+        "status": "SERVER_AUTHORITATIVE_SCORING_AND_ANTI_CHEAT_STILL_REQUIRE_VALIDATION"
+      }
+    },
+    "phone": {
+      "observed_at": "2026-11-01T21:24:32Z",
+      "device": "Samsung SM-A217F",
+      "package": "com.topherofit.thf.pulse",
+      "version_code": 51019,
+      "installer": "com.android.vending",
+      "base_apk_sha256": "102868add16d8f0daff1d043b0c164c08733637f33625e084a2051d910b9ffe7",
+      "location_master_enabled": true,
+      "tracking_service_foreground": true,
+      "start_requested": true,
+      "physical_p0": "BLOCKED_NOT_RUN_ACTIVE_SESSION"
+    },
+    "next_candidate_version_code": 51020,
+    "candidate_allocated": false,
+    "play_changed": false,
+    "production": "NOT_VERIFIED"
+  },
+  "latest_integrator_observation": {
+    "observed_at": "2026-11-01T19:00:00+02:00",
+    "canonical_branch_head_before_checkpoint": "4a2315fd16be8610396d6415292f4863f90b8dd6",
+    "recovery_checkpoint_commit": "88b867169f1844bb97c2f1528cfbaf5a862acded",
+    "play_readback_performed": false,
+    "last_recorded_internal_version_code": 51019,
+    "last_recorded_play_readback_run": 40518110062,
+    "publication_probe_run": 41321708182,
+    "publication_probe_conclusion": "failure",
+    "publication_probe_jobs": 0,
+    "publication_probe_artifact_or_readback": "none",
+    "phone_last_verified_play_installed_version": 51018,
+    "phone_last_verified_at": "2026-10-27T10:17:49+03:00",
+    "phone_current_adb": "not attached",
+    "next_candidate_version_code": 51020,
+    "candidate_allocated": false,
+    "candidate_build_sign_upload": "not run",
+    "production": "NOT_VERIFIED",
+    "lease_registry": {
+      "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
+      "note": "No lease registry was found in the canonical FitnessStandalone release directory/current recovery. Swarm/product.json is a product-lane manifest, not an exclusive lease; do not infer shared resources are free."
+    }
+  },
+  "previous_phone_observation": {
+    "last_verified_play_installed_version": 51018,
+    "version_name": "5.0.0-v2-alpha18",
+    "observed_at": "2026-10-27T10:17:49+03:00",
+    "installer": "com.android.vending",
+    "device": "Samsung SM-A217F",
+    "last_known_adb_serial": "REDACTED_LOCAL_NETWORK_ADDRESS",
+    "tracking_service_at_last_observation": "foreground=true; startRequested=true; owner session active/ambiguous",
+    "keyguard_unlocked": "NOT_CONFIRMED",
+    "latest_read_only_preflight_at": "2026-10-27T18:56:03+03:00",
+    "latest_preflight_result": "adb devices -l returned no attached devices",
+    "candidate_51019": "NOT_TESTED_PHYSICAL",
+    "pending": [
+      "stationary walk/run/cycle false accumulation",
+      "real movement and GPS jump/drift rejection",
+      "tab/Home/background/screen-off/reopen session continuity",
+      "explicit Stop and truthful notification metrics",
+      "daily-vs-session steps/history",
+      "process-death recovery",
+      "Health grants/partial grants/no-data/revoke/error and record provenance",
+      "compatible source-labelled heart-rate and wearable-verified swimming with real data only",
+      "offline exercise motion and Arabic/English voice",
+      "crash/ANR/logcat"
+    ]
+  },
+  "previous_latest_integrator_observation": {
+    "observed_at": "2026-11-01T19:00:00+02:00",
+    "canonical_branch_head_before_checkpoint": "4a2315fd16be8610396d6415292f4863f90b8dd6",
+    "recovery_checkpoint_commit": "88b867169f1844bb97c2f1528cfbaf5a862acded",
+    "play_readback_performed": false,
+    "last_recorded_internal_version_code": 51019,
+    "last_recorded_play_readback_run": 40518110062,
+    "publication_probe_run": 41321708182,
+    "publication_probe_conclusion": "failure",
+    "publication_probe_jobs": 0,
+    "publication_probe_artifact_or_readback": "none",
+    "phone_last_verified_play_installed_version": 51018,
+    "phone_last_verified_at": "2026-10-27T10:17:49+03:00",
+    "phone_current_adb": "not attached",
+    "next_candidate_version_code": 51020,
+    "candidate_allocated": false,
+    "candidate_build_sign_upload": "not run",
+    "production": "NOT_VERIFIED"
+  },
+  "previous_integrator_recheck": {
     "observed_at": "2026-10-30T17:02:40Z",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
     "root_agents_md_read_from_main": "33f47d6052e897dac5027b9596f5353ed7f62765",
@@ -225,24 +522,5 @@
       "play_changed": false,
       "production": "NOT_VERIFIED"
     }
-  },
-  "latest_integrator_observation": {
-    "observed_at": "2026-11-01T19:00:00+02:00",
-    "canonical_branch_head_before_checkpoint": "4a2315fd16be8610396d6415292f4863f90b8dd6",
-    "recovery_checkpoint_commit": "88b867169f1844bb97c2f1528cfbaf5a862acded",
-    "play_readback_performed": false,
-    "last_recorded_internal_version_code": 51019,
-    "last_recorded_play_readback_run": 40518110062,
-    "publication_probe_run": 41321708182,
-    "publication_probe_conclusion": "failure",
-    "publication_probe_jobs": 0,
-    "publication_probe_artifact_or_readback": "none",
-    "phone_last_verified_play_installed_version": 51018,
-    "phone_last_verified_at": "2026-10-27T10:17:49+03:00",
-    "phone_current_adb": "not attached",
-    "next_candidate_version_code": 51020,
-    "candidate_allocated": false,
-    "candidate_build_sign_upload": "not run",
-    "production": "NOT_VERIFIED"
   }
 }
