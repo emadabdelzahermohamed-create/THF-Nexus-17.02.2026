@@ -916,10 +916,12 @@ test('one-shot preview restores a manual pause that existed before the reduced-m
   assert.equal(h.detailStatus.textContent, 'Demonstration paused by you.');
   assert.equal(h.detailResumeButton.disabled, false);
   assert.equal(h.timers.size, 0);
+  assert.equal(h.frame0.classList.contains('is-active'), true);
+  assert.equal(h.frame1.classList.contains('is-active'), false);
   h.detailResumeButton.dispatch('click');
   assert.equal(h.timers.size, 1);
   h.tick();
-  assert.equal(h.frame0.classList.contains('is-active'), true);
+  assert.equal(h.frame1.classList.contains('is-active'), true);
 });
 
 test('manual pause preserves the selected exercise frame across background and foreground', async () => {
@@ -998,4 +1000,26 @@ test('background cancellation of a reduced-motion preview restores a pre-existin
   assert.equal(h.frame0.classList.contains('is-active'), false);
   assert.equal(h.frame2.classList.contains('is-active'), false);
   assert.equal(h.timers.size, 0);
+});
+
+test('turning reduced motion off during one-shot preview restores the exact pre-existing paused frame', async () => {
+  const h = buildHarness({ visible: false, exerciseAssets: ['media/demo-test/0.jpg', 'media/demo-test/1.jpg', 'media/demo-test/2.jpg'] });
+  await new Promise(resolve => setImmediate(resolve));
+  h.detailRoot.classList.remove('hidden');
+  h.fireMutation(h.detailRoot);
+  await new Promise(resolve => setImmediate(resolve));
+  h.tick();
+  h.detailPauseButton.dispatch('click');
+  h.setStoredPreference('1');
+  h.detailPlayOnceButton.dispatch('click');
+  h.tick();
+  h.setStoredPreference('0');
+  assert.equal(h.detailStatus.textContent, 'Demonstration paused by you.');
+  assert.equal(h.frame1.classList.contains('is-active'), true);
+  assert.equal(h.frame0.classList.contains('is-active'), false);
+  assert.equal(h.frame2.classList.contains('is-active'), false);
+  assert.equal(h.timers.size, 0);
+  h.detailResumeButton.dispatch('click');
+  h.tick();
+  assert.equal(h.frame2.classList.contains('is-active'), true);
 });
