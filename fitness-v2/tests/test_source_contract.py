@@ -255,6 +255,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
 
     def test_android_backend_sync_is_https_queued_and_session_scoped(self):
         gradle = (ANDROID / "app" / "build.gradle").read_text()
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
         source = "\n".join(
             p.read_text()
             for p in (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse").glob("*.kt")
@@ -267,10 +268,23 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         ):
             self.assertIn(marker, source)
         self.assertIn("blockNetworkLoads = false", source)
+        self.assertIn("cacheMode = WebSettings.LOAD_DEFAULT", source)
+        self.assertIn("TopHeroFit/${BuildConfig.VERSION_NAME}", source)
         self.assertIn("WebViewNetworkPolicy.shouldBlockExternalResource", source)
         network_policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "WebViewNetworkPolicy.kt").read_text()
-        self.assertIn('private const val MAP_TILE_HOST = "tile.openstreetmap.org"', network_policy)
+        self.assertIn('"tile.openstreetmap.org"', network_policy)
+        self.assertIn('"a.tile.opentopomap.org"', network_policy)
+        self.assertIn('"tiles.maps.eox.at"', network_policy)
         self.assertIn('uri.scheme.equals("https"', network_policy)
+        self.assertIn("L.control.layers", app)
+        self.assertIn("s2cloudless_3857", app)
+        self.assertIn("streets_3857", app)
+        self.assertIn("opentopomap.org", app)
+        self.assertIn("EOxCloudless", app)
+        self.assertIn("Contains modified Copernicus Sentinel data 2016", app)
+        self.assertIn("CC BY 4.0", app)
+        self.assertIn("https://maps.eox.at/", app)
+        self.assertIn("Rendering ©", app)
         self.assertNotIn("putString(\"backend_access_token\"", source)
         self.assertNotIn("setBackendAccessToken", source)
         self.assertIn(

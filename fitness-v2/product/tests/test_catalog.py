@@ -302,7 +302,17 @@ class ProductCatalogTest(unittest.TestCase):
         self.assertEqual(["https://www.google.com/maps"], external_assets)
         external_urls = re.findall(r"https?://\S+", combined)
         self.assertTrue(all(
-            url.startswith(("https://tile.openstreetmap.org/", "https://www.openstreetmap.org/", "https://www.google.com/maps"))
+            url.startswith((
+                "https://tile.openstreetmap.org/",
+                "https://www.openstreetmap.org/",
+                "https://www.google.com/maps",
+                "https://{s}.tile.opentopomap.org/",
+                "https://opentopomap.org/",
+                "https://tiles.maps.eox.at/",
+                "https://cloudless.eox.at",
+                "https://maps.eox.at/",
+                "https://eox.at/",
+            ))
             for url in external_urls
         ), external_urls)
 

@@ -185,7 +185,8 @@ class MainActivity : ComponentActivity() {
             blockNetworkLoads = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             mediaPlaybackRequiresUserGesture = false
-            userAgentString = "${userAgentString} TopHeroFit/5.0"
+            cacheMode = WebSettings.LOAD_DEFAULT
+            userAgentString = "${this.userAgentString} TopHeroFit/${BuildConfig.VERSION_NAME}"
             @Suppress("DEPRECATION")
             allowFileAccessFromFileURLs = false
             @Suppress("DEPRECATION")

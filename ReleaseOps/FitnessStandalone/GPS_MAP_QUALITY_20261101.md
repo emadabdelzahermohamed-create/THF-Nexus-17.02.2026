@@ -1,39 +1,71 @@
-# Top Hero Fit — GPS / Maps execution checkpoint
+# Top Hero Fit — GPS, Maps and Phone QA checkpoint
 
 Date: 2026-11-01 (Africa/Cairo)
-Branch: `agent/codex/gps-map-quality-20261030`
-Checkpoint base: `d37ad669ead851231bfced58d3dea1d34852d38a`
+Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`
+Working branch: `agent/codex/gps-map-quality-20261030`
 PR: [#215](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/215)
-Package: `com.topherofit.thf.pulse`
-Current release baseline: Play Internal 51019; next release identity must be >51019.
+Android package: `com.topherofit.thf.pulse`
+Installed Play baseline: `versionCode 51019`
+Next release versionCode: must be greater than 51019; do not allocate until all release gates pass.
 
-## Verified source implementation
-- Fused Location Provider uses high accuracy, disables batched delivery, rejects cached initial fixes, and waits for an accurate fix.
-- Weak fixes are visible diagnostically but are not accepted into the route; stale/mock/speed/accuracy and movement-integrity gates remain in place.
-- A persistent foreground tracking service and durable activity checkpoint are present in source.
-- The previous placeholder SVG map was replaced by a Leaflet map using attributed OpenStreetMap tiles, with route halo/line, start/current markers, accuracy radius, fit/follow, pan preservation, recenter, and an external Google Maps handoff. This is NOT the Google Maps SDK or Google basemap.
-- Offline SVG fallback remains available.
+## Confirmed Google Cloud state
+- `maps-android-backend.googleapis.com` (Maps SDK for Android) is ENABLED. Verified by the read-only GitHub Actions preflight.
+- `apikeys.googleapis.com` (API Keys API) is ENABLED. Enabled from the existing THF project in Cloud Console; no billing settings were touched.
+- Google Cloud Console's Maps Platform credentials flow explicitly prompts to select/link a Google Maps Platform billing account for this project. No billing account was linked, no payment method was added, and no chargeable configuration was changed.
+- The release-builder service account cannot list API keys (`apikeys.keys.list` permission denied). No Google Maps API key has been created or stored.
+- Therefore native Google Maps SDK rendering and Google traffic/transit overlays are NOT ready. Do not claim they are.
+- The app's external Google Maps directions handoff remains available and does not require the in-app Maps SDK key.
+- Free Google Maps SDK usage still requires a billing-enabled project. Do not link a billing account or add a payment method without explicit owner approval.
 
-## Tests executed 2026-11-01 on the connected Termux environment
-- `python3 -m unittest discover -s fitness-v2/tests -v`: PASS, 50 tests.
-- `python3 -m unittest discover -s fitness-v2/product/tests -v`: PASS, 60 tests.
-- `python3 -m unittest discover -s fitness-v2/backend/tests -v`: PASS, 15 tests.
-- `node --check fitness-v2/android/app/src/main/assets/pulse/app.js`: PASS.
-- Total: 125 Python tests PASS + JavaScript syntax PASS.
-- Android Gradle build was not run locally (no Android SDK/Gradle toolchain in Termux). Prior CI build run [41117472955](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41117472955) passed for older SHA `e0d5b64501cd0a8ca337733fd66afe9cc31b6d95`, versionCode 51019; artifact `13005344643`, digest `sha256:60f79bd68720c44bc2a57270e6de1e6685c2965276459c7960d9483d0a34b2ba`. This is validation evidence only, not a new release.
+## Implemented free in-app map layers
+The activity map now offers four real selectable base styles:
+1. Street: OpenStreetMap standard raster tiles.
+2. Terrain: OpenTopoMap raster tiles.
+3. Satellite: EOX Sentinel-2 cloudless 2016 imagery, explicitly labelled with its 2016 vintage.
+4. Hybrid: EOX 2016 satellite imagery plus transparent EOX streets overlay.
 
-## Google Maps SDK blocker
-- The enablement workflow authenticated to the existing THF Cloud project and confirmed project identity.
-- Workflow run [41119539583](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41119539583) failed at enabling `maps-android-backend.googleapis.com` because the existing release-builder service account lacks `serviceusage.services.enable`.
-- No billing configuration was read or changed, no billing account was linked, and no API key was created.
-- Owner action: enable [Maps SDK for Android in the existing project](https://console.cloud.google.com/apis/library/maps-android-backend.googleapis.com?project=project-b5e10d7e-8ce8-4aa4-a15), OR grant `roles/serviceusage.serviceUsageAdmin` to the existing release-builder service account on this project and rerun the workflow.
-- After API enablement, provision a restricted Android API key for package `com.topherofit.thf.pulse`, using the Play **app-signing** SHA-1 (not the upload-key SHA-1). Store the key in GitHub/Secret Manager; never commit it.
+Attribution is shown in the Leaflet map control:
+- OSM: © OpenStreetMap contributors.
+- OpenTopoMap: map data © OpenStreetMap contributors, SRTM; map style © OpenTopoMap (CC-BY-SA). Its official page permits commercial use with attribution/share-alike, but provides no uptime SLA and asks users not to overload its volunteer service.
+- EOX 2016 Sentinel-2 cloudless layer: current WMTS capabilities identify CC BY 4.0 and require attribution to EOX IT Services GmbH and modified Copernicus Sentinel data 2016.
+- EOX streets overlay: data © OpenStreetMap contributors; rendering © EOX IT Services GmbH and MapServer.
 
-## Physical QA blocker
-- The local ADB inventory currently returns no attached devices.
-- The last recorded wireless debugging endpoint `192.168.8.6:37675` refused connection; current mdns discovery is unsupported by the installed ADB binary.
-- No new physical-device GPS fix, Google basemap rendering, measured route accuracy, background/screen-off session continuity, battery, or crash/ANR PASS is claimed.
-- Once ADB is paired/connected, run stationary 60-second false-movement test, measured 300–500 m walk/run/cycle route, accuracy/jump inspection, screen-off/background/navigation recovery, pause/resume/stop, notification, and map layer/recenter/offline tests.
+Operational constraints:
+- OSM standard tile server is best-effort, has no SLA, requires a stable app-identifying User-Agent, normal HTTP caching, visible attribution, and prohibits prefetch/offline bulk downloads.
+- OpenTopoMap is a community service with no SLA; do not bulk-download or prefetch.
+- EOX imagery is from 2016 and must not be represented as current imagery.
+- No in-app live traffic layer is supplied by these free sources.
+
+## WebView network hardening and tile delivery
+- WebView external HTTP(S) requests are allowed only for exact approved HTTPS map tile hosts and tile paths: OSM, OpenTopoMap a/b/c, and EOX s2cloudless/streets WMTS layers.
+- All other external HTTP(S) subresources are intercepted and blocked; file/data resources remain local.
+- The User-Agent identifies TopHeroFit with the app version; cache mode explicitly remains LOAD_DEFAULT.
+- Map controls are compact for phone viewports; zoom and scale controls remain available.
+- Google Maps handoff now opens route directions from first to last recorded point (walking or bicycling), not only a single-point search.
+
+## Verified source and endpoint checks
+- Python source tests: 50 PASS.
+- Product/catalog tests: 60 PASS.
+- Backend tests: 15 PASS.
+- JavaScript syntax check: PASS.
+- Git diff whitespace check: PASS.
+- Live tile endpoint smoke checks from the connected phone environment: 4/4 HTTP 200 (OSM street, OpenTopoMap terrain, EOX 2016 satellite, EOX streets overlay).
+- New Kotlin unit tests cover exact tile host/path allowlisting, HTTPS-only behavior, lookalike-host rejection, and external resource blocking. They still require the Android CI run to confirm compilation/execution.
+- Prior Android CI build attempt found and caught a Kotlin WebResourceResponse constructor incompatibility; this was corrected to the API 21+ six-argument constructor. The corrected exact-head CI run is required before any install/release decision.
+
+## Physical-device state and safety
+- ADB wireless connection is restored and the Samsung phone is visible.
+- Installed Play app identity is `com.topherofit.thf.pulse`, versionCode 51019.
+- A native foreground workout service/session was active/restored when the app was launched. It was deliberately not stopped, reset, or overwritten.
+- Because a live workout was present, no new GPS test activity was started and no APK was installed over the Play app. This avoids losing the user's current session/data.
+- No physical route accuracy, stationary drift, screen-off GPS continuity, or map-layer UI PASS is claimed yet.
+- Once the current workout is safely ended by the user, run the phone P0 suite: stationary 60s drift, measured 300–500m walk/run/cycle, GPS accuracy/jump review, background/screen-off, pause/resume/stop, notification, map layer switching/recenter, and network/offline behavior.
 
 ## Release decision
-HOLD. Do not allocate 51020, merge #215, or upload to Play until the Google Maps key is securely provisioned, exact-head Android CI is green, and physical P0 GPS/session QA passes. Production remains unverified.
+HOLD — not Play-ready.
+- Do not upload a new AAB, merge the release PR, or allocate 51020 until exact-head Android CI passes and the physical P0 phone suite passes.
+- Google Maps native SDK remains blocked by the billing-account requirement. Continue with the no-billing map stack unless the owner explicitly authorizes linking an existing billing account.
+- No billing account/payment method was added, no API key was created, no versionCode 51020 was allocated, and no Play upload was made.
+
+## Scheduling
+Automations support recurring schedules only at daily, weekly, or monthly cadence. The three independent THF tracks are kept on daily schedules (GPS/phone QA, Health/exercise, and integration/Play). Hourly or per-second recurring schedules are not supported; do not create duplicate retry loops.

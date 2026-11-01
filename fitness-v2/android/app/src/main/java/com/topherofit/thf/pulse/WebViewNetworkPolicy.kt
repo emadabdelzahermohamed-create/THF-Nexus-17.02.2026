@@ -3,22 +3,38 @@ package com.topherofit.thf.pulse
 import java.net.URI
 
 /**
- * WebView is a local-first shell. Permit only the HTTPS tile endpoint required by the
- * activity map; native Kotlin networking remains responsible for authenticated APIs.
+ * WebView is a local-first shell. Permit only approved HTTPS raster map tiles;
+ * all other external HTTP(S) resources are blocked by MainActivity.
  */
 object WebViewNetworkPolicy {
-    private const val MAP_TILE_HOST = "tile.openstreetmap.org"
-    private val tilePath = Regex("^/\\d{1,2}/\\d+/\\d+\\.png$")
+    private val osmTileHosts = setOf(
+        "tile.openstreetmap.org",
+        "a.tile.opentopomap.org",
+        "b.tile.opentopomap.org",
+        "c.tile.opentopomap.org",
+    )
+    private const val EOX_TILE_HOST = "tiles.maps.eox.at"
+    private val rasterTilePath = Regex("^/\\d{1,2}/\\d+/\\d+\\.png$")
+    private val eoxTilePath = Regex(
+        "^/wmts/1\\.0\\.0/(s2cloudless_3857|streets_3857)/default/g/\\d{1,2}/\\d+/\\d+\\.(jpg|png)$",
+    )
 
     fun isAllowedMapTileUrl(rawUrl: String): Boolean = runCatching {
         val uri = URI(rawUrl)
-        uri.scheme.equals("https", ignoreCase = true) &&
-            uri.host.equals(MAP_TILE_HOST, ignoreCase = true) &&
-            (uri.port == -1 || uri.port == 443) &&
-            uri.userInfo == null &&
-            uri.query == null &&
-            uri.fragment == null &&
-            tilePath.matches(uri.path.orEmpty())
+        if (!uri.scheme.equals("https", ignoreCase = true) ||
+            (uri.port != -1 && uri.port != 443) ||
+            uri.userInfo != null ||
+            uri.query != null ||
+            uri.fragment != null
+        ) return@runCatching false
+
+        val host = uri.host?.lowercase() ?: return@runCatching false
+        val path = uri.path.orEmpty()
+        when {
+            host in osmTileHosts -> rasterTilePath.matches(path)
+            host == EOX_TILE_HOST -> eoxTilePath.matches(path)
+            else -> false
+        }
     }.getOrDefault(false)
 
     fun shouldBlockExternalResource(rawUrl: String): Boolean = runCatching {
