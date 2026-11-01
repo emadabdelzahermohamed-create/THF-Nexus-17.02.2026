@@ -18,6 +18,7 @@
   const detailPlaybackControl = document.getElementById('detailDemoPlayback');
   const detailPauseButton = document.getElementById('detailDemoPause');
   const detailResumeButton = document.getElementById('detailDemoResume');
+  const detailReplayButton = document.getElementById('detailDemoReplay');
   const states = new Map();
   const preloadCache = new Map();
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -258,6 +259,7 @@
     if (detailPlaybackControl) detailPlaybackControl.hidden = !ready;
     if (detailPauseButton) detailPauseButton.disabled = disabled || detailPaused;
     if (detailResumeButton) detailResumeButton.disabled = disabled || !detailPaused;
+    if (detailReplayButton) detailReplayButton.disabled = disabled;
   }
 
   function setDetailPaused(paused) {
@@ -266,6 +268,15 @@
     detailPaused = Boolean(paused);
     detailSlowTicks = 0;
     updateDetailPlaybackControls();
+    renderDetailSequence(true);
+    syncTimer();
+  }
+
+  function restartDetailSequence() {
+    if (reduceMotion() || !detailLoad?.settled || detailFrames().length < 2
+      || !detailRoot || detailRoot.classList.contains('hidden')) return;
+    detailIndex = 0;
+    detailSlowTicks = 0;
     renderDetailSequence(true);
     syncTimer();
   }
@@ -511,6 +522,7 @@
     detailSpeedSlow?.addEventListener('click', () => setDetailSpeed(true));
     detailPauseButton?.addEventListener('click', () => setDetailPaused(true));
     detailResumeButton?.addEventListener('click', () => setDetailPaused(false));
+    detailReplayButton?.addEventListener('click', restartDetailSequence);
     document.getElementById('reduceMotion')?.addEventListener('change', () => Promise.resolve().then(refresh));
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('resize', refresh, { passive: true });
