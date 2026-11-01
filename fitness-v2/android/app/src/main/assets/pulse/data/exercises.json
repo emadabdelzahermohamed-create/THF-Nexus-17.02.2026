@@ -6907,16 +6907,16 @@
       ]
     },
     "regression": {
-      "en": "Reduce load or depth, or squat to a stable box while keeping the whole foot planted.",
-      "ar": "خفّض الحمل أو عمق النزول، أو استخدم صندوقًا ثابتًا مع بقاء القدم كاملة على الأرض."
+      "en": "Reduce the load and range; keep the pelvis and lower back supported against the pad. Ask gym staff to adjust the seat or safety lock if the setup is unclear.",
+      "ar": "خفّض الحمل ومدى الحركة، وأبقِ الحوض وأسفل الظهر مسنودين إلى الوسادة. اطلب من موظف الجيم ضبط المقعد أو قفل الأمان إذا لم يكن الإعداد واضحًا."
     },
     "progression": {
-      "en": "Add depth, repetitions, or a small load only while the feet stay planted and knees track cleanly.",
-      "ar": "زد العمق أو العدات أو حملًا بسيطًا فقط مع ثبات القدم وتتبع الركبة لاتجاهها."
+      "en": "Increase load in small steps only after every rep stays controlled with the pelvis supported; change load or range one at a time.",
+      "ar": "زد الحمل بخطوات صغيرة فقط بعد ثبات التحكم وإسناد الحوض في كل عدة؛ غيّر الحمل أو مدى الحركة واحدًا في كل مرة."
     },
     "safety": {
-      "en": "Keep knees aligned with the feet and stop for joint pain, heel lift, or loss of balance.",
-      "ar": "حافظ على اتجاه الركبتين مع القدمين وتوقف عند ألم المفصل أو ارتفاع الكعب أو فقدان التوازن."
+      "en": "Check and set the machine’s safety lock before loading; keep the pelvis and lower back supported, avoid locking the knees, and stop if the pelvis lifts or knee/back pain occurs.",
+      "ar": "تحقق من قفل الأمان واضبطه قبل تحميل الجهاز؛ أبقِ الحوض وأسفل الظهر مسنودين، وتجنب قفل الركبتين، وتوقف إذا ارتفع الحوض أو ظهر ألم في الركبة أو الظهر."
     },
     "demo": {
       "type": "two_frame_image_sequence",
