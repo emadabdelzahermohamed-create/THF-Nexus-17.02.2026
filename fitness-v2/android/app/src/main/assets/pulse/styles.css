@@ -89,3 +89,20 @@
 .exercise-card-favorite:hover{background:#2c2514}
 .exercise-card-favorite:focus-visible{outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.exercise-card-open:hover img{transform:none!important}}
+
+
+/* Program favorites: independent, accessible save action and section-aware filter. */
+.program-favorites-filter{display:flex;align-items:center;gap:9px;min-height:44px;width:max-content;max-width:100%;margin:10px 0 14px;padding:8px 12px;border:1px solid #38535e;border-radius:12px;background:#0b1e26;color:var(--text);font-size:12px;font-weight:800}
+.program-favorites-filter input{width:18px;height:18px;min-height:18px;margin:0;accent-color:var(--gold);flex:0 0 auto}
+.program-favorites-filter input:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.program-card{position:relative;display:block;min-width:0;padding:0;overflow:hidden;border:1px solid #38535e;border-radius:21px;background:linear-gradient(145deg,#0f252e,#0a1920);color:var(--text);box-shadow:0 12px 28px #0004}
+.program-card-open{appearance:none;display:grid;grid-template-columns:minmax(140px,.7fr) 1fr;width:100%;min-width:0;padding:0;border:0;border-radius:inherit;background:transparent;color:inherit;text-align:start;font:inherit;cursor:pointer}
+.program-card-open:focus-visible,.program-card-favorite:focus-visible{outline:3px solid var(--blue);outline-offset:-3px}
+.program-card-favorite{position:absolute;z-index:3;top:8px;inset-inline-end:8px;display:grid;place-items:center;width:40px;height:40px;min-height:40px;padding:0;border:1px solid #8b733b;border-radius:999px;background:#081820e8;color:var(--gold);font-size:23px;line-height:1;box-shadow:0 4px 14px #0007;cursor:pointer}
+.program-card-favorite[aria-pressed="true"]{border-color:#d2b766;background:#302713;color:#ffe6a0}
+.program-card-favorite:hover{background:#2c2514}
+.program-card-favorite:focus-visible{outline-offset:2px}
+.saved-program-badge{align-self:flex-start}
+@media(max-width:760px){.program-card-open{grid-template-columns:1fr}}
+@media(max-width:480px){.program-card-open{grid-template-columns:122px 1fr}}
+@media(forced-colors:active){.program-favorites-filter,.program-card-favorite{forced-color-adjust:auto;border:1px solid ButtonText}.program-card-open:focus-visible,.program-card-favorite:focus-visible{outline:3px solid Highlight;outline-offset:3px}}

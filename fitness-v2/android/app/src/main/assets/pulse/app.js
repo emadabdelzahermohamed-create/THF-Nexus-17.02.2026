@@ -54,13 +54,18 @@
   Object.assign(COPY.en, {favoritesOnly:'Favorites only', addFavorite:'Add to favorites', removeFavorite:'Remove from favorites', savedExercise:'Saved'});
   Object.assign(COPY.ar, {openExerciseDetails:'افتح تفاصيل التمرين'});
   Object.assign(COPY.en, {openExerciseDetails:'Open exercise details'});
+  Object.assign(COPY.ar, {programFavoritesOnly:'البرامج المفضلة فقط',addProgramFavorite:'أضف البرنامج للمفضلة',removeProgramFavorite:'إزالة البرنامج من المفضلة',savedProgram:'برنامج مفضل',openProgramDetails:'افتح تفاصيل البرنامج',noFavoritePrograms:'لم تحفظ أي برنامج في هذا القسم بعد.',programSaved:'تم حفظ البرنامج في المفضلة.',programRemoved:'تمت إزالة البرنامج من المفضلة.'});
+  Object.assign(COPY.en, {programFavoritesOnly:'Favorite programs only',addProgramFavorite:'Add program to favorites',removeProgramFavorite:'Remove program from favorites',savedProgram:'Saved program',openProgramDetails:'Open program details',noFavoritePrograms:'No saved programs in this section yet.',programSaved:'Program saved to favorites.',programRemoved:'Program removed from favorites.'});
 
   const SECTION_ORDER = ['gym','home','running','cycling','football','swimming','yoga','calisthenics','boxing','hiit','mobility','recovery','team_sports'];
   const favoriteStore = window.THFExerciseFavorites.createExerciseFavorites(store, EXERCISES);
+  const programFavoriteStore = window.THFProgramFavorites.createProgramFavorites(store, PROGRAMS);
   const state = {
     lang: store.getItem('pulse.v2.lang') === 'en' ? 'en' : 'ar',
     trainMode: store.getItem('pulse.v2.trainMode') === 'exercises' ? 'exercises' : 'programs',
     programSection: 'all',
+    programFavoritesOnly: false,
+    programFavorites: programFavoriteStore,
     section: 'gym',
     filters: {body:'',muscle:'',equipment:'',movement:'',level:'',goal:'',favoritesOnly:false},
     favorites: favoriteStore,
@@ -161,15 +166,25 @@
   function exerciseFor(reference) { return EXERCISES.find(item => item.id === reference.exerciseId); }
 
   function renderPrograms() {
-    const results = PROGRAMS.filter(program => state.programSection === 'all' || program.section.id === state.programSection);
-    $('programCount').textContent = String(PROGRAMS.length);
+    const results = PROGRAMS.filter(program =>
+      (state.programSection === 'all' || program.section.id === state.programSection) &&
+      (!state.programFavoritesOnly || state.programFavorites.has(program.id)));
+    $('programFavoritesOnlyFilter').checked = Boolean(state.programFavoritesOnly);
+    $('programCount').textContent = String(results.length);
     $('emptyPrograms').classList.toggle('hidden', results.length > 0);
+    $('emptyProgramsTitle').textContent = state.programFavoritesOnly ? t('noFavoritePrograms') : t('noPrograms');
     $('programGrid').innerHTML = results.map(program => {
-      const firstExercise = exerciseFor(program.sessions[0].exercises[0]);
+      const firstReference = program.sessions?.[0]?.exercises?.[0];
+      const firstExercise = firstReference ? exerciseFor(firstReference) : null;
       const image = firstExercise?.demo?.assets?.[0] || '';
-      return `<button class="program-card" type="button" data-program="${escapeHtml(program.id)}"><span class="program-cover">${image?`<img src="./${escapeHtml(image)}" alt="">`:''}<span class="program-duration">${program.weeks} ${escapeHtml(t('weeks'))}</span></span><span class="program-copy"><span class="pill gold">${escapeHtml(local(program.section))}</span><h3>${escapeHtml(local(program.name))}</h3><p>${escapeHtml(local(program.summary))}</p><span class="program-meta"><b>${program.daysPerWeek}</b> ${escapeHtml(t('daysWeekly'))} · <b>${program.estimatedSessionMinutes}</b> ${escapeHtml(t('min'))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(program.level))}</span><span class="tag">${escapeHtml(local(program.goal))}</span><span class="tag">✓ ${escapeHtml(t('offline'))}</span></span></span></button>`;
+      return window.THFProgramCard.renderProgramCard(program, {
+        saved: state.programFavorites.has(program.id), image, lang: state.lang, t, local, escapeHtml
+      });
     }).join('');
-    $('programGrid').querySelectorAll('.program-card').forEach(card => card.addEventListener('click', () => openProgramDetail(card.dataset.program)));
+    $('programGrid').querySelectorAll('.program-card-open').forEach(button => button.addEventListener('click', () => openProgramDetail(button.dataset.program)));
+    $('programGrid').querySelectorAll('.program-card-favorite').forEach(button => button.addEventListener('click', event => {
+      event.preventDefault(); event.stopPropagation(); toggleProgramFavorite(button.dataset.program);
+    }));
   }
 
   function openProgramDetail(id) {
@@ -179,6 +194,30 @@
 
   function closeProgramDetail() { $('programDetail').classList.add('hidden'); document.body.style.overflow = ''; }
 
+  function renderProgramFavoriteControl(program) {
+    const button = $('toggleProgramFavoriteBtn');
+    if (!button || !program) return;
+    const saved = state.programFavorites.has(program.id);
+    button.textContent = t(saved ? 'removeProgramFavorite' : 'addProgramFavorite');
+    button.setAttribute('aria-pressed', String(saved));
+  }
+
+  function toggleProgramFavorite(id) {
+    const program = PROGRAMS.find(item => item.id === id);
+    if (!program) return;
+    const restoreCardFocus = document.activeElement?.classList?.contains('program-card-favorite');
+    const saved = state.programFavorites.toggle(id);
+    if (saved === null) return;
+    renderProgramFavoriteControl(program);
+    renderPrograms();
+    if (restoreCardFocus) {
+      const buttons = [...$('programGrid').querySelectorAll('.program-card-favorite')];
+      const target = buttons.find(button => button.dataset.program === id) || buttons[0] || $('programFavoritesOnlyFilter');
+      target?.focus();
+    }
+    toast(t(saved ? 'programSaved' : 'programRemoved'));
+  }
+
   function prescriptionText(reference) {
     const dose = reference.durationSeconds ? `${reference.sets} × ${reference.durationSeconds}s` : `${reference.sets} × ${reference.reps || '—'}`;
     return `${dose} · ${reference.restSeconds}s ${t('rest')} · RPE ${reference.targetRpe} · RIR ${reference.targetRir}`;
@@ -187,6 +226,7 @@
   function renderProgramDetail(program) {
     $('programDetailSection').textContent = local(program.section); $('programDetailName').textContent = local(program.name); $('programDetailSummary').textContent = local(program.summary);
     $('programDetailMeta').innerHTML = `<span class="tag">${program.weeks} ${escapeHtml(t('weeks'))}</span><span class="tag">${program.daysPerWeek} ${escapeHtml(t('daysWeekly'))}</span><span class="tag">${program.estimatedSessionMinutes} ${escapeHtml(t('min'))}</span><span class="tag">${escapeHtml(local(program.level))}</span><span class="tag">✓ ${escapeHtml(t('offline'))}</span>`;
+    renderProgramFavoriteControl(program);
     $('programSessions').innerHTML = `<div class="results-heading"><h2>${escapeHtml(t('programSessions'))}</h2><span class="count-badge">${program.sessions.length}</span></div>` + program.sessions.map((session,index) => `<article class="program-session"><div class="card-heading"><div><p class="eyebrow">${escapeHtml(t('session'))} ${index+1}</p><h3>${escapeHtml(local(session.name))}</h3></div><div class="program-session-actions"><span class="count-badge">${session.exercises.length} ${escapeHtml(t('exerciseCount'))}</span><button class="button secondary compact" type="button" data-start-program="${escapeHtml(program.id)}" data-start-session="${escapeHtml(session.id)}">${escapeHtml(t('startSession'))}</button></div></div><div class="session-exercises">${session.exercises.map(reference => { const exercise=exerciseFor(reference); return exercise?`<button type="button" data-exercise="${escapeHtml(exercise.id)}"><span><b>${escapeHtml(local(exercise.name))}</b><small>${escapeHtml(prescriptionText(reference))}</small></span><span aria-hidden="true">›</span></button>`:''; }).join('')}</div></article>`).join('');
     $('programSessions').querySelectorAll('[data-exercise]').forEach(button => button.addEventListener('click', () => { const id=button.dataset.exercise; closeProgramDetail(); openDetail(id); }));
     $('programSessions').querySelectorAll('[data-start-program]').forEach(button => button.addEventListener('click', () => startProgramSession(button.dataset.startProgram, button.dataset.startSession)));
@@ -620,12 +660,13 @@
     document.querySelectorAll('#primaryNav button').forEach(button=>button.addEventListener('click',()=>showScreen(button.dataset.screen)));
     document.querySelectorAll('#trainModeTabs button').forEach(button=>button.addEventListener('click',()=>{state.trainMode=button.dataset.mode;store.setItem('pulse.v2.trainMode',state.trainMode);renderTrainMode();}));
     $('exerciseSearch').addEventListener('input',renderExercises);
-    $('favoritesOnlyFilter').addEventListener('change',event=>{state.filters.favoritesOnly=Boolean(event.target.checked);renderExercises();});$('clearSearch').addEventListener('click',()=>{$('exerciseSearch').value='';renderExercises();});
+    $('favoritesOnlyFilter').addEventListener('change',event=>{state.filters.favoritesOnly=Boolean(event.target.checked);renderExercises();});
+    $('programFavoritesOnlyFilter').addEventListener('change',event=>{state.programFavoritesOnly=Boolean(event.target.checked);renderPrograms();});$('clearSearch').addEventListener('click',()=>{$('exerciseSearch').value='';renderExercises();});
     [['bodyFilter','body'],['muscleFilter','muscle'],['equipmentFilter','equipment'],['movementFilter','movement'],['levelFilter','level'],['goalFilter','goal']].forEach(([id,key])=>$(id).addEventListener('change',event=>{state.filters[key]=event.target.value;renderExercises();}));
     $('resetFilters').addEventListener('click',()=>resetFilters());$('emptyReset').addEventListener('click',()=>resetFilters());$('filterToggle').addEventListener('click',()=>{const panel=$('filterPanel'),collapsed=panel.classList.toggle('collapsed');$('filterToggle').setAttribute('aria-expanded',String(!collapsed));});
     $('toggleFavoriteBtn').addEventListener('click',()=>{if(state.selected)toggleFavorite(state.selected.id);});
     $('closeDetail').addEventListener('click',closeDetail);$('detailCloseButton').addEventListener('click',closeDetail);$('startExerciseBtn').addEventListener('click',()=>startExercise(state.selected));
-    $('closeProgramDetail').addEventListener('click',closeProgramDetail);$('programDetailCloseButton').addEventListener('click',closeProgramDetail);$('useProgramBtn').addEventListener('click',()=>useProgram($('useProgramBtn').dataset.program));
+    $('closeProgramDetail').addEventListener('click',closeProgramDetail);$('programDetailCloseButton').addEventListener('click',closeProgramDetail);$('useProgramBtn').addEventListener('click',()=>useProgram($('useProgramBtn').dataset.program));$('toggleProgramFavoriteBtn').addEventListener('click',()=>{if(state.selectedProgram)toggleProgramFavorite(state.selectedProgram.id);});
     $('startTodayBtn').addEventListener('click',()=>{const button=$('startTodayBtn');if(button.dataset.program&&button.dataset.session){startProgramSession(button.dataset.program,button.dataset.session);return;}const item=EXERCISES.find(exercise=>exercise.id===button.dataset.exercise);if(item)startExercise(item);});
     $('addSetBtn').addEventListener('click',addSet);$('finishWorkoutBtn').addEventListener('click',finishWorkout);$('skipRest').addEventListener('click',stopRest);$('exitWorkoutBtn').addEventListener('click',()=>{persistActive();showScreen('trainScreen');});
     $('speakCue').addEventListener('click',()=>speakExercise(activeExercise(),{force:true}));
