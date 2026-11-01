@@ -111,6 +111,7 @@
           <label><span data-i18n="movement">نمط الحركة</span><select id="movementFilter"></select></label>
           <label><span data-i18n="level">المستوى</span><select id="levelFilter"></select></label>
           <label><span data-i18n="goal">الهدف</span><select id="goalFilter"></select></label>
+          <label class="filter-check"><input id="favoritesOnlyFilter" type="checkbox"><span data-i18n="favoritesOnly">المفضلة فقط</span></label>
           <button id="resetFilters" class="text-button" type="button" data-i18n="resetFilters">إعادة ضبط الفلاتر</button>
         </div>
 
@@ -273,7 +274,7 @@
         <button id="detailDemoReplay" class="text-button" type="button" disabled data-i18n="restartDemo">إعادة من البداية</button>
         <button id="detailDemoPlayOnce" class="text-button" type="button" disabled hidden data-i18n="playDemoOnce">شغّل العرض مرة واحدة</button>
       </div>
-      <div class="detail-body"><div id="detailBadges" class="tag-row"></div><h1 id="detailName"></h1><p id="detailMeta" class="muted"></p><div id="detailMuscles" class="tag-row"></div><button id="startExerciseBtn" class="button primary full large" type="button" data-i18n="startThisExercise">ابدأ هذا التمرين</button><div id="detailContent"></div><details class="source-details"><summary data-i18n="sourceLicense">المصدر والترخيص</summary><p id="detailSource" class="small muted"></p></details></div>
+      <div class="detail-body"><div id="detailBadges" class="tag-row"></div><h1 id="detailName"></h1><p id="detailMeta" class="muted"></p><div id="detailMuscles" class="tag-row"></div><button id="startExerciseBtn" class="button primary full large" type="button" data-i18n="startThisExercise">ابدأ هذا التمرين</button><button id="toggleFavoriteBtn" class="button secondary full favorite-toggle" type="button" aria-pressed="false" data-i18n="addFavorite">أضف للمفضلة</button><div id="detailContent"></div><details class="source-details"><summary data-i18n="sourceLicense">المصدر والترخيص</summary><p id="detailSource" class="small muted"></p></details></div>
     </article>
   </div>
 
@@ -294,6 +295,7 @@
   <script src="./library-demo-motion.js"></script>
   <script src="./voice-guidance.js"></script>
   <script src="./rest-timer.js"></script>
+  <script src="./exercise-favorites.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
