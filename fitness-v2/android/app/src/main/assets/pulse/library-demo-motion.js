@@ -34,6 +34,7 @@
   let detailPaused = false;
   let detailOneShot = false;
   let detailOneShotFinished = false;
+  let detailOneShotWasPaused = false;
   let detailLoad = null;
   let scrollRefreshPending = false;
 
@@ -294,6 +295,7 @@
   function playDetailOneShot() {
     if (!reduceMotion() || !detailLoad?.settled || detailFrames().length < 2
       || !detailRoot || detailRoot.classList.contains('hidden') || document.hidden) return;
+    detailOneShotWasPaused = detailPaused;
     detailPaused = false;
     detailOneShot = true;
     detailOneShotFinished = false;
@@ -315,6 +317,7 @@
     if (!item || frames.length < 1 || assets.length < 1 || frames.length !== assets.length) {
       detailOneShot = false;
       detailOneShotFinished = false;
+      detailOneShotWasPaused = false;
       for (const frame of frames) {
         frame.setAttribute('data-demo-playable', 'false');
         frame.setAttribute('hidden', '');
@@ -338,6 +341,7 @@
     detailPaused = false;
     detailOneShot = false;
     detailOneShotFinished = false;
+    detailOneShotWasPaused = false;
     frames.forEach(frame => {
       frame.setAttribute('data-demo-playable', 'pending');
       frame.setAttribute('hidden', '');
@@ -384,6 +388,7 @@
       detailPaused = false;
       detailOneShot = false;
       detailOneShotFinished = false;
+      detailOneShotWasPaused = false;
       updateDetailPlaybackControls();
       detailDemo?.classList.remove('auto-sequence');
       detailDemo?.classList.remove('single-reference');
@@ -402,6 +407,7 @@
       detailPaused = false;
       detailOneShot = false;
       detailOneShotFinished = false;
+      detailOneShotWasPaused = false;
       updateDetailPlaybackControls();
       detailDemo?.classList.remove('auto-sequence');
       detailDemo?.classList.toggle('single-reference', frames.length === 1);
@@ -440,7 +446,7 @@
     }
     setDetailStatus(active
       ? detailOneShot ? 'playingOnce' : detailSlow ? 'playingSlow' : 'playing'
-      : detailOneShotFinished ? 'oneShotComplete'
+      : detailOneShotFinished && reduceMotion() ? 'oneShotComplete'
         : reduceMotion() ? 'reduced' : document.hidden ? 'paused' : detailPaused ? 'userPaused' : 'static');
   }
 
@@ -489,6 +495,8 @@
         if (advance) {
           detailSlowTicks = 0;
           if (detailOneShot && detailIndex >= frames.length - 1) {
+            detailPaused = detailOneShotWasPaused;
+            detailOneShotWasPaused = false;
             detailOneShot = false;
             detailOneShotFinished = true;
             updateDetailPlaybackControls();
@@ -501,6 +509,8 @@
           }
         }
       } else if (detailOneShot) {
+        detailPaused = detailOneShotWasPaused;
+        detailOneShotWasPaused = false;
         detailOneShot = false;
         detailOneShotFinished = false;
         renderDetailSequence(false);
@@ -513,6 +523,8 @@
     scanCards();
     loadDetailFrames();
     if (document.hidden) {
+      if (detailOneShot) detailPaused = detailOneShotWasPaused;
+      detailOneShotWasPaused = false;
       detailOneShot = false;
       detailOneShotFinished = false;
       detailIndex = 0;
@@ -523,6 +535,8 @@
       return;
     }
     if (!reduceMotion() && detailOneShot) {
+      detailPaused = detailOneShotWasPaused;
+      detailOneShotWasPaused = false;
       detailOneShot = false;
       detailOneShotFinished = false;
       detailIndex = 0;
