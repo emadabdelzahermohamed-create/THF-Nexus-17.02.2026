@@ -200,12 +200,11 @@ class MainActivity : ComponentActivity() {
                 return WebResourceResponse(
                     "text/plain",
                     "UTF-8",
+                    403,
+                    "Blocked by THF network policy",
+                    mapOf("Cache-Control" to "no-store"),
                     ByteArrayInputStream(ByteArray(0)),
-                ).apply {
-                    statusCode = 403
-                    reasonPhrase = "Blocked by THF network policy"
-                    responseHeaders = mapOf("Cache-Control" to "no-store")
-                }
+                )
             }
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
