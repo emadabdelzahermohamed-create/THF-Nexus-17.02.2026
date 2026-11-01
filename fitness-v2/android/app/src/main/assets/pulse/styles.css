@@ -76,3 +76,5 @@
 .detail-demo-playback[hidden]{display:none}
 .detail-demo-playback button{min-height:36px;padding:6px 12px;border:1px solid #38535e;border-radius:10px}
 .detail-demo-playback button:disabled{opacity:.45;cursor:not-allowed}
+
+.filter-panel .filter-check{display:flex;align-items:center;gap:8px;min-height:44px}.filter-panel .filter-check input{width:18px;height:18px;min-height:18px;accent-color:var(--gold);flex:0 0 auto}.favorite-toggle{margin-top:8px}
