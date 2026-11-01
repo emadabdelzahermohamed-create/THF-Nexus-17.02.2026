@@ -15,6 +15,9 @@
   const detailSpeedControl = document.getElementById('detailDemoSpeed');
   const detailSpeedNormal = document.getElementById('detailDemoSpeedNormal');
   const detailSpeedSlow = document.getElementById('detailDemoSpeedSlow');
+  const detailPlaybackControl = document.getElementById('detailDemoPlayback');
+  const detailPauseButton = document.getElementById('detailDemoPause');
+  const detailResumeButton = document.getElementById('detailDemoResume');
   const states = new Map();
   const preloadCache = new Map();
   const exercises = () => Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
@@ -26,6 +29,7 @@
   let detailIndex = 0;
   let detailSlow = false;
   let detailSlowTicks = 0;
+  let detailPaused = false;
   let detailLoad = null;
   let scrollRefreshPending = false;
 
@@ -211,6 +215,7 @@
     loading: {en: 'Loading offline exercise demonstration…', ar: 'جارٍ تحميل العرض الحركي دون إنترنت…'},
     playing: {en: 'Offline demonstration is playing automatically.', ar: 'العرض دون إنترنت يعمل تلقائيًا.'},
     playingSlow: {en: 'Offline demonstration is playing slowly.', ar: 'العرض دون إنترنت يعمل ببطء.'},
+    userPaused: {en: 'Demonstration paused by you.', ar: 'أوقفت العرض مؤقتًا.'},
     reduced: {en: 'Reduced motion is enabled; static reference frames are shown.', ar: 'تقليل الحركة مفعّل؛ تُعرض صور مرجعية ثابتة.'},
     paused: {en: 'Demonstration paused while the app is in the background.', ar: 'تم إيقاف العرض مؤقتًا أثناء وجود التطبيق في الخلفية.'},
     static: {en: 'Showing static offline reference frames.', ar: 'تُعرض صور مرجعية ثابتة دون حركة.'},
@@ -247,6 +252,24 @@
     renderDetailSequence(true);
   }
 
+  function updateDetailPlaybackControls() {
+    const ready = Boolean(detailLoad?.settled && detailFrames().length > 1);
+    const disabled = !ready || reduceMotion();
+    if (detailPlaybackControl) detailPlaybackControl.hidden = !ready;
+    if (detailPauseButton) detailPauseButton.disabled = disabled || detailPaused;
+    if (detailResumeButton) detailResumeButton.disabled = disabled || !detailPaused;
+  }
+
+  function setDetailPaused(paused) {
+    if (reduceMotion() || !detailLoad?.settled || detailFrames().length < 2
+      || !detailRoot || detailRoot.classList.contains('hidden')) return;
+    detailPaused = Boolean(paused);
+    detailSlowTicks = 0;
+    updateDetailPlaybackControls();
+    renderDetailSequence(true);
+    syncTimer();
+  }
+
   function loadDetailFrames() {
     const item = detailExercise();
     const frames = allDetailFrames();
@@ -264,6 +287,7 @@
       detailLoad = item ? {id: item.id, frames, settled: true} : null;
       setDetailStatus('unavailable');
       updateDetailSpeedControls();
+      updateDetailPlaybackControls();
       return;
     }
 
@@ -275,6 +299,7 @@
     const token = { id: item.id, frames, settled: false };
     detailLoad = token;
     detailSlowTicks = 0;
+    detailPaused = false;
     frames.forEach(frame => {
       frame.setAttribute('data-demo-playable', 'pending');
       frame.setAttribute('hidden', '');
@@ -313,10 +338,13 @@
 
   function renderDetailSequence(animate) {
     updateDetailSpeedControls();
+    updateDetailPlaybackControls();
     const allFrames = allDetailFrames();
     const frames = detailFrames();
     if (!detailRoot || detailRoot.classList.contains('hidden')) {
       detailSlowTicks = 0;
+      detailPaused = false;
+      updateDetailPlaybackControls();
       detailDemo?.classList.remove('auto-sequence');
       detailDemo?.classList.remove('single-reference');
       for (const frame of allFrames) frame.classList.remove('is-active');
@@ -331,6 +359,8 @@
     }
     if (frames.length < 2) {
       detailSlowTicks = 0;
+      detailPaused = false;
+      updateDetailPlaybackControls();
       detailDemo?.classList.remove('auto-sequence');
       detailDemo?.classList.toggle('single-reference', frames.length === 1);
       const playable = new Set(frames);
@@ -347,14 +377,15 @@
       setDetailStatus(frames.length === 1 ? 'single' : 'unavailable');
       return;
     }
-    const active = Boolean(animate && detailIsOpen() && !reduceMotion() && !document.hidden);
+    const sequenceVisible = Boolean(animate && detailIsOpen() && !reduceMotion() && !document.hidden);
+    const active = sequenceVisible && !detailPaused;
     detailDemo.classList.remove('single-reference');
-    detailDemo.classList.toggle('auto-sequence', active);
-    if (!active) detailIndex = 0;
+    detailDemo.classList.toggle('auto-sequence', sequenceVisible);
+    if (!sequenceVisible && !detailPaused) detailIndex = 0;
     const playable = new Set(frames);
     frames.forEach((frame, index) => {
       frame.removeAttribute('hidden');
-      const isActive = active && index === detailIndex;
+      const isActive = sequenceVisible && index === detailIndex;
       frame.classList.toggle('is-active', isActive);
       if (active && !isActive) frame.setAttribute('aria-hidden', 'true');
       else frame.removeAttribute('aria-hidden');
@@ -365,7 +396,7 @@
       frame.setAttribute('hidden', '');
       frame.setAttribute('aria-hidden', 'true');
     }
-    setDetailStatus(active ? (detailSlow ? 'playingSlow' : 'playing') : reduceMotion() ? 'reduced' : document.hidden ? 'paused' : 'static');
+    setDetailStatus(active ? (detailSlow ? 'playingSlow' : 'playing') : reduceMotion() ? 'reduced' : document.hidden ? 'paused' : detailPaused ? 'userPaused' : 'static');
   }
 
   function stopTimer() {
@@ -382,7 +413,7 @@
       for (const state of states.values()) state.visible = visibleInViewport(state.card);
     }
     const visibleReadyCard = Array.from(states.values()).some(state => state.visible && state.ready);
-    const shouldRun = visibleReadyCard || detailIsOpen();
+    const shouldRun = visibleReadyCard || (detailIsOpen() && !detailPaused);
     if (shouldRun && timer === null) timer = window.setInterval(tick, FRAME_MS);
     else if (!shouldRun) stopTimer();
   }
@@ -400,7 +431,7 @@
       if (!state.visible || !state.ready || frames.length < 2) continue;
       setCardFrame(state, (state.index + 1) % frames.length);
     }
-    if (detailIsOpen()) {
+    if (detailIsOpen() && !detailPaused) {
       const item = detailExercise();
       const frames = detailFrames();
       if (item && frames.length > 1) {
@@ -421,7 +452,7 @@
     if (reduceMotion() || document.hidden) {
       stopTimer();
       for (const state of states.values()) resetCard(state);
-      detailIndex = 0;
+      if (!detailPaused) detailIndex = 0;
       detailSlowTicks = 0;
       renderDetailSequence(false);
       return;
@@ -478,6 +509,8 @@
     }
     detailSpeedNormal?.addEventListener('click', () => setDetailSpeed(false));
     detailSpeedSlow?.addEventListener('click', () => setDetailSpeed(true));
+    detailPauseButton?.addEventListener('click', () => setDetailPaused(true));
+    detailResumeButton?.addEventListener('click', () => setDetailPaused(false));
     document.getElementById('reduceMotion')?.addEventListener('change', () => Promise.resolve().then(refresh));
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('resize', refresh, { passive: true });
