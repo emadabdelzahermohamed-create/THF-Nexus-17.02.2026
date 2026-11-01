@@ -225,5 +225,24 @@
       "play_changed": false,
       "production": "NOT_VERIFIED"
     }
+  },
+  "latest_integrator_observation": {
+    "observed_at": "2026-11-01T19:00:00+02:00",
+    "canonical_branch_head_before_checkpoint": "4a2315fd16be8610396d6415292f4863f90b8dd6",
+    "recovery_checkpoint_commit": "88b867169f1844bb97c2f1528cfbaf5a862acded",
+    "play_readback_performed": false,
+    "last_recorded_internal_version_code": 51019,
+    "last_recorded_play_readback_run": 40518110062,
+    "publication_probe_run": 41321708182,
+    "publication_probe_conclusion": "failure",
+    "publication_probe_jobs": 0,
+    "publication_probe_artifact_or_readback": "none",
+    "phone_last_verified_play_installed_version": 51018,
+    "phone_last_verified_at": "2026-10-27T10:17:49+03:00",
+    "phone_current_adb": "not attached",
+    "next_candidate_version_code": 51020,
+    "candidate_allocated": false,
+    "candidate_build_sign_upload": "not run",
+    "production": "NOT_VERIFIED"
   }
 }
