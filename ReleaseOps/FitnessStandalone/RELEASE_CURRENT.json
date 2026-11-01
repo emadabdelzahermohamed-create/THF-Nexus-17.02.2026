@@ -259,7 +259,7 @@
     },
     "lease_registry": {
       "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
-      "note": "No LEASES.json/MD found in the canonical FitnessStandalone tree. Swarm/product.json is stale (2026-10-02), not a current lock. Do not infer shared resources are free; keep to integrator-owned release files and avoid interrupting the active phone session."
+      "note": "No lease registry was found in the canonical FitnessStandalone release directory/current recovery. Swarm/product.json is a product-lane manifest, not an exclusive lease; do not infer shared resources are free."
     },
     "current_prs": {
       "gps_map": {
@@ -385,7 +385,11 @@
     "next_candidate_version_code": 51020,
     "candidate_allocated": false,
     "candidate_build_sign_upload": "not run",
-    "production": "NOT_VERIFIED"
+    "production": "NOT_VERIFIED",
+    "lease_registry": {
+      "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
+      "note": "No lease registry was found in the canonical FitnessStandalone release directory/current recovery. Swarm/product.json is a product-lane manifest, not an exclusive lease; do not infer shared resources are free."
+    }
   },
   "previous_phone_observation": {
     "last_verified_play_installed_version": 51018,
