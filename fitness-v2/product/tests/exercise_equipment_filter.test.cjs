@@ -37,28 +37,27 @@ test('profile equipment ids are trimmed, lowercased and deduplicated', () => {
 });
 
 test('the library filter is localized and explicitly keyboard-operable', () => {
-  assert.match(html, /<label class="equipment-match-filter"><input id="profileEquipmentFilter" type="checkbox">/);
-  assert.match(html, /data-i18n="myEquipmentOnly"/);
-  assert.match(app, /myEquipmentOnly:'أظهر التمارين المناسبة لمعداتي فقط (يشمل وزن الجسم)'/);
-  assert.match(app, /myEquipmentOnly:'Only exercises using my available equipment (includes bodyweight)'/);
+  assert.ok(html.includes('<label class="equipment-match-filter"><input id="profileEquipmentFilter" type="checkbox">'));
+  assert.ok(html.includes('data-i18n="myEquipmentOnly"'));
+  assert.ok(app.includes("myEquipmentOnly:'أظهر التمارين المناسبة لمعداتي فقط (يشمل وزن الجسم)'"));
+  assert.ok(app.includes("myEquipmentOnly:'Only exercises using my available equipment (includes bodyweight)'"));
 });
 
 test('the filter reads saved profile equipment and participates in the result predicate', () => {
-  assert.match(app, /helper.matchesAvailableEquipment(item?.equipment?.id, profile.equipment)/);
-  assert.match(app, /state.filters.profileEquipment || matchesProfileEquipment(item)/);
-  assert.match(app, /profileEquipmentFilter').addEventListener('change'/);
+  assert.ok(app.includes('helper.matchesAvailableEquipment(item?.equipment?.id, profile.equipment)'));
+  assert.ok(app.includes('(!state.filters.profileEquipment || matchesProfileEquipment(item))'));
+  assert.ok(app.includes("profileEquipmentFilter').addEventListener('change'"));
 });
 
 test('saving profile or onboarding refreshes an active equipment filter', () => {
-  const refreshes = app.match(/if(state.filters.profileEquipment)renderExercises();/g) || [];
-  assert.equal(refreshes.length, 2);
+  assert.equal(app.split('if(state.filters.profileEquipment)renderExercises();').length - 1, 2);
 });
 
 test('reset clears both the filter state and checkbox', () => {
-  assert.match(app, /profileEquipment:false}; $('exerciseSearch').value = ''; $('profileEquipmentFilter').checked = false/);
+  assert.ok(app.includes("profileEquipment:false}; $('exerciseSearch').value = ''; $('profileEquipmentFilter').checked = false"));
 });
 
 test('the helper loads before the app and the control has visible focus styling', () => {
   assert.ok(html.indexOf('./exercise-library-filters.js') < html.indexOf('./app.js'));
-  assert.match(css, /equipment-match-filter:focus-within/);
+  assert.ok(css.includes('equipment-match-filter:focus-within'));
 });
