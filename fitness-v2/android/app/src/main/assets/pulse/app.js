@@ -80,6 +80,7 @@
     });
     $('primaryNav').classList.toggle('hidden', id === 'activeWorkoutScreen' || id === 'activityScreen');
     document.body.classList.toggle('workout-active', id === 'activeWorkoutScreen');
+    window.THFActiveWorkoutDemoMotion?.reconcile();
     const demoVideo = $('activeDemoVideo');
     if (id === 'activeWorkoutScreen' && !demoVideo.classList.contains('hidden') && !preferredReducedMotion()) demoVideo.play().catch(() => {});
     else demoVideo.pause();
@@ -350,6 +351,7 @@
       if (status.textContent !== nextStatus) status.textContent = nextStatus;
     }
     if (motion?.asset && !reduced) {
+      window.THFActiveWorkoutDemoMotion?.stop();
       const nextSource = './' + motion.asset;
       if (video.getAttribute('src') !== nextSource) video.setAttribute('src', nextSource);
       video.setAttribute('aria-label', item.demo.alt[state.lang]);
@@ -376,9 +378,7 @@
     image.classList.remove('hidden');
     image.src = './' + item.demo.assets[0];
     image.alt = item.demo.alt[state.lang];
-    $('activeDemoPhase').textContent = reduced
-      ? (state.lang === 'ar' ? 'صورة ثابتة — تقليل الحركة' : 'Static image — reduced motion')
-      : (state.lang === 'ar' ? 'صور مرجعية — الحركة قيد الإضافة' : 'Reference images — motion pending');
+    window.THFActiveWorkoutDemoMotion?.render(item, state.lang, reduced);
   }
   function renderActiveWorkout() {
     const item = activeExercise(); if (!item) { state.active=null; store.removeItem('pulse.v2.active'); return; }
