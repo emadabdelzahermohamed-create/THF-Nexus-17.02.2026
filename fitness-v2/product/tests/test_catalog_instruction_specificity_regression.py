@@ -90,6 +90,10 @@ EXPECTED_HEAVY_BAG_THRUST_STEPS = {
     ]
 }
 
+STANDING_CALF_RAISES_SOURCE_ID = "Standing_Calf_Raises"
+EXPECTED_STANDING_CALF_RAISES_FINAL_AR = "كرر مع إبقاء الركبتين ثابتتين وتجنب الارتداد من أسفل الحركة؛ خفّف الحمل إذا فقدت التحكم، وتوقف إذا ظهر ألم."
+PREVIOUS_STANDING_CALF_RAISES_FINAL_AR = "كرر الحركة دون ارتداد أو تحميل يسبب ألمًا."
+
 GENERIC_ENGLISH_FILLER = (
     re.compile(r"\brepeat the procedure\b", re.IGNORECASE),
     re.compile(r"\bperform the (?:amount|number) of repetitions\b", re.IGNORECASE),
@@ -195,6 +199,22 @@ class CatalogInstructionSpecificityRegressionTest(unittest.TestCase):
         self.assertIn("Stop if you feel wrist, shoulder, or back pain.", item["steps"]["en"][2])
         self.assertIn("توقف إذا شعرت بألم في الرسغ أو الكتف أو الظهر", item["steps"]["ar"][2])
         self.assertNotIn("as hard as possible", " ".join(item["steps"]["en"]).lower())
+
+
+    def test_standing_calf_raises_final_arabic_cue_is_specific_and_controlled(self):
+        item = self.by_source_id[STANDING_CALF_RAISES_SOURCE_ID]
+        cue = item["steps"]["ar"][-1]
+        self.assertEqual(EXPECTED_STANDING_CALF_RAISES_FINAL_AR, cue)
+        self.assertEqual(item["steps"], BUILDER.STEP_OVERRIDES[STANDING_CALF_RAISES_SOURCE_ID])
+        self.assertEqual(5, len(item["steps"]["ar"]))
+        self.assertEqual(len(item["steps"]["en"]), len(item["steps"]["ar"]))
+        self.assertIn("الركبتين ثابتتين", cue)
+        self.assertIn("الارتداد من أسفل الحركة", cue)
+        self.assertIn("خفّف الحمل", cue)
+        self.assertIn("توقف إذا ظهر ألم", cue)
+        self.assertNotIn(PREVIOUS_STANDING_CALF_RAISES_FINAL_AR, " ".join(item["steps"]["ar"]))
+        self.assertIn("without bouncing", item["steps"]["en"][-1])
+
 
 if __name__ == "__main__":
     unittest.main()
