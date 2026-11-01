@@ -50,14 +50,18 @@
   Object.assign(COPY.ar, {demoPlayback:'التحكم في العرض',pauseDemo:'إيقاف مؤقت',resumeDemo:'استئناف',playDemoOnce:'شغّل العرض مرة واحدة'});
   Object.assign(COPY.en, {demoPlayback:'Playback controls',pauseDemo:'Pause',resumeDemo:'Resume',restartDemo:'Restart from beginning',playDemoOnce:'Play demo once'});
   Object.assign(COPY.ar, {restartDemo:'إعادة من البداية'});
+  Object.assign(COPY.ar, {favoritesOnly:'المفضلة فقط', addFavorite:'أضف للمفضلة', removeFavorite:'إزالة من المفضلة', savedExercise:'مفضل'});
+  Object.assign(COPY.en, {favoritesOnly:'Favorites only', addFavorite:'Add to favorites', removeFavorite:'Remove from favorites', savedExercise:'Saved'});
 
   const SECTION_ORDER = ['gym','home','running','cycling','football','swimming','yoga','calisthenics','boxing','hiit','mobility','recovery','team_sports'];
+  const favoriteStore = window.THFExerciseFavorites.createExerciseFavorites(store, EXERCISES);
   const state = {
     lang: store.getItem('pulse.v2.lang') === 'en' ? 'en' : 'ar',
     trainMode: store.getItem('pulse.v2.trainMode') === 'exercises' ? 'exercises' : 'programs',
     programSection: 'all',
     section: 'gym',
-    filters: {body:'',muscle:'',equipment:'',movement:'',level:'',goal:''},
+    filters: {body:'',muscle:'',equipment:'',movement:'',level:'',goal:'',favoritesOnly:false},
+    favorites: favoriteStore,
     selected: null,
     selectedProgram: null,
     active: parse(store.getItem('pulse.v2.active'), null),
@@ -205,6 +209,22 @@
     node.value = current;
   }
 
+  function renderFavoriteControl(item) {
+    const button = $('toggleFavoriteBtn');
+    if (!button || !item) return;
+    const saved = state.favorites.has(item.id);
+    button.textContent = t(saved ? 'removeFavorite' : 'addFavorite');
+    button.setAttribute('aria-pressed', String(saved));
+  }
+
+  function toggleFavorite(id) {
+    const item = EXERCISES.find(exercise => exercise.id === id);
+    if (!item) return;
+    state.favorites.toggle(id);
+    renderFavoriteControl(item);
+    renderExercises();
+  }
+
   function populateFilters() {
     const items = EXERCISES.filter(item => item.section.id === state.section);
     setOptions($('bodyFilter'), uniqueOptions(items, item=>item.bodyPart, (item,value)=>item.muscles.primary.en.indexOf(value)>=0 ? item.muscles.primary[state.lang][item.muscles.primary.en.indexOf(value)] : value), state.filters.body);
@@ -225,21 +245,23 @@
       (!state.filters.equipment || item.equipment.id === state.filters.equipment) &&
       (!state.filters.movement || item.movement.id === state.filters.movement) &&
       (!state.filters.level || item.level.id === state.filters.level) &&
-      (!state.filters.goal || item.goal.id === state.filters.goal);
+      (!state.filters.goal || item.goal.id === state.filters.goal) &&
+      (!state.filters.favoritesOnly || state.favorites.has(item.id));
   }
 
   function renderExercises() {
     if (!EXERCISES.length) { $('exerciseGrid').innerHTML = `<p class="error-message">${escapeHtml(t('noCatalog'))}</p>`; return; }
+    $('favoritesOnlyFilter').checked = Boolean(state.filters.favoritesOnly);
     const results = EXERCISES.filter(matches);
     $('resultsCount').textContent = String(results.length);
     $('emptyResults').classList.toggle('hidden', results.length > 0);
     $('activeFilterCount').textContent = String(Object.values(state.filters).filter(Boolean).length);
-    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span><span class="demo-unavailable-label">${escapeHtml(t('demoUnavailable'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span><h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
+    $('exerciseGrid').innerHTML = results.map(item => `<button class="exercise-card" type="button" data-id="${escapeHtml(item.id)}"><span class="media"><img src="./${escapeHtml(item.demo.assets[0])}" alt="${escapeHtml(item.demo.alt[state.lang])}" loading="lazy"><span class="offline-badge">✓ ${escapeHtml(t('offline'))}</span><span class="demo-unavailable-label">${escapeHtml(t('demoUnavailable'))}</span></span><span class="copy"><span class="pill">${escapeHtml(local(item.section))}</span>${state.favorites.has(item.id) ? `<span class="pill gold saved-exercise-badge">${escapeHtml(t('savedExercise'))}</span>` : ''}<h3>${escapeHtml(local(item.name))}</h3><span class="meta">${escapeHtml(local(item.muscles.primary))} · ${escapeHtml(local(item.equipment))}</span><span class="tag-row"><span class="tag">${escapeHtml(local(item.level))}</span><span class="tag">${escapeHtml(local(item.movement))}</span></span></span></button>`).join('');
     $('exerciseGrid').querySelectorAll('.exercise-card').forEach(card => card.addEventListener('click', () => openDetail(card.dataset.id)));
   }
 
   function resetFilters(render = true) {
-    state.filters = {body:'',muscle:'',equipment:'',movement:'',level:'',goal:''}; $('exerciseSearch').value = '';
+    state.filters = {body:'',muscle:'',equipment:'',movement:'',level:'',goal:'',favoritesOnly:false}; $('exerciseSearch').value = '';
     if (render) { populateFilters(); renderExercises(); }
   }
 
@@ -266,6 +288,7 @@
     $('detailDemo').innerHTML = item.demo.assets.map((asset,index) => `<div class="detail-frame"><img src="./${escapeHtml(asset)}" alt="${escapeHtml(detailFrameAlt(item,index,item.demo.assets.length))}"><span>${escapeHtml(t(index ? 'finish' : 'start'))}</span></div>`).join('');
     $('detailBadges').innerHTML = `<span class="pill gold">${escapeHtml(local(item.section))}</span><span class="pill">✓ ${escapeHtml(t('offline'))}</span><span class="pill">${escapeHtml(local(item.level))}</span>`;
     $('detailName').textContent = local(item.name); $('detailMeta').textContent = `${local(item.equipment)} · ${local(item.movement)} · ${local(item.goal)}`;
+    renderFavoriteControl(item);
     $('detailMuscles').innerHTML = item.muscles.primary[state.lang].concat(item.muscles.secondary[state.lang]).map(value => `<span class="tag">${escapeHtml(value)}</span>`).join('');
     const prescription = item.prescription; const dose = prescription.durationSeconds ? `${prescription.sets} × ${prescription.durationSeconds} sec` : `${prescription.sets} × ${prescription.reps} · ${prescription.restSeconds} sec`;
     $('detailContent').innerHTML = `<section class="detail-section"><h3>${escapeHtml(t('setup'))}</h3><p>${escapeHtml(local(item.setup))}</p></section><section class="detail-section"><h3>${escapeHtml(t('technique'))}</h3>${list(item.steps[state.lang],true)}</section><section class="detail-section"><h3>${escapeHtml(t('breathing'))}</h3><p>${escapeHtml(local(item.breathing))}</p></section><section class="detail-section"><h3>${escapeHtml(t('defaults'))}</h3><p>${escapeHtml(dose)} · ${escapeHtml(prescription.tempo)}</p></section><section class="detail-section"><h3>${escapeHtml(t('mistakes'))}</h3>${list(item.commonMistakes[state.lang])}</section><section class="detail-section"><h3>${escapeHtml(t('regression'))}</h3><p>${escapeHtml(local(item.regression))}</p><h3>${escapeHtml(t('progression'))}</h3><p>${escapeHtml(local(item.progression))}</p></section><section class="detail-section safety-card"><h3>${escapeHtml(t('safety'))}</h3><p>${escapeHtml(local(item.safety))}</p></section>`;
@@ -587,9 +610,11 @@
     $('onboardingEquipmentChoices').addEventListener('change',captureOnboardingDraft);
     document.querySelectorAll('#primaryNav button').forEach(button=>button.addEventListener('click',()=>showScreen(button.dataset.screen)));
     document.querySelectorAll('#trainModeTabs button').forEach(button=>button.addEventListener('click',()=>{state.trainMode=button.dataset.mode;store.setItem('pulse.v2.trainMode',state.trainMode);renderTrainMode();}));
-    $('exerciseSearch').addEventListener('input',renderExercises);$('clearSearch').addEventListener('click',()=>{$('exerciseSearch').value='';renderExercises();});
+    $('exerciseSearch').addEventListener('input',renderExercises);
+    $('favoritesOnlyFilter').addEventListener('change',event=>{state.filters.favoritesOnly=Boolean(event.target.checked);renderExercises();});$('clearSearch').addEventListener('click',()=>{$('exerciseSearch').value='';renderExercises();});
     [['bodyFilter','body'],['muscleFilter','muscle'],['equipmentFilter','equipment'],['movementFilter','movement'],['levelFilter','level'],['goalFilter','goal']].forEach(([id,key])=>$(id).addEventListener('change',event=>{state.filters[key]=event.target.value;renderExercises();}));
     $('resetFilters').addEventListener('click',()=>resetFilters());$('emptyReset').addEventListener('click',()=>resetFilters());$('filterToggle').addEventListener('click',()=>{const panel=$('filterPanel'),collapsed=panel.classList.toggle('collapsed');$('filterToggle').setAttribute('aria-expanded',String(!collapsed));});
+    $('toggleFavoriteBtn').addEventListener('click',()=>{if(state.selected)toggleFavorite(state.selected.id);});
     $('closeDetail').addEventListener('click',closeDetail);$('detailCloseButton').addEventListener('click',closeDetail);$('startExerciseBtn').addEventListener('click',()=>startExercise(state.selected));
     $('closeProgramDetail').addEventListener('click',closeProgramDetail);$('programDetailCloseButton').addEventListener('click',closeProgramDetail);$('useProgramBtn').addEventListener('click',()=>useProgram($('useProgramBtn').dataset.program));
     $('startTodayBtn').addEventListener('click',()=>{const button=$('startTodayBtn');if(button.dataset.program&&button.dataset.session){startProgramSession(button.dataset.program,button.dataset.session);return;}const item=EXERCISES.find(exercise=>exercise.id===button.dataset.exercise);if(item)startExercise(item);});
