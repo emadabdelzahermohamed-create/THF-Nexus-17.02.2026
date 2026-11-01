@@ -38,6 +38,7 @@
       reduced: {en: 'Static image — reduced motion', ar: 'صورة ثابتة — تقليل الحركة'},
       unavailable: {en: 'Static reference image — motion unavailable', ar: 'صورة مرجعية ثابتة — الحركة غير متاحة'},
       missing: {en: 'Offline demo unavailable — no local image could be decoded', ar: 'تعذر عرض التمرين دون إنترنت — لم يمكن فك أي صورة'}
+      ,unconfigured: {en: 'Offline demo unavailable — no local reference images are configured', ar: 'العرض دون إنترنت غير متاح — لا توجد صور مرجعية محلية'}
     };
     phase.textContent = labels[key]?.[state.lang] || labels[key]?.en || '';
   }
@@ -152,6 +153,8 @@
   function render(item, lang, reduced) {
     if (!item || !item.id || !Array.isArray(item.demo?.assets) || !item.demo.assets.length) {
       stop();
+      clearReferenceFrame();
+      setPhase('unconfigured', {lang: lang === 'ar' ? 'ar' : 'en'});
       return;
     }
     if (videoVisible()) { stop(); return; }
