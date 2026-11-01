@@ -32,15 +32,17 @@ jobs:
           gcloud projects describe "$GCP_PROJECT_ID" --format='value(projectId)' | grep -x "$GCP_PROJECT_ID"
           gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=maps-android-backend.googleapis.com' --format='value(config.name)' | grep -x 'maps-android-backend.googleapis.com'
           echo 'MAPS_ANDROID_BACKEND_API=ENABLED'
-      - name: Inspect billing, API Keys API and existing restricted keys (read only)
+      - name: Inspect API Keys API and existing secret (read only)
         run: |
           set -euo pipefail
-          billing_enabled="$(gcloud billing projects describe "$GCP_PROJECT_ID" --format='value(billingEnabled)')"
-          echo "BILLING_ENABLED=$billing_enabled"
           apikeys_enabled="$(gcloud services list --enabled --project "$GCP_PROJECT_ID" --filter='config.name=apikeys.googleapis.com' --format='value(config.name)')"
           if [[ "$apikeys_enabled" == "apikeys.googleapis.com" ]]; then
             echo 'API_KEYS_API=ENABLED'
-            gcloud services api-keys list --project "$GCP_PROJECT_ID" --format='table(displayName,name,restrictions.apiTargets[].service,restrictions.androidKeyRestrictions.allowedApplications[].packageName)'
+            if gcloud services api-keys list --project "$GCP_PROJECT_ID" --format='table(displayName,name,restrictions.apiTargets[].service,restrictions.androidKeyRestrictions.allowedApplications[].packageName)'; then
+              echo 'API_KEYS_LIST=READABLE'
+            else
+              echo 'API_KEYS_LIST=PERMISSION_DENIED_OR_UNAVAILABLE'
+            fi
           else
             echo 'API_KEYS_API=NOT_ENABLED'
           fi
