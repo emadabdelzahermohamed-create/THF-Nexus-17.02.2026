@@ -58,6 +58,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
     def test_android_identity_api_level_and_noncolliding_version(self):
         gradle = (ANDROID / "app" / "build.gradle").read_text()
         self.assertIn("applicationId 'com.topherofit.thf.pulse'", gradle)
+        self.assertIn("applicationIdSuffix '.qa'", gradle)
         self.assertIn("compileSdk 36", gradle)
         self.assertIn("targetSdk 36", gradle)
         version = int(re.search(r"versionCode\s+(\d+)", gradle).group(1))
