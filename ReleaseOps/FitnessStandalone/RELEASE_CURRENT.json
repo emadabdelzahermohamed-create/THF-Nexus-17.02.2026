@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-01T21:24:32Z",
+  "observed_at": "2026-11-02T19:39:00+02:00",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -69,8 +69,10 @@
           "title": "Top Hero Fit: Fitness & GPS",
           "short_description": "Offline home workouts, voice guidance, and walking, running & cycling GPS."
         },
-        "risk": "Current long descriptions also claim GPS/background-session/Health Connect capabilities; current physical P0 is not complete, so do not update or treat these claims as verified."
-      }
+        "risk": "Current readback listing claims GPS and background-session capabilities; the retrieved listing does not mention Health Connect. Physical P0 is incomplete, so do not treat GPS/background claims as verified or edit the listing until gates pass."
+      },
+      "artifact_download_sha256_verified": true,
+      "artifact_download_sha256_verified_at": "2026-11-02T19:39:00+02:00"
     }
   },
   "phone": {
@@ -119,13 +121,13 @@
     "note": "Prior validated Internal evidence retained; no rollback or production action taken."
   },
   "release_gates": {
-    "physical_p0": "BLOCKED_NOT_RUN_ACTIVE_SESSION",
+    "physical_p0": "BLOCKED_DEVICE_OFFLINE; last phone observation 2026-11-01T21:24:32Z showed foreground tracking and an active/ambiguous session; current session state unknown",
     "health_policy_privacy": "OPEN",
     "production": "NOT_VERIFIED",
     "maps_native_sdk_key": "BLOCKED_OWNER_KEY_AND_BILLING_PREREQUISITES",
     "listing_truthfulness": "OPEN"
   },
-  "next_action": "Keep versionCode 51020 unallocated. Build one combined integration candidate from GPS #215 + process-death #202 after resolving their shared ActivityTrackingService.kt/MainActivity.kt changes; run exact-head Android CI on the combined SHA and produce a QA-suffixed APK. Do not install while the current tracking session is active. Complete physical P0 (stationary false-count, real GPS/route accuracy, background/screen-off/reopen, process-death restore, Stop and truthful metrics). Resolve owner Maps key/billing prerequisites without paid infrastructure. Only after those gates pass, allocate 51020, sign the exact AAB, upload to Internal and independently read back the committed track/version. Do not edit the Play listing until GPS/background/Health claims are verified.",
+  "next_action": "Keep versionCode 51020 unallocated. Resolve GPS #215 and session #202 shared ActivityTrackingService.kt/MainActivity.kt changes into one QA-suffixed integration candidate and run exact-head Android CI once. Do not install or act on the phone until the authorized device is online and the existing session is safely idle. Complete physical P0 (stationary false-count, real GPS/route accuracy, background/screen-off/reopen, process-death restore, explicit Stop and truthful metrics). Keep native Maps SDK blocked until owner API/key prerequisites are satisfied without paid infrastructure. Integrate #263/#261 only after exact-head Android CI and source/Health ingestion gates pass. Only after owner prerequisites, combined exact-head CI and physical P0 pass may 51020 be allocated, signed, uploaded to Internal and independently read back. Do not edit listing or promote Production before policy/privacy and physical gates.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -188,7 +190,7 @@
     "promotion_pins_old_source_sha": "76053bd9127c38d8065eb7ac250bdeb34ab67854",
     "next_release_version_code": 51020,
     "status": "BLOCKED_BEFORE_VERSION_ALLOCATION",
-    "blocker": "Do not allocate 51020: owner Maps key/billing prerequisite remains unresolved; physical P0 is not run; GPS PR #215 and process-death PR #202 overlap in ActivityTrackingService.kt and MainActivity.kt, so a combined integration SHA and CI are still required. Individual validation builds passed, but no combined candidate exists.",
+    "blocker": "Do not allocate 51020: owner Maps API/key/billing prerequisites remain unresolved; physical P0 is not run and the authorized device is offline; GPS PR #215 current head 35c9d091dc292d171ed036ecb76e474cf84db0e5 and session PR #202 head dec85ca463301af03a02ce65b9aadde019b1b3bb overlap in ActivityTrackingService.kt and MainActivity.kt. #215 has no exact-head Android CI; #202 passed validation-only CI on its exact head, but a combined integration SHA and physical P0 are still required.",
     "latest_validation_runs": [
       {
         "pr": 215,
@@ -369,27 +371,23 @@
     "production": "NOT_VERIFIED"
   },
   "latest_integrator_observation": {
-    "observed_at": "2026-11-01T19:00:00+02:00",
-    "canonical_branch_head_before_checkpoint": "4a2315fd16be8610396d6415292f4863f90b8dd6",
-    "recovery_checkpoint_commit": "88b867169f1844bb97c2f1528cfbaf5a862acded",
-    "play_readback_performed": false,
+    "observed_at": "2026-11-02T19:39:00+02:00",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "canonical_base_sha_observed": "5e03c1e2dc0efcc244b6aacb6a5e72bc9a552b17",
+    "latest_gps_head": "35c9d091dc292d171ed036ecb76e474cf84db0e5",
+    "latest_gps_android_ci": "NONE_ON_CURRENT_HEAD",
+    "session_recovery_head": "dec85ca463301af03a02ce65b9aadde019b1b3bb",
+    "session_recovery_ci_run": 41351522015,
     "last_recorded_internal_version_code": 51019,
-    "last_recorded_play_readback_run": 40518110062,
-    "publication_probe_run": 41321708182,
-    "publication_probe_conclusion": "failure",
-    "publication_probe_jobs": 0,
-    "publication_probe_artifact_or_readback": "none",
-    "phone_last_verified_play_installed_version": 51018,
-    "phone_last_verified_at": "2026-10-27T10:17:49+03:00",
-    "phone_current_adb": "not attached",
+    "latest_play_readback_run": 41351011557,
+    "latest_play_readback_artifact_sha256": "2be8e401fb69c8acae539e57335f41205b6aed53accca40e3dac580508413b9c",
+    "play_readback_artifact_sha256_verified": true,
+    "phone_connection": "OFFLINE; last phone observation 2026-11-01T21:24:32Z",
     "next_candidate_version_code": 51020,
     "candidate_allocated": false,
     "candidate_build_sign_upload": "not run",
     "production": "NOT_VERIFIED",
-    "lease_registry": {
-      "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
-      "note": "No lease registry was found in the canonical FitnessStandalone release directory/current recovery. Swarm/product.json is a product-lane manifest, not an exclusive lease; do not infer shared resources are free."
-    }
+    "lease_registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND"
   },
   "previous_phone_observation": {
     "last_verified_play_installed_version": 51018,
@@ -522,5 +520,185 @@
       "play_changed": false,
       "production": "NOT_VERIFIED"
     }
+  },
+  "integrator_recheck_20261102": {
+    "observed_at": "2026-11-02T19:39:00+02:00",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "canonical_base_sha_observed": "5e03c1e2dc0efcc244b6aacb6a5e72bc9a552b17",
+    "latest_gps_checkpoint": {
+      "path": "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261101.md",
+      "branch": "agent/codex/gps-map-quality-20261030",
+      "blob_sha": "0e50b45f7be1e2a245753233f3e70343394b1115",
+      "follow_up_at": "2026-11-02 08:23 Cairo"
+    },
+    "play_readback": {
+      "run_id": 41351011557,
+      "head_sha": "25292d6a7b28258ca9174ac3c5e72cb133e8eb48",
+      "observed_at": "2026-11-01T21:15:09Z",
+      "artifact_id": 13101082135,
+      "artifact_digest": "sha256:2be8e401fb69c8acae539e57335f41205b6aed53accca40e3dac580508413b9c",
+      "artifact_download_sha256_verified": true,
+      "upload_attempted": false,
+      "commit_attempted": false,
+      "internal_version_code": 51019,
+      "internal_status": "completed",
+      "alpha_version_code": 51007,
+      "alpha_status": "draft",
+      "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK"
+    },
+    "phone_connection_check": {
+      "device": "localhost",
+      "status": "OFFLINE",
+      "last_seen": "about 7 hours before 2026-11-02T19:39:00+02:00",
+      "last_phone_observation": "2026-11-01T21:24:32Z",
+      "no_adb_or_session_actions": true
+    },
+    "maps_preflight": {
+      "run_id": 41351176796,
+      "last_recorded_state": "APIs enabled; key inventory permission denied; no key/billing account linked per GPS checkpoint",
+      "no_billing_or_paid_infrastructure_change": true
+    },
+    "lease_registry": {
+      "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
+      "checked_paths": [
+        "ReleaseOps/FitnessStandalone/LEASES.json",
+        "ReleaseOps/FitnessStandalone/LEASES.md",
+        "ReleaseOps/FitnessStandalone/LEASE_REGISTRY.json"
+      ],
+      "note": "Do not infer shared resources are free."
+    },
+    "current_prs": {
+      "gps_map": {
+        "pr": 215,
+        "head_sha": "35c9d091dc292d171ed036ecb76e474cf84db0e5",
+        "base_sha": "4e207c7de988372f5922924ccac49ade212c8a0b",
+        "draft": true,
+        "exact_head_status_checks": 0,
+        "only_associated_run": {
+          "id": 41400271596,
+          "conclusion": "success",
+          "type": "unrelated artifact-cap workflow"
+        },
+        "prior_android_ci": {
+          "run_id": 41350454201,
+          "head_sha": "72f5068b4977c163320db7eb1937d992138e944a",
+          "conclusion": "success",
+          "note": "older SHA; not current-head evidence"
+        },
+        "merge": "HOLD_OVERLAPS_PR202_AND_PHYSICAL_P0_OPEN"
+      },
+      "session_recovery": {
+        "pr": 202,
+        "head_sha": "dec85ca463301af03a02ce65b9aadde019b1b3bb",
+        "base_sha": "3b8a27ea00e6dfadec218cdc90563b71ad12d440",
+        "draft": false,
+        "exact_head_run": {
+          "id": 41351522015,
+          "conclusion": "success",
+          "artifact_id": 13100943370,
+          "artifact_digest": "sha256:1567ae3e4e5251e42a5e2274caca68e916c8470bd7ad640d56d93fe82e831a2f",
+          "validation_only": true,
+          "signing": "NOT_RUN",
+          "play_upload": "NOT_RUN"
+        },
+        "merge": "HOLD_OVERLAPS_PR215; COMBINED_CI_AND_PHYSICAL_P0_REQUIRED"
+      },
+      "daily_step_ledger": {
+        "pr": 225,
+        "head_sha": "40f3a6cf1fa79a01fabfb783f8dcbd617e8403bb",
+        "draft": true,
+        "exact_head_run": {
+          "id": 41175248362,
+          "conclusion": "success",
+          "artifact_id": 13032666359,
+          "artifact_digest": "sha256:4314292544ffc0cc78b0fb61a50e34bc2e9819072c1eae71573c1e47e07f61c0"
+        },
+        "scope": "Pure core only; no all-day observer/dashboard wiring; hold per scope."
+      },
+      "gps_anomaly_policy": {
+        "pr": 263,
+        "head_sha": "8b49e9513af484a1d334e71bfb5345a669e7b355",
+        "base_sha": "5e03c1e2dc0efcc244b6aacb6a5e72bc9a552b17",
+        "draft": true,
+        "exact_head_android_ci": "NONE",
+        "handoff_reported_tests": "11/11 local Kotlin harness; not Android/device CI",
+        "merge": "HOLD"
+      },
+      "swimming_eligibility": {
+        "pr": 261,
+        "head_sha": "7a81f7216beeef32919e8c755deeba06e5f5d803",
+        "base_sha": "5e03c1e2dc0efcc244b6aacb6a5e72bc9a552b17",
+        "draft": false,
+        "exact_head_android_ci": "NONE",
+        "handoff_reported_tests": "6/6 local Kotlin harness; not Android/device CI",
+        "health_reader_wiring": "NOT_DONE",
+        "merge": "HOLD"
+      },
+      "health": {
+        "prs": [
+          {
+            "pr": 93,
+            "head_sha": "1cc08cef7dae7f432275fd23960f4390a49db14c",
+            "exact_head_android_ci": "NONE"
+          },
+          {
+            "pr": 98,
+            "head_sha": "2483367811abcf68af740f24b2f55e0f04f211b3",
+            "exact_head_android_ci": "NONE; unrelated artifact-cap run 40284349463 only"
+          },
+          {
+            "pr": 117,
+            "head_sha": "e0150b84171490065af94bff342da65ab47873f8",
+            "exact_head_android_ci": "NONE"
+          },
+          {
+            "pr": 137,
+            "head_sha": "551cccdbf74b17001dfcad8ccc94ca340faafd72",
+            "exact_head_android_ci": "NONE"
+          },
+          {
+            "pr": 141,
+            "head_sha": "60a445dc0de8167069c3a8f824b90fcdef037514",
+            "exact_head_android_ci": "NONE"
+          },
+          {
+            "pr": 188,
+            "head_sha": "872921f52c6637bcf8ab338b87bc2ded281c1598",
+            "exact_head_android_ci": "NONE"
+          }
+        ],
+        "merge": "HOLD_PRIVACY_PERMISSION_AND_PROVENANCE_GATES"
+      },
+      "exercise_resume_rir_duration": {
+        "prs": [
+          {
+            "pr": 216,
+            "head_sha": "1ef915886fdac62c8fe1d5e50505fd354d989ee3",
+            "exact_head_android_ci": "NONE"
+          },
+          {
+            "pr": 214,
+            "head_sha": "c93f765099642976b908aa9a4dd81addda52752f",
+            "exact_head_android_ci": "NONE"
+          },
+          {
+            "pr": 213,
+            "head_sha": "f719214d813f367350d8a10591903d16b68f8da1",
+            "exact_head_android_ci": "NONE"
+          }
+        ]
+      },
+      "competitions": {
+        "open_pr_found": false,
+        "searches": [
+          "leaderboard",
+          "marathon",
+          "challenge",
+          "server-authoritative scoring"
+        ],
+        "status": "No open PR found; server-authoritative scoring and anti-cheat remain unvalidated."
+      }
+    },
+    "release_decision": "No PR merge, version allocation, signing, upload, Play write, or Production promotion in this recheck."
   }
 }
