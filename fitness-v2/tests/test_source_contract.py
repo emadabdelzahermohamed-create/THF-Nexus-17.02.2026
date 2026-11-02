@@ -2,6 +2,7 @@ import json
 import importlib.util
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 import unittest
 import zipfile
@@ -604,6 +605,86 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertNotIn("N?.beginStepSession?.()", app)
         self.assertIn('id="motionEvidencePanel"', html)
         self.assertIn('id="motionSourceBadge"', html)
+
+
+
+    def test_activity_map_smoothing_is_bounded_and_display_only(self):
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+        self.assertIn("function smoothActivityRouteForDisplay(points, mode)", app)
+        self.assertIn("const displayPoints=smoothActivityRouteForDisplay(points", app)
+        self.assertIn("activityMapUi.routeLine.setLatLngs(displayLatLngs)", app)
+        self.assertIn("const first=points[0]", app)
+        self.assertIn("const last=points[points.length-1]", app)
+        self.assertIn("activityMapUi.currentMarker.setLatLng(lastLatLng)", app)
+        self.assertIn("const accuracy=Number(last.accuracyMetres)", app)
+        self.assertIn("Number(snapshot?.distanceMetres||0)", app)
+
+        helper_start = app.index("function smoothActivityRouteForDisplay(")
+        helper_end = app.index("\n  function ensureActivityMap(", helper_start)
+        helper = app[helper_start:helper_end]
+        node_tests = r"""
+const assert = require('node:assert/strict');
+const point = (seconds, north, east = 0, accuracy = 2, extra = {}) => ({
+  lat: 30 + north / 111000,
+  lng: 31 + east / (111000 * Math.cos(Math.PI / 6)),
+  accuracyMetres: accuracy,
+  elapsedMs: seconds * 1000,
+  altitudeMetres: 10 + seconds,
+  ...extra,
+});
+const distance = (a, b) => {
+  const north = (Number(b.lat) - Number(a.lat)) * 111000;
+  const east = (Number(b.lng) - Number(a.lng)) * 111000 * Math.cos(Number(a.lat) * Math.PI / 180);
+  return Math.hypot(north, east);
+};
+const jitter = [point(0, 0), point(5, 10, 4, 4), point(10, 20)];
+const rawBefore = JSON.stringify(jitter);
+const smoothed = smoothActivityRouteForDisplay(jitter, 'walk');
+assert.equal(smoothed.length, jitter.length);
+assert.deepEqual(smoothed[0], jitter[0]);
+assert.deepEqual(smoothed[2], jitter[2]);
+assert.equal(smoothed[1].elapsedMs, jitter[1].elapsedMs);
+assert.equal(smoothed[1].accuracyMetres, jitter[1].accuracyMetres);
+assert.equal(smoothed[1].altitudeMetres, jitter[1].altitudeMetres);
+const shift = distance(jitter[1], smoothed[1]);
+assert(shift > 0.1 && shift <= 2.01);
+assert.equal(JSON.stringify(jitter), rawBefore);
+
+const corner = [point(0, 0, 0), point(5, 10, 0), point(10, 10, 10)];
+assert.deepEqual(smoothActivityRouteForDisplay(corner, 'walk'), corner);
+const staleGap = [point(0, 0), point(5, 10, 4, 4), point(20, 20)];
+assert.deepEqual(smoothActivityRouteForDisplay(staleGap, 'walk'), staleGap);
+const poorWalkFix = [point(0, 0), point(5, 10, 4, 26), point(10, 20)];
+assert.deepEqual(smoothActivityRouteForDisplay(poorWalkFix, 'walk'), poorWalkFix);
+const cycleFix = [point(0, 0), point(5, 10, 4, 30), point(10, 20)];
+const cycleSmoothed = smoothActivityRouteForDisplay(cycleFix, 'cycle');
+assert(distance(cycleFix[1], cycleSmoothed[1]) > 0.1);
+assert(distance(cycleFix[1], cycleSmoothed[1]) <= 3.01);
+assert.deepEqual(smoothActivityRouteForDisplay(jitter.slice(0, 2), 'walk'), jitter.slice(0, 2));
+
+const uneven = [point(0, 0), point(2, 4, 2, 4), point(10, 20)];
+const unevenSmoothed = smoothActivityRouteForDisplay(uneven, 'walk');
+assert(unevenSmoothed[1].lng < uneven[1].lng);
+assert(Math.abs(unevenSmoothed[1].lat - uneven[1].lat) < 1e-10);
+
+const dateLine = [
+  {lat: 0, lng: 179.9999, accuracyMetres: 2, elapsedMs: 0},
+  {lat: 0.00005, lng: -179.99995, accuracyMetres: 4, elapsedMs: 5000},
+  {lat: 0.0001, lng: -179.9999, accuracyMetres: 2, elapsedMs: 10000},
+];
+const dateLineSmoothed = smoothActivityRouteForDisplay(dateLine, 'walk');
+assert(Number.isFinite(dateLineSmoothed[1].lng));
+assert(dateLineSmoothed[1].lng >= -180 && dateLineSmoothed[1].lng <= 180);
+assert.deepEqual(smoothActivityRouteForDisplay([point(0, 0), point(5, 10, 4, 4), point(5, 20)], 'walk'),
+  [point(0, 0), point(5, 10, 4, 4), point(5, 20)]);
+"""
+        result = subprocess.run(
+            ["node", "-e", helper + "\n" + node_tests],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == "__main__":
