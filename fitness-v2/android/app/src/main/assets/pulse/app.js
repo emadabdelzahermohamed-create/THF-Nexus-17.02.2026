@@ -597,10 +597,99 @@
   function formatElapsed(ms){const total=Math.max(0,Math.floor(Number(ms||0)/1000)),h=Math.floor(total/3600),m=Math.floor((total%3600)/60),sec=total%60;return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
   function formatPace(value){const pace=Number(value);if(!Number.isFinite(pace)||pace<=0)return '—';const min=Math.floor(pace),sec=Math.max(0,Math.min(59,Math.round((pace-min)*60)));return `${min}:${String(sec).padStart(2,'0')}`;}
   function activityModeName(mode){return mode==='walk'?t('walk'):mode==='run'?t('run'):mode==='cycle'?t('cycle'):t('selectActivity');}
+  // Bounded display-only smoothing. Never use these coordinates for metrics or activation.
+  function smoothActivityRouteForDisplay(points, mode) {
+    if (!Array.isArray(points) || points.length < 3) return Array.isArray(points) ? points.slice() : [];
+    const maximumAccuracyMetres = mode === 'cycle' ? 40 : 25;
+    const result = points.slice();
+    const earthRadiusMetres = 6371000;
+    const radians = Math.PI / 180;
+    const normalizeLongitudeDelta = delta => {
+      let normalized = delta;
+      if (normalized > 180) normalized -= 360;
+      if (normalized < -180) normalized += 360;
+      return normalized;
+    };
+    const normalizeLongitude = longitude => ((longitude + 180) % 360 + 360) % 360 - 180;
+    const isUsable = point => {
+      const latitude = Number(point?.lat);
+      const longitude = Number(point?.lng);
+      const accuracy = Number(point?.accuracyMetres);
+      const elapsed = Number(point?.elapsedMs);
+      return Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 &&
+        Number.isFinite(longitude) && longitude >= -180 && longitude <= 180 &&
+        Number.isFinite(accuracy) && accuracy > 0 && accuracy <= maximumAccuracyMetres &&
+        Number.isFinite(elapsed) && elapsed >= 0;
+    };
+    const offsetMetres = (origin, target, cosLatitude) => {
+      const longitudeDelta = normalizeLongitudeDelta(Number(target.lng) - Number(origin.lng));
+      return [
+        longitudeDelta * radians * earthRadiusMetres * cosLatitude,
+        (Number(target.lat) - Number(origin.lat)) * radians * earthRadiusMetres,
+      ];
+    };
+
+    for (let index = 1; index < points.length - 1; index += 1) {
+      const previous = points[index - 1];
+      const current = points[index];
+      const next = points[index + 1];
+      if (!isUsable(previous) || !isUsable(current) || !isUsable(next)) continue;
+
+      const previousGapMs = Number(current.elapsedMs) - Number(previous.elapsedMs);
+      const nextGapMs = Number(next.elapsedMs) - Number(current.elapsedMs);
+      const totalGapMs = Number(next.elapsedMs) - Number(previous.elapsedMs);
+      if (previousGapMs <= 0 || nextGapMs <= 0 ||
+          previousGapMs > 10000 || nextGapMs > 10000 || totalGapMs > 10000) continue;
+
+      const latitudeRadians = Number(current.lat) * radians;
+      const cosLatitude = Math.cos(latitudeRadians);
+      if (!Number.isFinite(cosLatitude) || Math.abs(cosLatitude) < 1e-6) continue;
+
+      // Interpolate at the fix's actual monotonic timestamp, not an assumed midpoint.
+      const fraction = previousGapMs / totalGapMs;
+      const previousOffset = offsetMetres(current, previous, cosLatitude);
+      const nextOffset = offsetMetres(current, next, cosLatitude);
+      const expectedEast = previousOffset[0] + (nextOffset[0] - previousOffset[0]) * fraction;
+      const expectedNorth = previousOffset[1] + (nextOffset[1] - previousOffset[1]) * fraction;
+      const deviationMetres = Math.hypot(expectedEast, expectedNorth);
+
+      const previousSigma = Math.max(Number(previous.accuracyMetres), 1);
+      const currentSigma = Math.max(Number(current.accuracyMetres), 1);
+      const nextSigma = Math.max(Number(next.accuracyMetres), 1);
+      const expectedSigma = Math.sqrt(
+        (1 - fraction) * (1 - fraction) * previousSigma * previousSigma +
+        fraction * fraction * nextSigma * nextSigma
+      );
+      const cornerThresholdMetres = Math.max(4, Math.min(8, 1.5 * (currentSigma + expectedSigma)));
+      if (!Number.isFinite(deviationMetres) || deviationMetres > cornerThresholdMetres) continue;
+
+      const currentVariance = currentSigma * currentSigma;
+      const expectedVariance = expectedSigma * expectedSigma;
+      const confidenceFraction = currentVariance / (currentVariance + expectedVariance);
+      let correctionEast = expectedEast * confidenceFraction;
+      let correctionNorth = expectedNorth * confidenceFraction;
+      const correctionMetres = Math.hypot(correctionEast, correctionNorth);
+      const maximumShiftMetres = Math.min(3, currentSigma * 0.5);
+      if (!Number.isFinite(correctionMetres) || correctionMetres < 0.05) continue;
+      if (correctionMetres > maximumShiftMetres) {
+        const scale = maximumShiftMetres / correctionMetres;
+        correctionEast *= scale;
+        correctionNorth *= scale;
+      }
+
+      const latitude = Number(current.lat) + (correctionNorth / earthRadiusMetres) / radians;
+      const longitudeDelta = (correctionEast / (earthRadiusMetres * cosLatitude)) / radians;
+      const longitude = normalizeLongitude(Number(current.lng) + longitudeDelta);
+      if (Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 && Number.isFinite(longitude)) {
+        result[index] = Object.assign({}, current, { lat: latitude, lng: longitude });
+      }
+    }
+    return result;
+  }
   const activityMapUi={map:null,routeLine:null,routeHalo:null,startMarker:null,currentMarker:null,accuracyCircle:null,userInteracted:false,programmaticMove:false,lastPoint:null};
   function ensureActivityMap(){if(activityMapUi.map)return activityMapUi.map;if(!window.L||!$('activityMapCanvas'))return null;const map=L.map('activityMapCanvas',{zoomControl:false,attributionControl:true,preferCanvas:true,scrollWheelZoom:false,zoomAnimation:true,fadeAnimation:false}).setView([0,0],2);const streetLayer=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,maxNativeZoom:19,keepBuffer:2,updateWhenIdle:true,updateWhenZooming:false,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',crossOrigin:true});const terrainLayer=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{subdomains:'abc',maxZoom:17,maxNativeZoom:17,keepBuffer:2,updateWhenIdle:true,updateWhenZooming:false,attribution:'Map data: © OpenStreetMap contributors, SRTM · Map style: © <a href="https://opentopomap.org/about">OpenTopoMap (CC-BY-SA)</a>',crossOrigin:true});const satelliteLayer=L.tileLayer('https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg',{minZoom:2,maxZoom:18,maxNativeZoom:14,keepBuffer:1,updateWhenIdle:true,updateWhenZooming:false,attribution:'<a href="https://cloudless.eox.at">EOxCloudless</a> by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016) · CC BY 4.0',crossOrigin:true});const streetOverlay=L.tileLayer('https://tiles.maps.eox.at/wmts/1.0.0/streets_3857/default/g/{z}/{y}/{x}.png',{maxZoom:18,maxNativeZoom:18,keepBuffer:1,updateWhenIdle:true,updateWhenZooming:false,opacity:.94,attribution:'Data © OpenStreetMap contributors · Rendering © <a href="https://maps.eox.at/">EOX</a> and MapServer',crossOrigin:true});const hybridLayer=L.layerGroup([satelliteLayer,streetOverlay]);streetLayer.addTo(map);L.control.layers({'الشوارع / Street':streetLayer,'القمر الصناعي 2016 / Satellite':satelliteLayer,'التضاريس / Terrain':terrainLayer,'هجين / Hybrid':hybridLayer},null,{position:'topright',collapsed:true}).addTo(map);L.control.zoom({position:'bottomright'}).addTo(map);L.control.scale({position:'bottomleft',metric:true,imperial:false}).addTo(map);activityMapUi.routeHalo=L.polyline([],{color:'#07141b',weight:9,opacity:.88,lineCap:'round',lineJoin:'round',interactive:false}).addTo(map);activityMapUi.routeLine=L.polyline([],{color:'#21b7d5',weight:5,opacity:.98,lineCap:'round',lineJoin:'round',interactive:false}).addTo(map);activityMapUi.startMarker=L.circleMarker([0,0],{radius:6,color:'#07141b',weight:2,fillColor:'#f5d477',fillOpacity:1,interactive:false}).addTo(map);activityMapUi.currentMarker=L.circleMarker([0,0],{radius:8,color:'#ffffff',weight:3,fillColor:'#168ed1',fillOpacity:1,interactive:false}).addTo(map);activityMapUi.accuracyCircle=L.circle([0,0],{radius:0,color:'#168ed1',weight:1,fillColor:'#168ed1',fillOpacity:.10,interactive:false}).addTo(map);map.on('dragstart',()=>{activityMapUi.userInteracted=true;});map.on('zoomstart',()=>{if(!activityMapUi.programmaticMove)activityMapUi.userInteracted=true;});const recenter=$('activityMapRecenter');if(recenter)recenter.addEventListener('click',()=>{activityMapUi.userInteracted=false;fitActivityMapToRoute();});activityMapUi.map=map;$('activityMap').classList.add('leaflet-ready');return map;}
   function fitActivityMapToRoute(){const map=activityMapUi.map,line=activityMapUi.routeLine;if(!map||!line||!line.getLatLngs().length)return;const bounds=line.getBounds();if(!bounds.isValid())return;activityMapUi.programmaticMove=true;map.fitBounds(bounds,{padding:[42,42],maxZoom:17,animate:true});map.once('moveend',()=>{activityMapUi.programmaticMove=false;});}
-  function renderActivityRoute(route=[]){const line=$('activityRouteLine'),empty=$('activityMapEmpty'),googleLink=$('activityGoogleMaps'),recenter=$('activityMapRecenter');if(!line||!empty)return;const points=(Array.isArray(route)?route:[]).filter(p=>Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng))&&Math.abs(Number(p.lat))<=90&&Math.abs(Number(p.lng))<=180);empty.classList.toggle('hidden',points.length>0);if(recenter)recenter.disabled=points.length===0;if(!points.length){line.setAttribute('points','');if(googleLink)googleLink.classList.add('hidden');if(activityMapUi.routeLine){activityMapUi.routeLine.setLatLngs([]);activityMapUi.routeHalo.setLatLngs([]);activityMapUi.startMarker.setStyle({opacity:0,fillOpacity:0});activityMapUi.currentMarker.setStyle({opacity:0,fillOpacity:0});activityMapUi.accuracyCircle.setRadius(0);}activityMapUi.lastPoint=null;return;}const last=points[points.length-1],lastLatLng=[Number(last.lat),Number(last.lng)];if(googleLink){const first=points[0],travelMode=state.activitySnapshot?.mode==='cycle'?'bicycling':'walking';googleLink.href=points.length>1?`https://www.google.com/maps/dir/?api=1&origin=${Number(first.lat)},${Number(first.lng)}&destination=${lastLatLng[0]},${lastLatLng[1]}&travelmode=${travelMode}`:`https://www.google.com/maps/search/?api=1&query=${lastLatLng[0]},${lastLatLng[1]}`;googleLink.classList.remove('hidden');}const map=ensureActivityMap();if(!map){const lats=points.map(p=>Number(p.lat)),lngs=points.map(p=>Number(p.lng)),minLat=Math.min(...lats),maxLat=Math.max(...lats),minLng=Math.min(...lngs),maxLng=Math.max(...lngs),latSpan=Math.max(0.00005,maxLat-minLat),lngSpan=Math.max(0.00005,maxLng-minLng),svgPoints=points.map(p=>`${(60+(Number(p.lng)-minLng)/lngSpan*880).toFixed(1)},${(500-(Number(p.lat)-minLat)/latSpan*440).toFixed(1)}`).join(' ');line.setAttribute('points',svgPoints);return;}const latlngs=points.map(p=>[Number(p.lat),Number(p.lng)]);activityMapUi.routeHalo.setLatLngs(latlngs);activityMapUi.routeLine.setLatLngs(latlngs);activityMapUi.startMarker.setLatLng(latlngs[0]).setStyle({opacity:1,fillOpacity:1});activityMapUi.currentMarker.setLatLng(lastLatLng).setStyle({opacity:1,fillOpacity:1});const accuracy=Number(last.accuracyMetres);activityMapUi.accuracyCircle.setLatLng(lastLatLng).setRadius(Number.isFinite(accuracy)&&accuracy>0&&accuracy<=100?accuracy:0);if(!activityMapUi.lastPoint){fitActivityMapToRoute();}else if(!activityMapUi.userInteracted&&!map.getBounds().pad(-.22).contains(L.latLng(lastLatLng[0],lastLatLng[1]))){activityMapUi.programmaticMove=true;map.panTo(lastLatLng,{animate:true,duration:.35});map.once('moveend',()=>{activityMapUi.programmaticMove=false;});}activityMapUi.lastPoint=lastLatLng;setTimeout(()=>map.invalidateSize({pan:false}),80);}
+  function renderActivityRoute(route=[]){const line=$('activityRouteLine'),empty=$('activityMapEmpty'),googleLink=$('activityGoogleMaps'),recenter=$('activityMapRecenter');if(!line||!empty)return;const points=(Array.isArray(route)?route:[]).filter(p=>Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng))&&Math.abs(Number(p.lat))<=90&&Math.abs(Number(p.lng))<=180);const displayPoints=smoothActivityRouteForDisplay(points,String(state.activitySnapshot?.mode||''));empty.classList.toggle('hidden',points.length>0);if(recenter)recenter.disabled=points.length===0;if(!points.length){line.setAttribute('points','');if(googleLink)googleLink.classList.add('hidden');if(activityMapUi.routeLine){activityMapUi.routeLine.setLatLngs([]);activityMapUi.routeHalo.setLatLngs([]);activityMapUi.startMarker.setStyle({opacity:0,fillOpacity:0});activityMapUi.currentMarker.setStyle({opacity:0,fillOpacity:0});activityMapUi.accuracyCircle.setRadius(0);}activityMapUi.lastPoint=null;return;}const last=points[points.length-1],lastLatLng=[Number(last.lat),Number(last.lng)];if(googleLink){const first=points[0],travelMode=state.activitySnapshot?.mode==='cycle'?'bicycling':'walking';googleLink.href=points.length>1?`https://www.google.com/maps/dir/?api=1&origin=${Number(first.lat)},${Number(first.lng)}&destination=${lastLatLng[0]},${lastLatLng[1]}&travelmode=${travelMode}`:`https://www.google.com/maps/search/?api=1&query=${lastLatLng[0]},${lastLatLng[1]}`;googleLink.classList.remove('hidden');}const map=ensureActivityMap();if(!map){const lats=displayPoints.map(p=>Number(p.lat)),lngs=displayPoints.map(p=>Number(p.lng)),minLat=Math.min(...lats),maxLat=Math.max(...lats),minLng=Math.min(...lngs),maxLng=Math.max(...lngs),latSpan=Math.max(0.00005,maxLat-minLat),lngSpan=Math.max(0.00005,maxLng-minLng),svgPoints=displayPoints.map(p=>`${(60+(Number(p.lng)-minLng)/lngSpan*880).toFixed(1)},${(500-(Number(p.lat)-minLat)/latSpan*440).toFixed(1)}`).join(' ');line.setAttribute('points',svgPoints);return;}const latlngs=points.map(p=>[Number(p.lat),Number(p.lng)]),displayLatLngs=displayPoints.map(p=>[Number(p.lat),Number(p.lng)]);activityMapUi.routeHalo.setLatLngs(displayLatLngs);activityMapUi.routeLine.setLatLngs(displayLatLngs);activityMapUi.startMarker.setLatLng(latlngs[0]).setStyle({opacity:1,fillOpacity:1});activityMapUi.currentMarker.setLatLng(lastLatLng).setStyle({opacity:1,fillOpacity:1});const accuracy=Number(last.accuracyMetres);activityMapUi.accuracyCircle.setLatLng(lastLatLng).setRadius(Number.isFinite(accuracy)&&accuracy>0&&accuracy<=100?accuracy:0);if(!activityMapUi.lastPoint){fitActivityMapToRoute();}else if(!activityMapUi.userInteracted&&!map.getBounds().pad(-.22).contains(L.latLng(lastLatLng[0],lastLatLng[1]))){activityMapUi.programmaticMove=true;map.panTo(lastLatLng,{animate:true,duration:.35});map.once('moveend',()=>{activityMapUi.programmaticMove=false;});}activityMapUi.lastPoint=lastLatLng;setTimeout(()=>map.invalidateSize({pan:false}),80);}
   function renderActivity(snapshot=readActivitySnapshot()){state.activitySnapshot=snapshot||{active:false,route:[]};const mode=String(snapshot?.mode||'');$('activityModeLabel').textContent=activityModeName(mode);$('activityTimer').textContent=formatElapsed(snapshot?.elapsedMs);$('activityDistance').textContent=(Number(snapshot?.distanceMetres||0)/1000).toFixed(2);$('activityPace').textContent=mode==='cycle'?'—':formatPace(snapshot?.paceMinutesPerKm);$('activitySpeed').textContent=Number(snapshot?.averageSpeedKph||0).toFixed(1);$('activityCalories').textContent=Math.round(Number(snapshot?.estimatedCaloriesKcal||0));$('activitySteps').textContent=mode==='cycle'?'—':Number(snapshot?.steps||0).toLocaleString(locale());$('activityAccuracy').textContent=Number.isFinite(Number(snapshot?.lastAccuracyMetres))?Math.round(Number(snapshot.lastAccuracyMetres)):'—';const gpsFixState=String(snapshot?.gpsFixState||'acquiring');const observedAccuracy=Number(snapshot?.observedAccuracyMetres);$('activityGpsStatus').textContent=gpsFixState==='ready'?`GPS · ${Math.round(Number(snapshot.lastAccuracyMetres||0))}m`:gpsFixState==='weak'?`${t('gpsWeak')}${Number.isFinite(observedAccuracy)?` · ±${Math.round(observedAccuracy)}m`:''}`:gpsFixState==='stale'?t('gpsStale'):gpsFixState==='off'?t('gpsOff'):t('gpsWaiting');$('activityGpsStatus').classList.toggle('gold',gpsFixState==='ready');const mapEmpty=$('activityMapEmpty');if(mapEmpty&&!(snapshot?.route||[]).length)mapEmpty.textContent=gpsFixState==='off'?t('gpsOff'):gpsFixState==='permission'?t('activityPermissionNeeded'):gpsFixState==='stale'?t('gpsStale'):t('gpsRouteHint');$('activityStopBtn').disabled=!snapshot?.active;$('activityPauseBtn').disabled=!snapshot?.active;$('activityPauseBtn').textContent=t(snapshot?.paused?'resumeActivity':'pauseActivity');document.querySelectorAll('[data-activity-mode]').forEach(button=>button.classList.toggle('active',snapshot?.active&&button.dataset.activityMode===mode));renderActivityRoute(snapshot?.route||[]);renderActivityHistory();return snapshot;}
   function startActivityPolling(){stopActivityPolling();state.activityPoll=setInterval(()=>renderActivity(readActivitySnapshot()),1000);}
   function stopActivityPolling(){if(state.activityPoll){clearInterval(state.activityPoll);state.activityPoll=null;}}
