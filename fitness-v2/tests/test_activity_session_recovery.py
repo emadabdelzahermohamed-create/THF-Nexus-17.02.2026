@@ -72,5 +72,15 @@ class ActivitySessionRecoveryContractTest(unittest.TestCase):
         self.assertIn("return accepted", dispatch)
 
 
+    def test_step_activation_requires_sustained_evidence_and_discards_unconfirmed_warmup(self):
+        gate = (PKG / "ActivityActivationGate.kt").read_text()
+        service = SERVICE.read_text()
+        self.assertIn("ActivityStepActivationPolicy.confirmedSteps", gate)
+        self.assertIn("activityStepEvidenceBaseline", service)
+        self.assertIn("activityStepEvidenceStartedElapsedMs", service)
+        self.assertIn("val trustedStepDelta = ActivityStepActivationPolicy.confirmedSteps", service)
+        self.assertIn("activityStepBaseline = currentRawCounter - creditedSteps.toFloat()", service)
+        self.assertIn("activityStepDelta = creditedSteps", service)
+
 if __name__ == "__main__":
     unittest.main()

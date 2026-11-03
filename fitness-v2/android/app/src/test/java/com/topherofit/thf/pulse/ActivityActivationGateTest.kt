@@ -8,13 +8,15 @@ class ActivityActivationGateTest {
         mode: ActivityMode,
         displacement: Double,
         steps: Int = 0,
+        stepWindowMs: Long = 0L,
         points: Int = 3,
         durationMs: Long = 5_000L,
         accuracy: Double = 5.0,
     ) = ActivityActivationGate.shouldActivate(
         mode = mode,
         gpsDisplacementMetres = displacement,
-        measuredStepDelta = steps,
+        stepEvidenceDelta = steps,
+        stepEvidenceDurationMs = stepWindowMs,
         acceptedGpsPoints = points,
         gpsDurationMs = durationMs,
         worstGpsAccuracyMetres = accuracy,
@@ -26,8 +28,13 @@ class ActivityActivationGateTest {
         assertFalse(activates(ActivityMode.CYCLE, displacement = 17.99))
     }
 
-    @Test fun walkingAndRunningActivateFromMeasuredStepsOrValidatedGpsMotion() {
-        assertTrue(activates(ActivityMode.WALK, displacement = 0.0, steps = 2, points = 0, durationMs = 0L, accuracy = Double.NaN))
+    @Test fun walkingAndRunningRequireSustainedPlausibleStepsOrValidatedGpsMotion() {
+        assertFalse(activates(ActivityMode.WALK, displacement = 0.0, steps = 2, stepWindowMs = 5_000L, points = 0, durationMs = 0L, accuracy = Double.NaN))
+        assertTrue(activates(ActivityMode.WALK, displacement = 0.0, steps = 4, stepWindowMs = 5_000L, points = 0, durationMs = 0L, accuracy = Double.NaN))
+        assertTrue(activates(ActivityMode.WALK, displacement = 0.0, steps = 4, stepWindowMs = 15_000L, points = 0, durationMs = 0L, accuracy = Double.NaN))
+        assertFalse(activates(ActivityMode.WALK, displacement = 0.0, steps = 4, stepWindowMs = 4_999L, points = 0, durationMs = 0L, accuracy = Double.NaN))
+        assertFalse(activates(ActivityMode.WALK, displacement = 0.0, steps = 4, stepWindowMs = 15_001L, points = 0, durationMs = 0L, accuracy = Double.NaN))
+        assertFalse(activates(ActivityMode.WALK, displacement = 0.0, steps = 100, stepWindowMs = 5_000L, points = 0, durationMs = 0L, accuracy = Double.NaN))
         assertTrue(activates(ActivityMode.WALK, displacement = 12.5))
         assertTrue(activates(ActivityMode.RUN, displacement = 20.0))
         assertFalse(activates(ActivityMode.RUN, displacement = 20.0, points = 2))

@@ -188,6 +188,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private var activityDistanceMetres = 0.0
     private var activityStepBaseline: Float? = null
     private var activityStepDelta = 0
+    private var activityStepEvidenceBaseline = 0
+    private var activityStepEvidenceStartedElapsedMs = 0L
     private var currentSpeedKph = 0.0
     private var lastLocation: Location? = null
     private var lastObservedLocation: Location? = null
@@ -303,6 +305,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityDistanceMetres = 0.0
         activityStepBaseline = null
         activityStepDelta = 0
+        activityStepEvidenceBaseline = 0
+        activityStepEvidenceStartedElapsedMs = activityStartedAtElapsedMs
         currentSpeedKph = 0.0
         lastLocation = null
         lastObservedLocation = null
@@ -459,14 +463,17 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         if (event.sensor.type != Sensor.TYPE_STEP_COUNTER || activityMode?.usesSteps != true) return
         val raw = event.values.firstOrNull() ?: return
         if (!raw.isFinite() || raw < 0f) return
+        val nowElapsed = SystemClock.elapsedRealtime()
         val baseline = activityStepBaseline
         if (baseline == null || raw < baseline) {
             activityStepBaseline = raw
             activityStepDelta = 0
+            activityStepEvidenceBaseline = 0
+            activityStepEvidenceStartedElapsedMs = nowElapsed
         } else {
             activityStepDelta = max(0, (raw - baseline).toInt())
         }
-        maybeActivateActivity(SystemClock.elapsedRealtime())
+        maybeActivateActivity(nowElapsed)
         publishActivitySnapshot()
         saveActivityCheckpoint()
     }
@@ -483,16 +490,34 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         val gpsDisplacementMetres = gpsWindow?.displacementMetres ?: 0.0
         val gpsDurationMs = gpsWindow?.durationMs ?: 0L
         val worstGpsAccuracyMetres = gpsWindow?.worstAccuracyMetres ?: Double.NaN
+        var stepEvidenceDurationMs = (nowElapsed - activityStepEvidenceStartedElapsedMs).coerceAtLeast(0L)
+        if (stepEvidenceDurationMs > ActivityStepActivationPolicy.MAX_WINDOW_MS) {
+            activityStepEvidenceBaseline = activityStepDelta
+            activityStepEvidenceStartedElapsedMs = nowElapsed
+            stepEvidenceDurationMs = 0L
+        }
+        val stepEvidenceDelta = (activityStepDelta - activityStepEvidenceBaseline).coerceAtLeast(0)
+        val trustedStepDelta = ActivityStepActivationPolicy.confirmedSteps(stepEvidenceDelta, stepEvidenceDurationMs)
         if (!ActivityActivationGate.shouldActivate(
                 mode = mode,
                 gpsDisplacementMetres = gpsDisplacementMetres,
-                measuredStepDelta = activityStepDelta,
+                stepEvidenceDelta = stepEvidenceDelta,
+                stepEvidenceDurationMs = stepEvidenceDurationMs,
                 acceptedGpsPoints = gpsWindow?.pointCount ?: 0,
                 gpsDurationMs = gpsDurationMs,
                 worstGpsAccuracyMetres = worstGpsAccuracyMetres,
             )
         ) return
 
+        // Do not credit unconfirmed pre-activation counter noise. Keep only a plausible
+        // step window; GPS-confirmed activation starts step credit at the current counter.
+        val rawCounterBaseline = activityStepBaseline
+        if (rawCounterBaseline != null) {
+            val currentRawCounter = rawCounterBaseline + activityStepDelta.toFloat()
+            val creditedSteps = trustedStepDelta ?: 0
+            activityStepBaseline = currentRawCounter - creditedSteps.toFloat()
+            activityStepDelta = creditedSteps
+        }
         activityPhase = ActivitySessionPhase.ACTIVE
         if (gpsWindow != null) {
             val firstPoint = gpsWindow.firstPoint
@@ -575,6 +600,10 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityStartedAtElapsedMs += pausedFor
         activityPauseStartedElapsedMs = 0L
         activityPaused = false
+        if (activityPhase == ActivitySessionPhase.ARMED) {
+            activityStepEvidenceBaseline = activityStepDelta
+            activityStepEvidenceStartedElapsedMs = SystemClock.elapsedRealtime()
+        }
         getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE).edit().putBoolean("activity_paused", false).apply()
         lastLocation = null
         currentSpeedKph = 0.0
@@ -724,6 +753,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityDistanceMetres = if (checkpoint.phase == ActivitySessionPhase.ARMED) 0.0 else checkpoint.distanceMetres
         activityStepBaseline = checkpoint.stepBaseline
         activityStepDelta = checkpoint.stepDelta
+        activityStepEvidenceBaseline = activityStepDelta
+        activityStepEvidenceStartedElapsedMs = nowElapsed
         currentSpeedKph = 0.0
         lastAccuracyMetres = if (checkpoint.phase == ActivitySessionPhase.ACTIVE) checkpoint.lastAccuracyMetres else null
         route.clear()
