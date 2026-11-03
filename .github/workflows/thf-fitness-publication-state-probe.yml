@@ -1,6 +1,11 @@
 name: THF Fitness Publication State Probe
 
 on:
+  push:
+    branches:
+      - agent/codex/fitness-recovery/20261023
+    paths:
+      - '.github/workflows/thf-fitness-publication-state-probe.yml'
   workflow_dispatch:
 
 permissions:
