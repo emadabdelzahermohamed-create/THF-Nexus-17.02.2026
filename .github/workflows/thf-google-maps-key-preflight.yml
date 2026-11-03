@@ -1,6 +1,11 @@
 name: THF Google Maps Key Preflight
 
 on:
+  push:
+    branches:
+      - agent/codex/gps-map-quality-20261030
+    paths:
+      - '.github/workflows/thf-google-maps-key-preflight.yml'
   workflow_dispatch:
 
 permissions:
