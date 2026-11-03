@@ -14,6 +14,7 @@ on:
       - agent/codex/fitness-release-51017-20261027
       - agent/codex/session-persistence-20261027
       - agent/codex/activity-gps-session-integration-20261103-r1
+      - agent/codex/health-dedup-hardening-20261027
     paths:
       - 'fitness-v2/**'
       - '.github/workflows/fitness-sensor-candidate.yml'
