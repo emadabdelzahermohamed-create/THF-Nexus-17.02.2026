@@ -1,4 +1,5 @@
 name: THF Fitness Publication State Probe
+# Read-only evidence refresh trigger; no upload or commit step.
 
 on:
   push:
