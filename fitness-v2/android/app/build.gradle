@@ -34,7 +34,11 @@ android {
     kotlinOptions { jvmTarget = '17' }
     testOptions { unitTests.returnDefaultValues = true }
     buildTypes {
-        debug { versionNameSuffix '-debug' }
+        // Keep phone QA installs isolated from the Play package and its live workout/data.
+        debug {
+            applicationIdSuffix '.qa'
+            versionNameSuffix '-debug'
+        }
         release { minifyEnabled false; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' }
     }
 }

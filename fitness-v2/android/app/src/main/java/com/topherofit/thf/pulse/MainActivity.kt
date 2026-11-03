@@ -12,9 +12,11 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.io.ByteArrayInputStream
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.edit
@@ -178,9 +180,13 @@ class MainActivity : ComponentActivity() {
             domStorageEnabled = true
             allowFileAccess = true
             allowContentAccess = false
-            blockNetworkLoads = true
+            // External requests are disabled by an explicit host/path allowlist below.
+            // The activity map needs HTTPS raster tiles; all other HTTP(S) resources stay blocked.
+            blockNetworkLoads = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             mediaPlaybackRequiresUserGesture = false
+            cacheMode = WebSettings.LOAD_DEFAULT
+            userAgentString = "${this.userAgentString} TopHeroFit/${BuildConfig.VERSION_NAME}"
             @Suppress("DEPRECATION")
             allowFileAccessFromFileURLs = false
             @Suppress("DEPRECATION")
@@ -188,8 +194,30 @@ class MainActivity : ComponentActivity() {
         }
         web.addJavascriptInterface(PulseBridge(), "PulseNative")
         web.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+                val isAllowedTileRequest = request.method.equals("GET", ignoreCase = true) &&
+                    !WebViewNetworkPolicy.shouldBlockExternalResource(request.url.toString())
+                if (isAllowedTileRequest) return super.shouldInterceptRequest(view, request)
+                return WebResourceResponse(
+                    "text/plain",
+                    "UTF-8",
+                    403,
+                    "Blocked by THF network policy",
+                    mapOf("Cache-Control" to "no-store"),
+                    ByteArrayInputStream(ByteArray(0)),
+                )
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                return !request.url.scheme.equals("file", ignoreCase = true)
+                val uri = request.url
+                if (uri.scheme.equals("https", ignoreCase = true) &&
+                    uri.host in setOf("www.google.com", "maps.google.com") &&
+                    uri.path?.startsWith("/maps", ignoreCase = true) == true
+                ) {
+                    runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                    return true
+                }
+                return !uri.scheme.equals("file", ignoreCase = true)
             }
         }
     }
@@ -197,7 +225,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::prefs.isInitialized) clearExpiredPendingAccountAuth()
-        if (::motionEngine.isInitialized && !ActivityTrackingService.hasActiveTracking()) motionEngine.onHostResume()
+        val activityRestorePending = ActivityTrackingService.restorePersistedActivityIfAvailable(this)
+        if (::motionEngine.isInitialized && !activityRestorePending && !ActivityTrackingService.hasActiveTracking()) motionEngine.onHostResume()
         if (::foundingHeroBilling.isInitialized) foundingHeroBilling.start()
         if (::healthRepository.isInitialized) {
             lifecycleScope.launch {
