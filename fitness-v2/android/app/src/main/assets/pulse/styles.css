@@ -74,3 +74,5 @@
 @media(prefers-reduced-motion:reduce){.exercise-reference-motion img:first-of-type{opacity:1!important;animation:none!important}.exercise-reference-motion img:last-of-type{opacity:0!important;animation:none!important}}
 .motion-credit{margin:0;padding:8px 12px 12px;line-height:1.5;font-size:11px}
 .motion-credit a{color:var(--gold);text-decoration:underline}
+
+.filter-panel .equipment-match-filter{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 10px;border:1px solid #3e5b66;border-radius:12px;color:var(--text);font-size:12px;font-weight:800}.filter-panel .equipment-match-filter input{width:18px;height:18px;flex:0 0 auto;accent-color:var(--gold)}.filter-panel .equipment-match-filter span{line-height:1.4}.filter-panel .equipment-match-filter:focus-within{outline:3px solid var(--blue);outline-offset:2px}
