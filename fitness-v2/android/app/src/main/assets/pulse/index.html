@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07141b">
   <title>Top Hero Fit</title>
+  <link rel="stylesheet" href="./vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -158,7 +159,7 @@
       </div>
       <article id="activityLivePanel" class="surface activity-live-panel">
         <div class="card-heading"><div><p id="activityModeLabel" class="eyebrow" data-i18n="selectActivity">اختر نشاطًا للبدء</p><h2 id="activityTimer">00:00:00</h2></div><span id="activityGpsStatus" class="pill" data-i18n="gpsWaiting">بانتظار GPS</span></div>
-        <div id="activityMap" class="activity-map" role="img" aria-label="مسار GPS"><svg viewBox="0 0 1000 560" preserveAspectRatio="none"><defs><pattern id="activityGridPattern" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M100 0H0V100" fill="none" stroke="currentColor" stroke-opacity=".08" stroke-width="2"/></pattern></defs><rect width="1000" height="560" fill="url(#activityGridPattern)"/><polyline id="activityRouteLine" points="" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><div id="activityMapEmpty" data-i18n="gpsRouteHint">سيظهر مسارك الحقيقي هنا بعد أول نقاط GPS.</div></div>
+        <div id="activityMap" class="activity-map" role="region" aria-label="خريطة مسار النشاط"><div id="activityMapCanvas" role="application" aria-label="Interactive activity map" data-i18n-aria-label="activityMapLabel"></div><svg id="activityMapFallback" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true"><defs><pattern id="activityGridPattern" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M100 0H0V100" fill="none" stroke="currentColor" stroke-opacity=".08" stroke-width="2"/></pattern></defs><rect width="1000" height="560" fill="url(#activityGridPattern)"/><polyline id="activityRouteLine" points="" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><div id="activityMapEmpty" data-i18n="gpsRouteHint">بانتظار تثبيت موقع حديث لعرض خريطتك ومسارك الحقيقي.</div><button id="activityMapRecenter" class="activity-map-control activity-map-recenter" type="button" disabled data-i18n="mapRecenter">إعادة التمركز</button><a id="activityGoogleMaps" class="activity-map-control activity-map-google hidden" href="https://www.google.com/maps" rel="noopener noreferrer" data-i18n="mapGoogle">فتح في خرائط Google</a></div>
         <div class="metric-grid activity-metrics">
           <article class="metric"><span data-i18n="distance">المسافة</span><strong id="activityDistance">0.00</strong><small>km</small></article>
           <article class="metric"><span data-i18n="pace">الوتيرة</span><strong id="activityPace">—</strong><small>/km</small></article>
@@ -284,6 +285,7 @@
   </div>
 
   <div id="toast" class="toast hidden" role="status"></div>
+  <script src="./vendor/leaflet/leaflet.js"></script>
   <script src="./data/exercises.js"></script>
   <script src="./data/programs.js"></script>
   <script src="./data/motion-manifest.js"></script>
