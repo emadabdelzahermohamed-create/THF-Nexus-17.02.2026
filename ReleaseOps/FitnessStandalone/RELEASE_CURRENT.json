@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-03T17:25:04Z",
+  "observed_at": "2026-11-03T17:40:52Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -37,13 +37,13 @@
     "independent_readback": "PASS",
     "production": "NOT_VERIFIED",
     "latest_state_probe": {
-      "run_id": 41681987871,
-      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41681987871",
-      "head_sha": "46e5a9f1e6315e2a2e4f62185a53a26192953985",
-      "observed_at": "2026-11-03T17:12:58Z",
+      "run_id": 41686496926,
+      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41686496926",
+      "head_sha": "2994f3015af8769e9e9ebfaa766f3c0e8442e943",
+      "observed_at": "2026-11-03T17:40:52Z",
       "conclusion": "SUCCESS_READ_ONLY",
-      "artifact_id": 13254035412,
-      "artifact_digest": "sha256:2d99e956ce16f0e3a46dd24e646aa8105b4fc97765f5a0e596fd0322d897cb90",
+      "artifact_id": 13254613906,
+      "artifact_digest": "sha256:de4b1199534e758b9bd1f384713e14deff86274d45cf4506776f460d28221b17",
       "upload_attempted": false,
       "commit_attempted": false,
       "tracks": [
@@ -114,10 +114,10 @@
     "local_apksigner_verification": "INDETERMINATE: local apksigner lacks the ML-DSA KeyFactory required by the v3.2 signer; this is a verifier limitation, not an app-signature failure. No signature PASS inferred.",
     "physical_p0": "BLOCKED_DEVICE_OFFLINE; last observation 2026-11-01T21:24:32Z showed foreground tracking and an active/ambiguous session; current session state unknown",
     "latest_connection_check": {
-      "checked_during": "2026-11-03 automation recheck",
+      "checked_during": "2026-11-03T17:30Z authorized-device recheck",
       "device": "localhost",
       "status": "OFFLINE",
-      "last_seen": "about 30 hours before this recheck",
+      "last_seen": "about 31 hours before the 17:30Z check",
       "last_phone_observation": "2026-11-01T21:24:32Z",
       "no_adb_or_session_actions": true
     }
@@ -129,13 +129,13 @@
     "note": "Prior validated Internal evidence retained; no rollback or production action taken."
   },
   "release_gates": {
-    "physical_p0": "BLOCKED_DEVICE_OFFLINE; no current session-state read; last observation 2026-11-01T21:24:32Z showed active/ambiguous tracking",
+    "physical_p0": "BLOCKED_DEVICE_OFFLINE; authorized device last seen about 31 hours before 2026-11-03T17:30Z check; last phone observation 2026-11-01T21:24:32Z showed active/ambiguous tracking; current session state unknown",
     "health_policy_privacy": "OPEN; PR #117 policy-only dedup hardening is merged, but Health Connect ingestion, permissions/provenance wiring, and physical gates remain unverified",
     "production": "NOT_VERIFIED",
-    "maps_native_sdk_key": "BLOCKED_OWNER_API_KEY_AND_BILLING_PREREQUISITES; no key created/stored and no billing account linked",
+    "maps_native_sdk_key": "BLOCKED_OWNER_API_KEY_AND_BILLING_PREREQUISITES; preflight run 41684077962 at 2026-11-03T17:25:55Z confirms APIs enabled, key listing permission denied, key secret missing/not visible to builder, and no billing configuration changed",
     "listing_truthfulness": "OPEN; current listing claims GPS/background tracking and estimated metrics; physical P0 incomplete"
   },
-  "next_action": "Continue independent source work on raw-GPS anomaly-policy wiring, all-day step observer/dashboard, Health Connect ingestion and server-authoritative competitions only through disjoint exact-head-tested handoffs. Keep 51020 unallocated: owner Maps API/key prerequisites and physical P0 remain blocked. Resume phone P0 only when the authorized device is online and the existing session is safely idle. No paid infrastructure. After owner prerequisites, exact-head Android CI, and physical P0 pass, allocate one unique versionCode >51019, sign/upload only that exact new AAB, and independently read back Internal. Production only after policy/privacy and physical gates.",
+  "next_action": "Continue independent raw-GPS anomaly-policy wiring, all-day step observer/dashboard, Health Connect ingestion, and server-authoritative competition work only through disjoint exact-head-tested handoffs. Keep versionCode 51020 unallocated: owner Maps API/key/billing prerequisites and physical P0 remain blocked. Resume physical P0 only when the authorized device is online and the existing session is safely idle. No paid infrastructure. After owner prerequisites, exact-head Android CI, and physical P0 pass, allocate one unique versionCode >51019, sign/upload only that exact new AAB, and independently read back Internal. Production only after policy/privacy and physical gates.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -198,7 +198,7 @@
     "promotion_pins_old_source_sha": "76053bd9127c38d8065eb7ac250bdeb34ab67854",
     "next_release_version_code": 51020,
     "status": "BLOCKED_BEFORE_VERSION_ALLOCATION",
-    "blocker": "PR #264 GPS/session/step-evidence integration and PR #117 Health dedup policy are merged after exact-head Android CI. Do not allocate 51020: the authorized device is offline and physical P0 is not run; owner Maps API/key/billing prerequisites remain unresolved. Validation artifacts use 51019, are unsigned, and were not uploaded.",
+    "blocker": "PR #264 GPS/session integration and PR #117 Health dedup policy are merged after exact-head Android CI. Latest canonical app-source validation run 41684206709 on 7bdf52e260f741889fa85e5699a038a307acb285 passed; its unsigned AAB bytes duplicate PR #117 run 41683629360. Do not allocate 51020: owner Maps API/key/billing prerequisites and physical P0 remain blocked; validation artifacts are unsigned and unuploaded.",
     "latest_validation_runs": [
       {
         "pr": 215,
@@ -258,6 +258,23 @@
         "signing": "NOT_RUN",
         "play_upload": "NOT_RUN",
         "note": "Canonical merge commit 7bdf52e260f741889fa85e5699a038a307acb285 has the identical tree to this exact-head candidate."
+      },
+      {
+        "pr": null,
+        "branch": "agent/codex/fitness-recovery/20261023",
+        "source_sha": "7bdf52e260f741889fa85e5699a038a307acb285",
+        "run_id": 41684206709,
+        "conclusion": "PASS_VALIDATION_ONLY",
+        "artifact_id": 13254807503,
+        "artifact_digest": "sha256:3317fdfbf7136713ee4776d6cbb9a4b161965db12589862ef52ce7ad7952cab0",
+        "artifact_download_sha256_verified": true,
+        "debug_apk_sha256": "bacba395c94823081aa2d214887f298ce454b4b1df55a704ee216deb71eda94f",
+        "package": "com.topherofit.thf.pulse.qa",
+        "unsigned_aab_sha256": "bd0d8504025a0cc07a38271abd50f1b47c76f0ad4807fa5fe9a380077d632333",
+        "version_code": 51019,
+        "signing": "NOT_RUN",
+        "play_upload": "NOT_RUN",
+        "note": "Automatic post-merge candidate validation on the canonical app-source SHA. Unsigned AAB bytes are identical to PR #117 run 41683629360; no new release artifact and no repeat build warranted."
       }
     ],
     "duplicate_dispatch_cancelled": {
@@ -409,25 +426,29 @@
     "production": "NOT_VERIFIED"
   },
   "latest_integrator_observation": {
-    "observed_at": "2026-11-03T17:25:04Z",
+    "observed_at": "2026-11-03T17:40:52Z",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
-    "canonical_head_before_checkpoint": "7bdf52e260f741889fa85e5699a038a307acb285",
+    "canonical_head_before_checkpoint": "2994f3015af8769e9e9ebfaa766f3c0e8442e943",
     "merged_prs": [
       264,
       117
     ],
     "pr264_merge_commit": "92462d59a76061b6a445b5e119ec28ca544893af",
     "pr117_merge_commit": "7bdf52e260f741889fa85e5699a038a307acb285",
-    "latest_exact_head_ci_run": 41683629360,
-    "latest_exact_head_ci": "SUCCESS_VALIDATION_ONLY",
-    "latest_play_readback_run": 41681987871,
-    "latest_play_readback_artifact_sha256": "2d99e956ce16f0e3a46dd24e646aa8105b4fc97765f5a0e596fd0322d897cb90",
-    "phone_connection": "OFFLINE; last seen about 30 hours before recheck",
+    "latest_exact_head_ci_run": 41684206709,
+    "latest_exact_head_ci": "SUCCESS_VALIDATION_ONLY on app-source SHA 7bdf52e260f741889fa85e5699a038a307acb285; later canonical commits are evidence/workflow-comment only",
+    "latest_play_readback_run": 41686496926,
+    "latest_play_readback_artifact_sha256": "de4b1199534e758b9bd1f384713e14deff86274d45cf4506776f460d28221b17",
+    "phone_connection": "OFFLINE; last seen about 31 hours before the 17:30Z check",
     "next_candidate_version_code": 51020,
     "candidate_allocated": false,
-    "candidate_build_sign_upload": "not run",
+    "candidate_build_sign_upload": "Run 41684206709 validation-only; QA identity 51019; unsigned/unuploaded; AAB SHA duplicates PR #117 run 41683629360",
     "production": "NOT_VERIFIED",
-    "lease_registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND"
+    "lease_registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND; shared resources not assumed free",
+    "app_source_head": "7bdf52e260f741889fa85e5699a038a307acb285",
+    "latest_play_readback_artifact_id": 13254613906,
+    "latest_maps_preflight_run": 41684077962,
+    "latest_maps_preflight_head": "150d9ea001bab6e8970f22ba9f21e69f3ea595a7"
   },
   "previous_phone_observation": {
     "last_verified_play_installed_version": 51018,
@@ -972,5 +993,64 @@
       "note": "Do not infer shared resources are free."
     },
     "release_decision": "No version allocation, signing, Play upload, or Production promotion."
+  },
+  "latest_maps_preflight": {
+    "run_id": 41684077962,
+    "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41684077962",
+    "head_sha": "150d9ea001bab6e8970f22ba9f21e69f3ea595a7",
+    "observed_at": "2026-11-03T17:25:55Z",
+    "conclusion": "SUCCESS_READ_ONLY",
+    "maps_android_backend_api": "ENABLED",
+    "api_keys_api": "ENABLED",
+    "api_keys_list": "PERMISSION_DENIED",
+    "maps_key_secret": "MISSING_OR_NOT_VISIBLE_TO_BUILDER",
+    "billing_configuration_changed": false,
+    "native_maps_sdk": "BLOCKED_OWNER_API_KEY_AND_BILLING_PREREQUISITES"
+  },
+  "current_handoffs_20261103_1740": {
+    "pr215": {
+      "state": "OPEN_DRAFT",
+      "head_sha": "150d9ea001bab6e8970f22ba9f21e69f3ea595a7",
+      "android_ci": "NO_EXACT_HEAD_ANDROID_CI",
+      "maps_preflight_run": 41684077962,
+      "publication_probe_run": 41684075582,
+      "publication_probe_result": "FAILED_BEFORE_JOB_CREATION; 0 jobs; no artifact or Play action",
+      "note": "GPS/session source superseded by merged PR #264; remaining workflow/checkpoint changes are unmerged."
+    },
+    "pr225": {
+      "state": "OPEN_DRAFT",
+      "head_sha": "40f3a6cf1fa79a01fabfb783f8dcbd617e8403bb",
+      "exact_head_ci_run": 41175248362,
+      "exact_head_ci": "PASS_VALIDATION_ONLY",
+      "artifact_id": 13032666359,
+      "artifact_sha256": "4314292544ffc0cc78b0fb61a50e34bc2e9819072c1eae71573c1e47e07f61c0",
+      "artifact_download_sha256_verified": true,
+      "debug_apk_sha256": "0af5b5754c4d3359231e2f34dde27ff10ec1c2a7eac2d60c174a9912fe1c408f",
+      "unsigned_aab_sha256": "e6a48234f2fdb3a9642a6cd26b921e225ddc27dc022f98e0e933bfead498a100",
+      "note": "Pure core only; no all-day observer/persistence owner/dashboard; no user-visible daily tracking. Keep draft."
+    },
+    "pr263": {
+      "state": "OPEN_DRAFT",
+      "head_sha": "8b49e9513af484a1d334e71bfb5345a669e7b355",
+      "local_harness": "11/11",
+      "exact_head_android_ci": "NOT_RUN",
+      "raw_gps_ingestion_wiring": "NOT_ADDED"
+    },
+    "pr261": {
+      "state": "OPEN",
+      "head_sha": "7a81f7216beeef32919e8c755deeba06e5f5d803",
+      "local_tests": "6/6",
+      "exact_head_android_ci": "NOT_RUN",
+      "health_reader_wiring": "NOT_ADDED"
+    },
+    "pr141": {
+      "state": "OPEN",
+      "head_sha": "60a445dc0de8167069c3a8f824b90fcdef037514",
+      "exact_head_android_ci": "NOT_RUN"
+    },
+    "competitions": {
+      "open_server_authoritative_scoring_pr": "NONE_FOUND"
+    },
+    "lease_registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND; do not infer shared resources are free"
   }
 }
