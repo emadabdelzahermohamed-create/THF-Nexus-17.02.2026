@@ -10,6 +10,7 @@ data class GpsFix(
     val elapsedMs: Long,
     val mock: Boolean,
     val speedMps: Double?,
+    val sourceLabel: String? = null,
 )
 
 object GpsFixGate {
