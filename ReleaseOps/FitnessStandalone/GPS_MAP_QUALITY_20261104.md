@@ -16,6 +16,7 @@ App/test source HEAD (before evidence-only documentation commits): `6aa40c03dbe2
 This is a source-level measurement-filtering improvement, not a claim of physical GPS accuracy. A prolonged stationary drift can still exceed the deadband; GPS-only distance on small loops may be deferred until net displacement clears the threshold. Physical testing is required to assess those tradeoffs.
 
 Evidence-only documentation commits follow the app/test source HEAD; no additional app source changed.
+Draft PR #265 was opened at evidence HEAD `fd22c055af56a99acd2f7447b92a0b5faabceba8`; GitHub reports mergeable/clean, but the exact-head check-runs and statuses collections are empty. Subsequent commits are documentation-only.
 
 ## Exact-source checks
 
