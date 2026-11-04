@@ -1,15 +1,15 @@
 package com.topherofit.thf.pulse
 
 import java.util.Locale
-import kotlin.math.max
 
 /**
  * Conservative distance accumulator for accepted raw GPS fixes.
  *
- * Unlike the display route, this keeps a stable anchor while apparent movement is inside the
- * two fixes' horizontal-accuracy radii. Small real movements therefore accumulate instead of
- * being lost at every 1-second update, while stationary jitter is not summed as distance.
- * This is measurement filtering, not proof of location authenticity.
+ * It keeps a stable movement anchor while net displacement remains inside both fixes' reported
+ * accuracy radii. Accepted path length accumulates behind that anchor, so ordinary short updates
+ * and curved movement are not discarded. Stationary jitter is not summed into distance unless
+ * the net displacement also clears the uncertainty deadband. This is measurement filtering, not
+ * proof of location authenticity; a long stationary drift can still exceed the deadband.
  */
 data class GpsDistanceCredit(
     val distanceMetres: Double,
@@ -24,71 +24,92 @@ class GpsDistanceAccumulator {
     }
 
     private var anchor: GpsFix? = null
+    private var lastFix: GpsFix? = null
+    private var pendingPathDistanceMetres = 0.0
 
     fun reset() {
         anchor = null
+        lastFix = null
+        pendingPathDistanceMetres = 0.0
     }
 
-    /** Seed a new measurement window without crediting the segment to the previous anchor. */
+    /** Seed a new measurement window without crediting a segment to the previous anchor. */
     fun seed(fix: GpsFix?) {
-        anchor = fix?.takeIf(::isUsable)
+        val usable = fix?.takeIf(::isUsable)
+        anchor = usable
+        lastFix = usable
+        pendingPathDistanceMetres = 0.0
     }
 
     /**
-     * Offer an already accepted raw fix. Returns only conservative measurable distance.
-     * Small/uncertain displacement leaves the anchor unchanged so real movement can accumulate.
+     * Offer an already accepted raw fix. Returns accumulated path length only after net movement
+     * exceeds both endpoint accuracy radii plus a small minimum-displacement margin.
      * Provider changes and long gaps re-anchor rather than bridging unrelated evidence.
      */
     fun offer(fix: GpsFix): GpsDistanceCredit? {
         if (!isUsable(fix)) {
-            anchor = null
+            reset()
             return null
         }
 
-        val previous = anchor
-        if (previous == null) {
-            anchor = fix
+        val movementAnchor = anchor
+        val previousFix = lastFix
+        if (movementAnchor == null || previousFix == null) {
+            seed(fix)
             return null
         }
 
-        val previousSource = normalizedSource(previous.sourceLabel)
+        val anchorSource = normalizedSource(movementAnchor.sourceLabel)
         val currentSource = normalizedSource(fix.sourceLabel)
         if (currentSource == null) {
-            anchor = null
+            reset()
             return null
         }
-        if (previousSource == null || previousSource != currentSource) {
-            anchor = fix
-            return null
-        }
-
-        val elapsedMs = fix.elapsedMs - previous.elapsedMs
-        if (elapsedMs <= 0L || elapsedMs > MAX_ANCHOR_GAP_MS) {
-            anchor = fix
+        if (anchorSource == null || anchorSource != currentSource) {
+            seed(fix)
             return null
         }
 
-        val observedDistance = ActivityMetrics.distanceMetres(
-            previous.latitude,
-            previous.longitude,
+        val sincePreviousMs = fix.elapsedMs - previousFix.elapsedMs
+        val sinceAnchorMs = fix.elapsedMs - movementAnchor.elapsedMs
+        if (sincePreviousMs <= 0L || sincePreviousMs > MAX_ANCHOR_GAP_MS ||
+            sinceAnchorMs <= 0L || sinceAnchorMs > MAX_ANCHOR_GAP_MS
+        ) {
+            seed(fix)
+            return null
+        }
+
+        val stepDistance = ActivityMetrics.distanceMetres(
+            previousFix.latitude,
+            previousFix.longitude,
             fix.latitude,
             fix.longitude,
         )
-        if (!observedDistance.isFinite()) {
-            anchor = fix
+        val netDisplacement = ActivityMetrics.distanceMetres(
+            movementAnchor.latitude,
+            movementAnchor.longitude,
+            fix.latitude,
+            fix.longitude,
+        )
+        if (!stepDistance.isFinite() || !netDisplacement.isFinite()) {
+            seed(fix)
             return null
         }
 
-        val uncertaintyMetres = previous.accuracyMetres + fix.accuracyMetres
-        val conservativeDistance = max(0.0, observedDistance - uncertaintyMetres)
-        if (conservativeDistance < MIN_CREDITABLE_DISTANCE_METRES) {
-            return null
-        }
+        pendingPathDistanceMetres += stepDistance
+        lastFix = fix
 
+        val uncertaintyDeadband = movementAnchor.accuracyMetres + fix.accuracyMetres
+        val requiredDisplacement = uncertaintyDeadband + MIN_CREDITABLE_DISTANCE_METRES
+        if (netDisplacement < requiredDisplacement) return null
+
+        val credit = pendingPathDistanceMetres
         anchor = fix
+        lastFix = fix
+        pendingPathDistanceMetres = 0.0
         return GpsDistanceCredit(
-            distanceMetres = conservativeDistance,
-            elapsedMs = elapsedMs,
+            distanceMetres = credit,
+            elapsedMs = sinceAnchorMs,
         )
     }
 
