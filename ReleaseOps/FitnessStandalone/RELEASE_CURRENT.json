@@ -1057,7 +1057,6 @@
     "observed_date": "2026-11-04",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
     "canonical_base_sha_at_start": "f927d9fb3a80b581fd41966b91007c960577a6af",
-    "recovery_checkpoint_commit": "48f3641b3e56e28d49cedac83e7405c37fa1a5a1",
     "latest_gps_candidate": {
       "pr": 265,
       "branch": "agent/codex/activity-gps-distance-deadband-20261104-r1",
@@ -1119,6 +1118,10 @@
       "new_signed_aab": false,
       "play_listing_changed": false,
       "production_promotion": false
-    }
+    },
+    "checkpoint_path": "ReleaseOps/FitnessStandalone/INTEGRATOR_RECHECK_20261104.md",
+    "checkpoint_commit_sha": "1a42423450f1a0a468d73bb9c1138da3602ec7f3",
+    "recovery_path_preserved": true,
+    "recovery_restore_commit_sha": "1c3acf3b4910deaf18d54d43b7d848b911456533"
   }
 }
