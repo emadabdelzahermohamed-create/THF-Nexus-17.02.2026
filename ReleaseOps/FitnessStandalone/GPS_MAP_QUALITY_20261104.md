@@ -21,7 +21,7 @@ Draft PR #265 was opened at evidence HEAD `fd22c055af56a99acd2f7447b92a0b5faabce
 ## Exact-source checks
 
 - Kotlin/JVM harness: **19/19 regression cases passed** using the exact committed production blobs for `GpsDistanceAccumulator.kt` (blob `697d73545683ecf934c382960101cac1f969792e`), `GpsFixGate.kt` (blob `28261ddcea4f2b5672573a2af854fbf75a1ecc35`), and `ActivityMetrics.kt` (blob `9f91c8722c323f4f97a088165890661f3791f59f`). The committed `GpsDistanceAccumulatorTest.kt` blob is `60c1c9fbfa3ae99bacda5bb6c4b644cb236c5f10`; existing `GpsFixGateTest.kt` blob is `fddb715072978aded2697b157fd1a575d0e9ff10`.
-- Direct source-contract harness: **14/14 assertions passed** against the candidate service/helper/gate/metrics/source-test blobs. The added Python source-contract test snippet passed syntax compilation.
+- Direct source-contract harness: **15/15 assertions passed** against the candidate service/helper/gate/metrics/source-test blobs. The added Python source-contract test snippet passed syntax compilation.
 - These are local source/JVM checks. No Android Gradle/JUnit, lint, APK/AAB, or physical-device PASS is claimed.
 
 ## Blockers and release boundary
