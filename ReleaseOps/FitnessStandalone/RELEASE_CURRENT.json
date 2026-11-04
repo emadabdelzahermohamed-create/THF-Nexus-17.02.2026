@@ -1052,5 +1052,73 @@
       "open_server_authoritative_scoring_pr": "NONE_FOUND"
     },
     "lease_registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND; do not infer shared resources are free"
+  },
+  "integrator_recheck_20261104": {
+    "observed_date": "2026-11-04",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "canonical_base_sha_at_start": "f927d9fb3a80b581fd41966b91007c960577a6af",
+    "recovery_checkpoint_commit": "48f3641b3e56e28d49cedac83e7405c37fa1a5a1",
+    "latest_gps_candidate": {
+      "pr": 265,
+      "branch": "agent/codex/activity-gps-distance-deadband-20261104-r1",
+      "exact_head_sha": "1eebed21ded32571419b38be17fddc81bf247a56",
+      "app_test_source_sha": "b7703e71a4fb31d705ed631259a1920aa6346c33",
+      "local_kotlin_jvm": "19/19",
+      "local_source_contract": "17/17",
+      "exact_head_android_ci": "NONE",
+      "combined_status_checks": 0,
+      "physical_p0": "BLOCKED_DEVICE_OFFLINE",
+      "merge": "HOLD"
+    },
+    "health_policy_candidate": {
+      "pr": 266,
+      "exact_head_sha": "635d81ab449617207d9be37125335d7d8be5ca5e",
+      "local_kotlin_jvm": "14/14",
+      "exact_head_android_ci": "NONE",
+      "reader_or_permission_added": false,
+      "merge": "HOLD"
+    },
+    "play_readback": {
+      "run_id": 41686496926,
+      "attempt": 2,
+      "run_state_at_recheck": "QUEUED",
+      "artifact_id": 13348347320,
+      "artifact_sha256": "e82696b79e0e9727268b2fc9a968eddf8b021d9fb5efb9e806b7535850a0a444",
+      "artifact_download_sha256_verified": true,
+      "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
+      "internal_version_code": 51019,
+      "internal_status": "completed",
+      "alpha_version_code": 51007,
+      "alpha_status": "draft",
+      "production": "NOT_LISTED_IN_READBACK",
+      "upload_attempted": false,
+      "commit_attempted": false
+    },
+    "maps": {
+      "last_preflight_run": 41684077962,
+      "apis": "enabled",
+      "key_inventory": "permission denied",
+      "key_secret": "missing_or_not_visible",
+      "billing_account": "none linked",
+      "native_sdk": "blocked_owner_prerequisites",
+      "paid_infrastructure_changed": false
+    },
+    "phone": {
+      "device": "localhost",
+      "status": "OFFLINE",
+      "last_seen": "about 55 hours before recheck",
+      "physical_p0": "BLOCKED_NOT_RUN",
+      "no_device_actions": true
+    },
+    "lease_registry": {
+      "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
+      "note": "Do not infer shared resources are free."
+    },
+    "release_decision": {
+      "version_code_51020_allocated": false,
+      "new_signed_aab": false,
+      "play_listing_changed": false,
+      "production_promotion": false
+    }
   }
 }
