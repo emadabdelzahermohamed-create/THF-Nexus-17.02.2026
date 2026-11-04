@@ -34,3 +34,14 @@ This is the current evidence checkpoint for the canonical FitnessStandalone rele
 2. Preserve the unknown phone session; run physical P0 only when the authorized device is online and the session is confirmed safely idle.
 3. Keep native Google Maps blocked until owner API/key/billing prerequisites can be met without paid infrastructure.
 4. Continue daily-step observer/dashboard, Health ingestion, and server-authoritative competition work only as separately owned, tested handoffs; no safe exact-head-tested integration was available in this recheck.
+
+
+## Independent competition-backend audit — 2026-11-04
+
+The canonical backend has a claim-verification endpoint, but not a complete competition-scoring system:
+
+- `fitness-v2/backend/api.py` blob `5c96d8e6b4d04a5b454fd802df3174a1e56a80ea`, lines 224–239, accepts `POST /api/v2/competitions/{competitionId}/submissions`, verifies the supplied workout record/claimed metric, then echoes the path's competition ID.
+- `fitness-v2/backend/workout_store.py` blob `5e14e44539efeeced872fff9fdfcdf9c0f34aad3`, lines 325–344, checks a user-scoped server-stored workout volume against the client claim and explicitly returns `SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED`. The competition ID is not passed into this verifier.
+- The store schema contains workout sessions and sets, but no competition definitions, enrollment/membership, event windows, rules, submission ledger, or server-owned leaderboard/rank state. Existing tests cover claim matching and reject an extra client-supplied user ID; they do not establish competition membership, eligibility, anti-replay, event-window enforcement, or authoritative ranking.
+- Therefore this endpoint is a server-record claim matcher, not a server-authoritative competition scorer. Do not use its `accepted` response as leaderboard eligibility or reward authorization.
+- No open competition/leaderboard/marathon/server-authoritative scoring PR was found. No backend code was changed in this audit; exact-head CI and integration remain required before any implementation is accepted.
