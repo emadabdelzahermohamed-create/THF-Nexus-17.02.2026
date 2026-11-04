@@ -192,6 +192,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private var activityStepEvidenceStartedElapsedMs = 0L
     private var currentSpeedKph = 0.0
     private var lastLocation: Location? = null
+    private val gpsDistanceAccumulator = GpsDistanceAccumulator()
     private var lastObservedLocation: Location? = null
     private var lastAccuracyMetres: Float? = null
     private var lastObservedAccuracyMetres: Float? = null
@@ -309,6 +310,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityStepEvidenceStartedElapsedMs = activityStartedAtElapsedMs
         currentSpeedKph = 0.0
         lastLocation = null
+        gpsDistanceAccumulator.reset()
         lastObservedLocation = null
         lastAccuracyMetres = null
         lastObservedAccuracyMetres = null
@@ -393,6 +395,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun unregisterActivitySources() {
+        gpsDistanceAccumulator.reset()
         runCatching { fusedLocationClient.removeLocationUpdates(fusedLocationCallback) }
         runCatching { locationManager.removeUpdates(this) }
         runCatching { sensorManager.unregisterListener(this) }
@@ -415,23 +418,23 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             publishActivitySnapshot()
             return
         }
-        if (previous != null) {
-            val deltaMetres = ActivityMetrics.distanceMetres(previous.latitude, previous.longitude, location.latitude, location.longitude)
-            val deltaMs = location.elapsedRealtimeNanos / 1_000_000L - previous.elapsedRealtimeNanos / 1_000_000L
-            val impliedKph = ActivityMetrics.averageSpeedKph(deltaMetres, deltaMs)
-            // Candidate GPS points are evidence only while ARMED. Never expose their distance/speed
-            // as measured workout metrics until the movement gate has confirmed sustained motion.
-            if (activityPhase == ActivitySessionPhase.ACTIVE) {
-                if (deltaMetres >= 1.0) {
-                    activityDistanceMetres += deltaMetres
-                    currentSpeedKph = if (location.hasSpeed() && location.speed.isFinite() && location.speed > 0f) {
-                        location.speed * 3.6
-                    } else {
-                        impliedKph
-                    }
-                } else {
-                    currentSpeedKph = 0.0
-                }
+        // ARMED fixes are candidates only. Once movement activates the session, the activation
+        // window is credited separately and the accumulator is seeded at its final raw fix.
+        val distanceCredit = if (activityPhase == ActivitySessionPhase.ACTIVE) {
+            gpsDistanceAccumulator.offer(observedFix)
+        } else {
+            gpsDistanceAccumulator.seed(observedFix)
+            null
+        }
+        if (activityPhase == ActivitySessionPhase.ACTIVE) {
+            if (distanceCredit != null) {
+                activityDistanceMetres += distanceCredit.distanceMetres
+                currentSpeedKph = ActivityMetrics.averageSpeedKph(
+                    distanceCredit.distanceMetres,
+                    distanceCredit.elapsedMs,
+                )
+            } else {
+                currentSpeedKph = 0.0
             }
         }
         lastLocation = Location(location)
@@ -457,6 +460,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         elapsedMs = elapsedRealtimeNanos / 1_000_000L,
         mock = if (Build.VERSION.SDK_INT >= 31) isMock else isFromMockProvider,
         speedMps = if (hasSpeed()) speed.toDouble() else null,
+        sourceLabel = provider,
     )
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -535,6 +539,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             lastAccuracyMetres = lastPoint.accuracyMetres
             activityActivatedAtWallMs = activityStartedAtWallMs + firstPoint.elapsedMs
             activityActivatedAtElapsedMs = activityStartedAtElapsedMs + firstPoint.elapsedMs
+            gpsDistanceAccumulator.seed(lastLocation?.toGpsFix())
         } else {
             // Step evidence can activate walk/run without GPS. Discard all pre-activation GPS
             // candidates and start a fresh route anchor after activation.
@@ -542,6 +547,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             currentSpeedKph = 0.0
             route.clear()
             lastLocation = null
+            gpsDistanceAccumulator.reset()
             lastAccuracyMetres = null
             activityActivatedAtWallMs = System.currentTimeMillis()
             activityActivatedAtElapsedMs = nowElapsed
@@ -606,6 +612,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }
         getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE).edit().putBoolean("activity_paused", false).apply()
         lastLocation = null
+        gpsDistanceAccumulator.reset()
         currentSpeedKph = 0.0
         registerActivitySources(mode)
         publishActivitySnapshot()
@@ -756,6 +763,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         activityStepEvidenceBaseline = activityStepDelta
         activityStepEvidenceStartedElapsedMs = nowElapsed
         currentSpeedKph = 0.0
+        gpsDistanceAccumulator.reset()
         lastAccuracyMetres = if (checkpoint.phase == ActivitySessionPhase.ACTIVE) checkpoint.lastAccuracyMetres else null
         route.clear()
         if (checkpoint.phase == ActivitySessionPhase.ACTIVE) {
