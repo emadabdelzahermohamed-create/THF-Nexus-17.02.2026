@@ -1154,5 +1154,18 @@
     "checkpoint_commit_sha": "1a42423450f1a0a468d73bb9c1138da3602ec7f3",
     "recovery_path_preserved": true,
     "recovery_restore_commit_sha": "1c3acf3b4910deaf18d54d43b7d848b911456533"
+  },
+  "competition_audit_20261104": {
+    "audited_source_branch": "agent/codex/fitness-recovery/20261023",
+    "api_py_blob_sha": "5c96d8e6b4d04a5b454fd802df3174a1e56a80ea",
+    "workout_store_blob_sha": "5e14e44539efeeced872fff9fdfcdf9c0f34aad3",
+    "test_api_blob_sha": "3efc447176b712a2a8c14d331a02afe6534ca69a",
+    "test_workout_store_blob_sha": "08db76c38aa69215378d14826014a18fd5ae44a5",
+    "finding": "Existing endpoint only matches a client-claimed metric to user-scoped server-stored workout facts; competitionId is echoed, not validated against a competition registry or membership.",
+    "missing_authority": "No competition definitions, membership, event windows, scoring rules, idempotent submission ledger, or server-owned ranking state in the current store schema.",
+    "safety": "Do not treat accepted as leaderboard eligibility or reward authorization.",
+    "open_competition_pr_found": false,
+    "code_changed": false,
+    "exact_head_ci": "NOT_RUN"
   }
 }
