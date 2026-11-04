@@ -36,6 +36,26 @@ class GpsDistanceAccumulatorTest {
     }
 
     @Test
+    fun preservesAcceptedPathLengthWhenMovementTurns() {
+        val accumulator = GpsDistanceAccumulator()
+        assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0)))
+        assertNull(accumulator.offer(fix(metres = 5.0, seconds = 2)))
+
+        val corner = GpsFix(
+            latitude = latitudeForMeters(5.0),
+            longitude = Math.toDegrees(5.0 / 6_371_000.0),
+            accuracyMetres = 2.0,
+            elapsedMs = 4_000L,
+            mock = false,
+            speedMps = null,
+            sourceLabel = "fused",
+        )
+        val credit = accumulator.offer(corner)
+        assertNotNull(credit)
+        assertEquals(10.0, credit!!.distanceMetres, 0.3)
+    }
+
+    @Test
     fun stationaryJitterInsideAccuracyRadiiDoesNotAccumulate() {
         val accumulator = GpsDistanceAccumulator()
         assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0, accuracy = 3.0)))
