@@ -3,7 +3,7 @@
 Date: 2026-11-04
 Canonical base: `agent/codex/fitness-recovery/20261023` at `f927d9fb3a80b581fd41966b91007c960577a6af`
 Candidate branch: `agent/codex/activity-gps-distance-deadband-20261104-r1`
-Candidate HEAD: `6aa40c03dbe214bc265c8124f99d9b442f244882`
+App/test source HEAD (before evidence-only documentation commits): `6aa40c03dbe214bc265c8124f99d9b442f244882`
 
 ## Source delta
 
@@ -14,6 +14,8 @@ Candidate HEAD: `6aa40c03dbe214bc265c8124f99d9b442f244882`
 - Normalized longitude delta in `ActivityMetrics.distanceMetres` so legitimate routes crossing ±180° use the short arc.
 
 This is a source-level measurement-filtering improvement, not a claim of physical GPS accuracy. A prolonged stationary drift can still exceed the deadband; GPS-only distance on small loops may be deferred until net displacement clears the threshold. Physical testing is required to assess those tradeoffs.
+
+Evidence-only documentation commits follow the app/test source HEAD; no additional app source changed.
 
 ## Exact-source checks
 
