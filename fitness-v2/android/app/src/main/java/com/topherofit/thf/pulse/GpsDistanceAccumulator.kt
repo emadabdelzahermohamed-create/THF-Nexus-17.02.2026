@@ -26,11 +26,13 @@ class GpsDistanceAccumulator {
     private var anchor: GpsFix? = null
     private var lastFix: GpsFix? = null
     private var pendingPathDistanceMetres = 0.0
+    private var pendingWorstAccuracyMetres = 0.0
 
     fun reset() {
         anchor = null
         lastFix = null
         pendingPathDistanceMetres = 0.0
+        pendingWorstAccuracyMetres = 0.0
     }
 
     /** Seed a new measurement window without crediting a segment to the previous anchor. */
@@ -39,6 +41,7 @@ class GpsDistanceAccumulator {
         anchor = usable
         lastFix = usable
         pendingPathDistanceMetres = 0.0
+        pendingWorstAccuracyMetres = usable?.accuracyMetres ?: 0.0
     }
 
     /**
@@ -97,9 +100,10 @@ class GpsDistanceAccumulator {
         }
 
         pendingPathDistanceMetres += stepDistance
+        pendingWorstAccuracyMetres = maxOf(pendingWorstAccuracyMetres, fix.accuracyMetres)
         lastFix = fix
 
-        val uncertaintyDeadband = movementAnchor.accuracyMetres + fix.accuracyMetres
+        val uncertaintyDeadband = movementAnchor.accuracyMetres + pendingWorstAccuracyMetres
         val requiredDisplacement = uncertaintyDeadband + MIN_CREDITABLE_DISTANCE_METRES
         if (netDisplacement < requiredDisplacement) return null
 
@@ -107,6 +111,7 @@ class GpsDistanceAccumulator {
         anchor = fix
         lastFix = fix
         pendingPathDistanceMetres = 0.0
+        pendingWorstAccuracyMetres = fix.accuracyMetres
         return GpsDistanceCredit(
             distanceMetres = credit,
             elapsedMs = sinceAnchorMs,
