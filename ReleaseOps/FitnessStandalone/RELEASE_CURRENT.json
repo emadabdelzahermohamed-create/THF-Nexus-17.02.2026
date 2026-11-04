@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-03T17:40:52Z",
+  "observed_at": "2026-11-04T17:40:26Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -37,6 +37,37 @@
     "independent_readback": "PASS",
     "production": "NOT_VERIFIED",
     "latest_state_probe": {
+      "run_id": 41686496926,
+      "attempt": 2,
+      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41686496926",
+      "head_sha": "2994f3015af8769e9e9ebfaa766f3c0e8442e943",
+      "observed_at": "2026-11-04T17:40:26Z",
+      "run_status": "queued",
+      "conclusion": null,
+      "artifact_id": 13348347320,
+      "artifact_digest": "sha256:e82696b79e0e9727268b2fc9a968eddf8b021d9fb5efb9e806b7535850a0a444",
+      "artifact_download_sha256_verified": true,
+      "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
+      "upload_attempted": false,
+      "commit_attempted": false,
+      "tracks": [
+        {
+          "track": "internal",
+          "version_code": 51019,
+          "release_name": "THF Fitness 51019 Internal",
+          "status": "completed"
+        },
+        {
+          "track": "alpha",
+          "version_code": 51007,
+          "release_name": "Top Hero Fit 51007 Closed Test",
+          "status": "draft"
+        }
+      ],
+      "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
+      "run_completion": "NOT_CONFIRMED_RUN_STILL_QUEUED"
+    },
+    "previous_state_probe_20261103": {
       "run_id": 41686496926,
       "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41686496926",
       "head_sha": "2994f3015af8769e9e9ebfaa766f3c0e8442e943",
