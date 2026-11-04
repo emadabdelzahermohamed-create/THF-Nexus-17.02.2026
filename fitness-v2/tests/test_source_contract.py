@@ -699,6 +699,8 @@ class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
             service.index("private fun Location.toGpsFix")
         ]
         self.assertIn("gpsDistanceAccumulator.offer(observedFix)", location_path)
+        self.assertIn("if (activityPaused) return", location_path)
+        self.assertIn("activityMode?.usesSteps != true || activityPaused", service)
         self.assertIn("gpsDistanceAccumulator.seed(observedFix)", location_path)
         self.assertIn("activityDistanceMetres += distanceCredit.distanceMetres", location_path)
         self.assertNotIn("activityDistanceMetres += deltaMetres", location_path)
