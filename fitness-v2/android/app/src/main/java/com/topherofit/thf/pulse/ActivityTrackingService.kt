@@ -403,6 +403,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     override fun onLocationChanged(location: Location) {
         val mode = activityMode ?: return
+        if (activityPaused) return
         val nowElapsed = SystemClock.elapsedRealtime()
         val previous = lastLocation
         val observedFix = location.toGpsFix()
@@ -464,7 +465,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     )
 
     override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type != Sensor.TYPE_STEP_COUNTER || activityMode?.usesSteps != true) return
+        if (event.sensor.type != Sensor.TYPE_STEP_COUNTER || activityMode?.usesSteps != true || activityPaused) return
         val raw = event.values.firstOrNull() ?: return
         if (!raw.isFinite() || raw < 0f) return
         val nowElapsed = SystemClock.elapsedRealtime()
