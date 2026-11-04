@@ -687,5 +687,43 @@ assert.deepEqual(smoothActivityRouteForDisplay([point(0, 0), point(5, 10, 4, 4),
         self.assertEqual(result.returncode, 0, result.stderr)
 
 
+class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
+    def test_activity_service_uses_raw_fix_deadband_and_lifecycle_resets(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        helper = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsDistanceAccumulator.kt").read_text()
+        gate = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsFixGate.kt").read_text()
+        metrics = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityMetrics.kt").read_text()
+
+        location_path = service[
+            service.index("override fun onLocationChanged"):
+            service.index("private fun Location.toGpsFix")
+        ]
+        self.assertIn("gpsDistanceAccumulator.offer(observedFix)", location_path)
+        self.assertIn("gpsDistanceAccumulator.seed(observedFix)", location_path)
+        self.assertIn("activityDistanceMetres += distanceCredit.distanceMetres", location_path)
+        self.assertNotIn("activityDistanceMetres += deltaMetres", location_path)
+        self.assertIn("sourceLabel = provider", service)
+        self.assertIn("val gpsDistanceAccumulator = GpsDistanceAccumulator()", service)
+        self.assertIn("gpsDistanceAccumulator.reset()", service)
+
+        activation = service[
+            service.index("private fun maybeActivateActivity"):
+            service.index("private fun buildActivitySnapshot")
+        ]
+        self.assertIn("gpsDistanceAccumulator.seed(lastLocation?.toGpsFix())", activation)
+        self.assertIn("gpsDistanceAccumulator.reset()", activation)
+        unregister = service[
+            service.index("private fun unregisterActivitySources"):
+            service.index("override fun onLocationChanged")
+        ]
+        self.assertIn("gpsDistanceAccumulator.reset()", unregister)
+
+        self.assertIn("sourceLabel: String? = null", gate)
+        self.assertIn("MAX_ANCHOR_GAP_MS = 120_000L", helper)
+        self.assertIn("movementAnchor.accuracyMetres + fix.accuracyMetres", helper)
+        self.assertIn("pendingPathDistanceMetres += stepDistance", helper)
+        self.assertIn("normalizeLongitudeDelta(lon2 - lon1)", metrics)
+
+
 if __name__ == "__main__":
     unittest.main()
