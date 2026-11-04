@@ -66,6 +66,18 @@ class GpsDistanceAccumulatorTest {
     }
 
     @Test
+    fun poorIntermediateAccuracyRemainsInTheMovementDeadband() {
+        val accumulator = GpsDistanceAccumulator()
+        assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0, accuracy = 2.0)))
+        assertNull(accumulator.offer(fix(metres = 5.0, seconds = 2, accuracy = 20.0)))
+        assertNull(accumulator.offer(fix(metres = 10.0, seconds = 4, accuracy = 2.0)))
+
+        val credit = accumulator.offer(fix(metres = 30.0, seconds = 10, accuracy = 2.0))
+        assertNotNull(credit)
+        assertEquals(30.0, credit!!.distanceMetres, 0.3)
+    }
+
+    @Test
     fun providerChangeAndLongGapReanchorWithoutBridging() {
         val providerAccumulator = GpsDistanceAccumulator()
         assertNull(providerAccumulator.offer(fix(metres = 0.0, seconds = 0)))
