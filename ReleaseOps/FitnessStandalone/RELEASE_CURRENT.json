@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-04T17:40:26Z",
+  "observed_at": "2026-11-05T17:22:07Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -42,7 +42,7 @@
       "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41686496926",
       "head_sha": "2994f3015af8769e9e9ebfaa766f3c0e8442e943",
       "observed_at": "2026-11-04T17:40:26Z",
-      "run_status": "queued",
+      "run_status": "probe_job_completed",
       "conclusion": null,
       "artifact_id": 13348347320,
       "artifact_digest": "sha256:e82696b79e0e9727268b2fc9a968eddf8b021d9fb5efb9e806b7535850a0a444",
@@ -65,7 +65,14 @@
         }
       ],
       "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
-      "run_completion": "NOT_CONFIRMED_RUN_STILL_QUEUED"
+      "run_completion": "PROBE_JOB_COMPLETED_SUCCESS; OVERALL_RUN_CONCLUSION_NOT_EXPOSED",
+      "workflow_run_conclusion": "NOT_EXPOSED_BY_AVAILABLE_READBACK",
+      "workflow_job_id": 126747620298,
+      "workflow_job_name": "probe",
+      "workflow_job_status": "completed",
+      "workflow_job_conclusion": "success",
+      "independently_verified_at": "2026-11-05T17:22:07Z",
+      "artifact_download_sha256": "e82696b79e0e9727268b2fc9a968eddf8b021d9fb5efb9e806b7535850a0a444"
     },
     "previous_state_probe_20261103": {
       "run_id": 41686496926,
@@ -1167,5 +1174,93 @@
     "open_competition_pr_found": false,
     "code_changed": false,
     "exact_head_ci": "NOT_RUN"
+  },
+  "integrator_recheck_20261105": {
+    "observed_at": "2026-11-05T17:22:07Z",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "canonical_head_before_checkpoint": "e22118b9876503bed64ac0fb0b5e5dbf8b880073",
+    "checkpoint_path": "ReleaseOps/FitnessStandalone/INTEGRATOR_RECHECK_20261105.md",
+    "checkpoint_commit_sha": "4833bbc4179f1a61e759494becc329a9afb6e954",
+    "gps": {
+      "checkpoint_path": "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261105.md",
+      "checkpoint_blob_sha": "b4324f6e80311115df1241d738275679be283e14",
+      "pr": 265,
+      "branch": "agent/codex/activity-gps-distance-deadband-20261104-r1",
+      "head_sha": "2a3b194a5d046f46278cbe6de0fb02c69101e1c1",
+      "app_test_source_sha": "a09cb2098756440ecc9a799288823b4dda59de27",
+      "local_reference_model": "8/8",
+      "source_contract": "5/5",
+      "exact_head_status_checks": 0,
+      "exact_head_pr_workflow_runs": 0,
+      "android_ci": "NOT_RUN",
+      "base_merge_sha": "f927d9fb3a80b581fd41966b91007c960577a6af",
+      "behind_canonical": 8,
+      "ahead_of_merge_base": 28,
+      "state": "DRAFT_HOLD"
+    },
+    "session_integration": {
+      "pr": 264,
+      "state": "MERGED_SOURCE_ONLY",
+      "tested_source_sha": "5ce141340282319723a218deafbd1f24eee2b04a",
+      "android_ci_run": 41681713383,
+      "validation_zip_sha256": "70ae61660cd187c3aa054a803f26d0685a7e9ccc7cac28faf827d13f64d56240",
+      "signed_or_uploaded": false,
+      "physical_p0": "BLOCKED_NOT_RUN"
+    },
+    "health_policy": {
+      "pr": 266,
+      "head_sha": "e6fa84b1d161da9fe26b79ed8e5c4e1b0253ea18",
+      "local_harness": "11/11",
+      "exact_head_status_checks": 0,
+      "exact_head_pr_workflow_runs": 0,
+      "state": "DRAFT_HOLD"
+    },
+    "daily_steps": {
+      "pr": 225,
+      "head_sha": "40f3a6cf1fa79a01fabfb783f8dcbd617e8403bb",
+      "prior_exact_head_ci_run": 41175248362,
+      "prior_exact_head_ci": "PASS",
+      "current_canonical_behind": 34,
+      "current_canonical_ahead": 5,
+      "state": "REBASE_AND_RERUN_REQUIRED; CORE_ONLY_NO_OBSERVER_OR_DASHBOARD"
+    },
+    "anti_cheat": {
+      "pr263": "UNWIRED_NO_EXACT_HEAD_ANDROID_CI",
+      "pr261": "UNWIRED_NO_EXACT_HEAD_ANDROID_CI",
+      "dedicated_competition_scoring_pr_found": false,
+      "competition_audit_source": "2026-11-04",
+      "authoritative_scoring": "NOT_IMPLEMENTED"
+    },
+    "leases": {
+      "explicit_registry_found": false,
+      "evidence": "No explicit registry recorded in FitnessStandalone checkpoint; repository search for LEASES.json returned no match.",
+      "assume_shared_resources_free": false
+    },
+    "maps": {
+      "latest_preflight_run": 41684077962,
+      "preflight_date": "2026-11-03",
+      "apis_enabled": true,
+      "key_inventory_permission": "DENIED",
+      "key_visible": false,
+      "billing_account_linked": false,
+      "native_maps_sdk": "OWNER_PREREQUISITE_BLOCKED",
+      "paid_infrastructure_added": false
+    },
+    "phone": {
+      "authorized_device": "localhost",
+      "status": "OFFLINE",
+      "last_seen_hours_ago": 78,
+      "session_state": "UNKNOWN_PRESERVE",
+      "physical_p0": "BLOCKED_NOT_RUN",
+      "adb_or_session_actions_attempted": false
+    },
+    "release": {
+      "current_internal_version_code": 51019,
+      "next_version_code": 51020,
+      "next_version_allocated": false,
+      "signed_aab_sha256": "5dc7d0077ecfddd3224ca8557a3b4f6d0a5524cf194c0e547fc8b1605c7ba9c5",
+      "new_signed_aab": false,
+      "production": "NOT_VERIFIED"
+    }
   }
 }
