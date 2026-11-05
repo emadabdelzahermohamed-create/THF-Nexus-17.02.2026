@@ -8,8 +8,10 @@ import java.util.Locale
  * It keeps a stable movement anchor while net displacement remains inside both fixes' reported
  * accuracy radii. Accepted path length accumulates behind that anchor, so ordinary short updates
  * and curved movement are not discarded. Stationary jitter is not summed into distance unless
- * the net displacement also clears the uncertainty deadband. This is measurement filtering, not
- * proof of location authenticity; a long stationary drift can still exceed the deadband.
+ * the net displacement also clears the uncertainty deadband. A threshold-crossing excursion must
+ * persist for a second accepted fix; a one-fix spike that returns inside the deadband is discarded.
+ * This is measurement filtering, not proof of location authenticity; prolonged stationary drift
+ * can still exceed the deadband and persist long enough to be credited.
  */
 data class GpsDistanceCredit(
     val distanceMetres: Double,
@@ -27,12 +29,14 @@ class GpsDistanceAccumulator {
     private var lastFix: GpsFix? = null
     private var pendingPathDistanceMetres = 0.0
     private var pendingWorstAccuracyMetres = 0.0
+    private var pendingDisplacementCandidate = false
 
     fun reset() {
         anchor = null
         lastFix = null
         pendingPathDistanceMetres = 0.0
         pendingWorstAccuracyMetres = 0.0
+        pendingDisplacementCandidate = false
     }
 
     /** Seed a new measurement window without crediting a segment to the previous anchor. */
@@ -42,11 +46,13 @@ class GpsDistanceAccumulator {
         lastFix = usable
         pendingPathDistanceMetres = 0.0
         pendingWorstAccuracyMetres = usable?.accuracyMetres ?: 0.0
+        pendingDisplacementCandidate = false
     }
 
     /**
      * Offer an already accepted raw fix. Returns accumulated path length only after net movement
-     * exceeds both endpoint accuracy radii plus a small minimum-displacement margin.
+     * exceeds both reported accuracy radii plus a small margin, then persists at the next accepted
+     * fix. A one-fix excursion that falls back inside the deadband is discarded and re-anchored.
      * Provider changes and long gaps re-anchor rather than bridging unrelated evidence.
      */
     fun offer(fix: GpsFix): GpsDistanceCredit? {
@@ -105,13 +111,30 @@ class GpsDistanceAccumulator {
 
         val uncertaintyDeadband = movementAnchor.accuracyMetres + pendingWorstAccuracyMetres
         val requiredDisplacement = uncertaintyDeadband + MIN_CREDITABLE_DISTANCE_METRES
-        if (netDisplacement < requiredDisplacement) return null
+        if (netDisplacement < requiredDisplacement) {
+            if (pendingDisplacementCandidate) {
+                // A threshold-crossing excursion did not persist. Drop its unconfirmed path so a
+                // later real movement cannot accidentally credit the spike-and-return distance.
+                anchor = fix
+                lastFix = fix
+                pendingPathDistanceMetres = 0.0
+                pendingWorstAccuracyMetres = fix.accuracyMetres
+                pendingDisplacementCandidate = false
+            }
+            return null
+        }
+
+        if (!pendingDisplacementCandidate) {
+            pendingDisplacementCandidate = true
+            return null
+        }
 
         val credit = pendingPathDistanceMetres
         anchor = fix
         lastFix = fix
         pendingPathDistanceMetres = 0.0
         pendingWorstAccuracyMetres = fix.accuracyMetres
+        pendingDisplacementCandidate = false
         return GpsDistanceCredit(
             distanceMetres = credit,
             elapsedMs = sinceAnchorMs,
