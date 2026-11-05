@@ -23,16 +23,17 @@ class GpsDistanceAccumulatorTest {
     )
 
     @Test
-    fun smallUncertainMovesAccumulateFromStableAnchor() {
+    fun smallUncertainMovesAccumulateFromStableAnchorAndRequireConfirmation() {
         val accumulator = GpsDistanceAccumulator()
         assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0)))
         assertNull(accumulator.offer(fix(metres = 3.0, seconds = 3)))
         assertNull(accumulator.offer(fix(metres = 6.0, seconds = 6)))
+        assertNull(accumulator.offer(fix(metres = 8.0, seconds = 8)))
 
-        val credit = accumulator.offer(fix(metres = 8.0, seconds = 8))
+        val credit = accumulator.offer(fix(metres = 10.0, seconds = 10))
         assertNotNull(credit)
-        assertEquals(8.0, credit!!.distanceMetres, 0.15)
-        assertEquals(8_000L, credit.elapsedMs)
+        assertEquals(10.0, credit!!.distanceMetres, 0.15)
+        assertEquals(10_000L, credit.elapsedMs)
     }
 
     @Test
@@ -50,9 +51,20 @@ class GpsDistanceAccumulatorTest {
             speedMps = null,
             sourceLabel = "fused",
         )
-        val credit = accumulator.offer(corner)
+        assertNull(accumulator.offer(corner))
+
+        val afterCorner = GpsFix(
+            latitude = latitudeForMeters(8.0),
+            longitude = Math.toDegrees(5.0 / 6_371_000.0),
+            accuracyMetres = 2.0,
+            elapsedMs = 6_000L,
+            mock = false,
+            speedMps = null,
+            sourceLabel = "fused",
+        )
+        val credit = accumulator.offer(afterCorner)
         assertNotNull(credit)
-        assertEquals(10.0, credit!!.distanceMetres, 0.3)
+        assertEquals(13.0, credit!!.distanceMetres, 0.3)
     }
 
     @Test
@@ -71,10 +83,11 @@ class GpsDistanceAccumulatorTest {
         assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0, accuracy = 2.0)))
         assertNull(accumulator.offer(fix(metres = 5.0, seconds = 2, accuracy = 20.0)))
         assertNull(accumulator.offer(fix(metres = 10.0, seconds = 4, accuracy = 2.0)))
+        assertNull(accumulator.offer(fix(metres = 30.0, seconds = 10, accuracy = 2.0)))
 
-        val credit = accumulator.offer(fix(metres = 30.0, seconds = 10, accuracy = 2.0))
+        val credit = accumulator.offer(fix(metres = 40.0, seconds = 14, accuracy = 2.0))
         assertNotNull(credit)
-        assertEquals(30.0, credit!!.distanceMetres, 0.3)
+        assertEquals(40.0, credit!!.distanceMetres, 0.3)
     }
 
     @Test
@@ -82,16 +95,33 @@ class GpsDistanceAccumulatorTest {
         val providerAccumulator = GpsDistanceAccumulator()
         assertNull(providerAccumulator.offer(fix(metres = 0.0, seconds = 0)))
         assertNull(providerAccumulator.offer(fix(metres = 20.0, seconds = 10, source = "gps")))
-        val afterProviderChange = providerAccumulator.offer(fix(metres = 30.0, seconds = 20, source = "gps"))
+        assertNull(providerAccumulator.offer(fix(metres = 30.0, seconds = 20, source = "gps")))
+        val afterProviderChange = providerAccumulator.offer(fix(metres = 40.0, seconds = 30, source = "gps"))
         assertNotNull(afterProviderChange)
-        assertEquals(10.0, afterProviderChange!!.distanceMetres, 0.15)
+        assertEquals(20.0, afterProviderChange!!.distanceMetres, 0.15)
 
         val gapAccumulator = GpsDistanceAccumulator()
         assertNull(gapAccumulator.offer(fix(metres = 0.0, seconds = 0)))
         assertNull(gapAccumulator.offer(fix(metres = 50.0, seconds = 121)))
-        val afterGap = gapAccumulator.offer(fix(metres = 60.0, seconds = 131))
+        assertNull(gapAccumulator.offer(fix(metres = 60.0, seconds = 131)))
+        val afterGap = gapAccumulator.offer(fix(metres = 70.0, seconds = 141))
         assertNotNull(afterGap)
-        assertEquals(10.0, afterGap!!.distanceMetres, 0.15)
+        assertEquals(20.0, afterGap!!.distanceMetres, 0.15)
+    }
+
+    @Test
+    fun oneFixExcursionThatReturnsIsDiscardedBeforeLaterMovement() {
+        val accumulator = GpsDistanceAccumulator()
+        assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0, source = "gps")))
+        // A 20 m / 2 s excursion is below the cycling speed ceiling, but one fix is not enough
+        // to credit it. Returning to the anchor must discard the excursion's pending path.
+        assertNull(accumulator.offer(fix(metres = 20.0, seconds = 2, source = "gps")))
+        assertNull(accumulator.offer(fix(metres = 0.0, seconds = 4, source = "gps")))
+        assertNull(accumulator.offer(fix(metres = 10.0, seconds = 6, source = "gps")))
+
+        val confirmedMovement = accumulator.offer(fix(metres = 20.0, seconds = 8, source = "gps"))
+        assertNotNull(confirmedMovement)
+        assertEquals(20.0, confirmedMovement!!.distanceMetres, 0.15)
     }
 
     @Test
