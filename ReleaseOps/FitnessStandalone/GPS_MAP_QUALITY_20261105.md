@@ -40,3 +40,10 @@ The committed regression covers a 20 m / 2 s cycling-plausible excursion, return
 ## Next safe gate
 
 Obtain an authorized exact-head Android CI route for the candidate; then run physical P0 only when the authorized device is online and the existing session is confirmed safely idle. Keep native Maps SDK blocked until the owner prerequisite is met and a package/SHA-restricted key can be provisioned.
+
+
+## Canonical-base drift check
+
+- Read the canonical `INTEGRATOR_RECHECK_20261104.md` (blob `0c89c55d02cc7546abea3984ae2314fcd39169b1`) and `RELEASE_CURRENT.json` (blob `83ea1942d332cd3faa33e76ccb2330ee924ce69e`) on the canonical branch.
+- Canonical branch HEAD is `e22118b9876503bed64ac0fb0b5e5dbf8b880073`; PR #265's merge base is `f927d9fb3a80b581fd41966b91007c960577a6af`. The canonical branch is 8 commits ahead of that merge base. The only canonical-side changed files in that interval are `INTEGRATOR_RECHECK_20261104.md` and `RELEASE_CURRENT.json`; no app-source overlap was found. The candidate remains behind these evidence/state updates and was not rebased or merged in this run.
+- The latest recorded Play state probe, run 41686496926 attempt 2, was still queued at 2026-11-04T17:40:26Z with no conclusion. Its artifact digest was verified, but this is not a completed Play workflow PASS. The embedded readback reports Internal 51019 completed, alpha 51007 draft, and Production not verified/not listed. No Play action occurred in this run.
