@@ -214,9 +214,12 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("stableHealthRecordKey", identity)
         self.assertTrue(policy_path.exists())
         policy = policy_path.read_text()
-        for marker in ("object HealthRecordEvidencePolicy", "SELF_AUTHORED", "MANUAL_OR_UNKNOWN_METHOD", "EXTERNAL_SENSOR_RECORDED"):
+        for marker in ("object HealthRecordEvidencePolicy", "SELF_AUTHORED", "MANUAL_OR_UNKNOWN_METHOD", "APPROVED_PROVIDER_WITH_DEVICE_METADATA"):
             self.assertIn(marker, policy)
         self.assertIn("HealthRecordEvidencePolicy.assess", repository)
+        self.assertIn("HealthSourceTrustPolicy.isApprovedHealthConnectProvider", policy)
+        self.assertIn("HealthSourceTrustPolicy.isCompatibleActivityDeviceType", policy)
+        self.assertIn("deviceType = device?.type", repository)
         self.assertIn("canonicalKey", repository)
 
     def test_native_health_uses_stable_ids_provenance_and_revoke_checks(self):

@@ -13,13 +13,14 @@ object HealthRecordEvidencePolicy {
         recordType: String,
         recordId: String,
         trustedRecordingMethod: Boolean,
+        deviceType: Int? = null,
     ): HealthRecordEvidenceAssessment {
         val app = appPackageName.trim()
         val origin = dataOrigin.trim()
         val type = recordType.trim()
         val id = recordId.trim()
 
-        if (origin == app && app.isNotEmpty()) {
+        if (origin.equals(app, ignoreCase = true) && app.isNotEmpty()) {
             return HealthRecordEvidenceAssessment(
                 integrityClass = IntegrityClass.REJECTED,
                 verifiedForRewards = false,
@@ -47,10 +48,24 @@ object HealthRecordEvidencePolicy {
                 reason = "INCOMPLETE_PROVIDER_IDENTITY",
             )
         }
+        if (!HealthSourceTrustPolicy.isApprovedHealthConnectProvider(origin)) {
+            return HealthRecordEvidenceAssessment(
+                integrityClass = IntegrityClass.SUPPORTED,
+                verifiedForRewards = false,
+                reason = "UNTRUSTED_PROVIDER",
+            )
+        }
+        if (!HealthSourceTrustPolicy.isCompatibleActivityDeviceType(deviceType)) {
+            return HealthRecordEvidenceAssessment(
+                integrityClass = IntegrityClass.SUPPORTED,
+                verifiedForRewards = false,
+                reason = "INCOMPATIBLE_OR_UNKNOWN_DEVICE_CLASS",
+            )
+        }
         return HealthRecordEvidenceAssessment(
             integrityClass = IntegrityClass.VERIFIED,
             verifiedForRewards = true,
-            reason = "EXTERNAL_SENSOR_RECORDED",
+            reason = "APPROVED_PROVIDER_WITH_DEVICE_METADATA",
         )
     }
 }

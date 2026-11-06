@@ -1,5 +1,6 @@
 package com.topherofit.thf.pulse
 
+import androidx.health.connect.client.records.metadata.Device
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -36,17 +37,86 @@ class HealthConnectProvenanceTest {
         assertNotEquals(first, otherProvider)
     }
 
-    @Test fun trustedExternalHealthRecordIsRewardVerified() {
+    @Test fun reviewedWriterAllowlistIsExplicitAndNormalized() {
+        assertTrue(HealthSourceTrustPolicy.isApprovedHealthConnectProvider("com.google.android.apps.fitness"))
+        assertTrue(HealthSourceTrustPolicy.isApprovedHealthConnectProvider(" COM.SEC.ANDROID.APP.SHEALTH "))
+        assertTrue(HealthSourceTrustPolicy.isApprovedHealthConnectProvider("com.samsung.android.wear.shealth"))
+        assertFalse(HealthSourceTrustPolicy.isApprovedHealthConnectProvider("com.example.unreviewed.health"))
+        assertFalse(HealthSourceTrustPolicy.isApprovedHealthConnectProvider(" "))
+    }
+
+    @Test fun onlyActivityCompatibleDeviceClassesAreAccepted() {
+        listOf(
+            Device.TYPE_PHONE,
+            Device.TYPE_WATCH,
+            Device.TYPE_FITNESS_BAND,
+            Device.TYPE_CHEST_STRAP,
+            Device.TYPE_FITNESS_MACHINE,
+            Device.TYPE_RING,
+        ).forEach { deviceType ->
+            assertTrue(HealthSourceTrustPolicy.isCompatibleActivityDeviceType(deviceType))
+        }
+        assertFalse(HealthSourceTrustPolicy.isCompatibleActivityDeviceType(Device.TYPE_SCALE))
+        assertFalse(HealthSourceTrustPolicy.isCompatibleActivityDeviceType(null))
+    }
+
+    @Test fun trustedExternalHealthRecordWithDeviceMetadataIsRewardVerified() {
         val result = HealthRecordEvidencePolicy.assess(
             appPackageName = "com.topherofit.thf.pulse",
             dataOrigin = "com.samsung.android.wear.shealth",
             recordType = "StepsRecord",
             recordId = "record-12345678",
             trustedRecordingMethod = true,
+            deviceType = Device.TYPE_WATCH,
         )
         assertEquals(IntegrityClass.VERIFIED, result.integrityClass)
         assertTrue(result.verifiedForRewards)
-        assertEquals("EXTERNAL_SENSOR_RECORDED", result.reason)
+        assertEquals("APPROVED_PROVIDER_WITH_DEVICE_METADATA", result.reason)
+    }
+
+    @Test fun googleFitPhoneRecordCanBeSupportedAsAReviewedProvider() {
+        val result = HealthRecordEvidencePolicy.assess(
+            appPackageName = "com.topherofit.thf.pulse",
+            dataOrigin = "com.google.android.apps.fitness",
+            recordType = "StepsRecord",
+            recordId = "fit-record-12345678",
+            trustedRecordingMethod = true,
+            deviceType = Device.TYPE_PHONE,
+        )
+        assertEquals(IntegrityClass.VERIFIED, result.integrityClass)
+        assertTrue(result.verifiedForRewards)
+    }
+
+    @Test fun unknownExternalProviderIsSupportedButNotRewardVerified() {
+        val result = HealthRecordEvidencePolicy.assess(
+            appPackageName = "com.topherofit.thf.pulse",
+            dataOrigin = "com.example.unreviewed.health",
+            recordType = "StepsRecord",
+            recordId = "record-12345678",
+            trustedRecordingMethod = true,
+            deviceType = Device.TYPE_WATCH,
+        )
+        assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
+        assertFalse(result.verifiedForRewards)
+        assertEquals("UNTRUSTED_PROVIDER", result.reason)
+    }
+
+    @Test fun missingUnknownOrIncompatibleDeviceClassIsNotRewardVerified() {
+        val assessments = listOf(null, Device.TYPE_UNKNOWN, Device.TYPE_SCALE).map { deviceType ->
+            HealthRecordEvidencePolicy.assess(
+                appPackageName = "com.topherofit.thf.pulse",
+                dataOrigin = "com.samsung.android.wear.shealth",
+                recordType = "StepsRecord",
+                recordId = "record-12345678",
+                trustedRecordingMethod = true,
+                deviceType = deviceType,
+            )
+        }
+        assessments.forEach { result ->
+            assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
+            assertFalse(result.verifiedForRewards)
+            assertEquals("INCOMPATIBLE_OR_UNKNOWN_DEVICE_CLASS", result.reason)
+        }
     }
 
     @Test fun selfAuthoredHealthRecordIsNeverRewardVerified() {
@@ -56,6 +126,7 @@ class HealthConnectProvenanceTest {
             recordType = "ExerciseSessionRecord",
             recordId = "record-12345678",
             trustedRecordingMethod = true,
+            deviceType = Device.TYPE_PHONE,
         )
         assertEquals(IntegrityClass.REJECTED, result.integrityClass)
         assertFalse(result.verifiedForRewards)
@@ -69,6 +140,7 @@ class HealthConnectProvenanceTest {
             recordType = "StepsRecord",
             recordId = "record-12345678",
             trustedRecordingMethod = false,
+            deviceType = Device.TYPE_WATCH,
         )
         assertEquals(IntegrityClass.MANUAL, result.integrityClass)
         assertFalse(result.verifiedForRewards)

@@ -11,6 +11,8 @@ data class ActivityProvenance(
     val selfAuthoredByThf: Boolean = false,
     val duplicate: Boolean = false,
     val monotonicTimestamps: Boolean = true,
+    val providerDeviceType: Int? = null,
+    val trustedRecordingMethod: Boolean = false,
 )
 
 data class ActivityIntegrityInput(
@@ -45,17 +47,13 @@ object ActivityIntegrityClassifier {
         val provider = provenance.providerPackageName?.trim().orEmpty()
         val recordId = provenance.providerRecordId?.trim().orEmpty()
         if (provider.equals(THF_PACKAGE_NAME, ignoreCase = true)) return IntegrityClass.REJECTED
-        if (!validPackageName(provider) || recordId.isEmpty()) return IntegrityClass.SUPPORTED
-        return IntegrityClass.VERIFIED
-    }
-
-    private fun validPackageName(value: String): Boolean {
-        if (value.isEmpty() || value.length > 255 || !value.contains('.')) return false
-        return value.split('.').all { segment ->
-            segment.isNotEmpty() &&
-                (segment.first().isLetter() || segment.first() == '_') &&
-                segment.all { it.isLetterOrDigit() || it == '_' }
+        if (!HealthSourceTrustPolicy.isApprovedHealthConnectProvider(provider)) return IntegrityClass.SUPPORTED
+        if (recordId.isEmpty()) return IntegrityClass.SUPPORTED
+        if (!provenance.trustedRecordingMethod) return IntegrityClass.SUPPORTED
+        if (!HealthSourceTrustPolicy.isCompatibleActivityDeviceType(provenance.providerDeviceType)) {
+            return IntegrityClass.SUPPORTED
         }
+        return IntegrityClass.VERIFIED
     }
 
     private fun metricPlausible(value: Double?, maximum: Double): Boolean {
