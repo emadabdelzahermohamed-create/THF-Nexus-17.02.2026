@@ -14,7 +14,7 @@ class HeartRateEvidencePolicyTest {
     private fun evidence(
         bpm: Double? = 72.0,
         observedAt: Long? = 1_700_000_000_000L,
-        source: String? = "com.example.watch",
+        source: String? = "com.sec.android.app.shealth",
         device: HeartRateDeviceType = HeartRateDeviceType.WATCH,
         origin: HeartRateOrigin = HeartRateOrigin.HEALTH_CONNECT_WEARABLE,
         method: HeartRateRecordingMethod = HeartRateRecordingMethod.AUTOMATICALLY_RECORDED,
@@ -70,10 +70,10 @@ class HeartRateEvidencePolicyTest {
     }
 
     @Test fun automatic_watch_sample_preserves_source_and_device_but_never_verifies_sport() {
-        val result = assess(evidence(source = "com.example.watch"))
+        val result = assess(evidence(source = "com.sec.android.app.shealth"))
         assertEquals(HeartRateDisplayState.AVAILABLE, result.state)
         assertEquals(72.0, result.beatsPerMinute!!, 0.0)
-        assertEquals("com.example.watch", result.sourcePackage)
+        assertEquals("com.sec.android.app.shealth", result.sourcePackage)
         assertEquals(HeartRateDeviceType.WATCH, result.deviceType)
         assertEquals(HeartRateRecordingMethod.AUTOMATICALLY_RECORDED, result.recordingMethod)
         assertEquals(HeartRateTrustTier.TRUSTED_WEARABLE, result.trustTier)
@@ -131,6 +131,19 @@ class HeartRateEvidencePolicyTest {
             HeartRateTrustTier.UNVERIFIED,
             assess(evidence(method = HeartRateRecordingMethod.UNKNOWN)).trustTier,
         )
+    }
+
+    @Test fun unknown_health_connect_writer_cannot_receive_trusted_wearable_tier() {
+        val unknownWriter = evidence(source = "com.example.unknown")
+        val result = assess(unknownWriter)
+        assertEquals(HeartRateDisplayState.AVAILABLE, result.state)
+        assertEquals(HeartRateTrustTier.UNVERIFIED, result.trustTier)
+        // Stable identity may still support deduplication; it does not grant trust.
+        assertEquals(
+            HeartRateStableRecordKey("com.example.unknown", "hr-record-001"),
+            HeartRateEvidencePolicy.stableRecordKey(unknownWriter),
+        )
+        assertFalse(result.canVerifySportProgress)
     }
 
     @Test fun trusted_wearable_requires_stable_record_identity() {

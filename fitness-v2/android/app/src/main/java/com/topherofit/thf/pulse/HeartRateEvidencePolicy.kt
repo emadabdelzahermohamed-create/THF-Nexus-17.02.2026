@@ -188,6 +188,7 @@ object HeartRateEvidencePolicy {
         val trustTier = when {
             evidence.origin == HeartRateOrigin.HEALTH_CONNECT_WEARABLE &&
                 sourcePackage != null &&
+                HealthSourceTrustPolicy.isApprovedHealthConnectProvider(sourcePackage) &&
                 stableRecordKey(evidence) != null &&
                 evidence.deviceType in wearableDeviceTypes &&
                 evidence.recordingMethod in acceptedRecordingMethods ->
