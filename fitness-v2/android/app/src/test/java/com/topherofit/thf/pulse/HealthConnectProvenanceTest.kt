@@ -1,5 +1,6 @@
 package com.topherofit.thf.pulse
 
+import androidx.health.connect.client.records.metadata.Device
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -36,17 +37,69 @@ class HealthConnectProvenanceTest {
         assertNotEquals(first, otherProvider)
     }
 
-    @Test fun trustedExternalHealthRecordIsRewardVerified() {
+    @Test fun trustedExternalHealthRecordWithDeviceMetadataIsRewardVerified() {
         val result = HealthRecordEvidencePolicy.assess(
             appPackageName = "com.topherofit.thf.pulse",
             dataOrigin = "com.samsung.android.wear.shealth",
             recordType = "StepsRecord",
             recordId = "record-12345678",
             trustedRecordingMethod = true,
+            deviceType = Device.TYPE_WATCH,
         )
         assertEquals(IntegrityClass.VERIFIED, result.integrityClass)
         assertTrue(result.verifiedForRewards)
-        assertEquals("EXTERNAL_SENSOR_RECORDED", result.reason)
+        assertEquals("APPROVED_PROVIDER_WITH_DEVICE_METADATA", result.reason)
+    }
+
+    @Test fun googleFitPhoneRecordCanBeSupportedAsAReviewedProvider() {
+        val result = HealthRecordEvidencePolicy.assess(
+            appPackageName = "com.topherofit.thf.pulse",
+            dataOrigin = "com.google.android.apps.fitness",
+            recordType = "StepsRecord",
+            recordId = "fit-record-12345678",
+            trustedRecordingMethod = true,
+            deviceType = Device.TYPE_PHONE,
+        )
+        assertEquals(IntegrityClass.VERIFIED, result.integrityClass)
+        assertTrue(result.verifiedForRewards)
+    }
+
+    @Test fun unknownExternalProviderIsSupportedButNotRewardVerified() {
+        val result = HealthRecordEvidencePolicy.assess(
+            appPackageName = "com.topherofit.thf.pulse",
+            dataOrigin = "com.example.unreviewed.health",
+            recordType = "StepsRecord",
+            recordId = "record-12345678",
+            trustedRecordingMethod = true,
+            deviceType = Device.TYPE_WATCH,
+        )
+        assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
+        assertFalse(result.verifiedForRewards)
+        assertEquals("UNTRUSTED_PROVIDER", result.reason)
+    }
+
+    @Test fun missingOrUnknownDeviceClassIsNotRewardVerified() {
+        val missing = HealthRecordEvidencePolicy.assess(
+            appPackageName = "com.topherofit.thf.pulse",
+            dataOrigin = "com.samsung.android.wear.shealth",
+            recordType = "StepsRecord",
+            recordId = "record-12345678",
+            trustedRecordingMethod = true,
+            deviceType = null,
+        )
+        val unknown = HealthRecordEvidencePolicy.assess(
+            appPackageName = "com.topherofit.thf.pulse",
+            dataOrigin = "com.samsung.android.wear.shealth",
+            recordType = "StepsRecord",
+            recordId = "record-12345678",
+            trustedRecordingMethod = true,
+            deviceType = Device.TYPE_UNKNOWN,
+        )
+        assertEquals(IntegrityClass.SUPPORTED, missing.integrityClass)
+        assertFalse(missing.verifiedForRewards)
+        assertEquals("UNKNOWN_DEVICE_CLASS", missing.reason)
+        assertEquals(IntegrityClass.SUPPORTED, unknown.integrityClass)
+        assertFalse(unknown.verifiedForRewards)
     }
 
     @Test fun selfAuthoredHealthRecordIsNeverRewardVerified() {
@@ -56,6 +109,7 @@ class HealthConnectProvenanceTest {
             recordType = "ExerciseSessionRecord",
             recordId = "record-12345678",
             trustedRecordingMethod = true,
+            deviceType = Device.TYPE_PHONE,
         )
         assertEquals(IntegrityClass.REJECTED, result.integrityClass)
         assertFalse(result.verifiedForRewards)
@@ -69,6 +123,7 @@ class HealthConnectProvenanceTest {
             recordType = "StepsRecord",
             recordId = "record-12345678",
             trustedRecordingMethod = false,
+            deviceType = Device.TYPE_WATCH,
         )
         assertEquals(IntegrityClass.MANUAL, result.integrityClass)
         assertFalse(result.verifiedForRewards)
