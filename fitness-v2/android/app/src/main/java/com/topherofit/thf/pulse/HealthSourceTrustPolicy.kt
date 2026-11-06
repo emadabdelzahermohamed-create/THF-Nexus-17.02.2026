@@ -1,0 +1,31 @@
+package com.topherofit.thf.pulse
+
+import java.util.Locale
+
+/**
+ * Narrow package allowlist for Health Connect writers reviewed by the current product lane.
+ * This identifies the writing app only; it is not cryptographic device or wearable attestation.
+ * Unknown writers remain importable as supported evidence, but cannot independently qualify rewards.
+ */
+internal object HealthSourceTrustPolicy {
+    private val approvedProviderPackages = setOf(
+        "com.google.android.apps.fitness",
+        "com.sec.android.app.shealth",
+        "com.samsung.android.wear.shealth",
+    )
+
+    fun isApprovedHealthConnectProvider(rawPackageName: String?): Boolean {
+        val packageName = rawPackageName?.trim()?.lowercase(Locale.ROOT) ?: return false
+        if (!isValidPackageName(packageName)) return false
+        return packageName in approvedProviderPackages
+    }
+
+    private fun isValidPackageName(value: String): Boolean {
+        if (value.isEmpty() || value.length > 255 || !value.contains('.')) return false
+        return value.split('.').all { segment ->
+            segment.isNotEmpty() &&
+                (segment.first().isLetter() || segment.first() == '_') &&
+                segment.all { it.isLetterOrDigit() || it == '_' }
+        }
+    }
+}
