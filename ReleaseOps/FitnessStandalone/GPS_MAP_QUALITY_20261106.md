@@ -68,3 +68,19 @@ Native Google Maps SDK rendering and native traffic/transit remain blocked by ow
 Authorized Desktop Commander `localhost` is OFFLINE (last seen 103 hours ago at the 2026-11-06 recheck). The last phone observation remains 2026-11-01T21:24:32Z: Play-installed 51019, foreground tracking service, and an active/ambiguous session. Current phone/session state is unknown. No ADB, install, launch, Stop, session action, or activity-data read was attempted. Physical P0 is BLOCKED_NOT_RUN.
 
 VersionCode 51020 remains unallocated. No new signed AAB exists, no Play listing/track changed, and Production is not verified. Allocate only after owner API/key prerequisites, exact-head Android CI, and physical P0 pass; Production only after policy/privacy and physical gates pass.
+
+
+---
+
+## Integration update — 2026-11-06 20:23 Cairo
+
+The GPS/Health handoff is now integrated into the canonical branch.
+
+- PR [#267](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/267) merged as `be251efd890def10781b4b0aaa02c9e058ee3cb6`.
+- The merged tree was compared with tested PR head `f04fcb4de3744d3f161ce5ac130101ae6aecb699`: one merge commit ahead, zero file differences. The Android app-source SHA remains `5e5374e74f8cbce0eff54c0b5dc37ef860bfe4dc`.
+- Exact-source Android CI run [42262865136](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42262865136) succeeded: product 60/60, source-contract 33/33, backend 15/15, Android unit 151/151, lint, debug APK and release bundle build.
+- Downloaded artifact 13525932102 and independently recomputed ZIP SHA-256: `ceff03d2ba048982f911cac575a4e796533e83a0ca0b6fca3eb5fb004185aa7a`. QA APK SHA-256: `88327195ed61dd4f244bad9f395a946a58d4894fddfe3110b87c247ba1fa79a2`. Validation AAB SHA-256: `ee16ae4921e133ec373196fddf0743d8940c8e4ef1005c3f3de27711268c3b3f`.
+- The validation AAB is unsigned: its archive has no META-INF signature entries, and the app Gradle file contains no release signing configuration. It is not a Play upload candidate.
+- The later exact-head guard [42266789292](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42266789292) succeeded with Android packaging skipped; size-policy run [42266795888](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42266795888) succeeded. No unchanged AAB was rebuilt.
+
+The current canonical branch head is `ab29ddd333d39581ee6ed7a31a7fccd1ed7343c8`; the later competition merge changes backend files only. GPS stationary-drift, outdoor-route accuracy, background/screen-off and process-death behavior remain physical P0 requirements, not accepted results.
