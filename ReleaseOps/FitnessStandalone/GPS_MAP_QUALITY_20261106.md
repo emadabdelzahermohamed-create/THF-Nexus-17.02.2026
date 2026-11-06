@@ -29,7 +29,7 @@ The accumulator now bounds credited path to `min(pendingPathDistance, netDisplac
 - JUnit test blob: `07450a99d07ede401459307274e888c96507e1f9`
 - Source-contract blob: `d44cb4cb0e8b9ced8a14d7a8b5c194194f37b0cd`
 - Exact production helper compilation and committed test-method execution via Kotlin/JVM 21 with a local assertion shim: **9/9 PASS**.
-- Direct exact-source contract audit: **21/21 PASS** after correcting a stale assertion to compare the anchor accuracy with the accumulator's worst observed accuracy. The full repository Python suite was not run.
+- Direct exact-source contract audit: **22/22 PASS** after correcting a stale assertion to compare the anchor accuracy with the accumulator's worst observed accuracy. The full repository Python suite was not run.
 - Exact-head combined GitHub statuses: **0**; associated PR workflow runs: **0**.
 - Android Gradle/JUnit runner, service compilation, lint, APK/AAB, and physical GPS QA: **NOT RUN**.
 
