@@ -78,28 +78,22 @@ class HealthConnectProvenanceTest {
         assertEquals("UNTRUSTED_PROVIDER", result.reason)
     }
 
-    @Test fun missingOrUnknownDeviceClassIsNotRewardVerified() {
-        val missing = HealthRecordEvidencePolicy.assess(
-            appPackageName = "com.topherofit.thf.pulse",
-            dataOrigin = "com.samsung.android.wear.shealth",
-            recordType = "StepsRecord",
-            recordId = "record-12345678",
-            trustedRecordingMethod = true,
-            deviceType = null,
-        )
-        val unknown = HealthRecordEvidencePolicy.assess(
-            appPackageName = "com.topherofit.thf.pulse",
-            dataOrigin = "com.samsung.android.wear.shealth",
-            recordType = "StepsRecord",
-            recordId = "record-12345678",
-            trustedRecordingMethod = true,
-            deviceType = Device.TYPE_UNKNOWN,
-        )
-        assertEquals(IntegrityClass.SUPPORTED, missing.integrityClass)
-        assertFalse(missing.verifiedForRewards)
-        assertEquals("UNKNOWN_DEVICE_CLASS", missing.reason)
-        assertEquals(IntegrityClass.SUPPORTED, unknown.integrityClass)
-        assertFalse(unknown.verifiedForRewards)
+    @Test fun missingUnknownOrIncompatibleDeviceClassIsNotRewardVerified() {
+        val assessments = listOf(null, Device.TYPE_UNKNOWN, Device.TYPE_SCALE).map { deviceType ->
+            HealthRecordEvidencePolicy.assess(
+                appPackageName = "com.topherofit.thf.pulse",
+                dataOrigin = "com.samsung.android.wear.shealth",
+                recordType = "StepsRecord",
+                recordId = "record-12345678",
+                trustedRecordingMethod = true,
+                deviceType = deviceType,
+            )
+        }
+        assessments.forEach { result ->
+            assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
+            assertFalse(result.verifiedForRewards)
+            assertEquals("INCOMPATIBLE_OR_UNKNOWN_DEVICE_CLASS", result.reason)
+        }
     }
 
     @Test fun selfAuthoredHealthRecordIsNeverRewardVerified() {
