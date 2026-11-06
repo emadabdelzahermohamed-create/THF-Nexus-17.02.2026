@@ -1,5 +1,6 @@
 package com.topherofit.thf.pulse
 
+import androidx.health.connect.client.records.metadata.Device
 import java.util.Locale
 
 /**
@@ -13,6 +14,18 @@ internal object HealthSourceTrustPolicy {
         "com.sec.android.app.shealth",
         "com.samsung.android.wear.shealth",
     )
+
+    private val compatibleActivityDeviceTypes = setOf(
+        Device.TYPE_PHONE,
+        Device.TYPE_WATCH,
+        Device.TYPE_FITNESS_BAND,
+        Device.TYPE_CHEST_STRAP,
+        Device.TYPE_FITNESS_MACHINE,
+        Device.TYPE_RING,
+    )
+
+    fun isCompatibleActivityDeviceType(deviceType: Int?): Boolean =
+        deviceType != null && deviceType in compatibleActivityDeviceTypes
 
     fun isApprovedHealthConnectProvider(rawPackageName: String?): Boolean {
         val packageName = rawPackageName?.trim()?.lowercase(Locale.ROOT) ?: return false
