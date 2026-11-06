@@ -1,5 +1,6 @@
 package com.topherofit.thf.pulse
 
+import androidx.health.connect.client.records.metadata.Device
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -14,6 +15,8 @@ class ActivityIntegrityTest {
         durationMs: Long = 30 * 60_000L,
         speedMps: Double? = 3.2,
         cadenceSpm: Double? = 165.0,
+        deviceType: Int? = Device.TYPE_WATCH,
+        trustedRecordingMethod: Boolean = true,
     ) = ActivityIntegrityInput(
         provenance = ActivityProvenance(
             source = source,
@@ -22,14 +25,45 @@ class ActivityIntegrityTest {
             selfAuthoredByThf = selfAuthored,
             duplicate = duplicate,
             monotonicTimestamps = monotonicTimestamps,
+            providerDeviceType = deviceType,
+            trustedRecordingMethod = trustedRecordingMethod,
         ),
         durationMs = durationMs,
         speedMps = speedMps,
         cadenceSpm = cadenceSpm,
     )
 
-    @Test fun externalHealthProviderRecordIsVerified() {
+    @Test fun externalHealthProviderRecordWithCompleteMetadataIsVerified() {
         assertEquals(IntegrityClass.VERIFIED, ActivityIntegrityClassifier.classify(input()))
+    }
+
+    @Test fun googleFitProviderIsAcceptedOnlyWithCompleteMetadata() {
+        assertEquals(
+            IntegrityClass.VERIFIED,
+            ActivityIntegrityClassifier.classify(input(provider = "com.google.android.apps.fitness", deviceType = Device.TYPE_PHONE)),
+        )
+    }
+
+    @Test fun unknownExternalHealthProviderIsSupportedNotVerified() {
+        assertEquals(
+            IntegrityClass.SUPPORTED,
+            ActivityIntegrityClassifier.classify(input(provider = "com.example.unreviewed.health")),
+        )
+    }
+
+    @Test fun missingOrUnknownDeviceClassCannotVerifyHealthConnectEvidence() {
+        assertEquals(IntegrityClass.SUPPORTED, ActivityIntegrityClassifier.classify(input(deviceType = null)))
+        assertEquals(
+            IntegrityClass.SUPPORTED,
+            ActivityIntegrityClassifier.classify(input(deviceType = Device.TYPE_UNKNOWN)),
+        )
+    }
+
+    @Test fun untrustedRecordingMethodCannotVerifyHealthConnectEvidence() {
+        assertEquals(
+            IntegrityClass.SUPPORTED,
+            ActivityIntegrityClassifier.classify(input(trustedRecordingMethod = false)),
+        )
     }
 
     @Test fun validDeviceSensorEvidenceIsSupported() {
