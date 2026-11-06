@@ -1,5 +1,6 @@
 name: Fitness Activity Candidate Build
 # Guard: workflow-only changes skip Android packaging to avoid unchanged AAB rebuilds.
+# Competition branch runs backend tests only; Android packaging stays skipped for this handoff.
 
 on:
   push:

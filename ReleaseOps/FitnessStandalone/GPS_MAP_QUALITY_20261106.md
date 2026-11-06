@@ -1,54 +1,70 @@
-# Top Hero Fit — GPS quality checkpoint
+# Top Hero Fit — GPS, session and Health provenance checkpoint
 
-Date: 2026-11-06 (Africa/Cairo)
+Date: 2026-11-06 (Africa/Cairo; evidence through 2026-11-06T17:40:13Z)
 Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`
-Canonical recovery branch: `agent/codex/fitness-recovery/20261023`
-Canonical base SHA: `7dca1b9a83dc55752e96625e8ff18a58c9843cc7`
+Canonical branch: `agent/codex/fitness-recovery/20261023`
+Canonical base observed: `6f230a46d071af3dcd7fb79ef30c13b882620bc5`
 Candidate branch: `agent/codex/gps-path-inflation-guard-20261106-r1`
 PR: [#267](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/267)
-Source commit: `d3c644e802cfa229c2adfa71c89c9f6e623af97d`
+App-source SHA: `5e5374e74f8cbce0eff54c0b5dc37ef860bfe4dc`
+PR head before this evidence refresh: `0f7f6063a5526114803f785e55cc198f7b090f36` (workflow-only sync/comment after the tested app-source SHA).
 
-## Material GPS defect and correction
+## GPS measurement correction
 
-The pending distance accumulator previously added every accepted segment while waiting for net displacement to clear the reported-accuracy deadband. Oscillating accepted fixes could inflate the path length substantially even though the final displacement remained small.
+The candidate combines the accepted-fix GPS path accumulator and Health provenance handoff on the current canonical base.
 
-Reproduced through the existing `GpsFixGate` using 2 m reported accuracy and 5-second cycling updates:
+- Keeps a stable movement anchor while displacement remains inside the reported-accuracy deadband.
+- A one-fix displacement excursion is not credited unless it persists on the next accepted fix; a spike that returns inside the deadband is discarded and re-anchored.
+- Credited path is bounded by `min(pendingPathDistance, netDisplacement × 1.4)`, preventing oscillating accepted fixes from multiplying small drift into an inflated route.
+- Uses the worst observed accuracy radius for the pending path and normalizes longitude across the date line.
+- Retains provider/source consistency, accepted-fix distance accounting, pause/callback guards, and accumulator lifecycle resets.
 
-- Accepted positions: `0, 4, 0, 4, 0, 4, 0, 8, 12 m`
-- Net displacement: `12.0 m`
-- Previous credited path: `36.0 m` (3x net displacement)
-- New maximum credited path: `16.8 m` (1.4x net displacement)
+This is conservative measurement filtering, not GPS calibration, spoof-proofing, or physical accuracy proof. Persistent plausible stationary drift can still pass if it remains outside the uncertainty deadband long enough. Physical stationary-drift and real-route tests remain mandatory.
 
-The accumulator now bounds credited path to `min(pendingPathDistance, netDisplacement × 1.4)`. This preserves ordinary corner length where it fits within the envelope. It reduces oscillation-driven overcount but does not prove that a stationary phone cannot experience persistent plausible drift.
+## Exact-source Android CI and artifact evidence
 
-## Source and tests
+[Candidate workflow run 42262865136](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42262865136) completed successfully on the exact app-source SHA `5e5374e74f8cbce0eff54c0b5dc37ef860bfe4dc`.
 
-- Source commit: `d3c644e802cfa229c2adfa71c89c9f6e623af97d`
-- Base: `7dca1b9a83dc55752e96625e8ff18a58c9843cc7`
-- Production helper blob: `7ab7213e5d96e12d019f0589f08cf2c5dbc71baf`
-- JUnit test blob: `07450a99d07ede401459307274e888c96507e1f9`
-- Source-contract blob: `d44cb4cb0e8b9ced8a14d7a8b5c194194f37b0cd`
-- Exact production helper compilation and committed test-method execution via Kotlin/JVM 21 with a local assertion shim: **9/9 PASS**.
-- Direct exact-source contract audit: **22/22 PASS** after correcting a stale assertion to compare the anchor accuracy with the accumulator's worst observed accuracy. The full repository Python suite was not run.
-- Exact-head combined GitHub statuses: **0**; associated PR workflow runs: **0**.
-- Android Gradle/JUnit runner, service compilation, lint, APK/AAB, and physical GPS QA: **NOT RUN**.
+- Product tests: 60 passed.
+- Source-contract tests: 33 passed.
+- Backend tests: 15 passed.
+- Android unit tests: 151 passed, 0 failures.
+- `:app:lintDebug`, `:app:assembleDebug`, and `:app:bundleRelease`: successful.
+- Artifact ID: `13525932102`; ZIP SHA-256 independently recomputed after download: `ceff03d2ba048982f911cac575a4e796533e83a0ca0b6fca3eb5fb004185aa7a`.
+- QA APK SHA-256: `88327195ed61dd4f244bad9f395a946a58d4894fddfe3110b87c247ba1fa79a2`.
+- Unsigned validation AAB SHA-256: `ee16ae4921e133ec373196fddf0743d8940c8e4ef1005c3f3de27711268c3b3f`.
+- Candidate identity: `com.topherofit.thf.pulse.qa`, validation-only versionCode 51019. The AAB is unsigned; no signing or Play upload occurred.
 
-The candidate reapplies the prior GPS date-line normalization, provider identity, accepted-fix distance integration, pause guards, and accumulator lifecycle resets on the current canonical base. PR #267 changes only Activity Engine/GPS source and focused tests.
+The current PR head at the time of this report had one workflow-only comment commit after the tested app-source SHA. Its guard run [42263966129](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42263966129) passed: `changed-app` succeeded and Android packaging was skipped. No unchanged AAB was rebuilt.
 
-## Google Maps state
+## Health Connect provenance and anti-cheat boundary
 
-The latest recorded read-only preflight is run `41684077962` (2026-11-03): Maps Android Backend and API Keys APIs are enabled; key inventory permission is denied; no key is visible to the builder; no billing account is linked. No billing, payment method, key, or paid infrastructure was changed.
+The same tested app-source SHA:
+- Allow-lists the reviewed Health Connect writer packages `com.google.android.apps.fitness`, `com.sec.android.app.shealth`, and `com.samsung.android.wear.shealth`.
+- Requires compatible Health Connect device metadata: phone, watch, fitness band, chest strap, or ring.
+- Keeps manual, self-authored, unknown-provider, missing-identity, and incompatible-device evidence out of the trusted reward tier.
+- Passes the actual provider package and device type from the Health Connect reader into the evidence policy.
 
-Native Google Maps SDK rendering and native traffic/transit layers remain owner-prerequisite blocked. The current free map stack remains OSM street, OpenTopoMap terrain, and EOX 2016 satellite/hybrid with attribution; the Google directions handoff is not an in-app Google basemap. No Google Maps integration PASS is claimed.
+The allowlist identifies the writing app; it is not cryptographic wearable attestation. No Health permission or manifest expansion is included. Health Connect grant/revoke/no-data/error and real wearable physical tests, plus Play Health declaration/privacy reconciliation, remain open.
 
-## Physical-device and release gates
+## Session persistence and truthful metrics
 
-- Authorized Desktop Commander `localhost`: OFFLINE, last seen 92 hours ago. No ADB, install, launch, Stop, or session action was attempted. Current phone/session state is unknown and must be preserved.
-- Physical GPS, stationary drift, route accuracy, background/screen-off, process-death, and notification-control P0: **BLOCKED_NOT_RUN**.
-- PR #264 session integration is merged source-only and passed exact Android CI run `41681713383` on source SHA `5ce141340282319723a218deafbd1f24eee2b04a`; physical P0 remains unrun.
-- Stale PR #265 was closed as superseded by PR #267. PR #267 remains Draft; keep it unmerged pending exact-head Android CI and safe physical P0.
-- VersionCode 51020 remains unallocated. No release/workflow/signing/Play files changed; no artifact signed or uploaded; no Play state changed.
+The canonical branch already includes the source-only GPS/session restore integration from PR #264 (merged commit `92462d59a76061b6a445b5e119ec28ca544893af`; exact Android CI run `41681713383` on source SHA `5ce141340282319723a218deafbd1f24eee2b04a`). The current #267 candidate builds on that source. Persistent background/session behavior is still not physically accepted; notifications and restored state must be checked on-device.
 
-## Next safe gate
+The existing daily-step ledger PR #225 remains a core-only handoff: it has prior exact-head validation, but no all-day sensor observer or dashboard wiring. Do not present its core as live daily tracking.
 
-Obtain exact-head Android CI through an authorized existing route. Run physical P0 only after the authorized device is online and the current session is confirmed idle. Provision native Google Maps only after the owner prerequisite is met and the key can be restricted to the exact Android package and signing SHA plus required APIs.
+## Google Maps owner gate
+
+Latest recorded preflight remains run `41684077962` (2026-11-03):
+- Maps Android Backend and API Keys APIs enabled.
+- Release-builder key-inventory permission denied.
+- No restricted Maps key visible to the builder.
+- No billing account linked.
+
+Native Google Maps SDK rendering and native traffic/transit remain blocked by owner API/key prerequisites. No billing, payment method, key, or paid infrastructure was changed. Continue the attributed free OSM street, OpenTopoMap terrain, EOX 2016 satellite/hybrid layers, and honest Google directions handoff. EOX imagery is 2016, not current.
+
+## Physical P0 and release boundary
+
+Authorized Desktop Commander `localhost` is OFFLINE (last seen 103 hours ago at the 2026-11-06 recheck). The last phone observation remains 2026-11-01T21:24:32Z: Play-installed 51019, foreground tracking service, and an active/ambiguous session. Current phone/session state is unknown. No ADB, install, launch, Stop, session action, or activity-data read was attempted. Physical P0 is BLOCKED_NOT_RUN.
+
+VersionCode 51020 remains unallocated. No new signed AAB exists, no Play listing/track changed, and Production is not verified. Allocate only after owner API/key prerequisites, exact-head Android CI, and physical P0 pass; Production only after policy/privacy and physical gates pass.
