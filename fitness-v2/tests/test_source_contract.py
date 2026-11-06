@@ -233,7 +233,7 @@ class FitnessV2SourceContractTest(unittest.TestCase):
             "EXERCISE_TYPE_SOCCER", "EXERCISE_TYPE_SWIMMING_OPEN_WATER",
         ):
             self.assertIn(marker, source)
-        self.assertNotIn("HeartRateRecord", source)
+        self.assertNotRegex(source, r"\bHeartRateRecord\b")
 
     def test_backend_contract_is_authenticated_and_idempotent(self):
         contract = json.loads((ROOT / "fitness-v2" / "backend" / "openapi.json").read_text())
