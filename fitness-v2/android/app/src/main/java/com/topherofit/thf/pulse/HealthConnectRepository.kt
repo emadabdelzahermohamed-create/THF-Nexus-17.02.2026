@@ -211,6 +211,7 @@ class HealthConnectRepository(private val context: Context) {
             recordType = recordType,
             recordId = metadata.id,
             trustedRecordingMethod = trustedMethod,
+            deviceType = device?.type,
         )
         return HealthRecordEvidence(
             recordId = metadata.id,
