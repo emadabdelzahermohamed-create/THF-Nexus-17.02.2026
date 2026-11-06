@@ -20,7 +20,6 @@ internal object HealthSourceTrustPolicy {
         Device.TYPE_WATCH,
         Device.TYPE_FITNESS_BAND,
         Device.TYPE_CHEST_STRAP,
-        Device.TYPE_FITNESS_MACHINE,
         Device.TYPE_RING,
     )
 
