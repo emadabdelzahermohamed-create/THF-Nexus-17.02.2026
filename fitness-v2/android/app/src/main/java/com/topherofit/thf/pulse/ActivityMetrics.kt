@@ -56,7 +56,7 @@ object ActivityMetrics {
         val p1 = Math.toRadians(lat1)
         val p2 = Math.toRadians(lat2)
         val dLat = Math.toRadians(lat2 - lat1)
-        val dLon = Math.toRadians(lon2 - lon1)
+        val dLon = Math.toRadians(normalizeLongitudeDelta(lon2 - lon1))
         val a = sin(dLat / 2).pow(2.0) + cos(p1) * cos(p2) * sin(dLon / 2).pow(2.0)
         return 2.0 * EARTH_RADIUS_M * asin(min(1.0, sqrt(max(0.0, a))))
     }
@@ -78,6 +78,12 @@ object ActivityMetrics {
         val safeWeight = weightKg.coerceIn(30.0, 250.0)
         val minutes = durationMs / 60_000.0
         return mode.met * 3.5 * safeWeight / 200.0 * minutes
+    }
+
+    private fun normalizeLongitudeDelta(delta: Double): Double = when {
+        delta > 180.0 -> delta - 360.0
+        delta < -180.0 -> delta + 360.0
+        else -> delta
     }
 
     private fun validCoordinate(latitude: Double, longitude: Double): Boolean =
