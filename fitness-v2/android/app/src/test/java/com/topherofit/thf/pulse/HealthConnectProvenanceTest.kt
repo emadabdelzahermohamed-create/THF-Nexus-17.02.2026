@@ -37,6 +37,29 @@ class HealthConnectProvenanceTest {
         assertNotEquals(first, otherProvider)
     }
 
+    @Test fun reviewedWriterAllowlistIsExplicitAndNormalized() {
+        assertTrue(HealthSourceTrustPolicy.isApprovedHealthConnectProvider("com.google.android.apps.fitness"))
+        assertTrue(HealthSourceTrustPolicy.isApprovedHealthConnectProvider(" COM.SEC.ANDROID.APP.SHEALTH "))
+        assertTrue(HealthSourceTrustPolicy.isApprovedHealthConnectProvider("com.samsung.android.wear.shealth"))
+        assertFalse(HealthSourceTrustPolicy.isApprovedHealthConnectProvider("com.example.unreviewed.health"))
+        assertFalse(HealthSourceTrustPolicy.isApprovedHealthConnectProvider(" "))
+    }
+
+    @Test fun onlyActivityCompatibleDeviceClassesAreAccepted() {
+        listOf(
+            Device.TYPE_PHONE,
+            Device.TYPE_WATCH,
+            Device.TYPE_FITNESS_BAND,
+            Device.TYPE_CHEST_STRAP,
+            Device.TYPE_FITNESS_MACHINE,
+            Device.TYPE_RING,
+        ).forEach { deviceType ->
+            assertTrue(HealthSourceTrustPolicy.isCompatibleActivityDeviceType(deviceType))
+        }
+        assertFalse(HealthSourceTrustPolicy.isCompatibleActivityDeviceType(Device.TYPE_SCALE))
+        assertFalse(HealthSourceTrustPolicy.isCompatibleActivityDeviceType(null))
+    }
+
     @Test fun trustedExternalHealthRecordWithDeviceMetadataIsRewardVerified() {
         val result = HealthRecordEvidencePolicy.assess(
             appPackageName = "com.topherofit.thf.pulse",
