@@ -214,9 +214,12 @@ class FitnessV2SourceContractTest(unittest.TestCase):
         self.assertIn("stableHealthRecordKey", identity)
         self.assertTrue(policy_path.exists())
         policy = policy_path.read_text()
-        for marker in ("object HealthRecordEvidencePolicy", "SELF_AUTHORED", "MANUAL_OR_UNKNOWN_METHOD", "EXTERNAL_SENSOR_RECORDED"):
+        for marker in ("object HealthRecordEvidencePolicy", "SELF_AUTHORED", "MANUAL_OR_UNKNOWN_METHOD", "APPROVED_PROVIDER_WITH_DEVICE_METADATA"):
             self.assertIn(marker, policy)
         self.assertIn("HealthRecordEvidencePolicy.assess", repository)
+        self.assertIn("HealthSourceTrustPolicy.isApprovedHealthConnectProvider", policy)
+        self.assertIn("HealthSourceTrustPolicy.isCompatibleActivityDeviceType", policy)
+        self.assertIn("deviceType = device?.type", repository)
         self.assertIn("canonicalKey", repository)
 
     def test_native_health_uses_stable_ids_provenance_and_revoke_checks(self):
@@ -685,6 +688,48 @@ assert.deepEqual(smoothActivityRouteForDisplay([point(0, 0), point(5, 10, 4, 4),
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
+
+
+class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
+    def test_activity_service_uses_raw_fix_deadband_and_lifecycle_resets(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        helper = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsDistanceAccumulator.kt").read_text()
+        gate = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsFixGate.kt").read_text()
+        metrics = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityMetrics.kt").read_text()
+
+        location_path = service[
+            service.index("override fun onLocationChanged"):
+            service.index("private fun Location.toGpsFix")
+        ]
+        self.assertIn("gpsDistanceAccumulator.offer(observedFix)", location_path)
+        self.assertIn("if (activityPaused) return", location_path)
+        self.assertIn("activityMode?.usesSteps != true || activityPaused", service)
+        self.assertIn("gpsDistanceAccumulator.seed(observedFix)", location_path)
+        self.assertIn("activityDistanceMetres += distanceCredit.distanceMetres", location_path)
+        self.assertNotIn("activityDistanceMetres += deltaMetres", location_path)
+        self.assertIn("sourceLabel = provider", service)
+        self.assertIn("val gpsDistanceAccumulator = GpsDistanceAccumulator()", service)
+        self.assertIn("gpsDistanceAccumulator.reset()", service)
+
+        activation = service[
+            service.index("private fun maybeActivateActivity"):
+            service.index("private fun buildActivitySnapshot")
+        ]
+        self.assertIn("gpsDistanceAccumulator.seed(lastLocation?.toGpsFix())", activation)
+        self.assertIn("gpsDistanceAccumulator.reset()", activation)
+        unregister = service[
+            service.index("private fun unregisterActivitySources"):
+            service.index("override fun onLocationChanged")
+        ]
+        self.assertIn("gpsDistanceAccumulator.reset()", unregister)
+
+        self.assertIn("sourceLabel: String? = null", gate)
+        self.assertIn("MAX_ANCHOR_GAP_MS = 120_000L", helper)
+        self.assertIn("movementAnchor.accuracyMetres + pendingWorstAccuracyMetres", helper)
+        self.assertIn("pendingPathDistanceMetres += stepDistance", helper)
+        self.assertIn("MAX_PATH_TO_NET_RATIO = 1.4", helper)
+        self.assertIn("minOf(pendingPathDistanceMetres, netDisplacement * MAX_PATH_TO_NET_RATIO)", helper)
+        self.assertIn("normalizeLongitudeDelta(lon2 - lon1)", metrics)
 
 
 if __name__ == "__main__":
