@@ -722,7 +722,7 @@ class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
 
         self.assertIn("sourceLabel: String? = null", gate)
         self.assertIn("MAX_ANCHOR_GAP_MS = 120_000L", helper)
-        self.assertIn("movementAnchor.accuracyMetres + fix.accuracyMetres", helper)
+        self.assertIn("movementAnchor.accuracyMetres + pendingWorstAccuracyMetres", helper)
         self.assertIn("pendingPathDistanceMetres += stepDistance", helper)
         self.assertIn("MAX_PATH_TO_NET_RATIO = 1.4", helper)
         self.assertIn("minOf(pendingPathDistanceMetres, netDisplacement * MAX_PATH_TO_NET_RATIO)", helper)
