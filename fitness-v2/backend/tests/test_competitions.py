@@ -158,6 +158,8 @@ class CompetitionApiTest(unittest.TestCase):
             (Path(__file__).resolve().parents[1] / "openapi.json").read_text(encoding="utf-8")
         )
         paths = specification["paths"]
+        self.assertEqual("0.2.0", specification["info"]["version"])
+        self.assertNotIn("CompetitionResult", specification["components"]["schemas"])
         self.assertIn("/api/v2/admin/competitions", paths)
         self.assertIn("/api/v2/competitions", paths)
         self.assertIn("/api/v2/competitions/{competitionId}", paths)

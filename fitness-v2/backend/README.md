@@ -46,3 +46,5 @@ The competition admin route fails closed with `503 COMPETITION_ADMIN_DISABLED` u
 Capacity checks and score snapshot/idempotency checks use SQLite `BEGIN IMMEDIATE` transactions so concurrent workers serialize the relevant reads and writes. A later workout version does not rewrite an already-recorded competition score; a resubmission with changed facts conflicts.
 
 Before any reward eligibility is enabled, add a trusted activity-evidence pipeline, replay/anti-cheat controls, auditability, deployment secret ownership, privacy/policy review, and physical device validation.
+
+OpenAPI contract version: `0.2.0` (competition routes and explicit unverified/reward-ineligible response schema).
