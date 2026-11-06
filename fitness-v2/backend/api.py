@@ -8,6 +8,7 @@ when an idempotency key is reused for a different payload.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,7 @@ from typing import Callable, Iterable
 from urllib.parse import parse_qs
 
 from auth import AuthenticationError, HmacAccessTokenVerifier, decode_key_ring
+from competition_store import CompetitionStore
 from workout_store import (
     WorkoutConflictError,
     WorkoutSession,
@@ -28,7 +30,8 @@ from workout_store import (
 
 
 MAX_BODY_BYTES = 512 * 1024
-COMPETITION_PATH = re.compile(r"^/api/v2/competitions/([^/]+)/submissions$")
+COMPETITION_ROUTE_PATH = re.compile(r"^/api/v2/competitions/([^/]+)(?:/(join|submissions|leaderboard))?$")
+COMPETITION_ADMIN_PATH = "/api/v2/admin/competitions"
 
 
 class IdempotencyConflict(ValueError):
@@ -42,12 +45,15 @@ class FitnessApi:
         verifier: HmacAccessTokenVerifier,
         *,
         require_https: bool = True,
+        competition_admin_key: str | None = None,
     ):
         self.store = store
         self.verifier = verifier
         self.require_https = require_https
         self._store_lock = RLock()
         self._migrate()
+        self.competitions = CompetitionStore(store.db)
+        self.competition_admin_key = competition_admin_key if competition_admin_key is not None else os.environ.get("THF_COMPETITION_ADMIN_KEY", "")
 
     def _migrate(self) -> None:
         self.store.db.executescript(
@@ -221,22 +227,71 @@ class FitnessApi:
                 with self._store_lock:
                     summary = self.store.progress_summary(principal.user_id)
                 return self._response(start_response, "200 OK", summary)
-            competition = COMPETITION_PATH.match(path)
-            if competition and method == "POST":
-                _raw, payload = self._read_json(environ)
-                if set(payload) != {"workoutClientRecordId", "claimedMetric"}:
-                    raise WorkoutValidationError("invalid competition submission shape")
-                competition_id = competition.group(1)
-                if not 1 <= len(competition_id) <= 120:
-                    raise WorkoutValidationError("invalid competition id")
+            if path == "/api/v2/competitions" and method == "GET":
                 with self._store_lock:
-                    result = self.store.verify_competition_claim(
-                        principal.user_id,
-                        str(payload["workoutClientRecordId"]),
-                        float(payload["claimedMetric"]),
+                    items = self.competitions.list_competitions(user_id=principal.user_id)
+                return self._response(start_response, "200 OK", {"items": items})
+            if path == COMPETITION_ADMIN_PATH and method == "POST":
+                if not self.competition_admin_key:
+                    return self._response(start_response, "503 Service Unavailable", {"error": "COMPETITION_ADMIN_DISABLED"})
+                supplied_key = environ.get("HTTP_X_THF_COMPETITION_ADMIN_KEY", "")
+                if not hmac.compare_digest(supplied_key, self.competition_admin_key):
+                    return self._response(start_response, "403 Forbidden", {"error": "ADMIN_FORBIDDEN"})
+                _raw, payload = self._read_json(environ)
+                required = {"id", "title", "sport", "metric", "startsAt", "endsAt"}
+                allowed = required | {"maxParticipants"}
+                if not required.issubset(payload) or set(payload) - allowed:
+                    raise WorkoutValidationError("invalid competition definition shape")
+                with self._store_lock:
+                    competition_item = self.competitions.create_competition(
+                        competition_id=str(payload["id"]),
+                        title=str(payload["title"]),
+                        sport=str(payload["sport"]),
+                        metric=str(payload["metric"]),
+                        starts_at=str(payload["startsAt"]),
+                        ends_at=str(payload["endsAt"]),
+                        max_participants=payload.get("maxParticipants", 0),
                     )
-                result["competitionId"] = competition_id
-                return self._response(start_response, "200 OK", result)
+                return self._response(start_response, "201 Created", competition_item)
+            competition = COMPETITION_ROUTE_PATH.match(path)
+            if competition:
+                competition_id, action = competition.groups()
+                if action is None and method == "GET":
+                    with self._store_lock:
+                        item = self.competitions.get_competition(competition_id)
+                    if item is None:
+                        return self._response(start_response, "404 Not Found", {"error": "COMPETITION_NOT_FOUND"})
+                    return self._response(start_response, "200 OK", item)
+                if action == "join" and method == "POST":
+                    with self._store_lock:
+                        result = self.competitions.join(competition_id, principal.user_id)
+                    status = "200 OK" if result.get("joined") else "409 Conflict"
+                    return self._response(start_response, status, result)
+                if action == "submissions" and method == "POST":
+                    _raw, payload = self._read_json(environ)
+                    if set(payload) != {"workoutClientRecordId"}:
+                        raise WorkoutValidationError("competition submission accepts only workoutClientRecordId")
+                    with self._store_lock:
+                        result = self.competitions.submit_workout(
+                            competition_id,
+                            principal.user_id,
+                            str(payload["workoutClientRecordId"]),
+                        )
+                    status = "201 Created" if result.get("accepted") else "409 Conflict"
+                    result["competitionId"] = competition_id
+                    return self._response(start_response, status, result)
+                if action == "leaderboard" and method == "GET":
+                    query = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=False)
+                    try:
+                        limit = int(query.get("limit", ["50"])[0])
+                    except ValueError as exc:
+                        raise WorkoutValidationError("invalid leaderboard limit") from exc
+                    with self._store_lock:
+                        exists = self.competitions.get_competition(competition_id)
+                        if exists is None:
+                            return self._response(start_response, "404 Not Found", {"error": "COMPETITION_NOT_FOUND"})
+                        result = self.competitions.leaderboard(competition_id, limit=limit)
+                    return self._response(start_response, "200 OK", result)
             return self._response(start_response, "404 Not Found", {"error": "NOT_FOUND"})
         except AuthenticationError:
             return self._response(start_response, "401 Unauthorized", {"error": "UNAUTHORIZED"})
