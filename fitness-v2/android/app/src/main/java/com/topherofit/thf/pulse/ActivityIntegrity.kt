@@ -1,7 +1,5 @@
 package com.topherofit.thf.pulse
 
-import androidx.health.connect.client.records.metadata.Device
-
 enum class IntegrityClass { VERIFIED, SUPPORTED, MANUAL, REJECTED }
 
 enum class ActivitySourceKind { HEALTH_CONNECT, DEVICE_SENSOR, MANUAL }
@@ -52,8 +50,9 @@ object ActivityIntegrityClassifier {
         if (!HealthSourceTrustPolicy.isApprovedHealthConnectProvider(provider)) return IntegrityClass.SUPPORTED
         if (recordId.isEmpty()) return IntegrityClass.SUPPORTED
         if (!provenance.trustedRecordingMethod) return IntegrityClass.SUPPORTED
-        val deviceType = provenance.providerDeviceType
-        if (deviceType == null || deviceType == Device.TYPE_UNKNOWN) return IntegrityClass.SUPPORTED
+        if (!HealthSourceTrustPolicy.isCompatibleActivityDeviceType(provenance.providerDeviceType)) {
+            return IntegrityClass.SUPPORTED
+        }
         return IntegrityClass.VERIFIED
     }
 
