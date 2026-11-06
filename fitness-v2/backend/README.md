@@ -48,3 +48,6 @@ Capacity checks and score snapshot/idempotency checks use SQLite `BEGIN IMMEDIAT
 Before any reward eligibility is enabled, add a trusted activity-evidence pipeline, replay/anti-cheat controls, auditability, deployment secret ownership, privacy/policy review, and physical device validation.
 
 OpenAPI contract version: `0.2.0` (competition routes and explicit unverified/reward-ineligible response schema).
+
+
+Competition admin input contract: `id`, `title`, `sport`, `metric`, `startsAt`, and `endsAt` must be JSON strings. Null, numeric, boolean, and collection values are rejected with `422 INVALID_REQUEST`; `maxParticipants` remains a strict integer. The admin route remains disabled until the owner-managed `THF_COMPETITION_ADMIN_KEY` is configured.
