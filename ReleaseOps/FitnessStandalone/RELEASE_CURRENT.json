@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-05T17:22:07Z",
+  "observed_at": "2026-11-06T18:23:17Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -38,14 +38,13 @@
     "production": "NOT_VERIFIED",
     "latest_state_probe": {
       "run_id": 41686496926,
-      "attempt": 2,
       "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/41686496926",
       "head_sha": "2994f3015af8769e9e9ebfaa766f3c0e8442e943",
-      "observed_at": "2026-11-04T17:40:26Z",
+      "observed_at": "2026-11-06T18:07:44Z",
       "run_status": "probe_job_completed",
       "conclusion": null,
-      "artifact_id": 13348347320,
-      "artifact_digest": "sha256:e82696b79e0e9727268b2fc9a968eddf8b021d9fb5efb9e806b7535850a0a444",
+      "artifact_id": 13527497941,
+      "artifact_digest": "sha256:5c486a1e0d91ef1b310b1515f4eb92a1bde0ecb2b299f9f8a70de6aea9b182c1",
       "artifact_download_sha256_verified": true,
       "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
       "upload_attempted": false,
@@ -67,12 +66,12 @@
       "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
       "run_completion": "PROBE_JOB_COMPLETED_SUCCESS; OVERALL_RUN_CONCLUSION_NOT_EXPOSED",
       "workflow_run_conclusion": "NOT_EXPOSED_BY_AVAILABLE_READBACK",
-      "workflow_job_id": 126747620298,
+      "workflow_job_id": 128064256919,
       "workflow_job_name": "probe",
       "workflow_job_status": "completed",
       "workflow_job_conclusion": "success",
-      "independently_verified_at": "2026-11-05T17:22:07Z",
-      "artifact_download_sha256": "e82696b79e0e9727268b2fc9a968eddf8b021d9fb5efb9e806b7535850a0a444"
+      "independently_verified_at": "2026-11-06T18:23:17Z",
+      "artifact_download_sha256": "5c486a1e0d91ef1b310b1515f4eb92a1bde0ecb2b299f9f8a70de6aea9b182c1"
     },
     "previous_state_probe_20261103": {
       "run_id": 41686496926,
@@ -150,13 +149,13 @@
       "active_session_interrupted": false
     },
     "local_apksigner_verification": "INDETERMINATE: local apksigner lacks the ML-DSA KeyFactory required by the v3.2 signer; this is a verifier limitation, not an app-signature failure. No signature PASS inferred.",
-    "physical_p0": "BLOCKED_DEVICE_OFFLINE; last observation 2026-11-01T21:24:32Z showed foreground tracking and an active/ambiguous session; current session state unknown",
+    "physical_p0": "BLOCKED_NOT_RUN; current session state unknown; preserve",
     "latest_connection_check": {
-      "checked_during": "2026-11-03T17:30Z authorized-device recheck",
+      "checked_at": "2026-11-06T18:23:17Z",
       "device": "localhost",
       "status": "OFFLINE",
-      "last_seen": "about 31 hours before the 17:30Z check",
-      "last_phone_observation": "2026-11-01T21:24:32Z",
+      "last_seen": "about 103 hours before this check",
+      "last_phone_observation": "2026-11-01T21:24:32Z; foreground tracking service and active/ambiguous session; current state unknown",
       "no_adb_or_session_actions": true
     }
   },
@@ -167,13 +166,14 @@
     "note": "Prior validated Internal evidence retained; no rollback or production action taken."
   },
   "release_gates": {
-    "physical_p0": "BLOCKED_DEVICE_OFFLINE; authorized device last seen about 31 hours before 2026-11-03T17:30Z check; last phone observation 2026-11-01T21:24:32Z showed active/ambiguous tracking; current session state unknown",
-    "health_policy_privacy": "OPEN; PR #117 policy-only dedup hardening is merged, but Health Connect ingestion, permissions/provenance wiring, and physical gates remain unverified",
+    "physical_p0": "BLOCKED_DEVICE_OFFLINE; last phone observation 2026-11-01T21:24:32Z showed foreground tracking and active/ambiguous session; current state unknown",
+    "health_policy_privacy": "OPEN; PR #267 provenance policy is merged without permission expansion; Health Connect grant/revoke/no-data/error, real wearable provenance and Play declaration/privacy checks remain unverified",
     "production": "NOT_VERIFIED",
-    "maps_native_sdk_key": "BLOCKED_OWNER_API_KEY_AND_BILLING_PREREQUISITES; preflight run 41684077962 at 2026-11-03T17:25:55Z confirms APIs enabled, key listing permission denied, key secret missing/not visible to builder, and no billing configuration changed",
-    "listing_truthfulness": "OPEN; current listing claims GPS/background tracking and estimated metrics; physical P0 incomplete"
+    "maps_native_sdk_key": "BLOCKED_OWNER_API_KEY_AND_BILLING_PREREQUISITES; last preflight 41684077962 (2026-11-03) reports APIs enabled, key inventory permission denied, no key visible and no billing account linked",
+    "listing_truthfulness": "OPEN; live listing still describes GPS/background tracking and estimated metrics; physical P0 remains incomplete",
+    "competition_backend": "MERGED_SOURCE_ONLY; strength-volume API is server-recorded but not physically verified and reward-ineligible; admin key and deployment not configured/verified"
   },
-  "next_action": "Continue independent raw-GPS anomaly-policy wiring, all-day step observer/dashboard, Health Connect ingestion, and server-authoritative competition work only through disjoint exact-head-tested handoffs. Keep versionCode 51020 unallocated: owner Maps API/key/billing prerequisites and physical P0 remain blocked. Resume physical P0 only when the authorized device is online and the existing session is safely idle. No paid infrastructure. After owner prerequisites, exact-head Android CI, and physical P0 pass, allocate one unique versionCode >51019, sign/upload only that exact new AAB, and independently read back Internal. Production only after policy/privacy and physical gates.",
+  "next_action": "Preserve the unknown phone session. Keep native Maps SDK blocked until owner API/key/no-cost prerequisites exist. Rebase and exact-head-test isolated Health, raw-GPS anomaly and daily-step observer handoffs. Treat the merged competition API as provisional and reward-ineligible until owner secret, deployment, trusted evidence, replay/anti-cheat, privacy and physical validation. Keep versionCode 51020 unallocated.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -464,29 +464,27 @@
     "production": "NOT_VERIFIED"
   },
   "latest_integrator_observation": {
-    "observed_at": "2026-11-03T17:40:52Z",
+    "observed_at": "2026-11-06T18:23:17Z",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
-    "canonical_head_before_checkpoint": "2994f3015af8769e9e9ebfaa766f3c0e8442e943",
+    "canonical_head_before_evidence_refresh": "ab29ddd333d39581ee6ed7a31a7fccd1ed7343c8",
+    "app_source_sha": "5e5374e74f8cbce0eff54c0b5dc37ef860bfe4dc",
     "merged_prs": [
-      264,
-      117
+      267,
+      269
     ],
-    "pr264_merge_commit": "92462d59a76061b6a445b5e119ec28ca544893af",
-    "pr117_merge_commit": "7bdf52e260f741889fa85e5699a038a307acb285",
-    "latest_exact_head_ci_run": 41684206709,
-    "latest_exact_head_ci": "SUCCESS_VALIDATION_ONLY on app-source SHA 7bdf52e260f741889fa85e5699a038a307acb285; later canonical commits are evidence/workflow-comment only",
+    "pr267_merge_commit": "be251efd890def10781b4b0aaa02c9e058ee3cb6",
+    "pr269_merge_commit": "ab29ddd333d39581ee6ed7a31a7fccd1ed7343c8",
     "latest_play_readback_run": 41686496926,
-    "latest_play_readback_artifact_sha256": "de4b1199534e758b9bd1f384713e14deff86274d45cf4506776f460d28221b17",
-    "phone_connection": "OFFLINE; last seen about 31 hours before the 17:30Z check",
-    "next_candidate_version_code": 51020,
-    "candidate_allocated": false,
-    "candidate_build_sign_upload": "Run 41684206709 validation-only; QA identity 51019; unsigned/unuploaded; AAB SHA duplicates PR #117 run 41683629360",
+    "latest_play_readback_artifact_id": 13527497941,
+    "latest_play_readback_artifact_sha256": "5c486a1e0d91ef1b310b1515f4eb92a1bde0ecb2b299f9f8a70de6aea9b182c1",
+    "current_internal_version_code": 51019,
+    "next_version_code": 51020,
+    "next_version_allocated": false,
+    "phone_connection": "OFFLINE; last seen about 103 hours ago",
+    "physical_p0": "BLOCKED_NOT_RUN",
+    "maps_native_sdk": "OWNER_API_KEY_AND_BILLING_PREREQUISITES_BLOCKED",
     "production": "NOT_VERIFIED",
-    "lease_registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND; shared resources not assumed free",
-    "app_source_head": "7bdf52e260f741889fa85e5699a038a307acb285",
-    "latest_play_readback_artifact_id": 13254613906,
-    "latest_maps_preflight_run": 41684077962,
-    "latest_maps_preflight_head": "150d9ea001bab6e8970f22ba9f21e69f3ea595a7"
+    "lease_registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND"
   },
   "previous_phone_observation": {
     "last_verified_play_installed_version": 51018,
@@ -1262,5 +1260,100 @@
       "new_signed_aab": false,
       "production": "NOT_VERIFIED"
     }
+  },
+  "canonical_branch_head_before_evidence_refresh": "ab29ddd333d39581ee6ed7a31a7fccd1ed7343c8",
+  "canonical_app_source_sha": "5e5374e74f8cbce0eff54c0b5dc37ef860bfe4dc",
+  "current_integrations": {
+    "gps_health": {
+      "pr": 267,
+      "state": "MERGED",
+      "merge_commit_sha": "be251efd890def10781b4b0aaa02c9e058ee3cb6",
+      "tested_app_source_sha": "5e5374e74f8cbce0eff54c0b5dc37ef860bfe4dc",
+      "tested_pr_head_sha": "f04fcb4de3744d3f161ce5ac130101ae6aecb699",
+      "merge_tree_identical_to_tested_head": true,
+      "android_ci_run": 42262865136,
+      "android_ci_conclusion": "SUCCESS",
+      "product_tests": 60,
+      "source_contract_tests": 33,
+      "backend_tests": 15,
+      "android_unit_tests": 151,
+      "lint_debug": "PASS",
+      "debug_apk_build": "PASS",
+      "release_bundle_build": "PASS_UNSIGNED_VALIDATION_ONLY",
+      "artifact_id": 13525932102,
+      "artifact_zip_sha256": "ceff03d2ba048982f911cac575a4e796533e83a0ca0b6fca3eb5fb004185aa7a",
+      "qa_apk_sha256": "88327195ed61dd4f244bad9f395a946a58d4894fddfe3110b87c247ba1fa79a2",
+      "validation_aab_sha256": "ee16ae4921e133ec373196fddf0743d8940c8e4ef1005c3f3de27711268c3b3f",
+      "validation_aab_signed": false,
+      "production_signing_used": false,
+      "play_upload": false,
+      "exact_head_guard_run": 42266789292,
+      "exact_head_guard_conclusion": "SUCCESS; Android packaging skipped",
+      "size_policy_run": 42266795888,
+      "size_policy_conclusion": "SUCCESS",
+      "physical_p0": "NOT_RUN"
+    },
+    "competition_backend": {
+      "pr": 269,
+      "state": "MERGED_SOURCE_ONLY",
+      "merge_commit_sha": "ab29ddd333d39581ee6ed7a31a7fccd1ed7343c8",
+      "tested_pr_head_sha": "b46a92ab6e9797eeaf2631a4d1e10e60d81e677c",
+      "merge_tree_identical_to_tested_head": true,
+      "backend_ci_run": 42267621742,
+      "backend_ci_conclusion": "SUCCESS",
+      "backend_unit_tests": 27,
+      "compileall": "PASS",
+      "android_packaging": "SKIPPED",
+      "scope": "strength_training / strength_volume_kg_reps only",
+      "verification_level": "SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED",
+      "reward_eligible": false,
+      "admin_key_required": "THF_COMPETITION_ADMIN_KEY",
+      "admin_key_configured": false,
+      "events_seeded": false,
+      "live_deployment": "NOT_VERIFIED",
+      "payout_path": "NOT_CONNECTED"
+    },
+    "unmerged_competition_followup": {
+      "branch": "agent/codex/competition-authority-20261106-r1",
+      "head_sha": "41defcf74ce58b242743f01df200c49c68f30859",
+      "compare_to_canonical": "one commit ahead and one behind; OpenAPI and competition-test files only",
+      "associated_pr_workflow_runs": 0,
+      "status": "HOLD_NOT_INTEGRATED"
+    }
+  },
+  "current_prs": {
+    "merged": {
+      "pr267": "MERGED_AS_be251efd890def10781b4b0aaa02c9e058ee3cb6",
+      "pr269": "MERGED_AS_ab29ddd333d39581ee6ed7a31a7fccd1ed7343c8",
+      "pr264": "MERGED_SOURCE_ONLY; physical behavior not accepted"
+    },
+    "open_priority": {
+      "pr215": "OPEN_DRAFT; GPS code superseded by #264/#267; Maps SDK/key work held",
+      "pr266": "OPEN; heart-rate identity/freshness policy; local 11/11; no exact-head Android CI; no reader/permission",
+      "pr263": "OPEN_DRAFT; raw-GPS anomaly policy; local 11/11; no exact-head Android CI; not wired to raw GPS",
+      "pr261": "OPEN; swimming eligibility; local 6/6; no exact-head Android CI; not wired to Health reader",
+      "pr225": "OPEN_DRAFT; prior exact-head CI but pure ledger core only; no all-day observer/dashboard; rebase and fresh CI required",
+      "pr93": "OPEN; Health Connect service/permission integration; exact CI, privacy and physical gates remain",
+      "pr188": "OPEN; permission-scope guard; privacy/Play declaration and CI gates remain",
+      "pr98": "OPEN_HOLD; broad Health permission expansion not release-ready"
+    }
+  },
+  "lease_registry": {
+    "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
+    "note": "Repository search returned no lease-registry file; branch-name matches were release branches only. Do not assume shared resources are free."
+  },
+  "integrator_recheck_20261106_2023": {
+    "observed_at": "2026-11-06T18:23:17Z",
+    "canonical_head_before_evidence_refresh": "ab29ddd333d39581ee6ed7a31a7fccd1ed7343c8",
+    "app_source_sha": "5e5374e74f8cbce0eff54c0b5dc37ef860bfe4dc",
+    "gps_health_pr": 267,
+    "competition_pr": 269,
+    "latest_play_artifact_id": 13527497941,
+    "latest_play_artifact_sha256": "5c486a1e0d91ef1b310b1515f4eb92a1bde0ecb2b299f9f8a70de6aea9b182c1",
+    "physical_p0": "BLOCKED_NOT_RUN",
+    "version_code_51020_allocated": false,
+    "new_signed_aab": false,
+    "play_upload": false,
+    "production": "NOT_VERIFIED"
   }
 }
