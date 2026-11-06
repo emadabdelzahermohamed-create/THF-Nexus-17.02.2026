@@ -1,7 +1,5 @@
 package com.topherofit.thf.pulse
 
-import androidx.health.connect.client.records.metadata.Device
-
 data class HealthRecordEvidenceAssessment(
     val integrityClass: IntegrityClass,
     val verifiedForRewards: Boolean,
@@ -57,11 +55,11 @@ object HealthRecordEvidencePolicy {
                 reason = "UNTRUSTED_PROVIDER",
             )
         }
-        if (deviceType == null || deviceType == Device.TYPE_UNKNOWN) {
+        if (!HealthSourceTrustPolicy.isCompatibleActivityDeviceType(deviceType)) {
             return HealthRecordEvidenceAssessment(
                 integrityClass = IntegrityClass.SUPPORTED,
                 verifiedForRewards = false,
-                reason = "UNKNOWN_DEVICE_CLASS",
+                reason = "INCOMPATIBLE_OR_UNKNOWN_DEVICE_CLASS",
             )
         }
         return HealthRecordEvidenceAssessment(
