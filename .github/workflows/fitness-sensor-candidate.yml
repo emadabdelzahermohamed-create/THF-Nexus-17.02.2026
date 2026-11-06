@@ -1,4 +1,5 @@
 name: Fitness Activity Candidate Build
+# Guard: workflow-only changes skip Android packaging to avoid unchanged AAB rebuilds.
 
 on:
   push:
