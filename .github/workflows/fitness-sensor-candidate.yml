@@ -20,6 +20,7 @@ on:
       - agent/codex/gps-path-inflation-guard-20261106-r1
       - agent/codex/health-source-allowlist-20261106-r1
       - agent/codex/competition-authority-20261106-r1
+      - agent/codex/health-heart-rate-freshness-20261104-r1
     paths:
       - 'fitness-v2/**'
       - '.github/workflows/fitness-sensor-candidate.yml'
