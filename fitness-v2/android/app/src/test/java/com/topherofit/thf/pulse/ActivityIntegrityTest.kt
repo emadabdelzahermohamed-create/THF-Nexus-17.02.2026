@@ -51,11 +51,15 @@ class ActivityIntegrityTest {
         )
     }
 
-    @Test fun missingOrUnknownDeviceClassCannotVerifyHealthConnectEvidence() {
+    @Test fun missingUnknownOrIncompatibleDeviceClassCannotVerifyHealthConnectEvidence() {
         assertEquals(IntegrityClass.SUPPORTED, ActivityIntegrityClassifier.classify(input(deviceType = null)))
         assertEquals(
             IntegrityClass.SUPPORTED,
             ActivityIntegrityClassifier.classify(input(deviceType = Device.TYPE_UNKNOWN)),
+        )
+        assertEquals(
+            IntegrityClass.SUPPORTED,
+            ActivityIntegrityClassifier.classify(input(deviceType = Device.TYPE_SCALE)),
         )
     }
 
