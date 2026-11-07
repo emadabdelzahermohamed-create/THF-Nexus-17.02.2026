@@ -107,8 +107,16 @@ class CompetitionStore:
         max_participants: int = 0,
         now: datetime | None = None,
     ) -> dict:
-        identifier = str(competition_id).strip().lower()
-        name = str(title).strip()
+        if not isinstance(competition_id, str):
+            raise WorkoutValidationError("competition id must be a string")
+        if not isinstance(title, str):
+            raise WorkoutValidationError("competition title must be a string")
+        if not isinstance(sport, str) or not isinstance(metric, str):
+            raise WorkoutValidationError("competition sport and metric must be strings")
+        if not isinstance(starts_at, str) or not isinstance(ends_at, str):
+            raise WorkoutValidationError("competition timestamps must be strings")
+        identifier = competition_id.strip().lower()
+        name = title.strip()
         if not COMPETITION_ID.fullmatch(identifier):
             raise WorkoutValidationError("invalid competition id")
         if not 1 <= len(name) <= 160:

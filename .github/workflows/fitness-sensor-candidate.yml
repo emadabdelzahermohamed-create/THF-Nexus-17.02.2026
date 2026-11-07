@@ -20,6 +20,7 @@ on:
       - agent/codex/gps-path-inflation-guard-20261106-r1
       - agent/codex/health-source-allowlist-20261106-r1
       - agent/codex/competition-authority-20261106-r1
+      - agent/codex/competition-authority-20261107-r1
       - agent/codex/swimming-reviewed-provider-gate-20261107-r1
     paths:
       - 'fitness-v2/**'
@@ -68,7 +69,7 @@ jobs:
   deterministic-build:
     needs: changed-app
     # Do not rebuild the unchanged canonical app on a workflow-only push; candidate branches still run on exact pushed SHAs.
-    if: ${{ needs.changed-app.outputs.app_changed == 'true' && (github.event_name != 'push' || (github.ref != 'refs/heads/agent/codex/fitness-recovery/20261023' && github.ref != 'refs/heads/agent/codex/competition-authority-20261106-r1')) }}
+    if: ${{ needs.changed-app.outputs.app_changed == 'true' && (github.event_name != 'push' || (github.ref != 'refs/heads/agent/codex/fitness-recovery/20261023' && github.ref != 'refs/heads/agent/codex/competition-authority-20261106-r1' && github.ref != 'refs/heads/agent/codex/competition-authority-20261107-r1')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -138,7 +139,7 @@ jobs:
             fitness-v2/candidate-build.txt
 
   competition-backend:
-    if: ${{ github.ref == 'refs/heads/agent/codex/competition-authority-20261106-r1' }}
+    if: ${{ github.ref == 'refs/heads/agent/codex/competition-authority-20261106-r1' || github.ref == 'refs/heads/agent/codex/competition-authority-20261107-r1' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

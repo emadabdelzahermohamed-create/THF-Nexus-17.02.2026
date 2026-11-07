@@ -926,6 +926,7 @@
           "reason": {
             "type": "string",
             "enum": [
+              "COMPETITION_NOT_ACTIVE",
               "NOT_ENROLLED",
               "WORKOUT_NOT_FOUND",
               "SPORT_MISMATCH",
