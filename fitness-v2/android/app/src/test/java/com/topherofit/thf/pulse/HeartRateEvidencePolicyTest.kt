@@ -17,7 +17,7 @@ class HeartRateEvidencePolicyTest {
         source: String? = "com.sec.android.app.shealth",
         device: HeartRateDeviceType = HeartRateDeviceType.WATCH,
         origin: HeartRateOrigin = HeartRateOrigin.HEALTH_CONNECT_WEARABLE,
-        method: HeartRateRecordingMethod = HeartRateRecordingMethod.AUTOMATICALLY_RECORDED,
+        method: HeartRateCaptureMethod = HeartRateCaptureMethod.AUTOMATICALLY_RECORDED,
         permission: HeartRatePermissionState = HeartRatePermissionState.GRANTED,
         sourceAvailable: Boolean = true,
         readError: Boolean = false,
@@ -43,7 +43,7 @@ class HeartRateEvidencePolicyTest {
             sourcePackage = "com.example.watch",
             deviceType = HeartRateDeviceType.WATCH,
             origin = HeartRateOrigin.HEALTH_CONNECT_WEARABLE,
-            recordingMethod = HeartRateRecordingMethod.AUTOMATICALLY_RECORDED,
+            recordingMethod = HeartRateCaptureMethod.AUTOMATICALLY_RECORDED,
         )
         val result = assess(evidenceWithoutPermission)
         assertEquals(HeartRatePermissionState.NOT_GRANTED, evidenceWithoutPermission.permissionState)
@@ -75,7 +75,7 @@ class HeartRateEvidencePolicyTest {
         assertEquals(72.0, result.beatsPerMinute!!, 0.0)
         assertEquals("com.sec.android.app.shealth", result.sourcePackage)
         assertEquals(HeartRateDeviceType.WATCH, result.deviceType)
-        assertEquals(HeartRateRecordingMethod.AUTOMATICALLY_RECORDED, result.recordingMethod)
+        assertEquals(HeartRateCaptureMethod.AUTOMATICALLY_RECORDED, result.recordingMethod)
         assertEquals(HeartRateTrustTier.TRUSTED_WEARABLE, result.trustTier)
         assertFalse(result.canVerifySportProgress)
     }
@@ -84,7 +84,7 @@ class HeartRateEvidencePolicyTest {
         val result = assess(
             evidence(
                 device = HeartRateDeviceType.FITNESS_BAND,
-                method = HeartRateRecordingMethod.ACTIVELY_RECORDED,
+                method = HeartRateCaptureMethod.ACTIVELY_RECORDED,
             ),
         )
         assertEquals(HeartRateTrustTier.TRUSTED_WEARABLE, result.trustTier)
@@ -92,7 +92,7 @@ class HeartRateEvidencePolicyTest {
 
     @Test fun manual_entry_cannot_become_trusted_by_claiming_watch_device() {
         val result = assess(
-            evidence(method = HeartRateRecordingMethod.MANUAL_ENTRY),
+            evidence(method = HeartRateCaptureMethod.MANUAL_ENTRY),
         )
         assertEquals(HeartRateDisplayState.AVAILABLE, result.state)
         assertEquals(HeartRateTrustTier.IMPORTED_UNVERIFIED, result.trustTier)
@@ -129,7 +129,7 @@ class HeartRateEvidencePolicyTest {
         )
         assertEquals(
             HeartRateTrustTier.UNVERIFIED,
-            assess(evidence(method = HeartRateRecordingMethod.UNKNOWN)).trustTier,
+            assess(evidence(method = HeartRateCaptureMethod.UNKNOWN)).trustTier,
         )
     }
 

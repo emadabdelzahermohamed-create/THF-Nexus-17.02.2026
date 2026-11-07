@@ -18,7 +18,7 @@ enum class HeartRateOrigin {
 
 enum class HeartRateDeviceType { WATCH, SMARTWATCH, FITNESS_BAND, FITNESS_TRACKER, PHONE, OTHER, UNKNOWN }
 
-enum class HeartRateRecordingMethod {
+enum class HeartRateCaptureMethod {
     AUTOMATICALLY_RECORDED,
     ACTIVELY_RECORDED,
     MANUAL_ENTRY,
@@ -44,7 +44,7 @@ data class HeartRateEvidence(
     val sourcePackage: String? = null,
     val deviceType: HeartRateDeviceType = HeartRateDeviceType.UNKNOWN,
     val origin: HeartRateOrigin = HeartRateOrigin.UNKNOWN,
-    val recordingMethod: HeartRateRecordingMethod = HeartRateRecordingMethod.UNKNOWN,
+    val recordingMethod: HeartRateCaptureMethod = HeartRateCaptureMethod.UNKNOWN,
     // Least privilege: require the caller to confirm a current grant before exposing a sample.
     val permissionState: HeartRatePermissionState = HeartRatePermissionState.NOT_GRANTED,
     val sourceAvailable: Boolean = true,
@@ -63,7 +63,7 @@ data class HeartRateAssessment(
     val observedAtEpochMillis: Long?,
     val sourcePackage: String?,
     val deviceType: HeartRateDeviceType,
-    val recordingMethod: HeartRateRecordingMethod,
+    val recordingMethod: HeartRateCaptureMethod,
     val trustTier: HeartRateTrustTier,
 ) {
     /** Heart rate alone is never sufficient evidence to verify a sport session. */
@@ -86,8 +86,8 @@ object HeartRateEvidencePolicy {
     )
 
     private val acceptedRecordingMethods = setOf(
-        HeartRateRecordingMethod.AUTOMATICALLY_RECORDED,
-        HeartRateRecordingMethod.ACTIVELY_RECORDED,
+        HeartRateCaptureMethod.AUTOMATICALLY_RECORDED,
+        HeartRateCaptureMethod.ACTIVELY_RECORDED,
     )
 
     /**
@@ -110,7 +110,7 @@ object HeartRateEvidencePolicy {
         observedAtEpochMillis = null,
         sourcePackage = null,
         deviceType = HeartRateDeviceType.UNKNOWN,
-        recordingMethod = HeartRateRecordingMethod.UNKNOWN,
+        recordingMethod = HeartRateCaptureMethod.UNKNOWN,
         trustTier = HeartRateTrustTier.UNVERIFIED,
     )
 
@@ -137,7 +137,7 @@ object HeartRateEvidencePolicy {
                 observedAtEpochMillis = null,
                 sourcePackage = sourcePackage,
                 deviceType = evidence.deviceType,
-                recordingMethod = HeartRateRecordingMethod.UNKNOWN,
+                recordingMethod = HeartRateCaptureMethod.UNKNOWN,
                 trustTier = HeartRateTrustTier.UNVERIFIED,
             )
         }
@@ -196,7 +196,7 @@ object HeartRateEvidencePolicy {
 
             evidence.origin == HeartRateOrigin.HEALTH_CONNECT_IMPORTED ||
                 evidence.origin == HeartRateOrigin.MANUAL ||
-                evidence.recordingMethod == HeartRateRecordingMethod.MANUAL_ENTRY ->
+                evidence.recordingMethod == HeartRateCaptureMethod.MANUAL_ENTRY ->
                 HeartRateTrustTier.IMPORTED_UNVERIFIED
 
             else -> HeartRateTrustTier.UNVERIFIED
