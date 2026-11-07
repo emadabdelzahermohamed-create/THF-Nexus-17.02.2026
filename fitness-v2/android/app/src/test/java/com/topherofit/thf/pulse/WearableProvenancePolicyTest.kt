@@ -75,7 +75,7 @@ class WearableProvenancePolicyTest {
         val firstPhone = evidence(SportKind.WALKING, EvidenceOrigin.PHONE_MEASURED, start = 1_000_000L, end = 1_600_000L)
         val secondPhone = firstPhone.copy(startEpochMillis = 1_060_000L, endEpochMillis = 1_660_000L)
         val firstWatch = evidence(SportKind.CYCLING, EvidenceOrigin.HEALTH_WEARABLE, source = "com.sec.android.app.shealth", device = "watch", recordId = "record-1", start = 2_000_000L, end = 2_600_000L)
-        val secondWatch = firstWatch.copy(startEpochMillis = 2_060_000L, endEpochMillis = 2_660_000L)
+        val secondWatch = firstWatch.copy(recordId = "record-2", startEpochMillis = 2_060_000L, endEpochMillis = 2_660_000L)
         assertFalse(WearableProvenancePolicy.isDuplicate(firstPhone, secondPhone))
         assertFalse(WearableProvenancePolicy.isDuplicate(firstWatch, secondWatch))
     }
