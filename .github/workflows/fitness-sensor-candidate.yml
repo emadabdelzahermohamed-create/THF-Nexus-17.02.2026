@@ -26,6 +26,12 @@ on:
     paths:
       - 'fitness-v2/**'
       - '.github/workflows/fitness-sensor-candidate.yml'
+  pull_request:
+    branches:
+      - agent/codex/fitness-recovery/20261023
+    paths:
+      - 'fitness-v2/**'
+      - '.github/workflows/fitness-sensor-candidate.yml'
   workflow_dispatch:
 
 permissions:
@@ -43,6 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - id: diff
         shell: bash
@@ -75,6 +82,8 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -104,6 +113,7 @@ jobs:
         run: |
           set -uo pipefail
           mkdir -p fitness-v2/evidence
+          printf 'SOURCE_SHA=%s\n' "$(git rev-parse HEAD)" | tee fitness-v2/candidate-source-sha.txt
           set +e
           gradle --no-daemon -p fitness-v2/android :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:bundleRelease 2>&1 | tee fitness-v2/evidence/candidate-build.log
           build_status=${PIPESTATUS[0]}
@@ -127,7 +137,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fitness-activity-candidate-51019-${{ github.sha }}
+          name: fitness-activity-candidate-51019-${{ github.event.pull_request.head.sha || github.sha }}
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -138,6 +148,7 @@ jobs:
             fitness-v2/evidence/candidate-errors.txt
             fitness-v2/candidate-build.sha256
             fitness-v2/candidate-build.txt
+            fitness-v2/candidate-source-sha.txt
 
   competition-backend:
     if: ${{ github.ref == 'refs/heads/agent/codex/competition-authority-20261106-r1' || github.ref == 'refs/heads/agent/codex/competition-authority-20261107-r1' }}
