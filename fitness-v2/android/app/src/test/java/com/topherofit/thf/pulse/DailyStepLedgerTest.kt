@@ -189,4 +189,18 @@ class DailyStepLedgerTest {
         assertEquals(50L, afterReboot.state.days.single().steps)
     }
 
+
+    @Test
+    fun mixedBootCountAvailabilityRebasesWithoutCreditingAmbiguousDelta() {
+        val withBoot = record(DailyStepLedgerState(), elapsed = 10_000L, boot = 4, raw = 100L)
+        val missingBoot = record(withBoot.state, elapsed = 20_000L, boot = null, raw = 140L)
+        val restoredBoot = record(missingBoot.state, elapsed = 30_000L, boot = 4, raw = 180L)
+
+        assertEquals(DailyStepRecordStatus.BOOT_REBASE, missingBoot.status)
+        assertEquals(0L, missingBoot.delta)
+        assertEquals(DailyStepRecordStatus.BOOT_REBASE, restoredBoot.status)
+        assertEquals(0L, restoredBoot.delta)
+        assertEquals(0L, restoredBoot.state.days.single().steps)
+    }
+
 }
