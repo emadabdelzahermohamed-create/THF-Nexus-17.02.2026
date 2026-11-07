@@ -318,6 +318,41 @@ FAMILY = {
     },
 }
 
+ARABIC_INSTRUCTION_OVERRIDES = {
+    "One-Arm_Medicine_Ball_Slam": {
+        "setup_ar": "أخلِ منطقة الرمي، وقف بوقفة متدرجة ثابتة، وأمسك كرة طبية مناسبة بيد واحدة.",
+        "steps_ar": [
+            "قف بوقفة متدرجة ثابتة، وأمسك الكرة بيد واحدة على جهة الساق الخلفية.",
+            "ارفع الكرة فوق الرأس مع مد الوركين والركبتين، ثم اضربها في الأرض أمامك بثني الوركين والجذع بتحكم.",
+            "التقط ارتداد الكرة فقط إذا كان آمنًا، ثم كرر من دون فقدان التوازن.",
+        ],
+    },
+    "Pallof_Press_With_Rotation": {
+        "setup_ar": "ثبّت الكابل عند مستوى الصدر، وقف بجانب الجهاز بقدمين بعرض الورك، وأمسك المقبض بكلتا اليدين.",
+        "steps_ar": [
+            "اسحب المقبض إلى الصدر ثم مد الذراعين أمامك مع شد الجذع.",
+            "أدر الجذع ببطء بعيدًا عن البكرة نحو ربع دورة، مع بقاء القدمين والحوض ثابتين.",
+            "عد إلى مواجهة الأمام بتحكم، ثم أعد المقبض إلى الصدر وكرر للجهة الأخرى.",
+        ],
+    },
+    "Hanging_Leg_Raise": {
+        "setup_ar": "تأكد من ثبات العقلة والقبضة، وتعلّق بذراعين ممدودتين مع إرخاء الكتفين بعيدًا عن الأذنين.",
+        "steps_ar": [
+            "ابدأ من تعليق ثابت، مع شد البطن ومنع التأرجح.",
+            "ارفع الساقين أمامك حتى يرتفع الفخذان إلى مستوى الورك تقريبًا، من دون تقويس أسفل الظهر.",
+            "اخفض الساقين ببطء إلى وضع البداية، وحافظ على التحكم قبل التكرار التالي.",
+        ],
+    },
+    "Air_Bike": {
+        "setup_ar": "استلقِ على ظهرك، اثنِ الركبتين وارفع الكتفين قليلًا، وضع اليدين بخفة بجانب الرأس.",
+        "steps_ar": [
+            "قرّب المرفق الأيمن نحو الركبة اليسرى مع مد الساق اليمنى، من دون سحب الرقبة باليدين.",
+            "بدّل الجانبين كحركة بدّال: قرّب المرفق الأيسر من الركبة اليمنى ومد الساق اليسرى.",
+            "حافظ على أسفل الظهر ملامسًا للأرض بقدر مريح، وخفّض المدى إذا فقدت التحكم.",
+        ],
+    },
+}
+
 GUIDANCE = {
     "squat": {
         "regression_en": "Reduce load or depth, or squat to a stable box while keeping the whole foot planted.",
@@ -609,8 +644,21 @@ def clean_instructions(values: list[str]) -> list[str]:
     return result[:6]
 
 
+def validate_arabic_instruction_overrides() -> None:
+    selected_ids = {source_id for source_id, _, _, _ in SELECTION}
+    for source_id, override in ARABIC_INSTRUCTION_OVERRIDES.items():
+        if source_id not in selected_ids:
+            raise SystemExit(f"Arabic instruction override is not selected: {source_id}")
+        if not isinstance(override.get("setup_ar"), str) or not override["setup_ar"].strip():
+            raise SystemExit(f"Arabic setup override is empty: {source_id}")
+        steps = override.get("steps_ar")
+        if not isinstance(steps, list) or len(steps) < 2 or any(not isinstance(step, str) or not step.strip() for step in steps):
+            raise SystemExit(f"Arabic step override is invalid: {source_id}")
+
+
 def build(source: Path, repo: Path) -> None:
     validate_guidance_diversity(GUIDANCE)
+    validate_arabic_instruction_overrides()
     source_json = source / "dist" / "exercises.json"
     source_license = source / "LICENSE.md"
     if not source_json.is_file() or not source_license.is_file():
@@ -657,6 +705,7 @@ def build(source: Path, repo: Path) -> None:
         section_en, section_ar = SECTION_LABELS[section]
         slug = source_id.lower().replace("_", "-").replace("/", "-")
         guidance = guidance_for(source_id, pattern)
+        instruction_override = ARABIC_INSTRUCTION_OVERRIDES.get(source_id, {})
         catalog.append({
             "id": slug,
             "sourceItemId": source_id,
@@ -673,8 +722,8 @@ def build(source: Path, repo: Path) -> None:
             "level": {"id": level, "en": level.title(), "ar": LEVEL_AR.get(level, level)},
             "movement": {"id": pattern, "en": pattern.replace("_", " ").title(), "ar": PATTERN_AR[pattern]},
             "goal": {"id": goal, "en": goal.replace("_", " ").title(), "ar": GOAL_AR[goal]},
-            "setup": {"en": family["setup_en"], "ar": family["setup_ar"]},
-            "steps": {"en": clean_instructions(item.get("instructions") or []) or ENGLISH_STEPS[pattern], "ar": family["steps_ar"]},
+            "setup": {"en": family["setup_en"], "ar": instruction_override.get("setup_ar", family["setup_ar"])},
+            "steps": {"en": clean_instructions(item.get("instructions") or []) or ENGLISH_STEPS[pattern], "ar": instruction_override.get("steps_ar", family["steps_ar"])},
             "breathing": {"en": family["breathing_en"], "ar": family["breathing_ar"]},
             "prescription": prescription(item, pattern),
             "commonMistakes": {"en": family["mistakes_en"], "ar": family["mistakes_ar"]},
