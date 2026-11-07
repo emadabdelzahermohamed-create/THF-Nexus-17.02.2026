@@ -608,16 +608,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Week 2: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
+        "Week 1: learn each movement and finish every working set with 3–4 repetitions in reserve.",
+        "Week 2: add one controlled repetition to rep-based sets, or 5 seconds to timed sets; if form stays stable at RPE 7 or lower, progress range, leverage, or assistance by one small step—do not add external load.",
         "Week 3: keep the same exercises and confirm repeatable technique without grinding repetitions.",
         "Week 4: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسبوع 2: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 3: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 4: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم كل حركة وأنهِ مجموعات العمل مع 3–4 عدات في الاحتياط.",
+        "الأسبوع 2: أضف عدة مضبوطة واحدة إلى المجموعات المعتمدة على التكرار، أو 5 ثوانٍ إلى المجموعات الزمنية؛ وإذا ظل الأداء ثابتًا عند RPE 7 أو أقل، فعدّل مدى الحركة أو الرافعة أو المساعدة خطوة واحدة فقط، دون إضافة حمل خارجي.",
+        "الأسبوع 3: حافظ على التمارين نفسها وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
+        "الأسبوع 4: قلّل مجموعات العمل 30–40%، وراجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
     },
     "offline": true,
@@ -852,16 +852,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
+        "Week 1: learn each movement and finish every working set with 3–4 repetitions in reserve.",
+        "Weeks 2–4: add one controlled repetition to rep-based sets, or 5 seconds to timed sets; if form stays stable at RPE 8 or lower, progress range, leverage, or assistance by one small step—do not add external load.",
         "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
         "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم كل حركة وأنهِ مجموعات العمل مع 3–4 عدات في الاحتياط.",
+        "الأسابيع 2–4: أضف عدة مضبوطة واحدة إلى المجموعات المعتمدة على التكرار، أو 5 ثوانٍ إلى المجموعات الزمنية؛ وإذا ظل الأداء ثابتًا عند RPE 8 أو أقل، فعدّل مدى الحركة أو الرافعة أو المساعدة خطوة واحدة فقط، دون إضافة حمل خارجي.",
+        "الأسبوع 5: حافظ على التمارين نفسها وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
+        "الأسبوع 6: قلّل مجموعات العمل 30–40%، وراجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
     },
     "offline": true,
@@ -3996,16 +3996,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–4: add one repetition first; add 2–5% load only when form stays stable at RPE 7 or lower.",
+        "Week 1: learn each movement and finish every working set with 3–4 repetitions in reserve.",
+        "Weeks 2–4: add one controlled repetition to rep-based sets, or 5 seconds to timed sets; if form stays stable at RPE 7 or lower, progress range, leverage, or assistance by one small step—do not add external load.",
         "Week 5: keep the same exercises and confirm repeatable technique without grinding repetitions.",
         "Week 6: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–4: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 7 أو أقل.",
-        "الأسبوع 5: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 6: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم كل حركة وأنهِ مجموعات العمل مع 3–4 عدات في الاحتياط.",
+        "الأسابيع 2–4: أضف عدة مضبوطة واحدة إلى المجموعات المعتمدة على التكرار، أو 5 ثوانٍ إلى المجموعات الزمنية؛ وإذا ظل الأداء ثابتًا عند RPE 7 أو أقل، فعدّل مدى الحركة أو الرافعة أو المساعدة خطوة واحدة فقط، دون إضافة حمل خارجي.",
+        "الأسبوع 5: حافظ على التمارين نفسها وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
+        "الأسبوع 6: قلّل مجموعات العمل 30–40%، وراجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
     },
     "offline": true,
@@ -4245,16 +4245,16 @@ window.THF_PROGRAMS = [
     },
     "progression": {
       "en": [
-        "Week 1: learn technique and finish every working set with 3–4 repetitions in reserve.",
-        "Weeks 2–6: add one repetition first; add 2–5% load only when form stays stable at RPE 8 or lower.",
+        "Week 1: learn each movement and finish every working set with 3–4 repetitions in reserve.",
+        "Weeks 2–6: add one controlled repetition to rep-based sets, or 5 seconds to timed sets; if form stays stable at RPE 8 or lower, progress range, leverage, or assistance by one small step—do not add external load.",
         "Week 7: keep the same exercises and confirm repeatable technique without grinding repetitions.",
         "Week 8: reduce working sets by 30–40%, review progress, then repeat or move to the next level."
       ],
       "ar": [
-        "الأسبوع الأول: تعلّم الأداء وأنهِ كل مجموعة عمل مع 3–4 عدات في الاحتياط.",
-        "الأسابيع 2–6: أضف عدة أولًا، ثم زد الحمل 2–5% فقط مع ثبات الأداء عند RPE 8 أو أقل.",
-        "الأسبوع 7: حافظ على نفس التمارين وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
-        "الأسبوع 8: قلّل مجموعات العمل 30–40%، راجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
+        "الأسبوع الأول: تعلّم كل حركة وأنهِ مجموعات العمل مع 3–4 عدات في الاحتياط.",
+        "الأسابيع 2–6: أضف عدة مضبوطة واحدة إلى المجموعات المعتمدة على التكرار، أو 5 ثوانٍ إلى المجموعات الزمنية؛ وإذا ظل الأداء ثابتًا عند RPE 8 أو أقل، فعدّل مدى الحركة أو الرافعة أو المساعدة خطوة واحدة فقط، دون إضافة حمل خارجي.",
+        "الأسبوع 7: حافظ على التمارين نفسها وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
+        "الأسبوع 8: قلّل مجموعات العمل 30–40%، وراجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي."
       ]
     },
     "offline": true,

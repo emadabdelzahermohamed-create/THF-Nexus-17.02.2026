@@ -144,9 +144,9 @@ def localized_goal(goal: str) -> dict[str, str]:
 
 PROGRESSION_FAMILY = {
     "gym": "strength",
-    "home": "strength",
+    "home": "bodyweight_strength",
     "swimming": "strength",
-    "calisthenics": "strength",
+    "calisthenics": "bodyweight_strength",
     "running": "endurance",
     "cycling": "endurance",
     "football": "conditioning",
@@ -171,6 +171,22 @@ def progression_for(section_id: str, weeks: int, level: str) -> dict[str, list[s
     phase_en = build_phase_label(build_end, "en")
     phase_ar = build_phase_label(build_end, "ar")
     family = PROGRESSION_FAMILY[section_id]
+
+    if family == "bodyweight_strength":
+        return {
+            "en": [
+                "Week 1: learn each movement and finish every working set with 3–4 repetitions in reserve.",
+                f"{phase_en}: add one controlled repetition to rep-based sets, or 5 seconds to timed sets; if form stays stable at RPE {target_rpe} or lower, progress range, leverage, or assistance by one small step—do not add external load.",
+                f"Week {weeks - 1}: keep the same exercises and confirm repeatable technique without grinding repetitions.",
+                f"Week {weeks}: reduce working sets by 30–40%, review progress, then repeat or move to the next level.",
+            ],
+            "ar": [
+                "الأسبوع الأول: تعلّم كل حركة وأنهِ مجموعات العمل مع 3–4 عدات في الاحتياط.",
+                f"{phase_ar}: أضف عدة مضبوطة واحدة إلى المجموعات المعتمدة على التكرار، أو 5 ثوانٍ إلى المجموعات الزمنية؛ وإذا ظل الأداء ثابتًا عند RPE {target_rpe} أو أقل، فعدّل مدى الحركة أو الرافعة أو المساعدة خطوة واحدة فقط، دون إضافة حمل خارجي.",
+                f"الأسبوع {weeks - 1}: حافظ على التمارين نفسها وتأكد من تكرار الأداء الصحيح دون عدات قسرية.",
+                f"الأسبوع {weeks}: قلّل مجموعات العمل 30–40%، وراجع تقدمك، ثم كرر البرنامج أو انتقل للمستوى التالي.",
+            ],
+        }
 
     if family == "strength":
         return {
