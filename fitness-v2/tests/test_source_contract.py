@@ -732,5 +732,19 @@ class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
         self.assertIn("normalizeLongitudeDelta(lon2 - lon1)", metrics)
 
 
+class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
+    def test_fresh_rejected_fix_is_not_mislabeled_as_weak_accuracy(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsFixPresentationPolicy.kt").read_text()
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+
+        self.assertIn("GpsFixPresentationPolicy.state(", service)
+        self.assertIn('return "filtered"', policy)
+        self.assertIn('"filtered" -> "تم رصد الموقع', service)
+        self.assertIn("gpsFixState==='filtered'?", app)
+        self.assertIn("gpsFiltered:'", app)
+        self.assertNotIn("gpsFixState==='weak'", app)
+
+
 if __name__ == "__main__":
     unittest.main()
