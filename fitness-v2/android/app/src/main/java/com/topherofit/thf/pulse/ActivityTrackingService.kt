@@ -894,27 +894,24 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     private fun gpsFixState(): String {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-        ) return "permission"
         val enabled = runCatching {
             locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
         }.getOrDefault(false)
-        if (!enabled) return "off"
-        val observed = lastObservedLocation ?: return "acquiring"
-        val ageMs = SystemClock.elapsedRealtime() - observed.elapsedRealtimeNanos / 1_000_000L
-        if (ageMs > 30_000L) return "stale"
-        val accepted = lastLocation
-        if (accepted == null || accepted.elapsedRealtimeNanos < observed.elapsedRealtimeNanos) return "weak"
-        return "ready"
+        return GpsFixPresentationPolicy.state(
+            locationPermissionGranted = hasLocationPermission(),
+            providerEnabled = enabled,
+            observedElapsedMs = lastObservedLocation?.elapsedRealtimeNanos?.div(1_000_000L),
+            acceptedElapsedMs = lastLocation?.elapsedRealtimeNanos?.div(1_000_000L),
+            nowElapsedMs = SystemClock.elapsedRealtime(),
+        )
     }
 
     private fun gpsStatus(): String = when (gpsFixState()) {
         "permission" -> "إذن الموقع غير متاح · المسافة لا تتحدث"
         "off" -> "الموقع مغلق · المسافة لا تتحدث"
         "stale" -> "إشارة الموقع متوقفة · بانتظار تحديث"
-        "weak" -> "تم تحديد الموقع · الدقة ضعيفة ±${lastObservedAccuracyMetres?.toInt() ?: 0} م"
+        "filtered" -> "تم رصد الموقع ±${lastObservedAccuracyMetres?.toInt() ?: 0} م · النقطة لم تُقبل لاحتساب المسافة"
         "ready" -> "GPS متصل · دقة ±${lastAccuracyMetres?.toInt() ?: 0} م"
         else -> "جارٍ تثبيت موقع عالي الدقة"
     }
