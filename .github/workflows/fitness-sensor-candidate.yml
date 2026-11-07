@@ -21,7 +21,6 @@ on:
       - agent/codex/health-source-allowlist-20261106-r1
       - agent/codex/competition-authority-20261106-r1
       - agent/codex/competition-authority-20261107-r1
-      - agent/codex/daily-step-ledger-core-20261107-r1
       - agent/codex/swimming-reviewed-provider-gate-20261107-r1
     paths:
       - 'fitness-v2/**'
@@ -31,7 +30,6 @@ on:
       - agent/codex/fitness-recovery/20261023
     paths:
       - 'fitness-v2/**'
-      - '.github/workflows/fitness-sensor-candidate.yml'
   workflow_dispatch:
 
 permissions:
