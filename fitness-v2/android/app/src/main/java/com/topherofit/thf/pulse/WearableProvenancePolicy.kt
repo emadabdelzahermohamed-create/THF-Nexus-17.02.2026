@@ -1,5 +1,7 @@
 package com.topherofit.thf.pulse
 
+import java.util.Locale
+
 enum class SportKind { WALKING, RUNNING, CYCLING, SWIMMING_POOL, SWIMMING_OPEN_WATER, OTHER }
 enum class EvidenceOrigin { PHONE_MEASURED, HEALTH_WEARABLE, HEALTH_IMPORTED, MANUAL, UNKNOWN }
 enum class CompetitionTrust { VERIFIED, TRUSTED, IMPORTED, MANUAL, REJECTED }
@@ -17,12 +19,13 @@ data class SportEvidence(
 )
 
 object WearableProvenancePolicy {
-    private val wearableDeviceTypes = setOf("watch", "smartwatch", "fitness_band", "fitness_tracker", "wearable")
+    private val wearableDeviceTypes = setOf("watch", "smartwatch", "fitness_band", "fitness_tracker")
     private val reconcilableSports = setOf(SportKind.WALKING, SportKind.RUNNING, SportKind.CYCLING)
 
-    private fun hasWearableDeviceProvenance(evidence: SportEvidence): Boolean =
-        !evidence.sourcePackage.isNullOrBlank() &&
-            evidence.deviceType?.trim()?.lowercase() in wearableDeviceTypes
+    private fun hasReviewedWearableDeviceProvenance(evidence: SportEvidence): Boolean =
+        HealthSourceTrustPolicy.isApprovedHealthConnectProvider(evidence.sourcePackage) &&
+            !evidence.recordId.isNullOrBlank() &&
+            evidence.deviceType?.trim()?.lowercase(Locale.ROOT) in wearableDeviceTypes
 
     private fun isHealthOrigin(origin: EvidenceOrigin): Boolean =
         origin == EvidenceOrigin.HEALTH_WEARABLE || origin == EvidenceOrigin.HEALTH_IMPORTED
@@ -35,7 +38,9 @@ object WearableProvenancePolicy {
 
         if (evidence.sport == SportKind.SWIMMING_POOL || evidence.sport == SportKind.SWIMMING_OPEN_WATER) {
             // Phone GPS/sensors never verify swimming. Pool sessions legitimately need no GPS.
-            val wearable = evidence.origin == EvidenceOrigin.HEALTH_WEARABLE && hasWearableDeviceProvenance(evidence)
+            // A wearable label alone is insufficient: writer, device class and stable record ID must be reviewed.
+            val wearable = evidence.origin == EvidenceOrigin.HEALTH_WEARABLE &&
+                hasReviewedWearableDeviceProvenance(evidence)
             return if (wearable) CompetitionTrust.VERIFIED else when (evidence.origin) {
                 EvidenceOrigin.HEALTH_IMPORTED -> CompetitionTrust.IMPORTED
                 EvidenceOrigin.MANUAL -> CompetitionTrust.MANUAL
@@ -45,7 +50,11 @@ object WearableProvenancePolicy {
 
         return when (evidence.origin) {
             EvidenceOrigin.PHONE_MEASURED -> if (evidence.hasAcceptedGps) CompetitionTrust.VERIFIED else CompetitionTrust.TRUSTED
-            EvidenceOrigin.HEALTH_WEARABLE -> if (hasWearableDeviceProvenance(evidence)) CompetitionTrust.TRUSTED else CompetitionTrust.IMPORTED
+            EvidenceOrigin.HEALTH_WEARABLE -> if (hasReviewedWearableDeviceProvenance(evidence)) {
+                CompetitionTrust.TRUSTED
+            } else {
+                CompetitionTrust.IMPORTED
+            }
             EvidenceOrigin.HEALTH_IMPORTED -> CompetitionTrust.IMPORTED
             EvidenceOrigin.MANUAL -> CompetitionTrust.MANUAL
             EvidenceOrigin.UNKNOWN -> CompetitionTrust.REJECTED
