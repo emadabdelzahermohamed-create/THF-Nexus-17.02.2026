@@ -1,5 +1,6 @@
 name: THF Fitness Publication State Probe
 # Read-only evidence refresh trigger; no upload or commit step.
+# 2026-11-07 canonical readback refresh after exact-head integrations; this workflow remains read-only.
 
 on:
   push:
