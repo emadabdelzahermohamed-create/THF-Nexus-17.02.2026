@@ -175,4 +175,18 @@ class DailyStepLedgerTest {
         assertEquals(first.state, stale.state)
     }
 
+
+    @Test
+    fun missingBootCountUsesMonotonicClockToDetectReboot() {
+        val first = record(DailyStepLedgerState(), elapsed = 10_000L, boot = null, raw = 100L)
+        val sameBoot = record(first.state, elapsed = 30_000L, boot = null, raw = 150L)
+        val afterReboot = record(sameBoot.state, elapsed = 1_000L, boot = null, raw = 8L)
+
+        assertEquals(DailyStepRecordStatus.COUNTED, sameBoot.status)
+        assertEquals(50L, sameBoot.delta)
+        assertEquals(DailyStepRecordStatus.BOOT_REBASE, afterReboot.status)
+        assertEquals(0L, afterReboot.delta)
+        assertEquals(50L, afterReboot.state.days.single().steps)
+    }
+
 }
