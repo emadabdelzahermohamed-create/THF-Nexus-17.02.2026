@@ -18,13 +18,16 @@ class WearableProvenancePolicyTest {
         rejected: Boolean = false,
     ) = SportEvidence(sport, origin, source, device, recordId, start, end, gps, rejected)
 
-    @Test fun swimming_requires_wearable_health_provenance() {
+    @Test fun swimming_requires_reviewed_wearable_health_provenance() {
+        val samsung = "com.sec.android.app.shealth"
+        val google = "com.google.android.apps.fitness"
         assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.PHONE_MEASURED, gps = true)))
-        assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app")))
-        assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "phone")))
-        assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "spoofed-device")))
-        assertEquals(CompetitionTrust.VERIFIED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch")))
-        assertEquals(CompetitionTrust.VERIFIED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "smartwatch", gps = false)))
+        assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch")))
+        assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = samsung, device = "phone")))
+        assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = samsung, device = "spoofed-device")))
+        assertEquals(CompetitionTrust.REJECTED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = samsung, device = "wearable")))
+        assertEquals(CompetitionTrust.VERIFIED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.HEALTH_WEARABLE, source = samsung, device = "watch")))
+        assertEquals(CompetitionTrust.VERIFIED, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.HEALTH_WEARABLE, source = google, device = "smartwatch", gps = false)))
     }
 
     @Test fun imported_and_manual_swimming_never_become_verified() {
@@ -32,9 +35,18 @@ class WearableProvenancePolicyTest {
         assertEquals(CompetitionTrust.MANUAL, WearableProvenancePolicy.classify(evidence(SportKind.SWIMMING_POOL, EvidenceOrigin.MANUAL)))
     }
 
-    @Test fun wearable_origin_without_wearable_device_is_not_trusted() {
-        assertEquals(CompetitionTrust.IMPORTED, WearableProvenancePolicy.classify(evidence(SportKind.RUNNING, EvidenceOrigin.HEALTH_WEARABLE, source = "health.app", device = "phone")))
-        assertEquals(CompetitionTrust.TRUSTED, WearableProvenancePolicy.classify(evidence(SportKind.RUNNING, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "fitness_tracker")))
+    @Test fun wearable_origin_without_reviewed_writer_or_compatible_device_is_not_trusted() {
+        assertEquals(CompetitionTrust.IMPORTED, WearableProvenancePolicy.classify(evidence(SportKind.RUNNING, EvidenceOrigin.HEALTH_WEARABLE, source = "com.sec.android.app.shealth", device = "phone")))
+        assertEquals(CompetitionTrust.IMPORTED, WearableProvenancePolicy.classify(evidence(SportKind.RUNNING, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "fitness_tracker")))
+    }
+
+    @Test fun unreviewed_health_writers_cannot_become_trusted_for_walk_run_or_cycle() {
+        for (sport in listOf(SportKind.WALKING, SportKind.RUNNING, SportKind.CYCLING)) {
+            val unreviewed = evidence(sport, EvidenceOrigin.HEALTH_WEARABLE, source = "com.example.health", device = "watch")
+            val reviewed = evidence(sport, EvidenceOrigin.HEALTH_WEARABLE, source = "com.sec.android.app.shealth", device = "watch")
+            assertEquals(CompetitionTrust.IMPORTED, WearableProvenancePolicy.classify(unreviewed))
+            assertEquals(CompetitionTrust.TRUSTED, WearableProvenancePolicy.classify(reviewed))
+        }
     }
 
     @Test fun anomalies_fail_closed() {
@@ -44,7 +56,7 @@ class WearableProvenancePolicyTest {
 
     @Test fun overlapping_phone_and_health_records_deduplicate() {
         val phone = evidence(SportKind.RUNNING, EvidenceOrigin.PHONE_MEASURED, gps = true, start = 1_000_000L, end = 1_600_000L)
-        val health = evidence(SportKind.RUNNING, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch", start = 1_060_000L, end = 1_660_000L)
+        val health = evidence(SportKind.RUNNING, EvidenceOrigin.HEALTH_WEARABLE, source = "com.sec.android.app.shealth", device = "watch", start = 1_060_000L, end = 1_660_000L)
         assertTrue(WearableProvenancePolicy.isDuplicate(phone, health))
         assertFalse(WearableProvenancePolicy.isDuplicate(phone, health.copy(sport = SportKind.CYCLING)))
     }
@@ -52,7 +64,7 @@ class WearableProvenancePolicyTest {
     @Test fun nearby_same_origin_sessions_are_not_silently_dropped() {
         val firstPhone = evidence(SportKind.WALKING, EvidenceOrigin.PHONE_MEASURED, start = 1_000_000L, end = 1_600_000L)
         val secondPhone = firstPhone.copy(startEpochMillis = 1_060_000L, endEpochMillis = 1_660_000L)
-        val firstWatch = evidence(SportKind.CYCLING, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch", start = 2_000_000L, end = 2_600_000L)
+        val firstWatch = evidence(SportKind.CYCLING, EvidenceOrigin.HEALTH_WEARABLE, source = "com.sec.android.app.shealth", device = "watch", start = 2_000_000L, end = 2_600_000L)
         val secondWatch = firstWatch.copy(startEpochMillis = 2_060_000L, endEpochMillis = 2_660_000L)
         assertFalse(WearableProvenancePolicy.isDuplicate(firstPhone, secondPhone))
         assertFalse(WearableProvenancePolicy.isDuplicate(firstWatch, secondWatch))
@@ -60,12 +72,12 @@ class WearableProvenancePolicyTest {
 
     @Test fun swimming_never_time_deduplicates_without_stable_identity() {
         val phone = evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.PHONE_MEASURED, gps = true)
-        val watch = evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch")
+        val watch = evidence(SportKind.SWIMMING_OPEN_WATER, EvidenceOrigin.HEALTH_WEARABLE, source = "com.sec.android.app.shealth", device = "watch")
         assertFalse(WearableProvenancePolicy.isDuplicate(phone, watch))
     }
 
-    @Test fun stable_record_identity_deduplicates() {
-        val a = evidence(SportKind.WALKING, EvidenceOrigin.HEALTH_WEARABLE, source = "watch.app", device = "watch", recordId = "record-1")
+    @Test fun stable_record_identity_deduplicates_within_same_source() {
+        val a = evidence(SportKind.WALKING, EvidenceOrigin.HEALTH_WEARABLE, source = "com.sec.android.app.shealth", device = "watch", recordId = "record-1")
         val b = a.copy(startEpochMillis = 9_000_000L, endEpochMillis = 9_600_000L)
         assertTrue(WearableProvenancePolicy.isDuplicate(a, b))
     }
