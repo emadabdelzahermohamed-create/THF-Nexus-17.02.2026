@@ -609,6 +609,18 @@ def clean_instructions(values: list[str]) -> list[str]:
     return result[:6]
 
 
+
+def normalize_muscle_groups(primary: list[str], secondary: list[str]) -> tuple[list[str], list[str]]:
+    """Keep primary and secondary muscle tags unique and mutually exclusive."""
+    primary_unique = list(dict.fromkeys(primary))
+    seen = set(primary_unique)
+    secondary_unique = []
+    for muscle in secondary:
+        if muscle not in seen:
+            seen.add(muscle)
+            secondary_unique.append(muscle)
+    return primary_unique, secondary_unique
+
 def build(source: Path, repo: Path) -> None:
     validate_guidance_diversity(GUIDANCE)
     source_json = source / "dist" / "exercises.json"
@@ -650,8 +662,9 @@ def build(source: Path, repo: Path) -> None:
 
         pattern = pattern_for(item)
         family = FAMILY[pattern]
-        primary = item.get("primaryMuscles") or []
-        secondary = item.get("secondaryMuscles") or []
+        primary, secondary = normalize_muscle_groups(
+            item.get("primaryMuscles") or [], item.get("secondaryMuscles") or []
+        )
         equipment = item.get("equipment")
         level = item.get("level") or "beginner"
         section_en, section_ar = SECTION_LABELS[section]
