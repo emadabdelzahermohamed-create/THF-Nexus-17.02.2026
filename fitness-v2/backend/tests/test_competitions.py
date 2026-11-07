@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from api import FitnessApi
 from competition_store import CompetitionStore
 from auth import HmacAccessTokenVerifier
-from workout_store import WorkoutSession, WorkoutSet, WorkoutStore
+from workout_store import WorkoutSession, WorkoutSet, WorkoutStore, WorkoutValidationError
 
 
 KEY = b"k" * 32
@@ -170,6 +170,7 @@ class CompetitionApiTest(unittest.TestCase):
         self.assertEqual(["workoutClientRecordId"], submission["required"])
         result = specification["components"]["schemas"]["CompetitionSubmissionResult"]
         self.assertIn("SERVER_RECORDED_SCORE", result["properties"]["reason"]["enum"])
+        self.assertIn("COMPETITION_NOT_ACTIVE", result["properties"]["reason"]["enum"])
         self.assertEqual(
             "SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED",
             result["properties"]["verificationLevel"]["const"],
@@ -199,6 +200,56 @@ class CompetitionApiTest(unittest.TestCase):
                 },
             )
             self.assertEqual("422 Unprocessable Entity", status, body)
+
+    def test_admin_rejects_non_string_competition_fields(self):
+        start, end = self.event_window()
+        valid = {
+            "id": "typed-strength-open",
+            "title": "Typed Strength Open",
+            "sport": "strength_training",
+            "metric": "strength_volume_kg_reps",
+            "startsAt": start,
+            "endsAt": end,
+        }
+        invalid_values = (
+            ("id", None),
+            ("id", 123),
+            ("title", None),
+            ("title", False),
+            ("sport", None),
+            ("metric", 123),
+            ("startsAt", None),
+            ("endsAt", 123),
+        )
+        for field, invalid_value in invalid_values:
+            with self.subTest(field=field, invalid_value=invalid_value):
+                payload = dict(valid)
+                payload[field] = invalid_value
+                status, body = self.request(
+                    "/api/v2/admin/competitions",
+                    method="POST",
+                    bearer=token("admin-user"),
+                    admin_key="competition-admin-secret",
+                    body=payload,
+                )
+                self.assertEqual("422 Unprocessable Entity", status, body)
+
+    def test_competition_store_rejects_non_string_definition_fields(self):
+        start, end = self.event_window()
+        valid = {
+            "competition_id": "typed-store-open",
+            "title": "Typed Store Open",
+            "sport": "strength_training",
+            "metric": "strength_volume_kg_reps",
+            "starts_at": start,
+            "ends_at": end,
+        }
+        for field in ("competition_id", "title", "sport", "metric", "starts_at", "ends_at"):
+            with self.subTest(field=field):
+                invalid = dict(valid)
+                invalid[field] = None
+                with self.assertRaises(WorkoutValidationError):
+                    self.api.competitions.create_competition(**invalid)
 
     def test_capacity_is_atomic_across_database_connections(self):
         with tempfile.TemporaryDirectory() as directory:

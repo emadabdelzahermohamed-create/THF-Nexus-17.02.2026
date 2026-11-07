@@ -242,14 +242,17 @@ class FitnessApi:
                 allowed = required | {"maxParticipants"}
                 if not required.issubset(payload) or set(payload) - allowed:
                     raise WorkoutValidationError("invalid competition definition shape")
+                string_fields = ("id", "title", "sport", "metric", "startsAt", "endsAt")
+                if any(not isinstance(payload[field], str) for field in string_fields):
+                    raise WorkoutValidationError("competition definition fields must be strings")
                 with self._store_lock:
                     competition_item = self.competitions.create_competition(
-                        competition_id=str(payload["id"]),
-                        title=str(payload["title"]),
-                        sport=str(payload["sport"]),
-                        metric=str(payload["metric"]),
-                        starts_at=str(payload["startsAt"]),
-                        ends_at=str(payload["endsAt"]),
+                        competition_id=payload["id"],
+                        title=payload["title"],
+                        sport=payload["sport"],
+                        metric=payload["metric"],
+                        starts_at=payload["startsAt"],
+                        ends_at=payload["endsAt"],
                         max_participants=payload.get("maxParticipants", 0),
                     )
                 return self._response(start_response, "201 Created", competition_item)
