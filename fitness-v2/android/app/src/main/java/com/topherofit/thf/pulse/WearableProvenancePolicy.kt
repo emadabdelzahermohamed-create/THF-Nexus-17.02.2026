@@ -24,6 +24,7 @@ object WearableProvenancePolicy {
 
     private fun hasReviewedWearableDeviceProvenance(evidence: SportEvidence): Boolean =
         HealthSourceTrustPolicy.isApprovedHealthConnectProvider(evidence.sourcePackage) &&
+            !evidence.recordId.isNullOrBlank() &&
             evidence.deviceType?.trim()?.lowercase(Locale.ROOT) in wearableDeviceTypes
 
     private fun isHealthOrigin(origin: EvidenceOrigin): Boolean =
@@ -37,7 +38,7 @@ object WearableProvenancePolicy {
 
         if (evidence.sport == SportKind.SWIMMING_POOL || evidence.sport == SportKind.SWIMMING_OPEN_WATER) {
             // Phone GPS/sensors never verify swimming. Pool sessions legitimately need no GPS.
-            // A wearable label alone is insufficient: the actual Health Connect writer must be reviewed.
+            // A wearable label alone is insufficient: writer, device class and stable record ID must be reviewed.
             val wearable = evidence.origin == EvidenceOrigin.HEALTH_WEARABLE &&
                 hasReviewedWearableDeviceProvenance(evidence)
             return if (wearable) CompetitionTrust.VERIFIED else when (evidence.origin) {
