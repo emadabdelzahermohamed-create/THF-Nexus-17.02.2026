@@ -201,7 +201,7 @@ class HeartRateEvidencePolicyTest {
 
     @Test fun sample_older_than_freshness_window_is_stale_and_not_current() {
         val observedAt = referenceNowEpochMillis - HeartRateEvidencePolicy.MAX_SAMPLE_AGE_MILLIS - 1L
-        val result = assess(evidence(observedAt = observedAt))
+        val result = assess(evidence(observedAt = observedAt, source = "com.example.watch"))
         assertEquals(HeartRateDisplayState.STALE_DATA, result.state)
         assertNull(result.beatsPerMinute)
         assertEquals(observedAt, result.observedAtEpochMillis)
