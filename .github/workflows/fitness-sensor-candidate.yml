@@ -21,6 +21,7 @@ on:
       - agent/codex/health-source-allowlist-20261106-r1
       - agent/codex/competition-authority-20261106-r1
       - agent/codex/competition-authority-20261107-r1
+      - agent/codex/daily-step-ledger-core-20261107-r1
       - agent/codex/swimming-reviewed-provider-gate-20261107-r1
     paths:
       - 'fitness-v2/**'
