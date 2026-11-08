@@ -29,7 +29,7 @@ This is a truthful UI/state-classification correction. It does not change accept
 - Local Kotlin/JVM harness for the exact policy logic: **9/9 PASS**.
 - Added Android JUnit regression coverage for permission, provider-off, no observation, stale/future observation, filtered fix, and ready fix.
 - Added repository source-contract coverage for the service-to-policy and UI state wiring.
-- Exact-head Android CI, Node syntax check, Android Gradle/JUnit, lint, APK/AAB: pending after the candidate push; no PASS claimed yet.
+- Exact-head Android CI run 42345994357 passed on candidate HEAD `7192d2cff4886bea908215039b47bc1cb8ff6784`: 159/159 Android unit tests, lint with 0 errors and 16 warnings, debug APK and unsigned validation AAB packaging. Artifact and binary hashes are recorded below.
 
 ## Google Maps owner gate
 
@@ -39,10 +39,27 @@ The in-app map remains the attributed free OSM street, OpenTopoMap terrain, and 
 
 ## Physical-device QA
 
-Authorized Desktop Commander device `localhost` was offline at the 2026-11-07 recheck (last seen 115 hours earlier). No ADB, install, launch, Stop, or activity-session action was attempted. Phone/session state remains unknown. Physical GPS, stationary-drift, background, screen-off, process-death, and notification P0 are **BLOCKED_NOT_RUN**.
+Authorized Desktop Commander device `localhost` remained offline at the 2026-11-08 08:47 Cairo recheck (last seen about 1 hour earlier). No ADB, install, launch, Stop, or activity-session action was attempted. Phone/session state remains unknown. Physical GPS, stationary-drift, background, screen-off, process-death, and notification P0 are **BLOCKED_NOT_RUN**.
 
 ## Scope boundary
 
 This candidate changes only Activity Engine/GPS presentation code, focused tests, the activity UI status text, and GPS/recovery evidence. It does not change Health/anti-cheat code, exercise catalog data, workflows, release version, signing, or Play.
 
 Historical repository note: PR #267 was already merged on 2026-11-06. GitHub's merged-file list for that PR includes Health provenance files and `.github/workflows/fitness-sensor-candidate.yml`. Those are pre-existing canonical history, not changes in this run; this run does not edit them.
+
+
+## Exact-head Android CI follow-up — 2026-11-08 (Africa/Cairo)
+
+The previously pending validation has now completed on the exact candidate branch HEAD `7192d2cff4886bea908215039b47bc1cb8ff6784` (app-source commit `a91b11658b72739c1f40d4465ee2b8359f8919e3`).
+
+- GitHub Actions run [42345994357](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42345994357): `changed-app` succeeded; `deterministic-build` succeeded; competition-backend was skipped as unrelated.
+- The product/source-contract/backend regression step succeeded; Android API 36 setup succeeded.
+- Android unit report: **159 tests, 0 failures, 0 ignored (100%)**.
+- Android lint: **0 errors, 16 warnings**.
+- Debug APK and validation AAB packaging completed; build log reports **BUILD SUCCESSFUL**, 99 actionable Gradle tasks, 2m 43s.
+- Workflow artifact ID: `13563827022`; downloaded archive SHA-256 independently recomputed as `0fa296bdeb8f83c35b5da8577d6ea4eda58e3e441919754cf10cdb517939201e`.
+- QA debug APK SHA-256: `01b07b5dfc0439ba12f2062b964384993a157aa7aaea19cdac435fb996b9054f`.
+- Validation AAB SHA-256: `1a5ac6a962dc61adc1deac706616d6ba28e44acdb69aa3cfee546bbb28ae9789`. The AAB contains no JAR signing block entries; it is an unsigned validation bundle, not a production-signed artifact.
+- Candidate build metadata remains validation identity `versionCode=51019`, `versionName=5.0.0-v2-alpha19-debug`. No version allocation, production signing, Play upload, track change, or release PASS occurred.
+
+This is exact-head Android build/unit/lint evidence only. It is **not** physical GPS, Google Maps, background/screen-off/process-death device QA, or Play acceptance.
