@@ -66,3 +66,12 @@ This file is the current recovery addendum. The historical `RECOVERY_20261023.md
 ## Release decision
 
 **HOLD.** VersionCode 51020 remains unallocated. Next Android versionCode must be greater than 51019 and allocated only after owner API/key prerequisites, exact-head Android CI and physical P0 QA pass. Production remains unverified until policy/privacy and physical gates pass. No paid infrastructure, signing, Play write or Production action occurred.
+
+
+## Policy/privacy reconciliation
+- Current manifest declares only Health Connect `READ_STEPS`, `READ_EXERCISE`, `WRITE_EXERCISE`, `READ_DISTANCE`, and `READ_ACTIVE_CALORIES_BURNED`; no heart-rate or clinical data permission is declared.
+- Current source keeps imported Health Connect summaries on-device; the separate backend queue carries THF-created workout records. Missing permissions remain null, while granted/no-record reads remain zero.
+- The historical Health declaration draft still refers to versionCode 51003 and is not submitted. The current Play readback cannot verify the Play Console privacy-policy URL or Health apps declaration.
+- Repository privacy/deletion pages are newer than the existing AppDeploy snapshot dated 2026-10-27. The snapshot privacy page omits the current purchase disclosure, and the deletion page omits the current purchase-retention paragraph. Public-page reachability was not verified.
+- Current listing disclaimers do not explicitly state “not a medical device” or “does not diagnose, treat, cure or prevent”. No listing edit or declaration submission occurred.
+- Full source/permission/data-flow review, AppDeploy comparison, required bilingual disclaimer and Production blockers are recorded in [POLICY_PRIVACY_RECONCILIATION_20261108.md](POLICY_PRIVACY_RECONCILIATION_20261108.md). Production remains HOLD.
