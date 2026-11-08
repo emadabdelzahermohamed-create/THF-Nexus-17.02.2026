@@ -82,3 +82,12 @@ The two handoffs were disjoint. The #281 merge tree differs from its tested base
 - AppDeploy read-only snapshot for `thf-fitness-pulse-ul26f1` is Ready but the stored snapshot is dated 2026-10-27; secret inventory is empty and no backend errors were reported. This does not establish a live competition deployment or admin key. Existing frontend logs include WebGL-context and remote Arabic-font load failures.
 - Maps owner prerequisite remains blocked by preflight 41684077962: APIs enabled, key inventory permission denied, no restricted Android key visible, no billing account linked. Phone remains offline with unknown session; physical P0 remains BLOCKED_NOT_RUN.
 - VersionCode 51020 remains unallocated; no new signed AAB, Play upload, listing edit or Production promotion. Production remains NOT_VERIFIED.
+
+
+## Policy/privacy release audit — 2026-11-08
+- Created [POLICY_PRIVACY_RECONCILIATION_20261108.md](POLICY_PRIVACY_RECONCILIATION_20261108.md) from the canonical manifest, Health Connect repository, MainActivity data flow, privacy/deletion source pages and current official Google Play policy.
+- The declared Health Connect scope remains five permissions: read steps/exercise/distance/active calories and write exercise. No heart-rate or clinical scope is declared.
+- The Health summary path remains on-device; backend sync is a separate THF-created workout queue. Provider/device metadata is a provenance heuristic, not cryptographic attestation; reward eligibility remains false for unverified data.
+- The Health declaration draft is still historical versionCode 51003 and not submitted. The Play readback does not expose privacy-policy URL or declaration state.
+- Existing AppDeploy snapshot v1793087800913 is dated 2026-10-27 and its stored privacy/deletion pages lag the current repository source. Public URL reachability was not verified; AppDeploy secret inventory is empty. No deployment or secret changed.
+- Current Play listing lacks an explicit “not a medical device” disclaimer and professional-consultation reminder in both locales. No listing edit or declaration submission was made. Production remains HOLD pending updated disclosures, live page readback, declaration/Data Safety reconciliation and physical QA.
