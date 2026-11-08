@@ -1496,16 +1496,20 @@
       }
     ],
     "latest_play_readback": {
-      "run_id": 42405709027,
-      "run_attempt": 2,
-      "job_id": 128802337041,
+      "run_id": 42508799594,
+      "run_attempt": 1,
+      "workflow_id": 388958716,
+      "run_head_sha": "057184d4f89c3a9cdc152187dfd0312244f7f730",
+      "job_id": 128817153188,
       "job_conclusion": "success",
-      "artifact_id": 13626008171,
-      "artifact_sha256": "0f73170f5da6c8e80efe883a7a60b015ae0bbeefc8f2f19534cc845bcb65dbea",
+      "run_status": "completed",
+      "run_conclusion": "success",
+      "artifact_id": 13627803896,
+      "artifact_sha256": "dd0dea0844d11e8bef03caa35a59c4752b92862a839b163481d574ca1ccf0954",
       "artifact_download_sha256_recomputed": true,
       "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
-      "observed_at": "2026-11-08T17:14:13Z",
-      "independently_rechecked_at": "2026-11-08T17:53:13Z",
+      "observed_at": "2026-11-08T18:12:34Z",
+      "independently_rechecked_at": "2026-11-08T18:12:37Z",
       "internal_51019": "completed",
       "alpha_51007": "draft",
       "production": "NOT_VERIFIED_NOT_LISTED",
@@ -1519,8 +1523,10 @@
       "workflow_run": 42506335882,
       "artifact_id": 13627900908,
       "artifact_zip_sha256": "1e8df4de5bb45b146bedf4f780417655027c1dfed0a4cf39446fdd802b5fd4d6",
+      "artifact_download_sha256_recomputed": true,
       "debug_apk_sha256": "566a64bee34a0ce6610bc7a36b6547795a9abd867884cf245b8de89bd11bfb05",
       "unsigned_aab_sha256": "652c6cf16b4a67dddbeee3551cb069c2695fe0dbdb9fa9fdccbc48f1bb8e19df",
+      "aab_signature_entries": 0,
       "tests": {
         "product": 62,
         "source_contract": 34,
@@ -1544,16 +1550,16 @@
       "pr215": "CLOSED_NOT_MERGED; stale mixed GPS/Maps branch; app GPS/session source superseded by #264/#267; native Maps SDK work remains owner-gated; branch preserved for reference",
       "pr225": "CLOSED_NOT_MERGED; DailyStepLedger core blob already canonical; canonical tests are newer; all-day observer/dashboard remain unimplemented",
       "pr279": "CLOSED_NOT_MERGED; duplicate GPS permission-state UI handoff superseded by merged #281; exact-head run 42456524774 succeeded but no additional merge needed",
-      "pr98": "CLOSED_NOT_MERGED; broad Health expansion with 14 extra read scopes and mixed workflow/Gradle/catalog changes; retained as reference, not approved for merge"
+      "pr98": "CLOSED_NOT_MERGED; broad Health expansion with 14 extra read scopes and mixed workflow/Gradle/catalog changes; retained as reference, not approved for merge",
+      "pr263": "CLOSED_UNMERGED; local policy harness only; not wired to raw GPS ingestion",
+      "pr261": "CLOSED_UNMERGED; local eligibility tests only; not wired to Health ingestion",
+      "pr266": "CLOSED_UNMERGED; local heart-rate policy harness only; no Health reader or UI"
     },
     "open_prs": {
       "pr93": "OPEN_DRAFT; Health Services reader/service integration; no exact-head Android CI; privacy/permission/provenance and physical QA remain",
       "pr188": "OPEN_DRAFT; Health permission-scope regression guard; exact-head CI and Play declaration/privacy review remain",
-      "pr263": "OPEN_DRAFT; raw-GPS anomaly policy; local 11/11 only; no exact-head Android CI and not wired to raw GPS ingestion",
-      "pr261": "OPEN; swimming eligibility policy; local 6/6 only; no exact-head Android CI and not wired to Health ingestion",
-      "pr266": "OPEN; heart-rate identity/freshness policy; local harness only; no exact-head Android CI or Health reader",
-      "pr248": "OPEN_DRAFT; route display smoothing; no exact-head current-head CI",
-      "pr282": "OPEN_DRAFT; Health metric null-vs-zero UI correction; exact-head Android CI passed on 3291e076510b5626dd8ee931dad84728ba01605d; merge held because app.js is also claimed by open exercise UX PRs #224/#247/#249/#250/#253/#254/#256/#258"
+      "pr248": "OPEN_DRAFT; display-only GPS route smoothing; local 11/11 harness only; no exact-head Android CI on current head; not integrated",
+      "pr282": "OPEN_DRAFT; Health metric null-vs-zero UI correction; exact-head Android CI passed on 3291e076510b5626dd8ee931dad84728ba01605d; merge held due app.js overlap with #224/#247/#249/#250/#253/#254/#256/#258"
     },
     "open_app_js_overlap": {
       "pr224": "offline demo auto-animation",
@@ -1569,9 +1575,10 @@
     "phone": {
       "device": "localhost",
       "status": "OFFLINE",
-      "last_seen": "about 7 hours before 19:53 Cairo",
+      "last_seen": "about 7 hours before the 2026-11-08 20:02 Cairo device check",
       "current_session_state": "UNKNOWN; preserve",
       "physical_p0": "BLOCKED_NOT_RUN",
+      "last_phone_observation": "2026-11-01T21:24:32Z",
       "adb_or_session_actions": false
     },
     "maps": {
@@ -1602,13 +1609,13 @@
       "heart_rate_evidence": "policy/test present; not wired to Health ingestion"
     },
     "competition": {
-      "pr269": "merged source-only",
+      "pr269": "MERGED_SOURCE_ONLY; backend CI run 42267621742 succeeded",
       "score_boundary": "SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED",
       "reward_eligible": false,
       "events_seeded": false,
-      "admin_key": "not configured",
-      "deployment": "not independently verified",
-      "followup_branch": "20261106 branch has no content delta versus canonical; no new handoff"
+      "admin_key": "not configured; existing AppDeploy secret-name inventory empty",
+      "deployment": "NOT_INDEPENDENTLY_VERIFIED; existing web snapshot is dated 2026-10-27",
+      "followup_branch": "2026-11-07 branch is an ancestor/no-delta"
     },
     "workflow_candidate": {
       "branch": "agent/codex/workflow-backend-only-skip-20261108-r1",
@@ -1619,7 +1626,8 @@
       "pr_created": false
     },
     "leases": {
-      "registry": "not found",
+      "checked_on": "2026-11-08",
+      "registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
       "shared_resources_assumed_free": false
     },
     "release_decision": {
@@ -1630,7 +1638,7 @@
       "production": "NOT_VERIFIED",
       "release_gate": "HOLD"
     },
-    "canonical_branch_head_scope": "Head observed before this evidence-only recovery refresh; all subsequent commits in this refresh are checkpoint/workflow documentation only."
+    "canonical_branch_head_scope": "Head observed before this evidence-only recovery refresh; subsequent commits in this refresh are checkpoint/workflow documentation only."
   },
   "latest_play_readback": {
     "run_id": 42508799594,
