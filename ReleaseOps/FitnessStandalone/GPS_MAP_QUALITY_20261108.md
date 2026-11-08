@@ -2,7 +2,7 @@
 Date: 2026-11-08 (Africa/Cairo)
 Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`
 Canonical branch: `agent/codex/fitness-recovery/20261023`
-Canonical HEAD after tested handoffs: `2b5d44668d33b9e9faac5d8ace9753e5f6032ad3`
+Canonical app-source SHA after tested handoffs: `2b5d44668d33b9e9faac5d8ace9753e5f6032ad3`. Subsequent canonical commits are evidence-only.
 
 ## Current GPS behavior and truthful status
 
