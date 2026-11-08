@@ -49,3 +49,11 @@ Canonical app-source SHA after tested handoffs: `2b5d44668d33b9e9faac5d8ace9753e
 - No ADB command, install, launch, Stop, session action, or activity-data read was attempted. Preserve the unknown session.
 - Physical GPS accuracy, stationary drift, background/screen-off continuity, process-death recovery, pause/resume/Stop, notification metrics, and Health grant/revoke/no-data/provenance P0 remain `BLOCKED_NOT_RUN`.
 - VersionCode 51020 remains unallocated. Next code must be greater than 51019 and only allocated after owner API/key prerequisites, exact-head Android CI, and physical P0 pass. Production remains unverified pending policy/privacy and physical gates.
+
+
+## 2026-11-08 20:12 Cairo recheck
+- Canonical branch head at evidence capture: `057184d4f89c3a9cdc152187dfd0312244f7f730`; canonical app-source SHA remains `2b5d44668d33b9e9faac5d8ace9753e5f6032ad3`. The intervening change was only the read-only Play-probe workflow comment.
+- GPS route display-smoothing PR #248 remains open/draft at head `67d3b438815fe83ced301551aee43f5a6548c91d`; its 11/11 local harness is not repository Android CI. No exact-head Android CI exists on the current PR head, and the helper is not integrated into the accepted route path. It remains unmerged.
+- Current map layers and GPS acceptance logic are unchanged. Native Google Maps remains owner API/key/billing-gated by preflight 41684077962 (2026-11-03); no paid infrastructure or key was created.
+- Authorized phone remains offline; session state unknown; physical GPS/background P0 remains `BLOCKED_NOT_RUN`. No ADB or session action was attempted.
+- Latest live Play readback is run [42508799594](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42508799594), artifact 13627803896, ZIP SHA-256 `dd0dea0844d11e8bef03caa35a59c4752b92862a839b163481d574ca1ccf0954`; Internal 51019 completed, alpha 51007 draft, Production not listed/verified. The probe is read-only.
