@@ -19,7 +19,9 @@ import kotlin.reflect.KClass
 
 data class HealthConnectionState(
     val availability: String,
+    /** True when at least one core read metric is accessible; partial grants are usable. */
     val connected: Boolean,
+    /** True only when every currently requested core read permission is granted. */
     val readPermissionsGranted: Boolean,
     val writePermissionsGranted: Boolean,
     val grantedPermissions: Set<String>,
@@ -45,10 +47,11 @@ data class HealthRecordEvidence(
 )
 
 data class HealthSnapshot(
-    val steps: Long,
-    val distanceMeters: Double,
-    val activeCaloriesKcal: Double,
-    val exerciseSessions: Int,
+    /** Null means the matching permission is absent; zero means granted with no records. */
+    val steps: Long?,
+    val distanceMeters: Double?,
+    val activeCaloriesKcal: Double?,
+    val exerciseSessions: Int?,
     val origins: Set<String>,
     val latestSessionEnd: Instant?,
     val recordsRead: Int,
@@ -73,12 +76,13 @@ data class WorkoutForHealth(
 
 class HealthConnectRepository(private val context: Context) {
     companion object {
-        val READ_PERMISSIONS: Set<String> = setOf(
-            HealthPermission.getReadPermission(StepsRecord::class),
-            HealthPermission.getReadPermission(ExerciseSessionRecord::class),
-            HealthPermission.getReadPermission(DistanceRecord::class),
-            HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
+        val READ_PERMISSION_BY_METRIC: Map<HealthReadMetric, String> = linkedMapOf(
+            HealthReadMetric.STEPS to HealthPermission.getReadPermission(StepsRecord::class),
+            HealthReadMetric.EXERCISE_SESSIONS to HealthPermission.getReadPermission(ExerciseSessionRecord::class),
+            HealthReadMetric.DISTANCE to HealthPermission.getReadPermission(DistanceRecord::class),
+            HealthReadMetric.ACTIVE_CALORIES to HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
         )
+        val READ_PERMISSIONS: Set<String> = READ_PERMISSION_BY_METRIC.values.toSet()
         val WRITE_PERMISSIONS: Set<String> = setOf(
             HealthPermission.getWritePermission(ExerciseSessionRecord::class),
         )
@@ -109,14 +113,15 @@ class HealthConnectRepository(private val context: Context) {
                 missingPermissions = REQUIRED_PERMISSIONS,
             )
         val granted = client.permissionController.getGrantedPermissions()
-        val missingRead = READ_PERMISSIONS - granted
+        val readPlan = HealthReadPermissionPolicy.plan(granted, READ_PERMISSION_BY_METRIC)
+        val missingRead = readPlan.missingPermissions
         val missingWrite = WRITE_PERMISSIONS - granted
         val missing = missingRead + missingWrite
-        val readsGranted = missingRead.isEmpty()
+        val readsGranted = readPlan.hasAllReadPermissions
         val writesGranted = missingWrite.isEmpty()
         return HealthConnectionState(
             availability = availability(),
-            connected = readsGranted,
+            connected = readPlan.hasAnyReadPermission,
             readPermissionsGranted = readsGranted,
             writePermissionsGranted = writesGranted,
             grantedPermissions = granted,
@@ -129,16 +134,35 @@ class HealthConnectRepository(private val context: Context) {
     suspend fun readRecent(days: Long = 7): HealthSnapshot {
         val client = requireNotNull(clientOrNull()) { "Health Connect is unavailable" }
         val granted = client.permissionController.getGrantedPermissions()
-        require(granted.containsAll(READ_PERMISSIONS)) {
-            "Health Connect read permissions are missing"
+        val readPlan = HealthReadPermissionPolicy.plan(granted, READ_PERMISSION_BY_METRIC)
+        require(readPlan.hasAnyReadPermission) {
+            "At least one Health Connect read permission is required"
         }
 
         val end = Instant.now()
         val start = end.minus(days, ChronoUnit.DAYS)
-        val steps = readAll(client, StepsRecord::class, start, end)
-        val distances = readAll(client, DistanceRecord::class, start, end)
-        val calories = readAll(client, ActiveCaloriesBurnedRecord::class, start, end)
-        val sessions = readAll(client, ExerciseSessionRecord::class, start, end)
+        // Read only record types for which the user granted the matching permission.
+        // Missing permissions stay null in HealthSnapshot; they are never represented as zero.
+        val steps = if (readPlan.canRead(HealthReadMetric.STEPS)) {
+            readAll(client, StepsRecord::class, start, end)
+        } else {
+            emptyList()
+        }
+        val distances = if (readPlan.canRead(HealthReadMetric.DISTANCE)) {
+            readAll(client, DistanceRecord::class, start, end)
+        } else {
+            emptyList()
+        }
+        val calories = if (readPlan.canRead(HealthReadMetric.ACTIVE_CALORIES)) {
+            readAll(client, ActiveCaloriesBurnedRecord::class, start, end)
+        } else {
+            emptyList()
+        }
+        val sessions = if (readPlan.canRead(HealthReadMetric.EXERCISE_SESSIONS)) {
+            readAll(client, ExerciseSessionRecord::class, start, end)
+        } else {
+            emptyList()
+        }
         val allRecords: List<Record> = steps + distances + calories + sessions
         val evidence = allRecords.map { it.toEvidence() }
         val verifiedEvidenceByKey = evidence
@@ -156,12 +180,27 @@ class HealthConnectRepository(private val context: Context) {
         val origins = evidence.map { it.dataOrigin }.filter { it.isNotBlank() }.toSet()
 
         return HealthSnapshot(
-            steps = steps.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.count },
-            distanceMeters = distances.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.distance.inMeters },
-            activeCaloriesKcal = calories.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.energy.inKilocalories },
-            exerciseSessions = sessions.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.size,
+            steps = readPlan.valueIfReadable(
+                HealthReadMetric.STEPS,
+                steps.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.count },
+            ),
+            distanceMeters = readPlan.valueIfReadable(
+                HealthReadMetric.DISTANCE,
+                distances.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.distance.inMeters },
+            ),
+            activeCaloriesKcal = readPlan.valueIfReadable(
+                HealthReadMetric.ACTIVE_CALORIES,
+                calories.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.energy.inKilocalories },
+            ),
+            exerciseSessions = readPlan.valueIfReadable(
+                HealthReadMetric.EXERCISE_SESSIONS,
+                sessions.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.size,
+            ),
             origins = origins,
-            latestSessionEnd = sessions.filter { it.healthRecordKey() in verifiedKeys }.maxOfOrNull { it.endTime },
+            latestSessionEnd = readPlan.valueIfReadable(
+                HealthReadMetric.EXERCISE_SESSIONS,
+                sessions.filter { it.healthRecordKey() in verifiedKeys }.maxOfOrNull { it.endTime },
+            ),
             recordsRead = allRecords.size,
             verifiedRecords = verifiedCount,
             excludedManualOrUnknownRecords = evidence.count { !it.verifiedForRewards },
