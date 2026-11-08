@@ -1356,7 +1356,6 @@
   },
   "latest_integrator_checkpoint": {
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
-    "canonical_head": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
     "gps_checkpoint": "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261108.md",
     "integrator_checkpoint": "ReleaseOps/FitnessStandalone/INTEGRATOR_RECHECK_20261108.md",
     "merged_handoffs": [
@@ -1436,6 +1435,15 @@
     "leases": {
       "registry": "not found",
       "shared_resources_assumed_free": false
+    },
+    "canonical_app_source_sha": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
+    "post_merge_push_run": {
+      "run_id": 42504262580,
+      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42504262580",
+      "head_sha": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
+      "conclusion": "SUCCESS",
+      "deterministic_build": "SKIPPED_NO_APP_BUILD",
+      "artifacts": []
     }
   }
 }
