@@ -25,7 +25,7 @@ This file is the current recovery addendum. The historical `RECOVERY_20261023.md
 
 ## Artifact lineage and release boundary
 
-- The current canonical app source `2b5d44668d33b9e9faac5d8ace9753e5f6032ad3` has exact-head Android validation through PR #281's tested tree. Its QA APK SHA-256 is `cd2e19b53e0192f9c418bc3e9ceacff3fda01e000213137f3b61ecf7162d0e47` only if separately verified; the recorded exact value for the #281 QA APK is `cd2e19b53e0192f9c418bc3e9ceacff3fda01e000213137f3b61ecf7162d0e47`. The unsigned validation AAB SHA-256 is `44a5d7c8f28c452686ee14dff3059102b097001e6a645b065993acd528b32828`.
+- The current canonical app source `2b5d44668d33b9e9faac5d8ace9753e5f6032ad3` has exact-head Android validation through PR #281's tested tree. Its QA APK SHA-256 is `cd2e19b53e0192f9c418bc3e4bab33d32c7c29034bb115488e71fa25f7630208` only if separately verified; the recorded exact value for the #281 QA APK is `cd2e19b53e0192f9c418bc3e4bab33d32c7c29034bb115488e71fa25f7630208`. The unsigned validation AAB SHA-256 is `44a5d7c8f28c452686ee14dff3059102b097001e6a645b065993acd528b32828`.
 - The exact #281 artifact is validation-only, package `com.topherofit.thf.pulse.qa`, validation versionCode 51019; it is unsigned. No release signing or Play upload occurred.
 - The existing signed 51019 AAB remains SHA-256 `5dc7d0077ecfddd3224ca8557a3b4f6d0a5524cf194c0e547fc8b1605c7ba9c5` from the older source lineage `76053bd9127c38d8065eb7ac250bdeb34ab67854`. It is not an artifact for the current app-source SHA.
 - VersionCode 51020 remains unallocated. No new signed AAB, upload, listing edit, track change, or Production promotion occurred.
