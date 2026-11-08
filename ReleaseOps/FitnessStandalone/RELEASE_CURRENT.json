@@ -1637,7 +1637,29 @@
       "production": "NOT_VERIFIED",
       "release_gate": "HOLD"
     },
-    "canonical_branch_head_scope": "Head observed before this evidence-only recovery refresh; subsequent commits in this refresh are checkpoint/workflow documentation only."
+    "canonical_branch_head_scope": "Head observed before this evidence-only recovery refresh; subsequent commits in this refresh are checkpoint/workflow documentation only.",
+    "policy_privacy_reconciliation": {
+      "path": "ReleaseOps/FitnessStandalone/POLICY_PRIVACY_RECONCILIATION_20261108.md",
+      "status": "HOLD; INTERNAL_RECONCILIATION_ONLY; NOT_SUBMITTED",
+      "source_sha": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
+      "health_connect_permissions": [
+        "READ_STEPS",
+        "READ_EXERCISE",
+        "WRITE_EXERCISE",
+        "READ_DISTANCE",
+        "READ_ACTIVE_CALORIES_BURNED"
+      ],
+      "read_data_flow": "ON_DEVICE_SUMMARY; BACKEND_QUEUE_IS_SEPARATE_THF_CREATED_WORKOUT_RECORDS",
+      "provenance": "PROVIDER_AND_DEVICE_METADATA_HEURISTIC_NOT_CRYPTOGRAPHIC_ATTESTATION",
+      "health_apps_declaration": "HISTORICAL_DRAFT_VERSION_CODE_51003; NOT_SUBMITTED",
+      "play_privacy_policy_url": "NOT_VERIFIED_BY_CURRENT_PLAY_READBACK",
+      "listing_medical_disclaimer": "MISSING_EXPLICIT_NOT_A_MEDICAL_DEVICE_AND_CONSULT_HEALTHCARE_PROFESSIONAL_WORDING_IN_BOTH_LOCALES",
+      "repository_privacy_pages": "CURRENT_SOURCE_INCLUDES_PURCHASE_AND_EXTERNAL_IDENTITY_DISCLOSURES",
+      "appdeploy_snapshot": "STALE_2026_10_27; STORED_PRIVACY_AND_DELETION_PAGES_LAG_REPOSITORY",
+      "public_page_reachability": "NOT_VERIFIED",
+      "no_listing_or_declaration_write": true,
+      "production_gate": "BLOCKED_PENDING_DECLARATION_PRIVACY_DISCLOSURE_AND_PHYSICAL_P0"
+    }
   },
   "latest_play_readback": {
     "run_id": 42508799594,
@@ -1711,5 +1733,27 @@
     ],
     "read_only": true,
     "not_android_or_play_evidence": true
+  },
+  "policy_privacy_reconciliation": {
+    "path": "ReleaseOps/FitnessStandalone/POLICY_PRIVACY_RECONCILIATION_20261108.md",
+    "status": "HOLD; INTERNAL_RECONCILIATION_ONLY; NOT_SUBMITTED",
+    "source_sha": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
+    "health_connect_permissions": [
+      "READ_STEPS",
+      "READ_EXERCISE",
+      "WRITE_EXERCISE",
+      "READ_DISTANCE",
+      "READ_ACTIVE_CALORIES_BURNED"
+    ],
+    "read_data_flow": "ON_DEVICE_SUMMARY; BACKEND_QUEUE_IS_SEPARATE_THF_CREATED_WORKOUT_RECORDS",
+    "provenance": "PROVIDER_AND_DEVICE_METADATA_HEURISTIC_NOT_CRYPTOGRAPHIC_ATTESTATION",
+    "health_apps_declaration": "HISTORICAL_DRAFT_VERSION_CODE_51003; NOT_SUBMITTED",
+    "play_privacy_policy_url": "NOT_VERIFIED_BY_CURRENT_PLAY_READBACK",
+    "listing_medical_disclaimer": "MISSING_EXPLICIT_NOT_A_MEDICAL_DEVICE_AND_CONSULT_HEALTHCARE_PROFESSIONAL_WORDING_IN_BOTH_LOCALES",
+    "repository_privacy_pages": "CURRENT_SOURCE_INCLUDES_PURCHASE_AND_EXTERNAL_IDENTITY_DISCLOSURES",
+    "appdeploy_snapshot": "STALE_2026_10_27; STORED_PRIVACY_AND_DELETION_PAGES_LAG_REPOSITORY",
+    "public_page_reachability": "NOT_VERIFIED",
+    "no_listing_or_declaration_write": true,
+    "production_gate": "BLOCKED_PENDING_DECLARATION_PRIVACY_DISCLOSURE_AND_PHYSICAL_P0"
   }
 }
