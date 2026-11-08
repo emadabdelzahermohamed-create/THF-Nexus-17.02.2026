@@ -21,6 +21,7 @@ on:
       - agent/codex/health-source-allowlist-20261106-r1
       - agent/codex/competition-authority-20261106-r1
       - agent/codex/competition-authority-20261107-r1
+      - agent/codex/workflow-backend-only-skip-20261108-r1
       - agent/codex/swimming-reviewed-provider-gate-20261107-r1
     paths:
       - 'fitness-v2/**'
@@ -44,6 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       app_changed: ${{ steps.diff.outputs.app_changed }}
+      backend_changed: ${{ steps.diff.outputs.backend_changed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,28 +56,38 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           BEFORE_SHA: ${{ github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
-          REF_NAME: ${{ github.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          if [[ "$EVENT_NAME" == "push" && "$REF_NAME" == "refs/heads/agent/codex/swimming-reviewed-provider-gate-20261107-r1" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             echo "app_changed=true" >> "$GITHUB_OUTPUT"
+            echo "backend_changed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if [[ "$EVENT_NAME" != "push" || -z "$BEFORE_SHA" || "$BEFORE_SHA" =~ ^0+$ ]]; then
-            echo "app_changed=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if git diff --name-only "$BEFORE_SHA" "$HEAD_SHA" -- fitness-v2/ | grep -q .; then
-            echo "app_changed=true" >> "$GITHUB_OUTPUT"
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            test -n "$BASE_SHA"
+            CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          elif [[ "$EVENT_NAME" == "push" && -n "$BEFORE_SHA" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
+            CHANGED_FILES="$(git diff --name-only "$BEFORE_SHA" "$HEAD_SHA")"
           else
-            echo "app_changed=false" >> "$GITHUB_OUTPUT"
+            CHANGED_FILES="$(git show --format= --name-only "$HEAD_SHA")"
           fi
+          app_changed=false
+          backend_changed=false
+          if grep -q '^fitness-v2/backend/' <<< "$CHANGED_FILES"; then
+            backend_changed=true
+          fi
+          if grep '^fitness-v2/' <<< "$CHANGED_FILES" | grep -qv '^fitness-v2/backend/'; then
+            app_changed=true
+          fi
+          echo "app_changed=$app_changed" >> "$GITHUB_OUTPUT"
+          echo "backend_changed=$backend_changed" >> "$GITHUB_OUTPUT"
 
   deterministic-build:
     needs: changed-app
     # Do not rebuild the unchanged canonical app on a workflow-only push; candidate branches still run on exact pushed SHAs.
-    if: ${{ needs.changed-app.outputs.app_changed == 'true' && (github.event_name != 'push' || (github.ref != 'refs/heads/agent/codex/fitness-recovery/20261023' && github.ref != 'refs/heads/agent/codex/competition-authority-20261106-r1' && github.ref != 'refs/heads/agent/codex/competition-authority-20261107-r1')) }}
+    if: ${{ needs.changed-app.outputs.app_changed == 'true' && (github.event_name != 'push' || github.ref != 'refs/heads/agent/codex/fitness-recovery/20261023') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -149,7 +161,8 @@ jobs:
             fitness-v2/candidate-source-sha.txt
 
   competition-backend:
-    if: ${{ github.ref == 'refs/heads/agent/codex/competition-authority-20261106-r1' || github.ref == 'refs/heads/agent/codex/competition-authority-20261107-r1' }}
+    needs: changed-app
+    if: ${{ needs.changed-app.outputs.backend_changed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
