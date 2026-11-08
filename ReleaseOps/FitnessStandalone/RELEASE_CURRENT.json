@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-08T17:53:13Z",
+  "observed_at": "2026-11-08T17:57:37.462Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -522,7 +522,7 @@
     "production": "NOT_VERIFIED"
   },
   "latest_integrator_observation": {
-    "observed_at": "2026-11-08T17:53:13Z",
+    "observed_at": "2026-11-08T17:57:37.462Z",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
     "canonical_branch_head": "4e337838c079a75d9615653d14c38838e55d19ef",
     "app_source_sha": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
@@ -1436,7 +1436,7 @@
   },
   "lease_registry": {
     "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
-    "checked_at": "2026-11-08T17:53:13Z",
+    "checked_at": "2026-11-08T17:57:37.462Z",
     "note": "No current lease registry found in canonical FitnessStandalone release evidence. Shared resources are not assumed free."
   },
   "integrator_recheck_20261106_2023": {
@@ -1454,10 +1454,10 @@
     "production": "NOT_VERIFIED"
   },
   "latest_integrator_checkpoint": {
-    "observed_at": "2026-11-08T17:53:13Z",
-    "local_time": "2026-11-08 19:53 Africa/Cairo",
+    "observed_at": "2026-11-08T17:57:37.462Z",
+    "local_time": "2026-11-08 19:57 Africa/Cairo",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
-    "canonical_branch_head": "4e337838c079a75d9615653d14c38838e55d19ef",
+    "canonical_branch_head": "bafa9e0b1822a12804a858fd808a3c56dd4ebd80",
     "canonical_app_source_sha": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
     "gps_checkpoint": "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261108.md",
     "recovery": "ReleaseOps/FitnessStandalone/RECOVERY_20261023.md",
@@ -1629,6 +1629,7 @@
       "new_signed_aab": false,
       "production": "NOT_VERIFIED",
       "release_gate": "HOLD"
-    }
+    },
+    "canonical_branch_head_scope": "branch head before this final evidence-only JSON refresh; canonical app-source SHA is recorded separately"
   }
 }
