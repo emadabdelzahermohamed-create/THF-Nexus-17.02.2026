@@ -9,7 +9,7 @@ Canonical base at branch creation: `c105b6c10d4d784b64a9e8ff25e4656073434629`
 
 - Re-read the requested historical `GPS_MAP_QUALITY_20261101.md` from `agent/codex/gps-map-quality-20261030`, blob `0e50b45f7be1e2a245753233f3e70343394b1115`. That path is not present on the current canonical branch.
 - Re-read the newest canonical GPS report `GPS_MAP_QUALITY_20261108.md`, blob `44d1a3e751f193d7e95377ed1e9df526b95ba495`, and recovery checkpoint blob `578be4a435991324d3eb3263e5e7127f479ec569`.
-- Canonical branch head remained `c105b6c10d4d784b64a9e8ff25e4656073434629`. Candidate base is exact; 4 commits ahead / 0 behind.
+- Canonical branch head remained `c105b6c10d4d784b64a9e8ff25e4656073434629`. Candidate base is exact; 6 commits ahead / 0 behind (two later commits are documentation-only).
 
 ## Defect and correction
 
@@ -30,11 +30,12 @@ This changes presentation/state only; it does not change raw fixes, provider set
 ## Exact Git evidence
 
 - Candidate branch: `agent/codex/gps-accuracy-state-truth-20261109-r1`
+- Current branch HEAD after evidence-only documentation commits: `2b1af24a050b5609a4453ad25e8a9cc3f74f5ee9`.
 - Source/policy/test commit: `4571f59ee57438a979c759c864ac204e94008110`
 - Map halo follow-up: `04893e88c8c2b9a37ce9dcf27ab64b286d847e94`
 - Test discovery correction: `24fb52d8dccc9cb07f27ca2c2cfdefc315ffa30a`
 - Process-death pending-snapshot fix; exact app/test source HEAD: `d3f051103054c73a08bc4faf8c57fd100e15932f`
-- [PR #283](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/283): Draft, open, unmerged; 4 commits ahead / 0 behind.
+- [PR #283](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/283): Draft, open, unmerged; 6 commits ahead / 0 behind (two later commits are documentation-only).
 - Exactly five changed files: ActivityTrackingService, GpsFixPresentationPolicy, its tests, app.js, and the focused Python source-contract test.
 
 ## Verification
