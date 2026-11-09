@@ -65,3 +65,8 @@ No explicit lease registry was found; shared resources are not assumed free. Ver
 ## AppDeploy read-only follow-up — 2026-11-09 20:20 Cairo
 
 The TopHeroFit AppDeploy app thf-fitness-pulse-ul26f1 was rechecked with the current status and secret-inventory reads. Deployment status is ready at https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/, snapshot 1794247542845. QA frontend/network/backend error arrays are empty. The current AppDeploy secret inventory is empty, so THF_COMPETITION_ADMIN_KEY is not configured there. This confirms the frontend snapshot and secret inventory only; it does not independently verify that the separate competition API backend is deployed. No secret, backend, billing, or deployment change was made.
+
+
+## Public privacy-page access boundary — 2026-11-09
+
+A browser access attempt was made for both deployed pages: https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/privacy.html and https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/account-deletion.html. The browser tool returned an inaccessible result for both URLs and supplied no HTTP response. This does not establish that the site is down or reachable. AppDeploy independently reports the deployment ready; the deployed privacy/deletion source matches the canonical repository blobs recorded above. Public HTTP reachability and the Play Console privacy-policy URL remain unverified.
