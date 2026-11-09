@@ -1491,10 +1491,23 @@
     "evidence_commit_before_final_json_refresh": "6bf4dcec123d0ff8b3f21ac2c68cf9b8c521fe1e",
     "play_probe_trigger_commit": "f03ada0d74313e1c6d3248351de90204783d0ff8",
     "open_prs": {
-      "pr283": "OPEN_DRAFT; GPS accuracy-state truthfulness; exact-head Android CI run 42573716669 passed on 645d11cc141e1b40be98e1a53ebb20f979441f70; candidate AAB is byte-identical to prior validation AAB; app.js overlaps #282 and open exercise UX handoffs; not merged"
+      "93": "OPEN_DRAFT; Health Services reader; exact-head Android CI absent; permission/privacy/provenance/physical gates open",
+      "188": "OPEN_DRAFT; Health permission-scope guard; exact-head CI and declaration review pending",
+      "248": "OPEN_DRAFT; GPS route display smoothing; no exact-head Android CI",
+      "282": "OPEN_DRAFT; Health metric null-vs-zero UI; exact-head CI passed; app.js overlap prevents merge",
+      "283": "OPEN_DRAFT; GPS accuracy-state truthfulness; exact-head CI passed on 645d11c; app.js overlap prevents merge"
     },
     "open_app_js_overlap": {
-      "pr283": "GPS accuracy-state truthfulness; shares app.js with #282 and exercise UX handoffs; hold until ownership is reconciled",
+      "pr224": "offline demo auto-animation",
+      "pr247": "offline demo pause/resume",
+      "pr249": "offline demo replay",
+      "pr250": "reduced-motion one-shot demo",
+      "pr253": "local exercise favorites/filter",
+      "pr254": "exercise-card favorite controls",
+      "pr256": "offline program save/filter",
+      "pr258": "equipment-profile exercise filter",
+      "pr282": "Health metric null-versus-zero UI",
+      "pr283": "GPS accuracy-state truthfulness",
       "note": "PRs #282 and #283 both modify app.js and overlap open exercise UX handoffs; neither is merged until shared ownership is reconciled."
     },
     "current_open_prs_updated_on": "2026-11-09"
