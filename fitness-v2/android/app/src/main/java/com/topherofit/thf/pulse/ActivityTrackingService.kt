@@ -411,20 +411,25 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) return
-        var registered = false
-        runCatching {
-            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1_000L, 1f, this, Looper.getMainLooper())
-                registered = true
+        val provider = runCatching {
+            when {
+                locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
+                else -> null
             }
-        }
-        runCatching {
-            if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2_500L, 4f, this, Looper.getMainLooper())
-                registered = true
-            }
-        }
+        }.getOrNull() ?: return
+        val minTimeMs = if (provider == LocationManager.GPS_PROVIDER) 1_000L else 2_500L
+        val minDistanceMetres = if (provider == LocationManager.GPS_PROVIDER) 1f else 4f
+        val registered = runCatching {
+            locationManager.requestLocationUpdates(provider, minTimeMs, minDistanceMetres, this, Looper.getMainLooper())
+            true
+        }.getOrDefault(false)
         legacyLocationProvidersRegistered = registered
+        if (registered) {
+            // Avoid interleaving "fused", "gps" and "network" fixes in one distance window.
+            // The accumulator deliberately re-anchors when its source changes.
+            runCatching { fusedLocationClient.removeLocationUpdates(fusedLocationCallback) }
+        }
     }
 
     private fun registerStepSource(mode: ActivityMode) {
