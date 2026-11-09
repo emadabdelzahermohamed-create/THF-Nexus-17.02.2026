@@ -746,11 +746,6 @@ class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
         self.assertIn("gpsFiltered:'", app)
         self.assertNotIn("gpsFixState==='weak'", app)
 
-
-if __name__ == "__main__":
-    unittest.main()
-
-
 class GpsAccuracyPresentationSourceContractTest(unittest.TestCase):
     def test_accuracy_is_visible_only_for_a_fresh_accepted_fix(self):
         service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
@@ -773,3 +768,6 @@ class GpsAccuracyPresentationSourceContractTest(unittest.TestCase):
         self.assertIn("lastObservedLocation = null", resume)
         self.assertIn("lastObservedAccuracyMetres = null", resume)
         self.assertIn("lastAccuracyMetres = null", resume)
+
+if __name__ == "__main__":
+    unittest.main()
