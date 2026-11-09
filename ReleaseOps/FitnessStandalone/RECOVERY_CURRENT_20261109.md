@@ -36,7 +36,7 @@ PR #283 fixes stale/false GPS accuracy presentation and paused/process-death sna
 - Health Connect scopes remain READ_STEPS, READ_EXERCISE, WRITE_EXERCISE, READ_DISTANCE, READ_ACTIVE_CALORIES_BURNED. Partial consent is merged (#280); missing metric versus zero UI (#282) is tested but held due app.js overlap. Health Services reader (#93) and permission gate (#188) remain draft without exact-head CI. Imported Health summary stays on-device; provenance metadata is heuristic, not cryptographic attestation.
 - GPS anomaly, swimming and heart-rate policies are not wired end-to-end. Physical Health grant/revoke/no-data/error and wearable checks remain blocked.
 - Competition backend (#269) supports server-owned event/membership/capacity/submission/leaderboard logic for strength kg·reps. Scores remain SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED and rewardEligible=false; no event seed, admin key or independent deployment verification.
-- Policy/privacy: historical Health declaration is versionCode 51003 and unsubmitted; AppDeploy snapshot is stale (2026-10-27); public privacy/deletion pages and Play URL not independently verified; explicit non-medical-device and professional-consultation disclosures need both locales.
+- Policy/privacy: historical Health declaration is versionCode 51003 and unsubmitted. AppDeploy snapshot 1794247542845 is now ready and its privacy/deletion pages exactly match canonical repo blobs; QA frontend/network/backend errors are empty. External HTTP reachability and the Play privacy URL remain unverified. The Play listing still needs explicit not-a-medical-device and professional-consultation wording in both locales.
 
 ## Leases
 
