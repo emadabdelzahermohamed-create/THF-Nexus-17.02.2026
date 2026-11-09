@@ -140,3 +140,8 @@ A later read-only probe attempt [42672026813](https://github.com/emadabdelzaherm
 - #269 competition source has server-owned strength event/membership/capacity/submission/leaderboard logic, but no seeded event, no admin key, no independent deployment readback; scores remain SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED and reward-ineligible.
 - No explicit current lease registry found. Shared resources are not assumed free.
 - VersionCode 51020 remains unallocated; no new signed AAB, Play upload, listing edit, declaration submission or Production promotion. Release HOLD.
+
+
+## AppDeploy read-only follow-up — 2026-11-09 20:20 Cairo
+
+The TopHeroFit AppDeploy app thf-fitness-pulse-ul26f1 was rechecked with the current status and secret-inventory reads. Deployment status is ready at https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/, snapshot 1794247542845. QA frontend/network/backend error arrays are empty. The current AppDeploy secret inventory is empty, so THF_COMPETITION_ADMIN_KEY is not configured there. This confirms the frontend snapshot and secret inventory only; it does not independently verify that the separate competition API backend is deployed. No secret, backend, billing, or deployment change was made.
