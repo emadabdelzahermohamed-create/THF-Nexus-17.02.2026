@@ -557,8 +557,19 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun buildActivitySnapshot(active: Boolean): ActivitySnapshot {
-        if (activityPaused && activityMode != null) return lastActivitySnapshot.copy(active = active, paused = true, currentSpeedKph = 0.0)
+        if (activityPaused && activityMode != null) {
+            return lastActivitySnapshot.copy(
+                active = active,
+                paused = true,
+                currentSpeedKph = 0.0,
+                gpsFixState = "paused",
+                lastAccuracyMetres = null,
+                observedAccuracyMetres = null,
+            )
+        }
         val mode = activityMode ?: return lastActivitySnapshot
+        val fixState = gpsFixState()
+        val visibleAccuracy = GpsAccuracyPresentationPolicy.visibleAccuracy(fixState, lastAccuracyMetres)
         return ActivitySnapshotPolicy.build(
             sessionActive = active,
             phase = activityPhase,
@@ -572,10 +583,10 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             currentSpeedKph = currentSpeedKph,
             weightKg = activityWeightKg,
             acceptedRoute = route.toList(),
-            lastAccuracyMetres = lastAccuracyMetres,
+            lastAccuracyMetres = visibleAccuracy,
         ).copy(
-            gpsFixState = gpsFixState(),
-            observedAccuracyMetres = lastObservedAccuracyMetres,
+            gpsFixState = fixState,
+            observedAccuracyMetres = if (fixState == "filtered") lastObservedAccuracyMetres else null,
             paused = false,
         )
     }
@@ -613,6 +624,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }
         getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE).edit().putBoolean("activity_paused", false).apply()
         lastLocation = null
+        lastObservedLocation = null
+        lastObservedAccuracyMetres = null
+        lastAccuracyMetres = null
         gpsDistanceAccumulator.reset()
         currentSpeedKph = 0.0
         registerActivitySources(mode)
@@ -894,6 +908,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     private fun gpsFixState(): String {
+        if (activityMode != null && activityPaused) return "paused"
         val enabled = runCatching {
             locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
@@ -908,6 +923,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun gpsStatus(): String = when (gpsFixState()) {
+        "paused" -> "تتبع الموقع متوقف مؤقتًا"
         "permission" -> "إذن الموقع غير متاح · المسافة لا تتحدث"
         "off" -> "الموقع مغلق · المسافة لا تتحدث"
         "stale" -> "إشارة الموقع متوقفة · بانتظار تحديث"

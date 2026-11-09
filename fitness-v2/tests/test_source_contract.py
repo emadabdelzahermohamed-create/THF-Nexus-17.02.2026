@@ -749,3 +749,26 @@ class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GpsAccuracyPresentationSourceContractTest(unittest.TestCase):
+    def test_accuracy_is_visible_only_for_a_fresh_accepted_fix(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsFixPresentationPolicy.kt").read_text()
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+
+        self.assertIn('GpsAccuracyPresentationPolicy.visibleAccuracy(fixState, lastAccuracyMetres)', service)
+        self.assertIn('if (activityMode != null && activityPaused) return "paused"', service)
+        self.assertIn('gpsFixState = "paused"', service)
+        self.assertIn('lastAccuracyMetres = null', service)
+        self.assertIn('object GpsAccuracyPresentationPolicy', policy)
+        self.assertIn("gpsFixState==='ready'&&rawAccuracy!=null", app)
+        self.assertIn("gpsFixState==='paused'?t('gpsPaused')", app)
+        self.assertIn("gpsPaused:'GPS tracking is paused'", app)
+
+    def test_resume_does_not_reuse_pre_pause_accuracy_as_a_current_fix(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        resume = service[service.index("private fun resumeActivityInternal"):service.index("private fun finishActivityInternal")]
+        self.assertIn("lastObservedLocation = null", resume)
+        self.assertIn("lastObservedAccuracyMetres = null", resume)
+        self.assertIn("lastAccuracyMetres = null", resume)

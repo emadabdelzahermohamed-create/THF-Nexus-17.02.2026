@@ -24,3 +24,12 @@ object GpsFixPresentationPolicy {
         return "ready"
     }
 }
+
+
+/** Only a fresh, accepted fix may be presented as current GPS accuracy. */
+object GpsAccuracyPresentationPolicy {
+    fun visibleAccuracy(gpsFixState: String, acceptedAccuracyMetres: Float?): Float? {
+        if (gpsFixState != "ready") return null
+        return acceptedAccuracyMetres?.takeIf { it.isFinite() && it > 0f }
+    }
+}
