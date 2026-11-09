@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-09T18:08:26Z",
+  "observed_at": "2026-11-09T18:12:44Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -109,6 +109,16 @@
         "risk": "Listing still claims GPS/background tracking and estimated metrics; physical P0 and policy/privacy remain open. No listing edit."
       },
       "artifact_download_sha256_verified": true
+    },
+    "probe_refresh_attempt_20261109": {
+      "commit": "f03ada0d74313e1c6d3248351de90204783d0ff8",
+      "changed_path": ".github/workflows/thf-fitness-publication-state-probe.yml",
+      "change": "comment only; requests a fresh publication-state probe; no workflow logic, app source, track, listing or artifact change",
+      "combined_status": "NO_STATUS_EXPOSED",
+      "workflow_run": "NOT_OBSERVED",
+      "new_artifact": "NOT_OBSERVED",
+      "latest_verified_readback_remains": 42508799594,
+      "no_play_track_or_listing_write": true
     }
   },
   "phone": {
@@ -1447,8 +1457,8 @@
     "production": "NOT_VERIFIED"
   },
   "latest_integrator_checkpoint": {
-    "observed_at": "2026-11-09T18:08:26Z",
-    "local_time": "2026-11-09 20:08:26 Africa/Cairo",
+    "observed_at": "2026-11-09T18:12:44Z",
+    "local_time": "2026-11-09 20:12:44 Africa/Cairo",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
     "canonical_branch_head_before_evidence_refresh": "c105b6c10d4d784b64a9e8ff25e4656073434629",
     "canonical_app_source_sha": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
@@ -1478,7 +1488,8 @@
       ],
       "deployed_at": "2026-11-09T18:05:42.845Z"
     },
-    "evidence_commit_before_final_json_refresh": "6bf4dcec123d0ff8b3f21ac2c68cf9b8c521fe1e"
+    "evidence_commit_before_final_json_refresh": "6bf4dcec123d0ff8b3f21ac2c68cf9b8c521fe1e",
+    "play_probe_trigger_commit": "f03ada0d74313e1c6d3248351de90204783d0ff8"
   },
   "latest_play_readback": {
     "run_id": 42508799594,
