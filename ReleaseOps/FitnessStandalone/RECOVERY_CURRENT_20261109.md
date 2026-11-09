@@ -45,3 +45,18 @@ No explicit current lease registry/file found in the canonical FitnessStandalone
 ## Release gate
 
 **HOLD.** Next Android versionCode must be greater than 51019 and may be allocated only after owner API/key prerequisites, exact-head Android CI and physical P0 QA pass. Production only after policy/privacy and physical gates. No paid infrastructure, signing or Play write.
+
+
+## 2026-11-09 20:20 Cairo refresh
+
+Canonical branch HEAD before this refresh sequence: `c8b89e63ff8daecdbd0f244681c2f7338d27ce82`; current app-source SHA remains `2b5d44668d33b9e9faac5d8ace9753e5f6032ad3`. The 15 later canonical commits since PR #283's base are release workflow/evidence-only.
+
+Latest GPS candidate PR #283 exact head `645d11cc141e1b40be98e1a53ebb20f979441f70` passed exact-head Android CI run [42573716669](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42573716669). Artifact 13654725577 ZIP SHA-256 `a2c28279cfbe30a82b6b0fc77a45fbdc28ab2d40139971f4b350e4f5b64c5161` was independently recomputed; QA APK `76bb278f83f7797ab7b840fa466186b32ce37d9eee619f1801c4718ff1edd85b`; unsigned AAB `e1d54e331a9611ad54891c1449ad0c0ed7fea97df604fee6f3406744f1c750b3`. The AAB has no JAR signature entries and is byte-identical to run 42572575827. No release artifact was created.
+
+PR #283 is now 8 ahead / 15 behind canonical, diverged from merge base `c105b6c10d4d784b64a9e8ff25e4656073434629`, and GitHub reports mergeable=false. It still changes `app.js`, shared with #282 and open exercise UX handoffs. Keep it Draft/unmerged; no rebase or partial cherry-pick was attempted.
+
+Latest successful independent Play API readback is run 42405709027 attempt 3, job 129340775331, artifact 13698390469. ZIP SHA-256 `ee01c04047136c005bd0826b7174bab09903d54930c27f3b85e92ae0f4b86d03` was independently recomputed; embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`. Observed 2026-11-09 17:54:54 UTC: Internal 51019 completed, alpha 51007 draft, Production not listed/verified; uploadAttempted=false and commitAttempted=false. Later probe 42672026813 failed with zero jobs/artifacts, so it did not produce a newer Play observation.
+
+The authorized device is offline (last seen about 31 hours ago); current phone/session state is unknown and must be preserved. No ADB or session action was attempted. Google Maps remains blocked by owner key-inventory permission and unlinked billing; no paid infrastructure. #282 is exact-CI-tested but held for app.js ownership; #93/#188 lack exact-head Android CI; #248 has local tests only; #216 is workout-session resume, not GPS activity-session persistence, and has no exact-head CI. #269 competition API remains strength-only and provisional; no event seeded, admin key absent, deployment unverified, all scores reward-ineligible.
+
+No explicit lease registry was found; shared resources are not assumed free. VersionCode 51020 remains unallocated. No signing, Play write, or Production action. Release HOLD.
