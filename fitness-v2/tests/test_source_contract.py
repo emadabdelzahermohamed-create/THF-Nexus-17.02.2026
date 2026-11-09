@@ -747,6 +747,18 @@ class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
         self.assertNotIn("gpsFixState==='weak'", app)
 
 
+class OpenStreetMapTileClientSourceContractTest(unittest.TestCase):
+    def test_webview_identifies_top_hero_fit_and_keeps_http_tile_caching(self):
+        activity = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "WebViewNetworkPolicy.kt").read_text()
+
+        self.assertIn('userAgentString = "TopHeroFit/${BuildConfig.VERSION_NAME} (Android; contact: TopHeroFit@gmail.com)"', activity)
+        self.assertIn("cacheMode = WebSettings.LOAD_DEFAULT", activity)
+        self.assertIn('"tile.openstreetmap.org"', policy)
+        self.assertIn("shouldBlockExternalResource", activity)
+        self.assertIn("isAllowedMapTileUrl", policy)
+
+
 class ActivityLocationFallbackSourceContractTest(unittest.TestCase):
     def test_fused_subscription_has_a_bounded_android_provider_fallback(self):
         service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()

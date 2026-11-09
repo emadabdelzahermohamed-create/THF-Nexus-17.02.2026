@@ -22,7 +22,7 @@ The current activity map is already rendered by Leaflet in the local WebView and
 ## Map and tile-source policy
 
 - Keep Leaflet and OSM-derived sources for now; no Google Maps SDK key or billing is needed for the in-app route map.
-- Keep visible source attribution and a stable TopHeroFit WebView User-Agent.
+- Keep visible source attribution and use a distinct, stable TopHeroFit User-Agent with the support contact. WebView uses LOAD_DEFAULT caching so normal HTTP tile cache headers are honoured.
 - Respect each provider's caching, attribution, identification and rate limits. The public tile.openstreetmap.org service is best-effort, has no SLA, and explicitly prohibits bulk prefetch/offline tile downloads. OSM data is free/open, but its community tile servers are not an unlimited free production CDN.
 - For reliable scale or offline map packs, select a provider that explicitly permits the intended use or self-host regional vector/raster tiles. Do not scrape public OSM tile servers.
 
