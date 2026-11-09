@@ -111,7 +111,13 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                 weightKg = checkpoint.weightKg,
                 acceptedRoute = if (checkpoint.phase == ActivitySessionPhase.ACTIVE) checkpoint.route else emptyList(),
                 lastAccuracyMetres = checkpoint.lastAccuracyMetres,
-            ).copy(paused = paused, currentSpeedKph = 0.0, gpsFixState = "acquiring")
+            ).copy(
+                paused = paused,
+                currentSpeedKph = 0.0,
+                gpsFixState = if (paused) "paused" else "acquiring",
+                lastAccuracyMetres = null,
+                observedAccuracyMetres = null,
+            )
 
             val intent = Intent(context, ActivityTrackingService::class.java).setAction(ACTION_RESTORE_ACTIVITY)
             return ActivityRestoreDispatch.attempt(

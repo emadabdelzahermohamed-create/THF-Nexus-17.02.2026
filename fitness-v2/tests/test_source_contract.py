@@ -756,6 +756,9 @@ class GpsAccuracyPresentationSourceContractTest(unittest.TestCase):
         self.assertIn('if (activityMode != null && activityPaused) return "paused"', service)
         self.assertIn('gpsFixState = "paused"', service)
         self.assertIn('lastAccuracyMetres = null', service)
+        pending_restore = service[service.index("val pendingSnapshot"):service.index("val intent = Intent(context, ActivityTrackingService::class.java).setAction(ACTION_RESTORE_ACTIVITY)")]
+        self.assertIn('gpsFixState = if (paused) "paused" else "acquiring"', pending_restore)
+        self.assertIn("lastAccuracyMetres = null", pending_restore)
         self.assertIn('object GpsAccuracyPresentationPolicy', policy)
         self.assertIn("gpsFixState==='ready'&&rawAccuracy!=null", app)
         self.assertIn("gpsFixState==='ready'&&Number.isFinite(accuracy)", app)
