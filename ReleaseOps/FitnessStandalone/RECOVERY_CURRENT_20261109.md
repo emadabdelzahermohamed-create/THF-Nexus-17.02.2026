@@ -60,3 +60,8 @@ Latest successful independent Play API readback is run 42405709027 attempt 3, jo
 The authorized device is offline (last seen about 31 hours ago); current phone/session state is unknown and must be preserved. No ADB or session action was attempted. Google Maps remains blocked by owner key-inventory permission and unlinked billing; no paid infrastructure. #282 is exact-CI-tested but held for app.js ownership; #93/#188 lack exact-head Android CI; #248 has local tests only; #216 is workout-session resume, not GPS activity-session persistence, and has no exact-head CI. #269 competition API remains strength-only and provisional; no event seeded, admin key absent, deployment unverified, all scores reward-ineligible.
 
 No explicit lease registry was found; shared resources are not assumed free. VersionCode 51020 remains unallocated. No signing, Play write, or Production action. Release HOLD.
+
+
+## AppDeploy read-only follow-up — 2026-11-09 20:20 Cairo
+
+The TopHeroFit AppDeploy app thf-fitness-pulse-ul26f1 was rechecked with the current status and secret-inventory reads. Deployment status is ready at https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/, snapshot 1794247542845. QA frontend/network/backend error arrays are empty. The current AppDeploy secret inventory is empty, so THF_COMPETITION_ADMIN_KEY is not configured there. This confirms the frontend snapshot and secret inventory only; it does not independently verify that the separate competition API backend is deployed. No secret, backend, billing, or deployment change was made.
