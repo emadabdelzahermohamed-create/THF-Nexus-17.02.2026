@@ -763,6 +763,7 @@ class GpsAccuracyPresentationSourceContractTest(unittest.TestCase):
         self.assertIn('lastAccuracyMetres = null', service)
         self.assertIn('object GpsAccuracyPresentationPolicy', policy)
         self.assertIn("gpsFixState==='ready'&&rawAccuracy!=null", app)
+        self.assertIn("gpsFixState==='ready'&&Number.isFinite(accuracy)", app)
         self.assertIn("gpsFixState==='paused'?t('gpsPaused')", app)
         self.assertIn("gpsPaused:'GPS tracking is paused'", app)
 
