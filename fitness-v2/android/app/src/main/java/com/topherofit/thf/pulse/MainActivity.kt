@@ -998,3 +998,149 @@ class MainActivity : ComponentActivity() {
             startWorkoutTracking(id, sensorProfile)
             JSONObject().put("active", true).put("sessionId", id).put("profile", sensorProfile.wireName).toString()
         }.getOrElse { JSONObject().put("active", false).put("error", it.message ?: it.javaClass.simpleName).toString() }
+        @JavascriptInterface
+        fun motionSnapshot(): String = ActivityTrackingService.workoutSnapshot()?.let(::motionEvidenceJson)?.toString()
+            ?: JSONObject().put("available", false).toString()
+
+        @JavascriptInterface
+        fun endMotionSession(): String {
+            val evidence = ActivityTrackingService.finishWorkout()
+            if (evidence != null) lastEndedMotionEvidence = evidence
+            if (!ActivityTrackingService.hasActiveTracking()) motionEngine.onHostResume()
+            return evidence?.let(::motionEvidenceJson)?.toString()
+                ?: JSONObject().put("available", false).toString()
+        }
+
+        @JavascriptInterface
+        fun beginActivitySession(mode: String?, weightKg: Double): String = runCatching {
+            val parsedMode = requireNotNull(ActivityMode.fromWire(mode)) { "unsupported activity mode" }
+            val live = ActivityTrackingService.activitySnapshot()
+            if (live.active) {
+                return@runCatching activitySnapshotJson(live).put("resumed", true).toString()
+            }
+            val safeWeight = weightKg.coerceIn(30.0, 250.0)
+            if (!hasLocationPermission()) {
+                pendingActivityStart = parsedMode to safeWeight
+                runOnUiThread { locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)) }
+                return@runCatching JSONObject().put("active", false).put("permissionRequired", "location").put("mode", parsedMode.wireName).toString()
+            }
+            if (parsedMode.usesSteps && !hasActivityPermission() && Build.VERSION.SDK_INT >= 29) {
+                pendingActivityStart = parsedMode to safeWeight
+                runOnUiThread { activityPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) }
+                return@runCatching JSONObject().put("active", false).put("permissionRequired", "activity_recognition").put("mode", parsedMode.wireName).toString()
+            }
+            startActivityTracking(parsedMode, safeWeight)
+            JSONObject().put("active", true).put("mode", parsedMode.wireName).toString()
+        }.getOrElse { JSONObject().put("active", false).put("error", it.message ?: it.javaClass.simpleName).toString() }
+
+        @JavascriptInterface
+        fun pauseActivitySession(): String {
+            ActivityTrackingService.pauseActivity()
+            return activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
+        }
+
+        @JavascriptInterface
+        fun resumeActivitySession(): String {
+            ActivityTrackingService.resumeActivity()
+            return activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
+        }
+
+        @JavascriptInterface
+        fun takePendingFinishedActivitySnapshot(): String = ActivityTrackingService.takePendingFinishedActivitySnapshot(this@MainActivity)
+
+        @JavascriptInterface
+        fun activitySnapshot(): String = activitySnapshotJson(ActivityTrackingService.activitySnapshot()).toString()
+
+        @JavascriptInterface
+        fun endActivitySession(): String {
+            val snapshot = ActivityTrackingService.finishActivity()
+            if (!ActivityTrackingService.hasActiveTracking()) motionEngine.onHostResume()
+            return activitySnapshotJson(snapshot).toString()
+        }
+
+        @JavascriptInterface
+        fun beginStepSession() {
+            beginMotionSession("legacy-${System.currentTimeMillis()}", MotionSensorProfile.STEP_DRILL.wireName)
+        }
+
+        @JavascriptInterface
+        fun sessionSteps(): Int = ActivityTrackingService.workoutSnapshot()?.stepDelta ?: 0
+
+        @JavascriptInterface
+        fun speak(text: String?, languageTag: String?, append: Boolean) {
+            if (text.isNullOrBlank()) return
+            runOnUiThread {
+                val locale = if (languageTag.orEmpty().lowercase().startsWith("ar")) Locale("ar", "EG") else Locale.US
+                tts?.language = locale
+                tts?.speak(text, if (append) TextToSpeech.QUEUE_ADD else TextToSpeech.QUEUE_FLUSH, null, "thf-fitness-v2")
+            }
+        }
+
+        @JavascriptInterface
+        fun saveSummary(json: String?): String = runCatching {
+            require(json != null && json.toByteArray(Charsets.UTF_8).size <= MAX_SUMMARY_BYTES) {
+                "invalid workout summary size"
+            }
+            val item = JSONObject(json)
+            item.remove("motionEvidence")
+            item.remove("verification")
+            val now = System.currentTimeMillis()
+            val start = item.optLong("startedAtMs", now - item.optLong("durationMin", 1L) * 60_000L)
+            val end = item.optLong("endedAtMs", now)
+            require(start > 0 && end > start && end - start <= 48L * 60L * 60L * 1_000L) {
+                "invalid workout summary time"
+            }
+            require((item.optJSONArray("sets")?.length() ?: 0) <= 1000) { "too many workout sets" }
+            val clientId = WorkoutIdentity.stableClientRecordId(item.optString("clientRecordId"), start, item.optString("id", "other"))
+            item.put("clientRecordId", clientId)
+            item.put("recordVersion", maxOf(1L, item.optLong("recordVersion", 1L)))
+            item.put("savedAt", now)
+            item.put("endedAtMs", end)
+            if (ActivityTrackingService.workoutSnapshot()?.sessionId?.startsWith("legacy-") == true) {
+                lastEndedMotionEvidence = ActivityTrackingService.finishWorkout()
+            }
+            val nativeEvidence = lastEndedMotionEvidence?.takeIf { it.sessionId == clientId }
+            if (nativeEvidence != null) {
+                item.put("motionEvidence", motionEvidenceJson(nativeEvidence))
+                item.put("measurementSource", "SENSOR")
+            } else {
+                item.put("measurementSource", "MANUAL_OR_UNVERIFIED")
+            }
+            val localOutcome = upsertLocalRecord(SUMMARIES, item, MAX_LOCAL_SUMMARIES)
+            val healthOutcome = if (localOutcome == "inserted" || localOutcome == "updated") {
+                enqueueSummaryForHealth(item)
+            } else {
+                localOutcome
+            }
+            val backendOutcome = if (localOutcome == "inserted" || localOutcome == "updated") {
+                enqueueSummaryForBackend(item)
+            } else {
+                localOutcome
+            }
+            if (healthOutcome == "inserted" || healthOutcome == "updated") {
+                lifecycleScope.launch { flushPendingHealth() }
+            }
+            if (backendOutcome == "inserted" || backendOutcome == "updated") {
+                lifecycleScope.launch { flushPendingBackend() }
+            }
+            JSONObject()
+                .put("saved", localOutcome != "stale")
+                .put("result", localOutcome)
+                .put("clientRecordId", clientId)
+                .put("healthQueued", healthOutcome == "inserted" || healthOutcome == "updated")
+                .put("backendQueued", backendOutcome == "inserted" || backendOutcome == "updated")
+                .toString()
+        }.getOrElse { JSONObject().put("saved", false).put("error", it.javaClass.simpleName).toString() }
+
+        @JavascriptInterface
+        fun readSummaries(): String = jsonArrayPreference(SUMMARIES).toString()
+
+        @JavascriptInterface
+        fun setPref(key: String?, value: String?) {
+            if (key != null) prefs.edit { putString("web_$key", value.orEmpty()) }
+        }
+
+        @JavascriptInterface
+        fun getPref(key: String?): String = if (key == null) "" else prefs.getString("web_$key", "").orEmpty()
+    }
+}
