@@ -94,6 +94,10 @@ Existing signed 51019 AAB remains SHA-256 `5dc7d0077ecfddd3224ca8557a3b4f6d0a552
 - GPS anomaly, swimming eligibility and heart-rate freshness policies/tests are not wired end-to-end to raw GPS/Health ingestion. Physical grant/revoke/no-data/error and compatible wearable-source QA remain unrun.
 - Competition backend source includes server-owned event definitions, membership, atomic capacity checks, submission ledger, event-window validation and a leaderboard route. Current supported score is strength volume in kg·reps only. Every score remains `SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED` and `rewardEligible=false`. No event is seeded, admin key is not configured, and deployment is not independently verified. No reward or payout is authorized.
 
+## AppDeploy privacy/deletion synchronization
+
+The existing TopHeroFit AppDeploy app is on the free plan. Snapshot 1794247542845 deployed successfully at https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/. Only `public/privacy.html`, `public/account-deletion.html` and one existing deletion-test expectation were changed. Both deployed page source files were re-read from the latest AppDeploy snapshot and compared byte-for-byte with canonical repository files: privacy blob `a5d43ac08ffeff52a0e9c35bde1d6ade2a384d82`; deletion blob `031be7223f956b5593fb848ec3d08a22a3a4077e`. The 12-test suite now asserts the Google Play cosmetic-purchase data disclosure and that Play order records are retained when THF app data is deleted. AppDeploy validation is valid with no errors; QA frontend, network and backend error arrays are empty. A generic warning notes the existing 12-test suite is larger than the recommended 3–5. External browser HTTP readback failed, so public page reachability is not independently claimed. No backend, secrets, billing, Play listing, Health declaration or Android release was changed.
+
 ## Leases and release decision
 
 - No explicit current lease registry/file was found in the canonical FitnessStandalone release area or repository search. Shared resources are not assumed free.
