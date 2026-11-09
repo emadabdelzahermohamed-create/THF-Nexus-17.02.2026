@@ -74,7 +74,7 @@ Latest independent readback remains [run 42508799594](https://github.com/emadabd
 - Production: not listed / not verified.
 - `uploadAttempted=false`; `commitAttempted=false`.
 
-The readback is dated 2026-11-08; no newer independent Play API readback was obtained on 2026-11-09. The listing still claims GPS sessions, background activity and estimated metrics. Its current medical disclaimer does not explicitly say the app is not a medical device and does not diagnose/treat/cure/prevent disease, nor include the required explicit professional-consultation reminder in both locales. No listing edit or declaration submission occurred.
+The readback is dated 2026-11-08; no newer independent Play API readback was obtained on 2026-11-09. I changed only the canonical probe workflow comment in commit `f03ada0d74313e1c6d3248351de90204783d0ff8` to request a fresh read-only state probe. As of the 20:12 Cairo check, the commit had no exposed check/status/workflow run and no new artifact, so the Nov 8 readback remains the latest verified Play observation. The listing still claims GPS sessions, background activity and estimated metrics. Its current medical disclaimer does not explicitly say the app is not a medical device and does not diagnose/treat/cure/prevent disease, nor include the required explicit professional-consultation reminder in both locales. No listing edit or declaration submission occurred.
 
 Existing signed 51019 AAB remains SHA-256 `5dc7d0077ecfddd3224ca8557a3b4f6d0a5524cf194c0e547fc8b1605c7ba9c5` from older source lineage `76053bd9127c38d8065eb7ac250bdeb34ab67854`. It is not an artifact for current canonical app-source SHA `2b5d44668d33b9e9faac5d8ace9753e5f6032ad3`.
 
