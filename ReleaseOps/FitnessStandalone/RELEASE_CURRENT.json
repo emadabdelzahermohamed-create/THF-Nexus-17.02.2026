@@ -1489,7 +1489,15 @@
       "deployed_at": "2026-11-09T18:05:42.845Z"
     },
     "evidence_commit_before_final_json_refresh": "6bf4dcec123d0ff8b3f21ac2c68cf9b8c521fe1e",
-    "play_probe_trigger_commit": "f03ada0d74313e1c6d3248351de90204783d0ff8"
+    "play_probe_trigger_commit": "f03ada0d74313e1c6d3248351de90204783d0ff8",
+    "open_prs": {
+      "pr283": "OPEN_DRAFT; GPS accuracy-state truthfulness; exact-head Android CI run 42573716669 passed on 645d11cc141e1b40be98e1a53ebb20f979441f70; candidate AAB is byte-identical to prior validation AAB; app.js overlaps #282 and open exercise UX handoffs; not merged"
+    },
+    "open_app_js_overlap": {
+      "pr283": "GPS accuracy-state truthfulness; shares app.js with #282 and exercise UX handoffs; hold until ownership is reconciled",
+      "note": "PRs #282 and #283 both modify app.js and overlap open exercise UX handoffs; neither is merged until shared ownership is reconciled."
+    },
+    "current_open_prs_updated_on": "2026-11-09"
   },
   "latest_play_readback": {
     "run_id": 42508799594,
