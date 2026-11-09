@@ -1645,7 +1645,7 @@
     "listing_medical_disclaimer": "MISSING_EXPLICIT_NOT_A_MEDICAL_DEVICE_AND_EXPLICIT_PROFESSIONAL_CONSULTATION_WORDING_IN_BOTH_LOCALES",
     "repository_privacy_pages": "CURRENT_SOURCE_INCLUDES_PURCHASE_AND_EXTERNAL_IDENTITY_DISCLOSURES",
     "appdeploy_snapshot": "CURRENT_20261109; snapshot 1794247542845 ready; privacy and account-deletion source exactly matches canonical repository; QA frontend/network/backend errors none",
-    "public_page_reachability": "NOT_INDEPENDENTLY_VERIFIED; AppDeploy deployment ready; external browser open inaccessible",
+    "public_page_reachability": "NOT_VERIFIED; browser open attempts for both deployed pages returned tool-level inaccessible results; this is not proof of an HTTP error. AppDeploy reports the deployment ready.",
     "no_listing_or_declaration_write": true,
     "production_gate": "BLOCKED_PENDING_HEALTH_DECLARATION_PLAY_PRIVACY_URL_LISTING_DISCLOSURES_AND_PHYSICAL_P0",
     "appdeploy_snapshot_version": "1794247542845",
@@ -1769,5 +1769,16 @@
     "secret_names": [],
     "secret_inventory_checked_at": "2026-11-09T18:20:14Z",
     "note": "This verifies the AppDeploy frontend snapshot and secret inventory only; it does not verify the separate competition backend deployment."
+  },
+  "public_page_access_attempt_20261109": {
+    "attempted_at": "2026-11-09T18:20:14Z",
+    "urls": [
+      "https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/privacy.html",
+      "https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/account-deletion.html"
+    ],
+    "result": "BROWSER_TOOL_INACCESSIBLE",
+    "interpretation": "No public HTTP response was obtained; do not infer the pages are down or reachable from this result.",
+    "appdeploy_status": "ready",
+    "source_match": "privacy and account-deletion pages match canonical repository blobs a5d43ac08ffeff52a0e9c35bde1d6ade2a384d82 and 031be7223f956b5593fb848ec3d08a22a3a4077e"
   }
 }
