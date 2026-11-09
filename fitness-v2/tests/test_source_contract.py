@@ -747,5 +747,35 @@ class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
         self.assertNotIn("gpsFixState==='weak'", app)
 
 
+class ActivityLocationFallbackSourceContractTest(unittest.TestCase):
+    def test_fused_subscription_has_a_bounded_android_provider_fallback(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityLocationFallbackPolicy.kt").read_text()
+
+        self.assertIn("locationFallbackWatchdog", service)
+        self.assertIn("postDelayed(locationFallbackWatchdog, LOCATION_FALLBACK_POLL_MS * 2)", service)
+        self.assertIn("ActivityLocationFallbackPolicy.shouldRegisterLegacyProviders(", service)
+        self.assertIn("registerLegacyLocationProviders(mode)", service)
+        self.assertIn("LocationManager.GPS_PROVIDER", service)
+        self.assertIn("LocationManager.NETWORK_PROVIDER", service)
+        self.assertIn("legacyLocationProvidersRegistered", service)
+        self.assertIn("removeCallbacks(locationFallbackWatchdog)", service)
+        self.assertIn("FIRST_ACCEPTED_FIX_TIMEOUT_MS = 8_000L", policy)
+        self.assertIn("ACCEPTED_FIX_STALE_TIMEOUT_MS = 12_000L", policy)
+
+    def test_stale_or_paused_accuracy_is_never_presented_as_current(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsFixPresentationPolicy.kt").read_text()
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+
+        self.assertIn("GpsAccuracyPresentationPolicy.visibleAccuracy(fixState, lastAccuracyMetres)", service)
+        self.assertIn('gpsFixState = "paused"', service)
+        self.assertIn('return "paused"', service)
+        self.assertIn("rawAccuracy!=null&&Number.isFinite(acceptedAccuracy)&&acceptedAccuracy>0", app)
+        self.assertIn("rawObservedAccuracy!=null&&Number.isFinite(observedAccuracy)&&observedAccuracy>0", app)
+        self.assertIn("gpsFixState==='ready'&&Number.isFinite(accuracy)", app)
+        self.assertIn('object GpsAccuracyPresentationPolicy', policy)
+
+
 if __name__ == "__main__":
     unittest.main()

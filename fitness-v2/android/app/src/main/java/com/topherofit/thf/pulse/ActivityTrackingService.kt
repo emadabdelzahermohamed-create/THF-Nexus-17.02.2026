@@ -60,6 +60,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         private const val ACTIVITY_CHECKPOINT_PREFS = "thf_activity_tracking"
         private const val ACTIVITY_CHECKPOINT_KEY = "active_activity_checkpoint"
         private const val ACTIVITY_CHECKPOINT_INTERVAL_MS = 10_000L
+        private const val LOCATION_FALLBACK_POLL_MS = 4_000L
 
         @Volatile private var instance: ActivityTrackingService? = null
         @Volatile private var lastActivitySnapshot = ActivitySnapshot(
@@ -111,7 +112,13 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                 weightKg = checkpoint.weightKg,
                 acceptedRoute = if (checkpoint.phase == ActivitySessionPhase.ACTIVE) checkpoint.route else emptyList(),
                 lastAccuracyMetres = checkpoint.lastAccuracyMetres,
-            ).copy(paused = paused, currentSpeedKph = 0.0, gpsFixState = "acquiring")
+            ).copy(
+                paused = paused,
+                currentSpeedKph = 0.0,
+                gpsFixState = if (paused) "paused" else "acquiring",
+                lastAccuracyMetres = null,
+                observedAccuracyMetres = null,
+            )
 
             val intent = Intent(context, ActivityTrackingService::class.java).setAction(ACTION_RESTORE_ACTIVITY)
             return ActivityRestoreDispatch.attempt(
@@ -200,6 +207,28 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private var sessionStartedAtWallMs = 0L
     private var lastActivityCheckpointWriteElapsedMs = 0L
     private val notificationHandler = Handler(Looper.getMainLooper())
+    private val locationFallbackHandler = Handler(Looper.getMainLooper())
+    private var locationRequestStartedElapsedMs = 0L
+    private var legacyLocationProvidersRegistered = false
+    private val locationFallbackWatchdog = object : Runnable {
+        override fun run() {
+            val mode = activityMode ?: return
+            if (activityPaused) return
+            val nowElapsed = SystemClock.elapsedRealtime()
+            val lastAcceptedElapsed = lastLocation?.elapsedRealtimeNanos?.div(1_000_000L)
+            if (ActivityLocationFallbackPolicy.shouldRegisterLegacyProviders(
+                    requestStartedElapsedMs = locationRequestStartedElapsedMs,
+                    lastAcceptedElapsedMs = lastAcceptedElapsed,
+                    nowElapsedMs = nowElapsed,
+                )
+            ) {
+                registerLegacyLocationProviders(mode)
+            }
+            if (activityMode == mode && !activityPaused) {
+                locationFallbackHandler.postDelayed(this, LOCATION_FALLBACK_POLL_MS)
+            }
+        }
+    }
     private val fusedLocationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             result.locations.forEach(::onLocationChanged)
@@ -347,6 +376,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }
 
         registerStepSource(mode)
+        locationRequestStartedElapsedMs = SystemClock.elapsedRealtime()
+        legacyLocationProvidersRegistered = false
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1_000L)
             .setMinUpdateIntervalMillis(1_000L)
             // Never seed a new session with a cached last-known fix from before Start.
@@ -369,23 +400,31 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         } else {
             registerLegacyLocationProviders(mode)
         }
+        // A successful FLP subscription does not guarantee that this device will ever deliver
+        // a fix. Start the Android framework GPS/network providers if no accepted fix arrives.
+        locationFallbackHandler.removeCallbacks(locationFallbackWatchdog)
+        locationFallbackHandler.postDelayed(locationFallbackWatchdog, LOCATION_FALLBACK_POLL_MS * 2)
     }
 
     private fun registerLegacyLocationProviders(mode: ActivityMode) {
-        if (activityMode != mode) return
+        if (activityMode != mode || legacyLocationProvidersRegistered) return
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) return
+        var registered = false
         runCatching {
             if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1_000L, 1f, this, Looper.getMainLooper())
+                registered = true
             }
         }
         runCatching {
             if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2_500L, 4f, this, Looper.getMainLooper())
+                registered = true
             }
         }
+        legacyLocationProvidersRegistered = registered
     }
 
     private fun registerStepSource(mode: ActivityMode) {
@@ -395,6 +434,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun unregisterActivitySources() {
+        locationFallbackHandler.removeCallbacks(locationFallbackWatchdog)
+        legacyLocationProvidersRegistered = false
+        locationRequestStartedElapsedMs = 0L
         gpsDistanceAccumulator.reset()
         runCatching { fusedLocationClient.removeLocationUpdates(fusedLocationCallback) }
         runCatching { locationManager.removeUpdates(this) }
@@ -557,8 +599,19 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun buildActivitySnapshot(active: Boolean): ActivitySnapshot {
-        if (activityPaused && activityMode != null) return lastActivitySnapshot.copy(active = active, paused = true, currentSpeedKph = 0.0)
+        if (activityPaused && activityMode != null) {
+            return lastActivitySnapshot.copy(
+                active = active,
+                paused = true,
+                currentSpeedKph = 0.0,
+                gpsFixState = "paused",
+                lastAccuracyMetres = null,
+                observedAccuracyMetres = null,
+            )
+        }
         val mode = activityMode ?: return lastActivitySnapshot
+        val fixState = gpsFixState()
+        val visibleAccuracy = GpsAccuracyPresentationPolicy.visibleAccuracy(fixState, lastAccuracyMetres)
         return ActivitySnapshotPolicy.build(
             sessionActive = active,
             phase = activityPhase,
@@ -572,10 +625,10 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             currentSpeedKph = currentSpeedKph,
             weightKg = activityWeightKg,
             acceptedRoute = route.toList(),
-            lastAccuracyMetres = lastAccuracyMetres,
+            lastAccuracyMetres = visibleAccuracy,
         ).copy(
-            gpsFixState = gpsFixState(),
-            observedAccuracyMetres = lastObservedAccuracyMetres,
+            gpsFixState = fixState,
+            observedAccuracyMetres = if (fixState == "filtered") lastObservedAccuracyMetres else null,
             paused = false,
         )
     }
@@ -613,6 +666,9 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }
         getSharedPreferences(ACTIVITY_CHECKPOINT_PREFS, MODE_PRIVATE).edit().putBoolean("activity_paused", false).apply()
         lastLocation = null
+        lastObservedLocation = null
+        lastObservedAccuracyMetres = null
+        lastAccuracyMetres = null
         gpsDistanceAccumulator.reset()
         currentSpeedKph = 0.0
         registerActivitySources(mode)
@@ -894,6 +950,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     private fun gpsFixState(): String {
+        if (activityMode != null && activityPaused) return "paused"
         val enabled = runCatching {
             locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
@@ -908,6 +965,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun gpsStatus(): String = when (gpsFixState()) {
+        "paused" -> "تتبع الموقع متوقف مؤقتًا"
         "permission" -> "إذن الموقع غير متاح · المسافة لا تتحدث"
         "off" -> "الموقع مغلق · المسافة لا تتحدث"
         "stale" -> "إشارة الموقع متوقفة · بانتظار تحديث"
