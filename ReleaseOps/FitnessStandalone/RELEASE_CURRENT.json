@@ -1605,21 +1605,27 @@
     "score_boundary": "SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED",
     "reward_eligible": false,
     "events_seeded": false,
-    "admin_key": "not configured; no secret available in existing AppDeploy inventory",
-    "deployment": "NOT_INDEPENDENTLY_VERIFIED"
+    "admin_key": "NOT_CONFIGURED; current AppDeploy secret inventory is empty (read 2026-11-09 20:20 Cairo)",
+    "deployment": "NOT_INDEPENDENTLY_VERIFIED; current AppDeploy frontend ready state does not verify the separate competition API backend"
   },
   "appdeploy_web_snapshot_readback": {
     "app_id": "thf-fitness-pulse-ul26f1",
     "status": "ready",
     "snapshot_version": "1794247542845",
     "snapshot_timestamp_utc": "2026-11-09T18:05:42.845Z",
-    "secret_inventory": "NOT_RECHECKED_IN_THIS_REFRESH",
+    "secret_inventory": "EMPTY",
     "frontend_errors": [],
     "network_errors": [],
     "backend_errors": [],
     "privacy_and_deletion_pages_exact_match_canonical_repository": true,
     "read_only": true,
-    "not_android_or_play_evidence": true
+    "not_android_or_play_evidence": true,
+    "secret_inventory_checked_at": "2026-11-09T18:20:14Z",
+    "qa_timestamp_utc": "2026-11-09T18:06:00.034Z",
+    "deployment_status": "ready",
+    "qa_frontend_errors": [],
+    "qa_network_errors": [],
+    "qa_backend_errors": []
   },
   "policy_privacy_reconciliation": {
     "path": "ReleaseOps/FitnessStandalone/POLICY_PRIVACY_RECONCILIATION_20261108.md",
@@ -1750,5 +1756,18 @@
     ],
     "read_only": true,
     "not_android_or_play_evidence": true
+  },
+  "appdeploy_live_status_readback": {
+    "app_id": "thf-fitness-pulse-ul26f1",
+    "deployment_status": "ready",
+    "snapshot_version": "1794247542845",
+    "live_url": "https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/",
+    "qa_timestamp_utc": "2026-11-09T18:06:00.034Z",
+    "qa_frontend_errors": [],
+    "qa_network_errors": [],
+    "qa_backend_errors": [],
+    "secret_names": [],
+    "secret_inventory_checked_at": "2026-11-09T18:20:14Z",
+    "note": "This verifies the AppDeploy frontend snapshot and secret inventory only; it does not verify the separate competition backend deployment."
   }
 }
