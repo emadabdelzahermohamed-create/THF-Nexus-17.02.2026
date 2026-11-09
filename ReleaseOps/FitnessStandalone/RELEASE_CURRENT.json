@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-09T18:12:44Z",
+  "observed_at": "2026-11-09T18:20:14Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -37,19 +37,20 @@
     "independent_readback": "PASS",
     "production": "NOT_VERIFIED",
     "latest_state_probe": {
-      "run_id": 42508799594,
-      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42508799594",
-      "run_attempt": 1,
-      "head_sha": "057184d4f89c3a9cdc152187dfd0312244f7f730",
-      "observed_at": "2026-11-08T18:12:34Z",
+      "run_id": 42405709027,
+      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42405709027",
+      "run_attempt": 3,
+      "workflow_id": 388958716,
+      "head_sha": "b06ae31c39d3d010258b0b0189c99f9ef7e49d4f",
+      "observed_at": "2026-11-09T17:54:54Z",
       "run_status": "completed",
       "run_conclusion": "success",
-      "workflow_job_id": 128817153188,
+      "workflow_job_id": 129340775331,
       "workflow_job_name": "probe",
       "workflow_job_status": "completed",
       "workflow_job_conclusion": "success",
-      "artifact_id": 13627803896,
-      "artifact_digest": "sha256:dd0dea0844d11e8bef03caa35a59c4752b92862a839b163481d574ca1ccf0954",
+      "artifact_id": 13698390469,
+      "artifact_digest": "sha256:ee01c04047136c005bd0826b7174bab09903d54930c27f3b85e92ae0f4b86d03",
       "artifact_download_sha256_verified": true,
       "artifact_download_sha256_verified_at": "2026-11-09",
       "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
@@ -70,7 +71,7 @@
         }
       ],
       "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
-      "no_new_readback_on_2026_11_09": true
+      "no_newer_successful_readback": true
     },
     "previous_state_probe_20261103": {
       "run_id": 41686496926,
@@ -113,11 +114,14 @@
     "probe_refresh_attempt_20261109": {
       "commit": "f03ada0d74313e1c6d3248351de90204783d0ff8",
       "changed_path": ".github/workflows/thf-fitness-publication-state-probe.yml",
-      "change": "comment only; requests a fresh publication-state probe; no workflow logic, app source, track, listing or artifact change",
-      "combined_status": "NO_STATUS_EXPOSED",
-      "workflow_run": "NOT_OBSERVED",
-      "new_artifact": "NOT_OBSERVED",
-      "latest_verified_readback_remains": 42508799594,
+      "change": "comment-only read-only probe trigger; no workflow logic, app source, track, listing or artifact mutation",
+      "failed_run_id": 42672026813,
+      "failed_run_url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42672026813",
+      "failed_run_conclusion": "failure",
+      "failed_run_jobs": 0,
+      "failed_run_artifacts": 0,
+      "interpretation": "No probe job or new Play API observation was produced; this is not evidence of a Play API failure or Play mutation.",
+      "latest_verified_readback": 42405709027,
       "no_play_track_or_listing_write": true
     }
   },
@@ -161,9 +165,10 @@
     "physical_p0": "BLOCKED_NOT_RUN; device offline; current session state unknown; preserve",
     "latest_connection_check": {
       "checked_on": "2026-11-09",
+      "checked_at_local": "2026-11-09 20:20 Africa/Cairo",
       "device": "localhost",
       "status": "OFFLINE",
-      "last_seen": "about 31 hours before 2026-11-09 19:50 Cairo check",
+      "last_seen": "about 31 hours before the 2026-11-09 20:20 Cairo check",
       "current_phone_session_state": "UNKNOWN; preserve; no ADB/session actions",
       "no_adb_or_session_actions": true
     }
@@ -179,11 +184,11 @@
     "health_policy_privacy": "OPEN; #280 partial consent merged; #282 null-vs-zero UI exact-head CI passed but merge held for app.js overlap; #93 reader/#188 permission guard remain draft without exact-head CI; physical grant/revoke/no-data/error and Play declaration/privacy unverified",
     "production": "NOT_VERIFIED",
     "maps_native_sdk_key": "BLOCKED_OWNER_API_KEY_AND_BILLING_PREREQUISITES; latest preflight 41684077962 (2026-11-03): APIs enabled, key inventory permission denied, no restricted Android key visible, no billing account linked",
-    "listing_truthfulness": "OPEN; live listing still claims GPS/background sessions and estimated metrics; physical P0 remains incomplete; no listing edit",
+    "listing_truthfulness": "OPEN; live listing claims GPS/background sessions and estimated metrics; current medical disclaimer lacks explicit not-a-medical-device and professional-consultation wording in both locales; physical P0 incomplete; no listing edit",
     "competition_backend": "MERGED_SOURCE_ONLY; server-owned event/membership/capacity/submission/leaderboard code exists for strength kg·reps; scores SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED and reward-ineligible; no event seed, admin key or independent deployment verification",
-    "gps_accuracy": "PR #283 exact-head Android CI success; open/draft/unmerged due app.js overlap; physical GPS P0 not run"
+    "gps_accuracy": "PR #283 exact-head Android CI success on 645d11c; current PR branch diverged 8 ahead/15 behind and app.js overlaps #282/exercise UX; unmerged; physical GPS P0 not run"
   },
-  "next_action": "Keep PR #283 and #282 unmerged until shared app.js ownership is resolved. Preserve the unknown phone session until the authorized device is online and safely idle. Obtain owner-controlled Maps API/key access without paid infrastructure. Wire all-day steps and anti-cheat to trusted ingestion with exact-head tests. Complete Health declaration/privacy disclosures and verify competition deployment/admin-key readiness. Allocate >51019 only after owner API/key prerequisites, exact-head Android CI and physical P0 pass; Production only after policy/privacy and physical gates.",
+  "next_action": "Keep PR #283 and #282 unmerged until shared app.js ownership and PR #283 base drift are resolved. Preserve the unknown phone session until device is online and safely idle. Obtain owner-controlled Maps API/key prerequisites without paid infrastructure. Wire all-day steps and anti-cheat to trusted ingestion with exact-head tests. Complete Health declaration, Data Safety and bilingual medical disclosures. Verify competition deployment/admin-key readiness; keep scores reward-ineligible. Allocate >51019 only after owner API/key prerequisites, exact-head Android CI and physical P0 pass; Production only after policy/privacy and physical gates.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -1331,7 +1336,7 @@
       "production": "NOT_VERIFIED"
     }
   },
-  "canonical_branch_head_before_evidence_refresh": "c105b6c10d4d784b64a9e8ff25e4656073434629",
+  "canonical_branch_head_before_evidence_refresh": "c8b89e63ff8daecdbd0f244681c2f7338d27ce82",
   "canonical_app_source_sha": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
   "current_integrations": {
     "gps_health": {
@@ -1414,9 +1419,10 @@
     "priority_open": {
       "93": "OPEN_DRAFT; Health Services reader; exact-head Android CI absent; permission/privacy/provenance/physical gates open",
       "188": "OPEN_DRAFT; Health permission-scope guard; exact-head CI and declaration review pending",
-      "248": "OPEN_DRAFT; GPS route display smoothing; no exact-head Android CI",
+      "216": "OPEN; workout-session resume protection; no exact-head Android CI; separate from GPS activity-session persistence",
+      "248": "OPEN_DRAFT; GPS route display smoothing; local tests only; no exact-head Android CI",
       "282": "OPEN_DRAFT; Health metric null-vs-zero UI; exact-head CI passed; app.js overlap prevents merge",
-      "283": "OPEN_DRAFT; GPS accuracy-state truthfulness; exact-head CI passed on 645d11c; app.js overlap prevents merge"
+      "283": "OPEN_DRAFT; GPS accuracy-state truthfulness; exact-head CI passed on 645d11c; now 8 ahead/15 behind canonical and app.js overlap prevents merge"
     },
     "other_open_exercise_handoffs": [
       "224",
@@ -1439,8 +1445,8 @@
   },
   "lease_registry": {
     "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
-    "checked_at": "2026-11-09T17:50:14Z",
-    "note": "Repository search and canonical release area contain no explicit current lease registry. Shared resources are not assumed free."
+    "checked_at": "2026-11-09T18:20:14Z",
+    "note": "Canonical repository tree and FitnessStandalone release area contain no explicit current lease registry. Shared resources are not assumed free."
   },
   "integrator_recheck_20261106_2023": {
     "observed_at": "2026-11-06T18:23:17Z",
@@ -1457,10 +1463,10 @@
     "production": "NOT_VERIFIED"
   },
   "latest_integrator_checkpoint": {
-    "observed_at": "2026-11-09T18:12:44Z",
-    "local_time": "2026-11-09 20:12:44 Africa/Cairo",
+    "observed_at": "2026-11-09T18:20:14Z",
+    "local_time": "2026-11-09 20:20:14 Africa/Cairo",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
-    "canonical_branch_head_before_evidence_refresh": "c105b6c10d4d784b64a9e8ff25e4656073434629",
+    "canonical_branch_head_before_evidence_refresh": "c8b89e63ff8daecdbd0f244681c2f7338d27ce82",
     "canonical_app_source_sha": "2b5d44668d33b9e9faac5d8ace9753e5f6032ad3",
     "integrator_checkpoint": "ReleaseOps/FitnessStandalone/INTEGRATOR_RECHECK_20261109.md",
     "recovery": "ReleaseOps/FitnessStandalone/RECOVERY_CURRENT_20261109.md",
@@ -1510,31 +1516,44 @@
       "pr283": "GPS accuracy-state truthfulness",
       "note": "PRs #282 and #283 both modify app.js and overlap open exercise UX handoffs; neither is merged until shared ownership is reconciled."
     },
-    "current_open_prs_updated_on": "2026-11-09"
+    "current_open_prs_updated_on": "2026-11-09",
+    "play_readback_run": 42405709027,
+    "play_readback_artifact": 13698390469,
+    "play_readback_sha256": "ee01c04047136c005bd0826b7174bab09903d54930c27f3b85e92ae0f4b86d03",
+    "latest_probe_failure": 42672026813,
+    "candidate_exact_head_ci": 42573716669,
+    "candidate_compare": {
+      "status": "diverged",
+      "ahead_by": 8,
+      "behind_by": 15,
+      "merge_base": "c105b6c10d4d784b64a9e8ff25e4656073434629",
+      "mergeable": false
+    }
   },
   "latest_play_readback": {
-    "run_id": 42508799594,
-    "run_attempt": 1,
+    "run_id": 42405709027,
+    "run_attempt": 3,
     "workflow_id": 388958716,
-    "run_head_sha": "057184d4f89c3a9cdc152187dfd0312244f7f730",
-    "job_id": 128817153188,
+    "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42405709027",
+    "run_head_sha": "b06ae31c39d3d010258b0b0189c99f9ef7e49d4f",
+    "job_id": 129340775331,
     "job_name": "probe",
     "job_status": "completed",
     "job_conclusion": "success",
-    "artifact_id": 13627803896,
-    "artifact_sha256": "dd0dea0844d11e8bef03caa35a59c4752b92862a839b163481d574ca1ccf0954",
+    "artifact_id": 13698390469,
+    "artifact_sha256": "ee01c04047136c005bd0826b7174bab09903d54930c27f3b85e92ae0f4b86d03",
     "artifact_download_sha256_recomputed": true,
     "artifact_reverified_on": "2026-11-09",
     "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
-    "observed_at": "2026-11-08T18:12:34Z",
+    "observed_at": "2026-11-09T17:54:54Z",
     "internal_51019": "completed",
     "alpha_51007": "draft",
     "production": "NOT_VERIFIED_NOT_LISTED",
     "upload_attempted": false,
     "commit_attempted": false,
     "listing_claims_gps_sessions_background_activity_and_estimated_metrics": true,
-    "listing_disclaimer": "Does not explicitly state not-a-medical-device and the required explicit professional-consultation reminder in both locales.",
-    "no_new_play_api_readback_on_2026_11_09": true
+    "listing_disclaimer": "Current listing says it does not provide medical diagnosis or replace professional medical advice, but does not explicitly say it is not a medical device or provide the explicit professional-consultation reminder in both locales.",
+    "no_newer_successful_readback": true
   },
   "health_metric_truthfulness_candidate": {
     "pr": 282,
@@ -1592,14 +1611,13 @@
   "appdeploy_web_snapshot_readback": {
     "app_id": "thf-fitness-pulse-ul26f1",
     "status": "ready",
-    "snapshot_version": "1793087800913",
-    "snapshot_timestamp_utc": "2026-10-27T07:56:40.913Z",
+    "snapshot_version": "1794247542845",
+    "snapshot_timestamp_utc": "2026-11-09T18:05:42.845Z",
     "secret_names": [],
-    "backend_errors": 0,
-    "frontend_errors": [
-      "WebGL context creation failure",
-      "remote Noto Sans Arabic font load failure"
-    ],
+    "frontend_errors": [],
+    "network_errors": [],
+    "backend_errors": [],
+    "privacy_and_deletion_pages_exact_match_canonical_repository": true,
     "read_only": true,
     "not_android_or_play_evidence": true
   },
@@ -1636,7 +1654,7 @@
     "app_test_source_sha": "d3f051103054c73a08bc4faf8c57fd100e15932f",
     "base_sha": "c105b6c10d4d784b64a9e8ff25e4656073434629",
     "ahead_by": 8,
-    "behind_by": 0,
+    "behind_by": 15,
     "docs_only_commits_after_app_test_source": 4,
     "workflow_run": 42573716669,
     "workflow_job_id": 129017045460,
@@ -1667,8 +1685,14 @@
     "validation_version_code": 51019,
     "duplicate_aab_bytes_from_run": 42572575827,
     "duplicate_aab_rebuild_note": "PR workflow rebuilt identical AAB bytes after documentation-only commits; not a new release artifact; no upload.",
-    "merge_hold": "app.js overlaps PR #282 and open exercise UX handoffs",
-    "physical_p0": "BLOCKED_NOT_RUN"
+    "merge_hold": "Base diverged 8 ahead/15 behind and app.js is shared with PR #282 and open exercise UX handoffs; do not merge or partially cherry-pick.",
+    "physical_p0": "BLOCKED_NOT_RUN",
+    "canonical_head_at_refresh": "c8b89e63ff8daecdbd0f244681c2f7338d27ce82",
+    "compare_status": "diverged",
+    "merge_base": "c105b6c10d4d784b64a9e8ff25e4656073434629",
+    "github_mergeable": false,
+    "workflow_attempt": 1,
+    "aab_has_jar_signature_entries": false
   },
   "release_decision": {
     "internal_version_code": 51019,
@@ -1711,5 +1735,6 @@
     "health_declaration_submitted": false,
     "deployed_at": "2026-11-09T18:05:42.845Z",
     "qa_timestamp": "2026-11-09T18:06:00.034Z"
-  }
+  },
+  "canonical_branch_head_at_refresh": "c8b89e63ff8daecdbd0f244681c2f7338d27ce82"
 }
