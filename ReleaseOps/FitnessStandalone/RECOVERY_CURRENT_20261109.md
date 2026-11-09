@@ -20,7 +20,7 @@ PR #283 fixes stale/false GPS accuracy presentation and paused/process-death sna
 ## Release and Play
 
 - Internal 51019 remains completed; alpha 51007 remains draft; Production was not listed/verified.
-- Latest independent Play readback: run 42508799594, job 128817153188 succeeded, artifact 13627803896. ZIP SHA-256 `dd0dea0844d11e8bef03caa35a59c4752b92862a839b163481d574ca1ccf0954` re-downloaded and recomputed on 2026-11-09; embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`. Readback date is 2026-11-08, not a new Nov 9 API observation. uploadAttempted=false, commitAttempted=false.
+- Latest independent Play readback: run 42508799594, job 128817153188 succeeded, artifact 13627803896. Workflow comment trigger commit `f03ada0d74313e1c6d3248351de90204783d0ff8` was created for a fresh probe, but no new check/run/artifact was exposed as of the 2026-11-09 20:12 Cairo check; the Nov 8 readback remains current. ZIP SHA-256 `dd0dea0844d11e8bef03caa35a59c4752b92862a839b163481d574ca1ccf0954` re-downloaded and recomputed on 2026-11-09; embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`. Readback date is 2026-11-08, not a new Nov 9 API observation. uploadAttempted=false, commitAttempted=false.
 - Existing signed 51019 AAB SHA-256 `5dc7d0077ecfddd3224ca8557a3b4f6d0a5524cf194c0e547fc8b1605c7ba9c5` belongs to older source lineage `76053bd9127c38d8065eb7ac250bdeb34ab67854`, not current canonical source.
 - VersionCode 51020 remains unallocated. No new signed AAB, Play upload, listing edit or Production promotion.
 
