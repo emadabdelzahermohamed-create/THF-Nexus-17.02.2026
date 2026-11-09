@@ -14,7 +14,7 @@ The current activity map is already rendered by Leaflet in the local WebView and
 
 - Keep Fused Location Provider as the preferred source when Google Play services is present. It is free to use for this app flow and does not require a Google Maps API key or Maps billing.
 - Do not assume a successful Fused Location Provider subscription guarantees callbacks. Add a bounded watchdog: if no accepted fix arrives within 8 seconds, or the last accepted fix becomes 12 seconds stale, register Android framework LocationManager GPS and network providers as a fallback.
-- Keep the fallback registration idempotent and remove its watchdog on pause, finish, or service destruction.
+- Keep fallback registration idempotent, stop Fused updates after the framework fallback is successfully registered, and remove the watchdog on pause, finish, or service destruction.
 - Keep the existing accuracy, monotonic timestamp, mock-location, speed/jump, movement-activation and distance-accumulation gates. Do not use map display smoothing for metrics.
 - Show accepted accuracy only while the GPS state is ready; missing accuracy must remain unavailable, not become a false 0 m. A paused session must explicitly report paused and clear stale accuracy.
 - This fallback improves resilience when the fused subscription is silent. It cannot make a weak satellite signal accurate, defeat device power management, or replace physical walk/run/cycle tests.
@@ -28,7 +28,7 @@ The current activity map is already rendered by Leaflet in the local WebView and
 
 ## Google Maps Rx link
 
-android-maps-rx is an RxJava adapter for Google Maps/Places SDK events. It does not provide a location provider, GPS fusion, satellite data, accuracy filtering, route smoothing, background tracking, or synchronization. It also does not remove Maps SDK key/billing requirements. It is not part of the GPS repair.
+The googlemaps/android-maps-rx repository is officially archived and deprecated. It is an RxJava adapter for Google Maps/Places SDK events. It does not provide a location provider, GPS fusion, satellite data, accuracy filtering, route smoothing, background tracking, or synchronization. It also does not remove Maps SDK key/billing requirements. It is not part of the GPS repair.
 
 ## Candidate source changes
 
