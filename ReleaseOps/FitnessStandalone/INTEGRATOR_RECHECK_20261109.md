@@ -114,3 +114,29 @@ The existing TopHeroFit AppDeploy app is on the free plan. Snapshot 179424754284
 5. Complete Health declaration, Data Safety, current public privacy/deletion page readback and bilingual medical disclosures.
 6. Verify competition deployment/admin-key readiness; keep all unverified scores reward-ineligible.
 7. Allocate a versionCode greater than 51019 only after owner API/key prerequisites, exact-head Android CI and physical P0 pass. Production only after policy/privacy and physical gates.
+
+
+## 2026-11-09 20:20 Cairo refresh
+
+The canonical branch HEAD before the evidence refresh sequence was c8b89e63ff8daecdbd0f244681c2f7338d27ce82; the current Android app-source SHA remains 2b5d44668d33b9e9faac5d8ace9753e5f6032ad3. The 15 commits since PR #283's base are workflow/release-evidence-only.
+
+### GPS candidate and exact CI
+
+PR #283 exact head 645d11cc141e1b40be98e1a53ebb20f979441f70 passed exact-head run [42573716669](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42573716669), attempt 1. Android unit 220/220; product 60/60; source-contract 36/36; backend 29/29; lint 0 errors/16 warnings/1 hint; API 36, debug APK and validation AAB tasks succeeded. Artifact 13654725577 was downloaded and rehashed: ZIP a2c28279cfbe30a82b6b0fc77a45fbdc28ab2d40139971f4b350e4f5b64c5161; QA APK 76bb278f83f7797ab7b840fa466186b32ce37d9eee619f1801c4718ff1edd85b; unsigned AAB e1d54e331a9611ad54891c1449ad0c0ed7fea97df604fee6f3406744f1c750b3. AAB has no JAR signature entries and is byte-identical to the prior run 42572575827; no new release bytes.
+
+Current PR compare against canonical head c8b89e63ff8daecdbd0f244681c2f7338d27ce82: 8 ahead / 15 behind, diverged from c105b6c10d4d784b64a9e8ff25e4656073434629, mergeable=false. The PR includes two documentation paths that have independently advanced on canonical and changes app.js, shared with #282 and open exercise UX handoffs. It remains Draft/unmerged; no rebase, cherry-pick, or merge.
+
+### Fresh Play readback
+
+The latest successful independent Play API observation is [run 42405709027, attempt 3](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42405709027), job 129340775331. Artifact 13698390469 ZIP SHA-256 ee01c04047136c005bd0826b7174bab09903d54930c27f3b85e92ae0f4b86d03 was independently recomputed and matches GitHub's artifact digest. Embedded JSON SHA-256: 09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63. API readback time: 2026-11-09 17:54:54 UTC. Internal 51019 completed; alpha 51007 draft; Production not listed/verified. uploadAttempted=false; commitAttempted=false.
+
+A later read-only probe attempt [42672026813](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42672026813) failed before job creation (zero jobs, zero artifacts); it did not make a newer Play observation. No Play mutation is evidenced.
+
+### Remaining gates
+
+- Desktop Commander localhost is OFFLINE, last seen about 31 hours ago. Phone/session state unknown; preserve it. No ADB/install/launch/Stop/session action. Physical P0 remains BLOCKED_NOT_RUN.
+- Native Google Maps remains blocked by owner key-inventory permission and unlinked billing; preflight 41684077962 (2026-11-03) is still the latest. No paid infrastructure.
+- #282 Health null-vs-zero UI passed exact-head CI but is held for shared app.js; #93 Health Services and #188 permission gate have no exact-head Android CI; #248 GPS route smoothing has local-only tests; #216 workout-session resume has no exact-head CI and is not the GPS activity-session path.
+- #269 competition source has server-owned strength event/membership/capacity/submission/leaderboard logic, but no seeded event, no admin key, no independent deployment readback; scores remain SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED and reward-ineligible.
+- No explicit current lease registry found. Shared resources are not assumed free.
+- VersionCode 51020 remains unallocated; no new signed AAB, Play upload, listing edit, declaration submission or Production promotion. Release HOLD.
