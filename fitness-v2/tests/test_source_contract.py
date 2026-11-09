@@ -759,6 +759,20 @@ class OpenStreetMapTileClientSourceContractTest(unittest.TestCase):
         self.assertIn("isAllowedMapTileUrl", policy)
 
 
+class DeviceLocationSettingsRecoverySourceContractTest(unittest.TestCase):
+    def test_location_off_has_a_native_settings_recovery_action(self):
+        activity = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+
+        self.assertIn("Settings.ACTION_LOCATION_SOURCE_SETTINGS", activity)
+        self.assertIn("fun openLocationSettings()", activity)
+        self.assertIn('id="activityLocationSettingsBtn"', html)
+        self.assertIn("gpsFixState!=='off'", app)
+        self.assertIn("N?.openLocationSettings?.()", app)
+        self.assertIn("enableDeviceLocation:'Enable device location'", app)
+
+
 class ActivityLocationFallbackSourceContractTest(unittest.TestCase):
     def test_fused_subscription_has_a_bounded_android_provider_fallback(self):
         service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()

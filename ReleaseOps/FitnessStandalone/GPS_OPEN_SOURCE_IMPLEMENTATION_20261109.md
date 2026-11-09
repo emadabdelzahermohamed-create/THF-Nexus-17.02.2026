@@ -26,6 +26,10 @@ The current activity map is already rendered by Leaflet in the local WebView and
 - Respect each provider's caching, attribution, identification and rate limits. The public tile.openstreetmap.org service is best-effort, has no SLA, and explicitly prohibits bulk prefetch/offline tile downloads. OSM data is free/open, but its community tile servers are not an unlimited free production CDN.
 - For reliable scale or offline map packs, select a provider that explicitly permits the intended use or self-host regional vector/raster tiles. Do not scrape public OSM tile servers.
 
+## Device-level location gate observed on 2026-11-09
+
+The connected SM-A217F has TopHeroFit 51019 installed from Google Play and the app's fine/coarse location permissions are granted, but Android secure setting location_mode is 0 (device location disabled). No app GPS accuracy test can pass while the system-wide location service is off. The app now offers a button that opens Android Location settings when it detects the disabled state; it does not silently enable a device-wide privacy setting.
+
 ## Google Maps Rx link
 
 The googlemaps/android-maps-rx repository is officially archived and deprecated. It is an RxJava adapter for Google Maps/Places SDK events. It does not provide a location provider, GPS fusion, satellite data, accuracy filtering, route smoothing, background tracking, or synchronization. It also does not remove Maps SDK key/billing requirements. It is not part of the GPS repair.
