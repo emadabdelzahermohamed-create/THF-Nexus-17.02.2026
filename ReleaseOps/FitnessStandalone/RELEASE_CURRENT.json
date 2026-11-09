@@ -1466,7 +1466,17 @@
     "no_app_source_merge": true,
     "no_version_allocation": true,
     "no_signing": true,
-    "no_play_write": true
+    "no_play_write": true,
+    "appdeploy_policy_sync": {
+      "snapshot_version": "1794247542845",
+      "status": "ready",
+      "exact_repo_source_match": true,
+      "changed_paths": [
+        "public/privacy.html",
+        "public/account-deletion.html",
+        "tests/tests.json"
+      ]
+    }
   },
   "latest_play_readback": {
     "run_id": 42508799594,
@@ -1574,12 +1584,15 @@
     "provenance": "PROVIDER_AND_DEVICE_METADATA_HEURISTIC_NOT_CRYPTOGRAPHIC_ATTESTATION",
     "health_apps_declaration": "HISTORICAL_DRAFT_VERSION_CODE_51003; NOT_SUBMITTED",
     "play_privacy_policy_url": "NOT_VERIFIED_BY_CURRENT_PLAY_READBACK",
-    "listing_medical_disclaimer": "MISSING_EXPLICIT_NOT_A_MEDICAL_DEVICE_AND_CONSULT_HEALTHCARE_PROFESSIONAL_WORDING_IN_BOTH_LOCALES",
+    "listing_medical_disclaimer": "MISSING_EXPLICIT_NOT_A_MEDICAL_DEVICE_AND_EXPLICIT_PROFESSIONAL_CONSULTATION_WORDING_IN_BOTH_LOCALES",
     "repository_privacy_pages": "CURRENT_SOURCE_INCLUDES_PURCHASE_AND_EXTERNAL_IDENTITY_DISCLOSURES",
-    "appdeploy_snapshot": "STALE_2026_10_27; STORED_PRIVACY_AND_DELETION_PAGES_LAG_REPOSITORY",
-    "public_page_reachability": "NOT_VERIFIED",
+    "appdeploy_snapshot": "CURRENT_20261109; snapshot 1794247542845 ready; privacy and account-deletion source exactly matches canonical repository; QA frontend/network/backend errors none",
+    "public_page_reachability": "NOT_INDEPENDENTLY_VERIFIED; AppDeploy deployment ready; external browser open inaccessible",
     "no_listing_or_declaration_write": true,
-    "production_gate": "BLOCKED_PENDING_DECLARATION_PRIVACY_DISCLOSURE_AND_PHYSICAL_P0"
+    "production_gate": "BLOCKED_PENDING_HEALTH_DECLARATION_PLAY_PRIVACY_URL_LISTING_DISCLOSURES_AND_PHYSICAL_P0",
+    "appdeploy_snapshot_version": "1794247542845",
+    "appdeploy_privacy_repo_blob": "a5d43ac08ffeff52a0e9c35bde1d6ade2a384d82",
+    "appdeploy_deletion_repo_blob": "031be7223f956b5593fb848ec3d08a22a3a4077e"
   },
   "gps_truthfulness_candidate_20261109": {
     "pr": 283,
@@ -1631,5 +1644,36 @@
     "play_write": false,
     "production": "NOT_VERIFIED",
     "release_gate": "HOLD"
+  },
+  "appdeploy_policy_sync_20261109": {
+    "app_id": "thf-fitness-pulse-ul26f1",
+    "plan": "free",
+    "snapshot_version": "1794247542845",
+    "deployment_status": "ready",
+    "live_url": "https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/",
+    "changed_paths": [
+      "public/privacy.html",
+      "public/account-deletion.html",
+      "tests/tests.json"
+    ],
+    "privacy_repo_blob": "a5d43ac08ffeff52a0e9c35bde1d6ade2a384d82",
+    "deletion_repo_blob": "031be7223f956b5593fb848ec3d08a22a3a4077e",
+    "deployed_source_exact_match": true,
+    "tests_count": 12,
+    "test_change": "Deletion disclosure test now asserts Google Play cosmetic-purchase data disclosure and retention of Google Play order records after THF account-data deletion.",
+    "validation_valid": true,
+    "validation_errors": [],
+    "qa_frontend_errors": [],
+    "qa_network_errors": [],
+    "qa_backend_errors": [],
+    "validation_warnings": [
+      "Existing tests/tests.json contains 12 tests; AppDeploy recommends 3–5 for new/substantial suites."
+    ],
+    "public_http_readback": "NOT_VERIFIED; browser open was inaccessible",
+    "backend_changed": false,
+    "secrets_changed": false,
+    "billing_changed": false,
+    "play_listing_changed": false,
+    "health_declaration_submitted": false
   }
 }
