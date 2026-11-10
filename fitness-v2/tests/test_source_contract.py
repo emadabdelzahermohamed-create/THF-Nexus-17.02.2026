@@ -772,5 +772,36 @@ class GpsAccuracyPresentationSourceContractTest(unittest.TestCase):
         self.assertIn("lastObservedAccuracyMetres = null", resume)
         self.assertIn("lastAccuracyMetres = null", resume)
 
+
+class ActivityLocationFallbackSourceContractTest(unittest.TestCase):
+    def test_delayed_fused_failure_cannot_rearm_location_updates(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityLocationFallbackPolicy.kt").read_text()
+
+        registration = service[
+            service.index("private fun registerActivitySources"):
+            service.index("private fun registerLegacyLocationProviders")
+        ]
+        fallback = service[
+            service.index("private fun registerLegacyLocationProviders"):
+            service.index("private fun registerStepSource")
+        ]
+        unregister = service[
+            service.index("private fun unregisterActivitySources"):
+            service.index("override fun onLocationChanged")
+        ]
+
+        self.assertIn("val registrationGeneration = ++activityLocationRegistrationGeneration", registration)
+        self.assertIn("registerLegacyLocationProviders(mode, registrationGeneration)", registration)
+        self.assertIn("activityLocationRegistrationGeneration += 1L", unregister)
+        self.assertIn("ActivityLocationFallbackPolicy.shouldRegister(", fallback)
+        self.assertIn("requestGeneration = registrationGeneration", fallback)
+        self.assertIn("currentGeneration = activityLocationRegistrationGeneration", fallback)
+        self.assertIn("activeMode = activityMode", fallback)
+        self.assertIn("paused = activityPaused", fallback)
+        self.assertIn("requestGeneration == currentGeneration", policy)
+        self.assertIn("activeMode == requestedMode", policy)
+        self.assertIn("!paused", policy)
+
 if __name__ == "__main__":
     unittest.main()
