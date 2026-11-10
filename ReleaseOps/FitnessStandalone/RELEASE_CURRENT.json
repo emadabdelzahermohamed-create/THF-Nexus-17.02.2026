@@ -1511,7 +1511,7 @@
     "observed_at": "2026-11-10T18:19:48Z",
     "local_time": "2026-11-10 20:19:48 Africa/Cairo",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
-    "canonical_branch_head_before_evidence_refresh": "baab97b1ff1e2c4f0ca0bba7b1921ad9e5ff43b7",
+    "canonical_branch_head_before_evidence_refresh": "7e6577eebd57325ece74b2af6763add92bad0146",
     "evidence_checkpoint_head": "94514fcd6c720af2c4f13f5f0d834a6fa54ab68e",
     "canonical_app_source_sha": "baab97b1ff1e2c4f0ca0bba7b1921ad9e5ff43b7",
     "integrator_checkpoint": "ReleaseOps/FitnessStandalone/INTEGRATOR_RECHECK_20261110.md",
@@ -1535,8 +1535,10 @@
     "candidate_compare": {
       "status": "diverged",
       "ahead_by": 13,
-      "behind_by": 1,
-      "merge_base": "9b5db58e809fa7d5e639bc4ee55df03d100467e8"
+      "behind_by": 5,
+      "merge_base": "9b5db58e809fa7d5e639bc4ee55df03d100467e8",
+      "canonical_head_checked": "7e6577eebd57325ece74b2af6763add92bad0146",
+      "note": "Five canonical commits after the merge base are #285's disjoint Health merge plus four evidence-only checkpoint commits; the GPS candidate has not been rebased."
     },
     "play_readback_run": 42405709027,
     "play_readback_attempt": 3,
@@ -1768,7 +1770,7 @@
     "deployed_at": "2026-11-09T18:05:42.845Z",
     "qa_timestamp": "2026-11-09T18:06:00.034Z"
   },
-  "canonical_branch_head_at_refresh": "94514fcd6c720af2c4f13f5f0d834a6fa54ab68e",
+  "canonical_branch_head_at_refresh": "7e6577eebd57325ece74b2af6763add92bad0146",
   "previous_appdeploy_web_snapshot_readback_20261027": {
     "app_id": "thf-fitness-pulse-ul26f1",
     "status": "ready",
@@ -1843,8 +1845,10 @@
     "compare": {
       "status": "diverged",
       "ahead_by": 13,
-      "behind_by": 1,
-      "merge_base": "9b5db58e809fa7d5e639bc4ee55df03d100467e8"
+      "behind_by": 5,
+      "merge_base": "9b5db58e809fa7d5e639bc4ee55df03d100467e8",
+      "canonical_head_checked": "7e6577eebd57325ece74b2af6763add92bad0146",
+      "note": "Five canonical commits after the merge base are #285's disjoint Health merge plus four evidence-only checkpoint commits; the GPS candidate has not been rebased."
     },
     "physical_p0": "BLOCKED_DEVICE_OFFLINE",
     "owner_maps_preflight_run": 41684077962,
@@ -1905,6 +1909,14 @@
     "version_51020_allocated": false,
     "new_signed_aab": false,
     "play_write": false,
-    "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED"
+    "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED",
+    "candidate_compare": {
+      "status": "diverged",
+      "ahead_by": 13,
+      "behind_by": 5,
+      "merge_base": "9b5db58e809fa7d5e639bc4ee55df03d100467e8",
+      "canonical_head_checked": "7e6577eebd57325ece74b2af6763add92bad0146",
+      "note": "Five canonical commits after the merge base are #285's disjoint Health merge plus four evidence-only checkpoint commits; the GPS candidate has not been rebased."
+    }
   }
 }
