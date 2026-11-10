@@ -183,10 +183,10 @@
     "physical_p0": "BLOCKED_DEVICE_OFFLINE; current phone/session state unknown; preserve; no ADB/session actions",
     "health_policy_privacy": "PR #285 merged as baab97b1ff1e2c4f0ca0bba7b1921ad9e5ff43b7 after exact-head CI 42827029570. Typed Health Connect swimming gate requires approved writer, active/automatic recording, valid interval, stable ID and watch/fitness-band metadata; this is not cryptographic attestation or physical watch proof. #282 exact-head CI passed on old base but remains held for app.js overlap; #93 reader and #188 permission guard remain open. Physical Health grant/revoke/no-data/error, Play declaration, Data Safety and privacy gates remain unverified.",
     "production": "NOT_VERIFIED",
-    "maps_native_sdk_key": "BLOCKED_OWNER_API_KEY_AND_BILLING_PREREQUISITES; latest preflight 41684077962 (2026-11-03): APIs enabled, key inventory permission denied, no restricted Android key visible, no billing account linked",
+    "maps_native_sdk_key": "NOT_REQUIRED_FOR_CURRENT_OSM_LEAFLET_STACK; do not add Google Maps Rx, Maps SDK billing or a Maps key. Google directions remains an optional external handoff.",
     "listing_truthfulness": "OPEN; live listing claims GPS/background sessions and estimated metrics; current medical disclaimer lacks explicit not-a-medical-device and professional-consultation wording in both locales; physical P0 incomplete; no listing edit",
     "competition_backend": "MERGED_SOURCE_ONLY; server-owned event/membership/capacity/submission/leaderboard code exists for strength kg·reps; scores SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED and reward-ineligible; no event seed, admin key or independent deployment verification.",
-    "gps_accuracy": "PR #284 current branch HEAD 427ffe79ae7459fd062ce932bc1239a53cf2fcda passed exact branch-head Android CI run 42776754514 (product 60/60, source 40/40, backend 29/29, Android unit 225/225 per the downloaded Gradle HTML report (0 failures); lint/assemble/bundle PASS). Validation AAB 961e639ae8c348c866d3d409a68d24471b08a1a8d9c8cd4a1b226a3a221077cc is unsigned and byte-identical to source-head run 42773832856. PR remains Draft: 13 ahead/1 behind, app.js overlaps #282/exercise UX, MainActivity ownership claim #93, physical P0 not run, owner Maps API/key/billing gate unresolved."
+    "gps_accuracy": "PR #284 current branch HEAD 427ffe79ae7459fd062ce932bc1239a53cf2fcda passed exact branch-head Android CI run 42776754514 (product 60/60, source 40/40, backend 29/29, Android unit 225/225 per the downloaded Gradle HTML report (0 failures); lint/assemble/bundle PASS). Validation AAB 961e639ae8c348c866d3d409a68d24471b08a1a8d9c8cd4a1b226a3a221077cc is unsigned and byte-identical to source-head run 42773832856. PR remains Draft: 13 ahead/1 behind, app.js overlaps #282/exercise UX, MainActivity ownership claim #93, physical P0 not run, no Maps SDK key/billing is required for Leaflet/OSM; shared-file and physical P0 gates remain."
   },
   "next_action": "Keep PR #284 Draft until physical P0, owner Maps API/key prerequisites and shared app.js/MainActivity ownership are resolved. Preserve the unknown phone session until the authorized device is online and safely idle. Complete Health privacy/declaration and physical provenance gates; keep competition scores reward-ineligible until admin key, event seed, deployment and physical validation are verified. Implement route backup only from ROUTE_SYNC_DESIGN_20261110.md with default-off location consent and tested deletion. Allocate a unique versionCode greater than 51019 only after owner prerequisites, exact-head Android CI and physical P0; sign and upload only the resulting new AAB; Production only after policy/privacy and physical gates.",
   "canonical_validation": {
@@ -251,7 +251,7 @@
     "promotion_pins_old_source_sha": "76053bd9127c38d8065eb7ac250bdeb34ab67854",
     "next_release_version_code": 51020,
     "status": "BLOCKED_BEFORE_VERSION_ALLOCATION",
-    "blocker": "Owner Maps API/key/billing prerequisites and physical P0 remain blocked; authorized phone is offline and current session state is unknown. PR #284 passed exact branch-head CI but remains Draft due physical P0, app.js overlap with #282/exercise UX, and MainActivity ownership claim #93. PR #285 Health swimming metadata gate is merged after exact-head CI. Validation AABs are unsigned and unuploaded. Route sync is design-only. Do not allocate 51020, sign, or upload.",
+    "blocker": "Separate owner release API/key prerequisites, exact-head Android CI on the final combined source, physical P0, and privacy gates remain. The authorized phone is offline and current session state is unknown. PR #284 passed exact branch-head CI but remains Draft for physical P0 and shared-file reconciliation: app.js overlaps #282/#216/exercise UX and MainActivity is claimed by #93. The current Leaflet/OSM/TopoMap/EOX map needs no Google Maps SDK key or billing; do not add Google Maps Rx, Maps SDK billing, or a key. PR #285 is merged after exact-head CI. Validation AABs are unsigned and unuploaded. Route sync is design-only. Do not allocate 51020, sign, or upload.",
     "latest_validation_runs": [
       {
         "pr": 215,
@@ -587,7 +587,7 @@
     "next_version_allocated": false,
     "phone_connection": "OFFLINE; last seen about 8 hours before 20:31 Cairo; session state unknown",
     "physical_p0": "BLOCKED_NOT_RUN",
-    "maps_native_sdk": "OWNER_API_KEY_AND_BILLING_PREREQUISITES_BLOCKED",
+    "maps_native_sdk": "NOT_REQUIRED_FOR_CURRENT_OSM_LEAFLET_STACK; do not add Google Maps SDK, billing or key.",
     "production": "NOT_VERIFIED",
     "lease_registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
     "new_health_ui_handoff": {
@@ -1772,7 +1772,7 @@
     "deployed_at": "2026-11-09T18:05:42.845Z",
     "qa_timestamp": "2026-11-09T18:06:00.034Z"
   },
-  "canonical_branch_head_at_refresh": "9c4e3e318f573b8b9974a3ba467f584fc74c171e",
+  "canonical_branch_head_at_refresh": "8db67a18002df0f9cedce48c31619433eb1876bd",
   "previous_appdeploy_web_snapshot_readback_20261027": {
     "app_id": "thf-fitness-pulse-ul26f1",
     "status": "ready",
@@ -1847,14 +1847,14 @@
     "compare": {
       "status": "diverged",
       "ahead_by": 13,
-      "behind_by": 6,
+      "behind_by": 7,
       "merge_base": "9b5db58e809fa7d5e639bc4ee55df03d100467e8",
-      "canonical_head_checked": "9c4e3e318f573b8b9974a3ba467f584fc74c171e",
-      "note": "Six canonical commits after the merge base are #285's disjoint Health merge plus five evidence-only checkpoint commits; the GPS candidate has not been rebased."
+      "canonical_head_checked": "8db67a18002df0f9cedce48c31619433eb1876bd",
+      "note": "Seven canonical commits after the merge base at pre-refresh head 8db67a18002df0f9cedce48c31619433eb1876bd are #285's disjoint Health merge plus six evidence-only commits. This refresh adds one further evidence-only commit; live post-refresh comparison is 13 ahead / 8 behind. GPS candidate is not rebased."
     },
     "physical_p0": "BLOCKED_DEVICE_OFFLINE",
     "owner_maps_preflight_run": 41684077962,
-    "merge_hold": "Physical P0, owner Maps API/key prerequisites, app.js overlap with #282/exercise UX and MainActivity ownership claim #93."
+    "merge_hold": "Physical P0 and shared-file reconciliation: app.js overlaps #282/#216/exercise UX and MainActivity is claimed by #93. Leaflet/OSM/TopoMap/EOX requires no Maps SDK key or billing; do not add Google Maps Rx, Maps SDK billing or a key."
   },
   "health_swimming_provenance_20261110": {
     "pr": 285,
@@ -1907,7 +1907,7 @@
     "play_readback_run": 42405709027,
     "play_readback_artifact": 13791872061,
     "physical_p0": "BLOCKED_DEVICE_OFFLINE",
-    "maps_owner_gate": "BLOCKED_OWNER_API_KEY_AND_BILLING_PREREQUISITES",
+    "maps_owner_gate": "NOT_REQUIRED_FOR_CURRENT_OSM_LEAFLET_STACK; do not add Google Maps Rx, Maps SDK billing or a Maps key.",
     "version_51020_allocated": false,
     "new_signed_aab": false,
     "play_write": false,
@@ -1915,12 +1915,12 @@
     "candidate_compare": {
       "status": "diverged",
       "ahead_by": 13,
-      "behind_by": 6,
+      "behind_by": 7,
       "merge_base": "9b5db58e809fa7d5e639bc4ee55df03d100467e8",
-      "canonical_head_checked": "9c4e3e318f573b8b9974a3ba467f584fc74c171e",
-      "note": "Six canonical commits after the merge base are #285's disjoint Health merge plus five evidence-only checkpoint commits; the GPS candidate has not been rebased."
+      "canonical_head_checked": "8db67a18002df0f9cedce48c31619433eb1876bd",
+      "note": "Seven canonical commits after the merge base at pre-refresh head 8db67a18002df0f9cedce48c31619433eb1876bd are #285's disjoint Health merge plus six evidence-only commits. This refresh adds one further evidence-only commit; live post-refresh comparison is 13 ahead / 8 behind. GPS candidate is not rebased."
     },
-    "canonical_branch_head_before_refresh": "9c4e3e318f573b8b9974a3ba467f584fc74c171e",
+    "canonical_branch_head_before_refresh": "8db67a18002df0f9cedce48c31619433eb1876bd",
     "play_readback_attempt": 4,
     "play_readback_artifact_sha256": "bffbb6484802331c90f7b49ba029ab373f63cc2f13d94d10b980907008e775ee",
     "play_readback_embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63"
@@ -1948,5 +1948,19 @@
       "ignored": 0
     },
     "correction": "The downloaded Gradle HTML reports contain 225 Android unit tests per run, not 450. The earlier 450/450 aggregate count was overstated; this is a reporting correction, not a test failure."
+  },
+  "maps_stack_decision_20261110": {
+    "status": "OPEN_SOURCE_STACK_SELECTED",
+    "in_app_renderer": "Leaflet in local WebView",
+    "layers": [
+      "OpenStreetMap streets",
+      "OpenTopoMap terrain",
+      "EOX Sentinel-2 cloudless 2016 satellite/hybrid"
+    ],
+    "google_maps_sdk": "NOT_REQUIRED",
+    "billing": "NOT_REQUIRED",
+    "api_key": "NOT_REQUIRED",
+    "google_directions": "Optional external handoff only",
+    "instruction": "Do not add archived Google Maps Rx, Google Maps SDK billing, or a Google Maps key."
   }
 }

@@ -41,21 +41,23 @@ Run [42694452852](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.0
 
 ### Current PR #284 merge blockers
 
-- Compare after #285 merge: 13 commits ahead / 6 behind canonical, merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`; no rebase/cherry-pick was performed.
+- Compare at pre-refresh canonical head `8db67a18002df0f9cedce48c31619433eb1876bd`: 13 ahead / 7 behind, merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`; this evidence-only refresh adds one canonical commit, so the live post-refresh comparison is 13 ahead / 8 behind. No rebase/cherry-pick was performed.
 - PR #282 is open/draft and changes `app.js` for Health metric null-vs-zero truthfulness. Its base is old (`4e337838c079a75d9615653d14c38838e55d19ef`); exact-head CI exists on its old head, but open exercise UX handoffs also modify `app.js`. Reconcile and retest the combined file tree.
+- PR #216 remains open and changes `app.js` for active-workout resume policy. It is separate from GPS activity-session persistence but overlaps #284's `app.js`; no exact-head Android CI is recorded. Reconcile it with #282 and exercise UX handoffs in one combined JS tree.
+- PR #202 is closed; its `ActivityTrackingService.kt` / `ActivitySessionCheckpoint.kt` work is already in merged #264. No other active open PR directly changes `ActivityTrackingService.kt`; #284 is the current direct service handoff.
 - PR #93 is open and claims `MainActivity.kt` for the Health-settings bridge, alongside Health reader/manifest/rationale surfaces. Reconcile that bridge with the location-settings bridge in #284 before merging.
 - PR #248 is open/draft, adds only a display-smoothing helper and test, has an old base (`4a2315fd16be8610396d6415292f4863f90b8dd6`) and local 11/11 stub-harness evidence only. It has no exact-head Android Gradle/JUnit CI and is not wired into the route path.
 - PR #215 is closed; its GPS source was superseded by #264, already in the canonical lineage. No other active direct ActivityTrackingService handoff was found.
 - No explicit active lease registry or lease PR was found. Treat #93's MainActivity ownership note as a file-level hold.
 
-Keep #284 Draft/unmerged until physical P0, owner Maps prerequisites and shared-file reconciliation pass.
+Keep #284 Draft/unmerged until physical P0 and shared-file reconciliation pass. The Leaflet/OSM-derived map does not require a Google Maps SDK key or billing.
 
 ## 3. Device and Maps evidence
 
 - Current Desktop Commander `localhost` check is OFFLINE; the 2026-11-10 20:31 Cairo recheck saw it last online about 8 hours earlier. Last recorded device identity is Samsung SM-A217F / Android 12; Play package `com.topherofit.thf.pulse`.
 - Last recorded device-wide `location_mode=0` was from 2026-11-09. Current device/session state is unknown. No ADB device is available; no install, launch, Stop, pause/resume, settings or session action was attempted. Preserve the existing Play install and unknown session.
 - Physical P0 remains NOT RUN: stationary drift, measured outdoor route, jump/multipath rejection, screen-off/background, Home/reopen, pause/resume, Stop, process-death recovery, notifications and daily-vs-session steps.
-- Maps owner preflight 41684077962 (2026-11-03): Maps Android Backend and API Keys APIs enabled; key-inventory permission denied; no package/SHA-restricted Android key visible; no billing account linked. Native Google Maps SDK/traffic/transit remains owner-gated. No paid infrastructure, billing, key or secret change.
+- Historical Maps preflight 41684077962 (2026-11-03) found no visible restricted key and no billing account. This is not a blocker for the current Leaflet/OSM/TopoMap/EOX map; it needs no Maps SDK key or billing. Google directions is an optional external handoff. Do not add Google Maps Rx, Maps SDK billing, or a key.
 
 ## 4. Live Play state and release lineage
 

@@ -32,9 +32,11 @@ The earlier requested checkpoint run [42694452852](https://github.com/emadabdelz
 
 ### Merge hold and overlap
 
-After the disjoint #285 merge, PR #284 is 13 commits ahead / 6 behind canonical, with merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`. It remains Draft until physical P0 and owner Maps prerequisites pass and shared-file ownership is reconciled.
+At pre-refresh canonical head `8db67a18002df0f9cedce48c31619433eb1876bd`, PR #284 was 13 ahead / 7 behind, with merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`. This evidence-only refresh adds one canonical commit; the live post-refresh comparison is 13 ahead / 8 behind. Keep #284 Draft until physical P0 and shared-file ownership are reconciled. The current Leaflet/OSM-derived map does not require a Google Maps SDK key or billing.
 
 - #282 is open/draft and changes `app.js` for Health metric null-versus-zero truthfulness. It has exact-head CI on its old head but is based on older SHA `4e337838c079a75d9615653d14c38838e55d19ef`; it also overlaps open exercise UX handoffs. Reconcile/rebase and test the combined `app.js` tree before merge.
+- #216 remains open and changes `app.js` for active-workout resume policy. It is separate from GPS activity-session persistence but overlaps #284's `app.js`; no exact-head Android CI is recorded. Reconcile it with #282 and the exercise UX handoffs in one combined JS tree.
+- #202 is closed; its `ActivityTrackingService.kt` / `ActivitySessionCheckpoint.kt` work is already in the merged #264 baseline. No other active open PR directly changes `ActivityTrackingService.kt`; #284 is the current direct service handoff.
 - #93 remains open and claims `MainActivity.kt` for the Health-settings bridge plus Health service/manifest/rationale files. Treat that claim as an active file-level hold; reconcile the two settings bridges and run exact combined-head CI before merging #284.
 - #248 remains open/draft and adds only `ActivityGpsRouteSmoother.kt` plus its test. Its base is stale (`4a2315fd16be8610396d6415292f4863f90b8dd6`); its 11/11 local stub-harness result is not Android Gradle/JUnit CI. It is not wired into the route path and must remain display-only; raw accepted fixes remain the only metric source.
 - #215 is closed; its GPS/session source was superseded by #264, already in the canonical lineage. #284 is the current active ActivityTrackingService fallback/generation-guard handoff.
@@ -64,13 +66,13 @@ Latest successful independent Play state readback is [run 42405709027, attempt 4
 - Existing signed 51019 AAB SHA-256 remains `5dc7d0077ecfddd3224ca8557a3b4f6d0a5524cf194c0e547fc8b1605c7ba9c5`, built from older source lineage `76053bd9127c38d8065eb7ac250bdeb34ab67854`. This is the current Play release artifact, not an artifact for canonical source `baab...` or GPS candidate `427ffe...`.
 - The #284 and #285 AABs are unsigned validation artifacts only. No new signed AAB exists for current source, and the Nov 9 Play state probe is not a readback of either candidate artifact.
 
-Keep versionCode `51020` unallocated. The next code must be greater than 51019 and allocated only after owner Maps API/key prerequisites, exact-head Android CI on the final combined source and physical P0 pass. Production remains NOT_VERIFIED until policy/privacy and physical gates pass.
+Keep versionCode `51020` unallocated. The next code must be greater than 51019 and allocated only after separate owner release API/key prerequisites, exact-head Android CI on the final combined source and physical P0 pass. These release credentials are separate from Maps; do not add Google Maps Rx, Maps SDK billing or a Maps key. Production remains NOT_VERIFIED until policy/privacy and physical gates pass.
 
-## Device and owner Maps gates
+## Device and map decision
 
 - Current Desktop Commander check reports `localhost` OFFLINE; the 2026-11-10 20:31 Cairo recheck saw it last online about 8 hours earlier. Last known phone identity is Samsung SM-A217F / Android 12 with Play package `com.topherofit.thf.pulse`; last recorded device-wide `location_mode=0` was 2026-11-09. Current phone/session state is unknown. Preserve the existing install and any unknown live session.
 - No ADB device was available. No install, launch, Stop, pause/resume, session action, settings change or activity-data read was attempted. Physical GPS stationary-drift, measured-route, background/screen-off, notification, pause/resume and process-death P0 remain NOT RUN.
-- Latest owner Maps preflight remains run 41684077962 (2026-11-03): Maps Android Backend and API Keys APIs enabled, key-inventory permission denied, no package/SHA-restricted Android key visible, no billing account linked. Native Google Maps basemap/traffic/transit remains owner-gated. No permission retry, key, billing, secret or paid infrastructure change.
+- Historical Maps preflight 41684077962 (2026-11-03) found no visible restricted key and no billing account. This is not a blocker for the current Leaflet/OSM/TopoMap/EOX map, which needs no Maps SDK key or billing. Google directions remains an optional external handoff. Do not add Google Maps Rx, Maps SDK billing, or a key.
 
 ## Session, metrics, steps and competitions
 
@@ -87,4 +89,4 @@ Design-only document: [ROUTE_SYNC_DESIGN_20261110.md](ROUTE_SYNC_DESIGN_20261110
 
 ## Release decision
 
-**HOLD.** No paid infrastructure, no version allocation, no signing, no Play write, no Production promotion. Preserve the unknown phone session. Keep #284 Draft until physical P0, owner Maps prerequisites and shared-file reconciliation are complete. Keep Health/privacy and competition reward gates closed until their exact source, backend, policy and physical evidence passes.
+**HOLD.** No paid infrastructure, no version allocation, no signing, no Play write, no Production promotion. Preserve the unknown phone session. Keep #284 Draft until physical P0 and shared-file reconciliation are complete. The current in-app map is Leaflet/OSM-derived; do not add Google Maps Rx, Maps SDK billing, or a Maps key. Keep Health/privacy and competition reward gates closed until their exact source, backend, policy and physical evidence passes.
