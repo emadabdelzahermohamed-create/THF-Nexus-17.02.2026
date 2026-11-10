@@ -202,6 +202,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private var lastObservedLocation: Location? = null
     private var lastAccuracyMetres: Float? = null
     private var lastObservedAccuracyMetres: Float? = null
+    private var activityLocationRegistrationGeneration = 0L
     private val route = mutableListOf<ActivityRoutePoint>()
     private var sessionStartedAtWallMs = 0L
     private var lastActivityCheckpointWriteElapsedMs = 0L
@@ -352,6 +353,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             return
         }
 
+        val registrationGeneration = ++activityLocationRegistrationGeneration
         registerStepSource(mode)
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1_000L)
             .setMinUpdateIntervalMillis(1_000L)
@@ -370,15 +372,22 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         if (playServicesReady) {
             runCatching {
                 fusedLocationClient.requestLocationUpdates(request, fusedLocationCallback, Looper.getMainLooper())
-                    .addOnFailureListener { registerLegacyLocationProviders(mode) }
-            }.onFailure { registerLegacyLocationProviders(mode) }
+                    .addOnFailureListener { registerLegacyLocationProviders(mode, registrationGeneration) }
+            }.onFailure { registerLegacyLocationProviders(mode, registrationGeneration) }
         } else {
             registerLegacyLocationProviders(mode)
         }
     }
 
-    private fun registerLegacyLocationProviders(mode: ActivityMode) {
-        if (activityMode != mode) return
+    private fun registerLegacyLocationProviders(mode: ActivityMode, registrationGeneration: Long) {
+        if (!ActivityLocationFallbackPolicy.shouldRegister(
+                requestedMode = mode,
+                activeMode = activityMode,
+                paused = activityPaused,
+                requestGeneration = registrationGeneration,
+                currentGeneration = activityLocationRegistrationGeneration,
+            )
+        ) return
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) return
@@ -401,6 +410,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun unregisterActivitySources() {
+        activityLocationRegistrationGeneration += 1L
         gpsDistanceAccumulator.reset()
         runCatching { fusedLocationClient.removeLocationUpdates(fusedLocationCallback) }
         runCatching { locationManager.removeUpdates(this) }
