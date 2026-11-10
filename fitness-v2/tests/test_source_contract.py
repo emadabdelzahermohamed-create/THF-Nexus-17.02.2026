@@ -803,5 +803,28 @@ class ActivityLocationFallbackSourceContractTest(unittest.TestCase):
         self.assertIn('object GpsAccuracyPresentationPolicy', policy)
 
 
+
+class ActivityLocationRegistrationLifecycleSourceContractTest(unittest.TestCase):
+    def test_late_fused_task_completion_cannot_resurrect_a_paused_or_replaced_session(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityLocationFallbackPolicy.kt").read_text()
+
+        self.assertIn("private var locationRequestGeneration = 0L", service)
+        self.assertIn("val requestGeneration = locationRequestGeneration", service)
+        self.assertIn(".addOnSuccessListener {", service)
+        self.assertIn(".addOnFailureListener {", service)
+        self.assertIn("shouldKeepFusedLocationRegistration(", service)
+        self.assertIn("removeLocationUpdates(callback)", service)
+        self.assertIn("locationRequestGeneration += 1L", service)
+        self.assertIn("fun shouldKeepFusedLocationRegistration(", policy)
+
+    def test_framework_fallback_is_never_registered_for_a_paused_or_replaced_session(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityLocationFallbackPolicy.kt").read_text()
+
+        self.assertIn("shouldRegisterLegacyLocationProvider(", service)
+        self.assertIn("paused = activityPaused", service)
+        self.assertIn("fun shouldRegisterLegacyLocationProvider(", policy)
+
 if __name__ == "__main__":
     unittest.main()

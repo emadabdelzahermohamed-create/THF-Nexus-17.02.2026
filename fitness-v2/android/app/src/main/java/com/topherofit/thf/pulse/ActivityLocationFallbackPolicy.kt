@@ -21,4 +21,22 @@ object ActivityLocationFallbackPolicy {
         if (lastAccepted > nowElapsedMs) return false
         return nowElapsedMs - lastAccepted >= ACCEPTED_FIX_STALE_TIMEOUT_MS
     }
+    /**
+     * Keeps an asynchronous Fused Location Provider registration only for the session
+     * generation that requested it. A completion after pause, stop, or replacement must
+     * remove its own callback instead of leaving background location updates running.
+     */
+    fun shouldKeepFusedLocationRegistration(
+        sessionModeMatches: Boolean,
+        paused: Boolean,
+        generationMatches: Boolean,
+    ): Boolean = sessionModeMatches && !paused && generationMatches
+
+    /** Prevents an asynchronous failure/watchdog from starting framework updates after pause/stop. */
+    fun shouldRegisterLegacyLocationProvider(
+        sessionModeMatches: Boolean,
+        paused: Boolean,
+        alreadyRegistered: Boolean,
+    ): Boolean = sessionModeMatches && !paused && !alreadyRegistered
+
 }

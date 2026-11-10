@@ -229,11 +229,10 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             }
         }
     }
-    private val fusedLocationCallback = object : LocationCallback() {
-        override fun onLocationResult(result: LocationResult) {
-            result.locations.forEach(::onLocationChanged)
-        }
-    }
+    // Each async FLP request owns a unique callback and generation. A late completion
+    // must never resurrect location updates after Pause, Stop, or a replacement session.
+    private var locationRequestGeneration = 0L
+    private var fusedLocationCallback: LocationCallback? = null
     private val notificationTicker = object : Runnable {
         override fun run() {
             if (!hasLiveSession()) return
@@ -378,6 +377,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         registerStepSource(mode)
         locationRequestStartedElapsedMs = SystemClock.elapsedRealtime()
         legacyLocationProvidersRegistered = false
+        locationRequestGeneration += 1L
+        val requestGeneration = locationRequestGeneration
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1_000L)
             .setMinUpdateIntervalMillis(1_000L)
             // Never seed a new session with a cached last-known fix from before Start.
@@ -393,10 +394,53 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         val playServicesReady = GoogleApiAvailability.getInstance()
             .isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS
         if (playServicesReady) {
+            val callback = object : LocationCallback() {
+                override fun onLocationResult(result: LocationResult) {
+                    if (!ActivityLocationFallbackPolicy.shouldKeepFusedLocationRegistration(
+                            sessionModeMatches = activityMode == mode,
+                            paused = activityPaused,
+                            generationMatches = requestGeneration == locationRequestGeneration,
+                        )
+                    ) return
+                    result.locations.forEach(::onLocationChanged)
+                }
+            }
+            fusedLocationCallback = callback
             runCatching {
-                fusedLocationClient.requestLocationUpdates(request, fusedLocationCallback, Looper.getMainLooper())
-                    .addOnFailureListener { registerLegacyLocationProviders(mode) }
-            }.onFailure { registerLegacyLocationProviders(mode) }
+                fusedLocationClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
+                    .addOnSuccessListener {
+                        if (!ActivityLocationFallbackPolicy.shouldKeepFusedLocationRegistration(
+                                sessionModeMatches = activityMode == mode,
+                                paused = activityPaused,
+                                generationMatches = requestGeneration == locationRequestGeneration,
+                            )
+                        ) {
+                            runCatching { fusedLocationClient.removeLocationUpdates(callback) }
+                            if (fusedLocationCallback === callback) fusedLocationCallback = null
+                        }
+                    }
+                    .addOnFailureListener {
+                        if (fusedLocationCallback === callback) fusedLocationCallback = null
+                        if (ActivityLocationFallbackPolicy.shouldKeepFusedLocationRegistration(
+                                sessionModeMatches = activityMode == mode,
+                                paused = activityPaused,
+                                generationMatches = requestGeneration == locationRequestGeneration,
+                            )
+                        ) {
+                            registerLegacyLocationProviders(mode)
+                        }
+                    }
+            }.onFailure {
+                if (fusedLocationCallback === callback) fusedLocationCallback = null
+                if (ActivityLocationFallbackPolicy.shouldKeepFusedLocationRegistration(
+                        sessionModeMatches = activityMode == mode,
+                        paused = activityPaused,
+                        generationMatches = requestGeneration == locationRequestGeneration,
+                    )
+                ) {
+                    registerLegacyLocationProviders(mode)
+                }
+            }
         } else {
             registerLegacyLocationProviders(mode)
         }
@@ -407,7 +451,12 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun registerLegacyLocationProviders(mode: ActivityMode) {
-        if (activityMode != mode || legacyLocationProvidersRegistered) return
+        if (!ActivityLocationFallbackPolicy.shouldRegisterLegacyLocationProvider(
+                sessionModeMatches = activityMode == mode,
+                paused = activityPaused,
+                alreadyRegistered = legacyLocationProvidersRegistered,
+            )
+        ) return
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) return
@@ -426,9 +475,12 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }.getOrDefault(false)
         legacyLocationProvidersRegistered = registered
         if (registered) {
-            // Avoid interleaving "fused", "gps" and "network" fixes in one distance window.
-            // The accumulator deliberately re-anchors when its source changes.
-            runCatching { fusedLocationClient.removeLocationUpdates(fusedLocationCallback) }
+            // Invalidate any pending FLP Task before removing its exact callback. Its success
+            // listener will also see the generation mismatch and cannot re-register after fallback.
+            locationRequestGeneration += 1L
+            val callback = fusedLocationCallback
+            fusedLocationCallback = null
+            if (callback != null) runCatching { fusedLocationClient.removeLocationUpdates(callback) }
         }
     }
 
@@ -442,8 +494,11 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         locationFallbackHandler.removeCallbacks(locationFallbackWatchdog)
         legacyLocationProvidersRegistered = false
         locationRequestStartedElapsedMs = 0L
+        locationRequestGeneration += 1L
+        val callback = fusedLocationCallback
+        fusedLocationCallback = null
+        if (callback != null) runCatching { fusedLocationClient.removeLocationUpdates(callback) }
         gpsDistanceAccumulator.reset()
-        runCatching { fusedLocationClient.removeLocationUpdates(fusedLocationCallback) }
         runCatching { locationManager.removeUpdates(this) }
         runCatching { sensorManager.unregisterListener(this) }
     }
