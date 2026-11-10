@@ -5,7 +5,6 @@ Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`
 Canonical branch: `agent/codex/fitness-recovery/20261023`  
 Canonical base: `9b5db58e809fa7d5e639bc4ee55df03d100467e8`  
 Candidate branch: `agent/codex/gps-open-source-stack-20261109`  
-Candidate branch HEAD: `e715ba0ca7c967a35004b2e8fdb7a3cab3b06fe4`  
 Exact tested app/test source HEAD: `1fab42783712a980367079c413ba6708f772d130` (three later commits are documentation-only).  
 Pull request: [#284](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/284) (Draft, open, unmerged)
 
@@ -16,7 +15,7 @@ Pull request: [#284](https://github.com/emadabdelzahermohamed-create/THF-Nexus-1
 - Re-read the 2026-11-09 GPS accuracy report from the superseded #283 candidate branch, blob `65d7f587355ee16796a7ecaf8d8cf5161a06207b`.
 - Re-read the canonical recovery checkpoint `RECOVERY_20261023.md`, blob `578be4a435991324d3eb3263e5e7127f479ec569`.
 - Re-read the open-source map decision `GPS_OPEN_SOURCE_IMPLEMENTATION_20261109.md`, blob `5ff41d2badec177ca7294582b960b2faebdc38bb`.
-- PR #284 is 10 commits ahead and 0 behind the canonical base. The current branch head is `e715ba0ca7c967a35004b2e8fdb7a3cab3b06fe4`; the exact tested app/test source head is `1fab42783712a980367079c413ba6708f772d130`.
+- PR #284 is based directly on the canonical base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`. Exact tested app/test source head is `1fab42783712a980367079c413ba6708f772d130`; subsequent commits are documentation-only. Current PR branch head is maintained in the PR metadata.
 - PR #283 was closed unmerged as superseded. Its workflow and RELEASE_CURRENT metadata changes were not merged.
 
 ## Material Activity Engine correction
