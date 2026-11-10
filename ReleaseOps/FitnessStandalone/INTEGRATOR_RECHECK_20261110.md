@@ -8,7 +8,7 @@ Canonical app-source SHA before evidence refresh: `baab97b1ff1e2c4f0ca0bba7b1921
 
 Read the latest GPS checkpoint on PR #284, the canonical recovery snapshot from 2026-11-09, the current PR/ownership state, and the latest independent Play state probe. PR #285 was the only handoff integrated in this run.
 
-PR #285 exact PR HEAD: `c8d464b86576db172d03a734ca9a119bd47631fb`. Exact-head Android CI [42827029570](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42827029570) succeeded: product 60/60, source-contract 34/34, backend 29/29, Android unit 450/450; lint, assembleDebug and bundleRelease passed.
+PR #285 exact PR HEAD: `c8d464b86576db172d03a734ca9a119bd47631fb`. Exact-head Android CI [42827029570](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42827029570) succeeded: product 60/60, source-contract 34/34, backend 29/29, Android unit 225/225; lint, assembleDebug and bundleRelease passed.
 
 - Canonical squash merge: `baab97b1ff1e2c4f0ca0bba7b1921ad9e5ff43b7`.
 - Files changed: `HealthConnectRepository.kt`, `HealthRecordEvidencePolicy.kt`, `HealthSourceTrustPolicy.kt`, and `HealthConnectProvenanceTest.kt` only.
@@ -34,14 +34,14 @@ Run [42694452852](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.0
 
 ### Later exact source/test and current branch-head runs
 
-- Exact source/test-head run [42773832856](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42773832856) passed on `1fab42783712a980367079c413ba6708f772d130`: product 60/60, source-contract 40/40, backend 29/29, Android unit 450/450, lint/assemble/bundleRelease passed. Artifact 13743311221 ZIP SHA-256 `1e38b7c2e199f51ef78df00a9e0921904a515cca8931279f2a4c1064913b4e73`; unsigned AAB SHA-256 `961e639ae8c348c866d3d409a68d24471b08a1a8d9c8cd4a1b226a3a221077cc`.
-- Current full branch-head run [42776754514](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42776754514) passed on `427ffe79ae7459fd062ce932bc1239a53cf2fcda`: product 60/60, source-contract 40/40, backend 29/29, Android unit 450/450, lint/assemble/bundleRelease passed.
+- Exact source/test-head run [42773832856](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42773832856) passed on `1fab42783712a980367079c413ba6708f772d130`: product 60/60, source-contract 40/40, backend 29/29, Android unit 225/225, lint/assemble/bundleRelease passed. Artifact 13743311221 ZIP SHA-256 `1e38b7c2e199f51ef78df00a9e0921904a515cca8931279f2a4c1064913b4e73`; unsigned AAB SHA-256 `961e639ae8c348c866d3d409a68d24471b08a1a8d9c8cd4a1b226a3a221077cc`.
+- Current full branch-head run [42776754514](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42776754514) passed on `427ffe79ae7459fd062ce932bc1239a53cf2fcda`: product 60/60, source-contract 40/40, backend 29/29, Android unit 225/225, lint/assemble/bundleRelease passed.
 - Current branch artifact 13745030142 ZIP SHA-256 `1da4d39ecf577fa4edb7a2a52e5cc59a24e6807813e71117e8e7e032a4528285`; QA APK SHA-256 `7df926720bd9f1cd5f14e52285a05c06a6499eea5dc59826afd8bfe8bcadfc61`; unsigned AAB SHA-256 `961e639ae8c348c866d3d409a68d24471b08a1a8d9c8cd4a1b226a3a221077cc`.
-- The downloaded current AAB bytes exactly match the `1fab` source/test-head AAB. The docs-only branch-head update produced no new bundle bytes. No signing or Play upload occurred.
+- The downloaded current AAB bytes exactly match the `1fab` source/test-head AAB. The docs-only branch-head update produced no new bundle bytes. No signing or Play upload occurred. The artifact's Gradle HTML report records 225 Android unit tests, 0 failures and 0 ignored; this corrects the earlier 450/450 aggregate count.
 
 ### Current PR #284 merge blockers
 
-- Compare after #285 merge: 13 commits ahead / 1 behind canonical, merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`; no rebase/cherry-pick was performed.
+- Compare after #285 merge: 13 commits ahead / 6 behind canonical, merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`; no rebase/cherry-pick was performed.
 - PR #282 is open/draft and changes `app.js` for Health metric null-vs-zero truthfulness. Its base is old (`4e337838c079a75d9615653d14c38838e55d19ef`); exact-head CI exists on its old head, but open exercise UX handoffs also modify `app.js`. Reconcile and retest the combined file tree.
 - PR #93 is open and claims `MainActivity.kt` for the Health-settings bridge, alongside Health reader/manifest/rationale surfaces. Reconcile that bridge with the location-settings bridge in #284 before merging.
 - PR #248 is open/draft, adds only a display-smoothing helper and test, has an old base (`4a2315fd16be8610396d6415292f4863f90b8dd6`) and local 11/11 stub-harness evidence only. It has no exact-head Android Gradle/JUnit CI and is not wired into the route path.
@@ -52,14 +52,14 @@ Keep #284 Draft/unmerged until physical P0, owner Maps prerequisites and shared-
 
 ## 3. Device and Maps evidence
 
-- Current Desktop Commander `localhost` check is OFFLINE; last seen about 7 hours before the latest check. Last recorded device identity is Samsung SM-A217F / Android 12; Play package `com.topherofit.thf.pulse`.
+- Current Desktop Commander `localhost` check is OFFLINE; the 2026-11-10 20:31 Cairo recheck saw it last online about 8 hours earlier. Last recorded device identity is Samsung SM-A217F / Android 12; Play package `com.topherofit.thf.pulse`.
 - Last recorded device-wide `location_mode=0` was from 2026-11-09. Current device/session state is unknown. No ADB device is available; no install, launch, Stop, pause/resume, settings or session action was attempted. Preserve the existing Play install and unknown session.
 - Physical P0 remains NOT RUN: stationary drift, measured outdoor route, jump/multipath rejection, screen-off/background, Home/reopen, pause/resume, Stop, process-death recovery, notifications and daily-vs-session steps.
 - Maps owner preflight 41684077962 (2026-11-03): Maps Android Backend and API Keys APIs enabled; key-inventory permission denied; no package/SHA-restricted Android key visible; no billing account linked. Native Google Maps SDK/traffic/transit remains owner-gated. No paid infrastructure, billing, key or secret change.
 
 ## 4. Live Play state and release lineage
 
-Latest successful independent Play state readback: run 42405709027, attempt 3; artifact 13698390469; ZIP SHA-256 `ee01c04047136c005bd0826b7174bab09903d54930c27f3b85e92ae0f4b86d03`; embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`. Readback observed 2026-11-09 17:54:54 UTC.
+Latest successful independent Play state readback: run 42405709027, attempt 4; artifact 13791872061; ZIP SHA-256 `bffbb6484802331c90f7b49ba029ab373f63cc2f13d94d10b980907008e775ee`; embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`. Readback observed 2026-11-10 18:31:07 UTC.
 
 - Internal 51019: completed.
 - Alpha 51007: draft.
