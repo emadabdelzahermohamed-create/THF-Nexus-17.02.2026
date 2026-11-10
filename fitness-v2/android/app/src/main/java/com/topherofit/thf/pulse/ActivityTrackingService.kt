@@ -375,7 +375,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                     .addOnFailureListener { registerLegacyLocationProviders(mode, registrationGeneration) }
             }.onFailure { registerLegacyLocationProviders(mode, registrationGeneration) }
         } else {
-            registerLegacyLocationProviders(mode)
+            registerLegacyLocationProviders(mode, registrationGeneration)
         }
     }
 
