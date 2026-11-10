@@ -792,7 +792,7 @@ class ActivityLocationFallbackSourceContractTest(unittest.TestCase):
         ]
 
         self.assertIn("val registrationGeneration = ++activityLocationRegistrationGeneration", registration)
-        self.assertIn("registerLegacyLocationProviders(mode, registrationGeneration)", registration)
+        self.assertEqual(registration.count("registerLegacyLocationProviders(mode, registrationGeneration)"), 2)
         self.assertIn("activityLocationRegistrationGeneration += 1L", unregister)
         self.assertIn("ActivityLocationFallbackPolicy.shouldRegister(", fallback)
         self.assertIn("requestGeneration = registrationGeneration", fallback)
