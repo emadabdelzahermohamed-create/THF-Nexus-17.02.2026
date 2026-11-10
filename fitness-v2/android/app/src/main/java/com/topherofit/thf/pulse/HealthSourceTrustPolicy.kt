@@ -26,6 +26,18 @@ internal object HealthSourceTrustPolicy {
     fun isCompatibleActivityDeviceType(deviceType: Int?): Boolean =
         deviceType != null && deviceType in compatibleActivityDeviceTypes
 
+    /**
+     * Health Connect device metadata must identify a water-compatible wearable for swimming.
+     * Phone, ring, chest-strap, scale, and unknown device classes do not qualify.
+     *
+     * This is a metadata gate, not hardware attestation.
+     */
+    fun swimmingDeviceLabel(deviceType: Int?): String? = when (deviceType) {
+        Device.TYPE_WATCH -> "watch"
+        Device.TYPE_FITNESS_BAND -> "fitness_band"
+        else -> null
+    }
+
     fun isApprovedHealthConnectProvider(rawPackageName: String?): Boolean {
         val packageName = rawPackageName?.trim()?.lowercase(Locale.ROOT) ?: return false
         if (!isValidPackageName(packageName)) return false

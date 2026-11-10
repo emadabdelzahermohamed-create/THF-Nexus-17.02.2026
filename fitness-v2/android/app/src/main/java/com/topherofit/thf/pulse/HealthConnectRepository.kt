@@ -244,6 +244,7 @@ class HealthConnectRepository(private val context: Context) {
         val recordType = this::class.simpleName ?: "Record"
         val trustedMethod = method == Metadata.RECORDING_METHOD_ACTIVELY_RECORDED ||
             method == Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED
+        val session = this as? ExerciseSessionRecord
         val assessment = HealthRecordEvidencePolicy.assess(
             appPackageName = context.packageName,
             dataOrigin = origin,
@@ -251,6 +252,11 @@ class HealthConnectRepository(private val context: Context) {
             recordId = metadata.id,
             trustedRecordingMethod = trustedMethod,
             deviceType = device?.type,
+            recordingMethod = method,
+            exerciseType = session?.exerciseType,
+            startEpochMillis = session?.startTime?.toEpochMilli(),
+            endEpochMillis = session?.endTime?.toEpochMilli(),
+            isExerciseSession = session != null,
         )
         return HealthRecordEvidence(
             recordId = metadata.id,
