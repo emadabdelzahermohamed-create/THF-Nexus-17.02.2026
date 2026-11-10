@@ -21,6 +21,7 @@ object HealthRecordEvidencePolicy {
         exerciseType: Int? = null,
         startEpochMillis: Long? = null,
         endEpochMillis: Long? = null,
+        isExerciseSession: Boolean = false,
     ): HealthRecordEvidenceAssessment {
         val app = appPackageName.trim()
         val origin = dataOrigin.trim()
@@ -58,12 +59,15 @@ object HealthRecordEvidencePolicy {
             return supported("INCOMPLETE_PROVIDER_IDENTITY")
         }
 
-        val isExerciseSession = type == ExerciseSessionRecord::class.simpleName
-        if (isExerciseSession && exerciseType == null) {
+        // The repository passes this typed flag from the actual record instance.
+        // Keep the class-name fallback for existing direct policy callers, but do not rely on
+        // simpleName alone because runtime minification may rename library classes.
+        val isExerciseSessionRecord = isExerciseSession || type == ExerciseSessionRecord::class.simpleName
+        if (isExerciseSessionRecord && exerciseType == null) {
             return supported("MISSING_EXERCISE_TYPE")
         }
         if (
-            isExerciseSession &&
+            isExerciseSessionRecord &&
             (startEpochMillis == null || endEpochMillis == null ||
                 startEpochMillis < 0L || endEpochMillis <= startEpochMillis)
         ) {
@@ -81,7 +85,7 @@ object HealthRecordEvidencePolicy {
             ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER -> SportKind.SWIMMING_OPEN_WATER
             else -> null
         }
-        if (isExerciseSession && swimmingSport != null) {
+        if (isExerciseSessionRecord && swimmingSport != null) {
             val deviceLabel = HealthSourceTrustPolicy.swimmingDeviceLabel(deviceType)
             val swimmingOrigin = if (deviceLabel != null) {
                 EvidenceOrigin.HEALTH_WEARABLE
