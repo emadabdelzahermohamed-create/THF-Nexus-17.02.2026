@@ -256,6 +256,7 @@ class HealthConnectRepository(private val context: Context) {
             exerciseType = session?.exerciseType,
             startEpochMillis = session?.startTime?.toEpochMilli(),
             endEpochMillis = session?.endTime?.toEpochMilli(),
+            isExerciseSession = session != null,
         )
         return HealthRecordEvidence(
             recordId = metadata.id,
