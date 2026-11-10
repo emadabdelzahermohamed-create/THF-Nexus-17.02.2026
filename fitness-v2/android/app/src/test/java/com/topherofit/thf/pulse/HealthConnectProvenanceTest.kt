@@ -169,6 +169,7 @@ class HealthConnectProvenanceTest {
             exerciseType = exerciseType,
             startEpochMillis = startEpochMillis,
             endEpochMillis = endEpochMillis,
+            isExerciseSession = true,
         )
     }
 
@@ -241,6 +242,7 @@ class HealthConnectProvenanceTest {
             recordingMethod = Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED,
             startEpochMillis = 1_000L,
             endEpochMillis = 2_000L,
+            isExerciseSession = true,
         )
         assertEquals(IntegrityClass.SUPPORTED, missingType.integrityClass)
         assertFalse(missingType.verifiedForRewards)
@@ -263,6 +265,25 @@ class HealthConnectProvenanceTest {
         assertEquals(IntegrityClass.SUPPORTED, unreviewed.integrityClass)
         assertFalse(unreviewed.verifiedForRewards)
         assertEquals("UNTRUSTED_PROVIDER", unreviewed.reason)
+    }
+
+    @Test fun swimming_gate_does_not_depend_on_runtime_class_name() {
+        val result = HealthRecordEvidencePolicy.assess(
+            appPackageName = "com.topherofit.thf.pulse",
+            dataOrigin = "com.samsung.android.wear.shealth",
+            recordType = "a",
+            recordId = "swimming-session-1",
+            trustedRecordingMethod = true,
+            deviceType = Device.TYPE_PHONE,
+            recordingMethod = Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED,
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
+            startEpochMillis = 1_000L,
+            endEpochMillis = 2_000L,
+            isExerciseSession = true,
+        )
+        assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
+        assertFalse(result.verifiedForRewards)
+        assertEquals("SWIMMING_INELIGIBLE_NON_WEARABLE_ORIGIN", result.reason)
     }
 
 }
