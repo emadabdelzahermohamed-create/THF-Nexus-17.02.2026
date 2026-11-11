@@ -78,3 +78,23 @@ No Health/anti-cheat or exercise-catalog files, release version, workflow, signi
 3. Test the coarse-only provider-selection path on Android 12; the current evidence is unit/Android-build validation only.
 4. Keep the existing Leaflet/OSM stack until the owner prerequisite and an explicit map-stack decision authorize native Google Maps SDK work.
 5. Keep VersionCode 51020 unallocated and PR #284 Draft.
+
+
+---
+
+## Integrator recheck — 2026-11-11 19:46 Africa/Cairo
+
+This section supersedes the earlier run/head observations above; it does not change the earlier historical evidence.
+
+- PR #284 current head: `be95a73bce584043eaffe17df1c1a99a81251488`.
+- Exact current-head run: [42978310512](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42978310512), SUCCESS. The implementation/test source commit remains `fdbdd0588222ba366e56767e3b21de66c3f0d829`; the final head adds only recovery-document synchronization.
+- Tests: product 60/60; source-contract 40/40; backend 29/29; Android 228/228, 0 failures, 0 ignored. Lint, debug APK, and release AAB validation passed.
+- Artifact 13836587093: ZIP SHA-256 `5c601d070f86f01729138eb90d84cf039b64499a73ad90f71541036c226fff5d`; APK SHA-256 `cd665518980fa18d910c7850c4ed602c251d0f0ebff16a399d67551788d65738`; AAB SHA-256 `be085f9f86bb147a88430983944d249254ff9a8cf3e7ad22d03e10e2f1c43239`. The AAB is unsigned and matches the prior source-head AAB; no signing or upload.
+- Requested run [42694452852](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42694452852) was a successful historical run on `3fcbe6acbb4dc660284c74c8392818996e1de7ee`, not the current PR head. Artifact ZIP SHA-256 `ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c`; APK SHA-256 `08a5730096d1cfc97193e47726f90e533f89d9e0cc3c606faae467b46e72e9b5`; unsigned AAB SHA-256 `08d2c80b5da604f6b50a95a7944b6576da87933ee5eec94c2a3944b5274b780e`; Android tests 223/223.
+- The preceding failed run [42694199295](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42694199295) failed the source-contract assertion that `motionSnapshot` exists because the uploaded MainActivity source was truncated. The current PR-head MainActivity file was fetched in two ranges (1–999 and 1000–1146): 1,146 lines total; `motionSnapshot` is present.
+- Current canonical app-source head: `3b65efa94709e3a60cc62113e19c92639e2a76b9`. Fresh compare: 15 ahead / 11 behind, merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`. PR remains Draft despite GitHub's mergeable=true.
+- Physical P0 remains NOT RUN: device offline, last seen about 31 hours before this recheck. Last recorded `location_mode=0` is from 2026-11-09; no device-wide setting was changed.
+- Current Leaflet/OSM-derived map stack remains the chosen free route; no Google Maps SDK, billing, or key is required for this stack.
+- No current candidate AAB was signed or uploaded. Latest Play readback remains 51019 Internal completed / 51007 Alpha draft / Production not verified; it is not a readback of this GPS candidate.
+
+Merge hold remains: #282/#216/exercise UX overlap `app.js`; #93 claims `MainActivity.kt`; physical P0 has not run.
