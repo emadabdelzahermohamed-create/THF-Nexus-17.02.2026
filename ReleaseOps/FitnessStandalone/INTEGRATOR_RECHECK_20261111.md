@@ -26,7 +26,7 @@ PR #284 current head is `be95a73bce584043eaffe17df1c1a99a81251488`. The app/test
 - Android API 36 setup, `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, `:app:bundleRelease`: PASS
 - Artifact ID: `13836587093`
 - Artifact ZIP SHA-256: `5c601d070f86f01729138eb90d84cf039b64499a73ad90f71541036c226fff5d`
-- QA APK SHA-256: `cd6655f3e58bfa4d9d4c8b2d42a1f30b2a77d5fef0f8eacac6e8c5d8f8a7f7a1`
+- QA APK SHA-256: `cd665518980fa18d910c7850c4ed602c251d0f0ebff16a399d67551788d65738`
 - Validation AAB SHA-256: `be085f9f86bb147a88430983944d249254ff9a8cf3e7ad22d03e10e2f1c43239`
 - AAB verification: **unsigned**. This is validation output, not a Play artifact.
 - The AAB bytes match the earlier source-head run 42976730277; no new signing or upload is justified.
@@ -35,8 +35,8 @@ The user-requested checkpoint run [42694452852](https://github.com/emadabdelzahe
 
 - Android unit tests: 223/223, 0 failures, 0 ignored
 - Artifact ID `13707718861`, ZIP SHA-256 `ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c`
-- APK SHA-256 `08a573... (historical artifact; see artifact report)`
-- AAB SHA-256 `08d2c80... (historical artifact; unsigned)`
+- APK SHA-256 `08a5730096d1cfc97193e47726f90e533f89d9e0cc3c606faae467b46e72e9b5`
+- AAB SHA-256 `08d2c80b5da604f6b50a95a7944b6576da87933ee5eec94c2a3944b5274b780e`
 
 The earlier [42694199295](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42694199295) failed one source-contract test because its uploaded `MainActivity.kt` ended before `motionSnapshot`. The current PR-head file was read in two chunks (999 + 147 lines): **1,146 lines total**, and `motionSnapshot` is present in the second chunk. The truncation failure is superseded by the later passing runs.
 
