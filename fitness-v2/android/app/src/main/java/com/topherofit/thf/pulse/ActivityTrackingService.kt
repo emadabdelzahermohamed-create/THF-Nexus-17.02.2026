@@ -460,13 +460,28 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) return
-        val provider = runCatching {
-            when {
-                locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
-                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
-                else -> null
-            }
-        }.getOrNull() ?: return
+        val finePermissionGranted =
+            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val coarsePermissionGranted =
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        // Android 12+ users may grant approximate-only location. Never attempt GPS_PROVIDER
+        // without fine permission; use NETWORK_PROVIDER when coarse permission is all we have.
+        val gpsProviderEnabled = runCatching {
+            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        }.getOrDefault(false)
+        val networkProviderEnabled = runCatching {
+            locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        }.getOrDefault(false)
+        val selectedProvider = ActivityLocationFallbackPolicy.selectLegacyProvider(
+            finePermissionGranted = finePermissionGranted,
+            coarsePermissionGranted = coarsePermissionGranted,
+            gpsProviderEnabled = gpsProviderEnabled,
+            networkProviderEnabled = networkProviderEnabled,
+        ) ?: return
+        val provider = when (selectedProvider) {
+            ActivityLocationFallbackPolicy.LegacyProvider.GPS -> LocationManager.GPS_PROVIDER
+            ActivityLocationFallbackPolicy.LegacyProvider.NETWORK -> LocationManager.NETWORK_PROVIDER
+        }
         val minTimeMs = if (provider == LocationManager.GPS_PROVIDER) 1_000L else 2_500L
         val minDistanceMetres = if (provider == LocationManager.GPS_PROVIDER) 1f else 4f
         val registered = runCatching {

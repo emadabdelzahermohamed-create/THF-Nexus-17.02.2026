@@ -39,4 +39,24 @@ object ActivityLocationFallbackPolicy {
         alreadyRegistered: Boolean,
     ): Boolean = sessionModeMatches && !paused && !alreadyRegistered
 
+    enum class LegacyProvider { GPS, NETWORK }
+
+    /**
+     * Selects only a provider allowed by the user's granted location precision.
+     * Approximate-only permission must never attempt GPS_PROVIDER.
+     */
+    fun selectLegacyProvider(
+        finePermissionGranted: Boolean,
+        coarsePermissionGranted: Boolean,
+        gpsProviderEnabled: Boolean,
+        networkProviderEnabled: Boolean,
+    ): LegacyProvider? {
+        if (!finePermissionGranted && !coarsePermissionGranted) return null
+        return when {
+            finePermissionGranted && gpsProviderEnabled -> LegacyProvider.GPS
+            networkProviderEnabled -> LegacyProvider.NETWORK
+            else -> null
+        }
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.topherofit.thf.pulse
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -37,6 +38,47 @@ class ActivityLocationFallbackPolicyTest {
         assertFalse(ActivityLocationFallbackPolicy.shouldRegisterLegacyLocationProvider(false, false, false))
         assertFalse(ActivityLocationFallbackPolicy.shouldRegisterLegacyLocationProvider(true, true, false))
         assertFalse(ActivityLocationFallbackPolicy.shouldRegisterLegacyLocationProvider(true, false, true))
+    }
+
+    @Test
+    fun approximateOnlyPermissionUsesNetworkEvenWhenGpsIsEnabled() {
+        assertEquals(
+            ActivityLocationFallbackPolicy.LegacyProvider.NETWORK,
+            ActivityLocationFallbackPolicy.selectLegacyProvider(
+                finePermissionGranted = false,
+                coarsePermissionGranted = true,
+                gpsProviderEnabled = true,
+                networkProviderEnabled = true,
+            ),
+        )
+    }
+
+    @Test
+    fun finePermissionPrefersGpsAndFallsBackToNetworkWhenGpsIsUnavailable() {
+        assertEquals(
+            ActivityLocationFallbackPolicy.LegacyProvider.GPS,
+            ActivityLocationFallbackPolicy.selectLegacyProvider(true, true, true, true),
+        )
+        assertEquals(
+            ActivityLocationFallbackPolicy.LegacyProvider.NETWORK,
+            ActivityLocationFallbackPolicy.selectLegacyProvider(true, true, false, true),
+        )
+    }
+
+    @Test
+    fun fallbackProviderSelectionFailsClosedWithoutPermissionOrEnabledProvider() {
+        assertEquals(
+            null,
+            ActivityLocationFallbackPolicy.selectLegacyProvider(false, false, true, true),
+        )
+        assertEquals(
+            null,
+            ActivityLocationFallbackPolicy.selectLegacyProvider(false, true, true, false),
+        )
+        assertEquals(
+            null,
+            ActivityLocationFallbackPolicy.selectLegacyProvider(true, false, false, false),
+        )
     }
 
 }
