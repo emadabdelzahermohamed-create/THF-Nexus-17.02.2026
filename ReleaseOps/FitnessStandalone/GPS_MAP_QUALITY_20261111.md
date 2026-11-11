@@ -66,7 +66,7 @@ This is exact-head source/build validation, not physical GPS QA or Play acceptan
 
 ## PR merge/ownership boundary
 - At run start, canonical branch HEAD was `c6da9f647d089c159b01c28e46d5e2da93baf712`; candidate compare: 14 ahead / 8 behind, merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`.
-- PR #284 remains Draft. Its file set overlaps #282 and #216 on `app.js); #93 claims `MainActivity.kt` and also overlaps `test_source_contract.py`. These shared-file changes require reconciliation and exact combined-head CI before merge.
+- PR #284 remains Draft. Its file set overlaps #282 and #216 on `app.js`; #93 claims `MainActivity.kt` and also overlaps `test_source_contract.py`. These shared-file changes require reconciliation and exact combined-head CI before merge.
 - PR #248 is a separate route-display smoothing handoff with stale base and no exact-head Android Gradle/JUnit CI; it remains unintegrated and must stay display-only if later accepted.
 
 ## Scope and release boundary
