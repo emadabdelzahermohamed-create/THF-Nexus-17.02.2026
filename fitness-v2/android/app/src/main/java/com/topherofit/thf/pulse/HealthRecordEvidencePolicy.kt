@@ -62,7 +62,9 @@ object HealthRecordEvidencePolicy {
         // The repository passes this typed flag from the actual record instance.
         // Keep the class-name fallback for existing direct policy callers, but do not rely on
         // simpleName alone because runtime minification may rename library classes.
-        val isExerciseSessionRecord = isExerciseSession || type == ExerciseSessionRecord::class.simpleName
+        val isExerciseSessionRecord = isExerciseSession ||
+            type == HealthRecordType.EXERCISE_SESSION.stableId ||
+            type == ExerciseSessionRecord::class.simpleName
         if (isExerciseSessionRecord && exerciseType == null) {
             return supported("MISSING_EXERCISE_TYPE")
         }

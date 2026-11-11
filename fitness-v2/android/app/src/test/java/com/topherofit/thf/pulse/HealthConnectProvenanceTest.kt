@@ -286,4 +286,22 @@ class HealthConnectProvenanceTest {
         assertEquals("SWIMMING_INELIGIBLE_NON_WEARABLE_ORIGIN", result.reason)
     }
 
+
+    @Test fun stableExerciseSessionTypeIdIsRecognizedWithoutTypedFlag() {
+        val result = HealthRecordEvidencePolicy.assess(
+            appPackageName = "com.topherofit.thf.pulse",
+            dataOrigin = "com.samsung.android.wear.shealth",
+            recordType = HealthRecordType.EXERCISE_SESSION.stableId,
+            recordId = "swimming-session-stable-type",
+            trustedRecordingMethod = true,
+            deviceType = Device.TYPE_PHONE,
+            recordingMethod = Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED,
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
+            startEpochMillis = 1_000L,
+            endEpochMillis = 2_000L,
+        )
+        assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
+        assertFalse(result.verifiedForRewards)
+        assertEquals("SWIMMING_INELIGIBLE_NON_WEARABLE_ORIGIN", result.reason)
+    }
 }
