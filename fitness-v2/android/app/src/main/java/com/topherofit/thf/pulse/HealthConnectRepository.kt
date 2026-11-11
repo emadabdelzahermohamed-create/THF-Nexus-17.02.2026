@@ -42,6 +42,7 @@ data class HealthRecordEvidence(
     val deviceType: Int?,
     val deviceManufacturer: String?,
     val deviceModel: String?,
+    val integrityClass: IntegrityClass,
     val verifiedForRewards: Boolean,
     val verificationReason: String,
 )
@@ -75,6 +76,11 @@ data class WorkoutForHealth(
 )
 
 class HealthConnectRepository(private val context: Context) {
+    private data class HealthRecordEntry(
+        val record: Record,
+        val evidence: HealthRecordEvidence,
+    )
+
     companion object {
         val READ_PERMISSION_BY_METRIC: Map<HealthReadMetric, String> = linkedMapOf(
             HealthReadMetric.STEPS to HealthPermission.getReadPermission(StepsRecord::class),
@@ -164,48 +170,62 @@ class HealthConnectRepository(private val context: Context) {
             emptyList()
         }
         val allRecords: List<Record> = steps + distances + calories + sessions
-        val evidence = allRecords.map { it.toEvidence() }
-        val verifiedEvidenceByKey = evidence
-            .asSequence()
-            .filter { it.verifiedForRewards }
-            .groupBy { it.canonicalKey }
-            .mapValues { (_, versions) ->
-                versions.maxWithOrNull(compareBy<HealthRecordEvidence> { it.clientRecordVersion }.thenBy { it.lastModifiedTime })!!
-            }
-        val verifiedKeys = verifiedEvidenceByKey.keys
-        val verifiedCount = verifiedKeys.size
-        val verifiedEvidenceCount = evidence.count { it.verifiedForRewards }
-        val duplicateRecordsExcluded = verifiedEvidenceCount - verifiedCount
+        val entries = allRecords.map { record -> HealthRecordEntry(record, record.toEvidence()) }
+        // Use the same selected record version for both evidence and metric aggregation.
+        // Stable identity is source + explicit record type + provider record ID. Records
+        // without complete identity are never collapsed into one synthetic duplicate group.
+        val deduplication = HealthRecordDeduplicationPolicy.selectLatest(
+            entries.map { entry ->
+                HealthRecordVersion(
+                    stableKey = entry.evidence.canonicalKey.takeIf {
+                        entry.evidence.dataOrigin.isNotBlank() &&
+                            entry.evidence.recordType.isNotBlank() &&
+                            entry.evidence.recordId.isNotBlank()
+                    },
+                    clientRecordVersion = entry.evidence.clientRecordVersion,
+                    lastModifiedTime = entry.evidence.lastModifiedTime,
+                    value = entry,
+                )
+            },
+        )
+        val selectedEntries = deduplication.selected.map { it.value }
+        val verifiedEntries = selectedEntries.filter { it.evidence.verifiedForRewards }
+        val verifiedCount = verifiedEntries.size
+        val excludedUnverifiedCount = entries.count { !it.evidence.verifiedForRewards }
+        val origins = selectedEntries.map { it.evidence.dataOrigin }.filter { it.isNotBlank() }.toSet()
 
-        val origins = evidence.map { it.dataOrigin }.filter { it.isNotBlank() }.toSet()
+        val verifiedSteps = verifiedEntries.mapNotNull { it.record as? StepsRecord }
+        val verifiedDistances = verifiedEntries.mapNotNull { it.record as? DistanceRecord }
+        val verifiedCalories = verifiedEntries.mapNotNull { it.record as? ActiveCaloriesBurnedRecord }
+        val verifiedSessions = verifiedEntries.mapNotNull { it.record as? ExerciseSessionRecord }
 
         return HealthSnapshot(
             steps = readPlan.valueIfReadable(
                 HealthReadMetric.STEPS,
-                steps.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.count },
+                verifiedSteps.sumOf { it.count },
             ),
             distanceMeters = readPlan.valueIfReadable(
                 HealthReadMetric.DISTANCE,
-                distances.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.distance.inMeters },
+                verifiedDistances.sumOf { it.distance.inMeters },
             ),
             activeCaloriesKcal = readPlan.valueIfReadable(
                 HealthReadMetric.ACTIVE_CALORIES,
-                calories.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.sumOf { it.energy.inKilocalories },
+                verifiedCalories.sumOf { it.energy.inKilocalories },
             ),
             exerciseSessions = readPlan.valueIfReadable(
                 HealthReadMetric.EXERCISE_SESSIONS,
-                sessions.filter { it.healthRecordKey() in verifiedKeys }.distinctBy { it.healthRecordKey() }.size,
+                verifiedSessions.size,
             ),
             origins = origins,
             latestSessionEnd = readPlan.valueIfReadable(
                 HealthReadMetric.EXERCISE_SESSIONS,
-                sessions.filter { it.healthRecordKey() in verifiedKeys }.maxOfOrNull { it.endTime },
+                verifiedSessions.maxOfOrNull { it.endTime },
             ),
             recordsRead = allRecords.size,
             verifiedRecords = verifiedCount,
-            excludedManualOrUnknownRecords = evidence.count { !it.verifiedForRewards },
-            duplicateRecordsExcluded = duplicateRecordsExcluded,
-            recordEvidence = evidence,
+            excludedManualOrUnknownRecords = excludedUnverifiedCount,
+            duplicateRecordsExcluded = deduplication.duplicateCount,
+            recordEvidence = selectedEntries.map { it.evidence },
             dataReadSuccessfully = true,
             hasVerifiedRewardData = verifiedCount > 0,
         )
@@ -241,7 +261,7 @@ class HealthConnectRepository(private val context: Context) {
         val method = metadata.recordingMethod
         val device = metadata.device
         val origin = metadata.dataOrigin.packageName
-        val recordType = this::class.simpleName ?: "Record"
+        val recordType = stableRecordType()
         val trustedMethod = method == Metadata.RECORDING_METHOD_ACTIVELY_RECORDED ||
             method == Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED
         val session = this as? ExerciseSessionRecord
@@ -270,16 +290,23 @@ class HealthConnectRepository(private val context: Context) {
             deviceType = device?.type,
             deviceManufacturer = device?.manufacturer,
             deviceModel = device?.model,
+            integrityClass = assessment.integrityClass,
             verifiedForRewards = assessment.verifiedForRewards,
             verificationReason = assessment.reason,
         )
     }
 
-    private fun Record.healthRecordKey(): String = WorkoutIdentity.stableHealthRecordKey(
-        dataOrigin = metadata.dataOrigin.packageName,
-        recordType = this::class.simpleName ?: "Record",
-        recordId = metadata.id,
-    )
+    /**
+     * Explicit stable IDs avoid using minifiable runtime class names in Health record identity.
+     * readRecent() currently requests exactly these four record families.
+     */
+    private fun Record.stableRecordType(): String = when (this) {
+        is StepsRecord -> HealthRecordType.STEPS.stableId
+        is DistanceRecord -> HealthRecordType.DISTANCE.stableId
+        is ActiveCaloriesBurnedRecord -> HealthRecordType.ACTIVE_CALORIES.stableId
+        is ExerciseSessionRecord -> HealthRecordType.EXERCISE_SESSION.stableId
+        else -> "UnknownRecord"
+    }
 
     private suspend fun <T : Record> readAll(
         client: HealthConnectClient,
