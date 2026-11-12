@@ -125,3 +125,52 @@ No new Play readback, declaration, upload, signing, listing change or promotion 
 Next run should: (1) re-read this checkpoint and current PR heads; (2) resolve #93's provenance/UI and reconciliation handoff without broadening permissions; (3) keep GPS anomaly integration with the GPS owner and wait for physical P0; (4) consolidate bilingual catalog/program stacks onto canonical with semantic tests; (5) add only properly licensed, correctly mapped full-motion clips after motion-manifest ownership is free; (6) keep Play Health/privacy and physical tests as hard gates.
 
 No GPS/activity-tracking native file, release version/workflow/signing file, Play state, device state or user data was changed in this run.
+
+## 2026-11-12 19:44 Cairo — current integrator recheck
+
+This addendum supersedes stale canonical-head, PR and GPS evidence fields above. Scope remains TopHeroFit only.
+
+### Canonical source and exact-tree CI
+
+- Canonical branch HEAD before this evidence-only refresh: `a4b853a231c5ee88741a23d581162e727d02d48f`.
+- That commit changes only this recovery document; its parent/app-test commit is `8929d1ef76b119f442409db709d9e319cefba399`.
+- The current canonical app/test tree is `7d84cab1d05e2ec111332b61457db07d80c17f53`, identical to tested PR #289 head `953f521ea3f2bc9ad03ea6ac6d0549259fa0979b`.
+- Exact-tree CI: [43226464817](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43226464817) — SUCCESS. Product 67/67, source-contract 34/34, backend 29/29, Android 236/236, 0 failures/0 ignored; lint, assembleDebug and bundleRelease passed.
+- Downloaded artifact 13948107645 and independently recomputed ZIP SHA-256 `5d3b619bf0ceced4be1b08a8ba32669ce98cbc5e045967fd78c27cef733566e1`; APK SHA-256 `86d6040e8c451e5d49ca2a67500bebe663d99483377adff3e655ad53b275f250`; validation AAB SHA-256 `e1b5bb32e416a3cffde2bd841a4f4246ece1c9a571334c3dabbfb486bba59981`. Independent `jarsigner -verify` reports the AAB is unsigned. This is validation identity 51019 only, not a release artifact.
+- Canonical push run [43227243445](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43227243445) on merge commit `8929d1e...` succeeded at the changed-app job but skipped deterministic Android build on the canonical branch. Exact tree equality to #289's fully tested head is the Android validation basis; no new Android build artifact was produced by that push run.
+- Release ledger was refreshed in commit `a29ec486a80598ea66ae246e718700250d84b7e4`; the current recovery update follows it.
+
+### GPS / Maps handoff — PR #284
+
+- Latest GPS checkpoint: [GPS_MAP_QUALITY_20261112.md](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/blob/agent/codex/gps-open-source-stack-20261109/ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261112.md), blob `ab41c38249c87145fbf24791a64b8012f1f52b4b`. It is on the candidate branch, not canonical.
+- PR #284 branch HEAD: `274155eafdfff381009ef5814a621f32b225f1a8`; tested application/test SHA: `68894a585e78df0a8d7b40cc68fa4f29acf10c9c`.
+- Exact-source run [43172404327](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43172404327) — SUCCESS: product 60/60, source-contract 40/40, backend 29/29, Android 230/230, 0 failures/0 ignored; lint, assemble and bundle passed.
+- Artifact 13922608138 ZIP SHA-256 `76aa03815f80106e962aa0dbd4df7c09fb41d762aa67e1895534d954dce6dca6`; APK SHA-256 `6ef8aff880b65ac86ccc76ae21d93c3d73a22211b045653455154ae7d2dde875`; unsigned validation AAB SHA-256 `cb8a4e0ad2e77d46cf4eb4964a534d1540b7665b9ff9dcf97f4c326d85489e1c`. ZIP was downloaded and independently rehashed; `jarsigner -verify` confirms the AAB is unsigned.
+- Requested historical run [42694452852](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42694452852) is SUCCESS on old head `3fcbe6acbb4dc660284c74c8392818996e1de7ee), not current source. Artifact 13707718861 ZIP SHA-256 `ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c`; APK SHA-256 `08a5730096d1cfc97193e47726f90e533f89d9e0cc3c606faae467b46e72e9b5`; unsigned AAB SHA-256 `08d2c80b5da604f6b50a95a7944b6576da87933ee5eec94c2a3944b5274b780e`; Android 223/223. Historical artifacts were downloaded and rehashed.
+- PR #284 remains Draft/unmerged. Current compare from canonical: 19 ahead / 20 behind, merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`; GitHub reports `mergeable=false`. Keep it Draft.
+- The 42694199295 failure is the prior truncated API upload of `MainActivity.kt`; the recovery record documents the full 1,146-line restoration and `motionSnapshot` presence. No new phone install or activity action was taken.
+- Keep the free Leaflet/WebView map: attributed OSM streets, OpenTopoMap terrain, EOX Sentinel-2 cloudless 2016 satellite/hybrid. No archived Google Maps Rx, Maps SDK billing, API key or paid infrastructure.
+
+### Current ownership holds and anti-cheat wiring
+
+- No explicit current lease registry file or lease issue was found. PR #93 claims `MainActivity.kt`; treat it as a hold. PRs #282/#216 and exercise UX handoffs overlap `app.js`; #284 also changes `app.js`. Shared files are not assumed free.
+- #93 remains Draft, has no exact-head CI, and adds 14 Health read scopes (19 total) versus the merged five-scope allowlist enforced by #188. Its branch is 2 ahead / 323 behind current canonical. Do not merge it.
+- #282 remains Draft; exact validation run 42506335882 passed (62 product / 34 source-contract / 29 backend / 218 Android), but it overlaps #284/#216 in `app.js`; no combined-head CI.
+- #216 is open on a noncanonical base and has no exact-head workflow run. #248 is Draft, display-only, has no exact-head Android CI and is not connected to metric calculations.
+- #188 (least-privilege permission gate), #288 (fail-closed Health record types), #286 (source-scoped latest-record dedup) and #285 (swimming wearable metadata gate) are merged after their recorded exact-head CI. #289 is merged as the test-only offline motion/catalog/license integrity gate.
+- The pure `ActivityEvidenceAnomalyPolicy` and its tests exist on canonical. Neither canonical nor #284 `ActivityTrackingService.kt` references `ActivityEvidenceAnomalyPolicy`, `ActivityGpsFix` or `assessSegment`. The service reads provider, `elapsedRealtimeNanos` and the Android mock flag, but live accepted fixes are not yet passed into the policy. Do not credit distance, pace or competition from display-smoothed points; the GPS owner must wire raw provider/time/coordinates/accuracy/mock evidence before anti-cheat is considered integrated.
+
+### Health, competitions and route sync
+
+- Health Connect canonical permissions remain exactly five: Steps, Exercise, Exercise write, Distance and Active Calories. Heart-rate access remains absent. #93's extra scopes fail the merged #188 allowlist.
+- #269 is merged as a backend-only provisional strength leaderboard. The admin route remains disabled without owner-managed `THF_COMPETITION_ADMIN_KEY`; no event is seeded and deployment is not independently verified. Scores are `SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED`, `rewardEligible=false`; no THF rewards/payouts are authorized.
+- Finished GPS route history remains in WebView localStorage. Route sync remains DESIGN ONLY: no authenticated route endpoint, no precise-location upload. Do not implement or claim cloud backup until #284 is physically validated and the separate consent, retention, deletion, backend and privacy gates are tested.
+
+### Phone, Play and release boundary
+
+- Desktop Commander `localhost` is OFFLINE; last seen about 55 hours before the 2026-11-12 19:44 Cairo check. Current SM-A217F session state is unknown. Last recorded device-wide `location_mode=0` is from 2026-11-09 and was not changed. No ADB, install, launch, Stop, pause/resume or settings action was taken.
+- Latest successful read-only Play state readback remains run [42405709027, attempt 4](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42405709027), observed 2026-11-10 18:31:07 UTC. Downloaded artifact 13791872061 ZIP SHA-256 `bffbb6484802331c90f7b49ba029ab373f63cc2f13d94d10b980907008e775ee`; embedded JSON SHA-256 `09e7a346e5e1c893d4323d20105d8f4d63`; both independently verified again on 2026-11-12.
+- Readback: Internal 51019 completed; Alpha 51007 draft; Production not listed/not verified; `uploadAttempted=false`, `commitAttempted=false`. No newer successful Play readback was found. This is the latest evidence, not a new 2026-11-12 Play observation.
+- The recorded signed 51019 AAB SHA is `5dc7d0077ecfddd3224ca8557a3b4f6d0a5524cf194c0e547fc8b1605c7ba9c5`, but its original artifact is no longer retrievable for fresh rehash. The new GPS and canonical validation AABs are unsigned and unuploaded.
+- VersionCode 51020 remains unallocated. Keep release HOLD until owner-controlled release API/signing prerequisites, final combined-source exact-head Android CI, physical GPS/session P0, Health/privacy/Play declaration and policy gates pass. Production remains NOT VERIFIED.
+- No merge, signing, Play write, Production promotion, device mutation, paid infrastructure or other-project work occurred in this recheck.
