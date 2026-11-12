@@ -504,6 +504,14 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             legacyLocationProvidersRegistered = false
             legacyLocationProvider = selectedProvider
             legacyProviderAttemptStartedElapsedMs = nowElapsed
+            // A provider change starts a new measurement source. Do not compare its first
+            // fix with a stale fix from the previous provider or bridge distance across sources.
+            lastLocation = null
+            lastObservedLocation = null
+            lastAccuracyMetres = null
+            lastObservedAccuracyMetres = null
+            gpsDistanceAccumulator.reset()
+            currentSpeedKph = 0.0
         }
         if (legacyLocationProvidersRegistered) return
 
