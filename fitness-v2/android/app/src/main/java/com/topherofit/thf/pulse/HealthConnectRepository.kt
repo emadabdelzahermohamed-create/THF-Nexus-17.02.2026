@@ -45,6 +45,8 @@ data class HealthRecordEvidence(
     val integrityClass: IntegrityClass,
     val verifiedForRewards: Boolean,
     val verificationReason: String,
+    /** Raw Health Connect exercise-session fields retained for source reconciliation. */
+    val exerciseSession: HealthExerciseSessionDetails? = null,
 )
 
 data class HealthSnapshot(
@@ -293,6 +295,13 @@ class HealthConnectRepository(private val context: Context) {
             integrityClass = assessment.integrityClass,
             verifiedForRewards = assessment.verifiedForRewards,
             verificationReason = assessment.reason,
+            exerciseSession = session?.let {
+                HealthExerciseSessionDetails(
+                    exerciseType = it.exerciseType,
+                    startTime = it.startTime,
+                    endTime = it.endTime,
+                )
+            },
         )
     }
 
