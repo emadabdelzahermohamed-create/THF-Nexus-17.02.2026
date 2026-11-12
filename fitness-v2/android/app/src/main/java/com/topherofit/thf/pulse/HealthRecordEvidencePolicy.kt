@@ -65,6 +65,20 @@ object HealthRecordEvidencePolicy {
         val isExerciseSessionRecord = isExerciseSession ||
             type == HealthRecordType.EXERCISE_SESSION.stableId ||
             type == ExerciseSessionRecord::class.simpleName
+        val supportedNonSessionRecordTypes = setOf(
+            HealthRecordType.STEPS.stableId,
+            HealthRecordType.DISTANCE.stableId,
+            HealthRecordType.ACTIVE_CALORIES.stableId,
+        )
+
+        // A nonblank type string is not sufficient provenance. The repository currently reads
+        // exactly these four record families; keep future/unknown types out of reward totals.
+        if (isExerciseSessionRecord && type in supportedNonSessionRecordTypes) {
+            return supported("RECORD_TYPE_MISMATCH")
+        }
+        if (!isExerciseSessionRecord && type !in supportedNonSessionRecordTypes) {
+            return supported("UNSUPPORTED_RECORD_TYPE")
+        }
         if (isExerciseSessionRecord && exerciseType == null) {
             return supported("MISSING_EXERCISE_TYPE")
         }
