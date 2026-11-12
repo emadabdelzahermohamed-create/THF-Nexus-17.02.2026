@@ -210,6 +210,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private val locationFallbackHandler = Handler(Looper.getMainLooper())
     private var locationRequestStartedElapsedMs = 0L
     private var legacyLocationProvidersRegistered = false
+    private var legacyLocationProvider: ActivityLocationFallbackPolicy.LegacyProvider? = null
+    private var legacyProviderAttemptStartedElapsedMs = 0L
     private val locationFallbackWatchdog = object : Runnable {
         override fun run() {
             val mode = activityMode ?: return
@@ -377,6 +379,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         registerStepSource(mode)
         locationRequestStartedElapsedMs = SystemClock.elapsedRealtime()
         legacyLocationProvidersRegistered = false
+        legacyLocationProvider = null
+        legacyProviderAttemptStartedElapsedMs = 0L
         locationRequestGeneration += 1L
         val requestGeneration = locationRequestGeneration
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1_000L)
@@ -451,12 +455,6 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     }
 
     private fun registerLegacyLocationProviders(mode: ActivityMode) {
-        if (!ActivityLocationFallbackPolicy.shouldRegisterLegacyLocationProvider(
-                sessionModeMatches = activityMode == mode,
-                paused = activityPaused,
-                alreadyRegistered = legacyLocationProvidersRegistered,
-            )
-        ) return
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) return
@@ -465,19 +463,50 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         val coarsePermissionGranted =
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         // Android 12+ users may grant approximate-only location. Never attempt GPS_PROVIDER
-        // without fine permission; use NETWORK_PROVIDER when coarse permission is all we have.
+        // without fine permission, and never attempt NETWORK_PROVIDER without coarse permission.
         val gpsProviderEnabled = runCatching {
             locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
         }.getOrDefault(false)
         val networkProviderEnabled = runCatching {
             locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
         }.getOrDefault(false)
-        val selectedProvider = ActivityLocationFallbackPolicy.selectLegacyProvider(
-            finePermissionGranted = finePermissionGranted,
+        val nowElapsed = SystemClock.elapsedRealtime()
+        val shouldSwitchToNetwork = ActivityLocationFallbackPolicy.shouldFallbackFromGpsToNetwork(
+            currentProvider = legacyLocationProvider,
             coarsePermissionGranted = coarsePermissionGranted,
-            gpsProviderEnabled = gpsProviderEnabled,
             networkProviderEnabled = networkProviderEnabled,
-        ) ?: return
+            gpsRegistrationSucceeded = legacyLocationProvidersRegistered,
+            providerAttemptStartedElapsedMs = legacyProviderAttemptStartedElapsedMs,
+            lastAcceptedElapsedMs = lastLocation?.elapsedRealtimeNanos?.div(1_000_000L),
+            nowElapsedMs = nowElapsed,
+        )
+        if (!ActivityLocationFallbackPolicy.shouldRegisterLegacyLocationProvider(
+                sessionModeMatches = activityMode == mode,
+                paused = activityPaused,
+                alreadyRegistered = legacyLocationProvidersRegistered,
+                allowProviderSwitch = shouldSwitchToNetwork,
+            )
+        ) return
+
+        val selectedProvider = when {
+            shouldSwitchToNetwork -> ActivityLocationFallbackPolicy.LegacyProvider.NETWORK
+            legacyLocationProvider != null -> legacyLocationProvider
+            else -> ActivityLocationFallbackPolicy.selectLegacyProvider(
+                finePermissionGranted = finePermissionGranted,
+                coarsePermissionGranted = coarsePermissionGranted,
+                gpsProviderEnabled = gpsProviderEnabled,
+                networkProviderEnabled = networkProviderEnabled,
+            )
+        } ?: return
+
+        if (selectedProvider != legacyLocationProvider) {
+            if (legacyLocationProvidersRegistered) runCatching { locationManager.removeUpdates(this) }
+            legacyLocationProvidersRegistered = false
+            legacyLocationProvider = selectedProvider
+            legacyProviderAttemptStartedElapsedMs = nowElapsed
+        }
+        if (legacyLocationProvidersRegistered) return
+
         val provider = when (selectedProvider) {
             ActivityLocationFallbackPolicy.LegacyProvider.GPS -> LocationManager.GPS_PROVIDER
             ActivityLocationFallbackPolicy.LegacyProvider.NETWORK -> LocationManager.NETWORK_PROVIDER
@@ -508,6 +537,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private fun unregisterActivitySources() {
         locationFallbackHandler.removeCallbacks(locationFallbackWatchdog)
         legacyLocationProvidersRegistered = false
+        legacyLocationProvider = null
+        legacyProviderAttemptStartedElapsedMs = 0L
         locationRequestStartedElapsedMs = 0L
         locationRequestGeneration += 1L
         val callback = fusedLocationCallback
