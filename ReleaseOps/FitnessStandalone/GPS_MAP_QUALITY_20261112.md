@@ -45,7 +45,21 @@ Exact source blobs:
 - Deterministic Kotlin policy harness: 18/18 assertions PASS (fine/coarse permission selection, no-permission fail-closed, GPS no-fix timeout, fresh/stale/future accepted-fix cases, immediate registration-failure fallback, network-provider availability, pause/replacement protection).
 - Re-fetched source-contract audit: 10/10 PASS (exact blobs, service wiring, provider-switch guard, old-anchor reset, permission gating, and both regression tests).
 - Git compare from prior candidate head `be95a73bce584043eaffe17df1c1a99a81251488` to source head `68894a585e78df0a8d7b40cc68fa4f29acf10c9c`: 2 commits ahead, 0 behind; exactly three files changed (ActivityTrackingService, ActivityLocationFallbackPolicy and its JUnit test).
-- Exact-head GitHub Actions lookup for `68894a585e78df0a8d7b40cc68fa4f29acf10c9c`: zero workflow runs; combined status list empty. Android Gradle/JUnit, Lint, APK/AAB and CI PASS are NOT claimed for this delta.
+- Initial exact-head Actions lookup returned no run immediately after the branch update. The workflow subsequently started and completed; the following exact-head recheck supersedes that transient observation.
+
+### Exact-head Android CI recheck — 2026-11-12 09:06 Cairo
+
+- Workflow run [43172404327](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43172404327) completed **SUCCESS** on exact application source SHA `68894a585e78df0a8d7b40cc68fa4f29acf10c9c`.
+- Jobs: `changed-app` SUCCESS; `deterministic-build` SUCCESS; `competition-backend` SKIPPED (not part of this Android lane).
+- Product tests: 60/60; source-contract tests: 40/40; backend tests: 29/29.
+- Android Gradle unit report: 230/230, 0 failures, 0 ignored. `compileDebugKotlin`, `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, and `:app:bundleRelease` all succeeded on the exact source SHA.
+- Android API 36 setup: PASS. Lint: 0 errors, 16 warnings, 1 hint.
+- Artifact ID: `13922608138`; ZIP SHA-256 independently recomputed after download: `76aa03815f80106e962aa0dbd4df7c09fb41d762aa67e1895534d954dce6dca6`.
+- QA APK SHA-256: `6ef8aff880b65ac86ccc76ae21d93c3d73a22211b045653455154ae7d2dde875`.
+- Validation AAB SHA-256: `cb8a4e0ad2e77d46cf4eb4964a534d1540b7665b9ff9dcf97f4c326d85489e1c`. Independent `jarsigner -verify` reports `jar is unsigned`; no production signing.
+- QA package: `com.topherofit.thf.pulse.qa`; versionCode 51019; versionName `5.0.0-v2-alpha19-debug`. This is validation output only, not the Play package or a release upload.
+- The exact-head build validates compilation and unit/source tests. It does not replace physical-device GPS/session QA or Play acceptance.
+
 - The repository's last prior Android CI PASS remains run [42976730277](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42976730277) on the earlier source SHA `fdbdd0588222ba366e56767e3b21de66c3f0d829`; it does not validate today's provider-switch changes.
 
 ## Physical-device QA
@@ -66,3 +80,9 @@ Exact source blobs:
 - PR #284 remains Draft and unmerged. Existing shared-file ownership holds (#282/#216 on `app.js`; #93 on `MainActivity.kt` and source-contract tests) remain unresolved. No rebase or merge was performed.
 - No Health/anti-cheat or exercise-catalog files, release version, workflows, signing, secrets or Play files changed.
 - VersionCode 51020 remains unallocated. No APK was installed; no AAB was signed or uploaded; no Play PASS.
+
+
+## Current PR state after CI
+
+- PR #284 remains Draft and unmerged. GitHub currently reports `mergeable=false`; no rebase or merge was attempted because the existing shared-file ownership holds remain unresolved.
+- Candidate branch HEAD after this evidence-only update is recorded by the latest checkpoint commit. The tested application source SHA remains `68894a585e78df0a8d7b40cc68fa4f29acf10c9c`; only GPS report/recovery documentation changed after it.
