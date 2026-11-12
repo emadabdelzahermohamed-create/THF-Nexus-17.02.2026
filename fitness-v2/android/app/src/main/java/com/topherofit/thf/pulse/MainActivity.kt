@@ -9,6 +9,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
@@ -186,7 +187,7 @@ class MainActivity : ComponentActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             mediaPlaybackRequiresUserGesture = false
             cacheMode = WebSettings.LOAD_DEFAULT
-            userAgentString = "${this.userAgentString} TopHeroFit/${BuildConfig.VERSION_NAME}"
+            userAgentString = "TopHeroFit/${BuildConfig.VERSION_NAME} (Android; contact: TopHeroFit@gmail.com)"
             @Suppress("DEPRECATION")
             allowFileAccessFromFileURLs = false
             @Suppress("DEPRECATION")
@@ -945,6 +946,13 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun openLocationSettings() {
+            runOnUiThread {
+                runCatching { startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }
+            }
+        }
+
+        @JavascriptInterface
         fun openHealthSettings() {
             runOnUiThread {
                 runCatching { startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)) }
@@ -990,7 +998,6 @@ class MainActivity : ComponentActivity() {
             startWorkoutTracking(id, sensorProfile)
             JSONObject().put("active", true).put("sessionId", id).put("profile", sensorProfile.wireName).toString()
         }.getOrElse { JSONObject().put("active", false).put("error", it.message ?: it.javaClass.simpleName).toString() }
-
         @JavascriptInterface
         fun motionSnapshot(): String = ActivityTrackingService.workoutSnapshot()?.let(::motionEvidenceJson)?.toString()
             ?: JSONObject().put("available", false).toString()

@@ -747,5 +747,84 @@ class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
         self.assertNotIn("gpsFixState==='weak'", app)
 
 
+class OpenStreetMapTileClientSourceContractTest(unittest.TestCase):
+    def test_webview_identifies_top_hero_fit_and_keeps_http_tile_caching(self):
+        activity = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "WebViewNetworkPolicy.kt").read_text()
+
+        self.assertIn('userAgentString = "TopHeroFit/${BuildConfig.VERSION_NAME} (Android; contact: TopHeroFit@gmail.com)"', activity)
+        self.assertIn("cacheMode = WebSettings.LOAD_DEFAULT", activity)
+        self.assertIn('"tile.openstreetmap.org"', policy)
+        self.assertIn("shouldBlockExternalResource", activity)
+        self.assertIn("isAllowedMapTileUrl", policy)
+
+
+class DeviceLocationSettingsRecoverySourceContractTest(unittest.TestCase):
+    def test_location_off_has_a_native_settings_recovery_action(self):
+        activity = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "MainActivity.kt").read_text()
+        html = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "index.html").read_text()
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+
+        self.assertIn("Settings.ACTION_LOCATION_SOURCE_SETTINGS", activity)
+        self.assertIn("fun openLocationSettings()", activity)
+        self.assertIn('id="activityLocationSettingsBtn"', html)
+        self.assertIn("gpsFixState!=='off'", app)
+        self.assertIn("N?.openLocationSettings?.()", app)
+        self.assertIn("enableDeviceLocation:'Enable device location'", app)
+
+
+class ActivityLocationFallbackSourceContractTest(unittest.TestCase):
+    def test_fused_subscription_has_a_bounded_android_provider_fallback(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityLocationFallbackPolicy.kt").read_text()
+
+        self.assertIn("locationFallbackWatchdog", service)
+        self.assertIn("postDelayed(locationFallbackWatchdog, LOCATION_FALLBACK_POLL_MS * 2)", service)
+        self.assertIn("ActivityLocationFallbackPolicy.shouldRegisterLegacyProviders(", service)
+        self.assertIn("registerLegacyLocationProviders(mode)", service)
+        self.assertIn("LocationManager.GPS_PROVIDER", service)
+        self.assertIn("LocationManager.NETWORK_PROVIDER", service)
+        self.assertIn("legacyLocationProvidersRegistered", service)
+        self.assertIn("removeCallbacks(locationFallbackWatchdog)", service)
+        self.assertIn("FIRST_ACCEPTED_FIX_TIMEOUT_MS = 8_000L", policy)
+        self.assertIn("ACCEPTED_FIX_STALE_TIMEOUT_MS = 12_000L", policy)
+
+    def test_stale_or_paused_accuracy_is_never_presented_as_current(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsFixPresentationPolicy.kt").read_text()
+        app = (ANDROID / "app" / "src" / "main" / "assets" / "pulse" / "app.js").read_text()
+
+        self.assertIn("GpsAccuracyPresentationPolicy.visibleAccuracy(fixState, lastAccuracyMetres)", service)
+        self.assertIn('gpsFixState = "paused"', service)
+        self.assertIn('return "paused"', service)
+        self.assertIn("rawAccuracy!=null&&Number.isFinite(acceptedAccuracy)&&acceptedAccuracy>0", app)
+        self.assertIn("rawObservedAccuracy!=null&&Number.isFinite(observedAccuracy)&&observedAccuracy>0", app)
+        self.assertIn("gpsFixState==='ready'&&Number.isFinite(accuracy)", app)
+        self.assertIn('object GpsAccuracyPresentationPolicy', policy)
+
+
+
+class ActivityLocationRegistrationLifecycleSourceContractTest(unittest.TestCase):
+    def test_late_fused_task_completion_cannot_resurrect_a_paused_or_replaced_session(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityLocationFallbackPolicy.kt").read_text()
+
+        self.assertIn("private var locationRequestGeneration = 0L", service)
+        self.assertIn("val requestGeneration = locationRequestGeneration", service)
+        self.assertIn(".addOnSuccessListener {", service)
+        self.assertIn(".addOnFailureListener {", service)
+        self.assertIn("shouldKeepFusedLocationRegistration(", service)
+        self.assertIn("removeLocationUpdates(callback)", service)
+        self.assertIn("locationRequestGeneration += 1L", service)
+        self.assertIn("fun shouldKeepFusedLocationRegistration(", policy)
+
+    def test_framework_fallback_is_never_registered_for_a_paused_or_replaced_session(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityLocationFallbackPolicy.kt").read_text()
+
+        self.assertIn("shouldRegisterLegacyLocationProvider(", service)
+        self.assertIn("paused = activityPaused", service)
+        self.assertIn("fun shouldRegisterLegacyLocationProvider(", policy)
+
 if __name__ == "__main__":
     unittest.main()
