@@ -20,6 +20,7 @@
     } : null,
   });
   const restTimer = window.THFRestTimer.createRestTimer();
+  const workoutCalendar = window.THFWorkoutLocalCalendar;
   const parse = (value, fallback) => { try { return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
   const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, match => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[match]));
   const locale = () => state.lang === 'ar' ? 'ar-EG' : 'en-US';
@@ -501,7 +502,7 @@
     const motionEvidence=endNativeMotionSession();stopMotionPolling();currentEntry.motionEvidence=motionEvidence;
     const measurementSource=motionEvidence?.available&&motionEvidence.sessionId===state.active.motionSessionId?'SENSOR':'MANUAL_OR_UNVERIFIED';
     const summary={clientRecordId:state.active.clientRecordId,recordVersion:1,exercise:local(title),exerciseName:title,id:program?.id||item.id,sport:program?.section?.id||item.sport,programId:program?.id||null,programSessionId:programSession?.id||null,startedAtMs:startedAt,endedAtMs:now,date:new Date(now).toISOString(),durationMin:Math.max(1,Math.round((now-startedAt)/60000)),reps:completedSets.reduce((sum,set)=>sum+(Number(set.reps)||0),0),volumeKg:volume,sets:allSets,completed:true,steps:Number(motionEvidence?.stepDelta||0),motionEvidence,measurementSource};
-    const history=parse(store.getItem('pulse.v2.history'),[]).filter(entry=>entry.clientRecordId!==summary.clientRecordId);history.push(summary);store.setItem('pulse.v2.history',JSON.stringify(history.slice(-200)));
+    const historyEntry={...summary,localDate:workoutCalendar.localDateKey(now)};const history=parse(store.getItem('pulse.v2.history'),[]).filter(entry=>entry.clientRecordId!==summary.clientRecordId);history.push(historyEntry);store.setItem('pulse.v2.history',JSON.stringify(history.slice(-200)));
     try { N?.saveSummary?.(JSON.stringify(summary)); } catch {}
     if(program&&programSession){const nextSession=(Number(state.active.programSessionIndex)+1)%program.sessions.length;store.setItem('pulse.v2.program',JSON.stringify({programId:program.id,sessionIndex:nextSession,selectedAt:new Date().toISOString()}));}
     state.active=null;store.removeItem('pulse.v2.active');stopRest();toast(programSession?t('sessionComplete'):t('saved'));renderToday();renderProgress();showScreen('progressScreen');
@@ -518,9 +519,9 @@
     if(program&&session&&suggested){$('todayPlanTag').textContent=local(program.section);$('todayWorkoutName').textContent=local(session.name);$('todayWorkoutMeta').textContent=`${local(program.name)} · ${session.exercises.length} ${t('exerciseCount')} · ${session.estimatedMinutes} ${t('min')}`;$('startTodayBtn').dataset.exercise=suggested.id;$('startTodayBtn').dataset.program=program.id;$('startTodayBtn').dataset.session=session.id;}
     else if(suggested){$('todayPlanTag').textContent=local(suggested.section);$('todayWorkoutName').textContent=local(suggested.name);$('todayWorkoutMeta').textContent=`${t('profilePlan')} · ${local(suggested.level)} · ${suggested.prescription.sets} ${t('setsLabel')}`;$('startTodayBtn').dataset.exercise=suggested.id;}
     $('todayDate').textContent=new Intl.DateTimeFormat(locale(),{weekday:'short',day:'numeric',month:'short'}).format(new Date());
-    const entries=history(), today=new Date().toISOString().slice(0,10), todays=entries.filter(entry=>(entry.date||'').startsWith(today));
+    const entries=history(), todays=workoutCalendar.sessionsForLocalDay(entries,Date.now());
     $('todaySessions').textContent=todays.length;$('todayMinutes').textContent=todays.reduce((sum,e)=>sum+(e.durationMin||0),0);$('todayVolume').textContent=Math.round(todays.reduce((sum,e)=>sum+(e.volumeKg||0),0));
-    const days=[...new Set(entries.map(entry=>(entry.date||'').slice(0,10)).filter(Boolean))];let streak=0,cursor=new Date();for(let offset=0;offset<90;offset++){const key=cursor.toISOString().slice(0,10);if(days.includes(key))streak++;else if(offset>0)break;cursor.setDate(cursor.getDate()-1);}$('streak').textContent=streak;
+    $('streak').textContent=workoutCalendar.currentStreak(entries,Date.now());
     const weekStart=Date.now()-7*86400000,weekCount=entries.filter(entry=>new Date(entry.date).getTime()>=weekStart).length,target=Number(profile.days)||3;$('weekProgress').textContent=`${Math.min(weekCount,target)}/${target}`;$('weekProgressBar').style.width=`${Math.min(100,weekCount/target*100)}%`;
   }
   function renderProgress(){
