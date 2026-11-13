@@ -484,11 +484,18 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             lastAcceptedElapsedMs = lastLocation?.elapsedRealtimeNanos?.div(1_000_000L),
             nowElapsedMs = nowElapsed,
         )
+        val currentProviderAvailable = when (legacyLocationProvider) {
+            ActivityLocationFallbackPolicy.LegacyProvider.GPS -> gpsProviderEnabled
+            ActivityLocationFallbackPolicy.LegacyProvider.NETWORK -> networkProviderEnabled
+            null -> false
+        }
+        val providerUnavailable = legacyLocationProvider != null && !currentProviderAvailable
+        val allowProviderSwitch = shouldSwitchToNetwork || providerUnavailable
         if (!ActivityLocationFallbackPolicy.shouldRegisterLegacyLocationProvider(
                 sessionModeMatches = activityMode == mode,
                 paused = activityPaused,
                 alreadyRegistered = legacyLocationProvidersRegistered,
-                allowProviderSwitch = shouldSwitchToNetwork,
+                allowProviderSwitch = allowProviderSwitch,
             )
         ) return
 
@@ -537,6 +544,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }
         val providerEnabled = runCatching { locationManager.isProviderEnabled(provider) }.getOrDefault(false)
         if (!providerEnabled) {
+            legacyLocationProvidersRegistered = false
             legacyLocationProvider = null
             legacyProviderAttemptStartedElapsedMs = 0L
             legacyProviderRegistrationFailureCount = 0
@@ -565,6 +573,20 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             legacyProviderNextAttemptElapsedMs = nowElapsed +
                 ActivityLocationFallbackPolicy.legacyProviderRetryDelayMs(legacyProviderRegistrationFailureCount)
         }
+    }
+
+    private fun refreshLegacyProviderSelection() {
+        val mode = activityMode ?: return
+        if (activityPaused) return
+        registerLegacyLocationProviders(mode)
+    }
+
+    override fun onProviderEnabled(provider: String) {
+        refreshLegacyProviderSelection()
+    }
+
+    override fun onProviderDisabled(provider: String) {
+        refreshLegacyProviderSelection()
     }
 
     private fun registerStepSource(mode: ActivityMode) {
