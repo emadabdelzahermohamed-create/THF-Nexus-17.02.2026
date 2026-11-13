@@ -174,3 +174,42 @@ This addendum supersedes stale canonical-head, PR and GPS evidence fields above.
 - The recorded signed 51019 AAB SHA is `5dc7d0077ecfddd3224ca8557a3b4f6d0a5524cf194c0e547fc8b1605c7ba9c5`, but its original artifact is no longer retrievable for fresh rehash. The new GPS and canonical validation AABs are unsigned and unuploaded.
 - VersionCode 51020 remains unallocated. Keep release HOLD until owner-controlled release API/signing prerequisites, final combined-source exact-head Android CI, physical GPS/session P0, Health/privacy/Play declaration and policy gates pass. Production remains NOT VERIFIED.
 - No merge, signing, Play write, Production promotion, device mutation, paid infrastructure or other-project work occurred in this recheck.
+
+## 2026-11-13 — GPS fallback resilience handoff
+
+### Canonical start and isolated candidate
+- This run re-read the historical `GPS_MAP_QUALITY_20261101.md`, the latest canonical `GPS_MAP_QUALITY_20261111.md`, and this current recovery checkpoint before editing.
+- Canonical branch base used for the isolated GPS handoff: `dedd5f39001781c19e7e19bdee8f44e2fa97b01d`. It is 11 commits after the prior app-source anchor `3b65efa94709e3a60cc62113e19c92639e2a76b9`; the intervening tree changes did not touch the five GPS/Activity files in this candidate.
+- New clean PR: [#292](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/292), branch `agent/codex/gps-fallback-resilience-20261113-r2`, source/test HEAD `cb97dc0b66299825e6a02dd91ec53e369667bb74`.
+- Changed files are limited to `ActivityTrackingService.kt`, `ActivityLocationFallbackPolicy.kt`, `ActivityLocationFallbackPolicyTest.kt`, `GpsFixPresentationPolicy.kt`, and `GpsAccuracyPresentationPolicyTest.kt`. No `app.js`, `MainActivity.kt`, `test_source_contract.py`, Health/anti-cheat, exercise-catalog, workflow, release-version, signing or Play file is in this PR.
+- The older first attempt PR #291 was closed before merge because it was 11 commits behind the live base. #292 was recreated from the exact current base and compares 5 ahead / 0 behind. Keep #292 Draft until exact-head CI and physical P0 are complete. Older mixed PR #284 remains Draft/held for shared UI-file ownership; do not merge it as a whole.
+
+### Material Activity Engine / GPS changes
+- Fused Location requests use per-request callback identity and a monotonically increasing session generation. Late success/failure after pause, stop or session replacement cannot revive location collection; stale callbacks remove only their own registration.
+- Framework provider selection respects fine/coarse permission. Approximate-only permission cannot request `GPS_PROVIDER`.
+- A silent GPS provider falls back to `NETWORK_PROVIDER` after the bounded no-fix/stale window; a failed GPS registration can fall back immediately when coarse permission and network provider are available.
+- The selected provider is retained only while still enabled. Provider enabled/disabled callbacks trigger immediate re-selection; if neither eligible provider exists, framework updates are removed and selection state is cleared.
+- Provider changes reset the measurement anchor, observed/accepted accuracy and current speed; route distance is not bridged across sources.
+- Repeated framework registration failures use bounded 4s/8s/16s/30s retry backoff.
+- Accepted accuracy is exposed only for a fresh `ready` fix and only when finite and positive. Missing, invalid, stale, filtered and paused states return no accuracy value, not a fabricated zero.
+
+### Exact source/test evidence
+- Exact GitHub source blobs:
+  - `ActivityTrackingService.kt`: `991d13677d2b23d1aa5fdd0530ae3d87a2a6999a`
+  - `ActivityLocationFallbackPolicy.kt`: `df94187062dd8f58aaf8574cfc66f843f89e3634`
+  - `ActivityLocationFallbackPolicyTest.kt`: `8f9cedbcd16750e67f92c7820a267b1b204ada8f`
+  - `GpsFixPresentationPolicy.kt`: `e0471db0b13da797020175563a71c9534b6e0e3e`
+  - `GpsAccuracyPresentationPolicyTest.kt`: `ac17d99d3b3b0ecf8328e9e2c4c153bd7e9c5fad`
+- Local Kotlin compilation of the exact fetched policy sources passed: 23 fallback/provider assertions plus 12 accuracy-presentation assertions.
+- Exact-fetched-source contract audit passed 13/13 checks, covering callback generation, late callback removal, permission-aware provider choice, provider re-selection, retry bounds, source reset and truthful accuracy.
+- Exact-head GitHub Android run [43382459916](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43382459916) started on `cb97dc0b66299825e6a02dd91ec53e369667bb74`. At this checkpoint, changed-app and product/source-contract/backend regression steps passed; the Android lint/test/build step was still in progress. Do not claim Android CI PASS until the run completes successfully.
+
+### Physical device and Maps gates
+- Fresh Desktop Commander inventory reports `localhost` OFFLINE, last seen 68 hours ago. No ADB device is attached. No install, launch, Stop, pause/resume, location-setting change or activity-data read was attempted; preserve the unknown phone session. Physical stationary-drift, measured-route, screen-off/background, notification and process-death P0 remain NOT RUN.
+- The canonical map decision remains the no-billing Leaflet/WebView stack: attributed OpenStreetMap streets, OpenTopoMap terrain and EOX Sentinel-2 cloudless 2016 imagery.
+- Historical preflight `41684077962` recorded Maps Android Backend/API Keys APIs enabled, but key-inventory permission denied, no package/SHA-restricted Android key visible and no billing account linked. No permission retry, key creation, billing, payment method or paid infrastructure change occurred. Native Google basemap/traffic/transit is not present or claimed; revisit only after owner prerequisites and an explicit repository map-stack decision.
+
+### Release boundary
+- No release version, workflow, signing, Play, Health/anti-cheat or exercise-catalog file changed.
+- VersionCode 51020 remains unallocated. No APK install, AAB signing/upload, Play write or Production promotion occurred.
+- Physical-device QA and Play acceptance remain unverified.
