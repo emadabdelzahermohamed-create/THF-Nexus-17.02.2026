@@ -62,7 +62,14 @@ data class HealthSnapshot(
     val recordEvidence: List<HealthRecordEvidence>,
     val dataReadSuccessfully: Boolean,
     val hasVerifiedRewardData: Boolean,
-)
+) {
+    /**
+     * Privacy-reduced per-record source metadata for UI/bridge consumers.
+     * Raw provider/client IDs and device manufacturer/model are not exposed.
+     */
+    val recordProvenance: List<HealthRecordProvenanceSummary>
+        get() = recordEvidence.map(HealthRecordProvenancePresentationPolicy::summarize)
+}
 
 data class WorkoutForHealth(
     val clientRecordId: String,
