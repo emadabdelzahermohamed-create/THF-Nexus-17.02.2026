@@ -122,7 +122,8 @@ No formal lease record was found. Treat #93's MainActivity/test_source_contract 
 
 ## Final canonical-head reconciliation
 
-- Current canonical branch HEAD after the evidence-ledger commits: `6286c7cebcf79872f0606e34ca5ba5c4e4efac28`.
-- Current compare to PR #292 head `de304b6f4baa44dc80b3245493d7275fe39f00fe`: 13 ahead / 6 behind; merge base `dedd5f39001781c19e7e19bdee8f44e2fa97b01d`. Keep Draft; no rebase/merge was performed.
-- Current compare to PR #284 head `274155eafdfff381009ef5814a621f32b225f1a8`: 19 ahead / 28 behind; merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`. GitHub reports #284 `mergeable=false`, `dirty`; keep Draft.
+- Canonical application/source comparison baseline: `6286c7cebcf79872f0606e34ca5ba5c4e4efac28`. The two subsequent evidence-only ledger commits advanced the branch to pre-checkpoint HEAD `22e5ad588811d84e36129779447c0432978210a4`; they changed only recovery/release documentation, not application source.
+- At pre-checkpoint HEAD `22e5ad588811d84e36129779447c0432978210a4`, PR #292 head `de304b6f4baa44dc80b3245493d7275fe39f00fe` is 13 ahead / 8 behind; merge base `dedd5f39001781c19e7e19bdee8f44e2fa97b01d`. Keep Draft; no rebase/merge was performed.
+- At the same pre-checkpoint HEAD, PR #284 head `274155eafdfff381009ef5814a621f32b225f1a8` is 19 ahead / 30 behind; merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`. GitHub reports #284 `mergeable=false`, `dirty`; keep Draft.
 - The preceding CI/artifact evidence is unchanged: PR #292 exact branch-head run 43383307618 on `de304b6`, artifact 14017568163, ZIP `d1aee733160901a21e0752b8615c3e2c6a858a64c529e28e9147162553458c32`, unsigned AAB `fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80`.
+- This final update is documentation-only. Its resulting commit is the new canonical branch HEAD; application/test source is unchanged.
