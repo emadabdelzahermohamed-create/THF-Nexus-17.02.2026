@@ -34,7 +34,12 @@ Provider changes reset the location measurement anchor, observed/accepted accura
 - Exact-source local accuracy-presentation harness: 12 assertions PASS.
 - Exact fetched-source contract audit: 13/13 PASS.
 - GitHub Android workflow: [run 43382459916](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43382459916), exact source HEAD `cb97dc0b66299825e6a02dd91ec53e369667bb74`.
-- At report creation: changed-app PASS; product/source-contract/backend regression step PASS; Android lint/unit/build step still IN_PROGRESS. Android CI, APK/AAB and artifact acceptance are not claimed until that exact run completes.
+- Exact-head Android run [43382459916](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43382459916) completed SUCCESS on source/test SHA `cb97dc0b66299825e6a02dd91ec53e369667bb74`.
+- Product tests 67/67; source-contract 34/34; backend 29/29; Android unit tests 250/250 (0 failures, 0 ignored).
+- Android API 36 setup, `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug` and `:app:bundleRelease` validation all passed. Lint reports 0 errors, 16 warnings and 1 hint.
+- Artifact ID `14017730574`; downloaded ZIP SHA-256 `e4f5c286137856df5c503cb3140eaff48608dd594004b6736637f5241fdcb149`; QA APK SHA-256 `ee26a73729eee644a279716e2b457c85a68fe26cea3d9663b96dc9e43c4f3e36`; validation AAB SHA-256 `fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80`.
+- The ZIP was downloaded and independently rehashed; `jarsigner -verify` reports the validation AAB is unsigned. Package `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.0.0-v2-alpha19-debug`. This is QA validation only, not a release artifact.
+- Final branch HEAD after documentation-only commits: `e5fb687872285a9b185145aca5d90b9f45be2206`; exact tested application/test SHA remains `cb97dc0b66299825e6a02dd91ec53e369667bb74`.
 
 ## Physical-device QA
 
