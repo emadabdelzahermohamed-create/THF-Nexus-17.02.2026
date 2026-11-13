@@ -82,7 +82,7 @@ Play Health declaration/privacy/Data Safety reconciliation, physical Health gran
 - Exact PR-head Android CI is [43383307618](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43383307618), not the earlier synthetic merge-event run 43382459916. Run 43383307618 checked out `de304b6f4baa44dc80b3245493d7275fe39f00fe` and completed SUCCESS.
 - Product 67/67; source-contract 34/34; backend 29/29; Android unit 250/250 (0 failures, 0 ignored); Android API 36, lintDebug, assembleDebug and bundleRelease validation passed. Lint: 0 errors, 16 warnings, 1 hint.
 - Exact-head artifact ID `14017568163`; downloaded ZIP SHA-256 `d1aee733160901a21e0752b8615c3e2c6a858a64c529e28e9147162553458c32`; APK SHA-256 `a0914f8767fdebc6799cc8bc2858dabf46355f87e1828742d1e482160ef63289`; unsigned validation AAB SHA-256 `fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80`. The ZIP and internal file hashes were recomputed from the downloaded artifact; `jarsigner -verify` reports the AAB is unsigned. QA identity remains `com.topherofit.thf.pulse.qa`, versionCode 51019; no release allocation or signing.
-- Relative to current canonical HEAD `dbe85572669fe50fd16cb3e126ab763efd0d08f0`, #292 is 13 commits ahead / 4 behind with merge base `dedd5f39001781c19e7e19bdee8f44e2fa97b01d`. Its five app/test files are disjoint from #293, but the branch has not been rebased or tested against the current canonical combined head. GitHub reports mergeable/clean; that does not replace combined-head CI or physical QA.
+- At the initial 19:47 recheck, pre-ledger canonical HEAD was `dbe85572669fe50fd16cb3e126ab763efd0d08f0`; after the evidence-ledger commits, current canonical HEAD is `6286c7cebcf79872f0606e34ca5ba5c4e4efac28`. Relative to that current HEAD, #292 is 13 commits ahead / 6 behind with merge base `dedd5f39001781c19e7e19bdee8f44e2fa97b01d`. Its five app/test files remain disjoint from #293, but the branch has not been rebased or tested against the current canonical combined head. GitHub's earlier clean mergeability snapshot does not replace combined-head CI or physical QA.
 
 ### Current PR ownership / overlap snapshot
 | PR | Current state | Files / hold |
@@ -118,3 +118,11 @@ No formal lease record was found. Treat #93's MainActivity/test_source_contract 
 
 ### Route backup / sync remains separate
 - Completed routes are still persisted in WebView localStorage; no authenticated route-sync endpoint or precise-location upload exists. The opt-in route backup design remains design-only with separate summary/precise-location consent, retention and deletion requirements. Do not implement or upload routes until the GPS and privacy/backend contracts are tested.
+
+
+## Final canonical-head reconciliation
+
+- Current canonical branch HEAD after the evidence-ledger commits: `6286c7cebcf79872f0606e34ca5ba5c4e4efac28`.
+- Current compare to PR #292 head `de304b6f4baa44dc80b3245493d7275fe39f00fe`: 13 ahead / 6 behind; merge base `dedd5f39001781c19e7e19bdee8f44e2fa97b01d`. Keep Draft; no rebase/merge was performed.
+- Current compare to PR #284 head `274155eafdfff381009ef5814a621f32b225f1a8`: 19 ahead / 28 behind; merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`. GitHub reports #284 `mergeable=false`, `dirty`; keep Draft.
+- The preceding CI/artifact evidence is unchanged: PR #292 exact branch-head run 43383307618 on `de304b6`, artifact 14017568163, ZIP `d1aee733160901a21e0752b8615c3e2c6a858a64c529e28e9147162553458c32`, unsigned AAB `fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80`.
