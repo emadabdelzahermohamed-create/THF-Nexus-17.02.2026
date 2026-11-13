@@ -46,13 +46,14 @@ internal object HealthRecordProvenancePresentationPolicy {
 
     fun summarize(evidence: HealthRecordEvidence): HealthRecordProvenanceSummary {
         val source = normalizeSourcePackage(evidence.dataOrigin)
-        val recordType = normalizeRecordType(evidence.recordType)
+        val stableRecordType = normalizeRecordType(evidence.recordType)
         val recordId = evidence.recordId.trim()
 
         // Recompute and compare rather than trusting an arbitrary string in canonicalKey.
-        // The raw provider ID is never returned from this projection.
-        val expectedKey = if (source != null && recordType != null && recordId.isNotEmpty()) {
-            WorkoutIdentity.stableHealthRecordKey(source, recordType, recordId)
+        // Unknown but well-formed record types retain a pseudonymous diagnostic key; they are
+        // still labelled "unknown" and cannot qualify for rewards.
+        val expectedKey = if (source != null && stableRecordType != null && recordId.isNotEmpty()) {
+            WorkoutIdentity.stableHealthRecordKey(source, stableRecordType, recordId)
         } else {
             null
         }
@@ -66,13 +67,14 @@ internal object HealthRecordProvenancePresentationPolicy {
         val reason = evidence.verificationReason.trim()
             .takeIf { reasonPattern.matches(it) }
             ?: "UNSPECIFIED"
+        val isSupportedRecordType = stableRecordType in supportedRecordTypes
 
         // Presentation must never upgrade the repository's evidence decision. It only fails
-        // closed further when the identity or the displayable provenance contract is incomplete.
+        // closed further when identity or the displayable provenance contract is incomplete.
         val rewardEligible = evidence.verifiedForRewards &&
             evidence.integrityClass == IntegrityClass.VERIFIED &&
             source != null &&
-            recordType != null &&
+            isSupportedRecordType &&
             recordKey != null &&
             recordingMethod in setOf("actively_recorded", "automatically_recorded") &&
             deviceClass in rewardCompatibleDeviceClasses
@@ -80,7 +82,7 @@ internal object HealthRecordProvenancePresentationPolicy {
         return HealthRecordProvenanceSummary(
             recordKey = recordKey,
             sourcePackage = source,
-            recordType = recordType ?: "unknown",
+            recordType = if (isSupportedRecordType) stableRecordType!! else "unknown",
             recordingMethod = recordingMethod,
             deviceClass = deviceClass,
             integrityClass = integrityClass,
@@ -98,9 +100,7 @@ internal object HealthRecordProvenancePresentationPolicy {
 
     private fun normalizeRecordType(raw: String): String? {
         val normalized = raw.trim()
-        return normalized.takeIf {
-            recordTypePattern.matches(it) && it in supportedRecordTypes
-        }
+        return normalized.takeIf { recordTypePattern.matches(it) }
     }
 
     private fun recordingMethodLabel(value: Int): String = when (value) {
