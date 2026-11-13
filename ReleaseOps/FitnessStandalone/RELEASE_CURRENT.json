@@ -210,11 +210,11 @@
     "maps_native_sdk_key": "NOT_REQUIRED_FOR_CURRENT_OSM_LEAFLET_STACK; do not add Google Maps Rx, Maps SDK billing or a Maps key. Google directions remains an optional external handoff.",
     "listing_truthfulness": "OPEN; live listing claims GPS/background sessions and estimated metrics; current medical disclaimer lacks explicit not-a-medical-device and professional-consultation wording in both locales; physical P0 incomplete; no listing edit",
     "competition_backend": "PR #269 merged; backend-only strength_volume_kg_reps leaderboard derives scores from stored non-warmup sets. Admin endpoint remains disabled without owner-managed THF_COMPETITION_ADMIN_KEY; no event seed or independently verified competition backend deployment. Scores remain SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED and rewardEligible=false. No THF rewards/payouts authorized.",
-    "gps_accuracy": "PR #292 branch head de304b6f4baa44dc80b3245493d7275fe39f00fe passed exact PR-head run 43383307618: product 67/67, source-contract 34/34, backend 29/29, Android 250/250 (0 failures, 0 ignored), lint/assemble/bundle PASS. Artifact 14017568163 ZIP d1aee733160901a21e0752b8615c3e2c6a858a64c529e28e9147162553458c32; APK a0914f8767fdebc6799cc8bc2858dabf46355f87e1828742d1e482160ef63289; unsigned AAB fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80. Current canonical dbe85572669fe50fd16cb3e126ab763efd0d08f0; candidate 13 ahead / 4 behind from merge base dedd5f39001781c19e7e19bdee8f44e2fa97b01d. PR #292 remains Draft pending physical P0 and final combined-head CI. PR #284 remains Draft/dirty and overlaps #292 on ActivityTrackingService, #282/#216 on app.js and #93 on MainActivity/test_source_contract. No GPS physical accuracy claim.",
+    "gps_accuracy": "PR #292 branch head de304b6f4baa44dc80b3245493d7275fe39f00fe passed exact PR-head run 43383307618: product 67/67, source-contract 34/34, backend 29/29, Android 250/250 (0 failures, 0 ignored), lint/assemble/bundle PASS. Artifact 14017568163 ZIP d1aee733160901a21e0752b8615c3e2c6a858a64c529e28e9147162553458c32; APK a0914f8767fdebc6799cc8bc2858dabf46355f87e1828742d1e482160ef63289; unsigned AAB fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80. Current canonical HEAD 6286c7cebcf79872f0606e34ca5ba5c4e4efac28; PR #292 is 13 ahead / 6 behind from merge base dedd5f39001781c19e7e19bdee8f44e2fa97b01d. PR #292 remains Draft pending current-base combined-head CI and physical P0. PR #284 head 274155eafdfff381009ef5814a621f32b225f1a8 is 19 ahead / 28 behind, mergeable=false/dirty; it overlaps #292 on ActivityTrackingService, #282/#216 on app.js and #93 on MainActivity/test_source_contract. No GPS physical accuracy claim.",
     "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED; finished GPS routes remain in WebView localStorage; no authenticated route endpoint or precise-location upload. Keep separate default-off summary and precise-route consent; do not implement/upload until #284 is physically validated and retention/deletion/privacy/backend contracts are verified.",
     "anti_cheat": "ActivityEvidenceAnomalyPolicy.kt and tests exist, but #292 ActivityTrackingService has no ActivityEvidenceAnomalyPolicy/ActivityGpsFix/assessSegment call. Raw provider, elapsedRealtimeNanos, coordinates, accuracy and OS mock flag are captured; current accepted-fix flow uses GpsFixGate/GpsDistanceAccumulator. Full anti-cheat integration and physical provenance remain NOT VERIFIED; do not award distance/pace/competition credit as fully anti-cheat verified."
   },
-  "next_action": "Keep #292 Draft until physical GPS/session P0 passes and its branch is reconciled/tested against current canonical dbe85572669fe50fd16cb3e126ab763efd0d08f0. Keep #284 Draft/dirty as a UI/map reference; do not merge it wholesale because of app.js, ActivityTrackingService, MainActivity and source-contract overlaps. Wire raw Android GPS fixes into ActivityEvidenceAnomalyPolicy before distance/pace/competition credit. Preserve the unknown phone session. Route sync remains design-only. Do not allocate 51020, sign, upload or promote until owner release API/signing prerequisites, final exact-head Android CI, physical P0 and policy/privacy gates pass.",
+  "next_action": "Keep #292 Draft until it is reconciled with current canonical HEAD 6286c7cebcf79872f0606e34ca5ba5c4e4efac28, passes combined-head CI and physical GPS/session P0. Keep #284 Draft/dirty as a UI/map reference; do not merge it wholesale. Wire raw Android GPS fixes into ActivityEvidenceAnomalyPolicy before distance/pace/competition credit. Preserve the unknown phone session. Route sync remains design-only. Do not allocate 51020, sign, upload or promote until owner release API/signing prerequisites, final exact-head Android CI, physical P0 and policy/privacy gates pass.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -2160,5 +2160,19 @@
     "next_version_allocated": false,
     "release_status": "HOLD",
     "paid_infrastructure_used": false
+  },
+  "gps_accuracy_reconciliation_20261113": {
+    "canonical_head": "6286c7cebcf79872f0606e34ca5ba5c4e4efac28",
+    "pr_292_head": "de304b6f4baa44dc80b3245493d7275fe39f00fe",
+    "pr_292_ahead": 13,
+    "pr_292_behind": 6,
+    "pr_292_merge_base": "dedd5f39001781c19e7e19bdee8f44e2fa97b01d",
+    "pr_284_head": "274155eafdfff381009ef5814a621f32b225f1a8",
+    "pr_284_ahead": 19,
+    "pr_284_behind": 28,
+    "pr_284_merge_base": "9b5db58e809fa7d5e639bc4ee55df03d100467e8",
+    "pr_284_mergeable_state": "dirty",
+    "rebase_or_merge_performed": false,
+    "reason": "PR #292 exact source is tested but still requires current-base combined-head CI and physical P0; PR #284 remains dirty and overlaps shared files."
   }
 }
