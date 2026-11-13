@@ -110,13 +110,29 @@ class HealthRecordProvenancePresentationPolicyTest {
     }
 
     @Test
-    fun unknownRecordTypesRemainVisibleAsUnknownButNeverQualify() {
+    fun unknownRecordTypesKeepDiagnosticIdentityButNeverQualify() {
         val summary = HealthRecordProvenancePresentationPolicy.summarize(
             evidence(type = "FutureSensitiveRecord"),
         )
 
         assertEquals("unknown", summary.recordType)
-        assertNull(summary.recordKey)
+        assertNotNull(summary.recordKey)
+        assertFalse(summary.rewardEligible)
+    }
+
+    @Test
+    fun unreviewedProviderRemainsSourceLabelledButNotRewardEligible() {
+        val summary = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                source = "com.example.unreviewed.health",
+                integrity = IntegrityClass.SUPPORTED,
+                verified = false,
+                reason = "UNTRUSTED_PROVIDER",
+            ),
+        )
+
+        assertEquals("com.example.unreviewed.health", summary.sourcePackage)
+        assertEquals("SUPPORTED", summary.integrityClass)
         assertFalse(summary.rewardEligible)
     }
 
