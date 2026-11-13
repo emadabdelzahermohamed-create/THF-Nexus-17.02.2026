@@ -33,6 +33,7 @@ Provider changes reset the location measurement anchor, observed/accepted accura
 - Exact-source local Kotlin compile and behavior harness: 23 fallback/provider assertions PASS.
 - Exact-source local accuracy-presentation harness: 12 assertions PASS.
 - Exact fetched-source contract audit: 13/13 PASS.
+- Read-only notification/session-control audit: 6/6 PASS — foreground service calls `startForeground`, ongoing notification refreshes every 5 seconds, notification exposes Stop/Pause/Resume actions, and MainActivity exposes pause/resume/end plus snapshot pause/accuracy state. Source evidence only; device interaction remains NOT RUN.
 - GitHub Android workflow: [run 43382459916](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43382459916), exact source HEAD `cb97dc0b66299825e6a02dd91ec53e369667bb74`.
 - Exact-head Android run [43382459916](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43382459916) completed SUCCESS on source/test SHA `cb97dc0b66299825e6a02dd91ec53e369667bb74`.
 - Product tests 67/67; source-contract 34/34; backend 29/29; Android unit tests 250/250 (0 failures, 0 ignored).
