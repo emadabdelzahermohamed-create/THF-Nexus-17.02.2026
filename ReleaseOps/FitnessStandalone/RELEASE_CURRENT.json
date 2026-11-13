@@ -210,7 +210,7 @@
     "maps_native_sdk_key": "NOT_REQUIRED_FOR_CURRENT_OSM_LEAFLET_STACK; do not add Google Maps Rx, Maps SDK billing or a Maps key. Google directions remains an optional external handoff.",
     "listing_truthfulness": "OPEN; live listing claims GPS/background sessions and estimated metrics; current medical disclaimer lacks explicit not-a-medical-device and professional-consultation wording in both locales; physical P0 incomplete; no listing edit",
     "competition_backend": "PR #269 merged; backend-only strength_volume_kg_reps leaderboard derives scores from stored non-warmup sets. Admin endpoint remains disabled without owner-managed THF_COMPETITION_ADMIN_KEY; no event seed or independently verified competition backend deployment. Scores remain SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED and rewardEligible=false. No THF rewards/payouts authorized.",
-    "gps_accuracy": "PR #292 branch head de304b6f4baa44dc80b3245493d7275fe39f00fe passed exact PR-head run 43383307618: product 67/67, source-contract 34/34, backend 29/29, Android 250/250 (0 failures, 0 ignored), lint/assemble/bundle PASS. Artifact 14017568163 ZIP d1aee733160901a21e0752b8615c3e2c6a858a64c529e28e9147162553458c32; APK a0914f8767fdebc6799cc8bc2858dabf46355f87e1828742d1e482160ef63289; unsigned AAB fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80. App-source comparison baseline 6286c7cebcf79872f0606e34ca5ba5c4e4efac28; pre-checkpoint canonical HEAD 22e5ad588811d84e36129779447c0432978210a4. PR #292 is 13 ahead / 8 behind from merge base dedd5f39001781c19e7e19bdee8f44e2fa97b01d. PR #284 head 274155eafdfff381009ef5814a621f32b225f1a8 is 19 ahead / 30 behind, mergeable=false/dirty. No GPS physical accuracy claim.",
+    "gps_accuracy": "PR #292 branch HEAD b0db64ad668cd2921cc8dcc34970912b42351b1f contains a documentation-only GPS report correction. Exact tested application/test SHA remains de304b6f4baa44dc80b3245493d7275fe39f00fe, passed exact PR-head run 43383307618: product 67/67, source-contract 34/34, backend 29/29, Android 250/250 (0 failures, 0 ignored), lint/assemble/bundle PASS. Artifact 14017568163 ZIP d1aee733160901a21e0752b8615c3e2c6a858a64c529e28e9147162553458c32; APK a0914f8767fdebc6799cc8bc2858dabf46355f87e1828742d1e482160ef63289; unsigned AAB fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80. Relative to pre-checkpoint canonical HEAD 935b18a835b4f5555b6be529fbe5c2c528abc792, PR #292 is 14 ahead / 9 behind from merge base dedd5f39001781c19e7e19bdee8f44e2fa97b01d. PR #284 is 19 ahead / 31 behind and dirty. No combined-current-head CI or GPS physical P0; no GPS physical accuracy claim.",
     "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED; finished GPS routes remain in WebView localStorage; no authenticated route endpoint or precise-location upload. Keep separate default-off summary and precise-route consent; do not implement/upload until #284 is physically validated and retention/deletion/privacy/backend contracts are verified.",
     "anti_cheat": "ActivityEvidenceAnomalyPolicy.kt and tests exist, but #292 ActivityTrackingService has no ActivityEvidenceAnomalyPolicy/ActivityGpsFix/assessSegment call. Raw provider, elapsedRealtimeNanos, coordinates, accuracy and OS mock flag are captured; current accepted-fix flow uses GpsFixGate/GpsDistanceAccumulator. Full anti-cheat integration and physical provenance remain NOT VERIFIED; do not award distance/pace/competition credit as fully anti-cheat verified."
   },
@@ -2162,19 +2162,22 @@
     "paid_infrastructure_used": false
   },
   "gps_accuracy_reconciliation_20261113": {
-    "comparison_baseline_sha": "6286c7cebcf79872f0606e34ca5ba5c4e4efac28",
-    "canonical_pre_checkpoint_head": "22e5ad588811d84e36129779447c0432978210a4",
-    "pr_292_head": "de304b6f4baa44dc80b3245493d7275fe39f00fe",
-    "pr_292_ahead": 13,
-    "pr_292_behind": 8,
+    "comparison_baseline_sha": "935b18a835b4f5555b6be529fbe5c2c528abc792",
+    "canonical_pre_checkpoint_head": "935b18a835b4f5555b6be529fbe5c2c528abc792",
+    "pr_292_branch_head": "b0db64ad668cd2921cc8dcc34970912b42351b1f",
+    "pr_292_exact_tested_source_sha": "de304b6f4baa44dc80b3245493d7275fe39f00fe",
+    "pr_292_exact_head_ci_run": 43383307618,
+    "pr_292_ahead": 14,
+    "pr_292_behind": 9,
     "pr_292_merge_base": "dedd5f39001781c19e7e19bdee8f44e2fa97b01d",
+    "pr_292_last_commit_is_docs_only": true,
     "pr_284_head": "274155eafdfff381009ef5814a621f32b225f1a8",
     "pr_284_ahead": 19,
-    "pr_284_behind": 30,
+    "pr_284_behind": 31,
     "pr_284_merge_base": "9b5db58e809fa7d5e639bc4ee55df03d100467e8",
     "pr_284_mergeable_state": "dirty",
     "rebase_or_merge_performed": false,
-    "application_source_changed_by_ledger_commits": false,
-    "reason": "PR #292 exact source is tested but still requires current-base combined-head CI and physical P0; PR #284 remains dirty and overlaps shared files."
+    "application_source_changed_after_exact_ci": false,
+    "reason": "PR #292 exact application/test source is tested but still requires current-base combined-head CI and physical P0; PR #284 remains dirty and overlaps shared files."
   }
 }

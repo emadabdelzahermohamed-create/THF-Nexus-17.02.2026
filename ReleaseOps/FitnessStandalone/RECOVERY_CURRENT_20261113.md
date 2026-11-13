@@ -127,3 +127,11 @@ No formal lease record was found. Treat #93's MainActivity/test_source_contract 
 - At the same pre-checkpoint HEAD, PR #284 head `274155eafdfff381009ef5814a621f32b225f1a8` is 19 ahead / 30 behind; merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`. GitHub reports #284 `mergeable=false`, `dirty`; keep Draft.
 - The preceding CI/artifact evidence is unchanged: PR #292 exact branch-head run 43383307618 on `de304b6`, artifact 14017568163, ZIP `d1aee733160901a21e0752b8615c3e2c6a858a64c529e28e9147162553458c32`, unsigned AAB `fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80`.
 - This final update is documentation-only. Its resulting commit is the new canonical branch HEAD; application/test source is unchanged.
+
+
+## GPS report correction and final PR-head snapshot
+
+- PR #292's branch HEAD is now `b0db64ad668cd2921cc8dcc34970912b42351b1f`. This commit changes only `GPS_MAP_QUALITY_20261113.md`; no Android source or tests changed after exact PR-head source/test SHA `de304b6f4baa44dc80b3245493d7275fe39f00fe` passed run 43383307618. The exact-head artifact hashes remain unchanged; no rebuild or reupload was made.
+- Relative to pre-this-checkpoint canonical HEAD `935b18a835b4f5555b6be529fbe5c2c528abc792`, #292 is 14 ahead / 9 behind from merge base `dedd5f39001781c19e7e19bdee8f44e2fa97b01d`. The branch is still not reconciled/tested against the current canonical combined head.
+- #284 remains Draft/dirty. Relative to the same pre-checkpoint canonical HEAD, it is 19 ahead / 31 behind from merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`; GitHub reports `mergeable=false` / `dirty`.
+- This snapshot is documentation-only. No PR was merged, no phone action was taken, and no Play state changed.
