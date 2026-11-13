@@ -11,7 +11,7 @@ import java.util.Locale
  * recordKey is a deterministic pseudonymous identity for list reconciliation only; it is not
  * anonymization, hardware attestation, or an authorization token.
  */
-internal data class HealthRecordProvenanceSummary(
+data class HealthRecordProvenanceSummary(
     val recordKey: String?,
     val sourcePackage: String?,
     val recordType: String,
