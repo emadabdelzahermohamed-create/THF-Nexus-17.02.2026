@@ -39,7 +39,7 @@ Provider changes reset the location measurement anchor, observed/accepted accura
 - Android API 36 setup, `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug` and `:app:bundleRelease` validation all passed. Lint reports 0 errors, 16 warnings and 1 hint.
 - Artifact ID `14017730574`; downloaded ZIP SHA-256 `e4f5c286137856df5c503cb3140eaff48608dd594004b6736637f5241fdcb149`; QA APK SHA-256 `ee26a73729eee644a279716e2b457c85a68fe26cea3d9663b96dc9e43c4f3e36`; validation AAB SHA-256 `fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80`.
 - The ZIP was downloaded and independently rehashed; `jarsigner -verify` reports the validation AAB is unsigned. Package `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.0.0-v2-alpha19-debug`. This is QA validation only, not a release artifact.
-- Final branch HEAD after documentation-only commits: `e5fb687872285a9b185145aca5d90b9f45be2206`; exact tested application/test SHA remains `cb97dc0b66299825e6a02dd91ec53e369667bb74`.
+- Documentation-only checkpoint/report commits followed the tested application/test SHA; no application source changed after it. The exact tested application/test SHA remains `cb97dc0b66299825e6a02dd91ec53e369667bb74`.
 
 ## Physical-device QA
 
