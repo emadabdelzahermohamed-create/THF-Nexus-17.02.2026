@@ -189,4 +189,31 @@ class HealthRecordProvenancePresentationPolicyTest {
         assertEquals("UNSPECIFIED", summary.verificationReason)
         assertFalse(summary.toString().contains("<script>"))
     }
+
+    @Test
+    fun healthSnapshotExposesOnlyPrivacyReducedRecordProvenance() {
+        val record = evidence()
+        val snapshot = HealthSnapshot(
+            steps = 120L,
+            distanceMeters = null,
+            activeCaloriesKcal = null,
+            exerciseSessions = null,
+            origins = setOf(record.dataOrigin),
+            latestSessionEnd = null,
+            recordsRead = 1,
+            verifiedRecords = 1,
+            excludedManualOrUnknownRecords = 0,
+            duplicateRecordsExcluded = 0,
+            recordEvidence = listOf(record),
+            dataReadSuccessfully = true,
+            hasVerifiedRewardData = true,
+        )
+
+        val summary = snapshot.recordProvenance.single()
+        assertEquals("com.samsung.android.wear.shealth", summary.sourcePackage)
+        assertEquals(record.canonicalKey, summary.recordKey)
+        assertTrue(summary.rewardEligible)
+        assertFalse(summary.toString().contains(record.recordId))
+        assertFalse(summary.toString().contains(requireNotNull(record.clientRecordId)))
+    }
 }
