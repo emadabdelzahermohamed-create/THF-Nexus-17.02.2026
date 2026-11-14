@@ -101,7 +101,7 @@ class HealthRecordProvenancePresentationPolicyTest {
     @Test
     fun malformedSourcePackageIsNotExposedOrRewardEligible() {
         val summary = HealthRecordProvenancePresentationPolicy.summarize(
-            evidence(source = "com.example\n<script>"),
+            evidence(source = "com.example\\n<script>"),
         )
 
         assertNull(summary.sourcePackage)
@@ -133,6 +133,22 @@ class HealthRecordProvenancePresentationPolicyTest {
 
         assertEquals("com.example.unreviewed.health", summary.sourcePackage)
         assertEquals("SUPPORTED", summary.integrityClass)
+        assertFalse(summary.rewardEligible)
+    }
+
+    @Test
+    fun unreviewedProviderCannotQualifyEvenIfUpstreamEvidenceIsInconsistent() {
+        val summary = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                source = "com.example.unreviewed.health",
+                integrity = IntegrityClass.VERIFIED,
+                verified = true,
+                reason = "APPROVED_PROVIDER_WITH_DEVICE_METADATA",
+            ),
+        )
+
+        assertEquals("com.example.unreviewed.health", summary.sourcePackage)
+        assertEquals("VERIFIED", summary.integrityClass)
         assertFalse(summary.rewardEligible)
     }
 
@@ -181,7 +197,7 @@ class HealthRecordProvenancePresentationPolicyTest {
         val summary = HealthRecordProvenancePresentationPolicy.summarize(
             evidence(
                 source = "  COM.SAMSUNG.ANDROID.WEAR.SHEALTH  ",
-                reason = "approved provider\n<script>",
+                reason = "approved provider\\n<script>",
             ),
         )
 
