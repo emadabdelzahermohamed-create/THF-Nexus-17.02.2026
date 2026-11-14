@@ -69,11 +69,14 @@ internal object HealthRecordProvenancePresentationPolicy {
             ?: "UNSPECIFIED"
         val isSupportedRecordType = stableRecordType in supportedRecordTypes
 
-        // Presentation must never upgrade the repository's evidence decision. It only fails
-        // closed further when identity or the displayable provenance contract is incomplete.
+        // Defense in depth at the UI boundary: a malformed or stale upstream evidence object
+        // must not turn an unreviewed Health Connect writer into reward-eligible provenance.
+        // The repository's evidence decision remains authoritative; this layer only fails closed.
+        val approvedSource = source != null &&
+            HealthSourceTrustPolicy.isApprovedHealthConnectProvider(source)
         val rewardEligible = evidence.verifiedForRewards &&
             evidence.integrityClass == IntegrityClass.VERIFIED &&
-            source != null &&
+            approvedSource &&
             isSupportedRecordType &&
             recordKey != null &&
             recordingMethod in setOf("actively_recorded", "automatically_recorded") &&
