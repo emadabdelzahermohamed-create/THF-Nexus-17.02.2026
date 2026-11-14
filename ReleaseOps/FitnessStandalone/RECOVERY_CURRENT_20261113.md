@@ -135,3 +135,40 @@ No formal lease record was found. Treat #93's MainActivity/test_source_contract 
 - Relative to pre-this-checkpoint canonical HEAD `935b18a835b4f5555b6be529fbe5c2c528abc792`, #292 is 14 ahead / 9 behind from merge base `dedd5f39001781c19e7e19bdee8f44e2fa97b01d`. The branch is still not reconciled/tested against the current canonical combined head.
 - #284 remains Draft/dirty. Relative to the same pre-checkpoint canonical HEAD, it is 19 ahead / 31 behind from merge base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`; GitHub reports `mergeable=false` / `dirty`.
 - This snapshot is documentation-only. No PR was merged, no phone action was taken, and no Play state changed.
+
+
+## 2026-11-14 Health provenance / ownership checkpoint
+
+### Canonical state after tested Health merge
+- Canonical branch before this checkpoint: `96d35d2edf292c16c5c462f4f6a2016576eb6a53`, squash merge of PR #295.
+- PR [#295](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/295) added a second fail-closed reviewed-provider check at the privacy-safe Health provenance presentation boundary.
+- Exact tested PR source SHA: `06ce46526bd01b7a887b736add55451421ce9536`.
+- Exact-head Android CI [run 43602214529](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43602214529): SUCCESS. Product 67/67, source-contract 34/34, backend 29/29; Android `:app:testDebugUnitTest`, lintDebug, assembleDebug and bundleRelease all PASS; Gradle BUILD SUCCESSFUL.
+- Validation artifact 14117290237; ZIP SHA-256 `5b923c85c700f4e189e81bd6d815a563a9fd251b5aadf6689a741065d8211e85`. QA-only package `com.topherofit.thf.pulse.qa`, validation VersionCode 51019; unsigned AAB only, no release signing/upload.
+- Canonical blobs after merge: `HealthRecordProvenancePresentationPolicy.kt` = `cc2c32803d2f4ad5ad696903e86048273a0d032a`; test = `b990558fe736c50da502341b6c412e0721949d83`.
+- The presentation layer now also calls `HealthSourceTrustPolicy.isApprovedHealthConnectProvider(normalizedSource)`. A deliberately inconsistent `VERIFIED + verifiedForRewards=true` evidence object from an unreviewed provider remains source-labelled but reward-ineligible.
+- Canonical manifest was re-fetched after merge: blob `0969cdb2f18775f23e0870bf754612a04376895f`; exactly five Health Connect scopes remain: READ_STEPS, READ_EXERCISE, WRITE_EXERCISE, READ_DISTANCE, READ_ACTIVE_CALORIES_BURNED. READ_HEART_RATE remains absent.
+
+### Health ownership and integration blockers
+- PR [#93](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/93) still owns AndroidManifest, Health service models/readers/activity/tests, MainActivity bridge, rationale strings and source-contract tests.
+- Exact PR #93 manifest patch still adds 14 optional Health scopes beyond the five-scope canonical allowlist: total calories, sleep, heart rate, resting heart rate, weight, height, body fat, basal metabolic rate, oxygen saturation, VO2 max, speed, nutrition, blood pressure and blood glucose. Merged PR #188's permission-scope gate rejects that expansion. Keep all 14 out until each service has a user-facing purpose, minimum-necessary rationale, Play Health/privacy/Data Safety reconciliation and physical grant/revoke/no-data/error QA.
+- Canonical MainActivity blob `b97e08756d5aba515c30f2d1a05517f56631ebf0` still serializes aggregate origins/counts only; it does not serialize `HealthSnapshot.recordProvenance` / `recordEvidence`. PR #93 owns this bridge. Send only privacy-reduced summaries; never expose raw record IDs, client IDs, manufacturer or model.
+- PR [#117](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/117) is merged and its cross-source walking/running/cycling time-proximity policy is canonical. However, canonical `HealthConnectRepository.kt` blob `dd65d53a70a8287014666d3759b0f4bab98aa152` does not invoke it or receive phone-measured session evidence. Stable Health record identity dedup remains separate from phone-vs-Health session reconciliation. Same-origin nearby sessions must not be silently dropped; swimming is never time-deduplicated without stable identity.
+- Optional heart-rate evidence remains policy-only and unintegrated. No READ_HEART_RATE permission, reader, physical watch sample or heart-rate evidence is available/claimed.
+
+### GPS owner handoff — no GPS edits in this lane
+- Latest candidate PR [#294](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/294), report [GPS_MAP_QUALITY_20261114.md](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/blob/agent/codex/gps-location-state-honesty-20261114-r1/ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261114.md), report blob `80aa04e8c0ae3cdcd840dccc25d0d2d3d43ec3a7`.
+- Exact GPS application/test source `9defd1296aa4575eafbe24981dfd95324ce14ef8`; exact-head Android CI [run 43568499998](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43568499998): SUCCESS. PR remains Draft and unmerged.
+- After Health merge #295, GPS branch compares 6 ahead / 1 behind canonical; merge base remains `4fe915abfd6abb46072e1dfe0b30fcaa13f92014`. The one-behind commit touches only the two Health provenance files; there is no file overlap. GPS owner must run combined-head CI after any rebase.
+- Exact PR #294 `ActivityTrackingService.kt` blob `3525cbc55b9cd9bf3bc3b5d6399ae3e5a8ff0d4d` captures OS mock flag and monotonic elapsed time and passes fixes through `GpsFixGate`, which already rejects mock, invalid/poor accuracy, stale/non-monotonic timestamps and sport-speed violations. It does not invoke canonical `ActivityEvidenceAnomalyPolicy.assessSegment` (blob `5643da3f8999298193b39d55e1d6104a95daf746`); source-continuity, long-gap and uncertainty-adjusted segment checks remain unintegrated. Integrator comment recorded on #294. Do not use display-smoothed points as evidence.
+- Desktop Commander device list on 2026-11-14: localhost OFFLINE, last seen 99 hours ago. No ADB device attached; current phone/session state unknown. No install, launch, stop, permission or activity-data action. Physical GPS/session P0 remains BLOCKED_NOT_RUN.
+
+### Exercise/catalog ownership
+- PR #160 shares five files with #159 and four with #233; it remains an unmerged catalog chain with no exact-head GitHub Actions/Python unittest acceptance. Keep generated JSON/JS, builder, manifest and source-sync ownership together.
+- Program PRs #204/#212/#213/#234 share generated program JSON/JS, builder and manifest; #213 also overlaps app.js with #214/#216/#282. Do not merge these branches blindly; require a single reconciled canonical catalog/program source and native regression/Android WebView tests.
+- Last canonical offline motion inventory: 5 offline videos, 2 reviewed 16-frame sequences and 105 two-frame reference-only exercises. PR #289's mapping/license/hash regression is canonical; it does not create additional motion assets.
+
+### Play and release hard gates
+- No fresh Google Play API readback was obtained on 2026-11-14. Latest verified readback remains run 42405709027 from 2026-11-10: Internal 51019 completed, Alpha 51007 draft, Production not verified. Do not treat this as a current live Play observation.
+- Play Health declaration/privacy/Data Safety reconciliation, physical Health Connect grant/revoke/no-data/error checks, compatible wearable/swimming validation, GPS physical P0 and final combined-head CI remain hard gates.
+- VersionCode 51020 remains unallocated. No release workflow, signing, Play listing, upload or track state changed.
