@@ -120,3 +120,7 @@ No merge, version allocation, signing, upload or Production promotion is authori
 - PR #284 received an ownership comment: keep Draft, use its map/WebView changes as a separate reference, and do not merge its overlapping native service, app.js, MainActivity or source-contract files wholesale.
 - The earlier documentation-only run 43568930832 produced an identical AAB SHA to run 43568499998. That redundant build is documented and must not be repeated. The new rebased AAB is different because canonical Health provenance is now in the combined source.
 - No merge, version allocation, signing, upload or Production promotion.
+
+
+## Canonical branch drift after exact GPS CI — 2026-11-14 20:18 Cairo
+The canonical branch has advanced from the PR #294 tested base `82ac0797f26ef142bee868ea6f8378066a961b1e` to `055f97d2e842170e45a838b21ed10e2c469d710d` through three documentation-only commits (GPS checkpoint, recovery checkpoint and release ledger). Current compare is 1 ahead / 3 behind; the PR diff still contains the same six GPS source/test files and no changed application/test blobs from those later commits. Do not rebuild or re-upload the unchanged AAB for this documentation-only drift. Re-evaluate mergeability against the latest canonical head only when physical P0 is ready; if rebase is required then, run exact-head CI only if the application/test tree changes.

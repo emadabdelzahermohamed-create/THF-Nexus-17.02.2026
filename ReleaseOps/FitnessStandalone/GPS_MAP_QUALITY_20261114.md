@@ -121,3 +121,7 @@ Artifact 14125129060 was downloaded and independently rehashed:
 The rebased AAB differs from the pre-Health-base AAB `281a1786...`, as expected because canonical PR #295 Health provenance is now part of the combined source. The separate docs-only run 43568930832 had the same AAB bytes as its predecessor and was a redundant rebuild; do not repeat that pattern.
 
 PR #294 remains Draft. The exact combined-head CI gate is now met, but physical P0 is still BLOCKED_NOT_RUN because Desktop Commander is offline and the SM-A217F/session state is unknown. No merge, install, signing, Play upload or version allocation.
+
+
+## Canonical branch drift after exact GPS CI — 2026-11-14 20:18 Cairo
+The canonical branch has advanced from the PR #294 tested base `82ac0797f26ef142bee868ea6f8378066a961b1e` to `055f97d2e842170e45a838b21ed10e2c469d710d` through three documentation-only commits (GPS checkpoint, recovery checkpoint and release ledger). Current compare is 1 ahead / 3 behind; the PR diff still contains the same six GPS source/test files and no changed application/test blobs from those later commits. Do not rebuild or re-upload the unchanged AAB for this documentation-only drift. Re-evaluate mergeability against the latest canonical head only when physical P0 is ready; if rebase is required then, run exact-head CI only if the application/test tree changes.
