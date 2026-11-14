@@ -109,3 +109,14 @@ The current Arabic and English listings include estimated-metric and no-medical-
 7. Keep route sync design-only until consent, account isolation, deletion, retention, storage-security and privacy contracts are implemented and tested.
 
 No merge, version allocation, signing, upload or Production promotion is authorized by this checkpoint.
+
+
+## 2026-11-14 rebased GPS integration update
+
+- Rebased PR #294 onto canonical base `82ac0797f26ef142bee868ea6f8378066a961b1e`; new exact PR head `7933a0eb0b6bedf8d00af49fee41ed24d88c264f`, 1 ahead / 0 behind, six source/test files only.
+- Exact combined-head Android CI [43625025348](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43625025348): SUCCESS. Product 67/67, source-contract 34/34, backend 29/29, Android 262/262 (0 failures/ignored), API 36, Kotlin, lint, assemble and unsigned AAB PASS. Lint 0 errors, 16 warnings, 1 hint.
+- Artifact 14125129060: ZIP SHA `d37f8558119c0303a81cc8567ce98f3a32c7df89c02c1c77fdfad0e112f1e09e`; APK SHA `03ff83dbe381022012e9eb2035c8edea42b98ccabadc851d8ca530f153d0a336`; unsigned AAB SHA `92806387b1b068e4beeddca059a2ec520e5d080e39c0c4990e2f35080d72577d`. Artifact downloaded and hashes independently verified; jarsigner confirms unsigned.
+- PR #294 body now records the rebased head, exact CI and artifact hashes. It remains Draft. The exact CI gate is met; physical P0 remains blocked by offline Desktop Commander and unknown SM-A217F/session state.
+- PR #284 received an ownership comment: keep Draft, use its map/WebView changes as a separate reference, and do not merge its overlapping native service, app.js, MainActivity or source-contract files wholesale.
+- The earlier documentation-only run 43568930832 produced an identical AAB SHA to run 43568499998. That redundant build is documented and must not be repeated. The new rebased AAB is different because canonical Health provenance is now in the combined source.
+- No merge, version allocation, signing, upload or Production promotion.
