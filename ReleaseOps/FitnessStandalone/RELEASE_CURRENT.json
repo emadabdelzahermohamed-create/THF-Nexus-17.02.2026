@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-14T18:19:08Z",
+  "observed_at": "2026-11-14T18:24:40Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -38,26 +38,23 @@
     "evidence_digest": "sha256:12492bdd85019eb8420858baf69bee480b22a462a03dd814f2c08524c717fc2c",
     "independent_readback_run": 40518110062,
     "independent_readback": "PASS",
-    "production": "NOT_VERIFIED",
+    "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
     "latest_state_probe": {
       "run_id": 43624419818,
-      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43624419818",
       "run_attempt": 1,
+      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43624419818",
       "head_sha": "72360838f3eedac994d8d13b8075b71d85151c13",
       "observed_at": "2026-11-14T18:03:26.8682761Z",
-      "run_status": "completed",
-      "run_conclusion": "success",
-      "workflow_job_id": 132536974738,
-      "workflow_job_name": "probe",
-      "workflow_job_status": "completed",
-      "workflow_job_conclusion": "success",
+      "conclusion": "success",
+      "job_id": 132536974738,
+      "job_name": "probe",
+      "job_conclusion": "success",
       "artifact_id": 14125382777,
-      "artifact_digest": "sha256:c1d38fe46a63a310558e9671645cbccfb4752b99aedf6d98d8aac0bd78b4363e",
+      "artifact_sha256": "c1d38fe46a63a310558e9671645cbccfb4752b99aedf6d98d8aac0bd78b4363e",
       "artifact_download_sha256_verified": true,
       "artifact_download_sha256_verified_at": "2026-11-14",
       "embedded_json_sha256": "09e7a346e5e1c893d4323d20105d8f4d63",
-      "upload_attempted": false,
-      "commit_attempted": false,
+      "package": "com.topherofit.thf.pulse",
       "tracks": [
         {
           "track": "internal",
@@ -73,6 +70,8 @@
         }
       ],
       "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
+      "upload_attempted": false,
+      "commit_attempted": false,
       "fresh_live_readback": true
     },
     "previous_state_probe_20261103": {
@@ -1495,11 +1494,13 @@
   },
   "current_prs": {
     "priority_open": {
-      "93": "OPEN_DRAFT; current head 1cc08cef7dae7f432275fd23960f4390a49db14c; claims MainActivity.kt/Health Services reader ownership; no exact-head workflow run; 19 Health permissions versus canonical five-scope allowlist; compare 2 ahead / 323 behind; do not merge.",
-      "216": "OPEN; head 1ef915886fdac62c8fe1d5e50505fd354d989ee3; targets noncanonical base agent/codex/active-workout-timed-rir-visibility-20261030; no exact-head workflow run; app.js overlap; not a disjoint tested handoff.",
-      "248": "OPEN_DRAFT; head 67d3b438815fe83ced301551aee43f5a6548c91d; display-only route smoothing; no exact-head workflow run; no metric/anti-cheat integration; do not merge.",
-      "282": "OPEN_DRAFT; head 3291e076510b5626dd8ee931dad84728ba01605d; exact validation run 42506335882 passed (62 product / 34 source-contract / 29 backend / 218 Android); unsigned AAB only; app.js overlap with #284/#216/exercise UX; no combined-head CI.",
-      "284": "OPEN_DRAFT; branch head 274155eafdfff381009ef5814a621f32b225f1a8; tested application source/test SHA 68894a585e78df0a8d7b40cc68fa4f29acf10c9c; exact-source run 43172404327 passed (60 product / 40 source-contract / 29 backend / 230 Android); 19 ahead / 20 behind current canonical, GitHub mergeable=false; app.js/MainActivity ownership holds and physical P0 blocked."
+      "93": "OPEN_DRAFT; head 1cc08cef7dae7f432275fd23960f4390a49db14c; base cb425fef23b8541499acb02cecd8b86312b0eb34; claims MainActivity.kt/Health Services reader ownership; 19 requested scopes conflict with canonical five-scope allowlist; no exact-head Android CI.",
+      "216": "OPEN; head 1ef915886fdac62c8fe1d5e50505fd354d989ee3; noncanonical base c93f765099642976b908aa9a4dd81addda52752f; app.js/index.html/styles overlap; no exact-head Android CI.",
+      "248": "OPEN_DRAFT; head 67d3b438815fe83ced301551aee43f5a6548c91d; display-only smoothing helper; no exact-head Android CI; not metric evidence.",
+      "282": "OPEN_DRAFT; head 3291e076510b5626dd8ee931dad84728ba01605d; app.js/product test; stale base 4e337838c079a75d9615653d14c38838e55d19ef; no combined-current-head CI; preserve null vs genuine zero.",
+      "284": "OPEN_DRAFT; head 274155eafdfff381009ef5814a621f32b225f1a8; 19 ahead / 45 behind current canonical, mergeable=false/dirty; overlaps #294 native GPS, #282/#216 app.js, #93 MainActivity/source-contract; map/UI reference only.",
+      "292": "CLOSED_UNMERGED; superseded by #294.",
+      "294": "OPEN_DRAFT; head 7933a0eb0b6bedf8d00af49fee41ed24d88c264f; base 82ac0797f26ef142bee868ea6f8378066a961b1e; 1 ahead / 5 behind current canonical, six GPS source/test files only; exact-head CI 43625025348 PASS; physical P0 blocked."
     },
     "other_open_exercise_handoffs": [
       "259",
@@ -1526,8 +1527,8 @@
   },
   "lease_registry": {
     "status": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
-    "checked_at": "2026-11-12T17:44:27Z",
-    "note": "No formal lease registry file or open lease issue found. PR #93 claims MainActivity.kt; #282/#216 and exercise UX handoffs share app.js with #284. These are active file-level holds. Do not assume shared resources are free."
+    "checked_at": "2026-11-14T18:24:40Z",
+    "note": "No formal lease registry found. Treat #93 MainActivity/source-contract, #282/#216/exercise app.js, and #294 ActivityTrackingService/native GPS as active file-level ownership holds. #284 overlaps all relevant shared files; do not assume them free."
   },
   "integrator_recheck_20261106_2023": {
     "observed_at": "2026-11-06T18:23:17Z",
@@ -1564,31 +1565,39 @@
     "physical_p0": "BLOCKED_DEVICE_OFFLINE"
   },
   "latest_play_readback": {
-    "run_id": 42405709027,
-    "run_attempt": 4,
-    "workflow_id": 388958716,
-    "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42405709027",
-    "run_head_sha": "b06ae31c39d3d010258b0b0189c99f9ef7e49d4f",
-    "job_id": 130039177913,
+    "run_id": 43624419818,
+    "run_attempt": 1,
+    "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43624419818",
+    "head_sha": "72360838f3eedac994d8d13b8075b71d85151c13",
+    "observed_at": "2026-11-14T18:03:26.8682761Z",
+    "conclusion": "success",
+    "job_id": 132536974738,
     "job_name": "probe",
-    "job_status": "completed",
     "job_conclusion": "success",
-    "artifact_id": 13791872061,
-    "artifact_sha256": "bffbb6484802331c90f7b49ba029ab373f63cc2f13d94d10b980907008e775ee",
-    "artifact_download_sha256_recomputed": true,
-    "artifact_reverified_on": "2026-11-12",
-    "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
-    "observed_at": "2026-11-10T18:31:07Z",
-    "internal_51019": "completed",
-    "alpha_51007": "draft",
-    "production": "NOT_VERIFIED_NOT_LISTED",
+    "artifact_id": 14125382777,
+    "artifact_sha256": "c1d38fe46a63a310558e9671645cbccfb4752b99aedf6d98d8aac0bd78b4363e",
+    "artifact_download_sha256_verified": true,
+    "artifact_download_sha256_verified_at": "2026-11-14",
+    "embedded_json_sha256": "09e7a346e5e1c893d4323d20105d8f4d63",
+    "package": "com.topherofit.thf.pulse",
+    "tracks": [
+      {
+        "track": "internal",
+        "version_code": 51019,
+        "release_name": "THF Fitness 51019 Internal",
+        "status": "completed"
+      },
+      {
+        "track": "alpha",
+        "version_code": 51007,
+        "release_name": "Top Hero Fit 51007 Closed Test",
+        "status": "draft"
+      }
+    ],
+    "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
     "upload_attempted": false,
     "commit_attempted": false,
-    "listing_claims_gps_sessions_background_activity_and_estimated_metrics": true,
-    "listing_disclaimer": "Current listing says it does not provide medical diagnosis or replace professional medical advice, but does not explicitly say it is not a medical device or provide the explicit professional-consultation reminder in both locales.",
-    "no_newer_successful_readback": true,
-    "note": "Read-only Play state probe of the existing 51019 release. It is not a readback of current canonical app source baab97b1ff1e2c4f0ca0bba7b1921ad9e5ff43b7 or GPS candidate 427ffe79ae7459fd062ce932bc1239a53cf2fcda.",
-    "readback_rechecked_at": "2026-11-12T17:44:27Z"
+    "fresh_live_readback": true
   },
   "health_metric_truthfulness_candidate": {
     "pr": 282,
@@ -1621,13 +1630,13 @@
     "merge_hold": "Open exercise UX PRs #224/#247/#249/#250/#253/#254/#256/#258 also modify app.js"
   },
   "leases": {
-    "checked_on": "2026-11-12",
+    "checked_on": "2026-11-14",
     "registry": "NO_EXPLICIT_CURRENT_LEASE_FILE_FOUND",
     "shared_resources_assumed_free": false,
     "active_file_holds": {
-      "MainActivity.kt": "#93 claims Health Services/reader ownership; no exact-head CI; current 19-scope manifest fails the merged five-scope #188 gate.",
-      "app.js": "#282, #216 and exercise UX handoffs overlap #284.",
-      "ActivityTrackingService.kt": "#284 is the active GPS owner; no independent service handoff is disjoint from it."
+      "MainActivity.kt": "#93 claims Health Services/reader ownership; no exact-head CI; 19-scope manifest conflicts with canonical five-scope allowlist.",
+      "app.js": "#282, #216 and exercise UX handoffs share this file; #284 also changes it.",
+      "ActivityTrackingService.kt": "#294 is the selected native GPS status/provider handoff; #284 overlaps it and must not be merged wholesale."
     }
   },
   "competition": {
@@ -2139,7 +2148,7 @@
   "gps_historical_checkpoint_42694452852": {
     "run_id": 42694452852,
     "head_sha": "3fcbe6acbb4dc660284c74c8392818996e1de7ee",
-    "conclusion": "SUCCESS",
+    "conclusion": "success",
     "artifact_id": 13707718861,
     "artifact_zip_sha256": "ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c",
     "qa_apk_sha256": "08a5730096d1cfc97193e47726f90e533f89d9e0cc3c606faae467b46e72e9b5",
@@ -2147,7 +2156,13 @@
     "android_unit_tests": 223,
     "artifact_downloaded_and_rehashed": true,
     "current_candidate": false,
-    "note": "Historical checkpoint only; superseded by tested source SHA 68894a585e78df0a8d7b40cc68fa4f29acf10c9c and run 43172404327."
+    "note": "Historical checkpoint only; superseded by tested source SHA 68894a585e78df0a8d7b40cc68fa4f29acf10c9c and run 43172404327.",
+    "artifact_zip_sha256_recomputed": true,
+    "qa_apk_sha256_recomputed": true,
+    "unsigned_aab_sha256_recomputed": true,
+    "failures": 0,
+    "ignored": 0,
+    "aab_signed": false
   },
   "integrator_recheck_20261112_1944": {
     "observed_at": "2026-11-12T17:44:27Z",
@@ -2199,7 +2214,8 @@
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
     "canonical_app_source_sha": "96d35d2edf292c16c5c462f4f6a2016576eb6a53",
     "canonical_doc_head_before_ledger_update": "ea72d398e823cce30dc99992f7cb141dccaac21f",
-    "canonical_head_at_last_compare": "7ebc2616fe013ca481f429e605bbfb3c37894200"
+    "canonical_head_at_last_compare": "9d4e05b9e2bb672462edc303dc96f2274a1ce350",
+    "canonical_head_at_observation": "9d4e05b9e2bb672462edc303dc96f2274a1ce350"
   },
   "gps_validation_candidate": {
     "pr_number": 294,
@@ -2209,11 +2225,18 @@
     "base_sha": "82ac0797f26ef142bee868ea6f8378066a961b1e",
     "head_sha": "7933a0eb0b6bedf8d00af49fee41ed24d88c264f",
     "ahead_by": 1,
-    "behind_by": 4,
-    "changed_files": 6,
+    "behind_by": 5,
+    "changed_files": [
+      "ActivityLocationFallbackPolicy.kt",
+      "ActivityTrackingService.kt",
+      "GpsFixPresentationPolicy.kt",
+      "ActivityLocationFallbackPolicyTest.kt",
+      "GpsAccuracyPresentationPolicyTest.kt",
+      "GpsFixPresentationPolicyTest.kt"
+    ],
     "exact_head_ci_run": 43625025348,
     "exact_head_ci_url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43625025348",
-    "exact_head_ci_conclusion": "success",
+    "exact_head_ci_conclusion": "SUCCESS",
     "product_tests": "67/67",
     "source_contract_tests": "34/34",
     "backend_tests": "29/29",
@@ -2233,10 +2256,14 @@
     "validation_version_code": 51019,
     "physical_p0": "BLOCKED_NOT_RUN",
     "merge_authorized": false,
-    "current_canonical_head": "7ebc2616fe013ca481f429e605bbfb3c37894200",
+    "current_canonical_head": "9d4e05b9e2bb672462edc303dc96f2274a1ce350",
     "current_compare": "diverged; four commits behind are documentation-only; six-file GPS application/test diff unchanged",
     "github_mergeable": true,
-    "draft": true
+    "draft": true,
+    "compare_status": "diverged",
+    "merge_base": "82ac0797f26ef142bee868ea6f8378066a961b1e",
+    "canonical_changes_since_tested_base": "Five documentation-only commits; only GPS_MAP_QUALITY_20261114.md, RECOVERY_CURRENT_20261114.md and RELEASE_CURRENT.json changed. No application/test source overlap.",
+    "artifact_hashes_independently_recomputed": true
   },
   "gps_previous_build_reconciliation": {
     "first_pre_health_source_sha": "9defd1296aa4575eafbe24981dfd95324ce14ef8",
@@ -2248,5 +2275,72 @@
     "duplicate_rebuild_to_avoid": true,
     "rebased_aab_sha256": "92806387b1b068e4beeddca059a2ec520e5d080e39c0c4990e2f35080d72577d",
     "rebased_aab_is_different_due_canonical_health_merge": true
+  },
+  "integrator_recheck_20261114_2024": {
+    "observed_at": "2026-11-14T18:24:40Z",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "canonical_head": "9d4e05b9e2bb672462edc303dc96f2274a1ce350",
+    "canonical_app_source_sha": "96d35d2edf292c16c5c462f4f6a2016576eb6a53",
+    "gps_pr_294": {
+      "head": "7933a0eb0b6bedf8d00af49fee41ed24d88c264f",
+      "base": "82ac0797f26ef142bee868ea6f8378066a961b1e",
+      "ahead": 1,
+      "behind": 5,
+      "merge_base": "82ac0797f26ef142bee868ea6f8378066a961b1e",
+      "changed_files": 6,
+      "exact_head_run": 43625025348,
+      "artifact_id": 14125129060,
+      "zip_sha256": "d37f8558119c0303a81cc8567ce98f3a32c7df89c02c1c77fdfad0e112f1e09e",
+      "apk_sha256": "03ff83dbe381022012e9eb2035c8edea42b98ccabadc851d8ca530f153d0a336",
+      "unsigned_aab_sha256": "92806387b1b068e4beeddca059a2ec520e5d080e39c0c4990e2f35080d72577d",
+      "android_tests": "262/262",
+      "physical_p0": "BLOCKED_NOT_RUN",
+      "decision": "KEEP_DRAFT_NO_MERGE"
+    },
+    "gps_historical_284": {
+      "head": "3fcbe6acbb4dc660284c74c8392818996e1de7ee",
+      "run": 42694452852,
+      "artifact_id": 13707718861,
+      "zip_sha256": "ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c",
+      "apk_sha256": "08a5730096d1cfc97193e47726f90e533f89d9e0cc3c606faae467b46e72e9b5",
+      "unsigned_aab_sha256": "08d2c80b5da604f6b50a95a7944b6576da87933ee5eec94c2a3944b5274b780e",
+      "android_tests": "223/223",
+      "aab_signed": false,
+      "artifact_rehashed": true
+    },
+    "play_readback": {
+      "run": 43624419818,
+      "observed_at": "2026-11-14T18:03:26.8682761Z",
+      "artifact_id": 14125382777,
+      "zip_sha256": "c1d38fe46a63a310558e9671645cbccfb4752b99aedf6d98d8aac0bd78b4363e",
+      "embedded_json_sha256": "09e7a346e5e1c893d4323d20105d8f4d63",
+      "internal": "51019 completed",
+      "alpha": "51007 draft",
+      "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
+      "upload_attempted": false,
+      "commit_attempted": false,
+      "artifact_rehashed": true
+    },
+    "phone": {
+      "device": "Samsung SM-A217F",
+      "desktop_commander": "OFFLINE",
+      "last_seen_approx_hours": 103,
+      "current_session": "UNKNOWN_PRESERVE",
+      "no_adb_or_session_actions": true
+    },
+    "anti_cheat": "ActivityEvidenceAnomalyPolicy is not wired into #294 ActivityTrackingService; GpsFixGate rejects mock/accuracy/time/sport-speed violations, but source continuity/long-gap/uncertainty-adjusted segment policy is not applied before credit.",
+    "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED; completed GPS routes local in WebView storage; no authenticated route endpoint or precise-location upload.",
+    "release": {
+      "internal_version_code": 51019,
+      "next_version_code": 51020,
+      "allocated": false,
+      "owner_api_write_and_signing_prerequisites": "UNVERIFIED",
+      "new_signed_aab": false,
+      "play_write": false,
+      "production": "NOT_VERIFIED",
+      "decision": "HOLD"
+    },
+    "no_paid_infrastructure": true,
+    "topherofit_only": true
   }
 }
