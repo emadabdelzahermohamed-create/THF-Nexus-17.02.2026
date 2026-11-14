@@ -4,45 +4,51 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class GpsFixPresentationPolicyTest {
-    private val now = 100_000L
-
-    private fun state(
-        permission: Boolean = true,
-        provider: Boolean = true,
-        observed: Long? = 99_000L,
-        accepted: Long? = 99_000L,
-    ) = GpsFixPresentationPolicy.state(permission, provider, observed, accepted, now)
-
-    @Test fun missingPermissionTakesPriority() {
-        assertEquals("permission", state(permission = false, provider = false, observed = null, accepted = null))
+    @Test
+    fun missingPermissionTakesPrecedenceOverEnabledLocationServices() {
+        assertEquals(
+            "permission",
+            GpsFixPresentationPolicy.state(false, true, null, null, 1_000L),
+        )
     }
 
-    @Test fun disabledProviderIsReported() {
-        assertEquals("off", state(provider = false))
+    @Test
+    fun disabledSystemLocationSwitchReportsOffBeforeUsingOldFixes() {
+        assertEquals(
+            "off",
+            GpsFixPresentationPolicy.state(true, false, 900L, 900L, 1_000L),
+        )
     }
 
-    @Test fun missingObservationRemainsAcquiring() {
-        assertEquals("acquiring", state(observed = null, accepted = null))
+    @Test
+    fun freshObservationWithoutAcceptedMeasurementReportsFiltered() {
+        assertEquals(
+            "filtered",
+            GpsFixPresentationPolicy.state(true, true, 950L, 900L, 1_000L),
+        )
     }
 
-    @Test fun staleAndFutureObservationsAreNotPresentedAsReady() {
-        assertEquals("stale", state(observed = now - 30_001L, accepted = now - 30_001L))
-        assertEquals("stale", state(observed = now + 1L, accepted = null))
+    @Test
+    fun oldObservationReportsStaleEvenWhenAnOlderFixWasAccepted() {
+        assertEquals(
+            "stale",
+            GpsFixPresentationPolicy.state(true, true, 8_999L, 8_999L, 40_000L),
+        )
     }
 
-    @Test fun freshObservationWithoutAcceptedFixIsFilteredNotWeak() {
-        assertEquals("filtered", state(observed = now - 500L, accepted = null))
+    @Test
+    fun freshAcceptedObservationReportsReady() {
+        assertEquals(
+            "ready",
+            GpsFixPresentationPolicy.state(true, true, 950L, 950L, 1_000L),
+        )
     }
 
-    @Test fun newerRejectedObservationIsFilteredWhenAcceptedFixIsOlder() {
-        assertEquals("filtered", state(observed = now - 500L, accepted = now - 1_000L))
-    }
-
-    @Test fun sameObservedAndAcceptedFixIsReady() {
-        assertEquals("ready", state(observed = now - 500L, accepted = now - 500L))
-    }
-
-    @Test fun acceptedFixNewerThanLastValidObservationRemainsReady() {
-        assertEquals("ready", state(observed = now - 1_000L, accepted = now - 500L))
+    @Test
+    fun notificationSourceLabelDistinguishesGpsNetworkAndFused() {
+        assertEquals("GPS", GpsFixPresentationPolicy.sourceLabel("gps"))
+        assertEquals("الشبكة", GpsFixPresentationPolicy.sourceLabel("network"))
+        assertEquals("الموقع المدمج", GpsFixPresentationPolicy.sourceLabel("fused"))
+        assertEquals("الموقع", GpsFixPresentationPolicy.sourceLabel(null))
     }
 }
