@@ -101,7 +101,7 @@ class HealthRecordProvenancePresentationPolicyTest {
     @Test
     fun malformedSourcePackageIsNotExposedOrRewardEligible() {
         val summary = HealthRecordProvenancePresentationPolicy.summarize(
-            evidence(source = "com.example\\n<script>"),
+            evidence(source = "com.example\n<script>"),
         )
 
         assertNull(summary.sourcePackage)
@@ -197,7 +197,7 @@ class HealthRecordProvenancePresentationPolicyTest {
         val summary = HealthRecordProvenancePresentationPolicy.summarize(
             evidence(
                 source = "  COM.SAMSUNG.ANDROID.WEAR.SHEALTH  ",
-                reason = "approved provider\\n<script>",
+                reason = "approved provider\n<script>",
             ),
         )
 
