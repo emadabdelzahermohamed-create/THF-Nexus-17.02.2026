@@ -100,3 +100,24 @@ Design only: [ROUTE_SYNC_DESIGN_20261110.md](ROUTE_SYNC_DESIGN_20261110.md). Kee
 5. Keep route sync design-only until the account/deletion/privacy contract and tests are implemented.
 
 No version allocation, signing, Play upload, Production promotion or GPS physical PASS occurred.
+
+
+## Rebased exact combined-head validation — 2026-11-14 20:13 Cairo
+
+PR #294 was safely rebased onto current canonical HEAD `82ac0797f26ef142bee868ea6f8378066a961b1e` by force-with-lease (expected previous PR head `1191a9b4ba4bebcb484c78c3223dd6f48f3ab2da`). The resulting PR head is `7933a0eb0b6bedf8d00af49fee41ed24d88c264f`, exactly one commit ahead and zero behind canonical. Its diff contains only six GPS source/test files; the canonical recovery and GPS reports remain in the base branch.
+
+[Exact rebased-head CI run 43625025348](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43625025348) completed SUCCESS on that exact SHA:
+- Product 67/67; source-contract 34/34; backend 29/29.
+- Android unit 262/262; 0 failures; 0 ignored.
+- API 36, Kotlin compile, lint, debug APK and unsigned validation AAB all PASS; Gradle BUILD SUCCESSFUL.
+- Lint: 0 errors, 16 warnings, 1 hint.
+
+Artifact 14125129060 was downloaded and independently rehashed:
+- ZIP: `d37f8558119c0303a81cc8567ce98f3a32c7df89c02c1c77fdfad0e112f1e09e`.
+- QA APK: `03ff83dbe381022012e9eb2035c8edea42b98ccabadc851d8ca530f153d0a336`.
+- AAB: `92806387b1b068e4beeddca059a2ec520e5d080e39c0c4990e2f35080d72577d`.
+- `jarsigner` reports the AAB is unsigned. APK identity is QA package `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.0.0-v2-alpha19-debug`. This is not a store artifact.
+
+The rebased AAB differs from the pre-Health-base AAB `281a1786...`, as expected because canonical PR #295 Health provenance is now part of the combined source. The separate docs-only run 43568930832 had the same AAB bytes as its predecessor and was a redundant rebuild; do not repeat that pattern.
+
+PR #294 remains Draft. The exact combined-head CI gate is now met, but physical P0 is still BLOCKED_NOT_RUN because Desktop Commander is offline and the SM-A217F/session state is unknown. No merge, install, signing, Play upload or version allocation.
