@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-13T17:47:20Z",
+  "observed_at": "2026-11-14T18:03:26.8682761Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -40,22 +40,21 @@
     "independent_readback": "PASS",
     "production": "NOT_VERIFIED",
     "latest_state_probe": {
-      "run_id": 42405709027,
-      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42405709027",
-      "run_attempt": 4,
-      "workflow_id": 388958716,
-      "head_sha": "b06ae31c39d3d010258b0b0189c99f9ef7e49d4f",
-      "observed_at": "2026-11-10T18:31:07Z",
+      "run_id": 43624419818,
+      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43624419818",
+      "run_attempt": 1,
+      "head_sha": "72360838f3eedac994d8d13b8075b71d85151c13",
+      "observed_at": "2026-11-14T18:03:26.8682761Z",
       "run_status": "completed",
       "run_conclusion": "success",
-      "workflow_job_id": 130039177913,
+      "workflow_job_id": 132536974738,
       "workflow_job_name": "probe",
       "workflow_job_status": "completed",
       "workflow_job_conclusion": "success",
-      "artifact_id": 13791872061,
-      "artifact_digest": "sha256:bffbb6484802331c90f7b49ba029ab373f63cc2f13d94d10b980907008e775ee",
+      "artifact_id": 14125382777,
+      "artifact_digest": "sha256:c1d38fe46a63a310558e9671645cbccfb4752b99aedf6d98d8aac0bd78b4363e",
       "artifact_download_sha256_verified": true,
-      "artifact_download_sha256_verified_at": "2026-11-12",
+      "artifact_download_sha256_verified_at": "2026-11-14",
       "embedded_json_sha256": "09e7a346e5e1c893d4323d20105d8f4d63",
       "upload_attempted": false,
       "commit_attempted": false,
@@ -74,8 +73,7 @@
         }
       ],
       "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
-      "no_newer_successful_readback": true,
-      "artifact_download_sha256_reverified_at": "2026-11-11T17:46:05Z"
+      "fresh_live_readback": true
     },
     "previous_state_probe_20261103": {
       "run_id": 41686496926,
@@ -146,6 +144,19 @@
       "upload_attempted": false,
       "commit_attempted": false,
       "production": "NOT_VERIFIED"
+    },
+    "latest_repository_probe_scan_20261114": {
+      "observed_at": "2026-11-14T18:03:26.8682761Z",
+      "latest_probe_run": 43624419818,
+      "latest_probe_conclusion": "success",
+      "latest_successful_readback": 43624419818,
+      "readback_artifact_id": 14125382777,
+      "artifact_zip_sha256": "c1d38fe46a63a310558e9671645cbccfb4752b99aedf6d98d8aac0bd78b4363e",
+      "embedded_json_sha256": "09e7a346e5e1c893d4323d20105d8f4d63",
+      "fresh_live_readback_performed": true,
+      "upload_attempted": false,
+      "commit_attempted": false,
+      "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK"
     }
   },
   "phone": {
@@ -185,13 +196,13 @@
       "active_session_interrupted": false
     },
     "local_apksigner_verification": "INDETERMINATE: local apksigner lacks the ML-DSA KeyFactory required by the v3.2 signer; this is a verifier limitation, not an app-signature failure. No signature PASS inferred.",
-    "physical_p0": "BLOCKED_NOT_RUN; Desktop Commander offline; current phone/session state unknown; preserve; no ADB/session actions",
+    "physical_p0": "BLOCKED_NOT_RUN; Desktop Commander offline; current SM-A217F session state unknown; preserve; no ADB/session actions",
     "latest_connection_check": {
-      "checked_on": "2026-11-13",
-      "checked_at_local": "2026-11-13 19:47:20 Africa/Cairo",
+      "checked_on": "2026-11-14",
+      "checked_at_local": "2026-11-14 19:56:52 Africa/Cairo",
       "device": "localhost",
       "status": "OFFLINE",
-      "last_seen": "about 79 hours before this check",
+      "last_seen": "about 103 hours before this check",
       "current_phone_session_state": "UNKNOWN; preserve; no ADB/session actions",
       "no_adb_or_session_actions": true,
       "last_recorded_location_mode": "0 on 2026-11-09; not changed during this recheck"
@@ -204,17 +215,18 @@
     "note": "Prior validated Internal evidence retained; no rollback or production action taken."
   },
   "release_gates": {
-    "physical_p0": "BLOCKED_DEVICE_OFFLINE; Desktop Commander localhost last seen about 79 hours before the 2026-11-13 19:47 Cairo check; current SM-A217F session state unknown; no ADB or session actions.",
-    "health_policy_privacy": "Merged #188 enforces exactly five Health scopes; merged #288 rejects unknown record types; #285 swimming metadata gate, #286 record dedup and #293 privacy-safe per-record provenance projection are merged. #93 remains Draft and still declares 19 Health permissions including READ_HEART_RATE, conflicting with canonical five-scope allowlist. #282 metric null-vs-zero UI remains Draft. Physical grants/revocation/no-data/error, wearable evidence, Play Health declaration, Data Safety and privacy gates remain unverified.",
+    "physical_p0": "BLOCKED_DEVICE_OFFLINE; Desktop Commander localhost offline, last seen about 103 hours before the 2026-11-14 19:56 Cairo check; current SM-A217F session state unknown; no ADB or session actions.",
+    "health_policy_privacy": "PR #295 merged at 96d35d2edf292c16c5c462f4f6a2016576eb6a53 after exact-source CI 43602214529 on 06ce46526bd01b7a887b736add55451421ce9536. Canonical Health scopes remain exactly five: READ_STEPS, READ_EXERCISE, WRITE_EXERCISE, READ_DISTANCE, READ_ACTIVE_CALORIES_BURNED. PR #93 remains Draft and declares 19 scopes, incompatible with the five-scope allowlist. PR #282 null-vs-zero UI remains Draft. Physical grants/revocation/no-data/error and Play Health/Data Safety declarations remain unverified.",
     "production": "NOT_VERIFIED",
     "maps_native_sdk_key": "NOT_REQUIRED_FOR_CURRENT_OSM_LEAFLET_STACK; do not add Google Maps Rx, Maps SDK billing or a Maps key. Google directions remains an optional external handoff.",
-    "listing_truthfulness": "OPEN; live listing claims GPS/background sessions and estimated metrics; current medical disclaimer lacks explicit not-a-medical-device and professional-consultation wording in both locales; physical P0 incomplete; no listing edit",
-    "competition_backend": "PR #269 merged; backend-only strength_volume_kg_reps leaderboard derives scores from stored non-warmup sets. Admin endpoint remains disabled without owner-managed THF_COMPETITION_ADMIN_KEY; no event seed or independently verified competition backend deployment. Scores remain SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED and rewardEligible=false. No THF rewards/payouts authorized.",
-    "gps_accuracy": "PR #292 branch HEAD b0db64ad668cd2921cc8dcc34970912b42351b1f contains a documentation-only GPS report correction. Exact tested application/test SHA remains de304b6f4baa44dc80b3245493d7275fe39f00fe, passed exact PR-head run 43383307618: product 67/67, source-contract 34/34, backend 29/29, Android 250/250 (0 failures, 0 ignored), lint/assemble/bundle PASS. Artifact 14017568163 ZIP d1aee733160901a21e0752b8615c3e2c6a858a64c529e28e9147162553458c32; APK a0914f8767fdebc6799cc8bc2858dabf46355f87e1828742d1e482160ef63289; unsigned AAB fb1e66c0e2570ddd14d00367890da2ed95f6374b08239e5f1d537366c54b7b80. Relative to pre-checkpoint canonical HEAD 935b18a835b4f5555b6be529fbe5c2c528abc792, PR #292 is 14 ahead / 9 behind from merge base dedd5f39001781c19e7e19bdee8f44e2fa97b01d. PR #284 is 19 ahead / 31 behind and dirty. No combined-current-head CI or GPS physical P0; no GPS physical accuracy claim.",
-    "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED; finished GPS routes remain in WebView localStorage; no authenticated route endpoint or precise-location upload. Keep separate default-off summary and precise-route consent; do not implement/upload until #284 is physically validated and retention/deletion/privacy/backend contracts are verified.",
-    "anti_cheat": "ActivityEvidenceAnomalyPolicy.kt and tests exist, but #292 ActivityTrackingService has no ActivityEvidenceAnomalyPolicy/ActivityGpsFix/assessSegment call. Raw provider, elapsedRealtimeNanos, coordinates, accuracy and OS mock flag are captured; current accepted-fix flow uses GpsFixGate/GpsDistanceAccumulator. Full anti-cheat integration and physical provenance remain NOT VERIFIED; do not award distance/pace/competition credit as fully anti-cheat verified."
+    "listing_truthfulness": "Latest read-only Play readback 43624419818 confirms Arabic and English listings contain estimated-metric and no-medical-diagnosis/professional-advice disclaimers. Listing still claims GPS sessions, background tracking, offline exercise/program content and voice guidance; physical GPS/session and media QA remain incomplete. No listing edit.",
+    "competition_backend": "PR #269 merged; provisional strength_volume_kg_reps only. Admin creation remains disabled without owner-managed THF_COMPETITION_ADMIN_KEY; no event seed or independently verified production backend deployment. Scores remain SERVER_RECORDED_NOT_PHYSICALLY_VERIFIED and rewardEligible=false. No rewards/payouts authorized.",
+    "gps_accuracy": "PR #294 Draft/unmerged. Exact tested source SHA 9defd1296aa4575eafbe24981dfd95324ce14ef8 passed run 43568499998: Product 67/67, source-contract 34/34, backend 29/29, Android 261/261 (0 failures, 0 ignored), API 36, lint/assemble/bundle PASS. Artifact 14102669147 ZIP 31cf603e660691d7783503a905a4fe0357e6e32022f4a10c883b9e9364aa02e5; APK 570a7e202a9a5ef81d016d03d3baf4cc9592a24e96e8fc6652566d9c8e8ce311; unsigned AAB 281a178695405b5a589640e0f367b76235d42b3893aa5c529f930fa0f4c4e681. Doc-only run 43568930832 produced the same AAB SHA; duplicate build not to be repeated. PR #294 must be rebased onto current canonical and pass exact combined-head CI. Physical P0 remains NOT_RUN. PR #284 remains Draft/overlapping and is not to be merged wholesale.",
+    "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED. persistFinishedActivity() stores completed routes in WebView localStorage. BackendSyncRepository sends workout/set metadata only; AppDeploy android_v2_routes.ts has no route endpoint and resource-kind allowlist excludes routes. No authenticated route upload/restore or precise-location cloud upload exists. Consent, retention, per-route deletion, revocation and account-deletion design remains in ROUTE_SYNC_DESIGN_20261110.md.",
+    "anti_cheat": "ActivityEvidenceAnomalyPolicy.kt and tests exist, but PR #294 ActivityTrackingService does not call assessSegment. GpsFixGate already rejects mock, invalid/poor accuracy, stale/non-monotonic timestamps and sport-speed violations. Source-continuity, long-gap and uncertainty-adjusted segment checks remain unintegrated; no full anti-cheat or physical provenance PASS.",
+    "signing_prerequisites": "Read-only Workload Identity Federation and Android Publisher read access confirmed by probe 43624419818. This does not prove Play upload/write permission or GCP Secret Manager access. Legacy fitness-51008-internal-promote.yml is hard-coded to source 76053bd..., versionCode 51019 and upload certificate SHA-1 D8:BB:CA:BC:17:78:03:43:2E:5D:95:7B:19:61:D2:03:6A:3A:03:06; it is not a 51020 release workflow. Candidate build workflow produces QA-only unsigned artifacts. Owner signing/API prerequisites and a new exact-source release workflow remain unverified."
   },
-  "next_action": "Keep #292 Draft until it is reconciled with the latest canonical branch, passes combined-head CI and physical GPS/session P0. Keep #284 Draft/dirty as a UI/map reference; do not merge it wholesale. Wire raw Android GPS fixes into ActivityEvidenceAnomalyPolicy before distance/pace/competition credit. Preserve the unknown phone session. Route sync remains design-only. Do not allocate 51020, sign, upload or promote until owner release API/signing prerequisites, final exact-head Android CI, physical P0 and policy/privacy gates pass.",
+  "next_action": "Keep PR #294 Draft; rebase its six disjoint GPS source/test files onto the current canonical branch and run exact combined-head CI. Keep PR #284 Draft as map/UI reference because it overlaps #294 native GPS, #282/#216 app.js and #93 MainActivity/test_source_contract. Preserve the unknown phone session. Physical P0, raw-GPS anomaly-policy integration, null-vs-zero metrics, Health permission reconciliation and competition evidence remain gates. Route sync is design-only. Do not allocate versionCode 51020, sign, upload or promote until owner API/key prerequisites, exact-head Android CI, physical P0 and policy/privacy gates pass.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -2179,5 +2191,12 @@
     "rebase_or_merge_performed": false,
     "application_source_changed_after_exact_ci": false,
     "reason": "PR #292 exact application/test source is tested but still requires current-base combined-head CI and physical P0; PR #284 remains dirty and overlaps shared files."
+  },
+  "latest_checkpoint": {
+    "recovery": "ReleaseOps/FitnessStandalone/RECOVERY_CURRENT_20261114.md",
+    "gps_map": "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261114.md",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "canonical_app_source_sha": "96d35d2edf292c16c5c462f4f6a2016576eb6a53",
+    "canonical_doc_head_before_ledger_update": "ddd1eb71d12c70213da56b7bc89539190b23ba9c"
   }
 }
