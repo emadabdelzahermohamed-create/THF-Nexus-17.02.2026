@@ -137,6 +137,22 @@ class HealthRecordProvenancePresentationPolicyTest {
     }
 
     @Test
+    fun unreviewedProviderCannotQualifyEvenIfUpstreamEvidenceIsInconsistent() {
+        val summary = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                source = "com.example.unreviewed.health",
+                integrity = IntegrityClass.VERIFIED,
+                verified = true,
+                reason = "APPROVED_PROVIDER_WITH_DEVICE_METADATA",
+            ),
+        )
+
+        assertEquals("com.example.unreviewed.health", summary.sourcePackage)
+        assertEquals("VERIFIED", summary.integrityClass)
+        assertFalse(summary.rewardEligible)
+    }
+
+    @Test
     fun presentationCannotUpgradeSupportedEvidenceToRewardEligible() {
         val summary = HealthRecordProvenancePresentationPolicy.summarize(
             evidence(integrity = IntegrityClass.SUPPORTED, verified = true),
