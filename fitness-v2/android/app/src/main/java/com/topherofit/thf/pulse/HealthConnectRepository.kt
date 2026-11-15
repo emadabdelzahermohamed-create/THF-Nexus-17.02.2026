@@ -45,6 +45,10 @@ data class HealthRecordEvidence(
     val integrityClass: IntegrityClass,
     val verifiedForRewards: Boolean,
     val verificationReason: String,
+    /** Raw session fields retained internally for sport-specific provenance checks. */
+    val exerciseType: Int? = null,
+    val startEpochMillis: Long? = null,
+    val endEpochMillis: Long? = null,
 )
 
 data class HealthSnapshot(
@@ -300,6 +304,9 @@ class HealthConnectRepository(private val context: Context) {
             integrityClass = assessment.integrityClass,
             verifiedForRewards = assessment.verifiedForRewards,
             verificationReason = assessment.reason,
+            exerciseType = session?.exerciseType,
+            startEpochMillis = session?.startTime?.toEpochMilli(),
+            endEpochMillis = session?.endTime?.toEpochMilli(),
         )
     }
 
