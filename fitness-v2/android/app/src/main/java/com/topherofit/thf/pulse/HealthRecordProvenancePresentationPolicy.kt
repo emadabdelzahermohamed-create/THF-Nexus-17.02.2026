@@ -1,5 +1,6 @@
 package com.topherofit.thf.pulse
 
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import java.util.Locale
@@ -74,13 +75,20 @@ internal object HealthRecordProvenancePresentationPolicy {
         // The repository's evidence decision remains authoritative; this layer only fails closed.
         val approvedSource = source != null &&
             HealthSourceTrustPolicy.isApprovedHealthConnectProvider(source)
+        val sportEvidenceEligible = isSportEvidenceEligible(
+            evidence = evidence,
+            sourcePackage = source,
+            stableRecordType = stableRecordType,
+            recordId = recordId,
+        )
         val rewardEligible = evidence.verifiedForRewards &&
             evidence.integrityClass == IntegrityClass.VERIFIED &&
             approvedSource &&
             isSupportedRecordType &&
             recordKey != null &&
             recordingMethod in setOf("actively_recorded", "automatically_recorded") &&
-            deviceClass in rewardCompatibleDeviceClasses
+            deviceClass in rewardCompatibleDeviceClasses &&
+            sportEvidenceEligible
 
         return HealthRecordProvenanceSummary(
             recordKey = recordKey,
@@ -92,6 +100,62 @@ internal object HealthRecordProvenancePresentationPolicy {
             rewardEligible = rewardEligible,
             verificationReason = reason,
         )
+    }
+
+    /**
+     * Re-check session shape and swimming-specific wearable eligibility at the presentation
+     * boundary. This prevents an inconsistent upstream VERIFIED flag from making a phone,
+     * ring or chest-strap swimming record reward-eligible.
+     */
+    private fun isSportEvidenceEligible(
+        evidence: HealthRecordEvidence,
+        sourcePackage: String?,
+        stableRecordType: String?,
+        recordId: String,
+    ): Boolean {
+        val isExerciseSession = stableRecordType == HealthRecordType.EXERCISE_SESSION.stableId
+        if (!isExerciseSession) {
+            return evidence.exerciseType == null &&
+                evidence.startEpochMillis == null &&
+                evidence.endEpochMillis == null
+        }
+
+        val exerciseType = evidence.exerciseType ?: return false
+        val start = evidence.startEpochMillis ?: return false
+        val end = evidence.endEpochMillis ?: return false
+        if (start < 0L || end <= start) return false
+
+        val swimmingSport = when (exerciseType) {
+            ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> SportKind.SWIMMING_POOL
+            ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER -> SportKind.SWIMMING_OPEN_WATER
+            else -> null
+        } ?: return true
+
+        val swimmingDevice = HealthSourceTrustPolicy.swimmingDeviceLabel(evidence.deviceType)
+        val swimmingMethod = when (evidence.recordingMethod) {
+            Metadata.RECORDING_METHOD_ACTIVELY_RECORDED -> SwimmingRecordingMethod.ACTIVE
+            Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED -> SwimmingRecordingMethod.AUTOMATIC
+            Metadata.RECORDING_METHOD_MANUAL_ENTRY -> SwimmingRecordingMethod.MANUAL
+            else -> SwimmingRecordingMethod.UNKNOWN
+        }
+        return SwimmingEligibilityPolicy.evaluate(
+            SwimmingEvidence(
+                sport = swimmingSport,
+                origin = if (swimmingDevice != null) {
+                    EvidenceOrigin.HEALTH_WEARABLE
+                } else {
+                    EvidenceOrigin.HEALTH_IMPORTED
+                },
+                sourcePackage = sourcePackage,
+                deviceType = swimmingDevice,
+                recordId = recordId,
+                recordKind = SwimmingRecordKind.EXERCISE_SESSION,
+                recordingMethod = swimmingMethod,
+                startEpochMillis = start,
+                endEpochMillis = end,
+                anomalyRejected = evidence.integrityClass == IntegrityClass.REJECTED,
+            ),
+        ).eligibleForVerifiedSwimmingProgress
     }
 
     private fun normalizeSourcePackage(raw: String): String? {
