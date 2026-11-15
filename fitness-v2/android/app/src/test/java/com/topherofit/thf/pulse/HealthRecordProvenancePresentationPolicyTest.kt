@@ -1,5 +1,6 @@
 package com.topherofit.thf.pulse
 
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import java.time.Instant
@@ -22,6 +23,9 @@ class HealthRecordProvenancePresentationPolicyTest {
         integrity: IntegrityClass = IntegrityClass.VERIFIED,
         verified: Boolean = true,
         reason: String = "APPROVED_PROVIDER_WITH_DEVICE_METADATA",
+        exerciseType: Int? = null,
+        startEpochMillis: Long? = null,
+        endEpochMillis: Long? = null,
     ) = HealthRecordEvidence(
         recordId = id,
         canonicalKey = canonicalKey ?: WorkoutIdentity.stableHealthRecordKey(source, type, id),
@@ -37,6 +41,9 @@ class HealthRecordProvenancePresentationPolicyTest {
         integrityClass = integrity,
         verifiedForRewards = verified,
         verificationReason = reason,
+        exerciseType = exerciseType,
+        startEpochMillis = startEpochMillis,
+        endEpochMillis = endEpochMillis,
     )
 
     @Test
@@ -204,6 +211,111 @@ class HealthRecordProvenancePresentationPolicyTest {
         assertEquals("com.samsung.android.wear.shealth", summary.sourcePackage)
         assertEquals("UNSPECIFIED", summary.verificationReason)
         assertFalse(summary.toString().contains("<script>"))
+    }
+
+    @Test
+    fun swimmingPresentationAcceptsOnlyReviewedWatchOrBandSessionMetadata() {
+        val watch = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "ExerciseSessionRecord",
+                device = Device.TYPE_WATCH,
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
+                startEpochMillis = 1_000L,
+                endEpochMillis = 2_000L,
+            ),
+        )
+        val band = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "ExerciseSessionRecord",
+                device = Device.TYPE_FITNESS_BAND,
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER,
+                startEpochMillis = 1_000L,
+                endEpochMillis = 2_000L,
+            ),
+        )
+
+        assertTrue(watch.rewardEligible)
+        assertTrue(band.rewardEligible)
+    }
+
+    @Test
+    fun swimmingPresentationRejectsPhoneRingAndChestStrapEvenWithVerifiedUpstreamFlags() {
+        listOf(Device.TYPE_PHONE, Device.TYPE_RING, Device.TYPE_CHEST_STRAP).forEach { device ->
+            val summary = HealthRecordProvenancePresentationPolicy.summarize(
+                evidence(
+                    type = "ExerciseSessionRecord",
+                    device = device,
+                    exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
+                    startEpochMillis = 1_000L,
+                    endEpochMillis = 2_000L,
+                    integrity = IntegrityClass.VERIFIED,
+                    verified = true,
+                ),
+            )
+            assertFalse(summary.rewardEligible)
+        }
+    }
+
+    @Test
+    fun swimmingPresentationRejectsMissingSportOrInvalidSessionTimes() {
+        val missingSport = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "ExerciseSessionRecord",
+                device = Device.TYPE_WATCH,
+                startEpochMillis = 1_000L,
+                endEpochMillis = 2_000L,
+            ),
+        )
+        val missingStart = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "ExerciseSessionRecord",
+                device = Device.TYPE_WATCH,
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
+                endEpochMillis = 2_000L,
+            ),
+        )
+        val reversedTime = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "ExerciseSessionRecord",
+                device = Device.TYPE_WATCH,
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
+                startEpochMillis = 2_000L,
+                endEpochMillis = 1_000L,
+            ),
+        )
+
+        assertFalse(missingSport.rewardEligible)
+        assertFalse(missingStart.rewardEligible)
+        assertFalse(reversedTime.rewardEligible)
+    }
+
+    @Test
+    fun nonSwimmingPhoneSessionKeepsReviewedProviderPathWithValidSessionMetadata() {
+        val summary = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "ExerciseSessionRecord",
+                device = Device.TYPE_PHONE,
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+                startEpochMillis = 1_000L,
+                endEpochMillis = 2_000L,
+            ),
+        )
+
+        assertTrue(summary.rewardEligible)
+    }
+
+    @Test
+    fun metricRecordCannotCarryExerciseSessionMetadataIntoRewardPresentation() {
+        val summary = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "StepsRecord",
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
+                startEpochMillis = 1_000L,
+                endEpochMillis = 2_000L,
+            ),
+        )
+
+        assertFalse(summary.rewardEligible)
     }
 
     @Test
