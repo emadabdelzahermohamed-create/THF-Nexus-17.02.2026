@@ -2,13 +2,34 @@ package com.topherofit.thf.pulse
 
 import androidx.health.connect.client.records.ExerciseSessionRecord
 
-/** Maps THF's stable sport keys to official Health Connect exercise types. */
+/** Maps THF sport and exercise/program keys to official Health Connect exercise types. */
 object HealthSportMapper {
     fun toExerciseType(rawSport: String?, rawExerciseId: String? = null): Int {
         val sport = rawSport.orEmpty().trim().lowercase()
         val exerciseId = rawExerciseId.orEmpty().trim().lowercase()
-        val key = if (sport.isNotBlank()) sport else exerciseId
 
+        // A section/program label is intentionally broad (for example "running" or
+        // "swimming"). Prefer a known exercise/program ID when it describes the actual
+        // session more precisely, so treadmill walking and dryland swim-strength programs
+        // are not written as running or in-water swimming sessions.
+        val exerciseSpecificType = when (exerciseId) {
+            "swim-dryland", "swim-strength" ->
+                ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING
+            "jogging-treadmill", "running-treadmill" ->
+                ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL
+            "walking-treadmill" ->
+                ExerciseSessionRecord.EXERCISE_TYPE_WALKING
+            "bicycling-stationary", "recumbent-bike", "air-bike" ->
+                ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY
+            "rowing-stationary" ->
+                ExerciseSessionRecord.EXERCISE_TYPE_ROWING_MACHINE
+            "elliptical-trainer" ->
+                ExerciseSessionRecord.EXERCISE_TYPE_ELLIPTICAL
+            else -> null
+        }
+        if (exerciseSpecificType != null) return exerciseSpecificType
+
+        val key = if (sport.isNotBlank()) sport else exerciseId
         return when (key) {
             "strength", "strength_training", "gym", "weights", "weightlifting",
             "squat", "lunge", "pushup", "plank" -> ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING
