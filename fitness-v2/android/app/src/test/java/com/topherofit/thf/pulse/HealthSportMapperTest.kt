@@ -16,6 +16,54 @@ class HealthSportMapperTest {
     }
 
     @Test
+    fun specificCatalogExercisesOverrideBroadSectionSport() {
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_WALKING,
+            HealthSportMapper.toExerciseType("running", "walking-treadmill"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL,
+            HealthSportMapper.toExerciseType("running", "jogging-treadmill"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL,
+            HealthSportMapper.toExerciseType("running", "running-treadmill"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY,
+            HealthSportMapper.toExerciseType("cycling", "bicycling-stationary"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY,
+            HealthSportMapper.toExerciseType("cycling", "recumbent-bike"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY,
+            HealthSportMapper.toExerciseType("home", "air-bike"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_ROWING_MACHINE,
+            HealthSportMapper.toExerciseType("hiit", "rowing-stationary"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_ELLIPTICAL,
+            HealthSportMapper.toExerciseType("hiit", "elliptical-trainer"),
+        )
+    }
+
+    @Test
+    fun drylandSwimmingProgramsAreNotWrittenAsSwimmingSessions() {
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+            HealthSportMapper.toExerciseType("swimming", "swim-dryland"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+            HealthSportMapper.toExerciseType("swimming", "swim-strength"),
+        )
+    }
+
+    @Test
     fun unknownSportFailsClosedToOtherWorkout() {
         assertEquals(ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT, HealthSportMapper.toExerciseType("unknown-sport"))
     }
