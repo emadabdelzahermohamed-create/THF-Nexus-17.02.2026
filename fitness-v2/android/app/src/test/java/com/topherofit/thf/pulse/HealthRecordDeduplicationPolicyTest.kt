@@ -1,6 +1,7 @@
 package com.topherofit.thf.pulse
 
 import java.time.Instant
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -81,6 +82,31 @@ class HealthRecordDeduplicationPolicyTest {
 
         assertEquals(2, result.selected.size)
         assertEquals(0, result.duplicateCount)
+    }
+
+    @Test
+    fun healthRecordIdentityIsIndependentOfDefaultLocale() {
+        val originalLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.US)
+            val usKey = WorkoutIdentity.stableHealthRecordKey(
+                "COM.GOOGLE.ANDROID.APPS.FITNESS",
+                HealthRecordType.ACTIVE_CALORIES.stableId,
+                "provider-record-123",
+            )
+
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+            val turkishKey = WorkoutIdentity.stableHealthRecordKey(
+                "COM.GOOGLE.ANDROID.APPS.FITNESS",
+                HealthRecordType.ACTIVE_CALORIES.stableId,
+                "provider-record-123",
+            )
+
+            assertEquals(usKey, turkishKey)
+            assertTrue(usKey.matches(Regex("^thf-health-[0-9a-f]{40}$")))
+        } finally {
+            Locale.setDefault(originalLocale)
+        }
     }
 
     @Test
