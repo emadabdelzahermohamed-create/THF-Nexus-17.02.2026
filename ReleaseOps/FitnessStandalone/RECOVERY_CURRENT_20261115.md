@@ -1,6 +1,138 @@
-# TopHeroFit canonical recovery — 2026-11-15
+# TopHeroFit canonical recovery — 2026-11-16
 
-> **Authoritative current update: 2026-11-15 19:19 Cairo.** This section supersedes earlier time-sensitive branch heads, PR comparisons, CI results, Play readback and phone status in the retained prior checkpoint below.
+> **Authoritative current update: 2026-11-16.** This update supersedes all time-sensitive branch heads, PR comparisons and CI state in the retained 2026-11-15 checkpoint below. Repository remains the sole source of truth: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`.
+
+## Canonical state and completed Health delivery
+
+- Canonical branch: `agent/codex/fitness-recovery/20261023`.
+- Latest application merge: PR #299, squash merge commit `16fd1b16ef9d3592ef031298e059ed730ff92f92`.
+- PR #299 exact tested source: `ed46cd03e0f71788ded660bd288852a9dca5a63c`.
+- Parent at test time: `a4ccae5bd7f518ea906b1267c820f4296fefab63`.
+- Post-merge comparison: exactly 1 commit ahead, 0 behind, exactly two files changed:
+  - `fitness-v2/android/app/src/main/java/com/topherofit/thf/pulse/HealthSportMapper.kt`
+  - `fitness-v2/android/app/src/test/java/com/topherofit/thf/pulse/HealthSportMapperTest.kt`
+- Canonical blob SHAs:
+  - HealthSportMapper.kt: `c6e149841f07946f46c768f28ec4f8ba34bc1258`
+  - HealthSportMapperTest.kt: `9ae88535e44fcf75fb1c678d447e3851f4a1f2fa`
+- No GPS/activity-tracking native files, manifest, MainActivity, app.js, catalog/program data, release version, workflow, signing or Play files changed in this merge.
+
+## PR #299 — precise Health Connect exercise/program mapping
+
+Merged: https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/299
+
+The writer supplies a broad section/program sport label plus the exercise/program ID. The old mapper always preferred the broad label, which caused concrete data errors:
+- `walking-treadmill` under the running section was written as RUNNING instead of WALKING.
+- `jogging-treadmill` and `running-treadmill` were written as generic RUNNING instead of RUNNING_TREADMILL.
+- `bicycling-stationary` and `recumbent-bike` were written as BIKING instead of BIKING_STATIONARY.
+- `rowing-stationary` and `elliptical-trainer` under HIIT were reduced to the broad HIIT type.
+- `swim-dryland` and `swim-strength` were written as in-water SWIMMING_POOL despite their actual dryland strength prescriptions.
+
+Known, unambiguous exercise/program IDs now take precedence; unknown IDs retain the existing broad-sport fallback. Dryland swim-support programs map to STRENGTH_TRAINING. This does not relax swimming eligibility: actual swimming still requires reviewed provider and compatible trusted wearable metadata.
+
+### Exact-head CI and artifacts
+
+Run 43881473640: https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43881473640 — **SUCCESS** on exact source SHA `ed46cd03e0f71788ded660bd288852a9dca5a63c`.
+
+- Product tests: 67/67.
+- Source-contract tests: 34/34.
+- Backend tests: 29/29.
+- Android unit tests: 256/256; 0 failures; 0 ignored.
+- Android API 36 setup, Kotlin compile, lintDebug, assembleDebug and bundleRelease validation: PASS.
+- Gradle: BUILD SUCCESSFUL in 2m 1s.
+- Lint: 0 errors, 16 warnings, 1 hint.
+
+Artifact 14231754743 was downloaded and independently rehashed:
+- ZIP SHA-256: `357e30ef3c6325cfd04ade7922da8990a9c596c1f99918330b1697a8e5da6713` (matches GitHub digest).
+- QA APK SHA-256: `d892fd2d6fb60396276b27ee5024ebc2dc97a2ada9b9e771fc629b888a10f166`.
+- Validation AAB SHA-256: `e2ea5d4b5c39b320e3435975736992af472db9d77114e82927b55391088aa7c1`.
+- `jarsigner`: `jar is unsigned`.
+- QA package: `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.0.0-v2-alpha19-debug`. Validation only; never promote.
+
+## Discarded false-positive candidate
+
+PR #298 was closed unmerged: https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/298
+
+The proposed locale issue was invalid. Kotlin `String.lowercase()` uses invariant-locale Unicode mapping, so the existing implementation was already locale-independent. No source from #298 was merged. Do not count it as a delivered change.
+
+## GPS checkpoint and ownership handoff
+
+Latest GPS candidate: PR #297, https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/297
+
+- Current branch HEAD: `d572bae1baea0ea01fdca91d39cc089a30378e90`.
+- Exact tested application/test source SHA: `3e784616e96aa810a7a10ded60b33bcf2bf6b57d`.
+- Exact-head CI run 43817464009: SUCCESS.
+- Product 67/67; source-contract 34/34; backend 29/29; Android 271/271; 0 failures; 0 ignored.
+- Android API 36, lintDebug, assembleDebug and unsigned bundleRelease validation passed; lint 0 errors, 16 warnings, 1 hint.
+- Artifact 14203510974 ZIP SHA-256: `f92f30e3053dbeae1644c1bee2e5fa6141e986a1dd8a647ed23110c4f89887d8`.
+- QA APK SHA-256: `1831a6ca336ae907482194d2e6bd85045e7f50b7087e84c898746b46235369ed`.
+- Validation AAB SHA-256: `86fe46286ada5f60415c86cb3bebd14f5f965e85802be2fac184dc50848049b1`; unsigned.
+- New GPS correction: an Android 12+ precise-to-approximate permission downgrade switches an active framework GPS subscription to eligible NETWORK_PROVIDER on the next four-second watchdog poll, rather than waiting for the normal no-fix timeout. Coarse permission and NETWORK_PROVIDER are required; provider changes do not bridge distance.
+- The two commits after the tested source SHA are checkpoint-documentation only; no app/test source changed after the tested SHA.
+- After PR #299 merged, current compare against canonical `16fd1b16ef9d3592ef031298e059ed730ff92f92` is 14 ahead / 1 behind. PR-info currently reports mergeable=true; keep Draft and rerun exact-head CI on the combined current canonical tree before merging.
+- PR #297 changes eight GPS source/test files plus its two GPS/recovery checkpoint documents. These are disjoint from PR #299's two HealthSportMapper files.
+- GPS owner was notified of the new canonical base and the required combined-head validation. No GPS-owned file was edited in this run.
+- `ActivityEvidenceAnomalyPolicy.assessSegment` remains unwired in the live tracking service. Do not claim full anti-cheat or location attestation.
+
+Latest GPS checkpoint on the GPS candidate branch (not canonical): `ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261116.md`, blob `3c2957db75a6a209a6b1c255c7d04f761712220c`. The physical P0 remains BLOCKED_NOT_RUN.
+
+## Current open PR ownership (fresh comparison against canonical 16fd1b1)
+
+| PR | Current comparison | Ownership / decision |
+|---|---:|---|
+| #93 | 2 ahead / 354 behind, diverged, 12 files | Health Services/MainActivity/manifest owner; still requests 19 Health scopes; blocked |
+| #282 | 2 ahead / 93 behind, diverged, 2 files | Health metric truthfulness in app.js; shares app.js with #216; blocked pending rebase/combined CI |
+| #160 | 53 ahead / 209 behind, diverged, 17 files | Bilingual exercise catalog and builder/tests; reconcile with #213 before integration |
+| #213 | 190 ahead / 209 behind, diverged, 49 files | Program/RIR and shared catalog/UI data; overlaps #160 and #224; do not merge wholesale |
+| #224 | 153 ahead / 209 behind, diverged, 36 files | Offline active-workout demo UI; overlaps #160/#213 and app.js |
+| #284 | 19 ahead / 51 behind, diverged, 13 files | GPS/map UI and native overlap; not this lane |
+| #297 | 14 ahead / 1 behind, diverged, 10 files | GPS owner; keep Draft until exact combined-head CI and physical P0 |
+
+Shared ownership remains explicit:
+- GPS native files: #297 / prior #294 lineage and #284; do not edit here.
+- MainActivity/manifest/Health Services bridge: #93.
+- app.js: #282 and #216; #224/#284 also overlap it.
+- Catalog/program builders and JSON/JS data: #160/#213/#224 overlapping ownership.
+- HealthSportMapper.kt and HealthSportMapperTest.kt: now canonical from #299; no overlap with current listed PRs.
+
+## Health Connect permissions and evidence boundary
+
+Canonical Android manifest blob remains `0969cdb2f18775f23e0870bf754612a04376895f` and contains exactly five Health Connect scopes:
+1. READ_STEPS
+2. READ_EXERCISE
+3. WRITE_EXERCISE
+4. READ_DISTANCE
+5. READ_ACTIVE_CALORIES_BURNED
+
+READ_HEART_RATE remains absent. No permission was added or broadened by PR #299.
+
+PR #93 still requests 19 scopes, including 14 beyond the reviewed five-scope baseline. It must rebase, restore the five-scope allowlist and pass exact-head CI before consideration. The current MainActivity/WebView bridge still does not expose the privacy-safe per-record `recordProvenance` contract; PR #93 owns that bridge. No raw Health record IDs should cross it.
+
+No physical Health Connect, real watch, heart-rate sensor or swimming record evidence was generated. Swimming remains eligible only with compatible reviewed wearable metadata; metadata is not cryptographic hardware attestation. Heart rate remains optional and unavailable until a genuine permitted source exists.
+
+## Catalog, programs and offline demonstrations
+
+The latest canonical catalog/program inventory retained from the previous checkpoint:
+- 112 exercises.
+- 84 Arabic/English instruction step-count mismatches; generic fallback cues still require movement-specific correction.
+- 26 programs, 94 sessions and 470 exercise references.
+- 232 timed references; 226 timed references still carry RIR despite their catalog entries disabling RIR.
+- Six timed Superman prescriptions remain inconsistent with the catalog's repetition-based definition.
+- Offline demonstrations: 5 video clips, 2 reviewed 16-frame sequences, 105 reference-only two-frame exercises.
+
+PR #160 and #213 remain divergent and share generated catalog/program builders and data. PR #224 overlaps the same UI/demo surfaces. Reconcile one canonical data/build chain before integration; do not merge stacked branches wholesale. No new motion asset was created in this run.
+
+## Physical and Play gates
+
+- Latest device check recorded in the November 16 GPS candidate checkpoint: Desktop Commander localhost offline; last known handset Samsung SM-A217F / Android 12; current device/session state unknown. No ADB, install, launch, Stop, settings or activity-data action was performed.
+- Physical P0 remains BLOCKED_NOT_RUN: stationary drift, measured walking/running/cycling routes, approximate-only permission transition, screen-off/background continuity, notification controls, process-death restore, Health Connect permission grant/revocation, and compatible physical wearable/swimming evidence.
+- Latest Play readback retained from 2026-11-15: Internal 51019 completed; Alpha 51007 draft; Production not verified. No fresh Play readback was obtained in this run.
+- VersionCode 51020 remains unallocated.
+- No release version, workflow, signing, Play listing, upload, track or Production state was changed.
+
+---
+# Retained previous canonical recovery — 2026-11-15
+
+> Historical checkpoint retained below for audit. The authoritative current state is the 2026-11-16 update at the top of this file.
 
 ## Current canonical state
 
@@ -383,3 +515,4 @@ The passing product suite on #296 also rechecked bilingual voice guidance, Healt
 7. Preserve physical Health/wearable/GPS and Play privacy gates before any release decision.
 
 No release version, signing configuration, workflow, Play state, GPS native file or tracking session was changed in this run.
+
