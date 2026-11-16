@@ -516,3 +516,38 @@ The passing product suite on #296 also rechecked bilingual voice guidance, Healt
 
 No release version, signing configuration, workflow, Play state, GPS native file or tracking session was changed in this run.
 
+
+## 2026-11-16 19:56 Cairo integrator update — supersedes earlier GPS/Play values
+
+### Canonical and GPS rebase
+- Canonical branch before this documentation checkpoint: `fbb63025ef0d6dbfe22c7661b049a4b72da2b5a0`; latest application merge remains PR #299 at `16fd1b16ef9d3592ef031298e059ed730ff92f92`.
+- PR #297 is now the selected native GPS handoff. Its branch was rebased with force-with-lease from `d572bae1baea0ea01fdca91d39cc089a30378e90` onto canonical `fbb63025ef0d6dbfe22c7661b049a4b72da2b5a0`.
+- New exact PR HEAD: `1c099845979a998dc0d374322f471c39400e566e`; compare 8 ahead / 0 behind, exactly eight GPS source/test files. The two old checkpoint documents were excluded from the source-only rebase; the canonical GPS report is now recorded separately.
+- Exact-head run [43923207674](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43923207674) completed SUCCESS on `1c099845979a998dc0d374322f471c39400e566e`: Product 67/67, source-contract 34/34, backend 29/29, Android 273/273, zero failures/ignored; API 36, Kotlin, lintDebug, assembleDebug and unsigned bundleRelease validation PASS.
+- Artifact 14253604668 independently downloaded and rehashed: ZIP `58c87c1a0ebf5d5a606375fee5a56aad2cf39ef2accd02f068ae8b8b199cc1aa`; QA APK `65cdf02aade50cb3916932e9af8187dd13ea5e21e38fe997ee795dcc3b283d98`; unsigned AAB `6e9d73ecf9a50838e17a7c3551f41931d21684d3e1c2af7dc443f5412250dfdc`. `jarsigner` reports unsigned; QA identity/versionCode 51019 only. Never promote.
+- PR #297 remains Draft and mergeable; physical P0 remains BLOCKED_NOT_RUN. `ActivityEvidenceAnomalyPolicy.assessSegment` remains unwired; do not claim complete anti-cheat or location attestation.
+
+### Fresh Play readback — 2026-11-16
+- Re-ran only the existing read-only publication-state job (run [43739661313](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43739661313), attempt 2). The workflow file blob at the old run head is identical to current canonical, SHA `33cf9e555e68e00b7990545720bd7e0403a96716`.
+- Job succeeded at 17:56:42Z. Artifact 14255396385 ZIP SHA-256 `c3634fa8a1c4c462deecf4ad6582db0c395481a7b8758051b709374d55e7a025`; embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`, independently rehashed.
+- Play readback: Internal 51019 Completed; Alpha 51007 Draft; Production not listed/not verified. `uploadAttempted=false`, `commitAttempted=false`. Arabic and English listings are unchanged; estimated-metric and no-medical-diagnosis disclaimers are present. GPS/background/offline/voice claims remain gated by physical QA. No Play mutation occurred.
+
+### Phone and physical P0
+- Fresh Desktop Commander listing: `localhost` OFFLINE, last seen about 151 hours. Last known handset Samsung SM-A217F / Android 12; current device and session state unknown.
+- No ADB, install, launch, Stop, settings change or activity-data read was attempted. Preserve the Play installation and any possible live session.
+- Physical stationary drift, measured walk/run/cycle, precise-to-approximate transition, first-fix latency, screen-off/background, notification controls and process-death recovery remain BLOCKED_NOT_RUN.
+
+### Current PRs and file ownership
+- #297: Draft, 8 ahead / 0 behind, exact-head CI PASS.
+- #284: Draft, 19 ahead / 52 behind, no current-head CI; overlaps #297 native GPS, #93 MainActivity/source-contract and #282/#216 app.js. Do not merge wholesale.
+- #282: Draft, 2 ahead / 94 behind; null-vs-zero formatter and product test only, but stale app.js base overlaps #216/#224/#284.
+- #93: Draft, 2 ahead / 355 behind; requests 19 Health scopes against the canonical five-scope allowlist. Blocked.
+- #216, #160 and #213 were converted to Draft because they are highly divergent/stacked and lack exact current-head CI. #224 and #248 remain Draft. Detailed file ownership is recorded in `INTEGRATOR_LEASES_CURRENT_20261116.md`.
+- #294 is closed unmerged and superseded by #297. #295 and #299 are merged.
+- No formal lease registry existed at the previous checkpoint; a canonical file-level ownership registry has now been added.
+
+### Release and sync boundary
+- Latest Play Internal remains 51019. Next Android versionCode 51020 is unallocated. No release signing, upload, track mutation or Production promotion.
+- Existing route history remains local in WebView localStorage. Authenticated route backup/sync remains design-only; no precise-location cloud upload.
+- Health scopes remain exactly five. `READ_HEART_RATE` remains absent. Competition admin creation remains disabled without the owner-managed key; scores are not physically verified and rewards remain ineligible.
+- No paid infrastructure, Maps billing/key, unrelated project or device mutation was used.
