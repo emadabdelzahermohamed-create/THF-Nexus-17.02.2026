@@ -889,11 +889,13 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     private fun finishActivityInternal(): ActivitySnapshot {
         if (activityMode == null) return lastActivitySnapshot
-        val final = buildActivitySnapshot(active = false)
+        val final = ActivitySnapshotPolicy.finish(buildActivitySnapshot(active = false))
         lastActivitySnapshot = final
         unregisterActivitySources()
         clearActivityCheckpoint()
         activityMode = null
+        activityPaused = false
+        activityPauseStartedElapsedMs = 0L
         notificationHandler.removeCallbacks(notificationTicker)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -920,7 +922,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     private fun finishFromNotification() {
         if (activityMode != null) {
-            val final = buildActivitySnapshot(active = false).copy(paused = false)
+            val final = ActivitySnapshotPolicy.finish(buildActivitySnapshot(active = false))
             val route = JSONArray()
             final.route.forEach { point ->
                 route.put(JSONObject().put("lat", point.latitude).put("lng", point.longitude)
@@ -944,7 +946,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     private fun stopCurrentSession(keepService: Boolean = false) {
         if (activityMode != null) {
-            lastActivitySnapshot = buildActivitySnapshot(active = false).copy(paused = false)
+            lastActivitySnapshot = ActivitySnapshotPolicy.finish(buildActivitySnapshot(active = false))
             unregisterActivitySources()
             clearActivityCheckpoint()
             activityMode = null
