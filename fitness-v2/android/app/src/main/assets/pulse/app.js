@@ -589,7 +589,25 @@
   function setHealthSyncBusy(busy,message=''){const button=$('healthSyncBtn');button.disabled=Boolean(busy);button.setAttribute('aria-busy',String(Boolean(busy)));if(message)$('healthEmpty').textContent=message;}
   function scheduleHealthRetry(retryAfterMs){clearTimeout(healthSyncRetryTimer);const delay=Math.max(1000,Math.min(Number(retryAfterMs)||5000,60000));setHealthSyncBusy(true,t('healthSyncWait'));healthSyncRetryTimer=setTimeout(()=>setHealthSyncBusy(false,t('healthEmpty')),delay);}
   function renderHealthError(data={}){const code=String(data.code||'');const retryAfterMs=Number(data.retryAfterMs||0);setHealthSyncBusy(false,code==='RATE_LIMITED'||code==='COOLDOWN'?t('healthSyncWait'):t('healthSyncFailed'));renderHealthStatus({...currentHealth(),lastError:data.message||'Health Connect error'});if(retryAfterMs>0)scheduleHealthRetry(retryAfterMs);}
-  function renderHealthSnapshot(data){clearTimeout(healthSyncRetryTimer);setHealthSyncBusy(false);$('healthSteps').textContent=Number(data.steps||0).toLocaleString(locale());$('healthSessions').textContent=Number(data.exerciseSessions||0).toLocaleString(locale());$('healthDistance').textContent=(Number(data.distanceMeters||0)/1000).toFixed(1);$('healthCalories').textContent=Math.round(Number(data.activeCaloriesKcal||0)).toLocaleString(locale());$('healthSources').innerHTML=(data.origins||[]).map(origin=>`<span class="tag">${escapeHtml(origin)}</span>`).join('');$('healthEmpty').textContent=data.uxState==='SYNCED_UNVERIFIED_ONLY'?(state.lang==='ar'?'تمت القراءة، لكن السجلات الحالية غير مؤهلة للمكافآت.':'Records were read, but none are currently reward-eligible.'):data.uxState==='SYNCED_NO_RECORDS'?(state.lang==='ar'?'الاتصال ناجح ولا توجد سجلات في آخر 7 أيام.':'Connected; no records in the last 7 days.'):(state.lang==='ar'?'تم تحديث ملخص موثّق لآخر 7 أيام.':'The verified 7-day summary is up to date.');renderHealthStatus({...currentHealth(),...data,lastError:''});}
+  function healthMetricDisplayValue(value, divisor = 1, decimals = 0) {
+    if (value === null || value === undefined) return '—';
+    const numeric = Number(value);
+    const scale = Number(divisor);
+    if (!Number.isFinite(numeric) || numeric < 0 || !Number.isFinite(scale) || scale <= 0) return '—';
+    const normalized = numeric / scale;
+    return decimals > 0 ? normalized.toFixed(decimals) : Math.round(normalized).toLocaleString(locale());
+  }
+  function renderHealthSnapshot(data){
+    clearTimeout(healthSyncRetryTimer);
+    setHealthSyncBusy(false);
+    $('healthSteps').textContent=healthMetricDisplayValue(data.steps);
+    $('healthSessions').textContent=healthMetricDisplayValue(data.exerciseSessions);
+    $('healthDistance').textContent=healthMetricDisplayValue(data.distanceMeters,1000,1);
+    $('healthCalories').textContent=healthMetricDisplayValue(data.activeCaloriesKcal);
+    $('healthSources').innerHTML=(data.origins||[]).map(origin=>`<span class="tag">${escapeHtml(origin)}</span>`).join('');
+    $('healthEmpty').textContent=data.uxState==='SYNCED_UNVERIFIED_ONLY'?(state.lang==='ar'?'تمت القراءة، لكن السجلات الحالية غير مؤهلة للمكافآت.':'Records were read, but none are currently reward-eligible.'):data.uxState==='SYNCED_NO_RECORDS'?(state.lang==='ar'?'الاتصال ناجح ولا توجد سجلات في آخر 7 أيام.':'Connected; no records in the last 7 days.'):(state.lang==='ar'?'تم تحديث ملخص موثّق لآخر 7 أيام.':'The verified 7-day summary is up to date.');
+    renderHealthStatus({...currentHealth(),...data,lastError:''});
+  }
 
   function activityHistory(){return parse(store.getItem('pulse.v2.activities'),[]);}
   function profileWeightKg(){const profile=parse(store.getItem('pulse.v2.profile'),defaultProfile());return Math.max(30,Math.min(250,Number(profile.weightKg)||70));}
