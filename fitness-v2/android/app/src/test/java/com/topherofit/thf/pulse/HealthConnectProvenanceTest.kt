@@ -284,7 +284,6 @@ class HealthConnectProvenanceTest {
             endEpochMillis = 2_000L,
             isExerciseSession = true,
             observedAtEpochMillis = 3_000L,
-            isExerciseSession = true,
         )
         assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
         assertFalse(result.verifiedForRewards)
