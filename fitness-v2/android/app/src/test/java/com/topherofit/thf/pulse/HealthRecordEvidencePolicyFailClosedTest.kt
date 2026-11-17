@@ -12,6 +12,7 @@ class HealthRecordEvidencePolicyFailClosedTest {
         recordType: String,
         isExerciseSession: Boolean = false,
         exerciseType: Int? = null,
+        observedAtEpochMillis: Long? = 3_000L,
     ) = HealthRecordEvidencePolicy.assess(
         appPackageName = "com.topherofit.thf.pulse",
         dataOrigin = "com.sec.android.app.shealth",
@@ -23,6 +24,7 @@ class HealthRecordEvidencePolicyFailClosedTest {
         startEpochMillis = if (isExerciseSession) 1_000L else null,
         endEpochMillis = if (isExerciseSession) 2_000L else null,
         isExerciseSession = isExerciseSession,
+        observedAtEpochMillis = observedAtEpochMillis,
     )
 
     @Test
@@ -62,6 +64,47 @@ class HealthRecordEvidencePolicyFailClosedTest {
             recordType = "a",
             isExerciseSession = true,
             exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+        )
+
+        assertEquals(IntegrityClass.VERIFIED, result.integrityClass)
+        assertTrue(result.verifiedForRewards)
+    }
+
+    @Test
+    fun futureDatedExerciseSessionIsNotRewardVerified() {
+        val result = assess(
+            recordType = "a",
+            isExerciseSession = true,
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+            observedAtEpochMillis = 1_999L,
+        )
+
+        assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
+        assertFalse(result.verifiedForRewards)
+        assertEquals("FUTURE_EXERCISE_SESSION", result.reason)
+    }
+
+    @Test
+    fun exerciseSessionWithoutObservationBoundaryFailsClosed() {
+        val result = assess(
+            recordType = "a",
+            isExerciseSession = true,
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+            observedAtEpochMillis = null,
+        )
+
+        assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
+        assertFalse(result.verifiedForRewards)
+        assertEquals("MISSING_OBSERVATION_TIME", result.reason)
+    }
+
+    @Test
+    fun sessionEndingAtObservationBoundaryRemainsEligible() {
+        val result = assess(
+            recordType = "a",
+            isExerciseSession = true,
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+            observedAtEpochMillis = 2_000L,
         )
 
         assertEquals(IntegrityClass.VERIFIED, result.integrityClass)

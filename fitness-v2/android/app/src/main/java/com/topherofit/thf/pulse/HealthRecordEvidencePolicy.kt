@@ -22,6 +22,7 @@ object HealthRecordEvidencePolicy {
         startEpochMillis: Long? = null,
         endEpochMillis: Long? = null,
         isExerciseSession: Boolean = false,
+        observedAtEpochMillis: Long? = null,
     ): HealthRecordEvidenceAssessment {
         val app = appPackageName.trim()
         val origin = dataOrigin.trim()
@@ -88,6 +89,13 @@ object HealthRecordEvidencePolicy {
                 startEpochMillis < 0L || endEpochMillis <= startEpochMillis)
         ) {
             return supported("INVALID_EXERCISE_SESSION_TIME")
+        }
+        if (isExerciseSessionRecord) {
+            val observedAt = observedAtEpochMillis
+                ?: return supported("MISSING_OBSERVATION_TIME")
+            if (requireNotNull(endEpochMillis) > observedAt) {
+                return supported("FUTURE_EXERCISE_SESSION")
+            }
         }
         if (!HealthSourceTrustPolicy.isApprovedHealthConnectProvider(origin)) {
             return supported("UNTRUSTED_PROVIDER")

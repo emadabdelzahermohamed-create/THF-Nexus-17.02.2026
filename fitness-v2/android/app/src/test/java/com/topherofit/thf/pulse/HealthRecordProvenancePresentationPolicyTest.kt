@@ -26,6 +26,7 @@ class HealthRecordProvenancePresentationPolicyTest {
         exerciseType: Int? = null,
         startEpochMillis: Long? = null,
         endEpochMillis: Long? = null,
+        observedAtEpochMillis: Long? = 3_000L,
     ) = HealthRecordEvidence(
         recordId = id,
         canonicalKey = canonicalKey ?: WorkoutIdentity.stableHealthRecordKey(source, type, id),
@@ -44,6 +45,7 @@ class HealthRecordProvenancePresentationPolicyTest {
         exerciseType = exerciseType,
         startEpochMillis = startEpochMillis,
         endEpochMillis = endEpochMillis,
+        observedAtEpochMillis = observedAtEpochMillis,
     )
 
     @Test
@@ -302,6 +304,42 @@ class HealthRecordProvenancePresentationPolicyTest {
         )
 
         assertTrue(summary.rewardEligible)
+    }
+
+    @Test
+    fun futureDatedExerciseSessionCannotBePresentedAsRewardEligible() {
+        val summary = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "ExerciseSessionRecord",
+                device = Device.TYPE_WATCH,
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+                startEpochMillis = 1_000L,
+                endEpochMillis = 4_000L,
+                observedAtEpochMillis = 3_000L,
+                integrity = IntegrityClass.VERIFIED,
+                verified = true,
+            ),
+        )
+
+        assertFalse(summary.rewardEligible)
+    }
+
+    @Test
+    fun missingObservationBoundaryCannotBePresentedAsRewardEligible() {
+        val summary = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "ExerciseSessionRecord",
+                device = Device.TYPE_WATCH,
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+                startEpochMillis = 1_000L,
+                endEpochMillis = 2_000L,
+                observedAtEpochMillis = null,
+                integrity = IntegrityClass.VERIFIED,
+                verified = true,
+            ),
+        )
+
+        assertFalse(summary.rewardEligible)
     }
 
     @Test

@@ -49,6 +49,8 @@ data class HealthRecordEvidence(
     val exerciseType: Int? = null,
     val startEpochMillis: Long? = null,
     val endEpochMillis: Long? = null,
+    /** Read-boundary clock used to reject future-dated imported sessions. */
+    val observedAtEpochMillis: Long? = null,
 )
 
 data class HealthSnapshot(
@@ -181,7 +183,7 @@ class HealthConnectRepository(private val context: Context) {
             emptyList()
         }
         val allRecords: List<Record> = steps + distances + calories + sessions
-        val entries = allRecords.map { record -> HealthRecordEntry(record, record.toEvidence()) }
+        val entries = allRecords.map { record -> HealthRecordEntry(record, record.toEvidence(end)) }
         // Use the same selected record version for both evidence and metric aggregation.
         // Stable identity is source + explicit record type + provider record ID. Records
         // without complete identity are never collapsed into one synthetic duplicate group.
@@ -268,7 +270,7 @@ class HealthConnectRepository(private val context: Context) {
         client.insertRecords(listOf(record))
     }
 
-    private fun Record.toEvidence(): HealthRecordEvidence {
+    private fun Record.toEvidence(observedAt: Instant): HealthRecordEvidence {
         val method = metadata.recordingMethod
         val device = metadata.device
         val origin = metadata.dataOrigin.packageName
@@ -288,6 +290,7 @@ class HealthConnectRepository(private val context: Context) {
             startEpochMillis = session?.startTime?.toEpochMilli(),
             endEpochMillis = session?.endTime?.toEpochMilli(),
             isExerciseSession = session != null,
+            observedAtEpochMillis = observedAt.toEpochMilli(),
         )
         return HealthRecordEvidence(
             recordId = metadata.id,
@@ -307,6 +310,7 @@ class HealthConnectRepository(private val context: Context) {
             exerciseType = session?.exerciseType,
             startEpochMillis = session?.startTime?.toEpochMilli(),
             endEpochMillis = session?.endTime?.toEpochMilli(),
+            observedAtEpochMillis = observedAt.toEpochMilli(),
         )
     }
 
