@@ -155,6 +155,7 @@ class HealthConnectProvenanceTest {
         recordId: String = "swimming-session-1",
         startEpochMillis: Long = 1_000L,
         endEpochMillis: Long = 2_000L,
+        observedAtEpochMillis: Long = 3_000L,
     ): HealthRecordEvidenceAssessment {
         val trustedMethod = recordingMethod == Metadata.RECORDING_METHOD_ACTIVELY_RECORDED ||
             recordingMethod == Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED
@@ -170,6 +171,7 @@ class HealthConnectProvenanceTest {
             startEpochMillis = startEpochMillis,
             endEpochMillis = endEpochMillis,
             isExerciseSession = true,
+            observedAtEpochMillis = observedAtEpochMillis,
         )
     }
 
@@ -242,6 +244,7 @@ class HealthConnectProvenanceTest {
             recordingMethod = Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED,
             startEpochMillis = 1_000L,
             endEpochMillis = 2_000L,
+            observedAtEpochMillis = 3_000L,
             isExerciseSession = true,
         )
         assertEquals(IntegrityClass.SUPPORTED, missingType.integrityClass)
@@ -280,6 +283,8 @@ class HealthConnectProvenanceTest {
             startEpochMillis = 1_000L,
             endEpochMillis = 2_000L,
             isExerciseSession = true,
+            observedAtEpochMillis = 3_000L,
+            isExerciseSession = true,
         )
         assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
         assertFalse(result.verifiedForRewards)
@@ -299,6 +304,7 @@ class HealthConnectProvenanceTest {
             exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
             startEpochMillis = 1_000L,
             endEpochMillis = 2_000L,
+            observedAtEpochMillis = 3_000L,
         )
         assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
         assertFalse(result.verifiedForRewards)
