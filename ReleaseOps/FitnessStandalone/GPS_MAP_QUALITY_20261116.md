@@ -77,7 +77,7 @@ Artifact 14253604668 was downloaded and independently rehashed:
 - `adjustedStartedAtElapsedMs` intentionally advances the session clock by the process downtime. Adding an old route-point offset to that adjusted start therefore advanced the old GPS fix by the same downtime and could make a stale checkpoint anchor appear fresh.
 - Fixed in commit `349fcbb40ffbda9641e33ab68637b29c99bc960e`: `restorableLastFixElapsedMs` reconstructs the actual fix time from the checkpoint's persisted, pre-adjustment monotonic start; it refuses paused, non-active, missing/invalid-accuracy, missing-route, out-of-window and overflow cases.
 - The service now seeds a live anchor only when that original timestamp is still within the 30-second freshness window. Route history remains available for display; an unobserved process-death gap is not bridged.
-- Four regression tests cover stale downtime, fresh-window preservation, paused/missing-accuracy rejection, repeated restore without a new fix, and the new post-restore time base.
+- Five regression tests cover stale downtime, fresh-window preservation, paused/missing-accuracy rejection, repeated restore without a new fix, and the new post-restore time base.
 
 ### Exact-head validation and artifact evidence
 - PR #297 remains Draft / unmerged.
