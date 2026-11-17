@@ -10,17 +10,38 @@ object GpsFixPresentationPolicy {
 
     fun state(
         locationPermissionGranted: Boolean,
-        providerEnabled: Boolean,
+        locationServicesEnabled: Boolean,
         observedElapsedMs: Long?,
         acceptedElapsedMs: Long?,
         nowElapsedMs: Long,
     ): String {
         if (!locationPermissionGranted) return "permission"
-        if (!providerEnabled) return "off"
+        if (!locationServicesEnabled) return "off"
         val observed = observedElapsedMs ?: return "acquiring"
         val observedAgeMs = nowElapsedMs - observed
         if (observedAgeMs < 0L || observedAgeMs > MAX_OBSERVED_AGE_MS) return "stale"
         if (acceptedElapsedMs == null || acceptedElapsedMs < observed) return "filtered"
         return "ready"
+    }
+
+    /** Describes the raw Android location source without calling every fix "GPS". */
+    fun sourceLabel(provider: String?): String = when {
+        provider.equals("gps", ignoreCase = true) -> "GPS"
+        provider.equals("network", ignoreCase = true) -> "الشبكة"
+        provider.equals("fused", ignoreCase = true) -> "الموقع المدمج"
+        else -> "الموقع"
+    }
+}
+
+/** Exposes current accuracy only while a fresh accepted fix is available. */
+object GpsAccuracyPresentationPolicy {
+    fun visibleAccuracy(gpsFixState: String, acceptedAccuracyMetres: Float?): Float? {
+        if (gpsFixState != "ready") return null
+        return acceptedAccuracyMetres?.takeIf { it.isFinite() && it > 0f }
+    }
+
+    fun formatAccuracyMetres(accuracyMetres: Float?): String {
+        val accuracy = accuracyMetres?.takeIf { it.isFinite() && it > 0f } ?: return "غير متاحة"
+        return if (accuracy < 1f) "±<1 م" else "±${kotlin.math.ceil(accuracy.toDouble()).toInt()} م"
     }
 }
