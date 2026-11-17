@@ -10,9 +10,9 @@ import java.util.Locale
  * and curved movement are not discarded. Stationary jitter is not summed into distance unless
  * the net displacement also clears the uncertainty deadband. Credited path length is bounded to
  * 1.4x net displacement so oscillating fixes cannot inflate a small drift into a long route. A
- * threshold-crossing excursion must persist for a second accepted fix; a one-fix spike that returns
- * inside the deadband is discarded. This is measurement filtering, not proof of location
- * authenticity; prolonged stationary drift can still exceed the deadband and persist long enough
+ * threshold-crossing excursion must persist across at least three accepted fixes spanning six
+ * seconds; a one- or two-fix spike that returns inside the deadband is discarded. This is
+ * measurement filtering, not proof of location authenticity; prolonged stationary drift can still
  * to be credited.
  */
 data class GpsDistanceCredit(
@@ -25,6 +25,8 @@ class GpsDistanceAccumulator {
         const val MAX_ANCHOR_GAP_MS = 120_000L
         const val MAX_HORIZONTAL_ACCURACY_METRES = 50.0
         const val MIN_CREDITABLE_DISTANCE_METRES = 3.0
+        const val MIN_CONFIRMATION_FIXES = 3
+        const val MIN_CONFIRMATION_DURATION_MS = 6_000L
         const val MAX_PATH_TO_NET_RATIO = 1.4
     }
 
@@ -33,13 +35,15 @@ class GpsDistanceAccumulator {
     private var pendingPathDistanceMetres = 0.0
     private var pendingWorstAccuracyMetres = 0.0
     private var pendingDisplacementCandidate = false
+    private var pendingDisplacementCandidateSinceElapsedMs: Long? = null
+    private var pendingDisplacementCandidateFixCount = 0
 
     fun reset() {
         anchor = null
         lastFix = null
         pendingPathDistanceMetres = 0.0
         pendingWorstAccuracyMetres = 0.0
-        pendingDisplacementCandidate = false
+        clearPendingDisplacementCandidate()
     }
 
     /** Seed a new measurement window without crediting a segment to the previous anchor. */
@@ -49,7 +53,7 @@ class GpsDistanceAccumulator {
         lastFix = usable
         pendingPathDistanceMetres = 0.0
         pendingWorstAccuracyMetres = usable?.accuracyMetres ?: 0.0
-        pendingDisplacementCandidate = false
+        clearPendingDisplacementCandidate()
     }
 
     /**
@@ -122,15 +126,24 @@ class GpsDistanceAccumulator {
                 lastFix = fix
                 pendingPathDistanceMetres = 0.0
                 pendingWorstAccuracyMetres = fix.accuracyMetres
-                pendingDisplacementCandidate = false
+                clearPendingDisplacementCandidate()
             }
             return null
         }
 
         if (!pendingDisplacementCandidate) {
             pendingDisplacementCandidate = true
+            pendingDisplacementCandidateSinceElapsedMs = fix.elapsedMs
+            pendingDisplacementCandidateFixCount = 1
             return null
         }
+
+        pendingDisplacementCandidateFixCount += 1
+        val candidateStartedAt = pendingDisplacementCandidateSinceElapsedMs ?: fix.elapsedMs
+        val candidateDurationMs = fix.elapsedMs - candidateStartedAt
+        if (pendingDisplacementCandidateFixCount < MIN_CONFIRMATION_FIXES ||
+            candidateDurationMs < MIN_CONFIRMATION_DURATION_MS
+        ) return null
 
         // Preserve ordinary turns, but bound path inflation from oscillating stationary fixes.
         val credit = minOf(pendingPathDistanceMetres, netDisplacement * MAX_PATH_TO_NET_RATIO)
@@ -138,11 +151,17 @@ class GpsDistanceAccumulator {
         lastFix = fix
         pendingPathDistanceMetres = 0.0
         pendingWorstAccuracyMetres = fix.accuracyMetres
-        pendingDisplacementCandidate = false
+        clearPendingDisplacementCandidate()
         return GpsDistanceCredit(
             distanceMetres = credit,
             elapsedMs = sinceAnchorMs,
         )
+    }
+
+    private fun clearPendingDisplacementCandidate() {
+        pendingDisplacementCandidate = false
+        pendingDisplacementCandidateSinceElapsedMs = null
+        pendingDisplacementCandidateFixCount = 0
     }
 
     private fun isUsable(fix: GpsFix): Boolean =
