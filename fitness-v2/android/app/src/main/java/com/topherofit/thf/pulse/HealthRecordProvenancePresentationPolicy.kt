@@ -124,6 +124,8 @@ internal object HealthRecordProvenancePresentationPolicy {
         val start = evidence.startEpochMillis ?: return false
         val end = evidence.endEpochMillis ?: return false
         if (start < 0L || end <= start) return false
+        val observedAt = evidence.observedAtEpochMillis ?: return false
+        if (end > observedAt) return false
 
         val swimmingSport = when (exerciseType) {
             ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> SportKind.SWIMMING_POOL
