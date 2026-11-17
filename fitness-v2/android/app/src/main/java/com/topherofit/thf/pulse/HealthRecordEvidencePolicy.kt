@@ -93,7 +93,7 @@ object HealthRecordEvidencePolicy {
         if (isExerciseSessionRecord) {
             val observedAt = observedAtEpochMillis
                 ?: return supported("MISSING_OBSERVATION_TIME")
-            if (endEpochMillis > observedAt) {
+            if (requireNotNull(endEpochMillis) > observedAt) {
                 return supported("FUTURE_EXERCISE_SESSION")
             }
         }
