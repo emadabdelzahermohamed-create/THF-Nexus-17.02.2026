@@ -292,6 +292,41 @@ class HealthConnectRepository(private val context: Context) {
             isExerciseSession = session != null,
             observedAtEpochMillis = observedAt.toEpochMilli(),
         )
+        // Health Connect metric records are source-labelled and version-deduplicated above,
+        // but a reviewed writer can still emit malformed, future-dated or implausible values.
+        // Keep those records visible as rejected evidence while excluding them from totals.
+        val metricAnomalyReason = if (assessment.verifiedForRewards) {
+            when (this) {
+                is StepsRecord -> HealthMetricEvidencePolicy.assessSteps(
+                    count = count,
+                    start = startTime,
+                    end = endTime,
+                    observedAt = observedAt,
+                )
+                is DistanceRecord -> HealthMetricEvidencePolicy.assessDistance(
+                    meters = distance.inMeters,
+                    start = startTime,
+                    end = endTime,
+                    observedAt = observedAt,
+                )
+                is ActiveCaloriesBurnedRecord -> HealthMetricEvidencePolicy.assessActiveCalories(
+                    kilocalories = energy.inKilocalories,
+                    start = startTime,
+                    end = endTime,
+                    observedAt = observedAt,
+                )
+                else -> null
+            }
+        } else {
+            null
+        }
+        val finalAssessment = metricAnomalyReason?.let { reason ->
+            HealthRecordEvidenceAssessment(
+                integrityClass = IntegrityClass.REJECTED,
+                verifiedForRewards = false,
+                reason = reason,
+            )
+        } ?: assessment
         return HealthRecordEvidence(
             recordId = metadata.id,
             canonicalKey = WorkoutIdentity.stableHealthRecordKey(origin, recordType, metadata.id),
@@ -304,9 +339,9 @@ class HealthConnectRepository(private val context: Context) {
             deviceType = device?.type,
             deviceManufacturer = device?.manufacturer,
             deviceModel = device?.model,
-            integrityClass = assessment.integrityClass,
-            verifiedForRewards = assessment.verifiedForRewards,
-            verificationReason = assessment.reason,
+            integrityClass = finalAssessment.integrityClass,
+            verifiedForRewards = finalAssessment.verifiedForRewards,
+            verificationReason = finalAssessment.reason,
             exerciseType = session?.exerciseType,
             startEpochMillis = session?.startTime?.toEpochMilli(),
             endEpochMillis = session?.endTime?.toEpochMilli(),
