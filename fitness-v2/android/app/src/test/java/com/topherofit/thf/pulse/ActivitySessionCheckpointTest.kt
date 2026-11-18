@@ -84,6 +84,14 @@ class ActivitySessionCheckpointTest {
     }
 
     @Test
+    fun routeCheckpointRejectsZeroAccuracyAndNonMonotonicElapsedTimes() {
+        val validHeader = "1|run|70|1|1|3|0||0|\\n"
+        assertNull(ActivitySessionCheckpointCodec.decode(validHeader + "30,31,,0,0"))
+        assertNull(ActivitySessionCheckpointCodec.decode(validHeader + "30,31,,5,1;30.1,31.1,,5,1"))
+        assertNull(ActivitySessionCheckpointCodec.decode(validHeader + "30,31,,5,2;30.1,31.1,,5,1"))
+    }
+
+    @Test
     fun forcedLifecycleCheckpointUsesSynchronousCommit() {
         var commitCalls = 0
         var applyCalls = 0

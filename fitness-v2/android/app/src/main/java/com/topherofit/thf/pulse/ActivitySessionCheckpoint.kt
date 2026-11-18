@@ -146,6 +146,7 @@ object ActivitySessionCheckpointCodec {
         if (encoded.isNullOrBlank()) return emptyList()
         val rows = encoded.split(';')
         if (rows.size > MAX_ROUTE_POINTS) return null
+        var previousRouteElapsedMs: Long? = null
         return rows.map { row ->
             val values = row.split(',')
             if (values.size != 5) return null
@@ -158,7 +159,10 @@ object ActivitySessionCheckpointCodec {
             if (!longitude.isFinite() || longitude !in -180.0..180.0) return null
             if (values[2].isNotEmpty() && altitude == null) return null
             if (altitude != null && !altitude.isFinite()) return null
-            if (!accuracy.isFinite() || accuracy < 0f || elapsedMs < 0L) return null
+            if (!accuracy.isFinite() || accuracy <= 0f || elapsedMs < 0L) return null
+            val previousElapsedMs = previousRouteElapsedMs
+            if (previousElapsedMs != null && elapsedMs <= previousElapsedMs) return null
+            previousRouteElapsedMs = elapsedMs
             ActivityRoutePoint(latitude, longitude, altitude, accuracy, elapsedMs)
         }
     }
