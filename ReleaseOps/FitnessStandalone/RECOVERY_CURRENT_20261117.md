@@ -128,3 +128,37 @@ Do not merge the diverged branches as-is. Rebase to canonical, isolate disjoint 
 7. Do not approve release readiness until physical GPS/Health/wearable checks and Play Health/privacy reconciliation are completed.
 
 No sensor, watch, Health Connect record, physical route or exercise evidence was fabricated. No paid services or unrelated projects were used.
+
+
+## 2026-11-17 final integrator addendum
+
+Observed: 2026-11-17T17:43:13Z. Canonical branch head before this documentation checkpoint: `b248a3571d871c604dbc3a11af72858bbac74eb9`. Canonical application tree includes the merged #282 Health metric truthfulness fix at merge `b248a3571d871c604dbc3a11af72858bbac74eb9`.
+
+### GPS/session handoff — PR #297
+- Current exact PR head: `c340e330d8e634fab231976bac1b8f9ad44915cc`; canonical first parent `b248a3571d871c604dbc3a11af72858bbac74eb9`; 5 ahead / 0 behind; exactly 14 GPS source/test files.
+- Exact-head run [44139154404](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/44139154404) SUCCESS: product 69/69, source-contract 34/34, backend 29/29, Android testDebugUnitTest/lintDebug/assembleDebug/bundleRelease PASS; lint 0 errors, 11 warnings, 1 hint.
+- Artifact 14353801968 ZIP SHA-256 `9634575de7c53d12a37470653ea610f37767df89b87a1a092117e6bbeee8249a`; QA APK `6cdc9a466da925cfd1293fdffbdf606be36a0ba64af99fa2027248ade3b9a8c7`; unsigned AAB `486224f753a14a3f6bac9315273ba1bf862ce9d015023f63b84fa773a9f2334d`. Independent download/hash verified; jarsigner confirms unsigned. QA-only package and versionCode 51019.
+- PR #297 remains Draft/unmerged because physical P0 is blocked. No signing, Play upload or version allocation.
+
+### Truthful Health metrics — PR #282 merged
+- #282 was isolated to `app.js` Health summary rendering plus `test_health_metric_truthfulness.py`. The canonical app.js at its original base was byte-identical to current canonical before transplant; #216/#224 patches do not touch the Health renderer.
+- Exact-head CI 44138210115 SUCCESS: product 69/69, source 34/34, backend 29/29, Android test/lint/build tasks PASS; lint 0 errors, 16 warnings, 1 hint.
+- Artifact 14354205471 ZIP SHA-256 `67f52888805c3d6e3a7f4d46f7dff7f2646dc9c9cc1fdd27fce98e415060fa74`; APK `5fdfb7c518b47f8e3adb228d406c17b964c295274f3efc4e7ee18a7d737ba2c8`; unsigned AAB `ada0ff871da583cb053bfbaf104189061a976f69c01d1672b1a2a82a9b3a1871`. Merge commit is `b248a3571d871c604dbc3a11af72858bbac74eb9`, with the same tree as the exact tested PR head. Null/undefined/invalid metrics now display unavailable; a real zero remains zero. No Health permission changes.
+- The final GPS run was repeated on the combined tree including this merged fix; its AAB differs from the earlier GPS-only AAB.
+
+### PR #284 and ownership
+- Historical run 42694452852 validates only old head `3fcbe6acbb4dc660284c74c8392818996e1de7ee`. Current #284 head remains `274155eafdfff381009ef5814a621f32b225f1a8`, 19 ahead / 61 behind, diverged and without current-head CI. It overlaps #297 native GPS, #93 MainActivity/Manifest and shared app.js work; keep Draft and do not merge wholesale.
+- Current lease registry: `INTEGRATOR_LEASES_CURRENT_20261117.md`.
+
+### Anti-cheat, route sync, competitions and Health
+- Direct source check of exact PR #297 `ActivityTrackingService.kt` found zero calls to `ActivityEvidenceAnomalyPolicy.assessSegment`. Full anti-cheat and location attestation remain incomplete.
+- Route sync remains design-only in `ROUTE_SYNC_DESIGN_20261110.md`; finished routes are local-only. No authenticated route endpoint or precise-location upload exists. The design already separates summary consent from precise-route consent and specifies finished-session-only uploads, retention, revocation, deletion and privacy tests.
+- #269 is merged but only provisional `strength_volume_kg_reps` is supported; admin creation remains disabled without the owner-managed key and verified production deployment. Scores are not physically verified and `rewardEligible=false`.
+- Canonical Health scopes remain exactly five. #93 remains Draft and requests 19 scopes; no heart-rate permission was added.
+
+### Device and Play evidence
+- Desktop Commander localhost is OFFLINE at the 2026-11-17 19:43 Cairo check; last seen about 8 hours earlier. Current SM-A217F session is unknown. No ADB or session action was attempted. Last recorded `location_mode=0` is from 2026-11-09; it was not changed.
+- Latest available independent Play readback remains run 43739661313 attempt 2, completed 2026-11-16 17:56:42Z: Internal 51019 Completed, Alpha 51007 Draft, Production not listed/not verified; upload/commit false. ZIP SHA-256 `c3634fa8a1c4c462deecf4ad6582db0c395481a7b8758051b709374d55e7a025`; embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`. No newer Play probe was found in the latest 100 workflow runs; no fresh 2026-11-17 Play readback is claimed.
+- 51020 remains unallocated. Owner Play write permission and GCP Secret Manager signing access remain unverified. No signing, AAB upload, Play mutation or Production promotion occurred.
+
+No paid infrastructure or other project was used.
