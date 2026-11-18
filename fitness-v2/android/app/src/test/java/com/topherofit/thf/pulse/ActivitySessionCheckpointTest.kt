@@ -84,6 +84,20 @@ class ActivitySessionCheckpointTest {
     }
 
     @Test
+    fun routeCheckpointAcceptsValidMonotonicRouteAfterHeaderNewline() {
+        val validHeader = "1|run|70|1|1|3|0||0|\n"
+        val decoded = requireNotNull(
+            ActivitySessionCheckpointCodec.decode(
+                validHeader + "30,31,,5,1;30.1,31.1,,6,2",
+            ),
+        )
+
+        assertEquals(2, decoded.route.size)
+        assertEquals(5f, decoded.route.first().accuracyMetres)
+        assertEquals(2L, decoded.route.last().elapsedMs)
+    }
+
+    @Test
     fun routeCheckpointRejectsZeroAccuracyAndNonMonotonicElapsedTimes() {
         val validHeader = "1|run|70|1|1|3|0||0|\n"
         assertNull(ActivitySessionCheckpointCodec.decode(validHeader + "30,31,,0,0"))
