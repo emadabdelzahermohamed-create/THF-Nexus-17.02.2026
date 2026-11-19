@@ -131,7 +131,7 @@ class HealthMetricSourceReconciliationPolicyTest {
     }
 
     @Test
-    fun overlappingIntervalsFromSameProviderRemainIndependent() {
+    fun overlappingIntervalsFromSameProviderAreAlsoAmbiguous() {
         val result = HealthMetricSourceReconciliationPolicy.reconcile(
             listOf(
                 candidate(index = 0, source = "com.samsung.android.wear.shealth", start = 0L, end = 60L),
@@ -139,8 +139,8 @@ class HealthMetricSourceReconciliationPolicyTest {
             ),
         )
 
-        assertEquals(2, result.accepted.size)
-        assertTrue(result.ambiguous.isEmpty())
+        assertTrue(result.accepted.isEmpty())
+        assertEquals(2, result.ambiguous.size)
     }
 
     @Test
