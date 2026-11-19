@@ -201,11 +201,36 @@ class HealthConnectRepository(private val context: Context) {
                 )
             },
         )
-        val selectedEntries = deduplication.selected.map { it.value }
-        val verifiedEntries = selectedEntries.filter { it.evidence.verifiedForRewards }
+        val sourceSelectedEntries = deduplication.selected.map { it.value }
+        // Provider record IDs deduplicate versions within a source. Reconcile exact mirrored
+        // metric intervals across sources as well, and fail closed on overlapping verified
+        // intervals whose values cannot be safely apportioned. Preserve every source label in
+        // recordEvidence; only accepted entries can contribute to reward totals.
+        val metricCandidates = sourceSelectedEntries.mapIndexedNotNull { index, entry ->
+            entry.toMetricSourceCandidate(index)
+        }
+        val metricCandidateIndices = metricCandidates.map { it.originalIndex }.toSet()
+        val metricReconciliation = HealthMetricSourceReconciliationPolicy.reconcile(metricCandidates)
+        val reconciledByIndex = mutableMapOf<Int, HealthRecordEntry>()
+        metricReconciliation.accepted.forEach { candidate ->
+            reconciledByIndex[candidate.originalIndex] = candidate.value
+        }
+        metricReconciliation.duplicates.forEach { candidate ->
+            reconciledByIndex[candidate.originalIndex] =
+                candidate.value.withProvenanceFailure("CROSS_SOURCE_DUPLICATE")
+        }
+        metricReconciliation.ambiguous.forEach { candidate ->
+            reconciledByIndex[candidate.originalIndex] =
+                candidate.value.withProvenanceFailure("CROSS_SOURCE_OVERLAP_AMBIGUOUS")
+        }
+        sourceSelectedEntries.forEachIndexed { index, entry ->
+            if (index !in metricCandidateIndices) reconciledByIndex[index] = entry
+        }
+        val reconciledEntries = reconciledByIndex.toSortedMap().values.toList()
+        val verifiedEntries = reconciledEntries.filter { it.evidence.verifiedForRewards }
         val verifiedCount = verifiedEntries.size
         val excludedUnverifiedCount = entries.count { !it.evidence.verifiedForRewards }
-        val origins = selectedEntries.map { it.evidence.dataOrigin }.filter { it.isNotBlank() }.toSet()
+        val origins = reconciledEntries.map { it.evidence.dataOrigin }.filter { it.isNotBlank() }.toSet()
 
         val verifiedSteps = verifiedEntries.mapNotNull { it.record as? StepsRecord }
         val verifiedDistances = verifiedEntries.mapNotNull { it.record as? DistanceRecord }
@@ -237,8 +262,8 @@ class HealthConnectRepository(private val context: Context) {
             recordsRead = allRecords.size,
             verifiedRecords = verifiedCount,
             excludedManualOrUnknownRecords = excludedUnverifiedCount,
-            duplicateRecordsExcluded = deduplication.duplicateCount,
-            recordEvidence = selectedEntries.map { it.evidence },
+            duplicateRecordsExcluded = deduplication.duplicateCount + metricReconciliation.duplicateCount,
+            recordEvidence = reconciledEntries.map { it.evidence },
             dataReadSuccessfully = true,
             hasVerifiedRewardData = verifiedCount > 0,
         )
@@ -269,6 +294,60 @@ class HealthConnectRepository(private val context: Context) {
         )
         client.insertRecords(listOf(record))
     }
+
+    private fun HealthRecordEntry.toMetricSourceCandidate(
+        originalIndex: Int,
+    ): HealthMetricSourceCandidate<HealthRecordEntry>? {
+        val source = evidence.dataOrigin.trim().takeIf { it.isNotEmpty() } ?: return null
+        return when (val metric = record) {
+            is StepsRecord -> HealthMetricSourceCandidate(
+                originalIndex = originalIndex,
+                sourcePackage = source,
+                metricType = HealthRecordType.STEPS.stableId,
+                startTime = metric.startTime,
+                endTime = metric.endTime,
+                valueFingerprint = metric.count.toString(),
+                verifiedForRewards = evidence.verifiedForRewards,
+                lastModifiedTime = evidence.lastModifiedTime,
+                value = this,
+            )
+            is DistanceRecord -> HealthMetricSourceCandidate(
+                originalIndex = originalIndex,
+                sourcePackage = source,
+                metricType = HealthRecordType.DISTANCE.stableId,
+                startTime = metric.startTime,
+                endTime = metric.endTime,
+                valueFingerprint = metric.distance.inMeters.metricFingerprint(),
+                verifiedForRewards = evidence.verifiedForRewards,
+                lastModifiedTime = evidence.lastModifiedTime,
+                value = this,
+            )
+            is ActiveCaloriesBurnedRecord -> HealthMetricSourceCandidate(
+                originalIndex = originalIndex,
+                sourcePackage = source,
+                metricType = HealthRecordType.ACTIVE_CALORIES.stableId,
+                startTime = metric.startTime,
+                endTime = metric.endTime,
+                valueFingerprint = metric.energy.inKilocalories.metricFingerprint(),
+                verifiedForRewards = evidence.verifiedForRewards,
+                lastModifiedTime = evidence.lastModifiedTime,
+                value = this,
+            )
+            else -> null
+        }
+    }
+
+    private fun Double.metricFingerprint(): String =
+        if (this == 0.0) "0" else toBits().toString(16)
+
+    private fun HealthRecordEntry.withProvenanceFailure(reason: String): HealthRecordEntry =
+        copy(
+            evidence = evidence.copy(
+                integrityClass = IntegrityClass.SUPPORTED,
+                verifiedForRewards = false,
+                verificationReason = reason,
+            ),
+        )
 
     private fun Record.toEvidence(observedAt: Instant): HealthRecordEvidence {
         val method = metadata.recordingMethod
