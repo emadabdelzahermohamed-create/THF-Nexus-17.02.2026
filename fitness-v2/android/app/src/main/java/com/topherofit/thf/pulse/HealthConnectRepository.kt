@@ -303,6 +303,7 @@ class HealthConnectRepository(private val context: Context) {
             is StepsRecord -> HealthMetricSourceCandidate(
                 originalIndex = originalIndex,
                 sourcePackage = source,
+                recordId = evidence.recordId.trim(),
                 metricType = HealthRecordType.STEPS.stableId,
                 startTime = metric.startTime,
                 endTime = metric.endTime,
