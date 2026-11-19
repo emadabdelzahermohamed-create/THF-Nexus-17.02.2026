@@ -12,6 +12,7 @@ import java.util.Locale
 internal data class HealthMetricSourceCandidate<T>(
     val originalIndex: Int,
     val sourcePackage: String,
+    val recordId: String,
     val metricType: String,
     val startTime: Instant,
     val endTime: Instant,
@@ -38,8 +39,7 @@ internal data class HealthMetricSourceReconciliationResult<T>(
  * partially overlapping intervals.
  *
  * Exact matches are deduplicated by metric type, interval and value. The winner prefers
- * reward-verified evidence, then the newest provider modification, then a stable source/index
- * tie-break. Any partial overlap between reward-verified records of the same metric family is ambiguous:
+ * reward-verified evidence, then the newest provider modification, then stable source/record identity and index tie-break. Any partial overlap between reward-verified records of the same metric family is ambiguous:
  * the policy cannot safely apportion the overlap, so the caller retains each source label
  * but marks all involved records non-reward-verified.
  *
@@ -87,6 +87,7 @@ internal object HealthMetricSourceReconciliationPolicy {
                     compareBy<HealthMetricSourceCandidate<T>> { it.verifiedForRewards }
                         .thenBy { it.lastModifiedTime }
                         .thenBy { it.sourcePackage.trim().lowercase(Locale.ROOT) }
+                        .thenBy { it.recordId.trim() }
                         .thenBy { it.originalIndex },
                 ) ?: error("A non-empty metric group must have a winner")
                 winners += winner
