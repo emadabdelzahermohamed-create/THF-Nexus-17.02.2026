@@ -12,6 +12,7 @@ class HealthMetricSourceReconciliationPolicyTest {
     private fun candidate(
         index: Int,
         source: String = "com.samsung.android.wear.shealth",
+        recordId: String = "record-$index",
         metric: String = HealthRecordType.STEPS.stableId,
         start: Long = 0L,
         end: Long = 60L,
@@ -22,6 +23,7 @@ class HealthMetricSourceReconciliationPolicyTest {
     ) = HealthMetricSourceCandidate(
         originalIndex = index,
         sourcePackage = source,
+        recordId = recordId,
         metricType = metric,
         startTime = base.plusSeconds(start),
         endTime = base.plusSeconds(end),
@@ -67,6 +69,19 @@ class HealthMetricSourceReconciliationPolicyTest {
 
         assertEquals(listOf("record-1"), result.accepted.map { it.value })
         assertEquals(listOf("record-0"), result.duplicates.map { it.value })
+    }
+
+    @Test
+    fun sameSourceAndModificationTimeUsesStableRecordIdTieBreak() {
+        val result = HealthMetricSourceReconciliationPolicy.reconcile(
+            listOf(
+                candidate(index = 0, recordId = "z-record", modified = 10L),
+                candidate(index = 1, recordId = "a-record", modified = 10L),
+            ),
+        )
+
+        assertEquals(listOf("record-0"), result.accepted.map { it.value })
+        assertEquals(listOf("record-1"), result.duplicates.map { it.value })
     }
 
     @Test
