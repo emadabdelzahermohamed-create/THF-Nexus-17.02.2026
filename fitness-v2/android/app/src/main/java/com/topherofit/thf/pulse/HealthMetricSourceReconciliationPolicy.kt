@@ -26,7 +26,7 @@ internal data class HealthMetricSourceReconciliationResult<T>(
     val accepted: List<HealthMetricSourceCandidate<T>>,
     /** Exact interval/value mirrors; one deterministic winner is retained. */
     val duplicates: List<HealthMetricSourceCandidate<T>>,
-    /** Overlapping verified intervals from different providers; none may affect totals. */
+    /** Overlapping verified intervals; none may affect totals. */
     val ambiguous: List<HealthMetricSourceCandidate<T>>,
 ) {
     val duplicateCount: Int
@@ -34,17 +34,16 @@ internal data class HealthMetricSourceReconciliationResult<T>(
 }
 
 /**
- * Prevents cross-provider Health Connect double counting without guessing how to split
+ * Prevents Health Connect metric double counting without guessing how to split
  * partially overlapping intervals.
  *
  * Exact matches are deduplicated by metric type, interval and value. The winner prefers
  * reward-verified evidence, then the newest provider modification, then a stable source/index
- * tie-break. Partial overlaps between different verified providers are retained as
- * source-labelled, non-reward-verified evidence by the caller.
+ * tie-break. Any partial overlap between reward-verified records of the same metric family is ambiguous:
+ * the policy cannot safely apportion the overlap, so the caller retains each source label
+ * but marks all involved records non-reward-verified.
  *
- * Unverified records never poison an otherwise verified source through overlap rejection.
- * Same-source partial intervals remain independent because this policy cannot infer whether
- * that provider intentionally emitted separate samples.
+ * Unverified records never poison verified records through overlap rejection.
  */
 internal object HealthMetricSourceReconciliationPolicy {
     private data class ExactMetricKey(
@@ -103,7 +102,6 @@ internal object HealthMetricSourceReconciliationPolicy {
                 val right = verified[rightIndex]
                 if (
                     left.metricType == right.metricType &&
-                    !left.sourcePackage.equals(right.sourcePackage, ignoreCase = true) &&
                     left.startTime.isBefore(right.endTime) &&
                     right.startTime.isBefore(left.endTime)
                 ) {
