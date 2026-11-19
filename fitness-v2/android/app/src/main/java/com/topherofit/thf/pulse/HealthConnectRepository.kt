@@ -216,8 +216,15 @@ class HealthConnectRepository(private val context: Context) {
             reconciledByIndex[candidate.originalIndex] = candidate.value
         }
         metricReconciliation.duplicates.forEach { candidate ->
+            val duplicate = candidate.value
+            // Preserve an existing manual, unknown-provider or anomaly reason. Only a
+            // previously verified duplicate is downgraded specifically for mirror exclusion.
             reconciledByIndex[candidate.originalIndex] =
-                candidate.value.withProvenanceFailure("CROSS_SOURCE_DUPLICATE")
+                if (duplicate.evidence.verifiedForRewards) {
+                    duplicate.withProvenanceFailure("CROSS_SOURCE_DUPLICATE")
+                } else {
+                    duplicate
+                }
         }
         metricReconciliation.ambiguous.forEach { candidate ->
             reconciledByIndex[candidate.originalIndex] =
