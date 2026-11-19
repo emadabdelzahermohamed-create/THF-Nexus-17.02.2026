@@ -322,6 +322,7 @@ class HealthConnectRepository(private val context: Context) {
             is DistanceRecord -> HealthMetricSourceCandidate(
                 originalIndex = originalIndex,
                 sourcePackage = source,
+                recordId = evidence.recordId.trim(),
                 metricType = HealthRecordType.DISTANCE.stableId,
                 startTime = metric.startTime,
                 endTime = metric.endTime,
@@ -333,6 +334,7 @@ class HealthConnectRepository(private val context: Context) {
             is ActiveCaloriesBurnedRecord -> HealthMetricSourceCandidate(
                 originalIndex = originalIndex,
                 sourcePackage = source,
+                recordId = evidence.recordId.trim(),
                 metricType = HealthRecordType.ACTIVE_CALORIES.stableId,
                 startTime = metric.startTime,
                 endTime = metric.endTime,
