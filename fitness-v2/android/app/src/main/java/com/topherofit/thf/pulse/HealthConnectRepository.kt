@@ -203,7 +203,7 @@ class HealthConnectRepository(private val context: Context) {
         )
         val sourceSelectedEntries = deduplication.selected.map { it.value }
         // Provider record IDs deduplicate versions within a source. Reconcile exact mirrored
-        // metric intervals across sources as well, and fail closed on overlapping verified
+        // metric intervals across sources/record IDs, and fail closed on overlapping verified
         // intervals whose values cannot be safely apportioned. Preserve every source label in
         // recordEvidence; only accepted entries can contribute to reward totals.
         val metricCandidates = sourceSelectedEntries.mapIndexedNotNull { index, entry ->
@@ -221,14 +221,14 @@ class HealthConnectRepository(private val context: Context) {
             // previously verified duplicate is downgraded specifically for mirror exclusion.
             reconciledByIndex[candidate.originalIndex] =
                 if (duplicate.evidence.verifiedForRewards) {
-                    duplicate.withProvenanceFailure("CROSS_SOURCE_DUPLICATE")
+                    duplicate.withProvenanceFailure("DUPLICATE_METRIC_INTERVAL")
                 } else {
                     duplicate
                 }
         }
         metricReconciliation.ambiguous.forEach { candidate ->
             reconciledByIndex[candidate.originalIndex] =
-                candidate.value.withProvenanceFailure("CROSS_SOURCE_OVERLAP_AMBIGUOUS")
+                candidate.value.withProvenanceFailure("OVERLAPPING_METRIC_INTERVAL_AMBIGUOUS")
         }
         sourceSelectedEntries.forEachIndexed { index, entry ->
             if (index !in metricCandidateIndices) reconciledByIndex[index] = entry
