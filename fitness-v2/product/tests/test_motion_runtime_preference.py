@@ -37,7 +37,8 @@ class MotionRuntimePreferenceTest(unittest.TestCase):
     def test_reference_sequence_names_each_visible_phase_bilingually(self):
         script = MOTION_RUNTIME.read_text()
 
-        self.assertIn("const phaseIndex = frameIndex % item.demo.assets.length;", script)
+        self.assertIn("const frameAssets = activeFrameAssets || item.demo.assets;", script)
+        self.assertIn("const phaseIndex = frameIndex % frameAssets.length;", script)
         self.assertIn("phaseIndex === 0 ? 'البداية' : 'النهاية'", script)
         self.assertIn("phaseIndex === 0 ? 'Start' : 'Finish'", script)
         self.assertIn("const reduced = reduceMotion();", script)
@@ -59,11 +60,21 @@ class MotionRuntimePreferenceTest(unittest.TestCase):
         script = MOTION_RUNTIME.read_text()
 
         self.assertIn("return new Promise(resolve =>", script)
-        self.assertIn("preload.addEventListener('load', resolve, {once: true});", script)
-        self.assertIn("preload.addEventListener('error', resolve, {once: true});", script)
+        self.assertIn("preload.addEventListener('load', () => resolve({asset, ok: true})", script)
+        self.assertIn("preload.addEventListener('error', () => resolve({asset, ok: false})", script)
         self.assertIn("const ready = Promise.all(framePromises);", script)
         self.assertIn("pendingExerciseId = item.id;", script)
         self.assertIn("if (activeExerciseId !== item.id || pendingExerciseId !== item.id", script)
+
+    def test_failed_reference_frame_falls_back_to_truthful_static_guidance(self):
+        script = MOTION_RUNTIME.read_text()
+
+        self.assertIn("resolve({asset, ok: true})", script)
+        self.assertIn("resolve({asset, ok: false})", script)
+        self.assertIn("const loadedAssets = readyFrames.filter(frame => frame.ok)", script)
+        self.assertIn("if (loadedAssets.length < 2)", script)
+        self.assertIn("صورة ثابتة — إطار الحركة غير متاح", script)
+        self.assertIn("Static image — motion frame unavailable", script)
 
     def test_reference_image_alt_identifies_the_visible_phase_bilingually(self):
         script = MOTION_RUNTIME.read_text()
