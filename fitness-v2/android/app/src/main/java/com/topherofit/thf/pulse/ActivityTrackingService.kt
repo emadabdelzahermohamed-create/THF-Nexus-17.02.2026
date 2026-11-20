@@ -415,6 +415,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         legacyProviderNextAttemptElapsedMs = 0L
         locationRequestGeneration += 1L
         val requestGeneration = locationRequestGeneration
+        val finePermissionGranted =
+            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1_000L)
             .setMinUpdateIntervalMillis(1_000L)
             // Never seed a new session with a cached last-known fix from before Start.
@@ -424,8 +426,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             // route and live pace stay responsive, and let FLP briefly prefer a precise
             // first fix instead of immediately surfacing a coarse initial estimate.
             .setMaxUpdateDelayMillis(0L)
-            .setGranularity(Granularity.GRANULARITY_FINE)
-            .setWaitForAccurateLocation(true)
+            .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
+            .setWaitForAccurateLocation(finePermissionGranted)
             .build()
         val playServicesReady = GoogleApiAvailability.getInstance()
             .isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS

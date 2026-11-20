@@ -748,5 +748,13 @@ class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
         self.assertNotIn("gpsFixState==='weak'", app)
 
 
+    def test_fused_request_respects_granted_location_precision(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+
+        self.assertIn("val finePermissionGranted =", service)
+        self.assertIn(".setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)", service)
+        self.assertIn(".setWaitForAccurateLocation(finePermissionGranted)", service)
+        self.assertNotIn(".setGranularity(Granularity.GRANULARITY_FINE)", service)
+
 if __name__ == "__main__":
     unittest.main()
