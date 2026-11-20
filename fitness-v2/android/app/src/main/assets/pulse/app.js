@@ -241,6 +241,18 @@
     if (entry?.kind === 'verified_frame_sequence') return state.lang === 'ar' ? 'مقطع إطارات موثّق' : 'Verified frame-sequence clip';
     return referenceCoverageLabel(item, compact);
   }
+
+  function motionAccessibleLabel(item, entry = motionAsset(item)) {
+    const name = local(item?.name) || (state.lang === 'ar' ? 'التمرين' : 'exercise');
+    if (state.lang === 'ar') {
+      if (entry?.kind === 'offline_video') return `فيديو تمرين ${name} يعمل دون اتصال`;
+      if (entry?.kind === 'verified_frame_sequence') return `مقطع حركة موثّق لتمرين ${name}`;
+      return `عرض التمرين: ${name}`;
+    }
+    if (entry?.kind === 'offline_video') return `Offline exercise video: ${name}`;
+    if (entry?.kind === 'verified_frame_sequence') return `Verified motion clip: ${name}`;
+    return `Exercise demonstration: ${name}`;
+  }
   function referenceMotionPlayer(item, context = 'detail') {
     const assets = Array.isArray(item?.demo?.assets) ? item.demo.assets.slice(0, 2) : [];
     const safeAssets = assets.length === 2 && assets.every(asset => typeof asset === 'string' && /^media\/free-exercise-db\/[A-Za-z0-9_/-]+\.jpg$/i.test(asset));
@@ -254,7 +266,7 @@
     if (!entry) return referenceMotionPlayer(item, context);
     const asset = `./${escapeHtml(entry.asset)}`;
     const poster = item.demo?.assets?.[0] ? ` poster="./${escapeHtml(item.demo.assets[0])}"` : '';
-    const label = escapeHtml(local(item.demo?.alt) || local(item.name));
+    const label = escapeHtml(motionAccessibleLabel(item, entry));
     const reduced = document.documentElement.classList.contains('motion-reduced');
     const controls = context === 'detail' ? 'controls' : '';
     const autoplay = reduced ? '' : 'autoplay';
@@ -419,7 +431,7 @@
     if (motion?.asset) {
       const nextSource = './' + motion.asset;
       if (video.getAttribute('src') !== nextSource) video.setAttribute('src', nextSource);
-      video.setAttribute('aria-label', item.demo.alt[state.lang]);
+      video.setAttribute('aria-label', motionAccessibleLabel(item, motion));
       video.classList.remove('hidden');
       image.classList.add('hidden');
       const credit = $('activeDemoCredit');
