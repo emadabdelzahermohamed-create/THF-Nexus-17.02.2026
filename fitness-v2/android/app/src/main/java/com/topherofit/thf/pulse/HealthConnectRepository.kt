@@ -233,6 +233,46 @@ class HealthConnectRepository(private val context: Context) {
         sourceSelectedEntries.forEachIndexed { index, entry ->
             if (index !in metricCandidateIndices) reconciledByIndex[index] = entry
         }
+
+        // Reconcile walking/running/cycling Health Connect sessions after provider-version
+        // selection. Near-identical sessions with one sport label are mirrored records;
+        // conflicting sport labels are ambiguous and must not inflate verified session counts.
+        val sessionCandidates = sourceSelectedEntries.mapIndexedNotNull { index, entry ->
+            val session = entry.record as? ExerciseSessionRecord ?: return@mapIndexedNotNull null
+            val activityKind = HealthExerciseSessionReconciliationPolicy.kindForExerciseType(
+                session.exerciseType,
+            ) ?: return@mapIndexedNotNull null
+            HealthExerciseSessionCandidate(
+                originalIndex = index,
+                sourcePackage = entry.evidence.dataOrigin,
+                recordId = entry.evidence.recordId,
+                activityKind = activityKind,
+                startTime = session.startTime,
+                endTime = session.endTime,
+                observedAt = entry.evidence.observedAtEpochMillis?.let(Instant::ofEpochMilli),
+                deviceType = entry.evidence.deviceType,
+                verifiedForRewards = entry.evidence.verifiedForRewards,
+                lastModifiedTime = entry.evidence.lastModifiedTime,
+                value = entry,
+            )
+        }
+        val sessionReconciliation = HealthExerciseSessionReconciliationPolicy.reconcile(sessionCandidates)
+        sessionReconciliation.accepted.forEach { candidate ->
+            reconciledByIndex[candidate.originalIndex] = candidate.value
+        }
+        sessionReconciliation.duplicates.forEach { candidate ->
+            reconciledByIndex[candidate.originalIndex] =
+                candidate.value.withProvenanceFailure("DUPLICATE_ACTIVITY_SESSION")
+        }
+        sessionReconciliation.ambiguous.forEach { candidate ->
+            reconciledByIndex[candidate.originalIndex] =
+                candidate.value.withProvenanceFailure("CONFLICTING_ACTIVITY_TYPE_AMBIGUOUS")
+        }
+        sessionReconciliation.invalid.forEach { rejection ->
+            reconciledByIndex[rejection.originalIndex] =
+                rejection.value.withProvenanceFailure(rejection.reason)
+        }
+
         val reconciledEntries = reconciledByIndex.toSortedMap().values.toList()
         val verifiedEntries = reconciledEntries.filter { it.evidence.verifiedForRewards }
         val verifiedCount = verifiedEntries.size
@@ -269,7 +309,7 @@ class HealthConnectRepository(private val context: Context) {
             recordsRead = allRecords.size,
             verifiedRecords = verifiedCount,
             excludedManualOrUnknownRecords = excludedUnverifiedCount,
-            duplicateRecordsExcluded = deduplication.duplicateCount + metricReconciliation.duplicateCount,
+            duplicateRecordsExcluded = deduplication.duplicateCount + metricReconciliation.duplicateCount + sessionReconciliation.duplicateCount,
             recordEvidence = reconciledEntries.map { it.evidence },
             dataReadSuccessfully = true,
             hasVerifiedRewardData = verifiedCount > 0,
