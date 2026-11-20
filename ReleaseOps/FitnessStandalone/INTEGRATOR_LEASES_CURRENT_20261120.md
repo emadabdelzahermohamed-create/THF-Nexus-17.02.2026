@@ -2,7 +2,7 @@
 
 Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`.
 Canonical branch: `agent/codex/fitness-recovery/20261023`.
-Canonical HEAD at this registry update: `a32075263aa7a87c43be58cd960e795fc0338be0` (documentation-only checkpoint over application merge `d8e315376de6785ec93a792342618737866ae121`).
+Canonical HEAD at this registry update: `f596bcf722d5fac810538907ad6180999774bfc3` (documentation-only checkpoint over application merge `d8e315376de6785ec93a792342618737866ae121`).
 
 ## Health lane — merged
 
@@ -21,8 +21,8 @@ PR #305 is the latest Health source change. It reconciles only verified Health C
 | PR | Current comparison to canonical | Owner boundary and disposition |
 |---|---:|---|
 | #93 | 2 ahead / 376 behind | Health Services reader/bridge, AndroidManifest, MainActivity and Health UI strings. Draft. Manifest declares 19 Health permissions versus canonical 5; remove unapproved scopes and rebase before integration. |
-| #303 | 3 ahead / 3 behind | Native GPS / Activity Engine: ActivityTrackingService, session checkpoint, GPS fix gates/accumulator/presentation and tests. Draft. Exact pre-rebase CI passed; rebase to current canonical and pass physical P0. |
-| #284 | 19 ahead / 73 behind | Older GPS provider fallback; overlaps ActivityTrackingService, MainActivity and WebView files with #303. Draft/non-mergeable; do not merge blindly. |
+| #303 | 15 ahead / 0 behind at rebase | Native GPS / Activity Engine: ActivityTrackingService, session checkpoint, GPS fix gates/accumulator/presentation and tests. Draft. Rebased onto f596bcf; exact-head CI 44784273743 PASS (Product 77, source 35, backend 29, Android 330); physical P0 still blocked. |
+| #284 | 19 ahead / 74 behind | Older GPS provider fallback; retargeted to canonical but stale, no exact-head CI. Overlaps #303 native GPS and #93/#216/#224 shared UI files. Draft; do not merge. |
 | #248 | 4 ahead / 210 behind | Bounded GPS route-smoother helper/test only; not yet integrated; GPS owner. |
 
 The Health lane does not edit GPS/activity-tracking native files. The activity anomaly policy remains tested but unwired in the live service; GPS owner must address that in the native lane.
@@ -85,7 +85,15 @@ Latest canonical offline-motion inventory from November 19: 5 licensed videos, 2
 | #118 | Open | Critical phone evidence checkpoint tests; must be run on the actual handset. |
 | #127 | Open | Release candidate 51018 preparation; release/version/signing/Play ownership is outside this Health lane. |
 
-Desktop Commander localhost is offline (last seen 76h ago); last known handset Samsung SM-A217F / Android 12, current state unknown. Physical GPS, Health Connect grant/revocation, watch/swimming and background-session acceptance remain not run.
+Desktop Commander localhost is offline (last seen 79h ago); last known handset Samsung SM-A217F / Android 12, current state unknown. Physical GPS, Health Connect grant/revocation, watch/swimming and background-session acceptance remain not run.
+
+## GPS / Maps reconciliation update (2026-11-20 17:40 UTC)
+
+- PR #303 branch `agent/codex/gps-activity-rebased-20261119-r1`, head `e905d906300d48e3927c0f9fd745cdad39b39334`, was rebased onto canonical `f596bcf722d5fac810538907ad6180999774bfc3`. Exactly 15 candidate file blobs were verified identical to the previously tested candidate. Exact-head run 44784273743 passed: Product 77/77, source 35/35, backend 29/29, Android 330/330, zero failures/ignored, API 36, lint/build PASS. Artifact 14652904221 ZIP SHA-256 `195f57456763ad82f66b0f1f1ecc08bb57c6c05e15a6e44e91a6fa99ad107600`; unsigned AAB SHA-256 `472c1968ba2fc20e25ea5a6a3d855fb0cf3f87153f5b0d5f963b3183029d9678`. Keep Draft until physical P0.
+- PR #284 is retargeted to canonical, head `274155eafdfff381009ef5814a621f32b225f1a8`, 19 ahead / 74 behind, no exact-head CI. Its native fallback/service changes duplicate #303; its UI settings/accuracy changes overlap MainActivity/app.js/index leases. Leaflet/OSM/OpenTopoMap/EOX tiles are already canonical. No map-only patch is isolated.
+- Recovery refs: `agent/codex/gps-pre-rebase-20261120-a328` preserves old #303 head `a3289482f93e500e2e0146e8f9b2d838a2390cb3`; `agent/codex/gps-activity-rebased-20261120-r2-stage` points to the rebased #303 head for audit. These are not separate release or integration candidates.
+- Fresh Play probe 43739661313 attempt 5 read Internal 51019 Completed, Alpha 51007 Draft, Production not verified. Artifact ZIP SHA-256 `bde43f845247c57edc6abbf7da1c1c3716f1af859f0d47d4ff70f87b1da97b0a`; no upload/commit attempt.
+- Physical P0 remains not run; Desktop Commander localhost was last seen 79h ago. Do not install, force-stop or change device location settings while handset/session state is unknown.
 
 ## Integration rules
 
