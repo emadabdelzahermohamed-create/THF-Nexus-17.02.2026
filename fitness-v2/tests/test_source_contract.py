@@ -740,7 +740,8 @@ class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
 
         self.assertIn("GpsFixPresentationPolicy.state(", service)
         self.assertIn('return "filtered"', policy)
-        self.assertIn('"filtered" -> "تم رصد الموقع', service)
+        self.assertIn("GpsFixPresentationPolicy.statusText(", service)
+        self.assertIn('"filtered" -> "تم رصد الموقع', policy)
         self.assertIn("gpsFixState==='filtered'?", app)
         self.assertIn("gpsFixState==='permission'?t('activityPermissionNeeded')", app)
         self.assertIn("gpsFiltered:'", app)
