@@ -1,9 +1,10 @@
 # TopHeroFit — canonical recovery checkpoint (2026-11-20)
 
-Observed: 2026-11-20 14:01:23 UTC.
+Observed: 2026-11-20 17:40 UTC.
 Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`.
 Canonical branch: `agent/codex/fitness-recovery/20261023`.
-Canonical application HEAD before this documentation commit: `d8e315376de6785ec93a792342618737866ae121`.
+Canonical application HEAD: `d8e315376de6785ec93a792342618737866ae121`.
+Latest canonical branch tip before this checkpoint update: `f596bcf722d5fac810538907ad6180999774bfc3` (documentation-only changes over the application merge).
 
 ## Canonical change merged today
 
@@ -70,18 +71,42 @@ The bilingual catalog, timed-program and offline-demo PRs remain diverged; see `
 
 ## GPS and physical acceptance
 
-Latest GPS candidate is PR [#303](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/303), head `a3289482f93e500e2e0146e8f9b2d838a2390cb3`. It has exact-head CI success on run 44689978734, but after the Health merge it compares 3 ahead / 2 behind canonical and must be rebased by its native owner. Keep Draft until physical P0 passes.
+Latest GPS candidate is PR [#303](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/303), still Draft.
 
-Desktop Commander localhost is OFFLINE; last seen 76 hours ago. Last known handset: Samsung SM-A217F / Android 12; current installed app and session state are unknown. No ADB, installation, launch, notification action, location-setting change or activity-data read was attempted. See `GPS_MAP_QUALITY_20261120.md`.
+- Branch: `agent/codex/gps-activity-rebased-20261119-r1`.
+- Current head: `e905d906300d48e3927c0f9fd745cdad39b39334`.
+- Canonical base at rebase: `f596bcf722d5fac810538907ad6180999774bfc3`.
+- Comparison at rebase: 15 ahead / 0 behind; exactly 15 GPS source/test files.
+- The 15 candidate file blobs were transplanted from the tested pre-rebase candidate and each resulting blob SHA was verified identical. Canonical Health #305 and ReleaseOps changes were disjoint.
+
+Exact-head workflow [44784273743](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/44784273743) — SUCCESS on exact head `e905d906300d48e3927c0f9fd745cdad39b39334`.
+
+- Product 77/77; source-contract 35/35; backend 29/29.
+- Android API 36; Android unit tests 330/330, zero failures and zero ignored.
+- Kotlin/Gradle, lint, debug APK and unsigned AAB validation passed; Gradle BUILD SUCCESSFUL in 2m54s.
+- Lint: zero errors, 11 warnings.
+- Artifact 14652904221 ZIP SHA-256: `195f57456763ad82f66b0f1f1ecc08bb57c6c05e15a6e44e91a6fa99ad107600`, independently downloaded and rehashed.
+- QA APK SHA-256: `d4a9246f95ff6e57b09f04b57caef2463844c57c390a6d25851734368237a6fb`.
+- Validation AAB SHA-256: `472c1968ba2fc20e25ea5a6a3d855fb0cf3f87153f5b0d5f963b3183029d9678`; `jarsigner` confirms unsigned. QA identity 51019 only; no version allocation or Play upload.
+
+PR [#284](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/284) was retargeted to the canonical branch but remains Draft: head `274155eafdfff381009ef5814a621f32b225f1a8`, 19 ahead / 74 behind, 13 changed files, no exact-head CI. Its historical run 42694452852 passed only on `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; artifact ZIP SHA-256 `ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c` was independently rehashed. Run 42694199295 failed the historical source-contract test because MainActivity had been truncated; the current #284 head has 1,146 lines and `motionSnapshot`, but this is not CI evidence.
+
+#284 overlaps #303 in native provider/service and GPS tests. Its remaining UI changes touch shared `app.js`, `index.html` and `MainActivity.kt`, which overlap #93/#216/#224 ownership. The Leaflet/OSM/OpenTopoMap/EOX tile stack is already canonical; #284 contains no isolated map-tile improvement. Keep it Draft and do not merge.
+
+Physical P0 remains BLOCKED_NOT_RUN. Desktop Commander localhost is OFFLINE; last seen 79 hours ago. Last known handset Samsung SM-A217F / Android 12; current app/session state is unknown. No ADB, install, launch, force-stop, notification action, location-setting change or activity-data read was attempted.
 
 ## Google Play and release gates
 
-Latest canonical readback is from 2026-11-19:
-- Internal 51019: completed.
-- Alpha 51007: draft.
-- Production: not verified in the readback.
-- Next versionCode 51020 remains unallocated.
+Fresh read-only Google Play readback on 2026-11-20:
 
-No fresh Play readback was obtained on November 20. Health declaration/privacy reconciliation, data-safety consistency, physical Health Connect grant/revocation, wearable validation and GPS P0 remain hard release gates. No signing, release workflow, version, listing, track, upload or Play state was changed.
+- Probe [43739661313, attempt 5](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43739661313) completed successfully; observed at 2026-11-20 17:33:14 UTC.
+- Artifact 14651274506 ZIP SHA-256: `bde43f845247c57edc6abbf7da1c1c3716f1af859f0d47d4ff70f87b1da97b0a`, downloaded and independently rehashed.
+- Embedded JSON SHA-256: `09e7a346e5e1c893d4323d20105d8f4d63`.
+- Internal 51019: Completed.
+- Alpha 51007: Draft.
+- Production: not listed / not verified in this readback.
+- `uploadAttempted=false`; `commitAttempted=false`. No listing, track, version, signing or Play state was changed.
+
+Health declaration/privacy reconciliation, data-safety consistency, physical Health Connect grant/revocation, wearable validation and GPS P0 remain hard release gates. No signing, release workflow, version, listing, track, upload or Production state was changed. VersionCode 51020 remains unallocated.
 
 No paid service or unrelated project was used.
