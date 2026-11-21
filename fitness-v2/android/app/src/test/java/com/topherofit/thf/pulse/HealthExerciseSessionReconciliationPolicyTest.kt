@@ -2,6 +2,7 @@ package com.topherofit.thf.pulse
 
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
+import androidx.health.connect.client.records.metadata.Metadata
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -21,6 +22,7 @@ class HealthExerciseSessionReconciliationPolicyTest {
         deviceType: Int? = Device.TYPE_PHONE,
         verified: Boolean = true,
         modified: Long = 2_000_000L,
+        recordingMethod: Int = Metadata.RECORDING_METHOD_ACTIVELY_RECORDED,
     ) = HealthExerciseSessionCandidate(
         originalIndex = index,
         sourcePackage = source,
@@ -30,6 +32,7 @@ class HealthExerciseSessionReconciliationPolicyTest {
         endTime = Instant.ofEpochMilli(end),
         observedAt = observedAt?.let(Instant::ofEpochMilli),
         deviceType = deviceType,
+        recordingMethod = recordingMethod,
         verifiedForRewards = verified,
         lastModifiedTime = Instant.ofEpochMilli(modified),
         value = "record-$index",
@@ -67,11 +70,131 @@ class HealthExerciseSessionReconciliationPolicyTest {
                 ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY,
             ),
         )
+        assertEquals(
+            HealthActivitySessionKind.SWIMMING_POOL,
+            HealthExerciseSessionReconciliationPolicy.kindForExerciseType(
+                ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL,
+            ),
+        )
+        assertEquals(
+            HealthActivitySessionKind.SWIMMING_OPEN_WATER,
+            HealthExerciseSessionReconciliationPolicy.kindForExerciseType(
+                ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER,
+            ),
+        )
         assertNull(
             HealthExerciseSessionReconciliationPolicy.kindForExerciseType(
                 ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
             ),
         )
+    }
+
+    @Test
+    fun compatible_wearable_swimming_mirrors_are_deduplicated() {
+        val olderWatch = candidate(
+            index = 0,
+            kind = HealthActivitySessionKind.SWIMMING_POOL,
+            source = "com.sec.android.app.shealth",
+            deviceType = Device.TYPE_WATCH,
+            modified = 1_900_000L,
+        )
+        val newerBand = candidate(
+            index = 1,
+            kind = HealthActivitySessionKind.SWIMMING_POOL,
+            source = "com.google.android.apps.fitness",
+            deviceType = Device.TYPE_FITNESS_BAND,
+            modified = 2_100_000L,
+            recordingMethod = Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED,
+        )
+
+        val result = HealthExerciseSessionReconciliationPolicy.reconcile(listOf(olderWatch, newerBand))
+
+        assertEquals(listOf(1), result.accepted.map { it.originalIndex })
+        assertEquals(listOf(0), result.duplicates.map { it.originalIndex })
+        assertTrue(result.ambiguous.isEmpty())
+        assertTrue(result.invalid.isEmpty())
+    }
+
+    @Test
+    fun pool_and_open_water_disagreement_excludes_both_sessions() {
+        val pool = candidate(
+            index = 0,
+            kind = HealthActivitySessionKind.SWIMMING_POOL,
+            source = "com.sec.android.app.shealth",
+            deviceType = Device.TYPE_WATCH,
+        )
+        val openWater = candidate(
+            index = 1,
+            kind = HealthActivitySessionKind.SWIMMING_OPEN_WATER,
+            source = "com.google.android.apps.fitness",
+            deviceType = Device.TYPE_FITNESS_BAND,
+        )
+
+        val result = HealthExerciseSessionReconciliationPolicy.reconcile(listOf(pool, openWater))
+
+        assertTrue(result.accepted.isEmpty())
+        assertEquals(listOf(0, 1), result.ambiguous.map { it.originalIndex })
+    }
+
+    @Test
+    fun verified_swimming_requires_reviewed_provider_compatible_wearable_and_auto_or_active_method() {
+        val untrustedProvider = candidate(
+            index = 0,
+            kind = HealthActivitySessionKind.SWIMMING_POOL,
+            source = "com.example.unreviewed.health",
+            deviceType = Device.TYPE_WATCH,
+        )
+        val phoneDevice = candidate(
+            index = 1,
+            kind = HealthActivitySessionKind.SWIMMING_POOL,
+            source = "com.sec.android.app.shealth",
+            deviceType = Device.TYPE_PHONE,
+        )
+        val unknownMethod = candidate(
+            index = 2,
+            kind = HealthActivitySessionKind.SWIMMING_OPEN_WATER,
+            source = "com.google.android.apps.fitness",
+            deviceType = Device.TYPE_WATCH,
+            recordingMethod = 0,
+        )
+
+        val result = HealthExerciseSessionReconciliationPolicy.reconcile(
+            listOf(untrustedProvider, phoneDevice, unknownMethod),
+        )
+
+        assertTrue(result.accepted.isEmpty())
+        assertEquals(
+            listOf(
+                "UNTRUSTED_SWIMMING_PROVIDER",
+                "INCOMPATIBLE_SWIMMING_DEVICE",
+                "UNSUPPORTED_SWIMMING_RECORDING_METHOD",
+            ),
+            result.invalid.map { it.reason },
+        )
+    }
+
+    @Test
+    fun unverified_swimming_metadata_does_not_poison_a_verified_wearable_session() {
+        val verified = candidate(
+            index = 0,
+            kind = HealthActivitySessionKind.SWIMMING_POOL,
+            source = "com.sec.android.app.shealth",
+            deviceType = Device.TYPE_WATCH,
+        )
+        val unverified = candidate(
+            index = 1,
+            kind = HealthActivitySessionKind.SWIMMING_POOL,
+            source = "com.example.unreviewed.health",
+            deviceType = Device.TYPE_PHONE,
+            verified = false,
+        )
+
+        val result = HealthExerciseSessionReconciliationPolicy.reconcile(listOf(verified, unverified))
+
+        assertEquals(listOf(0, 1), result.accepted.map { it.originalIndex })
+        assertTrue(result.duplicates.isEmpty())
+        assertTrue(result.ambiguous.isEmpty())
+        assertFalse(result.accepted.single { it.originalIndex == 1 }.verifiedForRewards)
     }
 
     @Test
