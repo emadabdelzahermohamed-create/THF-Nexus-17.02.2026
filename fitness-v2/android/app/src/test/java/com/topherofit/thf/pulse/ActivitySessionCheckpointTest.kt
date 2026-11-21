@@ -82,4 +82,142 @@ class ActivitySessionCheckpointTest {
         assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|1|-2||0|\n"))
         assertNull(ActivitySessionCheckpointCodec.decode("1|run|70|1|1|1|0||0|\n95,31,,5,0"))
     }
+
+    @Test
+    fun routeCheckpointAcceptsValidMonotonicRouteAfterHeaderNewline() {
+        val validHeader = "1|run|70|1|1|3|0||0|\n"
+        val decoded = requireNotNull(
+            ActivitySessionCheckpointCodec.decode(
+                validHeader + "30,31,,5,1;30.1,31.1,,6,2",
+            ),
+        )
+
+        assertEquals(2, decoded.route.size)
+        assertEquals(5f, decoded.route.first().accuracyMetres)
+        assertEquals(2L, decoded.route.last().elapsedMs)
+    }
+
+    @Test
+    fun routeCheckpointRejectsZeroAccuracyAndNonMonotonicElapsedTimes() {
+        val validHeader = "1|run|70|1|1|3|0||0|\n"
+        assertNull(ActivitySessionCheckpointCodec.decode(validHeader + "30,31,,0,0"))
+        assertNull(ActivitySessionCheckpointCodec.decode(validHeader + "30,31,,5,1;30.1,31.1,,5,1"))
+        assertNull(ActivitySessionCheckpointCodec.decode(validHeader + "30,31,,5,2;30.1,31.1,,5,1"))
+    }
+
+    @Test
+    fun forcedLifecycleCheckpointUsesSynchronousCommit() {
+        var commitCalls = 0
+        var applyCalls = 0
+
+        val persisted = ActivitySessionCheckpointPersistencePolicy.persist(
+            forceSynchronously = true,
+            commit = { commitCalls += 1; true },
+            apply = { applyCalls += 1 },
+        )
+
+        assertTrue(persisted)
+        assertEquals(1, commitCalls)
+        assertEquals(0, applyCalls)
+    }
+
+    @Test
+    fun periodicCheckpointUsesAsynchronousApply() {
+        var commitCalls = 0
+        var applyCalls = 0
+
+        val persisted = ActivitySessionCheckpointPersistencePolicy.persist(
+            forceSynchronously = false,
+            commit = { commitCalls += 1; true },
+            apply = { applyCalls += 1 },
+        )
+
+        assertTrue(persisted)
+        assertEquals(0, commitCalls)
+        assertEquals(1, applyCalls)
+    }
+
+    @Test
+    fun failedSynchronousCheckpointCommitIsNotReportedAsPersisted() {
+        var applyCalls = 0
+
+        val persisted = ActivitySessionCheckpointPersistencePolicy.persist(
+            forceSynchronously = true,
+            commit = { false },
+            apply = { applyCalls += 1 },
+        )
+
+        assertFalse(persisted)
+        assertEquals(0, applyCalls)
+    }
+
+    @Test
+    fun restoredAnchorUsesOriginalFixTimeInsteadOfDowntimeAdjustedSessionStart() {
+        val original = checkpoint()
+        val nowElapsedMs = 165_000L
+        val anchorElapsedMs = requireNotNull(
+            ActivitySessionCheckpointCodec.restorableLastFixElapsedMs(original, paused = false),
+        )
+
+        assertEquals(60_000L, anchorElapsedMs)
+        assertEquals(150_000L, ActivitySessionCheckpointCodec.adjustedStartedAtElapsedMs(original, nowElapsedMs))
+        assertFalse(GpsFixGate.isFreshElapsedTime(anchorElapsedMs, nowElapsedMs))
+    }
+
+    @Test
+    fun recentRestoredAnchorRemainsFreshWithinTheThirtySecondWindow() {
+        val original = checkpoint()
+        val anchorElapsedMs = requireNotNull(
+            ActivitySessionCheckpointCodec.restorableLastFixElapsedMs(original, paused = false),
+        )
+
+        assertTrue(GpsFixGate.isFreshElapsedTime(anchorElapsedMs, nowMs = 70_000L))
+    }
+
+    @Test
+    fun pausedOrMissingAccuracyCheckpointCannotSeedALiveAnchor() {
+        val original = checkpoint()
+
+        assertNull(ActivitySessionCheckpointCodec.restorableLastFixElapsedMs(original, paused = true))
+        assertNull(
+            ActivitySessionCheckpointCodec.restorableLastFixElapsedMs(
+                original.copy(lastAccuracyMetres = null),
+                paused = false,
+            ),
+        )
+    }
+
+    @Test
+    fun repeatedRestoreWithoutANewAcceptedFixCannotReviveHistoricalRouteAnchor() {
+        val restoredWithoutNewFix = checkpoint().copy(
+            startedAtElapsedMs = 150_000L,
+            savedAtElapsedMs = 160_000L,
+            lastAccuracyMetres = null,
+        )
+
+        assertNull(
+            ActivitySessionCheckpointCodec.restorableLastFixElapsedMs(
+                restoredWithoutNewFix,
+                paused = false,
+            ),
+        )
+    }
+
+    @Test
+    fun newFixAfterRestoreUsesTheAdjustedSessionStartAsItsNewTimeBase() {
+        val afterRestoreAndNewFix = checkpoint().copy(
+            startedAtElapsedMs = 150_000L,
+            savedAtElapsedMs = 175_000L,
+            lastAccuracyMetres = 5f,
+            route = listOf(ActivityRoutePoint(30.0460, 31.2370, null, 5f, 20_000L)),
+            activatedAtElapsedMs = 150_000L,
+        )
+
+        val anchorElapsedMs = requireNotNull(
+            ActivitySessionCheckpointCodec.restorableLastFixElapsedMs(afterRestoreAndNewFix, paused = false),
+        )
+        assertEquals(170_000L, anchorElapsedMs)
+        assertTrue(GpsFixGate.isFreshElapsedTime(anchorElapsedMs, nowMs = 175_000L))
+    }
+
 }

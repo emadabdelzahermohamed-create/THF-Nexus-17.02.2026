@@ -79,4 +79,30 @@ class GpsFixGateTest {
         for (speed in listOf(-1.0, Double.NaN, Double.POSITIVE_INFINITY, 50.0))
             assertFalse(accepts(first.copy(speedMps = speed)))
     }
+    @Test
+    fun fixFreshnessWindowIncludesThirtySecondBoundaryAndRejectsInvalidTimes() {
+        assertTrue(GpsFixGate.isFreshElapsedTime(80_000L, 110_000L))
+        assertFalse(GpsFixGate.isFreshElapsedTime(79_999L, 110_000L))
+        assertFalse(GpsFixGate.isFreshElapsedTime(110_001L, 110_000L))
+        assertFalse(GpsFixGate.isFreshElapsedTime(-1L, 110_000L))
+    }
+
+    @Test
+    fun staleCheckpointAnchorDoesNotRejectFirstFreshPostRestoreFix() {
+        val staleCheckpoint = first.copy(latitude = 31.0, elapsedMs = 50_000L, sourceLabel = "thf_checkpoint")
+        val firstAfterRestore = first.copy(latitude = 30.00003, elapsedMs = 103_000L, sourceLabel = "fused")
+
+        assertFalse(GpsFixGate.isFreshElapsedTime(staleCheckpoint.elapsedMs, 110_000L))
+        assertTrue(GpsFixGate.accepts(firstAfterRestore, staleCheckpoint, ActivityMode.WALK, 40_000L, 110_000L))
+    }
+
+    @Test
+    fun freshCheckpointAnchorStillEnforcesTheSportSpeedGate() {
+        val freshCheckpoint = first.copy(elapsedMs = 100_000L, sourceLabel = "thf_checkpoint")
+        val jump = first.copy(latitude = 31.0, elapsedMs = 101_000L, sourceLabel = "fused")
+
+        assertTrue(GpsFixGate.isFreshElapsedTime(freshCheckpoint.elapsedMs, 110_000L))
+        assertFalse(GpsFixGate.accepts(jump, freshCheckpoint, ActivityMode.WALK, 90_000L, 110_000L))
+    }
+
 }
