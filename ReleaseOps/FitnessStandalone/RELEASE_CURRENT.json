@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-20T17:40:00Z",
+  "observed_at": "2026-11-21T17:25:52Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -41,21 +41,21 @@
     "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
     "latest_state_probe": {
       "run_id": 43739661313,
-      "run_attempt": 5,
+      "run_attempt": 6,
       "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43739661313",
       "head_sha": "a8692a06ff93a7bb1b293f9eac986402f3f020c6",
       "workflow_blob_sha256": "33cf9e555e68e00b7990545720bd7e0403a96716",
       "workflow_blob_matches_current_canonical": true,
-      "observed_at": "2026-11-20T17:33:14.410Z",
-      "completed_at": "2026-11-20T17:33:15Z",
+      "observed_at": "2026-11-21T17:13:22.923Z",
+      "completed_at": "2026-11-21T17:13:23.945Z",
       "conclusion": "success",
-      "job_id": 136455098425,
+      "job_id": 136920747723,
       "job_name": "probe",
       "job_conclusion": "success",
-      "artifact_id": 14651274506,
-      "artifact_sha256": "bde43f845247c57edc6abbf7da1c1c3716f1af859f0d47d4ff70f87b1da97b0a",
+      "artifact_id": 14716559202,
+      "artifact_sha256": "765481fc3a27a193bd483ad7f8bfb72459fd04b1fed8ee4f248ab0448278db92",
       "artifact_download_sha256_verified": true,
-      "embedded_json_sha256": "09e7a346e5e1c893d4323d20105d8f4d63",
+      "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
       "package": "com.topherofit.thf.pulse",
       "tracks": [
         {
@@ -75,7 +75,7 @@
       "upload_attempted": false,
       "commit_attempted": false,
       "fresh_live_readback": true,
-      "workflow_change": "reran only the existing read-only probe job (attempt 5); no workflow code, listing, track or version mutation"
+      "workflow_change": "reran only the existing read-only probe; no workflow logic, listing, track or version mutation"
     },
     "previous_state_probe_20261103": {
       "run_id": 41686496926,
@@ -251,13 +251,13 @@
       "active_session_interrupted": false
     },
     "local_apksigner_verification": "INDETERMINATE: local apksigner lacks the ML-DSA KeyFactory required by the v3.2 signer; this is a verifier limitation, not an app-signature failure. No signature PASS inferred.",
-    "physical_p0": "BLOCKED_NOT_RUN; Desktop Commander localhost OFFLINE, last seen 79h ago; last known SM-A217F / Android 12; current app/session unknown; preserve; no ADB/session actions.",
+    "physical_p0": "BLOCKED_NOT_RUN; Desktop Commander localhost OFFLINE, last seen 103h before 2026-11-21 19:25 Cairo; last known SM-A217F / Android 12; current app/session unknown; no ADB/session actions.",
     "latest_connection_check": {
-      "checked_on": "2026-11-20",
-      "checked_at_local": "2026-11-20 19:24 Africa/Cairo",
+      "checked_on": "2026-11-21",
+      "checked_at_local": "2026-11-21 19:25 Africa/Cairo",
       "device": "localhost",
       "status": "OFFLINE",
-      "last_seen": "79 hours before this check",
+      "last_seen": "103 hours before this check",
       "current_phone_session_state": "UNKNOWN; preserve; no ADB/session actions",
       "no_adb_or_session_actions": true
     }
@@ -269,17 +269,17 @@
     "note": "Prior validated Internal evidence retained; no rollback or production action taken."
   },
   "release_gates": {
-    "physical_p0": "BLOCKED_NOT_RUN; Desktop Commander localhost OFFLINE, last seen 79h ago at 2026-11-20 19:24 Cairo; last known SM-A217F / Android 12; current session unknown; no ADB/session actions.",
+    "physical_p0": "BLOCKED_NOT_RUN; Desktop Commander localhost OFFLINE, last seen 103h before 2026-11-21 19:25 Cairo; last known SM-A217F / Android 12; current app/session unknown; no ADB/session actions.",
     "health_policy_privacy": "PR #282 merged at b248a3571d871c604dbc3a11af72858bbac74eb9; PR #301 merged at 7dc57dd9f6e647797cbbe2d1cfdb45773410a866; PR #304 merged at e28994ea76e67e0bed6eef3860f995b27388a002 after exact-head CI 44532209892. Exact mirror/overlap reconciliation is integrated. Health Connect allowlist remains five scopes; no heart-rate permission or additional scope was added. Physical grants/revoke/no-data/error and Play Health/Data Safety reconciliation remain unverified.",
     "production": "NOT_VERIFIED",
     "maps_native_sdk_key": "NOT_REQUIRED_FOR_CURRENT_OSM_LEAFLET_STACK; do not add Google Maps Rx, Maps SDK billing or a Maps key. Google directions remains an optional external handoff.",
-    "listing_truthfulness": "Latest independent readback 2026-11-20T17:33:14Z: Internal 51019 Completed; Alpha 51007 Draft; Production not listed/not verified. Listing unchanged; still describes GPS/background tracking and offline/voice features. Physical P0 and policy/privacy remain open; no listing edit.",
+    "listing_truthfulness": "Fresh read-only Google Play readback 2026-11-21 17:13:22.923Z: Internal 51019 Completed; Alpha 51007 Draft; Production not listed/not verified. Listing unchanged and still describes GPS sessions, background notification controls, offline-ready library and Arabic/English voice cues. No listing edit; physical P0 and policy/privacy remain open.",
     "competition_backend": "PR #269 merged; provisional strength_volume_kg_reps only. No independently verified GPS activity leaderboard; rewardEligible=false; no THF payouts authorized.",
-    "gps_accuracy": "PR #303 Draft; exact rebased head e905d906300d48e3927c0f9fd745cdad39b39334; canonical base f596bcf722d5fac810538907ad6180999774bfc3; exact-head run 44784273743 SUCCESS: Product 77/77, source 35/35, backend 29/29, Android 330/330, zero failures/ignored, API36/Kotlin/lint/assembleDebug/unsigned bundle validation PASS. Artifact 14652904221 ZIP 195f57456763ad82f66b0f1f1ecc08bb57c6c05e15a6e44e91a6fa99ad107600; APK d4a9246f95ff6e57b09f04b57caef2463844c57c390a6d25851734368237a6fb; unsigned AAB 472c1968ba2fc20e25ea5a6a3d855fb0cf3f87153f5b0d5f963b3183029d9678. Physical P0 BLOCKED_NOT_RUN; keep Draft/unmerged.",
-    "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED. Finished route points remain in WebView localStorage. Existing workout endpoints carry set/workout metadata only; no route endpoint/table or precise-location upload. Future route backup requires separate opt-in precise-location consent, finished-session-only upload, retention, revocation and deletion.",
-    "anti_cheat": "ActivityEvidenceAnomalyPolicy.assessSegment() remains tested but unwired in ActivityTrackingService. GPS filters are not full anti-cheat or cryptographic location attestation. No physical provenance PASS or reward eligibility is claimed.",
-    "signing_prerequisites": "Owner Play write permission and GCP Secret Manager signing-key access remain NOT_VERIFIED. Next versionCode 51020 remains UNALLOCATED. No new signed AAB or Play write.",
-    "pr_ownership": "Canonical application merge d8e315376de6785ec93a792342618737866ae121; latest canonical branch tip f596bcf722d5fac810538907ad6180999774bfc3. #303 Draft, 15 ahead/0 behind at rebase, exact CI 44784273743 PASS, physical P0 required. #284 Draft, retargeted to canonical, 19 ahead/74 behind, no exact-head CI; overlaps #303/#93/#216/#224. #305 merged at d8e315376de6785ec93a792342618737866ae121; #304/#302/#301/#282 remain merged. Other catalog/program/motion PRs remain diverged and under their existing shared-file leases."
+    "gps_accuracy": "PR #303 merged at b097d6ef0025d615c261ee42e8d2246533224e70 after exact-head run 44929317705 on source 26e90573ddda077ca2665ebdccd5600cc9316dd7. Product 77, source 35, backend 29, Android 335; artifact 14715989999 ZIP SHA-256 d081932610a732a35df9e5eb37e641938566fe1cd15744760ae195f486a2268e. APK/AAB are unsigned QA validation only. Physical P0 remains BLOCKED_NOT_RUN.",
+    "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED. Rechecked BackendSyncRepository, AccountAuthRepository, AppDeploy android_v2_routes.ts, Python backend auth/api/workout_store and OpenAPI. Existing bearer sync is workout/set metadata only; no authenticated route endpoint/table/upload. Finished routes remain in WebView localStorage; one-second UI refresh is local. AppDeploy README requires deployed authenticated DELETE /api/account to call deleteFitnessV2UserData; live deployment verification is not established. Privacy/account-deletion pages do not yet describe precise-route backup.",
+    "anti_cheat": "ActivityEvidenceAnomalyPolicy.assessSegment() remains tested but unwired in ActivityTrackingService. GPS filtering is not full anti-cheat or cryptographic location attestation. No physical provenance PASS or GPS reward eligibility is claimed.",
+    "signing_prerequisites": "Owner Google Play/API write permission and GCP Secret Manager signing-key access remain NOT_VERIFIED. Next versionCode 51020 remains UNALLOCATED. No new signed AAB or Play write.",
+    "pr_ownership": "Canonical application merge b097d6ef0025d615c261ee42e8d2246533224e70 (tested source tree 26e90573ddda077ca2665ebdccd5600cc9316dd7). #303 merged after exact-head CI 44929317705. #284 remains Draft, head 274155eafdfff381009ef5814a621f32b225f1a8, 19 ahead / 80 behind, no current exact-head CI; its native GPS hunks are superseded by #303 and remaining UI hunks overlap #93/#216/#224. #93/#216/#224/#248 remain Draft; catalog/program/motion PRs remain diverged under shared-file leases."
   },
   "next_action": "Keep PR #303 Draft despite exact-head CI PASS. When SM-A217F reconnects, first preserve any active session, then run physical P0 on the QA-suffixed APK. After physical acceptance, integrate ActivityEvidenceAnomalyPolicy into the live service with tests. Keep #284 Draft; its native work duplicates #303 and its remaining UI hunks conflict with shared app.js/MainActivity leases. Route sync remains design-only until explicit account/session consent, retention, revocation, deletion and privacy contracts are implemented and tested. Do not allocate 51020, sign or upload until owner Play/API and signing-key prerequisites, exact-source CI, physical P0 and policy/privacy gates pass.",
   "canonical_validation": {
@@ -1561,36 +1561,46 @@
   },
   "current_prs": {
     "priority_open": {
-      "93": "OPEN_DRAFT; head 1cc08cef7dae7f432275fd23960f4390a49db14c; base cb425fef23b8541499acb02cecd8b86312b0eb34; claims MainActivity.kt/Health Services reader ownership; 19 requested scopes conflict with canonical five-scope allowlist; no exact-head Android CI.",
-      "216": "OPEN; head 1ef915886fdac62c8fe1d5e50505fd354d989ee3; noncanonical base c93f765099642976b908aa9a4dd81addda52752f; app.js/index.html/styles overlap; no exact-head Android CI.",
-      "248": "OPEN_DRAFT; head 67d3b438815fe83ced301551aee43f5a6548c91d; display-only smoothing helper; no exact-head Android CI; not metric evidence.",
-      "282": "OPEN_DRAFT; head 3291e076510b5626dd8ee931dad84728ba01605d; app.js/product test; stale base 4e337838c079a75d9615653d14c38838e55d19ef; no combined-current-head CI; preserve null vs genuine zero.",
-      "284": "OPEN_DRAFT; head 274155eafdfff381009ef5814a621f32b225f1a8; 19 ahead / 45 behind current canonical, mergeable=false/dirty; overlaps #294 native GPS, #282/#216 app.js, #93 MainActivity/source-contract; map/UI reference only.",
-      "292": "CLOSED_UNMERGED; superseded by #294.",
-      "294": "OPEN_DRAFT; head 7933a0eb0b6bedf8d00af49fee41ed24d88c264f; base 82ac0797f26ef142bee868ea6f8378066a961b1e; 1 ahead / 5 behind current canonical, six GPS source/test files only; exact-head CI 43625025348 PASS; physical P0 blocked."
+      "93": "OPEN_DRAFT; head 1cc08cef7dae7f432275fd23960f4390a49db14c; Health Services/MainActivity/Manifest owner. Current branch declares 19 Health scopes versus canonical five; hold until narrowed and rebased.",
+      "160": "OPEN_DRAFT; bilingual catalog cleanup; shared exercises.js/json and builders.",
+      "213": "OPEN_DRAFT; timed RIR/program semantics; shared programs.js/json and app.js.",
+      "216": "OPEN_DRAFT; head 1ef915886fdac62c8fe1d5e50505fd354d989ee3; active-workout resume, based on noncanonical timed-RIR branch; app.js/index/styles shared.",
+      "224": "OPEN_DRAFT; head cc703baa3cc0e1866e50aafb9a8caad26583fc0a; offline active-workout motion, based on gym-catalog branch; app.js/index/motion assets shared.",
+      "248": "OPEN_DRAFT; head 67d3b438815fe83ced301551aee43f5a6548c91d; bounded GPS display smoothing helper; display-only, not a metric source.",
+      "284": "OPEN_DRAFT; head 274155eafdfff381009ef5814a621f32b225f1a8; 19 ahead / 80 behind canonical; no exact-head CI. Native GPS/service hunks superseded by merged #303; remaining app.js/index.html/MainActivity UI changes overlap #93/#216/#224.",
+      "244/252/257/259/260": "OPEN_DRAFT; bilingual catalog/muscle/cue branches; shared catalog assets/builders.",
+      "253/254/256/258": "OPEN_DRAFT; favorites/equipment/program filters; shared app.js/catalog/styles."
     },
     "other_open_exercise_handoffs": [
-      "259",
-      "260",
+      "160",
+      "213",
+      "224",
       "244",
+      "248",
       "252",
+      "253",
+      "254",
       "255",
-      "257"
+      "256",
+      "257",
+      "258",
+      "259",
+      "260"
     ],
     "closed_or_superseded": {
       "215": "CLOSED; superseded by #264",
       "283": "CLOSED; superseded by #284"
     },
     "merged": {
-      "188": "MERGED; exact Health permission-scope regression gate; run 43225828775 passed on head 5344cf74751e34f4b501e4b89137e06239a9ce42.",
-      "264": "MERGED; canonical GPS/session baseline",
-      "285": "MERGED; exact Health swimming provenance gate; run 42827029570 passed.",
-      "286": "MERGED; source-scoped latest Health record-version deduplication; run 43028123167 passed.",
-      "288": "MERGED; fail-closed Health record-type gate; run 43224407466 passed.",
-      "289": "MERGED; offline motion/catalog/license integrity test; exact head run 43226464817 passed."
+      "269": "MERGED; strength_volume_kg_reps only; GPS reward eligibility false.",
+      "282": "MERGED; metric truthfulness.",
+      "301": "MERGED; metric anomaly rejection.",
+      "303": "MERGED at b097d6ef0025d615c261ee42e8d2246533224e70 after exact-head CI 44929317705.",
+      "304": "MERGED; cross-source metric reconciliation.",
+      "305": "MERGED; walking/running/cycling Health session reconciliation."
     },
     "no_open_competition_or_all_day_step_observer_handoff_found": true,
-    "lease_note": "No explicit current lease registry file or lease issue found. Treat PR #93's MainActivity.kt claim as a hold; app.js is shared by #282, #216 and exercise UX handoffs; #284 also changes app.js and MainActivity.kt. Shared resources are not assumed free."
+    "lease_note": "Canonical native GPS is now owned by merged #303. Keep #284 UI hunks, #93 MainActivity/Manifest, #216/#224 app.js/motion, and catalog/program branches on separate explicit leases. Shared resources are not assumed free."
   },
   "lease_registry": {
     "status": "FORMAL_FILE_CREATED",
@@ -1631,20 +1641,21 @@
   },
   "latest_play_readback": {
     "run_id": 43739661313,
-    "run_attempt": 3,
+    "run_attempt": 6,
     "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43739661313",
     "head_sha": "a8692a06ff93a7bb1b293f9eac986402f3f020c6",
-    "observed_at": "2026-11-18T17:22:50Z",
-    "completed_at": "2026-11-18T17:22:53Z",
+    "workflow_blob_sha256": "33cf9e555e68e00b7990545720bd7e0403a96716",
+    "workflow_blob_matches_current_canonical": true,
+    "observed_at": "2026-11-21T17:13:22.923Z",
+    "completed_at": "2026-11-21T17:13:23.945Z",
     "conclusion": "success",
-    "job_id": 134991152062,
+    "job_id": 136920747723,
     "job_name": "probe",
     "job_conclusion": "success",
-    "artifact_id": 14451997696,
-    "artifact_sha256": "e7de6f3f00394c4888e0e3755f2259d072469733f9ebba14f1146a465096901e",
+    "artifact_id": 14716559202,
+    "artifact_sha256": "765481fc3a27a193bd483ad7f8bfb72459fd04b1fed8ee4f248ab0448278db92",
     "artifact_download_sha256_verified": true,
-    "artifact_download_sha256_verified_at": "2026-11-18",
-    "embedded_json_sha256": "09e7a346e5e1c893d4323d20105d8f4d63",
+    "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
     "package": "com.topherofit.thf.pulse",
     "tracks": [
       {
@@ -1664,7 +1675,7 @@
     "upload_attempted": false,
     "commit_attempted": false,
     "fresh_live_readback": true,
-    "workflow_change": "reran only the existing read-only probe job (attempt 3); workflow blob identical to current canonical; no Play track/listing write"
+    "workflow_change": "reran only the existing read-only probe; no workflow logic, listing, track or version mutation"
   },
   "health_metric_truthfulness_candidate": {
     "pr": 282,
@@ -1697,28 +1708,27 @@
     "merge_hold": "Open exercise UX PRs #224/#247/#249/#250/#253/#254/#256/#258 also modify app.js"
   },
   "leases": {
-    "checked_on": "2026-11-18",
-    "registry": "ReleaseOps/FitnessStandalone/INTEGRATOR_LEASES_CURRENT_20261118.md",
+    "checked_on": "2026-11-21",
+    "registry": "ReleaseOps/FitnessStandalone/INTEGRATOR_LEASES_CURRENT_20261121.md",
     "shared_resources_assumed_free": false,
     "active_file_holds": [
       {
-        "surface": "ActivityTrackingService.kt and GPS native policy/tests",
-        "owner": "PR #297",
-        "head": "f741af0dccd48dbcf258f5ae5b1d23e0db58f3af",
-        "status": "exact-head CI PASS; Draft until physical P0; rebase and retest before next QA install"
+        "surface": "ActivityTrackingService.kt, ActivitySessionCheckpoint.kt, GPS policy/accumulator/tests",
+        "owner": "Canonical PR #303 merged",
+        "status": "native GPS integration merged after exact-head CI; new changes require current-head rebase/test and physical P0 before release"
       },
       {
-        "surface": "app.js GPS status/pause hunk and activity header pill",
-        "owner": "PR #302",
-        "status": "merged at d2e4c688; canonical Location wording and distinct paused state"
-      },
-      {
-        "surface": "app.js map/pause/settings hunk",
+        "surface": "app.js/index.html/MainActivity location status/settings UI",
         "owner": "PR #284",
-        "status": "stale/overlapping; no merge owner; isolate map-only work after rebase"
+        "status": "Draft/stale; native logic superseded; remaining UI changes overlap shared leases; no merge"
       },
       {
-        "surface": "app.js active workout resume",
+        "surface": "MainActivity.kt, AndroidManifest.xml and Health Services bridge",
+        "owner": "PR #93",
+        "status": "19 requested Health scopes versus five canonical; blocked pending scope reduction and rebase"
+      },
+      {
+        "surface": "app.js active-workout resume",
         "owner": "PR #216",
         "status": "diverged; no whole-file overwrite"
       },
@@ -1728,24 +1738,24 @@
         "status": "diverged; no whole-file overwrite"
       },
       {
-        "surface": "MainActivity.kt, AndroidManifest.xml and Health Services bridge",
-        "owner": "PR #93",
-        "status": "19 scopes versus five canonical; blocked"
+        "surface": "GPS route display smoother",
+        "owner": "PR #248",
+        "status": "display-only helper; never a metric source; not integrated"
       },
       {
         "surface": "exercise catalog/program content",
-        "owner": "PR #160/#213/#224",
-        "status": "diverged; isolate data/UI hunks and exact-head test"
+        "owner": "PR #160/#213/#244/#252/#257/#259/#260",
+        "status": "shared data/manifests/builders; isolate one reviewed batch at a time"
       },
       {
-        "surface": "Health metric evidence policy and rendering",
-        "owner": "PR #301/#282",
-        "status": "merged; canonical"
+        "surface": "favorites/equipment/program filters",
+        "owner": "PR #253/#254/#256/#258",
+        "status": "shared app.js/catalog/styles; no blind merges"
       },
       {
         "surface": "ReleaseOps, version, workflows, signing and Play",
         "owner": "canonical integrator only",
-        "status": "owner write/key prerequisites unverified"
+        "status": "owner Play write/key prerequisites unverified; sole writer"
       }
     ]
   },
@@ -1867,7 +1877,7 @@
     "play_write": false,
     "production": "NOT_VERIFIED",
     "release_gate": "HOLD",
-    "blocker": "Physical P0 remains blocked by offline SM-A217F; owner Play write and GCP signing-secret access are unverified. GPS exact-head CI passes but AAB is unsigned QA validation only. Current GPS candidate must be rebased onto canonical including #302 and retested before physical QA. Privacy/policy gates remain mandatory."
+    "blocker": "PR #303 native GPS/Activity Engine is now merged after exact-head CI, but physical P0 remains blocked by offline SM-A217F; owner Play/API write and GCP signing-key access are unverified; privacy/policy and account-deletion gates remain mandatory. The exact validation AAB is unsigned QA only."
   },
   "appdeploy_policy_sync_20261109": {
     "app_id": "thf-fitness-pulse-ul26f1",
@@ -2325,16 +2335,17 @@
     "reason": "PR #292 exact application/test source is tested but still requires current-base combined-head CI and physical P0; PR #284 remains dirty and overlaps shared files."
   },
   "latest_checkpoint": {
-    "recovery": "ReleaseOps/FitnessStandalone/RECOVERY_CURRENT_20261118_CANONICAL.md",
-    "gps_map": "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261118_CANONICAL.md",
-    "ownership": "ReleaseOps/FitnessStandalone/INTEGRATOR_LEASES_CURRENT_20261118.md",
+    "recovery": "ReleaseOps/FitnessStandalone/RECOVERY_CURRENT_20261121.md",
+    "gps_map": "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261121.md",
+    "ownership": "ReleaseOps/FitnessStandalone/INTEGRATOR_LEASES_CURRENT_20261121.md",
+    "route_sync": "ReleaseOps/FitnessStandalone/ROUTE_SYNC_CONTRACT_RECHECK_20261121.md",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
-    "canonical_app_source_sha": "7dc57dd9f6e647797cbbe2d1cfdb45773410a866",
-    "exact_gps_pr": 297,
-    "exact_gps_pr_head": "f741af0dccd48dbcf258f5ae5b1d23e0db58f3af",
-    "exact_gps_ci_run": 44358671462,
+    "canonical_application_head": "b097d6ef0025d615c261ee42e8d2246533224e70",
+    "tested_gps_source_sha": "26e90573ddda077ca2665ebdccd5600cc9316dd7",
+    "exact_gps_pr": 303,
+    "exact_gps_ci_run": 44929317705,
     "latest_play_probe_run": 43739661313,
-    "latest_play_probe_attempt": 3
+    "latest_play_probe_attempt": 6
   },
   "gps_validation_candidate": {
     "pr_number": 297,
@@ -3203,18 +3214,17 @@
     "health_permissions_changed": false
   },
   "latestCheckpoint": {
-    "recovery": "ReleaseOps/FitnessStandalone/RECOVERY_CURRENT_20261119.md",
-    "gps_map": "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261119.md",
-    "ownership": "ReleaseOps/FitnessStandalone/INTEGRATOR_LEASES_CURRENT_20261119.md",
+    "recovery": "ReleaseOps/FitnessStandalone/RECOVERY_CURRENT_20261121.md",
+    "gps_map": "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261121.md",
+    "ownership": "ReleaseOps/FitnessStandalone/INTEGRATOR_LEASES_CURRENT_20261121.md",
+    "route_sync": "ReleaseOps/FitnessStandalone/ROUTE_SYNC_CONTRACT_RECHECK_20261121.md",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
-    "canonical_application_head": "e28994ea76e67e0bed6eef3860f995b27388a002",
+    "canonical_application_head": "b097d6ef0025d615c261ee42e8d2246533224e70",
+    "tested_gps_source_sha": "26e90573ddda077ca2665ebdccd5600cc9316dd7",
     "exact_gps_pr": 303,
-    "exact_gps_pr_head": "6e73d988fe668c5b86f2ff4c053f2f43c2c4b6a8",
-    "exact_gps_ci_run": 44582044304,
-    "latest_health_pr": 304,
-    "health_merge_sha": "e28994ea76e67e0bed6eef3860f995b27388a002",
+    "exact_gps_ci_run": 44929317705,
     "latest_play_probe_run": 43739661313,
-    "latest_play_probe_attempt": 4
+    "latest_play_probe_attempt": 6
   },
   "current_prs_20261119": {
     "canonical_compare_base": "e28994ea76e67e0bed6eef3860f995b27388a002",
@@ -3374,17 +3384,18 @@
     "allocation_gate": "owner Play/API and signing-key prerequisites + exact-head Android CI + physical P0 QA"
   },
   "latest_validation_candidate": {
-    "source_sha": "e905d906300d48e3927c0f9fd745cdad39b39334",
-    "canonical_base_sha": "f596bcf722d5fac810538907ad6180999774bfc3",
+    "source_sha": "26e90573ddda077ca2665ebdccd5600cc9316dd7",
+    "canonical_base_sha": "a87f86ef8d393772623ec34e5130610161bc365e",
     "pr": 303,
     "branch": "agent/codex/gps-activity-rebased-20261119-r1",
-    "exact_head_run": 44784273743,
-    "result": "SUCCESS",
+    "merge_sha": "b097d6ef0025d615c261ee42e8d2246533224e70",
+    "exact_head_run": 44929317705,
+    "result": "SUCCESS_AND_MERGED",
     "tests": {
       "product": 77,
       "source_contract": 35,
       "backend": 29,
-      "android_unit": 330,
+      "android_unit": 335,
       "failures": 0,
       "ignored": 0
     },
@@ -3392,16 +3403,16 @@
       "api": 36,
       "lint_errors": 0,
       "lint_warnings": 11,
-      "gradle": "BUILD SUCCESSFUL in 2m54s"
+      "gradle": "BUILD SUCCESSFUL in 3m11s"
     },
-    "artifact_id": 14652904221,
-    "artifact_zip_sha256": "195f57456763ad82f66b0f1f1ecc08bb57c6c05e15a6e44e91a6fa99ad107600",
-    "qa_apk_sha256": "d4a9246f95ff6e57b09f04b57caef2463844c57c390a6d25851734368237a6fb",
-    "unsigned_aab_sha256": "472c1968ba2fc20e25ea5a6a3d855fb0cf3f87153f5b0d5f963b3183029d9678",
+    "artifact_id": 14715989999,
+    "artifact_zip_sha256": "d081932610a732a35df9e5eb37e641938566fe1cd15744760ae195f486a2268e",
+    "qa_apk_sha256": "39dc453eb4d5572f534ccd910882a17ccfb5b5c04849755897dcd6f73de2d9f5",
+    "unsigned_aab_sha256": "4854e2585757383ce7d59e10b3bff48537a7bf4387dd2359c7918d339719d7d4",
     "signed": false,
     "version_code": 51019,
     "version_name": "5.0.0-v2-alpha19-debug",
-    "purpose": "QA validation only; no version allocation or Play upload"
+    "purpose": "QA validation only; not a release artifact; no version allocation or Play upload"
   },
   "latest_repository_probe_scan_20261120": {
     "observed_at": "2026-11-20T17:33:14.410Z",
@@ -3418,5 +3429,165 @@
     "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
     "upload_attempted": false,
     "commit_attempted": false
+  },
+  "canonical_application_head_20261121": {
+    "branch": "agent/codex/fitness-recovery/20261023",
+    "merge_sha": "b097d6ef0025d615c261ee42e8d2246533224e70",
+    "tested_source_sha": "26e90573ddda077ca2665ebdccd5600cc9316dd7",
+    "tree_sha": "9fa0cea8f307c05483f336c409390727c1f7ebc4",
+    "tree_matches_tested_source": true,
+    "note": "Squash merge preserves exact tested tree; ReleaseOps documentation commits follow the application merge."
+  },
+  "gps_activity_engine_integration_20261121": {
+    "pr": 303,
+    "status": "MERGED",
+    "merge_sha": "b097d6ef0025d615c261ee42e8d2246533224e70",
+    "source_sha": "26e90573ddda077ca2665ebdccd5600cc9316dd7",
+    "canonical_base_sha": "a87f86ef8d393772623ec34e5130610161bc365e",
+    "changed_files": 15,
+    "changed_file_scope": "native Activity Engine/GPS source and tests only; no WebView UI, MainActivity, Manifest, Health, release, workflow, signing or Play files",
+    "exact_head_run": 44929317705,
+    "result": "SUCCESS",
+    "tests": {
+      "product": 77,
+      "source_contract": 35,
+      "backend": 29,
+      "android_unit": 335,
+      "failures": 0,
+      "ignored": 0
+    },
+    "android": {
+      "api": 36,
+      "gradle": "BUILD SUCCESSFUL in 3m11s",
+      "lint_errors": 0,
+      "lint_warnings": 11,
+      "lint_hints": 1,
+      "debug_apk": "PASS",
+      "unsigned_aab_validation": "PASS"
+    },
+    "artifact_id": 14715989999,
+    "artifact_bytes": 63083632,
+    "artifact_zip_sha256": "d081932610a732a35df9e5eb37e641938566fe1cd15744760ae195f486a2268e",
+    "embedded_source_sha": "26e90573ddda077ca2665ebdccd5600cc9316dd7",
+    "qa_apk_sha256": "39dc453eb4d5572f534ccd910882a17ccfb5b5c04849755897dcd6f73de2d9f5",
+    "unsigned_aab_sha256": "4854e2585757383ce7d59e10b3bff48537a7bf4387dd2359c7918d339719d7d4",
+    "signed": false,
+    "qa_identity": {
+      "package": "com.topherofit.thf.pulse.qa",
+      "version_code": 51019,
+      "version_name": "5.0.0-v2-alpha19-debug"
+    },
+    "physical_p0": "BLOCKED_NOT_RUN",
+    "release_or_play_mutation": false
+  },
+  "play_latest": {
+    "run_id": 43739661313,
+    "run_attempt": 6,
+    "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43739661313",
+    "head_sha": "a8692a06ff93a7bb1b293f9eac986402f3f020c6",
+    "workflow_blob_sha256": "33cf9e555e68e00b7990545720bd7e0403a96716",
+    "workflow_blob_matches_current_canonical": true,
+    "observed_at": "2026-11-21T17:13:22.923Z",
+    "completed_at": "2026-11-21T17:13:23.945Z",
+    "conclusion": "success",
+    "job_id": 136920747723,
+    "job_name": "probe",
+    "job_conclusion": "success",
+    "artifact_id": 14716559202,
+    "artifact_sha256": "765481fc3a27a193bd483ad7f8bfb72459fd04b1fed8ee4f248ab0448278db92",
+    "artifact_download_sha256_verified": true,
+    "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
+    "package": "com.topherofit.thf.pulse",
+    "tracks": [
+      {
+        "track": "internal",
+        "version_code": 51019,
+        "release_name": "THF Fitness 51019 Internal",
+        "status": "completed"
+      },
+      {
+        "track": "alpha",
+        "version_code": 51007,
+        "release_name": "Top Hero Fit 51007 Closed Test",
+        "status": "draft"
+      }
+    ],
+    "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
+    "upload_attempted": false,
+    "commit_attempted": false,
+    "fresh_live_readback": true,
+    "workflow_change": "reran only the existing read-only probe; no workflow logic, listing, track or version mutation"
+  },
+  "latest_repository_probe_scan_20261121": {
+    "observed_at": "2026-11-21T17:13:22.923Z",
+    "latest_probe_run": 43739661313,
+    "latest_probe_attempt": 6,
+    "latest_probe_conclusion": "success",
+    "readback_artifact_id": 14716559202,
+    "artifact_zip_sha256": "765481fc3a27a193bd483ad7f8bfb72459fd04b1fed8ee4f248ab0448278db92",
+    "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
+    "artifact_download_sha256_verified": true,
+    "fresh_live_readback_performed": true,
+    "internal": "51019 completed",
+    "alpha": "51007 draft",
+    "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
+    "upload_attempted": false,
+    "commit_attempted": false
+  },
+  "current_prs_20261121": {
+    "priority_open": {
+      "93": "OPEN_DRAFT; head 1cc08cef7dae7f432275fd23960f4390a49db14c; Health Services/MainActivity/Manifest owner. Current branch declares 19 Health scopes versus canonical five; hold until narrowed and rebased.",
+      "160": "OPEN_DRAFT; bilingual catalog cleanup; shared exercises.js/json and builders.",
+      "213": "OPEN_DRAFT; timed RIR/program semantics; shared programs.js/json and app.js.",
+      "216": "OPEN_DRAFT; head 1ef915886fdac62c8fe1d5e50505fd354d989ee3; active-workout resume, based on noncanonical timed-RIR branch; app.js/index/styles shared.",
+      "224": "OPEN_DRAFT; head cc703baa3cc0e1866e50aafb9a8caad26583fc0a; offline active-workout motion, based on gym-catalog branch; app.js/index/motion assets shared.",
+      "248": "OPEN_DRAFT; head 67d3b438815fe83ced301551aee43f5a6548c91d; bounded GPS display smoothing helper; display-only, not a metric source.",
+      "284": "OPEN_DRAFT; head 274155eafdfff381009ef5814a621f32b225f1a8; 19 ahead / 80 behind canonical; no exact-head CI. Native GPS/service hunks superseded by merged #303; remaining app.js/index.html/MainActivity UI changes overlap #93/#216/#224.",
+      "244/252/257/259/260": "OPEN_DRAFT; bilingual catalog/muscle/cue branches; shared catalog assets/builders.",
+      "253/254/256/258": "OPEN_DRAFT; favorites/equipment/program filters; shared app.js/catalog/styles."
+    },
+    "other_open_exercise_handoffs": [
+      "160",
+      "213",
+      "224",
+      "244",
+      "248",
+      "252",
+      "253",
+      "254",
+      "255",
+      "256",
+      "257",
+      "258",
+      "259",
+      "260"
+    ],
+    "closed_or_superseded": {
+      "215": "CLOSED; superseded by #264",
+      "283": "CLOSED; superseded by #284"
+    },
+    "merged": {
+      "269": "MERGED; strength_volume_kg_reps only; GPS reward eligibility false.",
+      "282": "MERGED; metric truthfulness.",
+      "301": "MERGED; metric anomaly rejection.",
+      "303": "MERGED at b097d6ef0025d615c261ee42e8d2246533224e70 after exact-head CI 44929317705.",
+      "304": "MERGED; cross-source metric reconciliation.",
+      "305": "MERGED; walking/running/cycling Health session reconciliation."
+    },
+    "no_open_competition_or_all_day_step_observer_handoff_found": true,
+    "lease_note": "Canonical native GPS is now owned by merged #303. Keep #284 UI hunks, #93 MainActivity/Manifest, #216/#224 app.js/motion, and catalog/program branches on separate explicit leases. Shared resources are not assumed free."
+  },
+  "latest_route_sync_contract_recheck_20261121": {
+    "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+    "path": "ReleaseOps/FitnessStandalone/ROUTE_SYNC_CONTRACT_RECHECK_20261121.md",
+    "existing_android_sync": "Bearer + Idempotency-Key; workout/set metadata only",
+    "existing_appdeploy_routes": "Android auth, workout sync/restore, progress and competitions; no route endpoint",
+    "existing_python_api": "Strict workout allowlist and workout_sessions/workout_sets only; OpenAPI has no route path",
+    "local_route_storage": "WebView localStorage pulse.v2.activities; latest 100 entries",
+    "active_checkpoint": "Local Android preferences; no cloud queue",
+    "account_deletion": "README requires deployed DELETE /api/account to call deleteFitnessV2UserData; live route verification not established",
+    "privacy": "Current privacy/account-deletion pages do not disclose precise-route backup",
+    "implementation": false,
+    "cloud_upload_claim": false
   }
 }
