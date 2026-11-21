@@ -18,6 +18,7 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -40,7 +41,7 @@ import kotlin.math.max
  * A foreground notification is deliberately required: if the UI goes to the background, the user
  * can still see that GPS/motion collection is active and can stop it from the notification.
  */
-class ActivityTrackingService : Service(), LocationListener, SensorEventListener {
+class ActivityTrackingService : Service(), SensorEventListener {
     companion object {
         const val ACTION_START_ACTIVITY = "com.topherofit.thf.pulse.START_ACTIVITY"
         const val ACTION_START_WORKOUT = "com.topherofit.thf.pulse.START_WORKOUT"
@@ -219,6 +220,8 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
     private val locationFallbackHandler = Handler(Looper.getMainLooper())
     private var locationRequestStartedElapsedMs = 0L
     private var legacyLocationProvidersRegistered = false
+    private var legacyLocationListener: LocationListener? = null
+    private var legacyLocationRegistrationGeneration = 0L
     private var legacyLocationProvider: ActivityLocationFallbackPolicy.LegacyProvider? = null
     private var legacyProviderAttemptStartedElapsedMs = 0L
     private var legacyProviderRegistrationFailureCount = 0
@@ -440,7 +443,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
                             generationMatches = requestGeneration == locationRequestGeneration,
                         )
                     ) return
-                    result.locations.forEach(::onLocationChanged)
+                    result.locations.forEach(::handleLocationChanged)
                 }
             }
             fusedLocationCallback = callback
@@ -542,8 +545,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             )
         }
         if (selectedProvider == null) {
-            if (legacyLocationProvidersRegistered) runCatching { locationManager.removeUpdates(this) }
-            legacyLocationProvidersRegistered = false
+            removeLegacyLocationUpdates()
             legacyLocationProvider = null
             legacyProviderAttemptStartedElapsedMs = 0L
             legacyProviderRegistrationFailureCount = 0
@@ -552,8 +554,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         }
 
         if (selectedProvider != legacyLocationProvider) {
-            if (legacyLocationProvidersRegistered) runCatching { locationManager.removeUpdates(this) }
-            legacyLocationProvidersRegistered = false
+            removeLegacyLocationUpdates()
             legacyLocationProvider = selectedProvider
             legacyProviderAttemptStartedElapsedMs = nowElapsed
             legacyProviderRegistrationFailureCount = 0
@@ -585,8 +586,33 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         if (nowElapsed < legacyProviderNextAttemptElapsedMs) return
         val minTimeMs = if (provider == LocationManager.GPS_PROVIDER) 1_000L else 2_500L
         val minDistanceMetres = if (provider == LocationManager.GPS_PROVIDER) 1f else 4f
+        val registrationGeneration = legacyLocationRegistrationGeneration + 1L
+        legacyLocationRegistrationGeneration = registrationGeneration
+        val listener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                if (!ActivityLocationFallbackPolicy.shouldAcceptLegacyProviderCallback(
+                        expectedProvider = selectedProvider,
+                        callbackProvider = location.provider,
+                        registrationGenerationMatches = registrationGeneration == legacyLocationRegistrationGeneration,
+                    )
+                ) return
+                handleLocationChanged(location)
+            }
+
+            override fun onProviderEnabled(providerName: String) {
+                if (registrationGeneration == legacyLocationRegistrationGeneration) refreshLegacyProviderSelection()
+            }
+
+            override fun onProviderDisabled(providerName: String) {
+                if (registrationGeneration == legacyLocationRegistrationGeneration) refreshLegacyProviderSelection()
+            }
+
+            @Suppress("DEPRECATION")
+            override fun onStatusChanged(providerName: String?, status: Int, extras: Bundle?) = Unit
+        }
+        legacyLocationListener = listener
         val registered = runCatching {
-            locationManager.requestLocationUpdates(provider, minTimeMs, minDistanceMetres, this, Looper.getMainLooper())
+            locationManager.requestLocationUpdates(provider, minTimeMs, minDistanceMetres, listener, Looper.getMainLooper())
             true
         }.getOrDefault(false)
         legacyLocationProvidersRegistered = registered
@@ -600,24 +626,29 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
             fusedLocationCallback = null
             if (callback != null) runCatching { fusedLocationClient.removeLocationUpdates(callback) }
         } else {
+            if (legacyLocationListener === listener) {
+                legacyLocationListener = null
+                legacyLocationRegistrationGeneration += 1L
+                runCatching { locationManager.removeUpdates(listener) }
+            }
             legacyProviderRegistrationFailureCount += 1
             legacyProviderNextAttemptElapsedMs = nowElapsed +
                 ActivityLocationFallbackPolicy.legacyProviderRetryDelayMs(legacyProviderRegistrationFailureCount)
         }
     }
 
+    private fun removeLegacyLocationUpdates() {
+        legacyLocationRegistrationGeneration += 1L
+        val listener = legacyLocationListener
+        legacyLocationListener = null
+        legacyLocationProvidersRegistered = false
+        if (listener != null) runCatching { locationManager.removeUpdates(listener) }
+    }
+
     private fun refreshLegacyProviderSelection() {
         val mode = activityMode ?: return
         if (activityPaused) return
         registerLegacyLocationProviders(mode)
-    }
-
-    override fun onProviderEnabled(provider: String) {
-        refreshLegacyProviderSelection()
-    }
-
-    override fun onProviderDisabled(provider: String) {
-        refreshLegacyProviderSelection()
     }
 
     private fun registerStepSource(mode: ActivityMode) {
@@ -628,7 +659,7 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
 
     private fun unregisterActivitySources() {
         locationFallbackHandler.removeCallbacks(locationFallbackWatchdog)
-        legacyLocationProvidersRegistered = false
+        removeLegacyLocationUpdates()
         legacyLocationProvider = null
         legacyProviderAttemptStartedElapsedMs = 0L
         legacyProviderRegistrationFailureCount = 0
@@ -639,11 +670,10 @@ class ActivityTrackingService : Service(), LocationListener, SensorEventListener
         fusedLocationCallback = null
         if (callback != null) runCatching { fusedLocationClient.removeLocationUpdates(callback) }
         gpsDistanceAccumulator.reset()
-        runCatching { locationManager.removeUpdates(this) }
         runCatching { sensorManager.unregisterListener(this) }
     }
 
-    override fun onLocationChanged(location: Location) {
+    private fun handleLocationChanged(location: Location) {
         val mode = activityMode ?: return
         if (activityPaused) return
         val nowElapsed = SystemClock.elapsedRealtime()
