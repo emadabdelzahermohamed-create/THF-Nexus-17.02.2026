@@ -86,6 +86,25 @@ object ActivityLocationFallbackPolicy {
         return delayMs.coerceAtMost(LEGACY_PROVIDER_RETRY_MAX_MS)
     }
 
+    /**
+     * Rejects queued callbacks from a framework provider that has already been replaced.
+     * LocationManager.removeUpdates() does not make an already queued callback safe to consume;
+     * the listener generation and provider identity must both still match.
+     */
+    fun shouldAcceptLegacyProviderCallback(
+        expectedProvider: LegacyProvider?,
+        callbackProvider: String?,
+        registrationGenerationMatches: Boolean,
+    ): Boolean {
+        if (!registrationGenerationMatches) return false
+        val expectedLabel = when (expectedProvider) {
+            LegacyProvider.GPS -> "gps"
+            LegacyProvider.NETWORK -> "network"
+            null -> return false
+        }
+        return callbackProvider?.trim()?.equals(expectedLabel, ignoreCase = true) == true
+    }
+
     enum class LegacyProvider { GPS, NETWORK }
 
     /**
