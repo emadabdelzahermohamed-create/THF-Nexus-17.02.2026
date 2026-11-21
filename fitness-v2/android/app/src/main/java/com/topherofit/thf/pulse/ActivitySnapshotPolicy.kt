@@ -70,4 +70,11 @@ object ActivitySnapshotPolicy {
             route = acceptedRoute,
         )
     }
+    /** Normalizes every stop path to a completed, non-paused snapshot. */
+    fun finish(snapshot: ActivitySnapshot): ActivitySnapshot = snapshot.copy(
+        active = false,
+        currentSpeedKph = 0.0,
+        paused = false,
+    )
+
 }

@@ -18,6 +18,24 @@ data class ActivitySessionCheckpoint(
 )
 
 /**
+ * Chooses durable writes for lifecycle-critical activity checkpoint transitions.
+ *
+ * Periodic sensor/location updates may use SharedPreferences.apply(); forced lifecycle
+ * transitions and checkpoint deletion must complete synchronously before the service returns.
+ */
+object ActivitySessionCheckpointPersistencePolicy {
+    fun persist(
+        forceSynchronously: Boolean,
+        commit: () -> Boolean,
+        apply: () -> Unit,
+    ): Boolean {
+        if (forceSynchronously) return commit()
+        apply()
+        return true
+    }
+}
+
+/**
  * Compact, dependency-free codec for an in-flight activity session.
  * V2 persists ARMED/ACTIVE truth state. V1 is still accepted so an in-place Play update can
  * safely recover a 51014 session; legacy V1 sessions are treated as already ACTIVE.
@@ -128,6 +146,7 @@ object ActivitySessionCheckpointCodec {
         if (encoded.isNullOrBlank()) return emptyList()
         val rows = encoded.split(';')
         if (rows.size > MAX_ROUTE_POINTS) return null
+        var previousRouteElapsedMs: Long? = null
         return rows.map { row ->
             val values = row.split(',')
             if (values.size != 5) return null
@@ -140,7 +159,10 @@ object ActivitySessionCheckpointCodec {
             if (!longitude.isFinite() || longitude !in -180.0..180.0) return null
             if (values[2].isNotEmpty() && altitude == null) return null
             if (altitude != null && !altitude.isFinite()) return null
-            if (!accuracy.isFinite() || accuracy < 0f || elapsedMs < 0L) return null
+            if (!accuracy.isFinite() || accuracy <= 0f || elapsedMs < 0L) return null
+            val previousElapsedMs = previousRouteElapsedMs
+            if (previousElapsedMs != null && elapsedMs <= previousElapsedMs) return null
+            previousRouteElapsedMs = elapsedMs
             ActivityRoutePoint(latitude, longitude, altitude, accuracy, elapsedMs)
         }
     }
@@ -158,6 +180,26 @@ object ActivitySessionCheckpointCodec {
         if (restoreGapMs > maxRestoreGapMs) return false
         val lastRouteElapsed = checkpoint.route.lastOrNull()?.elapsedMs ?: 0L
         return lastRouteElapsed <= checkpoint.savedAtElapsedMs - checkpoint.startedAtElapsedMs
+    }
+
+    /**
+     * Returns the persisted route fix's original monotonic timestamp.
+     *
+     * Route elapsedMs values are offsets from the checkpoint's saved session-start base.
+     * Do not add the post-process-death adjusted start: doing so moves an old fix forward
+     * by the entire downtime and can make a stale location look freshly observed.
+     */
+    fun restorableLastFixElapsedMs(
+        checkpoint: ActivitySessionCheckpoint,
+        paused: Boolean,
+    ): Long? {
+        if (paused || checkpoint.phase != ActivitySessionPhase.ACTIVE) return null
+        if (checkpoint.lastAccuracyMetres?.let { it.isFinite() && it > 0f } != true) return null
+        val point = checkpoint.route.lastOrNull() ?: return null
+        if (!point.accuracyMetres.isFinite() || point.accuracyMetres <= 0f) return null
+        val maxRouteElapsedMs = checkpoint.savedAtElapsedMs - checkpoint.startedAtElapsedMs
+        if (maxRouteElapsedMs < 0L || point.elapsedMs !in 0L..maxRouteElapsedMs) return null
+        return runCatching { Math.addExact(checkpoint.startedAtElapsedMs, point.elapsedMs) }.getOrNull()
     }
 
     fun adjustedStartedAtElapsedMs(checkpoint: ActivitySessionCheckpoint, nowElapsedMs: Long): Long {

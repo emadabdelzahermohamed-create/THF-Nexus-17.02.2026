@@ -698,7 +698,7 @@ class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
         metrics = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityMetrics.kt").read_text()
 
         location_path = service[
-            service.index("override fun onLocationChanged"):
+            service.index("private fun handleLocationChanged"):
             service.index("private fun Location.toGpsFix")
         ]
         self.assertIn("gpsDistanceAccumulator.offer(observedFix)", location_path)
@@ -719,7 +719,7 @@ class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
         self.assertIn("gpsDistanceAccumulator.reset()", activation)
         unregister = service[
             service.index("private fun unregisterActivitySources"):
-            service.index("override fun onLocationChanged")
+            service.index("private fun handleLocationChanged")
         ]
         self.assertIn("gpsDistanceAccumulator.reset()", unregister)
 
@@ -740,12 +740,21 @@ class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
 
         self.assertIn("GpsFixPresentationPolicy.state(", service)
         self.assertIn('return "filtered"', policy)
-        self.assertIn('"filtered" -> "تم رصد الموقع', service)
+        self.assertIn("GpsFixPresentationPolicy.statusText(", service)
+        self.assertIn('"filtered" -> "تم رصد الموقع', policy)
         self.assertIn("gpsFixState==='filtered'?", app)
         self.assertIn("gpsFixState==='permission'?t('activityPermissionNeeded')", app)
         self.assertIn("gpsFiltered:'", app)
         self.assertNotIn("gpsFixState==='weak'", app)
 
+
+    def test_fused_request_respects_granted_location_precision(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+
+        self.assertIn("val finePermissionGranted =", service)
+        self.assertIn(".setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)", service)
+        self.assertIn(".setWaitForAccurateLocation(finePermissionGranted)", service)
+        self.assertNotIn(".setGranularity(Granularity.GRANULARITY_FINE)", service)
 
 if __name__ == "__main__":
     unittest.main()
