@@ -51,7 +51,7 @@ After #303 merged:
 
 ## Display-only route smoother PR #248
 
-PR [#248](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/248) remains Draft, 4 commits ahead / 228 behind canonical, with no exact-head CI. It adds only a standalone Kotlin smoother and its tests; the helper has no production call site. Canonical WebView `app.js` already has and calls `smoothActivityRouteForDisplay()` during map rendering. Keep one presentation implementation; do not merge an unused duplicate. Neither smoother may feed metrics, activation or rewards.
+PR [#248](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/248) remains Draft, 4 commits ahead / 231 behind canonical, with no exact-head CI. It adds only a standalone Kotlin smoother and its tests; the helper has no production call site. Canonical WebView `app.js` already has and calls `smoothActivityRouteForDisplay()` during map rendering. Keep one presentation implementation; do not merge an unused duplicate. Neither smoother may feed metrics, activation or rewards.
 
 ## Route history and sync boundary
 
