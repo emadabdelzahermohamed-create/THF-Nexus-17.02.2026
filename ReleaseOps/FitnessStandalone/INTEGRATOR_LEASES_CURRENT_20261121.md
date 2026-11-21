@@ -11,7 +11,7 @@ This registry supersedes the 2026-11-20 status snapshot. Shared files are not as
 | Surface | Owner / state | Integration rule |
 |---|---|---|
 | Native GPS provider, ActivityTrackingService, distance accumulator, session checkpoint and GPS tests | PR #303 merged at `b097d6ef...`; exact source `26e90573...`, run 44929317705 PASS | Canonical native owner. New changes require rebase on current canonical and exact-head CI. |
-| Legacy GPS / map-status/settings handoff | PR #284, Draft, 19 ahead / 80 behind, 13 files, no current-head CI | Native portions superseded by #303. Remaining app.js/index.html/MainActivity UI hunks conflict with active leases. Keep Draft; do not merge as-is. |
+| Legacy GPS / map-status/settings handoff | PR #284, Draft, 19 ahead / 94 behind, 13 files, no current-head CI | Native portions superseded by #303. Remaining app.js/index.html/MainActivity UI hunks conflict with active leases. Keep Draft; do not merge as-is. |
 | Health Services bridge, MainActivity and AndroidManifest | PR #93, Draft; head `1cc08cef...`; 19 requested Health scopes vs canonical five | Hold. Remove unapproved scopes and rebase; no Heart Rate/clinical permissions without separate approval and policy gate. |
 | Active workout resume/persistence UI | PR #216, Draft; head `1ef91588...`, based on noncanonical timed-RIR branch | app.js/index/styles shared with motion/program work. Rebase and isolate; no whole-file overwrite. |
 | Active-workout offline motion demos | PR #224, Draft; head `cc703baa...`, based on gym-library branch | app.js/index/styles and motion manifest/library shared. Rebase and isolate. |
