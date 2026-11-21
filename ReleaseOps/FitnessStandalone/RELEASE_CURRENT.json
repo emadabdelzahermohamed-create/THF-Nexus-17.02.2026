@@ -276,7 +276,7 @@
     "listing_truthfulness": "Fresh read-only Google Play readback 2026-11-21 17:13:22.923Z: Internal 51019 Completed; Alpha 51007 Draft; Production not listed/not verified. Listing unchanged and still describes GPS sessions, background notification controls, offline-ready library and Arabic/English voice cues. No listing edit; physical P0 and policy/privacy remain open.",
     "competition_backend": "PR #269 merged; provisional strength_volume_kg_reps only. No independently verified GPS activity leaderboard; rewardEligible=false; no THF payouts authorized.",
     "gps_accuracy": "PR #303 merged at b097d6ef0025d615c261ee42e8d2246533224e70 after exact-head run 44929317705 on source 26e90573ddda077ca2665ebdccd5600cc9316dd7. Product 77, source 35, backend 29, Android 335; artifact 14715989999 ZIP SHA-256 d081932610a732a35df9e5eb37e641938566fe1cd15744760ae195f486a2268e. APK/AAB are unsigned QA validation only. Physical P0 remains BLOCKED_NOT_RUN.",
-    "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED. Rechecked BackendSyncRepository, AccountAuthRepository, AppDeploy android_v2_routes.ts, Python backend auth/api/workout_store and OpenAPI. Existing bearer sync is workout/set metadata only; no authenticated route endpoint/table/upload. Finished routes remain in WebView localStorage; one-second UI refresh is local. AppDeploy README requires deployed authenticated DELETE /api/account to call deleteFitnessV2UserData; live deployment verification is not established. Privacy/account-deletion pages do not yet describe precise-route backup.",
+    "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED. Existing Android/AppDeploy/Python authenticated sync remains workout/set metadata only; no route endpoint/table/upload. Finished routes remain WebView localStorage; one-second UI refresh is local. Read-only AppDeploy snapshot thf-fitness-pulse-ul26f1 version 1794247542845 is READY; backend/index.ts lines 354-361 calls deleteFitnessV2UserData under requireAuth and combines its done flag; live helper is byte-identical to canonical repository source. No activity-routes endpoint exists. Privacy/account-deletion pages match canonical repository but do not disclose precise-route backup. Runtime non-privileged account deletion and empty-history readback remain untested. No route upload.",
     "anti_cheat": "ActivityEvidenceAnomalyPolicy.assessSegment() remains tested but unwired in ActivityTrackingService. GPS filtering is not full anti-cheat or cryptographic location attestation. No physical provenance PASS or GPS reward eligibility is claimed.",
     "signing_prerequisites": "Owner Google Play/API write permission and GCP Secret Manager signing-key access remain NOT_VERIFIED. Next versionCode 51020 remains UNALLOCATED. No new signed AAB or Play write.",
     "pr_ownership": "Canonical application merge b097d6ef0025d615c261ee42e8d2246533224e70 (tested source tree 26e90573ddda077ca2665ebdccd5600cc9316dd7). #303 merged after exact-head CI 44929317705. #284 remains Draft, head 274155eafdfff381009ef5814a621f32b225f1a8, 19 ahead / 80 behind, no current exact-head CI; its native GPS hunks are superseded by #303 and remaining UI hunks overlap #93/#216/#224. #93/#216/#224/#248 remain Draft; catalog/program/motion PRs remain diverged under shared-file leases."
@@ -1877,7 +1877,7 @@
     "play_write": false,
     "production": "NOT_VERIFIED",
     "release_gate": "HOLD",
-    "blocker": "PR #303 native GPS/Activity Engine is now merged after exact-head CI, but physical P0 remains blocked by offline SM-A217F; owner Play/API write and GCP signing-key access are unverified; privacy/policy and account-deletion gates remain mandatory. The exact validation AAB is unsigned QA only."
+    "blocker": "PR #303 native GPS/Activity Engine is merged after exact-head CI, but physical P0 remains blocked by offline SM-A217F; owner Play/API write and GCP signing-key access are unverified. Privacy/policy gates remain mandatory. Route backup is not implemented; deployed account-deletion source wiring is verified but runtime deletion QA and precise-route disclosure are not."
   },
   "appdeploy_policy_sync_20261109": {
     "app_id": "thf-fitness-pulse-ul26f1",
@@ -1929,16 +1929,28 @@
   },
   "appdeploy_live_status_readback": {
     "app_id": "thf-fitness-pulse-ul26f1",
+    "version": "1794247542845",
+    "url": "https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/",
     "deployment_status": "ready",
-    "snapshot_version": "1794247542845",
-    "live_url": "https://thf-fitness-pulse-ul26f1.v2.appdeploy.ai/",
-    "qa_timestamp_utc": "2026-11-09T18:06:00.034Z",
-    "qa_frontend_errors": [],
-    "qa_network_errors": [],
-    "qa_backend_errors": [],
-    "secret_names": [],
-    "secret_inventory_checked_at": "2026-11-09T18:20:14Z",
-    "note": "This verifies the AppDeploy frontend snapshot and secret inventory only; it does not verify the separate competition backend deployment."
+    "validation_valid": true,
+    "frontend_errors": [],
+    "backend_errors": [],
+    "validation_warnings": [
+      "tests/tests.json: Found 12 tests, consider focusing on 3-5."
+    ],
+    "account_delete_route_source_verified": true,
+    "account_delete_route": "backend/index.ts lines 354-361; requireAuth(); derives userId from authenticated context; calls deleteFitnessV2UserData(userId); combines v2Deletion.done with legacy deletion.",
+    "live_v2_helper_matches_canonical_repository": true,
+    "canonical_helper_blob_sha": "f3e6a9aa720a357a343449679221abc30c35050d",
+    "route_sync_endpoint_search_matches": 0,
+    "privacy_page_matches_canonical": true,
+    "privacy_page_blob_sha": "a5d43ac08ffeff52a0e9c35bde1d6ade2a384d82",
+    "account_deletion_page_matches_canonical": true,
+    "account_deletion_page_blob_sha": "031be7223f956b5593fb848ec3d08a22a3a4077e",
+    "precise_route_disclosure_present": false,
+    "runtime_deletion_qa_account_test": false,
+    "empty_v2_history_independent_readback": false,
+    "deployment_mutation_performed": false
   },
   "public_page_access_attempt_20261109": {
     "attempted_at": "2026-11-09T18:20:14Z",
@@ -3588,6 +3600,19 @@
     "account_deletion": "README requires deployed DELETE /api/account to call deleteFitnessV2UserData; live route verification not established",
     "privacy": "Current privacy/account-deletion pages do not disclose precise-route backup",
     "implementation": false,
-    "cloud_upload_claim": false
+    "cloud_upload_claim": false,
+    "live_appdeploy_snapshot": {
+      "app_id": "thf-fitness-pulse-ul26f1",
+      "version": "1794247542845",
+      "status": "ready",
+      "delete_account_route_wired": true,
+      "delete_account_route_lines": "backend/index.ts:354-361",
+      "v2_helper_matches_canonical": true,
+      "precise_route_endpoint_found": false,
+      "privacy_and_deletion_pages_match_canonical": true,
+      "precise_route_disclosure_present": false,
+      "runtime_deletion_qa": false,
+      "empty_history_readback": false
+    }
   }
 }
