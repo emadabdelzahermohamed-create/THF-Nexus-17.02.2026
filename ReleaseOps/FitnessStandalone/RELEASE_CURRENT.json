@@ -1566,8 +1566,8 @@
       "213": "OPEN_DRAFT; timed RIR/program semantics; shared programs.js/json and app.js.",
       "216": "OPEN_DRAFT; head 1ef915886fdac62c8fe1d5e50505fd354d989ee3; active-workout resume, based on noncanonical timed-RIR branch; app.js/index/styles shared.",
       "224": "OPEN_DRAFT; head cc703baa3cc0e1866e50aafb9a8caad26583fc0a; offline active-workout motion, based on gym-catalog branch; app.js/index/motion assets shared.",
-      "248": "OPEN_DRAFT; head 67d3b438815fe83ced301551aee43f5a6548c91d; 4 ahead / 228 behind; no exact-head CI. Adds unused Kotlin display-only smoother; canonical app.js already calls smoothActivityRouteForDisplay() for map rendering. Do not merge duplicate/unused implementation.",
-      "284": "OPEN_DRAFT; head 274155eafdfff381009ef5814a621f32b225f1a8; 19 ahead / 80 behind canonical; no exact-head CI. Native GPS/service hunks superseded by merged #303; remaining app.js/index.html/MainActivity UI changes overlap #93/#216/#224.",
+      "248": "OPEN_DRAFT; head 67d3b438815fe83ced301551aee43f5a6548c91d; 4 ahead / 231 behind; no exact-head CI. Adds unused Kotlin display-only smoother; canonical app.js already calls smoothActivityRouteForDisplay() for map rendering. Do not merge duplicate/unused implementation.",
+      "284": "OPEN_DRAFT; head 274155eafdfff381009ef5814a621f32b225f1a8; 19 ahead / 94 behind current canonical; 13 changed files; no exact-head CI. Native GPS/service hunks superseded by merged #303; remaining app.js/index.html/MainActivity UI changes overlap #93/#216/#224.",
       "244/252/257/259/260": "OPEN_DRAFT; bilingual catalog/muscle/cue branches; shared catalog assets/builders.",
       "253/254/256/258": "OPEN_DRAFT; favorites/equipment/program filters; shared app.js/catalog/styles."
     },
@@ -3555,8 +3555,8 @@
       "213": "OPEN_DRAFT; timed RIR/program semantics; shared programs.js/json and app.js.",
       "216": "OPEN_DRAFT; head 1ef915886fdac62c8fe1d5e50505fd354d989ee3; active-workout resume, based on noncanonical timed-RIR branch; app.js/index/styles shared.",
       "224": "OPEN_DRAFT; head cc703baa3cc0e1866e50aafb9a8caad26583fc0a; offline active-workout motion, based on gym-catalog branch; app.js/index/motion assets shared.",
-      "248": "OPEN_DRAFT; head 67d3b438815fe83ced301551aee43f5a6548c91d; 4 ahead / 228 behind; no exact-head CI. Adds unused Kotlin display-only smoother; canonical app.js already calls smoothActivityRouteForDisplay() for map rendering. Do not merge duplicate/unused implementation.",
-      "284": "OPEN_DRAFT; head 274155eafdfff381009ef5814a621f32b225f1a8; 19 ahead / 80 behind canonical; no exact-head CI. Native GPS/service hunks superseded by merged #303; remaining app.js/index.html/MainActivity UI changes overlap #93/#216/#224.",
+      "248": "OPEN_DRAFT; head 67d3b438815fe83ced301551aee43f5a6548c91d; 4 ahead / 231 behind; no exact-head CI. Adds unused Kotlin display-only smoother; canonical app.js already calls smoothActivityRouteForDisplay() for map rendering. Do not merge duplicate/unused implementation.",
+      "284": "OPEN_DRAFT; head 274155eafdfff381009ef5814a621f32b225f1a8; 19 ahead / 94 behind current canonical; 13 changed files; no exact-head CI. Native GPS/service hunks superseded by merged #303; remaining app.js/index.html/MainActivity UI changes overlap #93/#216/#224.",
       "244/252/257/259/260": "OPEN_DRAFT; bilingual catalog/muscle/cue branches; shared catalog assets/builders.",
       "253/254/256/258": "OPEN_DRAFT; favorites/equipment/program filters; shared app.js/catalog/styles."
     },
