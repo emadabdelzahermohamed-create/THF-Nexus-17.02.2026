@@ -97,4 +97,31 @@ class ActivitySnapshotPolicyTest {
         assertEquals(0.0, snapshot.distanceMetres, 0.0)
         assertFalse(snapshot.route.isNotEmpty())
     }
+    @Test
+    fun finishingPausedSessionClearsPauseAndSpeedButPreservesMeasuredHistory() {
+        val paused = ActivitySnapshotPolicy.build(
+            sessionActive = true,
+            phase = ActivitySessionPhase.ACTIVE,
+            mode = ActivityMode.RUN,
+            armedStartedAtWallMs = 1_000L,
+            activatedAtWallMs = 2_000L,
+            activatedAtElapsedMs = 5_000L,
+            nowElapsedMs = 65_000L,
+            measuredDistanceMetres = 1_000.0,
+            measuredStepDelta = 120,
+            currentSpeedKph = 4.0,
+            weightKg = 70.0,
+            acceptedRoute = route,
+            lastAccuracyMetres = 7f,
+        ).copy(paused = true)
+
+        val finished = ActivitySnapshotPolicy.finish(paused)
+
+        assertFalse(finished.active)
+        assertFalse(finished.paused)
+        assertEquals(0.0, finished.currentSpeedKph, 0.0)
+        assertEquals(1_000.0, finished.distanceMetres, 0.0)
+        assertEquals(route, finished.route)
+    }
+
 }
