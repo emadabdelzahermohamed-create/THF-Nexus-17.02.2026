@@ -48,8 +48,8 @@ The Python backend and AppDeploy routes are separate deployment adapters; do not
 
 ## 5. Privacy and deletion gaps before any route backup
 
-- Repository privacy page blob `a5d43ac08ffeff52a0e9c35bde1d6ade2a384d82` describes account/workout synchronization and says Health Connect summaries are not sent to the server. It does not disclose precise-route backup.
-- Account-deletion page blob `031be7223f956b5593fb848ec3d08a22a3a4077e` lists app-owned goals, legacy/V2 workout history, Android sessions/tickets, sync/idempotency records and competition submissions; it does not describe route records or route-consent receipts.
+- Live AppDeploy snapshot `1794247542845` privacy page matches canonical repository blob `a5d43ac08ffeff52a0e9c35bde1d6ade2a384d82`; it describes account/workout synchronization and says Health Connect summaries are not sent to the server. It does not disclose precise-route backup.
+- The live account-deletion page matches canonical repository blob `031be7223f956b5593fb848ec3d08a22a3a4077e`; it lists app-owned goals, legacy/V2 workout history, Android sessions/tickets, sync/idempotency records and competition submissions; it does not describe route records or route-consent receipts.
 - Neither page currently promises route backup, precise-location retention or route revocation. Do not enable location upload before updating and independently reviewing the in-app disclosure, privacy policy, account-deletion page and Google Play Data Safety/location declarations.
 - Storage-at-rest encryption/key-management and operator-access guarantees for precise coordinates have not been verified. If they are undocumented or insufficient, do not store precise routes server-side.
 
@@ -70,4 +70,4 @@ Retain the existing design in `ROUTE_SYNC_DESIGN_20261110.md`:
 
 ## 7. Decision
 
-No route-sync code or cloud upload was implemented. Completed routes remain local-only. The one-second map refresh remains local. The next route-sync implementation gate is after GPS/session P0 and an independently verified account-deletion contract, followed by privacy/storage-security review and exact-head backend/Android tests. No new infrastructure, paid service, permission, versionCode, signing or Play mutation was introduced.
+No route-sync code or cloud upload was implemented. Completed routes remain local-only. The one-second map refresh remains local. The deployed source-level account-deletion hook is now verified, but a non-privileged runtime deletion/readback test is still outstanding. The next route-sync implementation gate is after GPS/session P0 and that runtime deletion test, followed by privacy/storage-security review and exact-head backend/Android tests. No new infrastructure, paid service, permission, versionCode, signing or Play mutation was introduced.
