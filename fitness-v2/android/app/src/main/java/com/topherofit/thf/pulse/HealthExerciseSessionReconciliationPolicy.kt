@@ -2,11 +2,18 @@ package com.topherofit.thf.pulse
 
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
+import androidx.health.connect.client.records.metadata.Metadata
 import java.time.Instant
 import java.util.Locale
 import kotlin.math.abs
 
-internal enum class HealthActivitySessionKind { WALKING, RUNNING, CYCLING }
+internal enum class HealthActivitySessionKind {
+    WALKING,
+    RUNNING,
+    CYCLING,
+    SWIMMING_POOL,
+    SWIMMING_OPEN_WATER,
+}
 
 internal data class HealthExerciseSessionCandidate<T>(
     val originalIndex: Int,
@@ -17,6 +24,7 @@ internal data class HealthExerciseSessionCandidate<T>(
     val endTime: Instant,
     val observedAt: Instant?,
     val deviceType: Int?,
+    val recordingMethod: Int,
     val verifiedForRewards: Boolean,
     val lastModifiedTime: Instant,
     val value: T,
@@ -39,12 +47,14 @@ internal data class HealthExerciseSessionReconciliationResult<T>(
 }
 
 /**
- * Reconciles only reviewed Health Connect walking, running and cycling sessions.
+ * Reconciles reviewed Health Connect walking, running, cycling and eligible wearable
+ * swimming sessions.
  *
  * The provider/type/record-ID version selector runs first. This second layer catches
  * separate provider records that describe the same session. A single sport label is
  * deduplicated deterministically; conflicting labels are all excluded rather than
- * guessing whether walking, running or cycling was correct.
+ * guessing which activity label was correct. Swimming candidates receive an additional
+ * provider, watch/band and active/automatic recording-method check at this boundary.
  *
  * Unverified records never poison verified records. This is metadata reconciliation,
  * not device attestation or proof that a physical activity occurred.
@@ -58,6 +68,8 @@ internal object HealthExerciseSessionReconciliationPolicy {
         ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL -> HealthActivitySessionKind.RUNNING
         ExerciseSessionRecord.EXERCISE_TYPE_BIKING,
         ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY -> HealthActivitySessionKind.CYCLING
+        ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> HealthActivitySessionKind.SWIMMING_POOL
+        ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER -> HealthActivitySessionKind.SWIMMING_OPEN_WATER
         else -> null
     }
 
@@ -83,6 +95,16 @@ internal object HealthExerciseSessionReconciliationPolicy {
                     !candidate.endTime.isAfter(candidate.startTime) -> "INVALID_ACTIVITY_SESSION_TIME"
                 candidate.observedAt == null -> "MISSING_OBSERVATION_TIME"
                 candidate.endTime.isAfter(candidate.observedAt) -> "FUTURE_ACTIVITY_SESSION"
+                candidate.activityKind.isSwimming() &&
+                    !HealthSourceTrustPolicy.isApprovedHealthConnectProvider(candidate.sourcePackage) ->
+                    "UNTRUSTED_SWIMMING_PROVIDER"
+                candidate.activityKind.isSwimming() &&
+                    candidate.deviceType !in setOf(Device.TYPE_WATCH, Device.TYPE_FITNESS_BAND) ->
+                    "INCOMPATIBLE_SWIMMING_DEVICE"
+                candidate.activityKind.isSwimming() &&
+                    candidate.recordingMethod != Metadata.RECORDING_METHOD_ACTIVELY_RECORDED &&
+                    candidate.recordingMethod != Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED ->
+                    "UNSUPPORTED_SWIMMING_RECORDING_METHOD"
                 else -> null
             }
             if (reason != null) {
@@ -150,6 +172,10 @@ internal object HealthExerciseSessionReconciliationPolicy {
             invalid = invalid.sortedBy { it.originalIndex },
         )
     }
+
+    private fun HealthActivitySessionKind.isSwimming(): Boolean =
+        this == HealthActivitySessionKind.SWIMMING_POOL ||
+            this == HealthActivitySessionKind.SWIMMING_OPEN_WATER
 
     private fun <T> sameSessionWindow(
         left: HealthExerciseSessionCandidate<T>,
