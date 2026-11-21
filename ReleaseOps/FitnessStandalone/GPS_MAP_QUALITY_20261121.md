@@ -49,6 +49,10 @@ After #303 merged:
 - The existing Leaflet/tile stack is already canonical; no standalone map-tile patch remains.
 - Keep #284 Draft. Any retained UI change must be extracted under an explicit shared-file lease and pass exact-head CI.
 
+## Display-only route smoother PR #248
+
+PR [#248](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/248) remains Draft, 4 commits ahead / 228 behind canonical, with no exact-head CI. It adds only a standalone Kotlin smoother and its tests; the helper has no production call site. Canonical WebView `app.js` already has and calls `smoothActivityRouteForDisplay()` during map rendering. Keep one presentation implementation; do not merge an unused duplicate. Neither smoother may feed metrics, activation or rewards.
+
 ## Route history and sync boundary
 
 `persistFinishedActivity()` writes completed route points to WebView localStorage. The map's one-second polling is a local UI update only. Existing account sync handles workout/set metadata and does not include coordinates. No authenticated route API or cloud upload exists. Keep route backup as a separate default-off feature with independent consent, finished-session-only upload, retention, revocation, deletion and privacy/security review. See `ROUTE_SYNC_CONTRACT_RECHECK_20261121.md`.
