@@ -698,7 +698,7 @@ class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
         metrics = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityMetrics.kt").read_text()
 
         location_path = service[
-            service.index("override fun onLocationChanged"):
+            service.index("private fun handleLocationChanged"):
             service.index("private fun Location.toGpsFix")
         ]
         self.assertIn("gpsDistanceAccumulator.offer(observedFix)", location_path)
@@ -719,7 +719,7 @@ class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
         self.assertIn("gpsDistanceAccumulator.reset()", activation)
         unregister = service[
             service.index("private fun unregisterActivitySources"):
-            service.index("override fun onLocationChanged")
+            service.index("private fun handleLocationChanged")
         ]
         self.assertIn("gpsDistanceAccumulator.reset()", unregister)
 
