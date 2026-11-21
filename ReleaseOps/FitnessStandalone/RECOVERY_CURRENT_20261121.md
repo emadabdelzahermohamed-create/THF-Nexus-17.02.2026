@@ -109,6 +109,7 @@ Required physical P0 remains NOT RUN:
 - The one-second map/activity polling is local UI refresh, not a sync interval.
 - Existing authenticated sync only covers workout/set metadata. No route endpoint, route table, route consent resource or precise-location upload path exists.
 - Contract recheck and design-only constraints are in [ROUTE_SYNC_CONTRACT_RECHECK_20261121.md](./ROUTE_SYNC_CONTRACT_RECHECK_20261121.md) and [ROUTE_SYNC_DESIGN_20261110.md](./ROUTE_SYNC_DESIGN_20261110.md).
+- Read-only AppDeploy inspection of snapshot `1794247542845` confirms authenticated `DELETE /api/account` calls `deleteFitnessV2UserData`; its V2 helper is byte-for-byte identical to canonical repository source. Runtime deletion on a non-privileged QA account and empty-history readback remain untested. Live privacy and account-deletion pages match canonical repository files and do not disclose precise-route backup.
 - No route-sync implementation or cloud upload claim is made.
 
 ## 9. Release decision
