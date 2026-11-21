@@ -99,7 +99,7 @@ Required physical P0 remains NOT RUN:
 
 - Health PRs #282, #301, #304 and #305 remain merged. The canonical Health Connect allowlist remains five permissions: READ_STEPS, READ_EXERCISE, WRITE_EXERCISE, READ_DISTANCE and READ_ACTIVE_CALORIES_BURNED. No Heart Rate or other additional permission was added.
 - Health activity-session reconciliation is source/provenance metadata, not proof of physical exercise or GPS attestation.
-- `ActivityEvidenceAnomalyPolicy.assessSegment()` remains tested but unwired in the live ActivityTrackingService. Do not claim complete anti-cheat or GPS reward eligibility.
+- `ActivityEvidenceAnomalyPolicy.assessSegment()` remains tested but unwired. A source review found its per-fix 3 m minimum overlaps with the live multi-fix accumulator and could discard valid short updates if stacked as a second gate. Keep `GpsFixGate` as admission and `GpsDistanceAccumulator` as the sole metric-credit path until a unified policy is designed. See [ANTI_CHEAT_RECONCILIATION_20261121.md](./ANTI_CHEAT_RECONCILIATION_20261121.md). Do not claim complete anti-cheat or GPS reward eligibility.
 - Competition PR #269 is merged; current verified backend metric remains `strength_volume_kg_reps`. GPS reward eligibility remains false; no THF payouts are authorized.
 
 ## 8. Separate route-sync gap
