@@ -16,7 +16,7 @@ PR [#303](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/p
 
 - Branch: `agent/codex/gps-activity-rebased-20261119-r1`.
 - Exact tested application/source SHA: `ff082baf9a579766d4babab96c79480d68e2aa9a`.
-- Current compare to canonical: 19 ahead / 4 behind; 15 changed files; mergeable at last PR readback.
+- At application SHA `ff082baf9a579766d4babab96c79480d68e2aa9a`, the source/test comparison was 19 ahead / 4 behind across 15 application/test files. After adding and refreshing both candidate checkpoint documents, the final PR branch comparison is 23 ahead / 4 behind with 17 changed files; the four behind commits are canonical documentation/checkpoint changes and do not overlap the 15 application/test paths.
 - The four behind commits are canonical checkpoint/documentation changes and do not overlap the 15 GPS application/test paths.
 - The candidate still excludes `app.js`, `index.html`, `MainActivity`, Manifest, Health, anti-cheat, exercise catalog, release/version, workflow, signing and Play files.
 
