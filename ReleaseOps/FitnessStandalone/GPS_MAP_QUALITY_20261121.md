@@ -45,8 +45,8 @@ PR [#284](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/p
 
 After #303 merged:
 - #284 native provider/service/presentation/test changes are superseded and must not be merged.
-- Remaining #284 UI changes touch app.js, index.html and MainActivity (location status/pause, Android Location Settings bridge, accuracy-circle gating and User-Agent). These overlap #93/#216/#224 ownership.
-- The existing Leaflet/tile stack is already canonical; no standalone map-tile patch remains.
+- The only unique remaining behavior is the `openLocationSettings()` JS bridge/button. Canonical app.js already has truthful `gpsFixState`, paused status, accepted accuracy and accuracy-circle gating; Leaflet OSM/OpenTopoMap/EOX layers; tile `keepBuffer`/`updateWhenIdle`; and one-second local presentation refresh. Canonical MainActivity already appends `TopHeroFit/${BuildConfig.VERSION_NAME}` to the WebView User-Agent, so #284's custom contact-string UA is unnecessary. `WebSettings.LOAD_DEFAULT` is not a persistent offline tile cache; no offline tile-cache guarantee is established.
+- The remaining settings button touches app.js, index.html and MainActivity and overlaps #93's MainActivity/Health bridge lease and #216/#224 app.js leases. Keep #284 Draft; extract only that bridge/button after the shared leases are reconciled and exact-head CI passes.
 - Keep #284 Draft. Any retained UI change must be extracted under an explicit shared-file lease and pass exact-head CI.
 
 ## Display-only route smoother PR #248
