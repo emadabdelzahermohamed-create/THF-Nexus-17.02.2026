@@ -251,6 +251,7 @@ class HealthConnectRepository(private val context: Context) {
                 endTime = session.endTime,
                 observedAt = entry.evidence.observedAtEpochMillis?.let(Instant::ofEpochMilli),
                 deviceType = entry.evidence.deviceType,
+                recordingMethod = entry.evidence.recordingMethod,
                 verifiedForRewards = entry.evidence.verifiedForRewards,
                 lastModifiedTime = entry.evidence.lastModifiedTime,
                 value = entry,
