@@ -277,7 +277,7 @@
     "competition_backend": "PR #269 merged; provisional strength_volume_kg_reps only. No independently verified GPS activity leaderboard; rewardEligible=false; no THF payouts authorized.",
     "gps_accuracy": "PR #303 merged at b097d6ef0025d615c261ee42e8d2246533224e70 after exact-head run 44929317705 on source 26e90573ddda077ca2665ebdccd5600cc9316dd7. Product 77, source 35, backend 29, Android 335; artifact 14715989999 ZIP SHA-256 d081932610a732a35df9e5eb37e641938566fe1cd15744760ae195f486a2268e. APK/AAB are unsigned QA validation only. Physical P0 remains BLOCKED_NOT_RUN.",
     "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED. Existing Android/AppDeploy/Python authenticated sync remains workout/set metadata only; no route endpoint/table/upload. Finished routes remain WebView localStorage; one-second UI refresh is local. Read-only AppDeploy snapshot thf-fitness-pulse-ul26f1 version 1794247542845 is READY; backend/index.ts lines 354-361 calls deleteFitnessV2UserData under requireAuth and combines its done flag; live helper is byte-identical to canonical repository source. No activity-routes endpoint exists. Privacy/account-deletion pages match canonical repository but do not disclose precise-route backup. Runtime non-privileged account deletion and empty-history readback remain untested. No route upload.",
-    "anti_cheat": "ActivityEvidenceAnomalyPolicy.assessSegment() remains tested but unwired in ActivityTrackingService. GPS filtering is not full anti-cheat or cryptographic location attestation. No physical provenance PASS or GPS reward eligibility is claimed.",
+    "anti_cheat": "ActivityEvidenceAnomalyPolicy.assessSegment() remains tested but unwired. Review found its per-fix 3m minimum and sport thresholds overlap/differ from the live GpsFixGate + GpsDistanceAccumulator path; stacking it as a second metric gate risks undercounting valid short updates. Keep GpsFixGate as admission and GpsDistanceAccumulator as the sole metric-credit path until a unified policy is designed. See ANTI_CHEAT_RECONCILIATION_20261121.md. This is not full anti-cheat or location attestation; GPS reward eligibility remains false.",
     "signing_prerequisites": "Owner Google Play/API write permission and GCP Secret Manager signing-key access remain NOT_VERIFIED. Next versionCode 51020 remains UNALLOCATED. No new signed AAB or Play write.",
     "pr_ownership": "Canonical application merge b097d6ef0025d615c261ee42e8d2246533224e70 (tested source tree 26e90573ddda077ca2665ebdccd5600cc9316dd7). #303 merged after exact-head CI 44929317705. #284 remains Draft, head 274155eafdfff381009ef5814a621f32b225f1a8, 19 ahead / 80 behind, no current exact-head CI; its native GPS hunks are superseded by #303 and remaining UI hunks overlap #93/#216/#224. #93/#216/#224/#248 remain Draft; catalog/program/motion PRs remain diverged under shared-file leases."
   },
@@ -2357,7 +2357,8 @@
     "exact_gps_pr": 303,
     "exact_gps_ci_run": 44929317705,
     "latest_play_probe_run": 43739661313,
-    "latest_play_probe_attempt": 6
+    "latest_play_probe_attempt": 6,
+    "anti_cheat": "ReleaseOps/FitnessStandalone/ANTI_CHEAT_RECONCILIATION_20261121.md"
   },
   "gps_validation_candidate": {
     "pr_number": 297,
@@ -3236,7 +3237,8 @@
     "exact_gps_pr": 303,
     "exact_gps_ci_run": 44929317705,
     "latest_play_probe_run": 43739661313,
-    "latest_play_probe_attempt": 6
+    "latest_play_probe_attempt": 6,
+    "anti_cheat": "ReleaseOps/FitnessStandalone/ANTI_CHEAT_RECONCILIATION_20261121.md"
   },
   "current_prs_20261119": {
     "canonical_compare_base": "e28994ea76e67e0bed6eef3860f995b27388a002",
@@ -3614,5 +3616,14 @@
       "runtime_deletion_qa": false,
       "empty_history_readback": false
     }
+  },
+  "latest_anti_cheat_reconciliation_20261121": {
+    "path": "ReleaseOps/FitnessStandalone/ANTI_CHEAT_RECONCILIATION_20261121.md",
+    "status": "DESIGN_RECONCILIATION_ONLY_NO_CODE_CHANGE",
+    "policy": "ActivityEvidenceAnomalyPolicy.assessSegment remains tested but unwired",
+    "reason": "Per-fix 3m minimum overlaps the live multi-fix GpsDistanceAccumulator; stacking it as a second gate risks discarding valid short movement updates and double filtering.",
+    "current_metric_path": "GpsFixGate admission -> GpsDistanceAccumulator multi-fix credit -> ActivityTrackingService totals",
+    "gps_rewards": "DISABLED; rewardEligible=false",
+    "next_gate": "Unified decision policy, deterministic short-fix/multi-fix/provider-switch tests and physical stationary/outdoor calibration"
   }
 }
