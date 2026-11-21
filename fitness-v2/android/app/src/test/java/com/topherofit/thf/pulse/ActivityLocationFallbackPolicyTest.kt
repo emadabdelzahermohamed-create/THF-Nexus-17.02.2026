@@ -142,6 +142,59 @@ class ActivityLocationFallbackPolicyTest {
     }
 
     @Test
+    fun legacyProviderCallbacksMustMatchTheCurrentProviderAndRegistrationGeneration() {
+        assertTrue(
+            ActivityLocationFallbackPolicy.shouldAcceptLegacyProviderCallback(
+                expectedProvider = ActivityLocationFallbackPolicy.LegacyProvider.GPS,
+                callbackProvider = "gps",
+                registrationGenerationMatches = true,
+            ),
+        )
+        assertFalse(
+            ActivityLocationFallbackPolicy.shouldAcceptLegacyProviderCallback(
+                expectedProvider = ActivityLocationFallbackPolicy.LegacyProvider.GPS,
+                callbackProvider = "network",
+                registrationGenerationMatches = true,
+            ),
+        )
+        assertTrue(
+            ActivityLocationFallbackPolicy.shouldAcceptLegacyProviderCallback(
+                expectedProvider = ActivityLocationFallbackPolicy.LegacyProvider.NETWORK,
+                callbackProvider = "NETWORK",
+                registrationGenerationMatches = true,
+            ),
+        )
+        assertFalse(
+            ActivityLocationFallbackPolicy.shouldAcceptLegacyProviderCallback(
+                expectedProvider = ActivityLocationFallbackPolicy.LegacyProvider.NETWORK,
+                callbackProvider = "gps",
+                registrationGenerationMatches = true,
+            ),
+        )
+        assertFalse(
+            ActivityLocationFallbackPolicy.shouldAcceptLegacyProviderCallback(
+                expectedProvider = ActivityLocationFallbackPolicy.LegacyProvider.NETWORK,
+                callbackProvider = "network",
+                registrationGenerationMatches = false,
+            ),
+        )
+        assertFalse(
+            ActivityLocationFallbackPolicy.shouldAcceptLegacyProviderCallback(
+                expectedProvider = null,
+                callbackProvider = "network",
+                registrationGenerationMatches = true,
+            ),
+        )
+        assertFalse(
+            ActivityLocationFallbackPolicy.shouldAcceptLegacyProviderCallback(
+                expectedProvider = ActivityLocationFallbackPolicy.LegacyProvider.NETWORK,
+                callbackProvider = "fused",
+                registrationGenerationMatches = true,
+            ),
+        )
+    }
+
+    @Test
     fun approximateOnlyPermissionUsesNetworkEvenWhenGpsIsEnabled() {
         assertEquals(
             ActivityLocationFallbackPolicy.LegacyProvider.NETWORK,
