@@ -60,7 +60,7 @@ QA identity is `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.
 [PR #284](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/284) remains open Draft.
 
 - Head: `274155eafdfff381009ef5814a621f32b225f1a8`.
-- Canonical comparison after #303 merge: 19 ahead / 80 behind; 13 changed files; diverged; no current-head CI.
+- Canonical comparison after #303 merge: 19 ahead / 94 behind; 13 changed files; diverged; no current-head CI.
 - Historical run 42694452852 passed only on `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; ZIP SHA-256 `ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c`.
 - Historical run 42694199295 failed because the truncated MainActivity omitted `motionSnapshot`; no artifact was produced. Current #284 MainActivity is 1,146 lines and the symbol is present, but that is not CI or physical evidence.
 - #284's native provider/service/presentation/test hunks are superseded by merged #303. Its remaining UI changes touch app.js, index.html and MainActivity and overlap shared-file leases (#93, #216, #224). The canonical Leaflet/OSM/OpenTopoMap/EOX stack is already present; no isolated map-tile change remains.
