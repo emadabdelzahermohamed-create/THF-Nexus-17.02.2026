@@ -41,7 +41,7 @@ Canonical map stack:
 
 No Google Maps Rx, Maps SDK, billing, API key or paid map provider is required for this stack.
 
-PR [#284](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/284) remains Draft, open and unmerged. Its head `274155eafdfff381009ef5814a621f32b225f1a8` is 19 commits ahead / 80 behind current canonical, 13 files changed, and no exact-head CI exists. The historical PASS 42694452852 applies only to SHA `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; the historical failure 42694199295 was the truncated MainActivity/missing `motionSnapshot` source-contract failure.
+PR [#284](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/284) remains Draft, open and unmerged. Its head `274155eafdfff381009ef5814a621f32b225f1a8` is 19 commits ahead / 94 behind current canonical, 13 files changed, and no exact-head CI exists. The historical PASS 42694452852 applies only to SHA `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; the historical failure 42694199295 was the truncated MainActivity/missing `motionSnapshot` source-contract failure.
 
 After #303 merged:
 - #284 native provider/service/presentation/test changes are superseded and must not be merged.
