@@ -99,7 +99,8 @@ internal object HealthExerciseSessionReconciliationPolicy {
                     !HealthSourceTrustPolicy.isApprovedHealthConnectProvider(candidate.sourcePackage) ->
                     "UNTRUSTED_SWIMMING_PROVIDER"
                 candidate.activityKind.isSwimming() &&
-                    candidate.deviceType !in setOf(Device.TYPE_WATCH, Device.TYPE_FITNESS_BAND) ->
+                    candidate.deviceType != Device.TYPE_WATCH &&
+                    candidate.deviceType != Device.TYPE_FITNESS_BAND ->
                     "INCOMPATIBLE_SWIMMING_DEVICE"
                 candidate.activityKind.isSwimming() &&
                     candidate.recordingMethod != Metadata.RECORDING_METHOD_ACTIVELY_RECORDED &&
