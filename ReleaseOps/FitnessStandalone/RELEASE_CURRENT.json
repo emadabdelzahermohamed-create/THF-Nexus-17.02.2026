@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-22T17:56:05Z",
+  "observed_at": "2026-11-22T18:05:37Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -315,13 +315,13 @@
     "maps_native_sdk_key": "NOT_REQUIRED_FOR_CURRENT_OSM_LEAFLET_STACK; do not add Google Maps Rx, Maps SDK billing or a Maps key. Google directions remains an optional external handoff.",
     "listing_truthfulness": "Fresh independent read-only Google Play readback 2026-11-22T17:56:05Z: Internal 51019 Completed; Alpha 51007 Draft; Production not listed/not verified. Listing text is unchanged and still describes GPS sessions, background notification controls, offline-ready library and Arabic/English voice cues. No listing edit; physical P0 and policy/privacy remain open.",
     "competition_backend": "PR #269 merged; provisional strength_volume_kg_reps only. No independently verified GPS activity leaderboard; rewardEligible=false; no THF payouts authorized.",
-    "gps_accuracy": "PR #303 merged at b097d6ef0025d615c261ee42e8d2246533224e70. PR #307 is rebased onto current canonical at 45b27cc6a04b48931291e821efc85e76569965fe with Fused callback retained during framework fallback; exact-head CI run 45052702946 is in progress. Physical P0 remains BLOCKED_NOT_RUN; no GPS accuracy or route PASS claimed.",
+    "gps_accuracy": "PR #303 remains canonical. PR #307 head 45b27cc6a04b48931291e821efc85e76569965fe is rebased onto tested base 826fc5b3df4d96e647246289e9c2cc604a0ed5bf and passes exact-head CI run 45052702946 (Product 81, source-contract 37, backend 29, Android 342; lint 0 errors). Artifact 14766143584 ZIP SHA-256 e7b8d49d38ab6f1389488396a2c3ba33819c0fb93122994d7ac0ce63543a18a3; unsigned validation AAB SHA-256 74541210b5ed7775aad70c20948468e57da22e169906f237303fffad6780d6cc. Fused callback now remains subscribed during framework fallback; lifecycle teardown still invalidates it. PR remains Draft/unmerged pending physical P0. No GPS accuracy or route PASS claimed.",
     "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED. Existing Android/AppDeploy/Python authenticated sync remains workout/set metadata only; no route endpoint/table/upload. Finished routes remain WebView localStorage; one-second UI refresh is local. Read-only AppDeploy snapshot thf-fitness-pulse-ul26f1 version 1794247542845 is READY; backend/index.ts lines 354-361 calls deleteFitnessV2UserData under requireAuth and combines its done flag; live helper is byte-identical to canonical repository source. No activity-routes endpoint exists. Privacy/account-deletion pages match canonical repository but do not disclose precise-route backup. Runtime non-privileged account deletion and empty-history readback remain untested. No route upload.",
     "anti_cheat": "ActivityEvidenceAnomalyPolicy.assessSegment() remains tested but unwired. Review found its per-fix 3m minimum and sport thresholds overlap/differ from the live GpsFixGate + GpsDistanceAccumulator path; stacking it as a second metric gate risks undercounting valid short updates. Keep GpsFixGate as admission and GpsDistanceAccumulator as the sole metric-credit path until a unified policy is designed. See ANTI_CHEAT_RECONCILIATION_20261121.md. This is not full anti-cheat or location attestation; GPS reward eligibility remains false.",
     "signing_prerequisites": "Owner Google Play/API write permission and GCP Secret Manager signing-key access remain NOT_VERIFIED. Next versionCode 51020 remains UNALLOCATED. No new signed AAB or Play upload.",
     "pr_ownership": "Canonical application merge b097d6ef0025d615c261ee42e8d2246533224e70 (tested source tree 26e90573ddda077ca2665ebdccd5600cc9316dd7). #303 merged after exact-head CI 44929317705. #284 remains Draft, head 274155eafdfff381009ef5814a621f32b225f1a8, 19 ahead / 80 behind, no current exact-head CI; its native GPS hunks are superseded by #303 and remaining UI hunks overlap #93/#216/#224. #93/#216/#224/#248 remain Draft; catalog/program/motion PRs remain diverged under shared-file leases."
   },
-  "next_action": "Wait for exact-head CI on GPS PR #307 commit 45b27cc6a04b48931291e821efc85e76569965fe. Keep Draft until CI and physical P0 pass. Preserve any owner session when the handset reconnects; then run stationary-drift, measured-route, permission-downgrade, background/screen-off, notification-action and process-death tests. Afterward reconcile Anti-cheat with the single GPS distance-credit path. Keep route sync design-only with explicit consent, retention and deletion contracts. Do not allocate 51020, sign or upload until owner Play/API and signing-key prerequisites, exact-source CI, physical P0 and policy/privacy gates pass.",
+  "next_action": "PR #307 exact-head CI and artifact verification are complete. Keep it Draft/unmerged until physical P0 on an authorized handset: stationary drift, measured outdoor routes, permission downgrade, first-fix accuracy/latency, screen-off/background continuity, notification controls and process-death restore. The candidate AAB is unsigned QA 51019 only. Do not allocate 51020, sign or upload until owner Play/API and GCP signing-key prerequisites, physical P0 and policy/privacy gates pass. Then reconcile Anti-cheat with the single GPS distance-credit path; route sync remains design-only.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -1604,12 +1604,16 @@
       "state": "open_draft",
       "branch": "agent/codex/gps-fused-fallback-arbitration-20261122-r1",
       "head_sha": "45b27cc6a04b48931291e821efc85e76569965fe",
-      "base_sha": "826fc5b3df4d96e647246289e9c2cc604a0ed5bf",
+      "tested_base_sha": "826fc5b3df4d96e647246289e9c2cc604a0ed5bf",
+      "comparison_snapshot_base_sha": "2e6f2ee5132490917fafe7bfe99d4ded0f0170c7",
       "ahead": 1,
-      "behind": 0,
+      "behind": 1,
       "exact_head_ci_run": 45052702946,
-      "exact_head_ci_status": "IN_PROGRESS",
-      "source_fix": "Keep Fused subscribed during framework fallback; add source-contract regression for lifecycle invalidation",
+      "exact_head_ci_status": "PASS",
+      "artifact_id": 14766143584,
+      "artifact_zip_sha256": "e7b8d49d38ab6f1389488396a2c3ba33819c0fb93122994d7ac0ce63543a18a3",
+      "unsigned_aab_sha256": "74541210b5ed7775aad70c20948468e57da22e169906f237303fffad6780d6cc",
+      "source_fix": "Fused callback remains subscribed during framework fallback; lifecycle invalidation remains on unregister; source-contract regression added",
       "physical_p0": "BLOCKED_NOT_RUN"
     },
     "gps_284": {
@@ -3681,5 +3685,55 @@
     "version_name": "5.0.0-v2-alpha19-debug",
     "signature": "UNSIGNED_VALIDATION_ONLY",
     "play_upload": false
+  },
+  "gps_candidate_validation": {
+    "pr_number": 307,
+    "state": "OPEN_DRAFT_NOT_MERGED",
+    "branch": "agent/codex/gps-fused-fallback-arbitration-20261122-r1",
+    "source_sha": "45b27cc6a04b48931291e821efc85e76569965fe",
+    "tested_base_sha": "826fc5b3df4d96e647246289e9c2cc604a0ed5bf",
+    "current_canonical_comparison_snapshot": "2e6f2ee5132490917fafe7bfe99d4ded0f0170c7",
+    "ahead": 1,
+    "behind": 1,
+    "behind_delta": "one ReleaseOps-only canonical commit; no app-file overlap",
+    "workflow_run": 45052702946,
+    "workflow_url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45052702946",
+    "workflow_conclusion": "success",
+    "exact_head": true,
+    "product_tests": {
+      "passed": 81,
+      "failed": 0
+    },
+    "source_contract_tests": {
+      "passed": 37,
+      "failed": 0
+    },
+    "backend_tests": {
+      "passed": 29,
+      "failed": 0
+    },
+    "android_unit_tests": {
+      "passed": 342,
+      "failed": 0,
+      "ignored": 0
+    },
+    "android_api_36": "PASS",
+    "gradle": "BUILD SUCCESSFUL in 2m42s",
+    "lint": {
+      "errors": 0,
+      "warnings": 11,
+      "hints": 1
+    },
+    "artifact_id": 14766143584,
+    "artifact_zip_sha256": "e7b8d49d38ab6f1389488396a2c3ba33819c0fb93122994d7ac0ce63543a18a3",
+    "artifact_download_sha256_verified": true,
+    "qa_apk_sha256": "dc1bf863e2a88100de6f6a649672d4f3a0edfad2de547902bc534074fdcbb041",
+    "unsigned_aab_sha256": "74541210b5ed7775aad70c20948468e57da22e169906f237303fffad6780d6cc",
+    "qa_package": "com.topherofit.thf.pulse.qa",
+    "version_code": 51019,
+    "version_name": "5.0.0-v2-alpha19-debug",
+    "signature": "UNSIGNED_VALIDATION_ONLY",
+    "play_upload": false,
+    "physical_p0": "BLOCKED_NOT_RUN"
   }
 }
