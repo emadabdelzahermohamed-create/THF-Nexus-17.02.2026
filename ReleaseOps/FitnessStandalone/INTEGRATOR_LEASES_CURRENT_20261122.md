@@ -1,0 +1,60 @@
+# TopHeroFit — active integration ownership (2026-11-22)
+
+Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`.
+Canonical branch: `agent/codex/fitness-recovery/20261023`.
+Canonical HEAD: `0b2b52d204fc94944a077a383db7c5cb785c9147`.
+
+This registry supersedes the 2026-11-21 snapshot. Shared files are not assumed free. Only disjoint, exact-head-tested handoffs may integrate.
+
+## Canonical Health lane
+
+| PR | State | Scope / disposition |
+|---|---|---|
+| #282 | Merged | Metric truthfulness and missing-vs-zero distinction. |
+| #301 | Merged | Metric value/interval anomaly rejection. |
+| #304 | Merged | Cross-source exact metric mirror and overlapping interval reconciliation. |
+| #305 | Merged | Walking/running/cycling session mirror and conflicting-sport reconciliation. |
+| #306 | Merged | Compatible trusted wearable swimming session reconciliation. |
+| #308 | Merged | Same-provider/type/record-ID/version/time payload conflict quarantine. |
+
+PR #308 owns the canonical `HealthRecordDeduplicationPolicy.kt`, `HealthConnectRepository.kt` conflict wiring, its focused Kotlin tests and one product/source-contract test. It changed exactly four files and passed exact-head workflow 45028206758 on source SHA `44a84fa6a5a9abe47e89ac13cb8eef026864436a` before merge. No open PR in the current inventory changes those same four files.
+
+Canonical Health Connect permissions remain exactly five: READ_STEPS, READ_EXERCISE, WRITE_EXERCISE, READ_DISTANCE and READ_ACTIVE_CALORIES_BURNED. Heart rate is not requested.
+
+## Active Health / GPS ownership
+
+| PR | Current comparison to canonical | Owner boundary / disposition |
+|---|---:|---|
+| #93 | 2 ahead / 404 behind | Health Services bridge, manifest, MainActivity and Health rationale strings. Draft. Manifest has 19 Health permissions vs canonical 5; remove 14 unapproved scopes and rebase. |
+| #137 | 3 ahead / 259 behind | Permission reconciliation document and test only. Does not change manifest; rebase before integration. |
+| #307 | 12 ahead / 0 behind | Native GPS source arbitration: ActivityLocationFallbackPolicy, ActivityTrackingService and tests. Draft. Exact application SHA `ff37ab739b4372d2512cec26e4d4bff6353db57b` CI PASS; physical P0 pending. |
+| #284 | 19 ahead / 102 behind | Legacy GPS/provider fallback and shared UI. Draft/stale; native hunks superseded by #303, UI conflicts with #93/#216/#224. Do not merge. |
+| #248 | 4 ahead / 239 behind | Standalone GPS route smoother helper/test only; no production call site. Do not add a duplicate display smoother. |
+
+Health lane must not edit GPS/activity-tracking native files, MainActivity, manifest or Health Services bridge while their owners retain these leases.
+
+## Catalog and bilingual guidance
+
+| PR | Current comparison | Files / owner boundary |
+|---|---:|---|
+| #160 | 53 ahead / 259 behind | exercises.js/json, catalog manifest, build_catalog and bilingual quality tests. |
+| #213 | 190 ahead / 259 behind | programs.js/json, program builder, app.js, and inherited catalog/motion files; highly stacked/diverged. |
+| #224 | 153 ahead / 259 behind | active-workout demo module plus app.js, index.html, styles and motion/catalog dependencies. |
+
+These PRs share catalog JSON/JS, manifests, builders, app.js and motion assets. Rebase and isolate one compatible change at a time; do not merge whole divergent stacks.
+
+## Release and privacy ownership
+
+ReleaseOps, version allocation, workflows, signing, Google Play listing/tracks and uploads remain canonical integrator-only. Play Health declaration/privacy, Data Safety and physical grant/revocation checks remain hard gates. No versionCode 51020 allocation is authorized.
+
+## Integration protocol
+
+1. Fetch the current canonical branch tip and current PR head.
+2. Compare exact changed paths with active leases; reject shared-file overlap.
+3. Rebase/isolate onto current canonical without overwriting another owner.
+4. Run exact-head Product, source-contract, backend and Android API 36 unit/lint/build validation.
+5. Record artifact identity and hashes; distinguish unsigned validation AAB from signed release.
+6. Merge only the tested exact head with expected-head protection.
+7. Keep physical P0, Health Connect grant/revocation, wearable eligibility, Play declaration/privacy, signing and publication as separate acceptance gates.
+
+No paid infrastructure, unrelated project or unverified sensor/Health/route evidence is authorized.
