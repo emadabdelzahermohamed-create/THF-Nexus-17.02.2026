@@ -58,3 +58,24 @@ ReleaseOps, version allocation, workflows, signing, Google Play listing/tracks a
 7. Keep physical P0, Health Connect grant/revocation, wearable eligibility, Play declaration/privacy, signing and publication as separate acceptance gates.
 
 No paid infrastructure, unrelated project or unverified sensor/Health/route evidence is authorized.
+
+
+## Late GPS / release refresh — 2026-11-22 18:05 UTC
+
+Comparison snapshot base: `6a5a9f470c4aa165733f86d958d7651f55e2aed7`.
+
+| PR | Current comparison | Updated disposition |
+|---|---:|---|
+| #307 | 1 ahead / 2 behind | Draft. Head `45b27cc6a04b48931291e821efc85e76569965fe`; exact-head CI 45052702946 PASS. Four GPS-only policy/service/test/source-contract files. Fused callback now remains subscribed during framework fallback; lifecycle teardown still invalidates it. Unsigned QA AAB only. Physical P0 blocks merge. |
+| #284 | 19 ahead / 110 behind | Draft/stale. Native GPS overlaps and is superseded by #303/#307; remaining app.js/index.html/MainActivity UI overlaps shared leases #93/#216/#224. Do not merge. |
+| #93 | 2 ahead / 413 behind | Draft. Manifest declares 19 Health permissions vs canonical 5; remove 14 unapproved scopes and rebase. Owns manifest/MainActivity/Health Services bridge. |
+| #137 | 3 ahead / 268 behind | Open; permission reconciliation document and test only. |
+| #248 | 4 ahead / 247 behind | Draft. Standalone route-smoother helper has no production call site; do not add a duplicate display smoother. |
+| #216 | 201 ahead / 268 behind | Draft. Active-workout resume policy plus app.js/index.html/styles; shared UI ownership with #213/#224. |
+| #160 | 53 ahead / 268 behind | Draft. Exercise catalog data, manifest and builder. |
+| #213 | 190 ahead / 268 behind | Draft. Program semantics/builders and shared app.js/catalog/motion assets; highly diverged. |
+| #224 | 153 ahead / 268 behind | Draft. Offline active-workout demos plus shared app.js/index.html/styles/motion/catalog assets. |
+
+#307's exact-head run and artifact are recorded in RECOVERY_CURRENT_20261122.md and RELEASE_CURRENT.json. The canonical branch has received ReleaseOps-only state/checkpoint commits after the tested base; the GPS application diff remains disjoint from those files. Do not rebase merely to rebuild unchanged AAB bytes. Before any merge, re-check current base/head and exact changed paths; physical P0 remains mandatory.
+
+Release writer remains canonical-integrator-only. Latest read-only Play readback (2026-11-22 17:56:05 UTC, run 43739661313 attempt 7): Internal 51019 Completed, Alpha 51007 Draft, Production not listed/not verified; no upload or commit. VersionCode 51020 remains unallocated. Owner API write access and signing-key access remain unverified.

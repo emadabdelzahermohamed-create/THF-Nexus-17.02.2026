@@ -113,3 +113,66 @@ Latest independently recorded Play readback is 2026-11-21:
 Play Health declaration/privacy reconciliation, Data Safety consistency, physical Health Connect grant/revocation, wearable validation, GPS physical P0, signing and owner/API prerequisites remain hard release gates. No listing, track, version, signing, upload or Production state was changed.
 
 No paid service or unrelated project was used.
+
+
+## Late integrator update — 2026-11-22 18:05 UTC
+
+The canonical ReleaseOps state was refreshed after a new read-only Play probe and a corrected GPS source-arbitration candidate.
+
+### Fresh Google Play readback
+
+The existing read-only probe was rerun at 2026-11-22 17:56:05 UTC (attempt 7):
+- Run [43739661313](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43739661313): SUCCESS.
+- Artifact 14766395949 ZIP SHA-256: `7230b2fa82b21671d9710db75663c4ade78ce4a768974cb8a374301393774bc5`.
+- Embedded JSON SHA-256: `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`; independently downloaded and rehashed.
+- Internal 51019: Completed.
+- Alpha 51007: Draft.
+- Production: not listed / not verified.
+- `uploadAttempted=false`; `commitAttempted=false`; listing and track state unchanged.
+- Contact email remains TopHeroFit@gmail.com. The descriptions still claim GPS sessions, background controls and an offline-ready library; the readback confirms text only, not physical behavior.
+
+### GPS PR #307 — corrected callback lifecycle
+
+PR #307 remains Draft/open and unmerged. The prior implementation invalidated and removed the Fused callback immediately after framework fallback registration, making the new Fused recovery branch unreachable. The integrator posted the source-level finding, then rebased the GPS-only handoff onto canonical base `826fc5b3df4d96e647246289e9c2cc604a0ed5bf` and corrected it.
+
+Current tested PR head: `45b27cc6a04b48931291e821efc85e76569965fe`.
+- Framework fallback registration now keeps the Fused callback subscribed.
+- Fused can retake source ownership only after the existing freshness and accuracy checks.
+- Pause/Stop/session replacement still invalidate the generation and remove the callback in `unregisterActivitySources()`.
+- Added a source-contract regression proving fallback registration does not tear down Fused and lifecycle teardown still does.
+- The PR contains only four GPS policy/service/test/source-contract files.
+
+Exact-head run [45052702946](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45052702946): SUCCESS.
+- Product 81/81.
+- Source-contract 37/37.
+- Backend 29/29.
+- Android unit 342/342; zero failures and zero ignored.
+- Android API 36, Kotlin/Gradle, APK/AAB validation: PASS.
+- Gradle BUILD SUCCESSFUL in 2m42s.
+- Lint: zero errors, 11 warnings, 1 hint.
+
+Artifact 14766143584 was independently downloaded and rehashed:
+- ZIP SHA-256: `e7b8d49d38ab6f1389488396a2c3ba33819c0fb93122994d7ac0ce63543a18a3`.
+- QA APK SHA-256: `dc1bf863e2a88100de6f6a649672d4f3a0edfad2de547902bc534074fdcbb041`.
+- Unsigned validation AAB SHA-256: `74541210b5ed7775aad70c20948468e57da22e169906f237303fffad6780d6cc`.
+- Identity: QA package `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.0.0-v2-alpha19-debug`.
+- This AAB is unsigned QA validation only, not a release, and was not uploaded.
+
+The tested PR base was `826fc5b3df4d96e647246289e9c2cc604a0ed5bf`. At the comparison snapshot against canonical tip `6a5a9f470c4aa165733f86d958d7651f55e2aed7`, the PR was 1 ahead / 2 behind; the two commits behind are ReleaseOps-only canonical updates, with no app-file overlap. The PR remains Draft. Physical P0 is still BLOCKED_NOT_RUN, so no GPS accuracy, route, phone or background-session PASS is claimed.
+
+### Current canonical Health validation
+
+PR #308 is merged at `0b2b52d204fc94944a077a383db7c5cb785c9147`; its tree SHA exactly matches tested source `44a84fa6a5a9abe47e89ac13cb8eef026864436a` (tree `86ae28f845f9ad37e866fe154177fbe0e95e54a9`). Exact-head run 45028206758 passed Product/source/backend and Android 339/339 tests. Artifact 14757185084 ZIP SHA-256 `8ad614141b2352315871229525f0dbfcf4acc116d08c1d4df34c298b84af4f19`; QA APK SHA-256 `04f7f1880d1e450e04242d9534fee927e38fe9f7d72b0465cec9234086890470`; unsigned AAB SHA-256 `6a03489b1f4e8b568d5413b055c3828f98485b4e8836d55654864e36e374b0ff`. Exactly five Health Connect permissions remain; no heart-rate permission was added.
+
+### Remaining release gates
+
+- Physical P0: blocked because Desktop Commander localhost is OFFLINE; last known device SM-A217F / Android 12, current session state unknown. No ADB, install, launch, force-stop or location-setting action was taken.
+- Owner Google Play/API write permission and GCP Secret Manager signing-key access: NOT_VERIFIED.
+- VersionCode 51020: UNALLOCATED.
+- No signed AAB for the new GPS candidate; no Play upload or Production promotion.
+- Anti-cheat `ActivityEvidenceAnomalyPolicy.assessSegment()` remains unwired. Keep `GpsFixGate` as admission and `GpsDistanceAccumulator` as the only metric-credit path until a unified policy is tested.
+- GPS rewards remain disabled; competition support remains limited to server-derived strength volume.
+- Finished route history remains WebView localStorage only. No authenticated route endpoint or precise-location upload exists; route sync remains design-only with explicit consent, retention, revocation and deletion gates.
+- Current map remains Leaflet with OSM/TopoMap/EOX raster layers. No Google Maps SDK, billing or key was added.
+
+No release version was allocated, no signing was performed, no Play listing/track was changed, no paid infrastructure was used and no unrelated project was touched.
