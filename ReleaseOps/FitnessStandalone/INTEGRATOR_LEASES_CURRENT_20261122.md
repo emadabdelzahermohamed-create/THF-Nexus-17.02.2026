@@ -2,7 +2,7 @@
 
 Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`.
 Canonical branch: `agent/codex/fitness-recovery/20261023`.
-Canonical application merge: `0b2b52d204fc94944a077a383db7c5cb785c9147`; subsequent commits in this checkpoint are documentation-only.
+Canonical application merge: `0b2b52d204fc94944a077a383db7c5cb785c9147`. The PR comparison snapshot below was measured against canonical tip `20a052fcab20310043e2663b3beac9c88a6675ad`; checkpoint commits after that snapshot are documentation-only.
 
 This registry supersedes the 2026-11-21 snapshot. Shared files are not assumed free. Only disjoint, exact-head-tested handoffs may integrate.
 
@@ -25,11 +25,11 @@ Canonical Health Connect permissions remain exactly five: READ_STEPS, READ_EXERC
 
 | PR | Current comparison to canonical | Owner boundary / disposition |
 |---|---:|---|
-| #93 | 2 ahead / 404 behind | Health Services bridge, manifest, MainActivity and Health rationale strings. Draft. Manifest has 19 Health permissions vs canonical 5; remove 14 unapproved scopes and rebase. |
-| #137 | 3 ahead / 259 behind | Permission reconciliation document and test only. Does not change manifest; rebase before integration. |
-| #307 | 12 ahead / 0 behind | Native GPS source arbitration: ActivityLocationFallbackPolicy, ActivityTrackingService and tests. Draft. Exact application SHA `ff37ab739b4372d2512cec26e4d4bff6353db57b` CI PASS; physical P0 pending. |
-| #284 | 19 ahead / 102 behind | Legacy GPS/provider fallback and shared UI. Draft/stale; native hunks superseded by #303, UI conflicts with #93/#216/#224. Do not merge. |
-| #248 | 4 ahead / 239 behind | Standalone GPS route smoother helper/test only; no production call site. Do not add a duplicate display smoother. |
+| #93 | 2 ahead / 409 behind | Health Services bridge, manifest, MainActivity and Health rationale strings. Draft. Manifest has 19 Health permissions vs canonical 5; remove 14 unapproved scopes and rebase. |
+| #137 | 3 ahead / 264 behind | Permission reconciliation document and test only. Does not change manifest; rebase before integration. |
+| #307 | 12 ahead / 5 behind | Native GPS source arbitration: ActivityLocationFallbackPolicy, ActivityTrackingService and tests. Draft. Exact application SHA `ff37ab739b4372d2512cec26e4d4bff6353db57b` CI PASS; physical P0 pending. |
+| #284 | 19 ahead / 106 behind | Legacy GPS/provider fallback and shared UI. Draft/stale; native hunks superseded by #303, UI conflicts with #93/#216/#224. Do not merge. |
+| #248 | 4 ahead / 243 behind | Standalone GPS route smoother helper/test only; no production call site. Do not add a duplicate display smoother. |
 
 Health lane must not edit GPS/activity-tracking native files, MainActivity, manifest or Health Services bridge while their owners retain these leases.
 
@@ -37,9 +37,9 @@ Health lane must not edit GPS/activity-tracking native files, MainActivity, mani
 
 | PR | Current comparison | Files / owner boundary |
 |---|---:|---|
-| #160 | 53 ahead / 259 behind | exercises.js/json, catalog manifest, build_catalog and bilingual quality tests. |
-| #213 | 190 ahead / 259 behind | programs.js/json, program builder, app.js, and inherited catalog/motion files; highly stacked/diverged. |
-| #224 | 153 ahead / 259 behind | active-workout demo module plus app.js, index.html, styles and motion/catalog dependencies. |
+| #160 | 53 ahead / 264 behind | exercises.js/json, catalog manifest, build_catalog and bilingual quality tests. |
+| #213 | 190 ahead / 264 behind | programs.js/json, program builder, app.js, and inherited catalog/motion files; highly stacked/diverged. |
+| #224 | 153 ahead / 264 behind | active-workout demo module plus app.js, index.html, styles and motion/catalog dependencies. |
 
 These PRs share catalog JSON/JS, manifests, builders, app.js and motion assets. Rebase and isolate one compatible change at a time; do not merge whole divergent stacks.
 
