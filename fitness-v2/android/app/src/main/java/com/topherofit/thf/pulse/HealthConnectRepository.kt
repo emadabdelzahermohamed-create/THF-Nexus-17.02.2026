@@ -431,7 +431,7 @@ class HealthConnectRepository(private val context: Context) {
                 current.title.orEmpty(),
                 current.notes.orEmpty(),
             )
-            else -> listOf(current::class.qualifiedName.orEmpty(), current.toString())
+            else -> listOf(current.javaClass.name, current.toString())
         }
         val provenanceFields = listOf(
             evidence.clientRecordId.orEmpty(),
