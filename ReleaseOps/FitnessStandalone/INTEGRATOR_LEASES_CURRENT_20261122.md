@@ -2,7 +2,7 @@
 
 Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`.
 Canonical branch: `agent/codex/fitness-recovery/20261023`.
-Canonical HEAD: `0b2b52d204fc94944a077a383db7c5cb785c9147`.
+Canonical application merge: `0b2b52d204fc94944a077a383db7c5cb785c9147`; subsequent commits in this checkpoint are documentation-only.
 
 This registry supersedes the 2026-11-21 snapshot. Shared files are not assumed free. Only disjoint, exact-head-tested handoffs may integrate.
 
