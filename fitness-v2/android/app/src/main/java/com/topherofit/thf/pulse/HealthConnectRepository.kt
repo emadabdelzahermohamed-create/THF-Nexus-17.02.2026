@@ -198,10 +198,16 @@ class HealthConnectRepository(private val context: Context) {
                     clientRecordVersion = entry.evidence.clientRecordVersion,
                     lastModifiedTime = entry.evidence.lastModifiedTime,
                     value = entry,
+                    payloadFingerprint = entry.rewardPayloadFingerprint(),
                 )
             },
         )
         val sourceSelectedEntries = deduplication.selected.map { it.value }
+        // A same-ID/version/time collision with conflicting reward payload or provenance is
+        // not resolved by read order. Preserve each source-labelled record, but exclude it.
+        val conflictingVersionEntries = deduplication.conflicting.map { version ->
+            version.value.withProvenanceFailure("CONFLICTING_RECORD_VERSION_PAYLOAD")
+        }
         // Provider record IDs deduplicate versions within a source. Reconcile exact mirrored
         // metric intervals across sources/record IDs, and fail closed on overlapping verified
         // intervals whose values cannot be safely apportioned. Preserve every source label in
@@ -274,7 +280,12 @@ class HealthConnectRepository(private val context: Context) {
                 rejection.value.withProvenanceFailure(rejection.reason)
         }
 
-        val reconciledEntries = reconciledByIndex.toSortedMap().values.toList()
+        val reconciledEntries = reconciledByIndex.toSortedMap().values.toList() +
+            conflictingVersionEntries.sortedWith(
+                compareBy<HealthRecordEntry> { it.evidence.canonicalKey }
+                    .thenBy { it.evidence.clientRecordVersion }
+                    .thenBy { it.evidence.lastModifiedTime },
+            )
         val verifiedEntries = reconciledEntries.filter { it.evidence.verifiedForRewards }
         val verifiedCount = verifiedEntries.size
         val excludedUnverifiedCount = entries.count { !it.evidence.verifiedForRewards }
@@ -386,6 +397,53 @@ class HealthConnectRepository(private val context: Context) {
             )
             else -> null
         }
+    }
+
+    /**
+     * Stable fingerprint of fields that affect reward aggregation, sport eligibility or
+     * provenance. Length-prefixing prevents delimiter ambiguity; this value is internal only.
+     */
+    private fun HealthRecordEntry.rewardPayloadFingerprint(): String {
+        val recordFields = when (val current = record) {
+            is StepsRecord -> listOf(
+                HealthRecordType.STEPS.stableId,
+                current.startTime.toString(),
+                current.endTime.toString(),
+                current.count.toString(),
+            )
+            is DistanceRecord -> listOf(
+                HealthRecordType.DISTANCE.stableId,
+                current.startTime.toString(),
+                current.endTime.toString(),
+                current.distance.inMeters.metricFingerprint(),
+            )
+            is ActiveCaloriesBurnedRecord -> listOf(
+                HealthRecordType.ACTIVE_CALORIES.stableId,
+                current.startTime.toString(),
+                current.endTime.toString(),
+                current.energy.inKilocalories.metricFingerprint(),
+            )
+            is ExerciseSessionRecord -> listOf(
+                HealthRecordType.EXERCISE_SESSION.stableId,
+                current.startTime.toString(),
+                current.endTime.toString(),
+                current.exerciseType.toString(),
+                current.title.orEmpty(),
+                current.notes.orEmpty(),
+            )
+            else -> listOf(current::class.qualifiedName.orEmpty(), current.toString())
+        }
+        val provenanceFields = listOf(
+            evidence.clientRecordId.orEmpty(),
+            evidence.recordingMethod.toString(),
+            evidence.deviceType?.toString().orEmpty(),
+            evidence.deviceManufacturer.orEmpty(),
+            evidence.deviceModel.orEmpty(),
+            evidence.integrityClass.name,
+            evidence.verifiedForRewards.toString(),
+            evidence.verificationReason,
+        )
+        return (recordFields + provenanceFields).joinToString(separator = "") { "${it.length}:$it" }
     }
 
     private fun Double.metricFingerprint(): String =
