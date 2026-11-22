@@ -15,11 +15,13 @@ class HealthRecordDeduplicationPolicyTest {
         modified: String,
         label: String,
         trusted: Boolean = true,
+        payloadFingerprint: String? = label,
     ) = HealthRecordVersion(
         stableKey = key,
         clientRecordVersion = version,
         lastModifiedTime = Instant.parse(modified),
         value = Sample(label, trusted),
+        payloadFingerprint = payloadFingerprint,
     )
 
     @Test
@@ -46,6 +48,62 @@ class HealthRecordDeduplicationPolicyTest {
         )
 
         assertEquals("later", result.selected.single().value.label)
+        assertEquals(1, result.duplicateCount)
+    }
+
+    @Test
+    fun equal_version_and_modified_time_with_conflicting_payloads_are_quarantined() {
+        val result = HealthRecordDeduplicationPolicy.selectLatest(
+            listOf(
+                candidate("provider:type:id", 4, "2026-11-01T10:00:00Z", "steps-100", payloadFingerprint = "steps=100"),
+                candidate("provider:type:id", 4, "2026-11-01T10:00:00Z", "steps-900", payloadFingerprint = "steps=900"),
+            ),
+        )
+
+        assertTrue(result.selected.isEmpty())
+        assertEquals(2, result.conflicting.size)
+        assertEquals(0, result.duplicateCount)
+    }
+
+    @Test
+    fun identical_latest_payloads_are_deduplicated_safely() {
+        val result = HealthRecordDeduplicationPolicy.selectLatest(
+            listOf(
+                candidate("provider:type:id", 4, "2026-11-01T10:00:00Z", "first", payloadFingerprint = "steps=100"),
+                candidate("provider:type:id", 4, "2026-11-01T10:00:00Z", "second", payloadFingerprint = "steps=100"),
+            ),
+        )
+
+        assertEquals(1, result.selected.size)
+        assertEquals(1, result.duplicateCount)
+        assertTrue(result.conflicting.isEmpty())
+    }
+
+    @Test
+    fun missing_payload_fingerprint_on_a_tied_revision_fails_closed() {
+        val result = HealthRecordDeduplicationPolicy.selectLatest(
+            listOf(
+                candidate("provider:type:id", 4, "2026-11-01T10:00:00Z", "first", payloadFingerprint = null),
+                candidate("provider:type:id", 4, "2026-11-01T10:00:00Z", "second", payloadFingerprint = null),
+            ),
+        )
+
+        assertTrue(result.selected.isEmpty())
+        assertEquals(2, result.conflicting.size)
+    }
+
+    @Test
+    fun conflicting_latest_revision_does_not_resurrect_an_older_version() {
+        val result = HealthRecordDeduplicationPolicy.selectLatest(
+            listOf(
+                candidate("provider:type:id", 3, "2026-11-01T09:00:00Z", "old", payloadFingerprint = "steps=50"),
+                candidate("provider:type:id", 4, "2026-11-01T10:00:00Z", "latest-a", payloadFingerprint = "steps=100"),
+                candidate("provider:type:id", 4, "2026-11-01T10:00:00Z", "latest-b", payloadFingerprint = "steps=900"),
+            ),
+        )
+
+        assertTrue(result.selected.isEmpty())
+        assertEquals(2, result.conflicting.size)
         assertEquals(1, result.duplicateCount)
     }
 
