@@ -3,7 +3,8 @@
 Observed: 2026-11-22 13:40 UTC.
 Repository: `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`.
 Canonical branch: `agent/codex/fitness-recovery/20261023`.
-Canonical HEAD after the Health merge: `0b2b52d204fc94944a077a383db7c5cb785c9147`.
+Canonical application merge: `0b2b52d204fc94944a077a383db7c5cb785c9147`.
+Canonical branch tip when the PR ownership comparison was refreshed: `20a052fcab20310043e2663b3beac9c88a6675ad` (the four commits after the application merge are checkpoint/ownership documentation only).
 
 ## 1. Canonical Health Connect change merged
 
@@ -59,9 +60,9 @@ Canonical manifest blob SHA remains `0969cdb2f18775f23e0870bf754612a04376895f`. 
 
 No heart-rate permission. Optional heart rate remains unavailable unless separately approved, granted and backed by actual data.
 
-PR [#93 — Health Services integration](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/93) remains Draft/open. Fresh current-canonical comparison: 2 ahead / 404 behind. Its manifest blob `a3b24f09e6b0c8a67b0fee3e7578317cfe979092` declares 19 Health permissions, 14 more than canonical: basal metabolic rate, blood glucose, blood pressure, body fat, heart rate, height, nutrition, oxygen saturation, resting heart rate, sleep, speed, total calories, VO2 max and weight. It owns the manifest, MainActivity and Health Services bridge; no concurrent edit was made. A fresh scope/rebase blocker comment was posted: [PR #93 comment](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/93#issuecomment-7079935393).
+PR [#93 — Health Services integration](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/93) remains Draft/open. Fresh current-canonical comparison: 2 ahead / 409 behind. Its manifest blob `a3b24f09e6b0c8a67b0fee3e7578317cfe979092` declares 19 Health permissions, 14 more than canonical: basal metabolic rate, blood glucose, blood pressure, body fat, heart rate, height, nutrition, oxygen saturation, resting heart rate, sleep, speed, total calories, VO2 max and weight. It owns the manifest, MainActivity and Health Services bridge; no concurrent edit was made. A fresh scope/rebase blocker comment was posted: [PR #93 comment](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/93#issuecomment-7079935393).
 
-PR [#137 — permission minimization tests](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/137) remains open, 3 ahead / 259 behind; it changes only a reconciliation document and test, not the manifest. It is not a substitute for correcting PR #93.
+PR [#137 — permission minimization tests](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/137) remains open, 3 ahead / 264 behind; it changes only a reconciliation document and test, not the manifest. It is not a substitute for correcting PR #93.
 
 Health changes already canonical:
 - #282 metric truthfulness.
@@ -80,12 +81,12 @@ Latest canonical GPS checkpoint remains [GPS_MAP_QUALITY_20261121.md](./GPS_MAP_
 PR [#307 — Fused/framework source arbitration](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/307) is still OPEN, Draft and unmerged:
 - Branch head: `28d2fdee453a387ffe01a9b040737ca6f95fc3cd`.
 - Application source SHA tested: `ff37ab739b4372d2512cec26e4d4bff6353db57b`; later branch commits are checkpoint documentation only.
-- Current canonical comparison: 12 ahead / 0 behind.
+- Current canonical comparison: 12 ahead / 5 behind.
 - Exact-head candidate run: [44995245447](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/44995245447) — SUCCESS; Product 77/77, source-contract 36/36, backend 29/29, Android 338/338, API 36, lint, APK and unsigned AAB validation passed.
 - PR #307 owns `ActivityLocationFallbackPolicy.kt`, `ActivityTrackingService.kt`, its native tests and source-contract test. The Health lane did not edit these files.
 - Its November 22 recovery/GPS checkpoint files are candidate-branch documentation, not canonical files.
 
-PR #284 remains stale/Draft: 19 ahead / 102 behind, overlapping native work superseded by #303 and shared UI ownership. PR #248 remains Draft, 4 ahead / 239 behind; its standalone route-smoother helper has no production call site. Neither is approved for merge.
+PR #284 remains stale/Draft: 19 ahead / 106 behind, overlapping native work superseded by #303 and shared UI ownership. PR #248 remains Draft, 4 ahead / 243 behind; its standalone route-smoother helper has no production call site. Neither is approved for merge.
 
 Physical P0 remains BLOCKED_NOT_RUN. Latest recorded Desktop Commander localhost is OFFLINE; last known handset is Samsung SM-A217F / Android 12, current app/session state unknown. No ADB, install, launch, notification action, location-setting change or Health record read was attempted. No physical GPS, route, wearable or Health acceptance is claimed.
 
@@ -94,9 +95,9 @@ The tested `ActivityEvidenceAnomalyPolicy.assessSegment()` remains unwired in th
 ## 4. Exercise catalog, programs and offline demonstrations
 
 Current open handoffs remain diverged and own shared files:
-- #160 bilingual catalog: 53 ahead / 259 behind; owns exercises.js/json, catalog manifest and builder.
-- #213 timed RIR/program semantics: 190 ahead / 259 behind; touches programs, builders, app.js and shared motion/catalog assets.
-- #224 active-workout offline demos: 153 ahead / 259 behind; owns active-workout demo module and shared app.js/index/motion assets.
+- #160 bilingual catalog: 53 ahead / 264 behind; owns exercises.js/json, catalog manifest and builder.
+- #213 timed RIR/program semantics: 190 ahead / 264 behind; touches programs, builders, app.js and shared motion/catalog assets.
+- #224 active-workout offline demos: 153 ahead / 264 behind; owns active-workout demo module and shared app.js/index/motion assets.
 
 Do not merge these branches wholesale. Rebase and isolate one semantically reviewed change at a time. The Health PR #308 changed no catalog, program, offline-media, voice or accessibility UI files.
 
