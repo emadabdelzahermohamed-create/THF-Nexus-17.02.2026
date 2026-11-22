@@ -17,7 +17,7 @@ This registry supersedes the 2026-11-21 snapshot. Shared files are not assumed f
 | #306 | Merged | Compatible trusted wearable swimming session reconciliation. |
 | #308 | Merged | Same-provider/type/record-ID/version/time payload conflict quarantine. |
 
-PR #308 owns the canonical `HealthRecordDeduplicationPolicy.kt`, `HealthConnectRepository.kt` conflict wiring, its focused Kotlin tests and one product/source-contract test. It changed exactly four files and passed exact-head workflow 45028206758 on source SHA `44a84fa6a5a9abe47e89ac13cb8eef026864436a` before merge. No open PR in the current inventory changes those same four files.
+PR #308 owns the canonical `HealthRecordDeduplicationPolicy.kt`, `HealthConnectRepository.kt` conflict wiring, its focused Kotlin tests and one product/source-contract test. It changed exactly four files and passed exact-head workflow 45028206758 on source SHA `44a84fa6a5a9abe47e89ac13cb8eef026864436a` before merge. The inspected open PRs #93, #137, #160, #213, #224 and #307 do not change those same four files.
 
 Canonical Health Connect permissions remain exactly five: READ_STEPS, READ_EXERCISE, WRITE_EXERCISE, READ_DISTANCE and READ_ACTIVE_CALORIES_BURNED. Heart rate is not requested.
 
