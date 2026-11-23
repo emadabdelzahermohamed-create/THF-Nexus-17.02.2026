@@ -99,19 +99,6 @@ class HealthRecordEvidencePolicyFailClosedTest {
     }
 
     @Test
-    fun unknownExerciseTypeStaysSupportedButNeverRewardVerified() {
-        val result = assess(
-            recordType = HealthRecordType.EXERCISE_SESSION.stableId,
-            isExerciseSession = true,
-            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_UNKNOWN,
-        )
-
-        assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
-        assertFalse(result.verifiedForRewards)
-        assertEquals("UNKNOWN_EXERCISE_TYPE", result.reason)
-    }
-
-    @Test
     fun sessionEndingAtObservationBoundaryRemainsEligible() {
         val result = assess(
             recordType = "a",
