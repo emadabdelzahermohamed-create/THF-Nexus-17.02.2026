@@ -49,6 +49,59 @@ class ActivityLocationFallbackPolicyTest {
     }
 
     @Test
+    fun revokingTheLastLocationPermissionSuspendsAnyActiveLocationSource() {
+        assertTrue(
+            ActivityLocationFallbackPolicy.shouldSuspendLocationSources(
+                hasLocationPermission = false,
+                fusedCallbackRegistered = true,
+                legacyProviderRegistered = false,
+                hasLiveLocationState = false,
+            ),
+        )
+        assertTrue(
+            ActivityLocationFallbackPolicy.shouldSuspendLocationSources(
+                hasLocationPermission = false,
+                fusedCallbackRegistered = false,
+                legacyProviderRegistered = true,
+                hasLiveLocationState = false,
+            ),
+        )
+        assertTrue(
+            ActivityLocationFallbackPolicy.shouldSuspendLocationSources(
+                hasLocationPermission = false,
+                fusedCallbackRegistered = false,
+                legacyProviderRegistered = false,
+                hasLiveLocationState = true,
+            ),
+        )
+        assertFalse(
+            ActivityLocationFallbackPolicy.shouldSuspendLocationSources(
+                hasLocationPermission = false,
+                fusedCallbackRegistered = false,
+                legacyProviderRegistered = false,
+                hasLiveLocationState = false,
+            ),
+        )
+        assertFalse(
+            ActivityLocationFallbackPolicy.shouldSuspendLocationSources(
+                hasLocationPermission = true,
+                fusedCallbackRegistered = true,
+                legacyProviderRegistered = true,
+                hasLiveLocationState = true,
+            ),
+        )
+    }
+
+    @Test
+    fun permissionRegrantRestartsOnlyTheSameUnpausedLiveSession() {
+        assertTrue(ActivityLocationFallbackPolicy.shouldResumeLocationSources(true, true, true, false))
+        assertFalse(ActivityLocationFallbackPolicy.shouldResumeLocationSources(false, true, true, false))
+        assertFalse(ActivityLocationFallbackPolicy.shouldResumeLocationSources(true, false, true, false))
+        assertFalse(ActivityLocationFallbackPolicy.shouldResumeLocationSources(true, true, false, false))
+        assertFalse(ActivityLocationFallbackPolicy.shouldResumeLocationSources(true, true, true, true))
+    }
+
+    @Test
     fun silentGpsProviderFallsBackToNetworkAfterBoundedWait() {
         val start = 20_000L
         fun shouldSwitch(now: Long, accepted: Long? = null) =
@@ -254,6 +307,29 @@ class ActivityLocationFallbackPolicyTest {
     }
 
     @Test
+    fun legacyProviderAuthorizationTracksTheCurrentPermissionPrecision() {
+        val gps = ActivityLocationFallbackPolicy.LegacyProvider.GPS
+        val network = ActivityLocationFallbackPolicy.LegacyProvider.NETWORK
+
+        assertTrue(ActivityLocationFallbackPolicy.isLegacyProviderAuthorized(gps, true, false))
+        assertFalse(ActivityLocationFallbackPolicy.isLegacyProviderAuthorized(gps, false, true))
+        assertTrue(ActivityLocationFallbackPolicy.isLegacyProviderAuthorized(network, false, true))
+        assertFalse(ActivityLocationFallbackPolicy.isLegacyProviderAuthorized(network, true, false))
+        assertFalse(ActivityLocationFallbackPolicy.isLegacyProviderAuthorized(null, true, true))
+
+        assertEquals(
+            null,
+            ActivityLocationFallbackPolicy.selectLegacyProvider(
+                finePermissionGranted = false,
+                coarsePermissionGranted = true,
+                gpsProviderEnabled = true,
+                networkProviderEnabled = false,
+                preferredProvider = gps,
+            ),
+        )
+    }
+
+    @Test
     fun frameworkProviderRegistrationRetryUsesBoundedBackoff() {
         assertEquals(0L, ActivityLocationFallbackPolicy.legacyProviderRetryDelayMs(0))
         assertEquals(4_000L, ActivityLocationFallbackPolicy.legacyProviderRetryDelayMs(1))
@@ -287,5 +363,82 @@ class ActivityLocationFallbackPolicyTest {
             ActivityLocationFallbackPolicy.selectLegacyProvider(true, false, false, false),
         )
     }
+
+
+    @Test
+    fun fusedRecoveryRequiresTheCurrentUnpausedSessionAndAnActiveFallback() {
+        fun shouldPromote(
+            sessionMatches: Boolean = true,
+            paused: Boolean = false,
+            legacyActive: Boolean = true,
+        ) = ActivityLocationFallbackPolicy.shouldPromoteFusedLocation(
+            sessionModeMatches = sessionMatches,
+            paused = paused,
+            legacyProviderActive = legacyActive,
+            fusedFixAccuracyMetres = 4.0,
+            fusedFixElapsedMs = 20_001L,
+            currentAcceptedAccuracyMetres = 6.0,
+            currentAcceptedElapsedMs = 20_000L,
+            currentAcceptedFixFresh = true,
+        )
+
+        assertTrue(shouldPromote())
+        assertFalse(shouldPromote(sessionMatches = false))
+        assertFalse(shouldPromote(paused = true))
+        assertFalse(shouldPromote(legacyActive = false))
+    }
+
+    @Test
+    fun fusedRecoveryRequiresANewerFixBeforeApplyingAccuracyArbitration() {
+        fun shouldPromote(
+            fusedAccuracy: Double,
+            legacyAccuracy: Double,
+            fusedElapsed: Long,
+            legacyElapsed: Long,
+        ) = ActivityLocationFallbackPolicy.shouldPromoteFusedLocation(
+            sessionModeMatches = true,
+            paused = false,
+            legacyProviderActive = true,
+            fusedFixAccuracyMetres = fusedAccuracy,
+            fusedFixElapsedMs = fusedElapsed,
+            currentAcceptedAccuracyMetres = legacyAccuracy,
+            currentAcceptedElapsedMs = legacyElapsed,
+            currentAcceptedFixFresh = true,
+        )
+
+        assertTrue(shouldPromote(4.0, 5.0, fusedElapsed = 20_001L, legacyElapsed = 20_000L))
+        assertTrue(shouldPromote(5.0, 5.0, fusedElapsed = 20_001L, legacyElapsed = 20_000L))
+        assertFalse(shouldPromote(6.0, 5.0, fusedElapsed = 20_001L, legacyElapsed = 20_000L))
+        // A Fused fix can be fresh relative to now yet still be older than the fresh framework fix.
+        assertFalse(shouldPromote(1.0, 5.0, fusedElapsed = 19_999L, legacyElapsed = 20_000L))
+        // Equal timestamps cannot establish ordering and must not replace the current route source.
+        assertFalse(shouldPromote(1.0, 5.0, fusedElapsed = 20_000L, legacyElapsed = 20_000L))
+    }
+
+    @Test
+    fun fusedRecoveryCanReplaceMissingOrStaleLegacyFixButRejectsInvalidCandidateAccuracy() {
+        fun shouldPromote(
+            fusedAccuracy: Double?,
+            legacyAccuracy: Double?,
+            legacyFresh: Boolean,
+        ) = ActivityLocationFallbackPolicy.shouldPromoteFusedLocation(
+            sessionModeMatches = true,
+            paused = false,
+            legacyProviderActive = true,
+            fusedFixAccuracyMetres = fusedAccuracy,
+            fusedFixElapsedMs = 20_001L,
+            currentAcceptedAccuracyMetres = legacyAccuracy,
+            currentAcceptedElapsedMs = 20_000L,
+            currentAcceptedFixFresh = legacyFresh,
+        )
+
+        assertTrue(shouldPromote(10.0, 4.0, legacyFresh = false))
+        assertTrue(shouldPromote(10.0, null, legacyFresh = true))
+        assertFalse(shouldPromote(null, 4.0, legacyFresh = false))
+        assertFalse(shouldPromote(0.0, 4.0, legacyFresh = false))
+        assertFalse(shouldPromote(Double.NaN, 4.0, legacyFresh = false))
+        assertFalse(shouldPromote(Double.POSITIVE_INFINITY, 4.0, legacyFresh = false))
+    }
+
 
 }
