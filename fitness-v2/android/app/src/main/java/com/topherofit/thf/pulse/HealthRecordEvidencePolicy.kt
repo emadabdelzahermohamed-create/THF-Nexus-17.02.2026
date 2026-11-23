@@ -83,6 +83,9 @@ object HealthRecordEvidencePolicy {
         if (isExerciseSessionRecord && exerciseType == null) {
             return supported("MISSING_EXERCISE_TYPE")
         }
+        if (isExerciseSessionRecord && exerciseType == ExerciseSessionRecord.EXERCISE_TYPE_UNKNOWN) {
+            return supported("UNKNOWN_EXERCISE_TYPE")
+        }
         if (
             isExerciseSessionRecord &&
             (startEpochMillis == null || endEpochMillis == null ||
