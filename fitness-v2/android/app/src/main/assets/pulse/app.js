@@ -4,6 +4,8 @@
   const EXERCISES = Array.isArray(window.THF_EXERCISES) ? window.THF_EXERCISES : [];
   const PROGRAMS = Array.isArray(window.THF_PROGRAMS) ? window.THF_PROGRAMS : [];
   const motionManifest = window.THF_MOTION_MANIFEST || {};
+  const failedMotionExerciseIds = new Set();
+  let activeMotionErrorHandler = null;
   const $ = id => document.getElementById(id);
   const store = (() => {
     try { localStorage.setItem('__thf_probe', '1'); localStorage.removeItem('__thf_probe'); return localStorage; }
@@ -412,14 +414,32 @@
   function completedVolume(sets) { return (sets||[]).filter(set=>set.complete).reduce((sum,set)=>sum + Math.max(0,Number(set.load)||0)*Math.max(0,Number(set.reps)||0),0); }
   function sessionVolume() { return completedVolume(state.active?.sets) + (state.active?.programEntries||[]).reduce((sum,entry)=>sum+completedVolume(entry.sets),0); }
   function persistActive() { store.setItem('pulse.v2.active', JSON.stringify(state.active)); }
+  function fallbackActiveMotion(item, expectedSource) {
+    const video = $('activeDemoVideo');
+    if (!item || state.active?.exerciseId !== item.id
+        || video.dataset.exerciseId !== item.id
+        || video.getAttribute('src') !== expectedSource) return false;
+    failedMotionExerciseIds.add(item.id);
+    if (activeMotionErrorHandler) video.removeEventListener('error', activeMotionErrorHandler);
+    activeMotionErrorHandler = null;
+    renderActiveMotion(item);
+    return true;
+  }
   function renderActiveMotion(item) {
     const video = $('activeDemoVideo');
     const image = $('activeDemoImage');
     const motion = motionManifest[item.id];
-    if (motion?.asset) {
+    if (motion?.asset && !failedMotionExerciseIds.has(item.id)) {
       const nextSource = './' + motion.asset;
-      if (video.getAttribute('src') !== nextSource) video.setAttribute('src', nextSource);
-      video.setAttribute('aria-label', item.demo.alt[state.lang]);
+      const sourceChanged = video.getAttribute('src') !== nextSource || video.dataset.exerciseId !== item.id;
+      if (sourceChanged) {
+        if (activeMotionErrorHandler) video.removeEventListener('error', activeMotionErrorHandler);
+        activeMotionErrorHandler = () => fallbackActiveMotion(item, nextSource);
+        video.addEventListener('error', activeMotionErrorHandler, {once:true});
+        video.dataset.exerciseId = item.id;
+        video.setAttribute('src', nextSource);
+      }
+      video.setAttribute('aria-label', local(item.demo?.alt) || local(item.name));
       video.classList.remove('hidden');
       image.classList.add('hidden');
       const credit = $('activeDemoCredit');
@@ -430,23 +450,37 @@
         sourceLink.textContent = state.lang === 'ar' ? `مصدر الفيديو: ${motion.author || 'Goulart'}` : `Video source: ${motion.author || 'Goulart'}`;
         licenseLink.href = motion.licenseUrl;
         credit.classList.remove('hidden');
+      } else {
+        credit?.classList.add('hidden');
       }
       $('activeDemoPhase').textContent = state.lang === 'ar' ? 'حركة كاملة تلقائية' : 'Automatic full movement';
-      if (!document.hidden) video.play().catch(() => {});
+      if (!document.hidden) {
+        const playback = video.play();
+        if (playback && typeof playback.catch === 'function') playback.catch(() => fallbackActiveMotion(item, nextSource));
+      }
       return;
     }
+    if (activeMotionErrorHandler) video.removeEventListener('error', activeMotionErrorHandler);
+    activeMotionErrorHandler = null;
     $('activeDemoCredit')?.classList.add('hidden');
+    $('activeDemoSource')?.removeAttribute('href');
+    $('activeDemoLicense')?.removeAttribute('href');
     video.pause();
     video.removeAttribute('src');
     video.load();
     video.classList.add('hidden');
     image.classList.remove('hidden');
-    image.src = './' + item.demo.assets[0];
-    image.alt = item.demo.alt[state.lang];
-    $('activeDemoPhase').textContent = state.lang === 'ar' ? 'صور مرجعية — الحركة قيد الإضافة' : 'Reference images — motion pending';
+    const referenceAssets = Array.isArray(item.demo?.assets) ? item.demo.assets : [];
+    if (referenceAssets.length) image.src = './' + referenceAssets[0];
+    else image.removeAttribute('src');
+    image.alt = local(item.demo?.alt) || local(item.name);
+    $('activeDemoPhase').textContent = state.lang === 'ar'
+      ? (referenceAssets.length >= 2 ? 'صور مرجعية — حركة تلقائية' : 'العرض المصوّر غير متاح')
+      : (referenceAssets.length >= 2 ? 'Reference images — automatic motion' : 'Demonstration unavailable');
   }
   function renderActiveWorkout() {
     const item = activeExercise(); if (!item) { state.active=null; store.removeItem('pulse.v2.active'); return; }
+    $('activeWorkoutScreen').dataset.exerciseId = item.id;
     renderActiveMotion(item);
     const program=PROGRAMS.find(value=>value.id===state.active.programId);const programSession=program?.sessions.find(value=>value.id===state.active.programSessionId);const programIndex=Number(state.active.programExerciseIndex)||0;
     $('activeSection').textContent = programSession?`${local(program.section)} · ${t('exerciseOf').replace('{current}',programIndex+1).replace('{total}',programSession.exercises.length)}`:local(item.section); $('activeExerciseName').textContent = local(item.name);
