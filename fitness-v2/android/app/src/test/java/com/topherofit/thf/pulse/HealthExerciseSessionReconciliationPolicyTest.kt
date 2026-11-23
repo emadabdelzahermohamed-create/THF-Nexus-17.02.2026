@@ -23,11 +23,20 @@ class HealthExerciseSessionReconciliationPolicyTest {
         verified: Boolean = true,
         modified: Long = 2_000_000L,
         recordingMethod: Int = Metadata.RECORDING_METHOD_ACTIVELY_RECORDED,
+        exerciseType: Int = when (kind) {
+            HealthActivitySessionKind.WALKING -> ExerciseSessionRecord.EXERCISE_TYPE_WALKING
+            HealthActivitySessionKind.RUNNING -> ExerciseSessionRecord.EXERCISE_TYPE_RUNNING
+            HealthActivitySessionKind.CYCLING -> ExerciseSessionRecord.EXERCISE_TYPE_BIKING
+            HealthActivitySessionKind.OTHER -> ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING
+            HealthActivitySessionKind.SWIMMING_POOL -> ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL
+            HealthActivitySessionKind.SWIMMING_OPEN_WATER -> ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER
+        },
     ) = HealthExerciseSessionCandidate(
         originalIndex = index,
         sourcePackage = source,
         recordId = recordId,
         activityKind = kind,
+        exerciseType = exerciseType,
         startTime = Instant.ofEpochMilli(start),
         endTime = Instant.ofEpochMilli(end),
         observedAt = observedAt?.let(Instant::ofEpochMilli),
@@ -39,7 +48,7 @@ class HealthExerciseSessionReconciliationPolicyTest {
     )
 
     @Test
-    fun maps_only_walking_running_and_cycling_families() {
+    fun maps_cardio_swimming_and_other_typed_sessions() {
         assertEquals(
             HealthActivitySessionKind.WALKING,
             HealthExerciseSessionReconciliationPolicy.kindForExerciseType(
@@ -82,7 +91,8 @@ class HealthExerciseSessionReconciliationPolicyTest {
                 ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER,
             ),
         )
-        assertNull(
+        assertEquals(
+            HealthActivitySessionKind.OTHER,
             HealthExerciseSessionReconciliationPolicy.kindForExerciseType(
                 ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
             ),
@@ -325,6 +335,51 @@ class HealthExerciseSessionReconciliationPolicyTest {
             ),
             result.invalid.map { it.reason },
         )
+    }
+
+    @Test
+    fun mirrored_strength_training_sessions_are_deduplicated_by_raw_exercise_type() {
+        val phone = candidate(
+            index = 0,
+            kind = HealthActivitySessionKind.OTHER,
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+            source = "com.google.android.apps.fitness",
+            deviceType = Device.TYPE_PHONE,
+        )
+        val watch = candidate(
+            index = 1,
+            kind = HealthActivitySessionKind.OTHER,
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+            source = "com.sec.android.app.shealth",
+            deviceType = Device.TYPE_WATCH,
+        )
+
+        val result = HealthExerciseSessionReconciliationPolicy.reconcile(listOf(phone, watch))
+
+        assertEquals(listOf(1), result.accepted.map { it.originalIndex })
+        assertEquals(listOf(0), result.duplicates.map { it.originalIndex })
+        assertTrue(result.ambiguous.isEmpty())
+    }
+
+    @Test
+    fun different_other_exercise_types_in_the_same_window_are_ambiguous() {
+        val strength = candidate(
+            index = 0,
+            kind = HealthActivitySessionKind.OTHER,
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+        )
+        val otherType = candidate(
+            index = 1,
+            kind = HealthActivitySessionKind.OTHER,
+            exerciseType = Int.MAX_VALUE,
+            source = "com.sec.android.app.shealth",
+        )
+
+        val result = HealthExerciseSessionReconciliationPolicy.reconcile(listOf(strength, otherType))
+
+        assertTrue(result.accepted.isEmpty())
+        assertTrue(result.duplicates.isEmpty())
+        assertEquals(listOf(0, 1), result.ambiguous.map { it.originalIndex })
     }
 
     @Test
