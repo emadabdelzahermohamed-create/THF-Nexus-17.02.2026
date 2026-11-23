@@ -11,6 +11,7 @@ internal enum class HealthActivitySessionKind {
     WALKING,
     RUNNING,
     CYCLING,
+    OTHER,
     SWIMMING_POOL,
     SWIMMING_OPEN_WATER,
 }
@@ -20,6 +21,8 @@ internal data class HealthExerciseSessionCandidate<T>(
     val sourcePackage: String,
     val recordId: String,
     val activityKind: HealthActivitySessionKind,
+    /** Raw Health Connect exercise type; preserves distinctions inside OTHER. */
+    val exerciseType: Int,
     val startTime: Instant,
     val endTime: Instant,
     val observedAt: Instant?,
@@ -47,8 +50,8 @@ internal data class HealthExerciseSessionReconciliationResult<T>(
 }
 
 /**
- * Reconciles reviewed Health Connect walking, running, cycling and eligible wearable
- * swimming sessions.
+ * Reconciles reviewed Health Connect walking, running, cycling, other typed exercise
+ * sessions and eligible wearable swimming sessions. Unknown exercise types are excluded.
  *
  * The provider/type/record-ID version selector runs first. This second layer catches
  * separate provider records that describe the same session. A single sport label is
@@ -70,7 +73,8 @@ internal object HealthExerciseSessionReconciliationPolicy {
         ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY -> HealthActivitySessionKind.CYCLING
         ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> HealthActivitySessionKind.SWIMMING_POOL
         ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER -> HealthActivitySessionKind.SWIMMING_OPEN_WATER
-        else -> null
+        ExerciseSessionRecord.EXERCISE_TYPE_UNKNOWN -> null
+        else -> HealthActivitySessionKind.OTHER
     }
 
     fun <T> reconcile(
@@ -150,8 +154,13 @@ internal object HealthExerciseSessionReconciliationPolicy {
             val component = componentIndexes.map { validVerified[it] }
             if (component.size == 1) {
                 accepted += component.single()
-            } else if (component.map { it.activityKind }.distinct().size > 1) {
-                // Do not choose a sport when reviewed sources disagree about the same session.
+            } else if (
+                component.map { it.activityKind }.distinct().size > 1 ||
+                component.filter { it.activityKind == HealthActivitySessionKind.OTHER }
+                    .map { it.exerciseType }.distinct().size > 1
+            ) {
+                // Do not choose a sport or a distinct non-cardio exercise type when reviewed
+                // sources disagree about the same session.
                 ambiguous += component
             } else {
                 val winner = component.maxWithOrNull(
