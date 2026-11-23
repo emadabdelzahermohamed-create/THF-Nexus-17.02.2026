@@ -51,7 +51,8 @@ internal data class HealthExerciseSessionReconciliationResult<T>(
 
 /**
  * Reconciles reviewed Health Connect walking, running, cycling, other typed exercise
- * sessions and eligible wearable swimming sessions. Unknown exercise types are excluded.
+ * sessions and eligible wearable swimming sessions. Other types retain their raw identity;
+ * conflicting types in the same session window are excluded rather than guessed.
  *
  * The provider/type/record-ID version selector runs first. This second layer catches
  * separate provider records that describe the same session. A single sport label is
