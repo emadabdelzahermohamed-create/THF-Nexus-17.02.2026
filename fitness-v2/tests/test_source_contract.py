@@ -767,7 +767,7 @@ class GpsLocationSourceArbitrationSourceContractTest(unittest.TestCase):
             service.index("fusedLocationCallback = callback")
         ]
         self.assertIn("legacyLocationProvidersRegistered", callback)
-        self.assertIn('it.sourceLabel?.equals("fused", ignoreCase = true) == true', callback)
+        self.assertIn('fix.sourceLabel?.equals("fused", ignoreCase = true) != true', callback)
         self.assertIn("GpsFixGate.accepts(", callback)
         self.assertIn("shouldPromoteFusedLocation(", callback)
         self.assertIn("promoteFusedLocationSource()", callback)
@@ -787,7 +787,7 @@ class GpsLocationSourceArbitrationSourceContractTest(unittest.TestCase):
         self.assertIn("if (fusedElapsed <= currentElapsed) return false", policy)
         self.assertIn("fusedAccuracy <= currentAccuracy", policy)
         self.assertIn("acceptedFusedLocations", callback)
-        self.assertIn("fix.elapsedMs > currentAcceptedElapsedMs", callback)
+        self.assertIn("it.second.elapsedMs > currentAcceptedElapsedMs", callback)
 
     def test_revoked_or_downgraded_permission_releases_an_unauthorized_framework_provider(self):
         service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
