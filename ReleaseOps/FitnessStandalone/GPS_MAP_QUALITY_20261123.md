@@ -9,7 +9,8 @@
 - Leaflet inside Android WebView.
 - OpenStreetMap-derived raster tiles for the base map.
 - OpenTopoMap and EOX Sentinel-2 as optional terrain/satellite layers.
-- Canonical MainActivity uses the TopHeroFit User-Agent pattern `TopHeroFit/${BuildConfig.VERSION_NAME} (Android; contact: TopHeroFit@gmail.com)`.
+- Canonical MainActivity appends `TopHeroFit/${BuildConfig.VERSION_NAME}` to the existing WebView User-Agent.
+- Draft PR #284 proposes the explicit `TopHeroFit/${BuildConfig.VERSION_NAME} (Android; contact: TopHeroFit@gmail.com)` User-Agent; it is not in canonical source.
 - No Google Maps SDK, Google Maps Rx, Maps billing, or new API key.
 - The one-second map refresh is local UI state only. It is not route backup or cloud sync.
 - Tile caching and WebView cache settings do not prove full offline map availability.
