@@ -253,6 +253,7 @@ class HealthConnectRepository(private val context: Context) {
                 sourcePackage = entry.evidence.dataOrigin,
                 recordId = entry.evidence.recordId,
                 activityKind = activityKind,
+                exerciseType = session.exerciseType,
                 startTime = session.startTime,
                 endTime = session.endTime,
                 observedAt = entry.evidence.observedAtEpochMillis?.let(Instant::ofEpochMilli),
