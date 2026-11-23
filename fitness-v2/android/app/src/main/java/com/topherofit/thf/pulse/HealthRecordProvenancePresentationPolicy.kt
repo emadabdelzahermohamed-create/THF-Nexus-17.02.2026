@@ -121,6 +121,7 @@ internal object HealthRecordProvenancePresentationPolicy {
         }
 
         val exerciseType = evidence.exerciseType ?: return false
+        if (exerciseType == ExerciseSessionRecord.EXERCISE_TYPE_UNKNOWN) return false
         val start = evidence.startEpochMillis ?: return false
         val end = evidence.endEpochMillis ?: return false
         if (start < 0L || end <= start) return false
