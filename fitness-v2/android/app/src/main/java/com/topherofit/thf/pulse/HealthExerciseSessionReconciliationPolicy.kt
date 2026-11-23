@@ -73,7 +73,6 @@ internal object HealthExerciseSessionReconciliationPolicy {
         ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY -> HealthActivitySessionKind.CYCLING
         ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> HealthActivitySessionKind.SWIMMING_POOL
         ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER -> HealthActivitySessionKind.SWIMMING_OPEN_WATER
-        ExerciseSessionRecord.EXERCISE_TYPE_UNKNOWN -> null
         else -> HealthActivitySessionKind.OTHER
     }
 
