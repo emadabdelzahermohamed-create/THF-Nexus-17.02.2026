@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-22T18:05:37Z",
+  "observed_at": "2026-11-23T17:51:34Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -3735,5 +3735,197 @@
     "signature": "UNSIGNED_VALIDATION_ONLY",
     "play_upload": false,
     "physical_p0": "BLOCKED_NOT_RUN"
+  },
+  "canonical_application_head_20261123": {
+    "branch": "agent/codex/fitness-recovery/20261023",
+    "previous_tip": "a930448d01649a5bc1a5efba4f163da8c25f2285",
+    "merged_pr": 309,
+    "tested_pr_head": "83cc98121bdd73a9d88705f9beb80fcfe420ea0e",
+    "canonical_merge_sha": "fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af",
+    "post_merge_compare": {
+      "ahead": 0,
+      "behind": 0,
+      "status": "identical"
+    },
+    "note": "The merge commit is one commit ahead of the tested PR head with zero changed files; no application bytes were rebuilt or reuploaded for this merge."
+  },
+  "health_session_reconciliation_20261123": {
+    "pr": 309,
+    "state": "MERGED",
+    "source_sha": "83cc98121bdd73a9d88705f9beb80fcfe420ea0e",
+    "merge_sha": "fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af",
+    "exact_head_run": 45194352739,
+    "conclusion": "success",
+    "compare": {
+      "ahead": 17,
+      "behind": 0,
+      "changed_files": 4
+    },
+    "tests": {
+      "product": 83,
+      "source_contract": 35,
+      "backend": 29,
+      "android_unit": 341,
+      "android_failures": 0,
+      "android_ignored": 0
+    },
+    "artifact_id": 14828150903,
+    "artifact_zip_sha256": "9d6938b7fce88e93d59065e10b64ee435420e9d4dc5e311589d750f579305be0",
+    "qa_apk_sha256": "c4a3d42418e82a6a23df301e800fd556d47c35979cb323bf4e5a0ada1d590b65",
+    "unsigned_validation_aab_sha256": "9d23056ae9abc9eb90cb8d69ef25717a51d997437109cd637b476eb7f6a180e5",
+    "signed": false,
+    "play_upload": false,
+    "permissions_changed": false,
+    "note": "Other typed Health Connect exercise sessions now reconcile deterministically; conflicting raw types in the same near-identical window are quarantined. This is metadata reconciliation, not hardware attestation."
+  },
+  "gps_candidate_validation_20261123": {
+    "pr": 307,
+    "state": "OPEN_DRAFT_NOT_MERGED",
+    "branch": "agent/codex/gps-fused-fallback-arbitration-20261122-r1",
+    "pr_head_sha": "5326bdef60c5e7e65ff6633767e43ade17675955",
+    "application_change_sha": "e788ea4b5ac6f539f503fbeb1d9c3f99a2438408",
+    "exact_head_run": 45132278712,
+    "conclusion": "success",
+    "current_compare_to_canonical": {
+      "ahead": 9,
+      "behind": 21,
+      "status": "diverged"
+    },
+    "tests": {
+      "product": 81,
+      "source_contract": 39,
+      "backend": 29,
+      "android_unit": 345,
+      "android_failures": 0,
+      "android_ignored": 0
+    },
+    "artifact_id": 14797923310,
+    "artifact_zip_sha256": "f3010f85b58670a7fada3de693aa4dd4a1e74f6d3fe8a0c1eed75102d1ce9c9d",
+    "unsigned_validation_aab_sha256": "97e790a850f404746a3c12f9107d1a18aaa2b3842c14a010c3d72b74bba52997",
+    "signed": false,
+    "aab_bytes_identical_to_prior_e788_run": true,
+    "physical_p0": "BLOCKED_NOT_RUN",
+    "decision": "Rebase onto fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af and rerun exact-head CI after physical P0; keep Draft."
+  },
+  "gps_open_source_pr284_20261123": {
+    "pr": 284,
+    "state": "OPEN_DRAFT_NOT_MERGED",
+    "head_sha": "3fcbe6acbb4dc660284c74c8392818996e1de7ee",
+    "base_sha": "9b5db58e809fa7d5e639bc4ee55df03d100467e8",
+    "current_compare_to_canonical": {
+      "ahead": 19,
+      "behind": 129,
+      "status": "diverged"
+    },
+    "changed_files": 13,
+    "exact_head_run": 42694452852,
+    "conclusion": "success",
+    "tests": {
+      "product": 60,
+      "source_contract": 38,
+      "backend": 29,
+      "android_unit": 223,
+      "android_failures": 0,
+      "android_ignored": 0
+    },
+    "artifact_id": 13707718861,
+    "artifact_zip_sha256": "ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c",
+    "unsigned_validation_aab_sha256": "08d2c80b5da604f6b50a95a7944b6576da87933ee5eec94c2a3944b5274b780e",
+    "signed": false,
+    "physical_p0": "BLOCKED_NOT_RUN",
+    "overlapping_files": [
+      "ActivityTrackingService.kt",
+      "MainActivity.kt",
+      "app.js",
+      "index.html"
+    ],
+    "decision": "Keep Draft; extract only openLocationSettings after MainActivity/app.js owners release files and isolated exact-head plus physical QA pass."
+  },
+  "integrator_recheck_20261123": {
+    "observed_at": "2026-11-23T17:51:34Z",
+    "canonical_branch": "agent/codex/fitness-recovery/20261023",
+    "canonical_tip": "fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af",
+    "default_branch": "main",
+    "main_vs_canonical": {
+      "status": "diverged",
+      "ahead": 753,
+      "behind": 180,
+      "merge_base": "46db554a12ff9b21cc2096d19244b007c8137b43",
+      "decision": "Do not auto-merge; RELEASE_CURRENT.json explicitly designates the recovery branch as canonical."
+    },
+    "play": {
+      "latest_verified_readback_run": 43739661313,
+      "attempt": 7,
+      "observed_at": "2026-11-22T17:56:05Z",
+      "artifact_id": 14766395949,
+      "artifact_sha256": "7230b2fa82b21671d9710db75663c4ade78ce4a768cb8a374301393774bc5",
+      "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
+      "internal": "51019 completed",
+      "alpha": "51007 draft",
+      "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
+      "fresh_live_readback_performed": false,
+      "upload_attempted": false,
+      "commit_attempted": false,
+      "reason": "The read-only probe is workflow_dispatch-only; no dispatch action is exposed by the GitHub connector, and Desktop Commander localhost is offline."
+    },
+    "device": {
+      "device": "Samsung SM-A217F",
+      "desktop_commander": "OFFLINE",
+      "last_seen_hours": 152,
+      "current_phone_session": "UNKNOWN",
+      "physical_p0": "BLOCKED_NOT_RUN",
+      "adb_or_session_actions": false
+    },
+    "release": {
+      "current_internal_version_code": 51019,
+      "next_version_code": 51020,
+      "next_version_code_status": "UNALLOCATED",
+      "owner_play_api_write": "UNVERIFIED",
+      "gcp_signing_key_access": "UNVERIFIED",
+      "new_signed_aab": false,
+      "production": "NOT_VERIFIED"
+    },
+    "route_sync": {
+      "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+      "local_storage_key": "pulse.v2.activities",
+      "authenticated_route_endpoint": false,
+      "precise_location_upload": false
+    },
+    "anti_cheat": {
+      "status": "TESTED_BUT_UNWIRED",
+      "metric_path": "GpsFixGate -> GpsDistanceAccumulator",
+      "gps_reward_eligible": false
+    },
+    "competition": {
+      "merged_pr": 269,
+      "current_metric": "strength_volume_kg_reps",
+      "gps_reward_eligible": false,
+      "thf_payouts": false
+    }
+  },
+  "current_prs_20261123": {
+    "merged": [
+      309,
+      303,
+      308,
+      305,
+      304,
+      302,
+      301,
+      282,
+      269
+    ],
+    "open_priority": {
+      "93": "Draft; Health Services/MainActivity/Manifest lane; requests 19 Health scopes vs canonical five; hold.",
+      "137": "Draft; permission-minimization docs/tests; no exact-head workflow run.",
+      "160": "Draft; bilingual catalog; shared catalog/build assets; no exact-head workflow run.",
+      "213": "Draft; timed-program RIR; shared program/app assets; no exact-head workflow run.",
+      "216": "Draft; active-workout resume; shared app.js/index/styles; no exact-head workflow run.",
+      "224": "Draft; offline demo autoplay; shared app.js/index/motion; no exact-head workflow run.",
+      "248": "Draft; display smoother helper lacks production call site; do not add duplicate path.",
+      "284": "Draft; exact historical run 42694452852 passed on 3fcbe6ac; 19 ahead / 129 behind; overlaps #307/#93/#216/#224.",
+      "307": "Draft; exact-head run 45132278712 passed on 5326bdef; 9 ahead / 21 behind; P0 blocked; rebase and rerun before merge.",
+      "118/119": "Open QA evidence/tooling; no current physical P0 readback."
+    }
   }
 }
