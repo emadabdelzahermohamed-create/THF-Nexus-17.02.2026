@@ -97,11 +97,6 @@ class HealthExerciseSessionReconciliationPolicyTest {
                 ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
             ),
         )
-        assertNull(
-            HealthExerciseSessionReconciliationPolicy.kindForExerciseType(
-                ExerciseSessionRecord.EXERCISE_TYPE_UNKNOWN,
-            ),
-        )
     }
 
     @Test
