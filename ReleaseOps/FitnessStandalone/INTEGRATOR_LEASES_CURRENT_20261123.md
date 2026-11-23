@@ -2,7 +2,8 @@
 
 **Observed:** 2026-11-23 19:51 Africa/Cairo  
 **Canonical branch:** `agent/codex/fitness-recovery/20261023`  
-**Canonical tip:** `fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af`
+**Canonical application head:** `fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af`
+**Raw compare snapshot:** canonical branch tip `96266069014b154edb5d08d7677d9349c4530649`, immediately before this lease refresh commit.
 
 ## Exclusive canonical ownership
 
@@ -17,10 +18,12 @@ No other PR may allocate a versionCode, sign, upload or commit a Play release.
 
 ## Active priority leases
 
+The raw ahead/behind values below are snapshots against `962660...` before this lease-refresh commit. The additional behind commits since application head `fe06...` are ReleaseOps checkpoint-only; the application-file diffs listed below remain unchanged. This lease refresh itself is documentation-only.
+
 | Lane | PR / owner | Owned files or scope | Current decision |
 |---|---|---|---|
-| GPS source arbitration | #307 — `agent/codex/gps-fused-fallback-arbitration-20261122-r1` | `ActivityLocationFallbackPolicy.kt`, `ActivityTrackingService.kt`, focused Kotlin tests and source-contract tests | Draft; exact-head CI passed on 5326bdef, but now 9 ahead / 21 behind canonical. Rebase and rerun CI; physical P0 still blocks merge. |
-| GPS map/settings watchdog | #284 — `agent/codex/gps-open-source-stack-20261109` | `app.js`, `index.html`, `MainActivity.kt`, `ActivityTrackingService.kt`, GPS policies/tests | Draft; 19 ahead / 129 behind; overlaps #307, #93, #216 and #224. Do not merge wholesale. |
+| GPS source arbitration | #307 — `agent/codex/gps-fused-fallback-arbitration-20261122-r1` | `ActivityLocationFallbackPolicy.kt`, `ActivityTrackingService.kt`, focused Kotlin tests and source-contract tests | Draft; exact-head CI passed on 5326bdef; raw compare 9 ahead / 31 behind at 962660. Ten extra behind commits since app head fe06 are ReleaseOps-only. Rebase and rerun CI; physical P0 still blocks merge. |
+| GPS map/settings watchdog | #284 — `agent/codex/gps-open-source-stack-20261109` | `app.js`, `index.html`, `MainActivity.kt`, `ActivityTrackingService.kt`, GPS policies/tests | Draft; raw compare 19 ahead / 139 behind at 962660; ten extra behind commits since app head fe06 are ReleaseOps-only. Overlaps #307, #93, #216 and #224. Do not merge wholesale. |
 | Health services / permissions | #93 | `MainActivity.kt`, Android Manifest, Health Services bridge | Draft; current handoff declares 19 Health scopes versus canonical five. Hold until narrowed and privacy/Play declarations reconciled. |
 | Health permission minimization | #137 — `agent/codex/health-permission-minimization-20261027` | permission-minimization product test and ReleaseOps evidence | No exact-head workflow run; no Play declaration or physical watch/grant/revoke PASS. |
 | Active workout resume | #216 — `agent/codex/active-workout-resume-protection-20261030` | active-workout resume state and shared WebView runtime | Draft; no exact-head Actions run; shared app.js/index/styles. |
