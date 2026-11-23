@@ -28,12 +28,12 @@ PR #303 is already merged at `b097d6ef0025d615c261ee42e8d2246533224e70`. It supp
 - Product 81/81; Source Contract 39/39; Backend 29/29; Android 345/345; zero failures/ignored.
 - Artifact 14797923310 ZIP SHA-256 `f3010f85b58670a7fada3de693aa4dd4a1e74f6d3fe8a0c1eed75102d1ce9c9d`.
 - Unsigned validation AAB SHA-256 `97e790a850f404746a3c12f9107d1a18aaa2b3842c14a010c3d72b74bba52997`.
-- The fix keeps Fused subscribed during framework fallback so a valid Fused fix can reclaim the source without the prior callback having been cancelled. The current branch is 9 ahead / 21 behind canonical; rebase and exact-head CI are still required.
+- The fix keeps Fused subscribed during framework fallback so a valid Fused fix can reclaim the source without the prior callback having been cancelled. At application head `fe06...`, the branch was 9 ahead / 21 behind; raw compare at canonical tip `962660...` was 9 ahead / 31 behind. The ten extra behind commits are ReleaseOps-only checkpoints; rebase and exact-head CI are still required.
 - Physical P0 is not run. No GPS accuracy PASS is claimed.
 
 ### PR #284 — fallback watchdog / map settings
 
-- Current head `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; 19 ahead / 129 behind canonical; 13 changed files.
+- Current head `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; at application head `fe06...` it was 19 ahead / 129 behind, and raw compare at `962660...` was 19 ahead / 139 behind. The ten extra behind commits are ReleaseOps-only; 13 changed files remain.
 - Historical exact-head run [42694452852](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42694452852) succeeded: Product 60/60, Source 38/38, Backend 29/29, Android 223/223, zero failures/ignored.
 - Artifact 13707718861 ZIP SHA-256 `ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c`.
 - Unsigned AAB SHA-256 `08d2c80b5da604f6b50a95a7944b6576da87933ee5eec94c2a3944b5274b780e`.
