@@ -8,7 +8,7 @@
 The latest independently downloaded and rehashed Play state probe remains [run 43739661313, attempt 7](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/43739661313), observed 2026-11-22 17:56:05 UTC.
 
 - Probe artifact: 14766395949.
-- ZIP SHA-256: `7230b2fa82b21671d9710db75663c4ade78ce4a768cb8a374301393774bc5`.
+- ZIP SHA-256: `7230b2fa82b21671d9710db75663c4ade78ce4a768974cb8a374301393774bc5`.
 - Embedded JSON SHA-256: `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`.
 - Independent download/re-hash: PASS.
 
