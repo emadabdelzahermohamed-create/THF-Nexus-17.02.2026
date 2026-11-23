@@ -3788,8 +3788,10 @@
     "conclusion": "success",
     "current_compare_to_canonical": {
       "ahead": 9,
-      "behind": 21,
-      "status": "diverged"
+      "behind": 31,
+      "status": "diverged",
+      "comparison_base_sha": "96266069014b154edb5d08d7677d9349c4530649",
+      "note": "Raw branch compare includes 10 ReleaseOps-only checkpoint commits after application head fe06; no GPS app-file overlap was introduced."
     },
     "tests": {
       "product": 81,
@@ -3814,8 +3816,10 @@
     "base_sha": "9b5db58e809fa7d5e639bc4ee55df03d100467e8",
     "current_compare_to_canonical": {
       "ahead": 19,
-      "behind": 129,
-      "status": "diverged"
+      "behind": 139,
+      "status": "diverged",
+      "comparison_base_sha": "96266069014b154edb5d08d7677d9349c4530649",
+      "note": "Raw branch compare includes 10 ReleaseOps-only checkpoint commits after application head fe06; existing MainActivity/app.js/ActivityTrackingService overlaps remain."
     },
     "changed_files": 13,
     "exact_head_run": 42694452852,
@@ -3844,13 +3848,13 @@
   "integrator_recheck_20261123": {
     "observed_at": "2026-11-23T17:51:34Z",
     "canonical_branch": "agent/codex/fitness-recovery/20261023",
-    "canonical_tip": "fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af",
     "default_branch": "main",
     "main_vs_canonical": {
       "status": "diverged",
-      "ahead": 753,
+      "ahead": 763,
       "behind": 180,
       "merge_base": "46db554a12ff9b21cc2096d19244b007c8137b43",
+      "comparison_base_sha": "96266069014b154edb5d08d7677d9349c4530649",
       "decision": "Do not auto-merge; RELEASE_CURRENT.json explicitly designates the recovery branch as canonical."
     },
     "play": {
@@ -3901,6 +3905,29 @@
       "current_metric": "strength_volume_kg_reps",
       "gps_reward_eligible": false,
       "thf_payouts": false
+    },
+    "canonical_application_head_after_pr309": "fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af",
+    "latest_compare_snapshot": {
+      "measured_against_canonical_branch_tip": "96266069014b154edb5d08d7677d9349c4530649",
+      "canonical_application_head": "fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af",
+      "gps_pr307": {
+        "ahead": 9,
+        "behind": 31,
+        "status": "diverged",
+        "changed_files": 6
+      },
+      "gps_pr284": {
+        "ahead": 19,
+        "behind": 139,
+        "status": "diverged",
+        "changed_files": 13
+      },
+      "default_main": {
+        "ahead": 763,
+        "behind": 180,
+        "status": "diverged"
+      },
+      "note": "The 10 additional commits behind the GPS handoffs since application head fe06 are ReleaseOps-only checkpoint commits; the application-file diffs are unchanged. This record update and the lease refresh that follow are also documentation-only."
     }
   },
   "current_prs_20261123": {
@@ -3923,8 +3950,8 @@
       "216": "Draft; active-workout resume; shared app.js/index/styles; no exact-head workflow run.",
       "224": "Draft; offline demo autoplay; shared app.js/index/motion; no exact-head workflow run.",
       "248": "Draft; display smoother helper lacks production call site; do not add duplicate path.",
-      "284": "Draft; exact historical run 42694452852 passed on 3fcbe6ac; 19 ahead / 129 behind; overlaps #307/#93/#216/#224.",
-      "307": "Draft; exact-head run 45132278712 passed on 5326bdef; 9 ahead / 21 behind; P0 blocked; rebase and rerun before merge.",
+      "284": "Draft; exact historical run 42694452852 passed on 3fcbe6ac; raw compare 19 ahead / 139 behind at 962660; overlaps #307/#93/#216/#224.",
+      "307": "Draft; exact-head run 45132278712 passed on 5326bdef; raw compare 9 ahead / 31 behind at 962660; 10 extra behind commits are ReleaseOps-only; P0 blocked; rebase and rerun before merge.",
       "118/119": "Open QA evidence/tooling; no current physical P0 readback."
     }
   }
