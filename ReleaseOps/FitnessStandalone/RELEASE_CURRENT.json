@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-23T17:51:34Z",
+  "observed_at": "2026-11-23T18:33:03Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -291,7 +291,7 @@
       "active_session_interrupted": false
     },
     "local_apksigner_verification": "INDETERMINATE: local apksigner lacks the ML-DSA KeyFactory required by the v3.2 signer; this is a verifier limitation, not an app-signature failure. No signature PASS inferred.",
-    "physical_p0": "BLOCKED_NOT_RUN; Desktop Commander localhost OFFLINE, last seen 103h before 2026-11-21 19:25 Cairo; last known SM-A217F / Android 12; current app/session unknown; no ADB/session actions.",
+    "physical_p0": "BLOCKED_NOT_RUN; latest read-only Desktop Commander check on 2026-11-23 reports localhost OFFLINE, last seen approximately 152 hours ago; current Samsung SM-A217F app/session state unknown; no ADB/session actions.",
     "latest_connection_check": {
       "checked_on": "2026-11-21",
       "checked_at_local": "2026-11-21 19:25 Africa/Cairo",
@@ -309,19 +309,19 @@
     "note": "Prior validated Internal evidence retained; no rollback or production action taken."
   },
   "release_gates": {
-    "physical_p0": "BLOCKED_NOT_RUN; Desktop Commander localhost OFFLINE on 2026-11-22; last known handset Samsung SM-A217F / Android 12; current app/session state unknown; no ADB/session actions.",
-    "health_policy_privacy": "PR #282 merged at b248a3571d871c604dbc3a11af72858bbac74eb9; PR #301 merged at 7dc57dd9f6e647797cbbe2d1cfdb45773410a866; PR #304 merged at e28994ea76e67e0bed6eef3860f995b27388a002 after exact-head CI 44532209892. Exact mirror/overlap reconciliation is integrated. Health Connect allowlist remains five scopes; no heart-rate permission or additional scope was added. Physical grants/revoke/no-data/error and Play Health/Data Safety reconciliation remain unverified.",
+    "physical_p0": "BLOCKED_NOT_RUN; latest read-only Desktop Commander device-list check on 2026-11-23 reports localhost OFFLINE, last seen approximately 152 hours ago; Samsung SM-A217F current app/session state unknown; no ADB/session actions.",
+    "health_policy_privacy": "PR #282, #301, #304, #305, #306, #308 and #309 are merged after exact-head validation. PR #309 (merge fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af; tested head 83cc98121bdd73a9d88705f9beb80fcfe420ea0e; run 45194352739) preserves raw Health Connect exercise types, deduplicates mirrored same-type non-cardio sessions and quarantines conflicting types. Artifact 14828150903 ZIP SHA-256 9d6938b7fce88e93d59065e10b64ee435420e9d4dc5e311589d750f579305be0 independently rehashed; validation AAB 9d23056ae9abc9eb90cb8d69ef25717a51d997437109cd637b476eb7f6a180e5 is unsigned. Health Connect allowlist remains five scopes; no heart-rate permission or additional scope was added. Physical grants/revoke/no-data/error and Play Health/Data Safety reconciliation remain unverified.",
     "production": "NOT_VERIFIED",
     "maps_native_sdk_key": "NOT_REQUIRED_FOR_CURRENT_OSM_LEAFLET_STACK; do not add Google Maps Rx, Maps SDK billing or a Maps key. Google directions remains an optional external handoff.",
     "listing_truthfulness": "Fresh independent read-only Google Play readback 2026-11-22T17:56:05Z: Internal 51019 Completed; Alpha 51007 Draft; Production not listed/not verified. Listing text is unchanged and still describes GPS sessions, background notification controls, offline-ready library and Arabic/English voice cues. No listing edit; physical P0 and policy/privacy remain open.",
     "competition_backend": "PR #269 merged; provisional strength_volume_kg_reps only. No independently verified GPS activity leaderboard; rewardEligible=false; no THF payouts authorized.",
-    "gps_accuracy": "PR #303 remains canonical. PR #307 head 45b27cc6a04b48931291e821efc85e76569965fe is rebased onto tested base 826fc5b3df4d96e647246289e9c2cc604a0ed5bf and passes exact-head CI run 45052702946 (Product 81, source-contract 37, backend 29, Android 342; lint 0 errors). Artifact 14766143584 ZIP SHA-256 e7b8d49d38ab6f1389488396a2c3ba33819c0fb93122994d7ac0ce63543a18a3; unsigned validation AAB SHA-256 74541210b5ed7775aad70c20948468e57da22e169906f237303fffad6780d6cc. Fused callback now remains subscribed during framework fallback; lifecycle teardown still invalidates it. PR remains Draft/unmerged pending physical P0. No GPS accuracy or route PASS claimed.",
+    "gps_accuracy": "PR #303 remains canonical Activity Engine/GPS base. PR #307 current head 923a951a304d1c8b2210539be83f07c8accb4371 is based directly on canonical ReleaseOps tip 54d6266c3c8bc469a339a2e1db59734b0ecc8908 and passes exact-head run 45238807995: Product 83/83, Source 39/39, Backend 29/29, Android 347/347, zero failures/ignored, API 36/Kotlin/Gradle PASS, lint 0 errors/11 warnings/1 hint. Artifact 14851146115 ZIP SHA-256 d8e716b24d085b65517354955483b0828c9eee1863b232129acc5a77e3389d8b; QA APK SHA-256 b26f62bed569b6a27c1c9fd83a3afa85513b3a89ab42418e7fc0ee7e21384739; unsigned validation AAB SHA-256 8339981e7fc59f3bbab0ab5c8d4b0b659048a08b9cddd39389cedebc6e973ee0. Fused promotion requires a strictly newer elapsed-realtime fix than a fresh framework fix; older/equal batch points are excluded after promotion. PR remains Draft/unmerged pending physical P0. No phone/GPS accuracy PASS claimed.",
     "route_sync": "DESIGN_ONLY_NOT_IMPLEMENTED. Existing Android/AppDeploy/Python authenticated sync remains workout/set metadata only; no route endpoint/table/upload. Finished routes remain WebView localStorage; one-second UI refresh is local. Read-only AppDeploy snapshot thf-fitness-pulse-ul26f1 version 1794247542845 is READY; backend/index.ts lines 354-361 calls deleteFitnessV2UserData under requireAuth and combines its done flag; live helper is byte-identical to canonical repository source. No activity-routes endpoint exists. Privacy/account-deletion pages match canonical repository but do not disclose precise-route backup. Runtime non-privileged account deletion and empty-history readback remain untested. No route upload.",
     "anti_cheat": "ActivityEvidenceAnomalyPolicy.assessSegment() remains tested but unwired. Review found its per-fix 3m minimum and sport thresholds overlap/differ from the live GpsFixGate + GpsDistanceAccumulator path; stacking it as a second metric gate risks undercounting valid short updates. Keep GpsFixGate as admission and GpsDistanceAccumulator as the sole metric-credit path until a unified policy is designed. See ANTI_CHEAT_RECONCILIATION_20261121.md. This is not full anti-cheat or location attestation; GPS reward eligibility remains false.",
     "signing_prerequisites": "Owner Google Play/API write permission and GCP Secret Manager signing-key access remain NOT_VERIFIED. Next versionCode 51020 remains UNALLOCATED. No new signed AAB or Play upload.",
-    "pr_ownership": "Canonical application merge b097d6ef0025d615c261ee42e8d2246533224e70 (tested source tree 26e90573ddda077ca2665ebdccd5600cc9316dd7). #303 merged after exact-head CI 44929317705. #284 remains Draft, head 274155eafdfff381009ef5814a621f32b225f1a8, 19 ahead / 80 behind, no current exact-head CI; its native GPS hunks are superseded by #303 and remaining UI hunks overlap #93/#216/#224. #93/#216/#224/#248 remain Draft; catalog/program/motion PRs remain diverged under shared-file leases."
+    "pr_ownership": "Canonical application head remains fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af; current ReleaseOps tip before this checkpoint 54d6266c3c8bc469a339a2e1db59734b0ecc8908. PR #307 is 2 ahead/0 behind with four GPS-only files and exact-head run 45238807995 PASS; physical P0 blocks merge. PR #284 current head 274155eafdfff381009ef5814a621f32b225f1a8 is 19 ahead/143 behind, 13 files, no exact-head CI; native/service and UI files overlap #307/#93/#216/#224. Keep #284 Draft and do not merge wholesale. #93/#216/#224/#248 remain Draft under shared-file leases."
   },
-  "next_action": "PR #307 exact-head CI and artifact verification are complete. Keep it Draft/unmerged until physical P0 on an authorized handset: stationary drift, measured outdoor routes, permission downgrade, first-fix accuracy/latency, screen-off/background continuity, notification controls and process-death restore. The candidate AAB is unsigned QA 51019 only. Do not allocate 51020, sign or upload until owner Play/API and GCP signing-key prerequisites, physical P0 and policy/privacy gates pass. Then reconcile Anti-cheat with the single GPS distance-credit path; route sync remains design-only.",
+  "next_action": "PR #307 exact-head run 45238807995 and artifact 14851146115 are verified for source 923a951a304d1c8b2210539be83f07c8accb4371; the validation AAB is unsigned QA 51019 only. Keep #307 Draft/unmerged until authorized SM-A217F access returns and physical P0 is completed without disturbing any active session: stationary drift, measured routes, permission downgrade/revoke/regrant, first-fix accuracy/latency, background/screen-off, notification Pause/Resume/Finish, process-death restore and crash/ANR/logcat. #284 remains stale and overlapping. Route sync remains design-only; anti-cheat remains unwired pending unified metric policy. Do not allocate 51020, sign or upload until owner Play/API and GCP signing-key prerequisites, exact final-head CI, physical P0 and privacy/policy gates pass.",
   "canonical_validation": {
     "merged_pr": 184,
     "merged_head_sha": "c904107ab1a03733b4df708ec2033aa31f1867c0",
@@ -341,12 +341,12 @@
     "physical_p0": "BLOCKED_NOT_RUN",
     "note": "The exact merged SHA passed source/product/backend and Android unit/lint/APK/AAB gates, but only with validation identity 51019. Do not upload this artifact. The exact existing candidate workflow path/identity assertions must be located and updated together with Gradle to unique 51020 before the one full acceptance run.",
     "canonical_source_sha": "7dc57dd9f6e647797cbbe2d1cfdb45773410a866",
-    "latest_gps_candidate_head": "e905d906300d48e3927c0f9fd745cdad39b39334",
-    "latest_gps_exact_head_run": 44784273743,
-    "latest_health_guard_merge": "7dc57dd9f6e647797cbbe2d1cfdb45773410a866",
-    "latest_health_guard_run": 44315659269,
+    "latest_gps_candidate_head": "923a951a304d1c8b2210539be83f07c8accb4371",
+    "latest_gps_exact_head_run": 45238807995,
+    "latest_health_guard_merge": "fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af",
+    "latest_health_guard_run": 45194352739,
     "latest_play_readback_run": 43739661313,
-    "latest_play_readback_attempt": 5
+    "latest_play_readback_attempt": 7
   },
   "scheduler_transition": {
     "target_enabled_daily_flexible_tasks": 3,

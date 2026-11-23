@@ -2,7 +2,8 @@
 
 **Observed:** 2026-11-23 19:51 Africa/Cairo  
 **Canonical application branch:** `agent/codex/fitness-recovery/20261023`  
-**Canonical tip:** `fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af`
+**Canonical application head:** `fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af`  
+**Current ReleaseOps tip before this checkpoint:** `54d6266c3c8bc469a339a2e1db59734b0ecc8908`
 
 ## Canonical map stack
 
@@ -23,26 +24,24 @@ PR #303 is already merged at `b097d6ef0025d615c261ee42e8d2246533224e70`. It supp
 
 ### PR #307 — source arbitration follow-up
 
-- Current PR head: `5326bdef60c5e7e65ff6633767e43ade17675955`.
-- Exact-head CI: [45132278712](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45132278712), success.
-- Product 81/81; Source Contract 39/39; Backend 29/29; Android 345/345; zero failures/ignored.
-- Artifact 14797923310 ZIP SHA-256 `f3010f85b58670a7fada3de693aa4dd4a1e74f6d3fe8a0c1eed75102d1ce9c9d`.
-- Unsigned validation AAB SHA-256 `97e790a850f404746a3c12f9107d1a18aaa2b3842c14a010c3d72b74bba52997`.
-- The fix keeps Fused subscribed during framework fallback so a valid Fused fix can reclaim the source without the prior callback having been cancelled. At application head `fe06...`, the branch was 9 ahead / 21 behind; raw compare at canonical tip `962660...` was 9 ahead / 31 behind. The ten extra behind commits are ReleaseOps-only checkpoints; rebase and exact-head CI are still required.
-- Physical P0 is not run. No GPS accuracy PASS is claimed.
+- Current PR head: `923a951a304d1c8b2210539be83f07c8accb4371`, based directly on canonical tip `54d6266c3c8bc469a339a2e1db59734b0ecc8908`.
+- Exact-head run [45238807995](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45238807995): Product 83/83; Source Contract 39/39; Backend 29/29; Android 347/347; zero failures/ignored; Android API 36/Kotlin/Gradle PASS; lint 0 errors, 11 warnings, 1 hint.
+- Artifact 14851146115 ZIP SHA-256 `d8e716b24d085b65517354955483b0828c9eee1863b232129acc5a77e3389d8b`; QA APK SHA-256 `b26f62bed569b6a27c1c9fd83a3afa85513b3a89ab42418e7fc0ee7e21384739`; unsigned validation AAB SHA-256 `8339981e7fc59f3bbab0ab5c8d4b0b659048a08b9cddd39389cedebc6e973ee0`. All hashes were independently recomputed; embedded source marker equals the exact PR head; `jarsigner` confirms unsigned.
+- Fused promotion now requires a strictly newer elapsed-realtime fix than the current fresh framework fix; equal timestamps fail closed. Older/equal entries in a batched Fused result are excluded before they can be appended after source promotion. The distance accumulator resets at the source boundary; no transition distance is credited.
+- The initial rebased attempt `ecfe9adb...` failed one source-contract expectation before Android build and produced no artifact. The contract was corrected in `923a951a...`; the exact-head run above passed.
+- Comparison: 2 ahead / 0 behind canonical ReleaseOps tip `54d6266c...`; four GPS-only application/test files. Physical P0 remains BLOCKED_NOT_RUN. Keep Draft/unmerged; no GPS/phone PASS is claimed.
 
 ### PR #284 — fallback watchdog / map settings
 
-- Current head `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; at application head `fe06...` it was 19 ahead / 129 behind, and raw compare at `962660...` was 19 ahead / 139 behind. The ten extra behind commits are ReleaseOps-only; 13 changed files remain.
-- Historical exact-head run [42694452852](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42694452852) succeeded: Product 60/60, Source 38/38, Backend 29/29, Android 223/223, zero failures/ignored.
-- Artifact 13707718861 ZIP SHA-256 `ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c`.
-- Unsigned AAB SHA-256 `08d2c80b5da604f6b50a95a7944b6576da87933ee5eec94c2a3944b5274b780e`.
-- The old failing run 42694199295 had a source-contract failure because `motionSnapshot` was absent from the truncated MainActivity input. The current PR branch tail contains `motionSnapshot` and the proposed `openLocationSettings()` bridge.
-- The canonical MainActivity does not yet contain `openLocationSettings()`. Do not merge #284 wholesale: it overlaps #307, #93, #216 and #224. The settings bridge is a later isolated extraction, not permission to merge the stale branch.
+- Current PR head `274155eafdfff381009ef5814a621f32b225f1a8`; original base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`. Current comparison to canonical ReleaseOps tip `54d6266c3c8bc469a339a2e1db59734b0ecc8908`: 19 ahead / 143 behind; 13 changed files.
+- Historical exact-head run [42694452852](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42694452852) succeeded only on old head `3fcbe6acbb4dc660284c74c8392818996e1de7ee`: Product 60/60, Source 38/38, Backend 29/29, Android 223/223, zero failures/ignored.
+- Artifact 13707718861 ZIP SHA-256 `ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c`; embedded source marker exactly matches `3fcbe6ac...`; unsigned validation AAB SHA-256 `08d2c80b5da604f6b50a95a7944b6576da87933ee5eec94c2a3944b5274b780e`. ZIP/AAB hashes independently rechecked in this run.
+- The old failing run 42694199295 failed because the uploaded MainActivity source was truncated before `motionSnapshot`; no artifact was produced. Current #284 MainActivity is 1,146 lines with `motionSnapshot` and `openLocationSettings`; canonical MainActivity is 1,140 lines with `motionSnapshot` but without the settings bridge.
+- No exact-head CI exists for the current #284 head. Do not merge wholesale: ActivityTrackingService overlaps #307; MainActivity is leased by #93; app.js/index.html overlap #216/#224. Keep Draft; only a later isolated settings bridge can be considered after shared-file ownership is released and exact-head/device validation passes.
 
 ## Physical P0 gate — BLOCKED
 
-Desktop Commander localhost is offline; the Samsung SM-A217F's current state is unknown. Do not launch, install, force-stop, pause or finish any possibly active session until the device is reconnected and its current state is read-only inspected.
+The latest read-only Desktop Commander device-list check still reports localhost OFFLINE (last seen about 152 hours ago); the Samsung SM-A217F current app/session state is unknown. Do not launch, install, force-stop, pause or finish any possibly active session until the device is reconnected and its current state is read-only inspected.
 
 Required measurements:
 1. Stationary 60-second drift and false distance.

@@ -1,9 +1,9 @@
 # TopHeroFit — Current Integrator Leases
 
-**Observed:** 2026-11-23 19:51 Africa/Cairo  
+**Observed:** 2026-11-23 20:33 Africa/Cairo  
 **Canonical branch:** `agent/codex/fitness-recovery/20261023`  
 **Canonical application head:** `fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af`
-**Raw compare snapshot:** canonical branch tip `96266069014b154edb5d08d7677d9349c4530649`, immediately before this lease refresh commit.
+**Raw compare snapshot:** canonical ReleaseOps tip `54d6266c3c8bc469a339a2e1db59734b0ecc8908`, immediately before this documentation refresh.
 
 ## Exclusive canonical ownership
 
@@ -22,8 +22,8 @@ The raw ahead/behind values below are snapshots against `962660...` before this 
 
 | Lane | PR / owner | Owned files or scope | Current decision |
 |---|---|---|---|
-| GPS source arbitration | #307 — `agent/codex/gps-fused-fallback-arbitration-20261122-r1` | `ActivityLocationFallbackPolicy.kt`, `ActivityTrackingService.kt`, focused Kotlin tests and source-contract tests | Draft; exact-head CI passed on 5326bdef; raw compare 9 ahead / 31 behind at 962660. Ten extra behind commits since app head fe06 are ReleaseOps-only. Rebase and rerun CI; physical P0 still blocks merge. |
-| GPS map/settings watchdog | #284 — `agent/codex/gps-open-source-stack-20261109` | `app.js`, `index.html`, `MainActivity.kt`, `ActivityTrackingService.kt`, GPS policies/tests | Draft; raw compare 19 ahead / 139 behind at 962660; ten extra behind commits since app head fe06 are ReleaseOps-only. Overlaps #307, #93, #216 and #224. Do not merge wholesale. |
+| GPS source arbitration | #307 — `agent/codex/gps-fused-fallback-arbitration-20261122-r1` | `ActivityLocationFallbackPolicy.kt`, `ActivityTrackingService.kt`, focused Kotlin tests and source-contract tests | Draft; current head `923a951a...`, 2 ahead / 0 behind canonical tip `54d6266c...`; exact-head run 45238807995 PASS (83 Product / 39 Source / 29 Backend / 347 Android; zero failures/ignored). Four GPS-only files. Artifact 14851146115 ZIP `d8e716...`, unsigned AAB `833998...`. Strict elapsed-time ordering rejects older/equal Fused fixes and filters stale batch points. Physical P0 still blocks merge. |
+| GPS map/settings watchdog | #284 — `agent/codex/gps-open-source-stack-20261109` | `app.js`, `index.html`, `MainActivity.kt`, `ActivityTrackingService.kt`, GPS policies/tests | Draft; current head `274155e...`, 19 ahead / 143 behind canonical tip `54d6266c...`, 13 files. Historical run 42694452852 validates only old SHA `3fcbe6ac...`; no current-head CI. Overlaps #307, #93, #216 and #224. Do not merge wholesale. |
 | Health services / permissions | #93 | `MainActivity.kt`, Android Manifest, Health Services bridge | Draft; current handoff declares 19 Health scopes versus canonical five. Hold until narrowed and privacy/Play declarations reconciled. |
 | Health permission minimization | #137 — `agent/codex/health-permission-minimization-20261027` | permission-minimization product test and ReleaseOps evidence | No exact-head workflow run; no Play declaration or physical watch/grant/revoke PASS. |
 | Active workout resume | #216 — `agent/codex/active-workout-resume-protection-20261030` | active-workout resume state and shared WebView runtime | Draft; no exact-head Actions run; shared app.js/index/styles. |
@@ -34,7 +34,7 @@ The raw ahead/behind values below are snapshots against `962660...` before this 
 
 ## Merged and closed lanes
 
-- #309 merged at `fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af` after exact-head run 45194352739; four-file Health-only diff, no permissions or release changes.
+- #309 merged at `fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af` after exact-head run 45194352739; four-file Health-only diff, no permissions or release changes. Artifact 14828150903 ZIP SHA-256 `9d6938b7fce88e93d59065e10b64ee435420e9d4dc5e311589d750f579305be0` was independently rehashed; validation AAB `9d23056ae9abc9eb90cb8d69ef25717a51d997437109cd637b476eb7f6a180e5` is unsigned.
 - #303 merged at `b097d6ef0025d615c261ee42e8d2246533224e70` after exact-head CI; canonical Activity Engine/GPS base.
 - #308, #305, #304, #302, #301, #282 and #269 are already merged.
 - #269 competition backend currently exposes `strength_volume_kg_reps` only. GPS reward eligibility remains false.
@@ -50,10 +50,10 @@ The raw ahead/behind values below are snapshots against `962660...` before this 
 
 ## Release and privacy gates
 
-- Current Internal: 51019 Completed; Alpha: 51007 Draft; Production not verified.
+- Latest independently rehashed Play readback (2026-11-22 17:56:05 UTC): Internal 51019 Completed; Alpha 51007 Draft; Production not listed/not verified. No new 2026-11-23 readback.
 - Next versionCode 51020 remains unallocated.
 - Owner Play/API write permission and GCP Secret Manager signing-key access are unverified.
-- No new signed AAB or Play upload.
+- No new signed AAB or Play upload. The latest GPS validation AAB is unsigned QA-only and is not a release candidate.
 - Route sync is design-only; no authenticated route endpoint or precise-location upload.
 - Anti-cheat policy is tested but unwired; do not stack it as a second distance gate.
 - No paid infrastructure or work outside TopHeroFit.
