@@ -48,7 +48,7 @@ class HealthExerciseSessionReconciliationPolicyTest {
     )
 
     @Test
-    fun maps_only_walking_running_and_cycling_families() {
+    fun maps_cardio_swimming_and_other_typed_sessions() {
         assertEquals(
             HealthActivitySessionKind.WALKING,
             HealthExerciseSessionReconciliationPolicy.kindForExerciseType(
