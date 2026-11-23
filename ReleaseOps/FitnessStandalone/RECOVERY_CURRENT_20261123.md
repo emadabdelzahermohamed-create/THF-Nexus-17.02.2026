@@ -7,7 +7,7 @@
 
 ## Source-of-truth boundary
 
-The repository's `RELEASE_CURRENT.json` designates the recovery branch above as canonical. The default `main` branch is heavily diverged: canonical is 753 commits ahead and 180 behind, with merge base `46db554a12ff9b21cc2096d19244b007c8137b43`. Do not merge these histories automatically.
+The repository's `RELEASE_CURRENT.json` designates the recovery branch above as canonical. At application head `fe06...`, default `main` was 753 ahead / 180 behind; raw compare at `962660...` was 763 ahead / 180 behind. The ten additional commits are ReleaseOps-only checkpoints. Do not merge these histories automatically.
 
 The canonical branch advanced from `a930448d01649a5bc1a5efba4f163da8c25f2285` through PR #309. Post-merge comparison against tested PR head `83cc98121bdd73a9d88705f9beb80fcfe420ea0e` shows one merge commit ahead and zero changed files.
 
@@ -33,14 +33,14 @@ The canonical branch advanced from `a930448d01649a5bc1a5efba4f163da8c25f2285` th
 - Exact-head run [45132278712](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45132278712): Product 81/81, Source Contract 39/39, Backend 29/29, Android Unit 345/345, zero failures/ignored.
 - Artifact 14797923310 ZIP SHA-256: `f3010f85b58670a7fada3de693aa4dd4a1e74f6d3fe8a0c1eed75102d1ce9c9d`.
 - Unsigned validation AAB SHA-256: `97e790a850f404746a3c12f9107d1a18aaa2b3842c14a010c3d72b74bba52997`. Its bytes match the earlier e788 build; no new Play artifact was created or uploaded.
-- Current compare to canonical: 9 ahead / 21 behind. Rebase onto this checkpoint and rerun exact-head CI before merge.
+- At application head `fe06...`, compare was 9 ahead / 21 behind; raw compare at `962660...` was 9 ahead / 31 behind. The ten extra behind commits are ReleaseOps-only checkpoints, not GPS app changes. Rebase onto the latest canonical branch and rerun exact-head CI before merge.
 - The branch-local recovery header still names `f6b124...`, while the PR and exact-head Actions evidence name `5326bdef...`; reconcile that stale checkpoint field.
 - Physical P0 remains blocked.
 
 ### PR #284 — Open-source map/fallback handoff
 
 - Draft; head `3fcbe6acbb4dc660284c74c8392818996e1de7ee`, original base `9b5db58e809fa7d5e639bc4ee55df03d100467e8`.
-- Current compare: 19 ahead / 129 behind; 13 changed files.
+- At application head `fe06...`, compare was 19 ahead / 129 behind; raw compare at `962660...` was 19 ahead / 139 behind. The ten extra behind commits are ReleaseOps-only checkpoints. The PR still changes 13 files.
 - Historical exact-head run [42694452852](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42694452852) succeeded: Product 60/60, Source Contract 38/38, Backend 29/29, Android Unit 223/223, zero failures/ignored.
 - Artifact 13707718861 ZIP SHA-256: `ee28619b54c910d640928d9a560e980b00f522782603f4ead109686f25379a1c`.
 - Unsigned validation AAB SHA-256: `08d2c80b5da604f6b50a95a7944b6576da87933ee5eec94c2a3944b5274b780e`.
