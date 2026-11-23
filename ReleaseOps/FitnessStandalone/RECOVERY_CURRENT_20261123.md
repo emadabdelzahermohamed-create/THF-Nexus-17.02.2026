@@ -50,7 +50,7 @@ The canonical branch advanced from `a930448d01649a5bc1a5efba4f163da8c25f2285` th
 
 ## Google Play and release
 
-Latest independently rehashed readback remains run 43739661313, attempt 7, observed 2026-11-22 17:56:05 UTC. Artifact 14766395949 SHA-256 `7230b2fa82b21671d9710db75663c4ade78ce4a768cb8a374301393774bc5`; embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`.
+Latest independently rehashed readback remains run 43739661313, attempt 7, observed 2026-11-22 17:56:05 UTC. Artifact 14766395949 SHA-256 `7230b2fa82b21671d9710db75663c4ade78ce4a768974cb8a374301393774bc5`; embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63`.
 
 - Internal: 51019 — Completed.
 - Alpha: 51007 — Draft.
