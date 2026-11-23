@@ -307,6 +307,23 @@ class HealthRecordProvenancePresentationPolicyTest {
     }
 
     @Test
+    fun unknownExerciseTypeCannotBePresentedAsRewardEligibleEvenWithVerifiedFlags() {
+        val summary = HealthRecordProvenancePresentationPolicy.summarize(
+            evidence(
+                type = "ExerciseSessionRecord",
+                device = Device.TYPE_PHONE,
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_UNKNOWN,
+                startEpochMillis = 1_000L,
+                endEpochMillis = 2_000L,
+                integrity = IntegrityClass.VERIFIED,
+                verified = true,
+            ),
+        )
+
+        assertFalse(summary.rewardEligible)
+    }
+
+    @Test
     fun futureDatedExerciseSessionCannotBePresentedAsRewardEligible() {
         val summary = HealthRecordProvenancePresentationPolicy.summarize(
             evidence(
