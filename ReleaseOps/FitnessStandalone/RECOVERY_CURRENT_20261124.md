@@ -5,7 +5,7 @@
 **Canonical branch:** `agent/codex/fitness-recovery/20261023`  
 **Canonical application head:** `fe06b2bb98c6b8862fb4ab8493758a6fa3aa75af`  
 **Canonical ReleaseOps parent before this checkpoint:** `c8f16884b099655950b692c8e735f1dea8b920a3`  
-**Current canonical ReleaseOps tip after this checkpoint:** `b688c1793be0a15bd4302c9b7eea0106ed0ea0a5`
+**Evidence-refresh parent before this correction:** `39f0e2e81fbcdc42db7f05e2b3d963021ef4dfd0`
 
 ## Source-of-truth and starting files
 
@@ -22,7 +22,7 @@
 - Exact head: `46241bd8286b2b1d3489aef3a46432eea702a054`.
 - Previous exact tested head: `923a951a304d1c8b2210539be83f07c8accb4371`.
 - Latest commit: `fix(gps): reject impossible Fused source-transition jumps`.
-- Compare snapshot against canonical branch before this checkpoint: 3 commits ahead / 1 behind at `c8f16884b099655950b692c8e735f1dea8b920a3`. This checkpoint adds one more documentation-only canonical commit, so current compare is 3 ahead / 2 behind. Both behind commits (`c8f16884...` and `b688c1793be0a15bd4302c9b7eea0106ed0ea0a5`) are ReleaseOps-only; application changes remain six GPS-owned files. No Health, catalog, release, signing or Play paths are in the PR.
+- Compare snapshot against canonical branch at evidence-refresh parent `39f0e2e81fbcdc42db7f05e2b3d963021ef4dfd0`: 3 commits ahead / 3 behind. The three behind commits (`c8f16884...`, `b688c179...`, `39f0e2e...`) are documentation-only ReleaseOps checkpoints; application changes remain six GPS-owned files with no overlap. No Health, catalog, release, signing or Play paths are in the PR.
 - PR [#307](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/307) remains Draft/unmerged and mergeable.
 
 ### New source correction
@@ -62,7 +62,7 @@ Fused source recovery previously validated candidates without the fresh framewor
 
 ## Next safe sequence
 
-1. Read the terminal result of workflow 45340645909; if successful, capture exact test counts and independently verify the produced QA artifact hashes.
+1. Preserve exact-head workflow 45340645909 and independently rehashed artifact 14895973148 as the current CI evidence; do not rebuild the unchanged SHA.
 2. Keep PR #307 Draft until physical P0 is completed on an authorized handset.
 3. Restore device access only after confirming the handset's current state read-only; do not disturb a potentially active session.
 4. Continue Maps integration only when owner Cloud permission, billing/project state and package/signing SHA are available.

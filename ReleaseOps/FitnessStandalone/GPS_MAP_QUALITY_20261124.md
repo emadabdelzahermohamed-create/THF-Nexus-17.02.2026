@@ -103,7 +103,7 @@ Required P0 evidence:
 
 ## Next safe action
 
-1. Read the terminal result for exact-head workflow 45340645909; record artifact hashes only if it completes successfully.
+1. Do not rebuild the unchanged exact application SHA; run 45340645909 is the completed evidence for this source tree.
 2. Keep PR #307 Draft until Physical P0 passes on an authorized handset.
 3. Resume device work only after read-only inspection confirms no existing activity session will be disturbed.
 4. Keep Google Maps provisioning blocked until owner Cloud permission and package/signing SHA prerequisites are evidenced.
