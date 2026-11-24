@@ -42,6 +42,8 @@ internal data class HealthExerciseSessionRejection<T>(
 internal data class HealthExerciseSessionReconciliationResult<T>(
     val accepted: List<HealthExerciseSessionCandidate<T>>,
     val duplicates: List<HealthExerciseSessionCandidate<T>>,
+    /** Connected session windows that are linked only transitively, not pairwise compatible. */
+    val windowAmbiguous: List<HealthExerciseSessionCandidate<T>>,
     val ambiguous: List<HealthExerciseSessionCandidate<T>>,
     val invalid: List<HealthExerciseSessionRejection<T>>,
 ) {
@@ -148,36 +150,57 @@ internal object HealthExerciseSessionReconciliationPolicy {
         }
 
         val duplicates = mutableListOf<HealthExerciseSessionCandidate<T>>()
+        val windowAmbiguous = mutableListOf<HealthExerciseSessionCandidate<T>>()
         val ambiguous = mutableListOf<HealthExerciseSessionCandidate<T>>()
         val components = validVerified.indices.groupBy { find(it) }.values
         components.forEach { componentIndexes ->
             val component = componentIndexes.map { validVerified[it] }
             if (component.size == 1) {
                 accepted += component.single()
-            } else if (
-                component.map { it.activityKind }.distinct().size > 1 ||
-                component.filter { it.activityKind == HealthActivitySessionKind.OTHER }
-                    .map { it.exerciseType }.distinct().size > 1
-            ) {
-                // Do not choose a sport or a distinct non-cardio exercise type when reviewed
-                // sources disagree about the same session.
-                ambiguous += component
             } else {
-                val winner = component.maxWithOrNull(
-                    compareBy<HealthExerciseSessionCandidate<T>> { devicePriority(it.deviceType) }
-                        .thenBy { it.lastModifiedTime }
-                        .thenBy { it.sourcePackage.trim().lowercase(Locale.ROOT) }
-                        .thenBy { it.recordId.trim() }
-                        .thenBy { it.originalIndex },
-                ) ?: error("A non-empty activity-session component must have a winner")
-                accepted += winner
-                duplicates += component.filter { it.originalIndex != winner.originalIndex }
+                val hasTypeConflict =
+                    component.map { it.activityKind }.distinct().size > 1 ||
+                        component.filter { it.activityKind == HealthActivitySessionKind.OTHER }
+                            .map { it.exerciseType }.distinct().size > 1
+                // Endpoint-tolerance matching is not transitive. A~B and B~C do not prove
+                // A~C, so a connected component must be a complete pairwise match before
+                // any record can be discarded as a duplicate.
+                val hasNonPairwiseWindowMatch = component.indices.any { leftIndex ->
+                    (leftIndex + 1 until component.size).any { rightIndex ->
+                        !sameSessionWindow(component[leftIndex], component[rightIndex])
+                    }
+                }
+
+                when {
+                    hasTypeConflict -> {
+                        // Do not choose a sport or a distinct non-cardio exercise type when
+                        // reviewed sources disagree about the same session.
+                        ambiguous += component
+                    }
+                    hasNonPairwiseWindowMatch -> {
+                        // Preserve source-labelled evidence but exclude the whole chained
+                        // component; no member is a safe duplicate winner.
+                        windowAmbiguous += component
+                    }
+                    else -> {
+                        val winner = component.maxWithOrNull(
+                            compareBy<HealthExerciseSessionCandidate<T>> { devicePriority(it.deviceType) }
+                                .thenBy { it.lastModifiedTime }
+                                .thenBy { it.sourcePackage.trim().lowercase(Locale.ROOT) }
+                                .thenBy { it.recordId.trim() }
+                                .thenBy { it.originalIndex },
+                        ) ?: error("A non-empty activity-session component must have a winner")
+                        accepted += winner
+                        duplicates += component.filter { it.originalIndex != winner.originalIndex }
+                    }
+                }
             }
         }
 
         return HealthExerciseSessionReconciliationResult(
             accepted = accepted.sortedBy { it.originalIndex },
             duplicates = duplicates.sortedBy { it.originalIndex },
+            windowAmbiguous = windowAmbiguous.sortedBy { it.originalIndex },
             ambiguous = ambiguous.sortedBy { it.originalIndex },
             invalid = invalid.sortedBy { it.originalIndex },
         )
