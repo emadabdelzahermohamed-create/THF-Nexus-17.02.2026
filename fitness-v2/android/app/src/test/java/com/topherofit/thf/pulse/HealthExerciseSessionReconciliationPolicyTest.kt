@@ -283,6 +283,47 @@ class HealthExerciseSessionReconciliationPolicyTest {
     }
 
     @Test
+    fun same_type_transitive_window_chain_is_quarantined_not_deduplicated() {
+        val first = candidate(
+            index = 0,
+            kind = HealthActivitySessionKind.RUNNING,
+            start = 1_000_000L,
+            end = 1_600_000L,
+        )
+        val bridge = candidate(
+            index = 1,
+            kind = HealthActivitySessionKind.RUNNING,
+            source = "com.sec.android.app.shealth",
+            start = 1_100_000L,
+            end = 1_700_000L,
+        )
+        val last = candidate(
+            index = 2,
+            kind = HealthActivitySessionKind.RUNNING,
+            source = "com.samsung.android.wear.shealth",
+            start = 1_200_000L,
+            end = 1_800_000L,
+        )
+
+        // first~bridge and bridge~last are within tolerance, but first~last is not.
+        val forward = HealthExerciseSessionReconciliationPolicy.reconcile(listOf(first, bridge, last))
+        val reverse = HealthExerciseSessionReconciliationPolicy.reconcile(listOf(last, bridge, first))
+
+        assertTrue(forward.accepted.isEmpty())
+        assertTrue(forward.duplicates.isEmpty())
+        assertTrue(forward.ambiguous.isEmpty())
+        assertEquals(listOf(0, 1, 2), forward.windowAmbiguous.map { it.originalIndex })
+        assertEquals(
+            listOf("record-0", "record-1", "record-2"),
+            forward.windowAmbiguous.map { it.recordId }.sorted(),
+        )
+        assertEquals(
+            forward.windowAmbiguous.map { it.recordId }.sorted(),
+            reverse.windowAmbiguous.map { it.recordId }.sorted(),
+        )
+    }
+
+    @Test
     fun distinct_or_only_partially_aligned_sessions_remain_separate() {
         val first = candidate(index = 0)
         val later = candidate(index = 1, source = "com.sec.android.app.shealth", start = 2_000_000L, end = 2_600_000L)
