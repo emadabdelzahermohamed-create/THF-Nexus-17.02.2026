@@ -107,3 +107,24 @@ Required P0 evidence:
 2. Keep PR #307 Draft until Physical P0 passes on an authorized handset.
 3. Resume device work only after read-only inspection confirms no existing activity session will be disturbed.
 4. Keep Google Maps provisioning blocked until owner Cloud permission and package/signing SHA prerequisites are evidenced.
+
+
+## Evening update — 2026-11-24 19:38 Africa/Cairo
+
+### Latest exact GPS source handoff
+
+PR #307 remains the active GPS source-arbitration handoff at exact head `46241bd8286b2b1d3489aef3a46432eea702a054`. The 2026-11-24 cross-provider continuity guard prevents a fresh-but-impossible Fused fix from becoming the route anchor after framework fallback. It applies normal fix validation, strictly increasing elapsed-realtime timestamps, and a conservative displacement/sport-speed envelope; batches are sorted and checked against a rolling accepted anchor. A stationary but valid handoff remains allowed.
+
+Exact-head run [45340645909](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45340645909) passed 83 Product, 39 Source Contract, 29 Backend and 349 Android unit tests, with zero failures/ignored. Artifact 14895973148 ZIP SHA-256: `e7adc8ff91e2d0e338a7c0646111605cba36c32a257ede5bf8554e9ab3007bc9`; QA APK: `e43f460a600be7ca4c0ea96dd61a973e13b43714545a45df79a7dabc6810aa98`; unsigned validation AAB: `255dd7e12469fb342b8c7b1cc1cb044c81bb76e60b4e4cdda95dfe9fca1748d8`.
+
+The PR remains Draft. Current canonical compare is 3 ahead / 6 behind, with only disjoint ReleaseOps/Health/probe commits behind it. GitHub reports mergeable=false while behind. No source rebase or repeat build was performed.
+
+### PR #284 remains unvalidated at its current head
+
+Current head `274155eafdfff381009ef5814a621f32b225f1a8`, 19 ahead / 149 behind, 13 files. Its only successful workflow is historical run 42694452852 on `3fcbe6ac...`; that is not evidence for the current head. Shared ownership conflicts remain across ActivityTrackingService, MainActivity/Manifest and WebView files. Keep Draft and extract no partial bridge until the relevant owners release those files and the isolated change receives exact-head CI and physical P0.
+
+### Map and metrics boundary
+
+Leaflet/WebView + OpenStreetMap-derived raster layers remain canonical, with OpenTopoMap and EOX Sentinel-2 optional layers. No Google Maps SDK/Rx, billing, API key, traffic or transit overlay was added. Map refresh remains local UI only; it is not route sync. GPS display smoothing must never alter distance, pace, speed or reward metrics.
+
+Physical P0 is still BLOCKED_NOT_RUN because the authorized Desktop Commander device is offline and the Samsung SM-A217F session state is unknown. No phone/GPS accuracy PASS is claimed.
