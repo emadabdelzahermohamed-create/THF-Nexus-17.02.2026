@@ -276,6 +276,10 @@ class HealthConnectRepository(private val context: Context) {
             reconciledByIndex[candidate.originalIndex] =
                 candidate.value.withProvenanceFailure("CONFLICTING_ACTIVITY_TYPE_AMBIGUOUS")
         }
+        sessionReconciliation.windowAmbiguous.forEach { candidate ->
+            reconciledByIndex[candidate.originalIndex] =
+                candidate.value.withProvenanceFailure("NON_TRANSITIVE_ACTIVITY_SESSION_WINDOW")
+        }
         sessionReconciliation.invalid.forEach { rejection ->
             reconciledByIndex[rejection.originalIndex] =
                 rejection.value.withProvenanceFailure(rejection.reason)
