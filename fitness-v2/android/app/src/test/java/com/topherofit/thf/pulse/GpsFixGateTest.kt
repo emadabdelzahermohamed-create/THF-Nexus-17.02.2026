@@ -69,6 +69,68 @@ class GpsFixGateTest {
         )
     }
 
+    @Test
+    fun fusedSourceTransitionRejectsImpossibleCrossProviderJumpsButAllowsStationaryPromotion() {
+        val frameworkFix = first.copy(elapsedMs = 100_000L, sourceLabel = "network")
+        val stationaryFusedFix = frameworkFix.copy(
+            accuracyMetres = 3.0,
+            elapsedMs = 101_000L,
+            sourceLabel = "fused",
+        )
+        val plausibleFusedFix = frameworkFix.copy(
+            latitude = 30.00003,
+            accuracyMetres = 3.0,
+            elapsedMs = 103_000L,
+            sourceLabel = "fused",
+        )
+        val teleportingFusedFix = frameworkFix.copy(
+            latitude = 31.0,
+            accuracyMetres = 3.0,
+            elapsedMs = 101_000L,
+            sourceLabel = "fused",
+        )
+
+        assertTrue(
+            GpsFixGate.acceptsSourceTransition(
+                stationaryFusedFix, frameworkFix, ActivityMode.WALK, 90_000L, 110_000L,
+            ),
+        )
+        assertTrue(
+            GpsFixGate.acceptsSourceTransition(
+                plausibleFusedFix, frameworkFix, ActivityMode.WALK, 90_000L, 110_000L,
+            ),
+        )
+        assertFalse(
+            GpsFixGate.acceptsSourceTransition(
+                teleportingFusedFix, frameworkFix, ActivityMode.WALK, 90_000L, 110_000L,
+            ),
+        )
+    }
+
+    @Test
+    fun fusedSourceTransitionRejectsDuplicateTimeButIgnoresAStaleHandoffAnchor() {
+        val frameworkFix = first.copy(elapsedMs = 100_000L, sourceLabel = "network")
+        val duplicateTimeFusedFix = frameworkFix.copy(sourceLabel = "fused")
+        val staleFrameworkFix = frameworkFix.copy(elapsedMs = 70_000L)
+        val freshFusedFix = first.copy(
+            latitude = 30.00003,
+            accuracyMetres = 3.0,
+            elapsedMs = 103_000L,
+            sourceLabel = "fused",
+        )
+
+        assertFalse(
+            GpsFixGate.acceptsSourceTransition(
+                duplicateTimeFusedFix, frameworkFix, ActivityMode.WALK, 90_000L, 110_000L,
+            ),
+        )
+        assertTrue(
+            GpsFixGate.acceptsSourceTransition(
+                freshFusedFix, staleFrameworkFix, ActivityMode.WALK, 90_000L, 110_000L,
+            ),
+        )
+    }
+
     @Test fun appliesDifferentSportSpeedLimits() {
         val moving = first.copy(latitude = 30.0001, elapsedMs = 102_000L)
         assertFalse(accepts(moving, first, ActivityMode.WALK))

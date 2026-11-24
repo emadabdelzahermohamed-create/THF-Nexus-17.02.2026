@@ -498,29 +498,37 @@ class ActivityTrackingService : Service(), SensorEventListener {
                     // fallback, but only one source may feed route/distance state at a time.
                     if (legacyLocationProvidersRegistered) {
                         val nowElapsed = SystemClock.elapsedRealtime()
-                        val acceptedFusedLocations = result.locations.mapNotNull { location ->
-                            val fix = location.toGpsFix()
-                            if (fix.sourceLabel?.equals("fused", ignoreCase = true) != true ||
-                                !GpsFixGate.accepts(
-                                    fix,
-                                    previous = null,
-                                    mode = mode,
-                                    sessionStartedMs = activityStartedAtElapsedMs,
-                                    nowMs = nowElapsed,
-                                )
-                            ) {
-                                null
-                            } else {
-                                location to fix
-                            }
-                        }
-                        val newestAcceptedFusedFix =
-                            acceptedFusedLocations.maxByOrNull { it.second.elapsedMs }?.second
                         val currentAcceptedElapsedMs =
                             lastLocation?.elapsedRealtimeNanos?.div(1_000_000L)
                         val currentAcceptedFixFresh = currentAcceptedElapsedMs?.let {
                             GpsFixGate.isFreshElapsedTime(it, nowElapsed)
                         } == true
+                        // A more accurate Fused point is not sufficient if it implies an
+                        // impossible cross-provider jump from the currently accepted fix.
+                        // Keep stationary promotion possible, but enforce monotonic time and
+                        // the sport-specific displacement/speed ceiling across the handoff.
+                        var transitionPrevious = lastLocation?.takeIf { currentAcceptedFixFresh }?.toGpsFix()
+                        val acceptedFusedLocations = result.locations
+                            .sortedBy { it.elapsedRealtimeNanos }
+                            .mapNotNull { location ->
+                                val fix = location.toGpsFix()
+                                if (fix.sourceLabel?.equals("fused", ignoreCase = true) != true ||
+                                    !GpsFixGate.acceptsSourceTransition(
+                                        fix,
+                                        previous = transitionPrevious,
+                                        mode = mode,
+                                        sessionStartedMs = activityStartedAtElapsedMs,
+                                        nowMs = nowElapsed,
+                                    )
+                                ) {
+                                    null
+                                } else {
+                                    transitionPrevious = fix
+                                    location to fix
+                                }
+                            }
+                        val newestAcceptedFusedFix =
+                            acceptedFusedLocations.maxByOrNull { it.second.elapsedMs }?.second
                         if (!ActivityLocationFallbackPolicy.shouldPromoteFusedLocation(
                                 sessionModeMatches = activityMode == mode,
                                 paused = activityPaused,

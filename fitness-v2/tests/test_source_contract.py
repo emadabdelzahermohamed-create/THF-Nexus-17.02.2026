@@ -768,7 +768,14 @@ class GpsLocationSourceArbitrationSourceContractTest(unittest.TestCase):
         ]
         self.assertIn("legacyLocationProvidersRegistered", callback)
         self.assertIn('fix.sourceLabel?.equals("fused", ignoreCase = true) != true', callback)
-        self.assertIn("GpsFixGate.accepts(", callback)
+        self.assertIn("GpsFixGate.acceptsSourceTransition(", callback)
+        self.assertIn("var transitionPrevious = lastLocation?.takeIf { currentAcceptedFixFresh }?.toGpsFix()", callback)
+        self.assertIn("result.locations", callback)
+        self.assertIn(".sortedBy { it.elapsedRealtimeNanos }", callback)
+        self.assertIn("transitionPrevious = fix", callback)
+        gate = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsFixGate.kt").read_text()
+        self.assertIn("fun acceptsSourceTransition(", gate)
+        self.assertIn("ActivityMetrics.averageSpeedKph(conservativeDisplacement, elapsedMs)", gate)
         self.assertIn("shouldPromoteFusedLocation(", callback)
         self.assertIn("promoteFusedLocationSource()", callback)
 
