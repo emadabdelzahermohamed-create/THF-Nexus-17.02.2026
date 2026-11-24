@@ -42,15 +42,32 @@ The Fused recovery batch was admitted using `GpsFixGate.accepts(..., previous = 
 - Added two Kotlin tests covering stationary/plausible handoff, teleport rejection, duplicate timestamps and stale previous anchors.
 - Extended the GPS source-contract test to require sorted, anchored transition validation.
 
-### Exact-head validation — pending
+### Exact-head validation — PASS
 
-Workflow [45340645909](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45340645909) is attached to exact head `46241bd8286b2b1d3489aef3a46432eea702a054`.
+Workflow [45340645909](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45340645909) completed **SUCCESS** on exact head `46241bd8286b2b1d3489aef3a46432eea702a054`.
 
-At checkpoint time:
-- Product, source-contract and backend regression step: **SUCCESS**.
-- Android unit/lint/API 36/APK/AAB build step: **IN_PROGRESS**.
-- No artifact has been published by this run yet.
-- Do not claim full CI PASS, Android test PASS, GPS accuracy PASS or phone QA PASS until exact workflow completion and physical evidence.
+| Suite / validation | Result |
+|---|---:|
+| Product | 83/83 |
+| Source contract | 39/39 |
+| Backend | 29/29 |
+| Android unit | 349/349 |
+| Android failures / ignored | 0 / 0 |
+| Android API 36 / Kotlin / Gradle | PASS |
+| Lint | 0 errors, 11 warnings, 1 hint |
+| Debug APK / unsigned AAB validation | PASS |
+
+Gradle BUILD SUCCESSFUL in 3m03s. APK identity was verified in the workflow log: `com.topherofit.thf.pulse.qa`, versionCode `51019`, versionName `5.0.0-v2-alpha19-debug`.
+
+Artifact `14895973148` was downloaded and independently rehashed:
+- ZIP size: 63,097,908 bytes.
+- ZIP SHA-256: `e7adc8ff91e2d0e338a7c0646111605cba36c32a257ede5bf8554e9ab3007bc9` (matches GitHub artifact digest).
+- Embedded source marker: `46241bd8286b2b1d3489aef3a46432eea702a054`.
+- QA APK SHA-256: `e43f460a600be7ca4c0ea96dd61a973e13b43714545a45df79a7dabc6810aa98`.
+- Validation AAB SHA-256: `255dd7e12469fb342b8c7b1cc1cb044c81bb76e60b4e4cdda95dfe9fca1748d8`.
+- `jarsigner -verify`: `jar is unsigned`.
+
+This is an unsigned QA validation artifact only, not a signed release or Play upload. Android CI PASS does not establish physical GPS or phone QA PASS.
 
 The PR remains Draft/unmerged. The changed-file set is six GPS-owned implementation/test files only:
 - `ActivityLocationFallbackPolicy.kt`
