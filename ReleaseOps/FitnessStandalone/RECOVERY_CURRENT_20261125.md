@@ -18,7 +18,7 @@
 
 - PR #312 merged at canonical commit `85fb3e96f90ca5f7a9eac9072d8301d7f31d55bb`.
 - Exact source SHA: `3f30353939806f50ebd7f5c45c30f4367fbd3426`.
-- Exact-head workflow [45626405480](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45626405480): workflow and deterministic Android job SUCCESS; API 36, Kotlin/Gradle, lint, debug APK and unsigned AAB validation completed.
+- Exact-head workflow [45626405480](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45626405480): Product 84/84, Source Contract 35/35, Backend 29/29, Android Unit 346/346; zero failures/ignored; API 36, Kotlin/Gradle, lint, debug APK and unsigned AAB validation PASS.
 - Artifact 15028895816 ZIP SHA-256: `f4ee13861128e192a4d08719e7f157a1e579451d92bfcb65e6106a3e52a834d7`; independently downloaded and rehashed.
 - Embedded source marker: `3f30353939806f50ebd7f5c45c30f4367fbd3426`.
 - QA APK SHA-256: `3bad782dd24cf1733dfbe04b8122f04bc2bea1cbc4660ce49a8600bb8892428a`.
