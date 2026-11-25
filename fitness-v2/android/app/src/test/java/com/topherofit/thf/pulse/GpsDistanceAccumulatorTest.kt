@@ -150,7 +150,8 @@ class GpsDistanceAccumulatorTest {
 
     @Test
     fun gapBeyondFreshFixWindowReanchorsWithoutBridgingStaleDistance() {
-        assertEquals(GpsFixGate.MAX_FIX_AGE_MS, GpsDistanceAccumulator.MAX_ANCHOR_GAP_MS)
+        assertEquals(GpsFixGate.MAX_FIX_AGE_MS, GpsDistanceAccumulator.MAX_FIX_GAP_MS)
+        assertEquals(120_000L, GpsDistanceAccumulator.MAX_ANCHOR_GAP_MS)
         val accumulator = GpsDistanceAccumulator()
         assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0)))
         // A 31-second gap exceeds the shared 30-second freshness contract. The new point
@@ -163,6 +164,20 @@ class GpsDistanceAccumulatorTest {
         assertNotNull(credit)
         assertEquals(30.0, credit!!.distanceMetres, 0.2)
         assertEquals(15_000L, credit.elapsedMs)
+    }
+
+    @Test
+    fun slowContinuousMovementCanAccumulateAcrossFreshFixesBeyondThirtySeconds() {
+        val accumulator = GpsDistanceAccumulator()
+        assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0)))
+        for (seconds in 1L..8L) {
+            assertNull(accumulator.offer(fix(metres = seconds.toDouble(), seconds = seconds * 5L)))
+        }
+        val credit = accumulator.offer(fix(metres = 9.0, seconds = 45))
+
+        assertNotNull(credit)
+        assertEquals(9.0, credit!!.distanceMetres, 0.2)
+        assertEquals(45_000L, credit.elapsedMs)
     }
 
     @Test
