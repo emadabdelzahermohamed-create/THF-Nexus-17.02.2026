@@ -103,6 +103,12 @@ object HealthRecordEvidencePolicy {
         if (!HealthSourceTrustPolicy.isCompatibleActivityDeviceType(deviceType)) {
             return supported("INCOMPATIBLE_OR_UNKNOWN_DEVICE_CLASS")
         }
+        if (
+            isExerciseSessionRecord &&
+            HealthExerciseSessionReconciliationPolicy.kindForExerciseType(requireNotNull(exerciseType)) == null
+        ) {
+            return supported("UNSUPPORTED_EXERCISE_TYPE")
+        }
 
         val swimmingSport = when (exerciseType) {
             ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> SportKind.SWIMMING_POOL

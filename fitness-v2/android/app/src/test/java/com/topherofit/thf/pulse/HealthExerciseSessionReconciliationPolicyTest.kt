@@ -97,6 +97,54 @@ class HealthExerciseSessionReconciliationPolicyTest {
                 ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
             ),
         )
+        assertEquals(
+            HealthActivitySessionKind.OTHER,
+            HealthExerciseSessionReconciliationPolicy.kindForExerciseType(
+                ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+            ),
+        )
+    }
+
+    @Test
+    fun unknown_future_exercise_type_is_not_classified_as_reward_eligible_other() {
+        assertNull(HealthExerciseSessionReconciliationPolicy.kindForExerciseType(Int.MAX_VALUE))
+    }
+
+    @Test
+    fun maps_all_current_mapper_other_types_to_the_reviewed_other_bucket() {
+        val supportedTypes = listOf(
+            ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+            ExerciseSessionRecord.EXERCISE_TYPE_HIKING,
+            ExerciseSessionRecord.EXERCISE_TYPE_SOCCER,
+            ExerciseSessionRecord.EXERCISE_TYPE_YOGA,
+            ExerciseSessionRecord.EXERCISE_TYPE_PILATES,
+            ExerciseSessionRecord.EXERCISE_TYPE_CALISTHENICS,
+            ExerciseSessionRecord.EXERCISE_TYPE_GYMNASTICS,
+            ExerciseSessionRecord.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING,
+            ExerciseSessionRecord.EXERCISE_TYPE_BOXING,
+            ExerciseSessionRecord.EXERCISE_TYPE_MARTIAL_ARTS,
+            ExerciseSessionRecord.EXERCISE_TYPE_ROWING,
+            ExerciseSessionRecord.EXERCISE_TYPE_ROWING_MACHINE,
+            ExerciseSessionRecord.EXERCISE_TYPE_TENNIS,
+            ExerciseSessionRecord.EXERCISE_TYPE_TABLE_TENNIS,
+            ExerciseSessionRecord.EXERCISE_TYPE_SQUASH,
+            ExerciseSessionRecord.EXERCISE_TYPE_BADMINTON,
+            ExerciseSessionRecord.EXERCISE_TYPE_VOLLEYBALL,
+            ExerciseSessionRecord.EXERCISE_TYPE_BASKETBALL,
+            ExerciseSessionRecord.EXERCISE_TYPE_HANDBALL,
+            ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING,
+            ExerciseSessionRecord.EXERCISE_TYPE_GUIDED_BREATHING,
+            ExerciseSessionRecord.EXERCISE_TYPE_ELLIPTICAL,
+            ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+        )
+
+        supportedTypes.forEach { exerciseType ->
+            assertEquals(
+                HealthActivitySessionKind.OTHER,
+                HealthExerciseSessionReconciliationPolicy.kindForExerciseType(exerciseType),
+            )
+        }
+        assertNull(HealthExerciseSessionReconciliationPolicy.kindForExerciseType(Int.MAX_VALUE))
     }
 
     @Test
