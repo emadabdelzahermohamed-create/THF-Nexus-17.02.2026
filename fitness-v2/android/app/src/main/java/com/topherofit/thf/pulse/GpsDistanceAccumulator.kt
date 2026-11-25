@@ -70,7 +70,7 @@ class GpsDistanceAccumulator {
      * exceeds both reported accuracy radii plus a small margin, then persists at the next accepted
      * fix. A one-fix excursion that falls back inside the deadband is discarded and re-anchored.
      * Provider changes and gaps beyond the shared 30-second fix-freshness window re-anchor rather
- * than bridging stale evidence.
+     * than bridging stale evidence.
      */
     fun offer(fix: GpsFix): GpsDistanceCredit? {
         if (!isUsable(fix)) {
