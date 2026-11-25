@@ -30,8 +30,13 @@
 
 - Run: https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45562000301
 - Exact tested application SHA: `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99`.
-- Observed at checkpoint: changed-app job SUCCESS; Product, source-contract and backend regression step SUCCESS; Android API 36 install SUCCESS; lint/build candidate step still IN_PROGRESS.
-- No Android unit/build PASS, artifact digest, signing or Play PASS is claimed until the run reports completion.
+- Workflow 45562000301 completed SUCCESS on exact application SHA `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99`.
+- Product 84/84; Source Contract 40/40; Backend 29/29; Android Unit 353/353; zero failures and zero ignored.
+- Android API 36, Kotlin/Gradle, lint, Debug APK and unsigned AAB validation PASS; Gradle BUILD SUCCESSFUL in 3m; lint 0 errors, 13 warnings, 1 hint.
+- QA package `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.0.0-v2-alpha19-debug`.
+- Artifact 14997818372, 63,102,201 bytes; ZIP SHA-256 `b1784658074f503d137fa0a31c49062ada76d411fd21b5074753436911969854`, independently rehashed and matched GitHub digest.
+- APK SHA-256 `20a2f7131c65adc37471e62d2d4b89e26f0e21ab57aa52caf9871badaac4b8d7`.
+- AAB SHA-256 `d599915e3ea9cfe8ca99c680628438e7bf89baa461e1b40d45b34e9f1c72514f`; `jarsigner` confirms unsigned. No signing or Play action occurred.
 
 ## Technical delta
 
@@ -53,8 +58,8 @@ PR #307 remains open and Draft, exact previous tested head `46241bd8286b2b1d3489
 
 ## Safe next actions
 
-1. Read workflow 45562000301 to completion on exact application SHA `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99`; fix only a newly observed failure, never rerun identical successful gates.
-2. After exact-head Android CI passes, update PR #311 with test counts and artifact evidence; keep it Draft until physical P0.
+1. Preserve workflow 45562000301 and artifact 14997818372 as exact-SHA CI evidence; do not rebuild the unchanged application SHA.
+2. Keep PR #311 Draft until physical P0; close PR #307 as superseded after confirming #311 contains the same GPS handoff fixes.
 3. Once #311 is proven, close PR #307 as superseded with a cross-link; do not force-push either branch.
 4. Resume handset QA only after a fresh read-only device connection and confirmation the handset is idle; do not disturb an active user session.
 5. Continue Google Maps only after owner permission, billing/project and exact release signing fingerprint are available.

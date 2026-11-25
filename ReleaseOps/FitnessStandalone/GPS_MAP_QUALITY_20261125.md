@@ -38,7 +38,13 @@ This candidate adds provider-confirmed stationary re-anchoring:
 - Initial implementation commit: `581458f364bee9f77d00c0ed5d55c2391f2e81d0`.
 - Corrective compile/API-wiring commit: `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99`.
 - Exact candidate workflow: [45562000301](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45562000301).
-- At checkpoint time: changed-app job PASS; Product/source-contract/backend regression step PASS; Android API 36 installation PASS; deterministic Android lint/build step still IN_PROGRESS. No Android unit/build PASS or artifact is claimed yet.
+- Workflow [45562000301](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45562000301) completed **SUCCESS** on exact application SHA `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99`.
+- Product 84/84; Source Contract 40/40; Backend 29/29; Android Unit 353/353; failures 0; ignored 0.
+- Android API 36, Kotlin/Gradle, lint, Debug APK and unsigned AAB validation PASS. Gradle BUILD SUCCESSFUL in 3m. Lint: 0 errors, 13 warnings, 1 hint.
+- QA package `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.0.0-v2-alpha19-debug`.
+- Artifact 14997818372, size 63,102,201 bytes. ZIP SHA-256 `b1784658074f503d137fa0a31c49062ada76d411fd21b5074753436911969854`; independently rehashed and matched GitHub digest.
+- QA APK SHA-256 `20a2f7131c65adc37471e62d2d4b89e26f0e21ab57aa52caf9871badaac4b8d7`.
+- Validation AAB SHA-256 `d599915e3ea9cfe8ca99c680628438e7bf89baa461e1b40d45b34e9f1c72514f`; `jarsigner -verify` reports `jar is unsigned`.
 - Exact PR: [#311](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/311), Draft, unmerged.
 - Candidate compare at code head: 2 commits ahead / 0 behind canonical; only GPS Activity Engine implementation/tests changed.
 
