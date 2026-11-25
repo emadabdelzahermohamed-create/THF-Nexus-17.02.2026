@@ -53,10 +53,10 @@
 ## Current PR comparison and merge boundary
 
 - #311 current head `5eee7f80543d88420af011e36c4001660e75ee3b`, base `10d9794546e6ecd203bb8078ed458f25a23f056c`.
-- Compared with canonical branch head `43007c52b858e67fb42615da7c788c354b792620`: 11 ahead / 3 behind. Three behind commits are disjoint Health and workflow-only changes; GPS files do not overlap.
+- Compared with canonical tip before this docs-only reconciliation `29ceacb0200bb1da26d7efe5535fa4cfa74b8a29`: 11 ahead / 11 behind. The behind commits are four Health-owned files from #312 plus read-only probe/workflow and ReleaseOps checkpoints; no GPS source/test overlap. The PR's two branch-local checkpoint files duplicate canonical ReleaseOps paths and must be dropped in favor of the canonical files before any eventual merge.
 - #311 remains Draft/unmerged until physical P0; no rebase/rebuild solely for disjoint docs/Health drift.
 - #307 is closed, not merged, superseded by #311.
-- #284 remains Draft: 19 ahead / 153 behind, 13 files, no exact-head CI; it overlaps #311, #93, #216 and #224.
+- #284 remains Draft: 19 ahead / 161 behind, 13 files, no exact-head CI; it overlaps #311, #93, #216 and #224.
 
 ## Physical P0 — BLOCKED_NOT_RUN
 

@@ -4,6 +4,7 @@
 **Repository:** `emadabdelzahermohamed-create/THF-Nexus-17.02.2026`  
 **Canonical branch:** `agent/codex/fitness-recovery/20261023`  
 **Canonical application base:** `85fb3e96f90ca5f7a9eac9072d8301d7f31d55bb`  
+**Canonical ReleaseOps parent before this reconciliation:** `29ceacb0200bb1da26d7efe5535fa4cfa74b8a29`  
 **Read-only Play probe trigger commit:** `43007c52b858e67fb42615da7c788c354b792620` (workflow-comment-only; no app source changed)
 
 ## Source of truth and startup
@@ -35,7 +36,7 @@
 - Exact-head workflow [45565394285](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45565394285): Product 84/84, Source Contract 40/40, Backend 29/29, Android Unit 355/355; zero failures/ignored; Android API 36/Kotlin/Gradle, lint, APK and unsigned AAB validation PASS. Lint: 0 errors, 13 warnings, 1 hint.
 - Artifact 14999992451 was downloaded and independently rehashed. ZIP SHA-256 `238de38fb8c33b09ffce2e857c960e8df55bf017c5fca417dd710472498c538a`, matching GitHub digest. Embedded source marker matches `6dc578...`. QA APK SHA-256 `93116e6cfeeffe3ce29cd0ae29ae0595191919205e0ddf0ca24cbda4ac1992aa`. Validation AAB SHA-256 `cd51118db39df8124448d1cc6856e3b5709334b2990111799537f7e807f42793`; unsigned by `jarsigner`.
 - QA identity: `com.topherofit.thf.pulse.qa`, versionCode 51019, `5.0.0-v2-alpha19-debug`. Not a release artifact.
-- Current compare against canonical branch head at recheck `43007c52...`: 11 ahead / 3 behind. The three behind commits are disjoint Health #312 and read-only publication-probe workflow changes; no GPS file overlap.
+- Current compare against canonical tip before this docs-only reconciliation `29ceacb...`: 11 ahead / 11 behind. The 11 behind changes are four Health-owned files from #312 plus the read-only probe workflow and ReleaseOps checkpoints; no GPS source/test overlap. Canonical recovery/GPS checkpoint files now exist at the same paths as the PR's branch-local additions; those two branch docs are duplicate/conflicting and must be dropped in favor of canonical docs before any eventual merge.
 - PR #311 remains Draft/unmerged because physical P0 is mandatory. Do not rebase/rebuild unchanged app bytes solely for docs/Health drift.
 
 ### GPS implementation boundary
@@ -57,7 +58,7 @@
 ### PR #284
 
 - Open Draft; head `274155eafdfff381009ef5814a621f32b225f1a8`.
-- Compare to canonical branch head `43007c52...`: 19 ahead / 153 behind; 13 changed files.
+- Compare to canonical tip before this docs-only reconciliation `29ceacb...`: 19 ahead / 161 behind; 13 changed files.
 - Historical run 42694452852 validates only old SHA `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; no exact-head CI exists for the current PR head.
 - Overlaps #311 (`ActivityTrackingService.kt` / GPS policy), #93 (`MainActivity.kt` / Manifest), and #216/#224 (`app.js` / `index.html`). Keep Draft; do not merge wholesale. Any map-only extraction must be isolated after owner release, exact-head CI and physical P0.
 
