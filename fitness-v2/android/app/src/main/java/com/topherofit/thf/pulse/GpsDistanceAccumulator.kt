@@ -24,7 +24,7 @@ data class GpsDistanceCredit(
 
 class GpsDistanceAccumulator {
     companion object {
-        const val MAX_ANCHOR_GAP_MS = 120_000L
+        const val MAX_ANCHOR_GAP_MS = GpsFixGate.MAX_FIX_AGE_MS
         const val MAX_HORIZONTAL_ACCURACY_METRES = 50.0
         const val MIN_CREDITABLE_DISTANCE_METRES = 3.0
         const val MIN_CONFIRMATION_FIXES = 3
@@ -69,7 +69,8 @@ class GpsDistanceAccumulator {
      * Offer an already accepted raw fix. Returns accumulated path length only after net movement
      * exceeds both reported accuracy radii plus a small margin, then persists at the next accepted
      * fix. A one-fix excursion that falls back inside the deadband is discarded and re-anchored.
-     * Provider changes and long gaps re-anchor rather than bridging unrelated evidence.
+     * Provider changes and gaps beyond the shared 30-second fix-freshness window re-anchor rather
+ * than bridging stale evidence.
      */
     fun offer(fix: GpsFix): GpsDistanceCredit? {
         if (!isUsable(fix)) {

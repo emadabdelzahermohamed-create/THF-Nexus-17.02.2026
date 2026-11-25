@@ -702,6 +702,11 @@ class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
             service.index("private fun Location.toGpsFix")
         ]
         self.assertIn("gpsDistanceAccumulator.offer(observedFix)", location_path)
+        self.assertIn("!GpsFixGate.isFreshElapsedTime(previousElapsedMs, nowElapsed)", location_path)
+        self.assertIn("lastLocation = null", location_path)
+        self.assertIn("lastAccuracyMetres = null", location_path)
+        self.assertIn("gpsDistanceAccumulator.reset()", location_path)
+        self.assertIn("currentSpeedKph = 0.0", location_path)
         self.assertIn("if (activityPaused) return", location_path)
         self.assertIn("activityMode?.usesSteps != true || activityPaused", service)
         self.assertIn("gpsDistanceAccumulator.seed(observedFix)", location_path)
@@ -724,7 +729,7 @@ class GpsDistanceAccumulatorSourceContractTest(unittest.TestCase):
         self.assertIn("gpsDistanceAccumulator.reset()", unregister)
 
         self.assertIn("sourceLabel: String? = null", gate)
-        self.assertIn("MAX_ANCHOR_GAP_MS = 120_000L", helper)
+        self.assertIn("MAX_ANCHOR_GAP_MS = GpsFixGate.MAX_FIX_AGE_MS", helper)
         self.assertIn("movementAnchor.accuracyMetres + pendingWorstAccuracyMetres", helper)
         self.assertIn("pendingPathDistanceMetres += stepDistance", helper)
         self.assertIn("MAX_PATH_TO_NET_RATIO = 1.4", helper)
