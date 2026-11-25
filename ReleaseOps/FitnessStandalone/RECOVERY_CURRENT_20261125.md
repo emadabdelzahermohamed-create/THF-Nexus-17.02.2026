@@ -64,3 +64,30 @@ PR #307 is now closed (not merged) as superseded by PR #311 after exact-head wor
 5. Continue Google Maps only after owner permission, billing/project and exact release signing fingerprint are available.
 6. Keep VersionCode 51020 unallocated; no signing, Play write or Production action.
 
+
+
+## 2026-11-25 08:53 Cairo — latest GPS source delta
+
+- Current PR #311 branch head before this checkpoint: `4850a8d46bfd134abdc12ec86f38c62469b4437c`; canonical base remains `10d9794546e6ecd203bb8078ed458f25a23f056c`; compare 7 ahead / 0 behind.
+- New implementation commit: `1c9931ccdc5e00dbd50e3bc9c7e40632a0598bbe`; KDoc-only follow-up: `4850a8d46bfd134abdc12ec86f38c62469b4437c`.
+- `GpsDistanceAccumulator.MAX_ANCHOR_GAP_MS` now shares the 30-second `GpsFixGate.MAX_FIX_AGE_MS` boundary instead of 120 seconds. A 31-second gap must re-anchor rather than credit the unobserved displacement.
+- New Kotlin regression verifies a 100 m apparent stale-gap jump is excluded and only the next 30 m / 15 s measured segment is credited.
+- Python source contract now verifies the live service clears stale prior location/accuracy, distance accumulator and current speed before admitting the next fix.
+- Changed source/test paths: `GpsDistanceAccumulator.kt`, `GpsDistanceAccumulatorTest.kt`, `fitness-v2/tests/test_source_contract.py`. No other ownership lane files changed.
+
+### Exact validation
+
+- Workflow 45564776923 on `1c9931ccdc5e00dbd50e3bc9c7e40632a0598bbe`: Product, Source Contract and Backend test step SUCCESS; Android API 36 install SUCCESS; Gradle Android unit/lint/build step still running when captured.
+- Workflow 45564822387 targets exact current application SHA `4850a8d46bfd134abdc12ec86f38c62469b4437c` and was pending. Do not label the new delta Android PASS until that run completes.
+- Prior SHA `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99` remains the last fully passed candidate before this delta (workflow 45562000301, Android 353/353).
+
+### Current blockers
+
+- Device list read once at 08:53 Cairo: localhost OFFLINE, last seen 189 hours ago. No ADB or device mutation; Physical P0 BLOCKED_NOT_RUN.
+- Google Maps remains gated by owner Cloud key-inventory permission, billing/project prerequisite and exact production signing fingerprint. No key/billing action.
+- PR #311 remains Draft/unmerged; no VersionCode 51020 allocation, signing or Play action.
+- No Health/anti-cheat or exercise catalog changes; no release/workflow/signing files changed.
+
+### Next action
+
+Check workflow 45564822387 on the exact application SHA, then update this checkpoint with its final result. Keep PR #311 Draft until physical P0 is completed.

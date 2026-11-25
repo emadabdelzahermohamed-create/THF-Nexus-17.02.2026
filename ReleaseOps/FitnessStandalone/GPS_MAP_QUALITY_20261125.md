@@ -71,3 +71,36 @@ Required handset acceptance remains: 60-second stationary drift, measured walk/r
 - VersionCode 51020 remains unallocated.
 - No signed AAB or Play action was attempted.
 - This is source/CI work only; do not merge PR #311 before exact-head Android CI and physical P0.
+
+
+## 2026-11-25 08:53 Cairo — stale-anchor freshness hardening
+
+A focused review found a policy mismatch: `GpsFixGate.MAX_FIX_AGE_MS` is 30 seconds, and the live service already clears the distance accumulator when its previous accepted fix becomes stale, but `GpsDistanceAccumulator.MAX_ANCHOR_GAP_MS` still allowed 120 seconds. That left the accumulator itself able to bridge a gap that the admission/service layer considers stale.
+
+Implemented on the same GPS-owned PR branch:
+
+- `MAX_ANCHOR_GAP_MS` now references `GpsFixGate.MAX_FIX_AGE_MS` (30,000 ms), keeping the accumulator's independent continuity boundary aligned with fix freshness.
+- Added Kotlin regression `gapBeyondFreshFixWindowReanchorsWithoutBridgingStaleDistance`: a 31-second gap with a 100 m apparent displacement re-anchors; only the next measured 30 m / 15 s segment is credited.
+- Strengthened the Python source contract to assert the live service clears `lastLocation`, accuracy, speed and accumulator state when the previous fix is stale.
+
+Source commit: `1c9931ccdc5e00dbd50e3bc9c7e40632a0598bbe`.  
+Formatting-only follow-up: `4850a8d46bfd134abdc12ec86f38c62469b4437c`.  
+Exact current application tree for queued final validation: `4850a8d46bfd134abdc12ec86f38c62469b4437c` (the follow-up changes only KDoc indentation).
+
+### Validation state at checkpoint
+
+- Workflow `45564776923` on intermediate source commit `1c9931ccdc5e00dbd50e3bc9c7e40632a0598bbe`: Product, Source Contract and Backend test step completed SUCCESS; Android API 36 installation completed; Gradle Android test/lint/build step was still in progress at checkpoint capture.
+- Workflow `45564822387` on exact current application SHA `4850a8d46bfd134abdc12ec86f38c62469b4437c`: queued/pending; no PASS claimed.
+- Previous complete exact-head evidence remains workflow `45562000301` on `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99` (353/353 Android tests). It does not validate the new stale-gap delta.
+
+### Device and release boundary
+
+One read-only Desktop Commander device-list check at 08:53 Cairo returned localhost OFFLINE, last seen 189 hours earlier. No ADB, install, force-stop, permission mutation or GPS-setting change was attempted. Physical P0 remains BLOCKED_NOT_RUN.
+
+Google Maps owner Cloud/key/billing prerequisite remains unavailable; no SDK/key/layer change. VersionCode 51020 remains unallocated. No signing, Play write, workflow, Health/anti-cheat or exercise-catalog file was changed.
+
+### Resume
+
+1. Read final workflow `45564822387` for exact SHA `4850a8d46bfd134abdc12ec86f38c62469b4437c`; record PASS only if it completes successfully.
+2. Keep PR #311 Draft/unmerged until physical P0.
+3. Resume handset QA only after a fresh read-only online check and confirmation the handset is idle.
