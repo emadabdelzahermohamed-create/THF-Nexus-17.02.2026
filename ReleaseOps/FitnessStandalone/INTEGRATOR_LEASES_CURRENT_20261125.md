@@ -52,3 +52,22 @@ No handoff PR may allocate versionCode, sign, upload, commit a Play release or p
 - Route sync remains design-only; completed GPS routes are local in `pulse.v2.activities`; no authenticated route endpoint/table or precise-location upload.
 - Anti-cheat `ActivityEvidenceAnomalyPolicy.assessSegment()` remains tested but unwired; `GpsFixGate` is admission and `GpsDistanceAccumulator` is the sole metric-credit path.
 - No paid infrastructure or unrelated projects.
+
+
+## Recheck — 2026-11-25 20:11 Africa/Cairo
+
+| Lane | Current evidence | Decision |
+|---|---|---|
+| GPS source arbitration / stationary drift #311 | Head `5eee7f80543d88420af011e36c4001660e75ee3b`; exact-head run 45566362328 PASS (84 Product / 40 Source / 29 Backend / 355 Android); artifact 14999518977 independently re-downloaded/rehashed: ZIP `01d30c100dece05428d6f3bb78b61468ebf8281c031f675e243d56d2e0bf50b0`, APK `154b76c9601db115a4b8484af8f051cce017abd10b5edf7a0e9b5e9e133ea301`, unsigned AAB `cd51118db39df8124448d1cc6856e3b5709334b2990111799537f7e807f42793`. Current compare 11 ahead / 14 behind; behind files are disjoint Health/ReleaseOps/probe changes; two duplicate branch-local docs remain. | Draft; physical P0 required. Do not rebase/rebuild unchanged bytes. |
+| GPS map/settings watchdog #284 | Head `274155eafdfff381009ef5814a621f32b225f1a8`; 19 ahead / 164 behind; 13 files; no workflow run on current head. Historical 42694452852 is only for `3fcbe6ac...`; artifact 13707718861 returns 404. | Draft; no merge. Overlaps #311, #93, #216 and #224. |
+| Health permissions #93 | Draft; 19 declared scopes vs canonical five; MainActivity/Manifest owner. | Hold; narrow and reconcile privacy/Play declarations. |
+| Active-workout resume #216 | Draft; shared WebView files; no exact-head Actions validation. | Hold. |
+| Offline active-workout demos #224 | Draft; V8/source-level evidence only; native WebView/device acceptance incomplete. | Hold. |
+| GPS route display smoother #248 | Draft; no production call site. | Do not alter metric credit. |
+
+## Live release/device recheck — 2026-11-25 20:11 Africa/Cairo
+
+- Latest read-only Play probe [45669171108](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45669171108) remains the latest live readback. Artifact 15049525912 ZIP SHA-256 `b0145bf9d7016f739da8528c6a538ccd9df3ad352208e68b89aa26045d3bb86a` and embedded JSON SHA-256 `09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63` were independently reverified. Internal 51019 Completed; Alpha 51007 Draft; Production not listed/not verified; no upload/commit.
+- Desktop Commander localhost OFFLINE (last seen about 200 hours earlier); SM-A217F state UNKNOWN. No ADB, install, launch, force-stop, session or location-setting action. Physical P0 BLOCKED_NOT_RUN.
+- Owner Play/API write permission and GCP Secret Manager signing-key access remain NOT_VERIFIED. VersionCode 51020 remains UNALLOCATED; no signed AAB or Play write.
+- Route sync remains design-only/local-storage; no authenticated endpoint or precise-location upload. Anti-cheat remains tested but unwired; `GpsFixGate` is admission and `GpsDistanceAccumulator` sole metric-credit path. Competition backend #269 remains provisional `strength_volume_kg_reps`, GPS `rewardEligible=false`, no THF payouts.
