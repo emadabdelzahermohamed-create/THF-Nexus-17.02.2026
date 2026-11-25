@@ -105,3 +105,28 @@ Google Maps owner Cloud/key/billing prerequisite remains unavailable; no SDK/key
 1. Read corrected exact-head workflow `45565394285` and record PASS only if it completes successfully.
 2. Keep PR #311 Draft/unmerged until physical P0.
 3. Resume handset QA only after a fresh read-only online check and confirmation the handset is idle.
+
+
+### Final exact-head CI result — PASS (2026-11-25)
+
+Corrected source SHA `6dc578979bf940bfc0c2010ebe4f197557c1ea6b` completed workflow [45565394285](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45565394285) with SUCCESS.
+
+| Suite / validation | Result |
+|---|---:|
+| Product | 84/84 |
+| Source Contract | 40/40 |
+| Backend | 29/29 |
+| Android Unit Tests | 355/355 |
+| Android failures / ignored | 0 / 0 |
+| Android API 36 / Kotlin / Gradle | PASS |
+| Android Lint | 0 errors, 13 warnings, 1 hint |
+| Debug APK / unsigned AAB validation | PASS |
+
+Gradle BUILD SUCCESSFUL in 3 minutes. The test report inside the downloaded artifact confirms 355 tests, zero failures and zero ignored; both new GPS regressions and the existing oscillating-path regression are green.
+
+Artifact [14999992451](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45565394285/artifacts/14999992451), 63,102,473 bytes:
+- ZIP SHA-256: `238de38fb8c33b09ffce2e857c960e8df55bf017c5fca417dd710472498c538a` (downloaded and independently rehashed; matches GitHub digest).
+- QA APK SHA-256: `93116e6cfeeffe3ce29cd0ae29ae0595191919205e0ddf0ca24cbda4ac1992aa`.
+- Validation AAB SHA-256: `cd51118db39df8124448d1cc6856e3b5709334b2990111799537f7e807f42793`; `jarsigner -verify` reports `jar is unsigned`.
+
+QA identity remains `com.topherofit.thf.pulse.qa`, versionCode `51019`, versionName `5.0.0-v2-alpha19-debug`, compile/target API 36. These are CI artifacts only; not a signed production candidate, physical-device PASS, Google Maps PASS or Play PASS.

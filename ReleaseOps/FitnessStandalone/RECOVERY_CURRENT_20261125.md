@@ -93,3 +93,22 @@ PR #307 is now closed (not merged) as superseded by PR #311 after exact-head wor
 ### Next action
 
 Check corrected workflow 45565394285 on exact SHA `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`. Keep PR #311 Draft until Physical P0 is complete.
+
+
+## 2026-11-25 — corrected stale-gap candidate exact-head PASS
+
+- Exact application SHA: `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`.
+- Workflow [45565394285](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45565394285): SUCCESS.
+- Product 84/84; Source Contract 40/40; Backend 29/29; Android Unit 355/355; zero failures and zero ignored.
+- Android API 36, Kotlin/Gradle, lint, assembleDebug and bundleRelease validation PASS. Lint: 0 errors, 13 warnings, 1 hint. Gradle BUILD SUCCESSFUL in 3 minutes.
+- Test HTML in the downloaded artifact independently confirms 355/355 and that both `gapBeyondFreshFixWindowReanchorsWithoutBridgingStaleDistance` and `slowContinuousMovementCanAccumulateAcrossFreshFixesBeyondThirtySeconds` passed, alongside `oscillatingAcceptedFixesCannotInflateCreditedPathBeyondNetDisplacementEnvelope`.
+- Artifact 14999992451 (63,102,473 bytes): ZIP SHA-256 `238de38fb8c33b09ffce2e857c960e8df55bf017c5fca417dd710472498c538a`, independently rehashed; APK SHA-256 `93116e6cfeeffe3ce29cd0ae29ae0595191919205e0ddf0ca24cbda4ac1992aa`; unsigned AAB SHA-256 `cd51118db39df8124448d1cc6856e3b5709334b2990111799537f7e807f42793`. Jarsigner confirms unsigned.
+- QA identity: `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName 5.0.0-v2-alpha19-debug, API 36. No production signing or release version allocation.
+
+### Current PR / blockers
+
+- PR #311 remains Draft/unmerged; corrected application SHA above is CI PASS. The latest branch commit after it is documentation-only.
+- The initial 30-second whole-anchor attempt was correctly rejected by the oscillating-path regression in runs 45564776923 and 45564822387; the split 30-second inter-fix / 120-second anchor policy is the tested correction.
+- Device bridge remains OFFLINE from the single read-only check (08:53 Cairo, last seen 189 hours earlier); no ADB or device mutation. Physical P0 remains BLOCKED_NOT_RUN.
+- Google Maps SDK/key remains owner Cloud permission + project/billing + exact production signing fingerprint gated. No Google Maps integration or billing/key change.
+- No Health/anti-cheat, exercise catalog, release/workflow/signing/Play files changed. VersionCode 51020 remains unallocated.
