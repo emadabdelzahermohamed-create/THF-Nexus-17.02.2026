@@ -13,14 +13,17 @@ class GpsDistanceAccumulatorTest {
         accuracy: Double = 2.0,
         source: String? = "fused",
         mock: Boolean = false,
+        speedMps: Double? = null,
+        speedAccuracyMps: Double? = null,
     ) = GpsFix(
         latitude = latitudeForMeters(metres),
         longitude = 0.0,
         accuracyMetres = accuracy,
         elapsedMs = seconds * 1_000L,
         mock = mock,
-        speedMps = null,
+        speedMps = speedMps,
         sourceLabel = source,
+        speedAccuracyMps = speedAccuracyMps,
     )
 
     @Test
@@ -223,6 +226,61 @@ class GpsDistanceAccumulatorTest {
             credit!!.distanceMetres,
             0.2,
         )
+    }
+
+
+    @Test
+    fun repeatedConfidentStationarySpeedFixesReanchorAndDiscardSlowGpsDrift() {
+        val accumulator = GpsDistanceAccumulator()
+        fun stationary(metres: Double, seconds: Long) = fix(
+            metres = metres,
+            seconds = seconds,
+            accuracy = 2.0,
+            speedMps = 0.05,
+            speedAccuracyMps = 0.10,
+        )
+
+        assertNull(accumulator.offer(stationary(0.0, 0)))
+        assertNull(accumulator.offer(stationary(5.0, 5)))
+        // Two low-speed observations spanning five seconds confirm a stationary window.
+        assertNull(accumulator.offer(stationary(10.0, 10)))
+        assertNull(accumulator.offer(stationary(15.0, 15)))
+        assertNull(accumulator.offer(stationary(20.0, 20)))
+    }
+
+    @Test
+    fun aSingleStationarySpeedObservationDoesNotSuppressMovementThatResumes() {
+        val accumulator = GpsDistanceAccumulator()
+        assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0)))
+        assertNull(
+            accumulator.offer(
+                fix(metres = 0.5, seconds = 3, speedMps = 0.05, speedAccuracyMps = 0.10),
+            ),
+        )
+        assertNull(
+            accumulator.offer(
+                fix(metres = 5.0, seconds = 5, speedMps = 1.2, speedAccuracyMps = 0.2),
+            ),
+        )
+        assertNull(accumulator.offer(fix(metres = 9.0, seconds = 8, speedMps = 1.2, speedAccuracyMps = 0.2)))
+        assertNull(accumulator.offer(fix(metres = 13.0, seconds = 11, speedMps = 1.2, speedAccuracyMps = 0.2)))
+        val credit = accumulator.offer(fix(metres = 17.0, seconds = 14, speedMps = 1.2, speedAccuracyMps = 0.2))
+
+        assertNotNull(credit)
+        assertEquals(16.5, credit!!.distanceMetres, 0.2)
+    }
+
+    @Test
+    fun lowReportedSpeedWithoutSpeedAccuracyIsNotTreatedAsStationaryEvidence() {
+        val accumulator = GpsDistanceAccumulator()
+        assertNull(accumulator.offer(fix(metres = 0.0, seconds = 0, speedMps = 0.05)))
+        assertNull(accumulator.offer(fix(metres = 5.0, seconds = 5, speedMps = 0.05)))
+        assertNull(accumulator.offer(fix(metres = 10.0, seconds = 10, speedMps = 0.05)))
+        assertNull(accumulator.offer(fix(metres = 15.0, seconds = 15, speedMps = 0.05)))
+        val credit = accumulator.offer(fix(metres = 20.0, seconds = 20, speedMps = 0.05))
+
+        assertNotNull(credit)
+        assertEquals(20.0, credit!!.distanceMetres, 0.2)
     }
 
     private fun latitudeForMeters(metres: Double): Double =

@@ -1,7 +1,6 @@
 package com.topherofit.thf.pulse
 
 import kotlin.math.max
-import kotlin.math.min
 
 data class GpsFix(
     val latitude: Double,
@@ -11,6 +10,7 @@ data class GpsFix(
     val mock: Boolean,
     val speedMps: Double?,
     val sourceLabel: String? = null,
+    val speedAccuracyMps: Double? = null,
 )
 
 object GpsFixGate {
@@ -29,11 +29,7 @@ object GpsFixGate {
         if (!fix.latitude.isFinite() || fix.latitude !in -90.0..90.0 ||
             !fix.longitude.isFinite() || fix.longitude !in -180.0..180.0) return false
         if (fix.elapsedMs < sessionStartedMs || !isFreshElapsedTime(fix.elapsedMs, nowMs)) return false
-        val maxKph = when (mode) {
-            ActivityMode.WALK -> 13.0
-            ActivityMode.RUN -> 32.0
-            ActivityMode.CYCLE -> 85.0
-        }
+        val maxKph = maxSpeedKph(mode)
         fix.speedMps?.let { if (!it.isFinite() || it < 0.0 || it * 3.6 > maxKph) return false }
         // A stale previous point is not a valid speed reference after an observation gap.
         val freshPrevious = previous?.takeIf { isFreshElapsedTime(it.elapsedMs, nowMs) }
@@ -51,5 +47,50 @@ object GpsFixGate {
             if (ActivityMetrics.averageSpeedKph(distance, fix.elapsedMs - freshPrevious.elapsedMs) > maxKph) return false
         }
         return true
+    }
+
+    /**
+     * Validate a provider handoff against the last accepted point without applying the normal
+     * movement deadband. A stationary Fused fix may legitimately take over from Network/GPS,
+     * but a spatial jump that exceeds the sport's speed envelope must not become a new route anchor.
+     */
+    fun acceptsSourceTransition(
+        fix: GpsFix,
+        previous: GpsFix?,
+        mode: ActivityMode,
+        sessionStartedMs: Long,
+        nowMs: Long,
+    ): Boolean {
+        if (!accepts(fix, previous = null, mode = mode, sessionStartedMs = sessionStartedMs, nowMs = nowMs)) {
+            return false
+        }
+        val freshPrevious = previous?.takeIf { isFreshElapsedTime(it.elapsedMs, nowMs) } ?: return true
+        if (fix.elapsedMs <= freshPrevious.elapsedMs ||
+            !freshPrevious.latitude.isFinite() || freshPrevious.latitude !in -90.0..90.0 ||
+            !freshPrevious.longitude.isFinite() || freshPrevious.longitude !in -180.0..180.0 ||
+            !freshPrevious.accuracyMetres.isFinite() || freshPrevious.accuracyMetres <= 0.0
+        ) {
+            return false
+        }
+        val elapsedMs = fix.elapsedMs - freshPrevious.elapsedMs
+        if (elapsedMs <= 0L) return false
+        val displacement = ActivityMetrics.distanceMetres(
+            freshPrevious.latitude,
+            freshPrevious.longitude,
+            fix.latitude,
+            fix.longitude,
+        )
+        if (!displacement.isFinite()) return false
+        val endpointUncertaintyMetres = max(fix.accuracyMetres, freshPrevious.accuracyMetres)
+        val conservativeDisplacement = (
+            displacement - max(1.0, endpointUncertaintyMetres * 0.5).coerceAtMost(8.0)
+        ).coerceAtLeast(0.0)
+        return ActivityMetrics.averageSpeedKph(conservativeDisplacement, elapsedMs) <= maxSpeedKph(mode)
+    }
+
+    private fun maxSpeedKph(mode: ActivityMode): Double = when (mode) {
+        ActivityMode.WALK -> 13.0
+        ActivityMode.RUN -> 32.0
+        ActivityMode.CYCLE -> 85.0
     }
 }

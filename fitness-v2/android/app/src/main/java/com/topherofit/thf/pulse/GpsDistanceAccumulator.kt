@@ -12,8 +12,10 @@ import java.util.Locale
  * 1.4x net displacement so oscillating fixes cannot inflate a small drift into a long route. A
  * threshold-crossing excursion must persist across at least three accepted fixes spanning six
  * seconds; a one- or two-fix spike that returns inside the deadband is discarded. This is
- * measurement filtering, not proof of location authenticity; prolonged stationary drift can still
- * to be credited.
+ * measurement filtering, not proof of location authenticity. When Android supplies a valid
+ * speed-accuracy estimate, repeated confidently-stationary observations re-anchor the window so
+ * slow provider drift cannot ratchet into credited distance. If speed accuracy is unavailable,
+ * GPS-only evidence remains conservative but prolonged coherent drift is still a physical-QA risk.
  */
 data class GpsDistanceCredit(
     val distanceMetres: Double,
@@ -28,6 +30,9 @@ class GpsDistanceAccumulator {
         const val MIN_CONFIRMATION_FIXES = 3
         const val MIN_CONFIRMATION_DURATION_MS = 6_000L
         const val MAX_PATH_TO_NET_RATIO = 1.4
+        const val STATIONARY_SPEED_UPPER_BOUND_MPS = 0.35
+        const val MIN_STATIONARY_CONFIRMATION_FIXES = 2
+        const val MIN_STATIONARY_CONFIRMATION_DURATION_MS = 3_000L
     }
 
     private var anchor: GpsFix? = null
@@ -37,6 +42,8 @@ class GpsDistanceAccumulator {
     private var pendingDisplacementCandidate = false
     private var pendingDisplacementCandidateSinceElapsedMs: Long? = null
     private var pendingDisplacementCandidateFixCount = 0
+    private var stationaryCandidateSinceElapsedMs: Long? = null
+    private var stationaryCandidateFixCount = 0
 
     fun reset() {
         anchor = null
@@ -44,6 +51,7 @@ class GpsDistanceAccumulator {
         pendingPathDistanceMetres = 0.0
         pendingWorstAccuracyMetres = 0.0
         clearPendingDisplacementCandidate()
+        clearStationaryCandidate()
     }
 
     /** Seed a new measurement window without crediting a segment to the previous anchor. */
@@ -54,6 +62,7 @@ class GpsDistanceAccumulator {
         pendingPathDistanceMetres = 0.0
         pendingWorstAccuracyMetres = usable?.accuracyMetres ?: 0.0
         clearPendingDisplacementCandidate()
+        clearStationaryCandidate()
     }
 
     /**
@@ -87,14 +96,47 @@ class GpsDistanceAccumulator {
         }
 
         val sincePreviousMs = fix.elapsedMs - previousFix.elapsedMs
-        val sinceAnchorMs = fix.elapsedMs - movementAnchor.elapsedMs
+        val observedGapSinceAnchorMs = fix.elapsedMs - movementAnchor.elapsedMs
         if (sincePreviousMs <= 0L || sincePreviousMs > MAX_ANCHOR_GAP_MS ||
-            sinceAnchorMs <= 0L || sinceAnchorMs > MAX_ANCHOR_GAP_MS
+            observedGapSinceAnchorMs <= 0L || observedGapSinceAnchorMs > MAX_ANCHOR_GAP_MS
         ) {
             seed(fix)
             return null
         }
 
+        if (isConfidentlyStationary(fix)) {
+            val candidateStartedAt = stationaryCandidateSinceElapsedMs
+            if (candidateStartedAt == null) {
+                stationaryCandidateSinceElapsedMs = fix.elapsedMs
+                stationaryCandidateFixCount = 1
+            } else {
+                stationaryCandidateFixCount += 1
+            }
+            lastFix = fix
+            if (stationaryCandidateFixCount >= MIN_STATIONARY_CONFIRMATION_FIXES &&
+                fix.elapsedMs - (candidateStartedAt ?: fix.elapsedMs) >= MIN_STATIONARY_CONFIRMATION_DURATION_MS
+            ) {
+                anchor = fix
+                pendingPathDistanceMetres = 0.0
+                pendingWorstAccuracyMetres = fix.accuracyMetres
+                clearPendingDisplacementCandidate()
+                clearStationaryCandidate()
+            }
+            return null
+        }
+
+        // A low-speed observation was provisional until confirmed by a second fix. If movement
+        // resumes first, restart at that last observation so stationary drift is never credited.
+        if (stationaryCandidateSinceElapsedMs != null) {
+            anchor = previousFix
+            movementAnchor = previousFix
+            pendingPathDistanceMetres = 0.0
+            pendingWorstAccuracyMetres = previousFix.accuracyMetres
+            clearPendingDisplacementCandidate()
+            clearStationaryCandidate()
+        }
+
+        val sinceAnchorMs = fix.elapsedMs - movementAnchor.elapsedMs
         val stepDistance = ActivityMetrics.distanceMetres(
             previousFix.latitude,
             previousFix.longitude,
@@ -156,6 +198,20 @@ class GpsDistanceAccumulator {
             distanceMetres = credit,
             elapsedMs = sinceAnchorMs,
         )
+    }
+
+    private fun isConfidentlyStationary(fix: GpsFix): Boolean {
+        val speed = fix.speedMps ?: return false
+        val speedAccuracy = fix.speedAccuracyMps ?: return false
+        if (!speed.isFinite() || speed < 0.0 || !speedAccuracy.isFinite() || speedAccuracy < 0.0) {
+            return false
+        }
+        return speed + speedAccuracy <= STATIONARY_SPEED_UPPER_BOUND_MPS
+    }
+
+    private fun clearStationaryCandidate() {
+        stationaryCandidateSinceElapsedMs = null
+        stationaryCandidateFixCount = 0
     }
 
     private fun clearPendingDisplacementCandidate() {

@@ -756,5 +756,155 @@ class GpsFixPresentationPolicySourceContractTest(unittest.TestCase):
         self.assertIn(".setWaitForAccurateLocation(finePermissionGranted)", service)
         self.assertNotIn(".setGranularity(Granularity.GRANULARITY_FINE)", service)
 
+
+class GpsLocationSourceArbitrationSourceContractTest(unittest.TestCase):
+    def test_fused_recovery_is_gated_and_releases_the_framework_source_before_acceptance(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityLocationFallbackPolicy.kt").read_text()
+
+        callback = service[
+            service.index("val callback = object : LocationCallback()"):
+            service.index("fusedLocationCallback = callback")
+        ]
+        self.assertIn("legacyLocationProvidersRegistered", callback)
+        self.assertIn('fix.sourceLabel?.equals("fused", ignoreCase = true) != true', callback)
+        self.assertIn("GpsFixGate.acceptsSourceTransition(", callback)
+        self.assertIn("var transitionPrevious = lastLocation?.takeIf { currentAcceptedFixFresh }?.toGpsFix()", callback)
+        self.assertIn("result.locations", callback)
+        self.assertIn(".sortedBy { it.elapsedRealtimeNanos }", callback)
+        self.assertIn("transitionPrevious = fix", callback)
+        gate = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsFixGate.kt").read_text()
+        self.assertIn("fun acceptsSourceTransition(", gate)
+        self.assertIn("ActivityMetrics.averageSpeedKph(conservativeDisplacement, elapsedMs)", gate)
+        self.assertIn("shouldPromoteFusedLocation(", callback)
+        self.assertIn("promoteFusedLocationSource()", callback)
+
+        promotion = service[
+            service.index("private fun promoteFusedLocationSource()"):
+            service.index("private fun registerLegacyLocationProviders")
+        ]
+        self.assertIn("removeLegacyLocationUpdates()", promotion)
+        self.assertIn("legacyLocationProvider = null", promotion)
+        self.assertIn("lastLocation = null", promotion)
+        self.assertIn("gpsDistanceAccumulator.reset()", promotion)
+        self.assertIn("currentSpeedKph = 0.0", promotion)
+
+        self.assertIn("fusedFixElapsedMs = newestAcceptedFusedFix?.elapsedMs", callback)
+        self.assertIn("currentAcceptedElapsedMs = currentAcceptedElapsedMs", callback)
+        self.assertIn("if (fusedElapsed <= currentElapsed) return false", policy)
+        self.assertIn("fusedAccuracy <= currentAccuracy", policy)
+        self.assertIn("acceptedFusedLocations", callback)
+        self.assertIn("it.second.elapsedMs > currentAcceptedElapsedMs", callback)
+
+    def test_revoked_or_downgraded_permission_releases_an_unauthorized_framework_provider(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        policy = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityLocationFallbackPolicy.kt").read_text()
+
+        registration = service[
+            service.index("private fun registerLegacyLocationProviders(mode: ActivityMode)"):
+            service.index("private fun removeLegacyLocationUpdates()")
+        ]
+        permission_revocation = registration[:registration.index("val gpsProviderEnabled")]
+        self.assertIn("if (!finePermissionGranted && !coarsePermissionGranted)", permission_revocation)
+        self.assertIn("removeLegacyLocationUpdates()", permission_revocation)
+        self.assertIn("lastLocation = null", permission_revocation)
+        self.assertIn("lastAccuracyMetres = null", permission_revocation)
+
+        self.assertIn("providerNoLongerAuthorized", registration)
+        self.assertIn("isLegacyProviderAuthorized(", registration)
+        self.assertIn("|| providerNoLongerAuthorized", registration)
+        self.assertIn("fun isLegacyProviderAuthorized(", policy)
+
+        watchdog = service[
+            service.index("private val locationFallbackWatchdog"):
+            service.index("// Each async FLP request")
+        ]
+        self.assertIn("legacyProviderPermissionInvalid", watchdog)
+        self.assertIn("isLegacyProviderAuthorized(", watchdog)
+        self.assertIn("shouldSuspendLocationSources", watchdog)
+        self.assertIn("fusedCallbackRegistered = fusedLocationCallback != null", watchdog)
+        self.assertIn("locationPermissionBlocked = true", watchdog)
+        self.assertIn("shouldResumeLocationSources", watchdog)
+        self.assertIn("registerActivitySources(mode)", watchdog)
+
+        no_provider = registration[
+            registration.index("if (selectedProvider == null)"):
+            registration.index("if (selectedProvider != legacyLocationProvider)")
+        ]
+        self.assertIn("removeLegacyLocationUpdates()", no_provider)
+        self.assertIn("lastLocation = null", no_provider)
+        self.assertIn("lastObservedLocation = null", no_provider)
+        self.assertIn("lastAccuracyMetres = null", no_provider)
+        self.assertIn("lastObservedAccuracyMetres = null", no_provider)
+        self.assertIn("gpsDistanceAccumulator.reset()", no_provider)
+        self.assertIn("currentSpeedKph = 0.0", no_provider)
+
+    def test_last_permission_revocation_removes_fused_and_regrant_restarts_location(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        watchdog = service[
+            service.index("private val locationFallbackWatchdog"):
+            service.index("// Each async FLP request")
+        ]
+        self.assertIn("fusedCallbackRegistered = fusedLocationCallback != null", watchdog)
+        self.assertIn("registerLegacyLocationProviders(mode)", watchdog)
+        self.assertIn("shouldResumeLocationSources", watchdog)
+        self.assertIn("registerActivitySources(mode)", watchdog)
+
+        registration = service[
+            service.index("private fun registerLegacyLocationProviders(mode: ActivityMode)"):
+            service.index("private fun removeLegacyLocationUpdates()")
+        ]
+        permission_cleanup = registration[:registration.index("val gpsProviderEnabled")]
+        self.assertIn("locationPermissionBlocked = true", permission_cleanup)
+        self.assertIn("removeFusedLocationUpdates()", permission_cleanup)
+
+        callback = service[
+            service.index("val callback = object : LocationCallback()"):
+            service.index("fusedLocationCallback = callback")
+        ]
+        self.assertIn("if (!hasLocationPermission())", callback)
+        self.assertIn("registerLegacyLocationProviders(mode)", callback)
+
+    def test_framework_fallback_keeps_fused_recovery_callback_registered(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+
+        registration = service[
+            service.index("private fun registerLegacyLocationProviders(mode: ActivityMode)"):
+            service.index("private fun removeLegacyLocationUpdates()")
+        ]
+        registered_start = registration.index("if (registered) {")
+        registered_end = registration.index("} else {", registered_start)
+        registered_block = registration[registered_start:registered_end]
+        self.assertIn("legacyLocationProvidersRegistered = registered", registration)
+        self.assertNotIn("locationRequestGeneration += 1L", registered_block)
+        self.assertNotIn("fusedLocationCallback = null", registered_block)
+        self.assertNotIn("fusedLocationClient.removeLocationUpdates", registered_block)
+
+        teardown = service[
+            service.index("private fun unregisterActivitySources()"):
+            service.index("private fun handleLocationChanged(")
+        ]
+        self.assertIn("removeFusedLocationUpdates()", teardown)
+        fused_teardown = service[
+            service.index("private fun removeFusedLocationUpdates()"):
+            service.index("private fun refreshLegacyProviderSelection()")
+        ]
+        self.assertIn("locationRequestGeneration += 1L", fused_teardown)
+        self.assertIn("fusedLocationClient.removeLocationUpdates(callback)", fused_teardown)
+
+class GpsStationarySpeedAccuracySourceContractTest(unittest.TestCase):
+    def test_android_speed_accuracy_is_optional_and_drives_stationary_reanchoring(self):
+        service = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "ActivityTrackingService.kt").read_text()
+        accumulator = (ANDROID / "app" / "src" / "main" / "java" / "com" / "topherofit" / "thf" / "pulse" / "GpsDistanceAccumulator.kt").read_text()
+
+        self.assertIn("Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && hasSpeedAccuracy()", service)
+        self.assertIn("speedAccuracyMetersPerSecond.toDouble()", service)
+        self.assertIn("speedAccuracyMps = null", service)
+        self.assertIn("fun isConfidentlyStationary(fix: GpsFix)", accumulator)
+        self.assertIn("speed + speedAccuracy <= STATIONARY_SPEED_UPPER_BOUND_MPS", accumulator)
+        self.assertIn("MIN_STATIONARY_CONFIRMATION_DURATION_MS = 3_000L", accumulator)
+        self.assertIn("anchor = previousFix", accumulator)
+        self.assertIn("clearPendingDisplacementCandidate()", accumulator)
+
 if __name__ == "__main__":
     unittest.main()
