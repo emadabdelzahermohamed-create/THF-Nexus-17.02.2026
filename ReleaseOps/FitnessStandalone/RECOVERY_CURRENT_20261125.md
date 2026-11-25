@@ -48,7 +48,7 @@
 
 ## Previous PR #307
 
-PR #307 remains open and Draft, exact previous tested head `46241bd8286b2b1d3489aef3a46432eea702a054`, prior workflow 45340645909 PASS. It was 3 ahead / 7 behind current canonical. The seven behind commits are canonical ReleaseOps/Health changes; no GPS file overlap. The new PR #311 carries the GPS-owned implementation/tests onto current canonical without force-pushing. Do not close #307 until #311's exact-head Android CI passes; then mark #307 superseded to avoid duplicate open GPS handoffs.
+PR #307 is now closed (not merged) as superseded by PR #311 after exact-head workflow 45562000301 passed. Its exact previous tested head was `46241bd8286b2b1d3489aef3a46432eea702a054` (workflow 45340645909 PASS). It had been 3 ahead / 7 behind current canonical; the seven canonical-only commits were ReleaseOps/Health changes with no GPS file overlap. PR #311 carries the six GPS-owned implementation/test changes onto current canonical and adds the stationary-drift guard without force-pushing either branch.
 
 ## Blockers
 
@@ -59,8 +59,7 @@ PR #307 remains open and Draft, exact previous tested head `46241bd8286b2b1d3489
 ## Safe next actions
 
 1. Preserve workflow 45562000301 and artifact 14997818372 as exact-SHA CI evidence; do not rebuild the unchanged application SHA.
-2. Keep PR #311 Draft until physical P0; close PR #307 as superseded after confirming #311 contains the same GPS handoff fixes.
-3. Once #311 is proven, close PR #307 as superseded with a cross-link; do not force-push either branch.
+2. Keep PR #311 Draft until physical P0; PR #307 is closed as superseded. Do not force-push either branch.
 4. Resume handset QA only after a fresh read-only device connection and confirmation the handset is idle; do not disturb an active user session.
 5. Continue Google Maps only after owner permission, billing/project and exact release signing fingerprint are available.
 6. Keep VersionCode 51020 unallocated; no signing, Play write or Production action.

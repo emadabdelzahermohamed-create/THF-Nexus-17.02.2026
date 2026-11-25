@@ -50,7 +50,7 @@ This candidate adds provider-confirmed stationary re-anchoring:
 
 ## Previous GPS handoff
 
-PR #307 exact head `46241bd8286b2b1d3489aef3a46432eea702a054` had prior exact-head CI PASS (workflow 45340645909; Android 349/349). It was 3 ahead / 7 behind the current canonical branch; the seven canonical-only changes since its merge base are ReleaseOps/Health files, with no GPS application-file overlap. To avoid force-pushing, this candidate copied the six GPS-owned PR #307 source/test files onto the current canonical base before adding the stationary guard. PR #307 remains open pending this replacement candidate's exact-head result.
+PR #307 exact head `46241bd8286b2b1d3489aef3a46432eea702a054` had prior exact-head CI PASS (workflow 45340645909; Android 349/349). It was 3 ahead / 7 behind the current canonical branch; the seven canonical-only changes since its merge base are ReleaseOps/Health files, with no GPS application-file overlap. To avoid force-pushing, this candidate copied the six GPS-owned PR #307 source/test files onto the current canonical base before adding the stationary guard. After PR #311 passed exact-head CI 45562000301, PR #307 was closed (not merged) as superseded; the six prior GPS changes are carried in PR #311.
 
 ## Physical P0 — BLOCKED_NOT_RUN
 
