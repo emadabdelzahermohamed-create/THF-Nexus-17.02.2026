@@ -5,17 +5,18 @@
 **Canonical application base:** `85fb3e96f90ca5f7a9eac9072d8301d7f31d55bb`  
 **GPS PR:** #311 — `5eee7f80543d88420af011e36c4001660e75ee3b` (current branch head; docs-only after tested app SHA)
 
-## Exact tested GPS application candidate
+## Exact tested GPS PR head
 
-- Tested application SHA: `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`.
-- Workflow [45565394285](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45565394285): SUCCESS.
+- Current PR head / exact tested source SHA: `5eee7f80543d88420af011e36c4001660e75ee3b`.
+- Workflow [45566362328](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45566362328): SUCCESS on that exact PR head.
 - Product 84/84; Source Contract 40/40; Backend 29/29; Android Unit 355/355; zero failures/ignored.
 - Android API 36, Kotlin/Gradle, lint, assembleDebug and bundleRelease validation PASS. Lint 0 errors, 13 warnings, 1 hint.
-- Artifact 14999992451, 63,102,473 bytes. ZIP SHA-256 `238de38fb8c33b09ffce2e857c960e8df55bf017c5fca417dd710472498c538a`; independently rehashed and matches GitHub digest.
-- Embedded source marker: `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`.
-- QA APK SHA-256: `93116e6cfeeffe3ce29cd0ae29ae0595191919205e0ddf0ca24cbda4ac1992aa`.
-- Validation AAB SHA-256: `cd51118db39df8124448d1cc6856e3b5709334b2990111799537f7e807f42793`; unsigned by `jarsigner`.
-- QA package `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.0.0-v2-alpha19-debug`. Not signed, not uploaded.
+- Artifact 14999518977, 63,102,392 bytes. ZIP SHA-256 `01d30c100dece05428d6f3bb78b61468ebf8281c031f675e243d56d2e0bf50b0`; independently rehashed and matches GitHub digest.
+- Embedded source marker: `5eee7f80543d88420af011e36c4001660e75ee3b`.
+- QA APK SHA-256: `154b76c9601db115a4b8484af8f051cce017abd10b5edf7a0e9b5e9e133ea301`.
+- Validation AAB SHA-256: `cd51118db39df8124448d1cc6856e3b5709334b2990111799537f7e807f42793`; `jarsigner` reports unsigned.
+- The AAB is byte-identical to the earlier corrected application build 45565394285; no signing, version allocation or Play upload occurred.
+- QA package `com.topherofit.thf.pulse.qa`, versionCode 51019, versionName `5.0.0-v2-alpha19-debug`. Not a release artifact.
 
 ## GPS behavior under test
 
@@ -53,10 +54,10 @@
 ## Current PR comparison and merge boundary
 
 - #311 current head `5eee7f80543d88420af011e36c4001660e75ee3b`, base `10d9794546e6ecd203bb8078ed458f25a23f056c`.
-- Compared with canonical tip before this docs-only reconciliation `29ceacb0200bb1da26d7efe5535fa4cfa74b8a29`: 11 ahead / 11 behind. The behind commits are four Health-owned files from #312 plus read-only probe/workflow and ReleaseOps checkpoints; no GPS source/test overlap. The PR's two branch-local checkpoint files duplicate canonical ReleaseOps paths and must be dropped in favor of the canonical files before any eventual merge.
+- Compared with canonical tip `ffb518f2fd4ef57399d0d1c96df707e857cc3199` before this docs-only checkpoint, the PR is 11 ahead / 13 behind. Behind changes are disjoint Health #312 and ReleaseOps/read-only probe updates; no GPS source/test overlap. The PR's two branch-local checkpoint files duplicate canonical ReleaseOps paths and must be dropped before any eventual merge.
 - #311 remains Draft/unmerged until physical P0; no rebase/rebuild solely for disjoint docs/Health drift.
 - #307 is closed, not merged, superseded by #311.
-- #284 remains Draft: 19 ahead / 161 behind, 13 files, no exact-head CI; it overlaps #311, #93, #216 and #224.
+- #284 remains Draft: 13 files, no exact-head CI; it overlaps #311, #93, #216 and #224.
 
 ## Physical P0 — BLOCKED_NOT_RUN
 

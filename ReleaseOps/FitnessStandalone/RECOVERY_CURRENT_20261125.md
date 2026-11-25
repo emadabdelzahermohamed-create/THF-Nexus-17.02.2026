@@ -30,13 +30,13 @@
 
 - PR: https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/311
 - Branch: `agent/codex/gps-stationary-speed-accuracy-guard-20261125-r1`
-- Current PR branch head: `5eee7f80543d88420af011e36c4001660e75ee3b` (documentation-only commit after tested application SHA).
-- Base recorded by PR: `10d9794546e6ecd203bb8078ed458f25a23f056c`.
-- Corrected exact tested application SHA: `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`.
-- Exact-head workflow [45565394285](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45565394285): Product 84/84, Source Contract 40/40, Backend 29/29, Android Unit 355/355; zero failures/ignored; Android API 36/Kotlin/Gradle, lint, APK and unsigned AAB validation PASS. Lint: 0 errors, 13 warnings, 1 hint.
-- Artifact 14999992451 was downloaded and independently rehashed. ZIP SHA-256 `238de38fb8c33b09ffce2e857c960e8df55bf017c5fca417dd710472498c538a`, matching GitHub digest. Embedded source marker matches `6dc578...`. QA APK SHA-256 `93116e6cfeeffe3ce29cd0ae29ae0595191919205e0ddf0ca24cbda4ac1992aa`. Validation AAB SHA-256 `cd51118db39df8124448d1cc6856e3b5709334b2990111799537f7e807f42793`; unsigned by `jarsigner`.
-- QA identity: `com.topherofit.thf.pulse.qa`, versionCode 51019, `5.0.0-v2-alpha19-debug`. Not a release artifact.
-- Current compare against canonical tip before this docs-only reconciliation `29ceacb...`: 11 ahead / 11 behind. The 11 behind changes are four Health-owned files from #312 plus the read-only probe workflow and ReleaseOps checkpoints; no GPS source/test overlap. Canonical recovery/GPS checkpoint files now exist at the same paths as the PR's branch-local additions; those two branch docs are duplicate/conflicting and must be dropped in favor of canonical docs before any eventual merge.
+- Current PR branch head: `5eee7f80543d88420af011e36c4001660e75ee3b`.
+- The current PR head itself passed exact-head workflow [45566362328](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45566362328): Product 84/84, Source Contract 40/40, Backend 29/29, Android Unit 355/355; zero failures/ignored; Android API 36/Kotlin/Gradle, lint, APK and unsigned AAB validation PASS. Lint: 0 errors, 13 warnings, 1 hint.
+- Artifact 14999518977, 63,102,392 bytes, downloaded and independently rehashed. ZIP SHA-256 `01d30c100dece05428d6f3bb78b61468ebf8281c031f675e243d56d2e0bf50b0`, matching GitHub digest. Embedded source marker is exactly `5eee7f80543d88420af011e36c4001660e75ee3b`. QA APK SHA-256 `154b76c9601db115a4b8484af8f051cce017abd10b5edf7a0e9b5e9e133ea301`. Validation AAB SHA-256 `cd51118db39df8124448d1cc6856e3b5709334b2990111799537f7e807f42793`; `jarsigner` confirms unsigned.
+- QA identity: `com.topherofit.thf.pulse.qa`, versionCode 51019, `5.0.0-v2-alpha19-debug`. The AAB bytes are identical to the previous corrected application run 45565394285; no signed release candidate or Play upload exists.
+- The current PR head is two documentation-only commits after application SHA `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`; the current-head workflow above covers the exact PR head.
+- Compared with canonical tip `ffb518f2fd4ef57399d0d1c96df707e857cc3199` before this docs-only checkpoint, PR #311 was 11 ahead / 13 behind. Behind changes are disjoint Health #312 and ReleaseOps/read-only probe updates; no GPS source/test overlap.
+- Canonical `RECOVERY_CURRENT_20261125.md` and `GPS_MAP_QUALITY_20261125.md` now occupy the same paths as the PR's branch-local checkpoint files. Drop those two duplicate PR docs before any eventual merge.
 - PR #311 remains Draft/unmerged because physical P0 is mandatory. Do not rebase/rebuild unchanged app bytes solely for docs/Health drift.
 
 ### GPS implementation boundary
@@ -58,7 +58,7 @@
 ### PR #284
 
 - Open Draft; head `274155eafdfff381009ef5814a621f32b225f1a8`.
-- Compare to canonical tip before this docs-only reconciliation `29ceacb...`: 19 ahead / 161 behind; 13 changed files.
+- PR #284 remains 13 changed files and has no exact-head CI; its only successful run is historical on SHA `3fcbe6ac...`.
 - Historical run 42694452852 validates only old SHA `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; no exact-head CI exists for the current PR head.
 - Overlaps #311 (`ActivityTrackingService.kt` / GPS policy), #93 (`MainActivity.kt` / Manifest), and #216/#224 (`app.js` / `index.html`). Keep Draft; do not merge wholesale. Any map-only extraction must be isolated after owner release, exact-head CI and physical P0.
 
