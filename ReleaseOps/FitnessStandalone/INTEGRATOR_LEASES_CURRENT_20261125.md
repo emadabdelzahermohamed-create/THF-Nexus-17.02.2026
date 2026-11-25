@@ -30,7 +30,7 @@ No handoff PR may allocate versionCode, sign, upload, commit a Play release or p
 ## Superseded / merged lanes
 
 - #307 is closed (not merged), superseded by #311.
-- #312 merged at `85fb3e96...`; exact source SHA `3f303539...`, run 45626405480, artifact 15028895816 ZIP `f4ee13861128e192a4d08719e7f157a1e579451d92bfcb65e6106a3e52a834d7`; unknown exercise types fail closed as `UNSUPPORTED_EXERCISE_TYPE`.
+- #312 merged at `85fb3e96...`; exact source SHA `3f303539...`, run 45626405480: Product 84/84, Source 35/35, Backend 29/29, Android 346/346, zero failures/ignored; artifact 15028895816 ZIP `f4ee13861128e192a4d08719e7f157a1e579451d92bfcb65e6106a3e52a834d7`; unknown exercise types fail closed as `UNSUPPORTED_EXERCISE_TYPE`.
 - #310 Health non-transitive session-window quarantine remains merged at `fad03f360c1d9a474b62239025ff76fde7eeb087`.
 - #309 Health reconciliation and #303 Activity Engine/GPS base remain merged.
 - #302 GPS status/pause presentation remains canonical.
