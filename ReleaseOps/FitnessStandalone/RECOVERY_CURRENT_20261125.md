@@ -68,26 +68,28 @@ PR #307 is now closed (not merged) as superseded by PR #311 after exact-head wor
 
 ## 2026-11-25 08:53 Cairo — latest GPS source delta
 
-- Current PR #311 branch head before this checkpoint: `4850a8d46bfd134abdc12ec86f38c62469b4437c`; canonical base remains `10d9794546e6ecd203bb8078ed458f25a23f056c`; compare 7 ahead / 0 behind.
-- New implementation commit: `1c9931ccdc5e00dbd50e3bc9c7e40632a0598bbe`; KDoc-only follow-up: `4850a8d46bfd134abdc12ec86f38c62469b4437c`.
-- `GpsDistanceAccumulator.MAX_ANCHOR_GAP_MS` now shares the 30-second `GpsFixGate.MAX_FIX_AGE_MS` boundary instead of 120 seconds. A 31-second gap must re-anchor rather than credit the unobserved displacement.
-- New Kotlin regression verifies a 100 m apparent stale-gap jump is excluded and only the next 30 m / 15 s measured segment is credited.
-- Python source contract now verifies the live service clears stale prior location/accuracy, distance accumulator and current speed before admitting the next fix.
-- Changed source/test paths: `GpsDistanceAccumulator.kt`, `GpsDistanceAccumulatorTest.kt`, `fitness-v2/tests/test_source_contract.py`. No other ownership lane files changed.
+- Canonical base: `agent/codex/fitness-recovery/20261023` at `10d9794546e6ecd203bb8078ed458f25a23f056c`.
+- Corrected source commit: `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`; branch head before this checkpoint is the same SHA. The documentation update after it is docs-only.
+- The first attempt incorrectly capped total anchor lifetime at 30 seconds; workflow 45564776923 failed one Android test that protects longer movement accumulation. It was corrected by separating `MAX_FIX_GAP_MS = 30_000L` from `MAX_ANCHOR_GAP_MS = 120_000L`.
+- The 31-second stale inter-fix regression excludes a 100 m unobserved jump and credits only the next 30 m / 15 s segment.
+- The 45-second slow-movement regression preserves 9 m of continuous movement.
+- The source contract verifies the live service resets stale prior location/accuracy, accumulator and current speed before processing the next accepted fix.
+- Source/test paths changed: `GpsDistanceAccumulator.kt`, `GpsDistanceAccumulatorTest.kt`, `fitness-v2/tests/test_source_contract.py`. No other ownership lane files changed.
 
 ### Exact validation
 
-- Workflow 45564776923 on `1c9931ccdc5e00dbd50e3bc9c7e40632a0598bbe`: Product, Source Contract and Backend test step SUCCESS; Android API 36 install SUCCESS; Gradle Android unit/lint/build step still running when captured.
-- Workflow 45564822387 targets exact current application SHA `4850a8d46bfd134abdc12ec86f38c62469b4437c` and was pending. Do not label the new delta Android PASS until that run completes.
-- Prior SHA `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99` remains the last fully passed candidate before this delta (workflow 45562000301, Android 353/353).
+- Workflow 45564776923 on the superseded first attempt: Product/Source/Backend PASS; 354 Android tests with one failure, `oscillatingAcceptedFixesCannotInflateCreditedPathBeyondNetDisplacementEnvelope`.
+- Workflow 45564822387 targets the superseded implementation and does not validate the corrected code.
+- Corrected workflow 45565394285 targets exact SHA `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`: Product/Source/Backend and Android API 36 setup passed; Android Unit/Lint/APK/AAB step was in progress at checkpoint capture.
+- Previous complete candidate remains SHA `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99`, workflow 45562000301, Android 353/353.
 
 ### Current blockers
 
 - Device list read once at 08:53 Cairo: localhost OFFLINE, last seen 189 hours ago. No ADB or device mutation; Physical P0 BLOCKED_NOT_RUN.
 - Google Maps remains gated by owner Cloud key-inventory permission, billing/project prerequisite and exact production signing fingerprint. No key/billing action.
-- PR #311 remains Draft/unmerged; no VersionCode 51020 allocation, signing or Play action.
+- PR #311 remains Draft/unmerged; VersionCode 51020 unallocated; no signing or Play action.
 - No Health/anti-cheat or exercise catalog changes; no release/workflow/signing files changed.
 
 ### Next action
 
-Check workflow 45564822387 on the exact application SHA, then update this checkpoint with its final result. Keep PR #311 Draft until physical P0 is completed.
+Check corrected workflow 45565394285 on exact SHA `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`. Keep PR #311 Draft until Physical P0 is complete.

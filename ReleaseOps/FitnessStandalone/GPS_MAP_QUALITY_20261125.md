@@ -73,25 +73,26 @@ Required handset acceptance remains: 60-second stationary drift, measured walk/r
 - This is source/CI work only; do not merge PR #311 before exact-head Android CI and physical P0.
 
 
-## 2026-11-25 08:53 Cairo — stale-anchor freshness hardening
+## 2026-11-25 08:53 Cairo — stale-fix continuity hardening
 
-A focused review found a policy mismatch: `GpsFixGate.MAX_FIX_AGE_MS` is 30 seconds, and the live service already clears the distance accumulator when its previous accepted fix becomes stale, but `GpsDistanceAccumulator.MAX_ANCHOR_GAP_MS` still allowed 120 seconds. That left the accumulator itself able to bridge a gap that the admission/service layer considers stale.
+A code review found that the live service already rejects a stale previous fix and resets the accumulator, but the accumulator itself had a 120-second inter-fix allowance. The first defensive change incorrectly changed the *whole movement-anchor lifetime* to 30 seconds. Exact workflow 45564776923 caught the regression: `oscillatingAcceptedFixesCannotInflateCreditedPathBeyondNetDisplacementEnvelope` failed because longer/slow movement was re-anchored too early.
 
-Implemented on the same GPS-owned PR branch:
+The corrected implementation separates the two windows:
 
-- `MAX_ANCHOR_GAP_MS` now references `GpsFixGate.MAX_FIX_AGE_MS` (30,000 ms), keeping the accumulator's independent continuity boundary aligned with fix freshness.
-- Added Kotlin regression `gapBeyondFreshFixWindowReanchorsWithoutBridgingStaleDistance`: a 31-second gap with a 100 m apparent displacement re-anchors; only the next measured 30 m / 15 s segment is credited.
-- Strengthened the Python source contract to assert the live service clears `lastLocation`, accuracy, speed and accumulator state when the previous fix is stale.
+- `MAX_FIX_GAP_MS = GpsFixGate.MAX_FIX_AGE_MS` (30,000 ms) limits only the gap between consecutive fixes.
+- `MAX_ANCHOR_GAP_MS = 120_000L` remains the maximum lifetime of a stable movement anchor.
+- A 31-second inter-fix gap with a 100 m apparent jump re-anchors; only the next measured 30 m / 15 s segment is credited.
+- A second regression proves 9 m of continuous slow movement over 45 seconds remains creditable.
+- The Python source contract verifies that the live service clears stale previous location, accuracy, current speed and accumulator state before admitting the next fix.
 
-Source commit: `1c9931ccdc5e00dbd50e3bc9c7e40632a0598bbe`.  
-Formatting-only follow-up: `4850a8d46bfd134abdc12ec86f38c62469b4437c`.  
-Exact current application tree for queued final validation: `4850a8d46bfd134abdc12ec86f38c62469b4437c` (the follow-up changes only KDoc indentation).
+Corrected implementation commit: `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`. The earlier 30-second-anchor attempt (`1c9931ccdc5e00dbd50e3bc9c7e40632a0598bbe`) and its KDoc-only follow-up (`4850a8d46bfd134abdc12ec86f38c62469b4437c`) are superseded.
 
-### Validation state at checkpoint
+### Validation state
 
-- Workflow `45564776923` on intermediate source commit `1c9931ccdc5e00dbd50e3bc9c7e40632a0598bbe`: Product, Source Contract and Backend test step completed SUCCESS; Android API 36 installation completed; Gradle Android test/lint/build step was still in progress at checkpoint capture.
-- Workflow `45564822387` on exact current application SHA `4850a8d46bfd134abdc12ec86f38c62469b4437c`: queued/pending; no PASS claimed.
-- Previous complete exact-head evidence remains workflow `45562000301` on `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99` (353/353 Android tests). It does not validate the new stale-gap delta.
+- Workflow `45564776923` on the first attempt completed FAILURE: Product, Source Contract and Backend passed; Android Unit Tests completed 354 tests with one failure in `oscillatingAcceptedFixesCannotInflateCreditedPathBeyondNetDisplacementEnvelope`.
+- Workflow `45564822387` on `4850a8d46bfd134abdc12ec86f38c62469b4437c` validates the same superseded implementation and is not evidence for the correction.
+- Corrected exact candidate workflow `45565394285` on `6dc578979bf940bfc0c2010ebe4f197557c1ea6b`: Product, Source Contract and Backend tests SUCCESS; Android API 36 setup SUCCESS; Gradle Android unit/lint/build was in progress at checkpoint capture. No Android PASS claimed.
+- Last fully passed candidate before this delta remains workflow `45562000301` on `de8dd0c2f1df12f5647fa04eec6cb20605d4fe99` (353/353 Android tests).
 
 ### Device and release boundary
 
@@ -101,6 +102,6 @@ Google Maps owner Cloud/key/billing prerequisite remains unavailable; no SDK/key
 
 ### Resume
 
-1. Read final workflow `45564822387` for exact SHA `4850a8d46bfd134abdc12ec86f38c62469b4437c`; record PASS only if it completes successfully.
+1. Read corrected exact-head workflow `45565394285` and record PASS only if it completes successfully.
 2. Keep PR #311 Draft/unmerged until physical P0.
 3. Resume handset QA only after a fresh read-only online check and confirmation the handset is idle.
