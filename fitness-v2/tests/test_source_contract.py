@@ -899,7 +899,8 @@ class GpsStationarySpeedAccuracySourceContractTest(unittest.TestCase):
 
         self.assertIn("Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && hasSpeedAccuracy()", service)
         self.assertIn("speedAccuracyMetersPerSecond.toDouble()", service)
-        self.assertIn("speedAccuracyMps = null", service)
+        self.assertIn("speedAccuracyMps = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && hasSpeedAccuracy())", service)
+        self.assertIn("else null", service)
         self.assertIn("fun isConfidentlyStationary(fix: GpsFix)", accumulator)
         self.assertIn("speed + speedAccuracy <= STATIONARY_SPEED_UPPER_BOUND_MPS", accumulator)
         self.assertIn("MIN_STATIONARY_CONFIRMATION_DURATION_MS = 3_000L", accumulator)

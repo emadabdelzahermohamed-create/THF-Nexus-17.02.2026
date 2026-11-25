@@ -77,7 +77,7 @@ class GpsDistanceAccumulator {
             return null
         }
 
-        val movementAnchor = anchor
+        var movementAnchor = anchor
         val previousFix = lastFix
         if (movementAnchor == null || previousFix == null) {
             seed(fix)

@@ -904,11 +904,7 @@ class ActivityTrackingService : Service(), SensorEventListener {
         mock = if (Build.VERSION.SDK_INT >= 31) isMock else isFromMockProvider,
         speedMps = if (hasSpeed()) speed.toDouble() else null,
         sourceLabel = provider,
-        speedAccuracyMps = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && hasSpeedAccuracy()) {
-            speedAccuracyMetersPerSecond.toDouble()
-        } else {
-            null
-        },
+        speedAccuracyMps = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && hasSpeedAccuracy()) speedAccuracyMetersPerSecond.toDouble() else null,
     )
 
     override fun onSensorChanged(event: SensorEvent) {
