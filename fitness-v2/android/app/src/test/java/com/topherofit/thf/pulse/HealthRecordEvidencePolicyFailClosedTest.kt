@@ -110,4 +110,29 @@ class HealthRecordEvidencePolicyFailClosedTest {
         assertEquals(IntegrityClass.VERIFIED, result.integrityClass)
         assertTrue(result.verifiedForRewards)
     }
+
+    @Test
+    fun unknown_future_exercise_type_stays_supported_but_never_reward_verified() {
+        val result = assess(
+            recordType = HealthRecordType.EXERCISE_SESSION.stableId,
+            isExerciseSession = true,
+            exerciseType = Int.MAX_VALUE,
+        )
+
+        assertEquals(IntegrityClass.SUPPORTED, result.integrityClass)
+        assertFalse(result.verifiedForRewards)
+        assertEquals("UNSUPPORTED_EXERCISE_TYPE", result.reason)
+    }
+
+    @Test
+    fun canonical_other_workout_type_remains_reward_verified() {
+        val result = assess(
+            recordType = HealthRecordType.EXERCISE_SESSION.stableId,
+            isExerciseSession = true,
+            exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+        )
+
+        assertEquals(IntegrityClass.VERIFIED, result.integrityClass)
+        assertTrue(result.verifiedForRewards)
+    }
 }

@@ -68,6 +68,35 @@ internal data class HealthExerciseSessionReconciliationResult<T>(
 internal object HealthExerciseSessionReconciliationPolicy {
     const val SESSION_ENDPOINT_TOLERANCE_MILLIS: Long = 120_000L
 
+    // Keep reward-eligible OTHER sessions limited to explicit types emitted by the current
+    // HealthSportMapper. A future SDK value must remain supported evidence, not silently
+    // become a verified exercise session until its semantics are reviewed and mapped.
+    private val supportedOtherExerciseTypes = setOf(
+        ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+        ExerciseSessionRecord.EXERCISE_TYPE_HIKING,
+        ExerciseSessionRecord.EXERCISE_TYPE_SOCCER,
+        ExerciseSessionRecord.EXERCISE_TYPE_YOGA,
+        ExerciseSessionRecord.EXERCISE_TYPE_PILATES,
+        ExerciseSessionRecord.EXERCISE_TYPE_CALISTHENICS,
+        ExerciseSessionRecord.EXERCISE_TYPE_GYMNASTICS,
+        ExerciseSessionRecord.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING,
+        ExerciseSessionRecord.EXERCISE_TYPE_BOXING,
+        ExerciseSessionRecord.EXERCISE_TYPE_MARTIAL_ARTS,
+        ExerciseSessionRecord.EXERCISE_TYPE_ROWING,
+        ExerciseSessionRecord.EXERCISE_TYPE_ROWING_MACHINE,
+        ExerciseSessionRecord.EXERCISE_TYPE_TENNIS,
+        ExerciseSessionRecord.EXERCISE_TYPE_TABLE_TENNIS,
+        ExerciseSessionRecord.EXERCISE_TYPE_SQUASH,
+        ExerciseSessionRecord.EXERCISE_TYPE_BADMINTON,
+        ExerciseSessionRecord.EXERCISE_TYPE_VOLLEYBALL,
+        ExerciseSessionRecord.EXERCISE_TYPE_BASKETBALL,
+        ExerciseSessionRecord.EXERCISE_TYPE_HANDBALL,
+        ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING,
+        ExerciseSessionRecord.EXERCISE_TYPE_GUIDED_BREATHING,
+        ExerciseSessionRecord.EXERCISE_TYPE_ELLIPTICAL,
+        ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+    )
+
     fun kindForExerciseType(exerciseType: Int): HealthActivitySessionKind? = when (exerciseType) {
         ExerciseSessionRecord.EXERCISE_TYPE_WALKING -> HealthActivitySessionKind.WALKING
         ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
@@ -76,7 +105,7 @@ internal object HealthExerciseSessionReconciliationPolicy {
         ExerciseSessionRecord.EXERCISE_TYPE_BIKING_STATIONARY -> HealthActivitySessionKind.CYCLING
         ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> HealthActivitySessionKind.SWIMMING_POOL
         ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_OPEN_WATER -> HealthActivitySessionKind.SWIMMING_OPEN_WATER
-        else -> HealthActivitySessionKind.OTHER
+        else -> HealthActivitySessionKind.OTHER.takeIf { exerciseType in supportedOtherExerciseTypes }
     }
 
     fun <T> reconcile(
