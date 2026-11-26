@@ -61,3 +61,8 @@ No handoff PR may allocate versionCode, sign, upload, commit a Play release or p
 - Route sync remains design-only/localStorage; no authenticated route endpoint/table or precise-location upload.
 - Anti-cheat `ActivityEvidenceAnomalyPolicy.assessSegment()` remains tested but unwired; `GpsFixGate` is admission and `GpsDistanceAccumulator` the sole metric-credit path.
 - No paid infrastructure or unrelated projects.
+
+
+### PR #284 source-integrity recheck — 2026-11-26
+
+Current head `274155eafdfff381009ef5814a621f32b225f1a8`: `MainActivity.kt` was fetched as lines 1–1000 plus 1001–1146 (1,146 total); `motionSnapshot()` is present in the tail. `app.js` has the `openLocationSettings()` bridge; MainActivity uses the unique TopHeroFit User-Agent and `LOAD_DEFAULT`; the existing WebView network policy allowlists HTTPS OSM/OpenTopoMap/EOX tiles. The WebView cache setting honors HTTP tile cache headers but is not offline map storage. No exact-head CI or physical QA; keep Draft.
