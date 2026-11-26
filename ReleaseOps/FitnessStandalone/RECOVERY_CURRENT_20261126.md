@@ -38,12 +38,12 @@ The mapper now prioritizes reviewed exercise IDs over broad program labels, reta
 - Exact-head workflow [45566362328](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45566362328) succeeded on the exact PR head: Product 84/84, Source Contract 40/40, Backend 29/29, Android Unit 355/355; zero failures/ignored; API 36, Kotlin/Gradle, lint and APK/unsigned-AAB validation PASS (0 lint errors, 13 warnings, 1 hint).
 - Artifact 14999518977 ZIP SHA-256 `01d30c100dece05428d6f3bb78b61468ebf8281c031f675e243d56d2e0bf50b0`; QA APK `154b76c9601db115a4b8484af8f051cce017abd10b5edf7a0e9b5e9e133ea301`; unsigned AAB `cd51118db39df8124448d1cc6856e3b5709334b2990111799537f7e807f42793`. Embedded source marker equals the exact PR head. QA package identity is `com.topherofit.thf.pulse.qa`, versionCode 51019.
 - GPS behavior and limitations are detailed in `GPS_MAP_QUALITY_20261126.md`.
-- Compared with the latest canonical branch head at the time of reconciliation, #311 is diverged (11 commits ahead / 19 behind) and GitHub reports it non-mergeable. Its two branch-local recovery/GPS checkpoint files duplicate canonical ReleaseOps paths. Keep Draft; no rebase/rebuild solely for docs/Health drift and no merge before physical P0.
+- Compared with the latest canonical branch head at the time of reconciliation, #311 is diverged (11 commits ahead / 26 behind) and GitHub reports it non-mergeable. Its two branch-local recovery/GPS checkpoint files duplicate canonical ReleaseOps paths. Keep Draft; no rebase/rebuild solely for docs/Health drift and no merge before physical P0.
 
 ## GPS map/settings handoff — PR #284
 
 - PR [#284](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/pull/284), Draft/unmerged.
-- Current head: `274155eafdfff381009ef5814a621f32b225f1a8`; base SHA: `f596bcf722d5fac810538907ad6180999774bfc3`; 13 changed files; 19 ahead / 169 behind the current canonical line.
+- Current head: `274155eafdfff381009ef5814a621f32b225f1a8`; base SHA: `f596bcf722d5fac810538907ad6180999774bfc3`; 13 changed files; 19 ahead / 176 behind the current canonical line.
 - No exact-head CI exists for the current PR head. Run [42694452852](https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/42694452852) validates only historical SHA `3fcbe6acbb4dc660284c74c8392818996e1de7ee`; historical artifact 13707718861 is unavailable (404).
 - Overlaps #311 (`ActivityTrackingService.kt`, GPS policy), #93 (`MainActivity.kt`/Manifest), and #216/#224 (shared WebView files). Do not merge wholesale or treat the initial 3fcbe6 head as current.
 - Preserve the requested implementation intent—8s/12s Fused-to-framework fallback, one selected framework provider, stop Fused after fallback registration, truthful accuracy/pause UI, unique TopHeroFit User-Agent, OSM caching and explicit Android Location Settings bridge—but validate on a current, isolated head before integration.
