@@ -52,6 +52,46 @@ class HealthSportMapperTest {
     }
 
     @Test
+    fun recognizedExerciseIdOverridesAnyBroaderProgramSport() {
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_YOGA,
+            HealthSportMapper.toExerciseType("home", "yoga"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_PILATES,
+            HealthSportMapper.toExerciseType("strength_training", "pilates"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+            HealthSportMapper.toExerciseType("home", "running"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+            HealthSportMapper.toExerciseType("swimming", "swim-dryland"),
+        )
+    }
+
+    @Test
+    fun knownSportRemainsFallbackWhenExerciseIdIsNotMapped() {
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+            HealthSportMapper.toExerciseType("running", "program-5k-beginner"),
+        )
+    }
+
+    @Test
+    fun currentCatalogRecoveryAndTeamSportSectionsHaveExplicitMappings() {
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING,
+            HealthSportMapper.toExerciseType("recovery", "calves-smr"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+            HealthSportMapper.toExerciseType("team_sports", "team-speed"),
+        )
+    }
+
+    @Test
     fun drylandSwimmingProgramsAreNotWrittenAsSwimmingSessions() {
         assertEquals(
             ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
@@ -64,7 +104,36 @@ class HealthSportMapperTest {
     }
 
     @Test
-    fun unknownSportFailsClosedToOtherWorkout() {
-        assertEquals(ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT, HealthSportMapper.toExerciseType("unknown-sport"))
+    fun explicitGenericLabelsMapToOtherWorkout() {
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+            HealthSportMapper.toExerciseType("other"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+            HealthSportMapper.toExerciseType("home", "unmapped-home-exercise"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+            HealthSportMapper.toExerciseType("unknown-sport", "other"),
+        )
+    }
+
+    @Test
+    fun knownSportOverridesGenericExerciseId() {
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+            HealthSportMapper.toExerciseType("running", "other"),
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun unknownSportAndExerciseIdAreRejectedInsteadOfInventingOtherWorkout() {
+        HealthSportMapper.toExerciseType("unknown-sport", "unknown-exercise")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun missingSportAndExerciseIdAreRejected() {
+        HealthSportMapper.toExerciseType(null, null)
     }
 }
