@@ -4077,7 +4077,6 @@
     "physical_p0": "BLOCKED_NOT_RUN",
     "play_upload_attempted": false
   },
-  "latest_integrator_checkpoint_commit": "8905c6dc5e39dbd47c16a993225729e13cebe880",
   "latest_repository_probe_scan_20261126": {
     "observed_at": "2026-11-26T17:59:45Z",
     "latest_probe_run": 45872277536,
@@ -4092,5 +4091,6 @@
     "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
     "upload_attempted": false,
     "commit_attempted": false
-  }
+  },
+  "latest_probe_trigger_commit": "8905c6dc5e39dbd47c16a993225729e13cebe880"
 }
