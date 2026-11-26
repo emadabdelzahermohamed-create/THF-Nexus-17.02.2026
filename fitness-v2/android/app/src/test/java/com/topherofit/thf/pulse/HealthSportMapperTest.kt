@@ -80,6 +80,18 @@ class HealthSportMapperTest {
     }
 
     @Test
+    fun currentCatalogRecoveryAndTeamSportSectionsHaveExplicitMappings() {
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING,
+            HealthSportMapper.toExerciseType("recovery", "calves-smr"),
+        )
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+            HealthSportMapper.toExerciseType("team_sports", "team-speed"),
+        )
+    }
+
+    @Test
     fun drylandSwimmingProgramsAreNotWrittenAsSwimmingSessions() {
         assertEquals(
             ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
