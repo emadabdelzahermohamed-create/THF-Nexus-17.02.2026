@@ -13,6 +13,7 @@ object HealthSportMapper {
         "general",
         "general_workout",
         "home",
+        "team_sports",
     )
 
     /**
@@ -84,7 +85,8 @@ object HealthSportMapper {
         "volleyball" -> ExerciseSessionRecord.EXERCISE_TYPE_VOLLEYBALL
         "basketball" -> ExerciseSessionRecord.EXERCISE_TYPE_BASKETBALL
         "handball" -> ExerciseSessionRecord.EXERCISE_TYPE_HANDBALL
-        "stretching", "mobility", "warmup" -> ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING
+        "stretching", "mobility", "warmup", "recovery" ->
+            ExerciseSessionRecord.EXERCISE_TYPE_STRETCHING
         "breathing", "guided_breathing", "recovery_breathing" ->
             ExerciseSessionRecord.EXERCISE_TYPE_GUIDED_BREATHING
         else -> null
