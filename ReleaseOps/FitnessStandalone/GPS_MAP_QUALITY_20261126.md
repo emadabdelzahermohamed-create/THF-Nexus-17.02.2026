@@ -52,3 +52,13 @@ No GPS accuracy, background tracking or phone QA PASS is claimed from CI alone.
 ## Separate route-sync gap
 
 Finished route history remains in WebView localStorage. No authenticated route-sync endpoint/table or precise-location upload exists. After #284 is validated, inspect the existing account/backend contract and design explicit opt-in consent, retention/deletion and no precise-location upload by default. One-second local map refresh is not route sync.
+
+
+## PR #284 current-head source inspection — code-only evidence
+
+- Current PR head remains `274155eafdfff381009ef5814a621f32b225f1a8`; no exact-head CI or device test exists.
+- `MainActivity.kt` at that head was fetched in two bounded windows (lines 1–1000 and 1001–1146): 1,146 lines total; the tail contains `motionSnapshot()`. Blob SHA-1: `9d92bc47dfe317e1739b1d952f22ac00b10c00f6`. This verifies the previously truncated bridge file is complete at the current PR head, not that the PR is build/phone-tested.
+- `app.js` blob `4dc443a4d24a84b88e2256338e17d8000a2c93a8` contains the location-settings button state and click bridge to `PulseNative.openLocationSettings()`; it shows the button only when device location is off.
+- The current MainActivity source uses `TopHeroFit/${BuildConfig.VERSION_NAME} (Android; contact: TopHeroFit@gmail.com)` as the WebView User-Agent and `WebSettings.LOAD_DEFAULT`.
+- `WebViewNetworkPolicy.kt` blob `ea560fc546df4dbed0838e0d4ac17506504c4dba` allowlists HTTPS raster tiles from OSM, OpenTopoMap and EOX; other external HTTP(S) resources are blocked. `LOAD_DEFAULT` honors normal HTTP tile cache headers; this is not an offline tile pack or bulk prefetch implementation. Respect OSM/provider rate, attribution and caching policies.
+- `ActivityLocationFallbackPolicy.kt` blob `b07bf335cfb5dbf6e921a72aac98cd2af7ad4cca` specifies an 8-second first accepted-fix watchdog, 12-second stale-fix timeout and 12-second silent-GPS-to-network fallback. Provider selection is permission-aware; only one framework provider is active at a time. These are source observations only; exact-head CI and physical P0 remain mandatory.
