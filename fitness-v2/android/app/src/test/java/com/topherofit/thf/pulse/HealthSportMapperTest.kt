@@ -115,6 +115,14 @@ class HealthSportMapperTest {
         )
         assertEquals(
             ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+            HealthSportMapper.toExerciseType("unknown-sport", "other"),
+        )
+    }
+
+    @Test
+    fun knownSportOverridesGenericExerciseId() {
+        assertEquals(
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
             HealthSportMapper.toExerciseType("running", "other"),
         )
     }
