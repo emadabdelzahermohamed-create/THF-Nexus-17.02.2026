@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-11-25T17:51:58Z",
+  "observed_at": "2026-11-26T17:59:45Z",
   "canonical_branch": "agent/codex/fitness-recovery/20261023",
   "package": "com.topherofit.thf.pulse",
   "candidate": {
@@ -40,20 +40,19 @@
     "independent_readback": "PASS",
     "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
     "latest_state_probe": {
-      "run_id": 45669171108,
+      "run_id": 45872277536,
       "run_attempt": 1,
-      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45669171108",
-      "head_sha": "43007c52b858e67fb42615da7c788c354b792620",
-      "workflow_blob_sha256": "20072534025a02d0c170cb990d6336ed261690c6",
-      "workflow_blob_matches_current_canonical": true,
-      "observed_at": "2026-11-25T17:51:42Z",
-      "completed_at": "2026-11-25T17:51:58Z",
+      "url": "https://github.com/emadabdelzahermohamed-create/THF-Nexus-17.02.2026/actions/runs/45872277536",
+      "head_sha": "8905c6dc5e39dbd47c16a993225729e13cebe880",
+      "workflow_blob_sha1": "28e721a486940a0eb50b05519e76ab545d53f0bc",
+      "observed_at": "2026-11-26T17:59:28Z",
+      "completed_at": "2026-11-26T17:59:45Z",
       "conclusion": "success",
-      "job_id": 139399438915,
+      "job_id": 140090486831,
       "job_name": "probe",
       "job_conclusion": "success",
-      "artifact_id": 15049525912,
-      "artifact_sha256": "b0145bf9d7016f739da8528c6a538ccd9df3ad352208e68b89aa26045d3bb86a",
+      "artifact_id": 15142793403,
+      "artifact_sha256": "7e51b333a5da1a8ad6390c4722bf1c49316e19b706e46975c5b283956a1b6e5d",
       "artifact_download_sha256_verified": true,
       "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
       "package": "com.topherofit.thf.pulse",
@@ -77,7 +76,7 @@
       "upload_attempted": false,
       "commit_attempted": false,
       "fresh_live_readback": true,
-      "workflow_change": "comment-only read-only probe trigger commit 43007c52...; workflow logic unchanged; temporary empty edit was created and deleted; no listing, track, version, upload or commit mutation"
+      "workflow_change": "comment-only trigger refresh; workflow logic unchanged; temporary empty edit created and deleted; no listing, track, version, upload or commit mutation"
     },
     "previous_state_probe_20261103": {
       "run_id": 41686496926,
@@ -4046,7 +4045,7 @@
     }
   },
   "canonical_releaseops_parent_before_20261124_checkpoint": "62e7cbf90c6d13656b0035f8fc86b1bf6b8bb683",
-  "canonical_application_head": "85fb3e96f90ca5f7a9eac9072d8301d7f31d55bb",
+  "canonical_application_head": "779df53146e23e76fe7b1faabffbc0e3540ee29a",
   "canonical_branch_head_before_release_pointer_update": "54145f17d3eba8f804fd83755c6f5f0c36e253d7",
   "canonical_branch_head_before_final_docs_reconciliation": "29ceacb0200bb1da26d7efe5535fa4cfa74b8a29",
   "gps_current_head_ci": {
@@ -4077,5 +4076,21 @@
     "qa_version_code": 51019,
     "physical_p0": "BLOCKED_NOT_RUN",
     "play_upload_attempted": false
+  },
+  "latest_integrator_checkpoint_commit": "8905c6dc5e39dbd47c16a993225729e13cebe880",
+  "latest_repository_probe_scan_20261126": {
+    "observed_at": "2026-11-26T17:59:45Z",
+    "latest_probe_run": 45872277536,
+    "latest_probe_conclusion": "success",
+    "readback_artifact_id": 15142793403,
+    "artifact_zip_sha256": "7e51b333a5da1a8ad6390c4722bf1c49316e19b706e46975c5b283956a1b6e5d",
+    "embedded_json_sha256": "09e7a346e5e1c893d4328a0894d03c0071e7319bf33516f0423d20105d8f4d63",
+    "artifact_download_sha256_verified": true,
+    "fresh_live_readback_performed": true,
+    "internal": "51019 completed",
+    "alpha": "51007 draft",
+    "production": "NOT_VERIFIED_NOT_LISTED_IN_READBACK",
+    "upload_attempted": false,
+    "commit_attempted": false
   }
 }
