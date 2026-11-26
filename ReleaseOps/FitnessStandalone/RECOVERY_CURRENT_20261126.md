@@ -89,3 +89,8 @@ The mapper now prioritizes reviewed exercise IDs over broad program labels, reta
 - Physical P0 remains BLOCKED_NOT_RUN: stationary drift, measured walk/run/cycle routes, precise/approximate and revoke/regrant, first-fix latency/accuracy, screen-off/background, notification Pause/Resume/Finish, process-death restore without stopped-time credit, crash/ANR/Logcat.
 - Owner Google Play/API write permission and GCP Secret Manager signing-key access remain NOT_VERIFIED.
 - Next versionCode 51020 remains UNALLOCATED. No new signed AAB. Production remains blocked on physical P0, policy/privacy and release gates.
+
+
+## PR #284 source-integrity recheck — 2026-11-26
+
+The current PR head `274155eafdfff381009ef5814a621f32b225f1a8` contains a complete 1,146-line `MainActivity.kt`; it was fetched in two bounded ranges and `motionSnapshot()` is present in the final range. The current `app.js` contains the `openLocationSettings()` click bridge, and MainActivity contains the TopHeroFit User-Agent plus `WebSettings.LOAD_DEFAULT`. The allowlisted WebView tile policy covers OSM/OpenTopoMap/EOX HTTPS raster endpoints. This is source inspection only: #284 still has no exact-head CI and no phone P0, and remains Draft/unmerged.
