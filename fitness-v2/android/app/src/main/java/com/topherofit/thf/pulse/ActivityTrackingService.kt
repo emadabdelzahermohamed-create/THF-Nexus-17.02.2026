@@ -1405,7 +1405,9 @@ class ActivityTrackingService : Service(), SensorEventListener {
             }
             startForeground(NOTIFICATION_ID, notification, type)
         } else if (Build.VERSION.SDK_INT >= 29) {
-            val type = if (activityMode != null) {
+            val locationEligible = hasLocationPermission() &&
+                runCatching { locationManager.isLocationEnabled }.getOrDefault(false)
+            val type = if (activityMode != null && locationEligible) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
             } else {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE
