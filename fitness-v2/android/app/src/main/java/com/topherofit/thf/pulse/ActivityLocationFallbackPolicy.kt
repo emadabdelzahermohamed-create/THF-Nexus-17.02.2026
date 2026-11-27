@@ -105,7 +105,93 @@ object ActivityLocationFallbackPolicy {
         return callbackProvider?.trim()?.equals(expectedLabel, ignoreCase = true) == true
     }
 
+
+    /**
+     * Fused remains the primary source while the framework provider is a bounded fallback.
+     * When both subscriptions overlap, only a fresh accepted Fused fix that is at least as
+     * accurate as the current framework fix may take ownership. This prevents alternating
+     * provider callbacks from repeatedly resetting the distance accumulator.
+     */
+    fun shouldPromoteFusedLocation(
+        sessionModeMatches: Boolean,
+        paused: Boolean,
+        legacyProviderActive: Boolean,
+        fusedFixAccuracyMetres: Double?,
+        fusedFixElapsedMs: Long?,
+        currentAcceptedAccuracyMetres: Double?,
+        currentAcceptedElapsedMs: Long?,
+        currentAcceptedFixFresh: Boolean,
+    ): Boolean {
+        if (!sessionModeMatches || paused || !legacyProviderActive) return false
+        val fusedAccuracy = fusedFixAccuracyMetres?.takeIf { it.isFinite() && it > 0.0 } ?: return false
+        val fusedElapsed = fusedFixElapsedMs?.takeIf { it > 0L } ?: return false
+        if (currentAcceptedFixFresh) {
+            val currentElapsed = currentAcceptedElapsedMs?.takeIf { it > 0L } ?: return false
+            // Equal timestamps cannot establish that Fused is newer; keep the current source.
+            if (fusedElapsed <= currentElapsed) return false
+        }
+        val currentAccuracy = currentAcceptedAccuracyMetres?.takeIf { it.isFinite() && it > 0.0 }
+        if (!currentAcceptedFixFresh || currentAccuracy == null) return true
+        return fusedAccuracy <= currentAccuracy
+    }
+
+    /**
+     * A permission revocation must tear down every active location subscription and live fix,
+     * including an FLP callback that has not delivered its first result yet.
+     */
+    fun shouldSuspendLocationSources(
+        hasLocationPermission: Boolean,
+        fusedCallbackRegistered: Boolean,
+        legacyProviderRegistered: Boolean,
+        hasLiveLocationState: Boolean,
+    ): Boolean = !hasLocationPermission &&
+        (fusedCallbackRegistered || legacyProviderRegistered || hasLiveLocationState)
+
+    /**
+     * Resume location collection only after permission returns to the same live, unpaused session.
+     */
+    fun shouldResumeLocationSources(
+        permissionWasBlocked: Boolean,
+        hasLocationPermission: Boolean,
+        sessionModeMatches: Boolean,
+        paused: Boolean,
+    ): Boolean = permissionWasBlocked && hasLocationPermission && sessionModeMatches && !paused
+
+    enum class ActivityForegroundServiceKind { LOCATION, HEALTH }
+
+    /**
+     * Android 14+ requires the runtime prerequisites for the selected foreground-service type.
+     * A disabled system location switch cannot start a location FGS even when app location
+     * permission remains granted; step collection can continue under the health type when
+     * ACTIVITY_RECOGNITION is still granted.
+     */
+    object ActivityForegroundServiceTypePolicy {
+        fun forActivity(
+            locationPermissionGranted: Boolean,
+            locationServicesEnabled: Boolean,
+            activityRecognitionPermissionGranted: Boolean,
+        ): ActivityForegroundServiceKind? = when {
+            locationPermissionGranted && locationServicesEnabled -> ActivityForegroundServiceKind.LOCATION
+            activityRecognitionPermissionGranted -> ActivityForegroundServiceKind.HEALTH
+            else -> null
+        }
+    }
+
     enum class LegacyProvider { GPS, NETWORK }
+
+    /**
+     * A framework subscription must be removed as soon as its permission is no longer granted.
+     * Android can leave a provider enabled after the user downgrades Precise to Approximate.
+     */
+    fun isLegacyProviderAuthorized(
+        provider: LegacyProvider?,
+        finePermissionGranted: Boolean,
+        coarsePermissionGranted: Boolean,
+    ): Boolean = when (provider) {
+        LegacyProvider.GPS -> finePermissionGranted
+        LegacyProvider.NETWORK -> coarsePermissionGranted
+        null -> false
+    }
 
     /**
      * Selects only a provider allowed by the user's granted location precision.
