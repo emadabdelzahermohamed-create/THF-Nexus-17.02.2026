@@ -64,3 +64,17 @@ Other merged:
 - Completed route history remains in WebView localStorage; no authenticated route-sync endpoint/table or precise-location upload. Route backup remains design-only pending #284 validation and explicit consent/retention/deletion design.
 - `ActivityEvidenceAnomalyPolicy.assessSegment()` remains tested but unwired. `GpsFixGate` is signal admission and `GpsDistanceAccumulator` the sole metric-credit path.
 - No paid infrastructure or unrelated projects.
+
+
+## Supporting open QA / Health / session-history PRs
+
+These are not release-authority lanes and none has exact-head CI on its current head at this checkpoint:
+
+| PR | Head | Scope / current evidence | Decision |
+|---|---|---|---|
+| #118 | `1dee6b430ac63a344d1ca5bd2b8fd5901dd84d46` | Two-file physical-QA evidence collector; open, non-Draft, stale base and currently unmergeable; no workflow run on current head. | Preserve as tooling only; rebase and exact-head test before use. No physical P0 is implied by the collector. |
+| #119 | `a832ac650acc6bf3606856361a9a3b85bf679834` | Seven-file Play 51018 preflight/blocked-P0 record; open, non-Draft, stale base and unmergeable; no workflow run on current head. Its installed-version observation is superseded by the current 51019 Play readback. | Historical QA evidence only; do not treat as current Play state or release proof. |
+| #137 | `551cccdbf74b17001dfcad8ccc94ca340faafd72` | Two-file Health permission-surface guard; open, non-Draft, stale base and unmergeable; no workflow run on current head. | Keep as a candidate guard, but reconcile with #93 and the canonical five-scope Health allowlist before integrating. |
+| #227 | `24e1b4ace1d86ea8e02d558ad9db993e4e627c77` | Four-file local-calendar workout-history/streak fix; Draft, stale base and unmergeable; no workflow run on current head. | Keep separate from GPS service work; exact-head product/native tests required before integration. |
+
+The open exercise-experience queue also includes #160 and #213 (catalog/program lanes), #224 (offline demo autoplay), and older accessibility/content PRs. Do not batch-merge stacked branches. Reconcile each against the canonical tree and its actual shared-file owner before testing a combined head.
