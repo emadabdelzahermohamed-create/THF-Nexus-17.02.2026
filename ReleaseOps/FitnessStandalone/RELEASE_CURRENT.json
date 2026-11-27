@@ -4156,7 +4156,7 @@
     "previous_tip": "11f06f2554593a8d40949bdadcc142c1001fdc94",
     "recovery_doc_commit": "e0afcad049b3db883aa7e9806353bd602304a3fa",
     "gps_map_doc_commit": "823a0565a56164f9e030393a6c16dfa0aa79edc2",
-    "lease_doc_commit": "c5094835933bbb41c1a28781127acc0cd4082984",
+    "lease_doc_commit": "84f525bab72fdafe8a627f3b1bfad4f4c1ad2340",
     "files": [
       "ReleaseOps/FitnessStandalone/RECOVERY_CURRENT_20261127.md",
       "ReleaseOps/FitnessStandalone/GPS_MAP_QUALITY_20261127.md",
@@ -4165,6 +4165,7 @@
     "application_source_changed": false,
     "release_version_allocated": false,
     "signing_or_play_write": false,
-    "branch_tip_before_release_pointer_update": "c5094835933bbb41c1a28781127acc0cd4082984"
+    "branch_tip_before_release_pointer_update": "84f525bab72fdafe8a627f3b1bfad4f4c1ad2340",
+    "supporting_qa_health_session_leases_included": true
   }
 }
