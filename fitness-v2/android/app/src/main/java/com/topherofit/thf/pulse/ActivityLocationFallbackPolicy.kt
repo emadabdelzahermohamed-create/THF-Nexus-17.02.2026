@@ -1,5 +1,25 @@
 package com.topherofit.thf.pulse
 
+enum class ActivityForegroundServiceKind { LOCATION, HEALTH }
+
+/**
+ * Android 14+ requires the runtime prerequisites for the selected foreground-service type.
+ * A disabled system location switch cannot start a location FGS even when app location
+ * permission remains granted; step collection can continue under the health type when
+ * ACTIVITY_RECOGNITION is still granted.
+ */
+object ActivityForegroundServiceTypePolicy {
+    fun forActivity(
+        locationPermissionGranted: Boolean,
+        locationServicesEnabled: Boolean,
+        activityRecognitionPermissionGranted: Boolean,
+    ): ActivityForegroundServiceKind? = when {
+        locationPermissionGranted && locationServicesEnabled -> ActivityForegroundServiceKind.LOCATION
+        activityRecognitionPermissionGranted -> ActivityForegroundServiceKind.HEALTH
+        else -> null
+    }
+}
+
 /**
  * Decides when to supplement a fused-location subscription with Android framework providers.
  * This is a resilience timeout, not a claim that a provider can guarantee a first fix.
@@ -156,26 +176,6 @@ object ActivityLocationFallbackPolicy {
         sessionModeMatches: Boolean,
         paused: Boolean,
     ): Boolean = permissionWasBlocked && hasLocationPermission && sessionModeMatches && !paused
-
-    enum class ActivityForegroundServiceKind { LOCATION, HEALTH }
-
-    /**
-     * Android 14+ requires the runtime prerequisites for the selected foreground-service type.
-     * A disabled system location switch cannot start a location FGS even when app location
-     * permission remains granted; step collection can continue under the health type when
-     * ACTIVITY_RECOGNITION is still granted.
-     */
-    object ActivityForegroundServiceTypePolicy {
-        fun forActivity(
-            locationPermissionGranted: Boolean,
-            locationServicesEnabled: Boolean,
-            activityRecognitionPermissionGranted: Boolean,
-        ): ActivityForegroundServiceKind? = when {
-            locationPermissionGranted && locationServicesEnabled -> ActivityForegroundServiceKind.LOCATION
-            activityRecognitionPermissionGranted -> ActivityForegroundServiceKind.HEALTH
-            else -> null
-        }
-    }
 
     enum class LegacyProvider { GPS, NETWORK }
 
