@@ -927,6 +927,8 @@ class GpsStationarySpeedAccuracySourceContractTest(unittest.TestCase):
         self.assertIn("fun forActivity(", policy)
         self.assertIn("if (!startForegroundForCurrentSession(buildNotification()))", service)
         self.assertIn("foregroundStarted", service)
+        self.assertIn("val locationEligible = hasLocationPermission()", service)
+        self.assertIn("activityMode != null && locationEligible", service)
 
 if __name__ == "__main__":
     unittest.main()
