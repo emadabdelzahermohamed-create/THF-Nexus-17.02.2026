@@ -226,6 +226,8 @@ class ActivityTrackingService : Service(), SensorEventListener {
     private var legacyProviderAttemptStartedElapsedMs = 0L
     private var legacyProviderRegistrationFailureCount = 0
     private var legacyProviderNextAttemptElapsedMs = 0L
+    private var locationPermissionBlocked = false
+    private var foregroundStarted = false
     private val locationFallbackWatchdog = object : Runnable {
         override fun run() {
             val mode = activityMode ?: return
@@ -241,23 +243,60 @@ class ActivityTrackingService : Service(), SensorEventListener {
             } else {
                 false
             }
-            val permissionOrSignalFallback = ActivityLocationFallbackPolicy.shouldFallbackFromGpsToNetwork(
-                currentProvider = legacyLocationProvider,
-                finePermissionGranted = finePermissionGranted,
-                coarsePermissionGranted = coarsePermissionGranted,
-                networkProviderEnabled = networkProviderEnabled,
-                gpsRegistrationSucceeded = legacyLocationProvidersRegistered,
-                providerAttemptStartedElapsedMs = legacyProviderAttemptStartedElapsedMs,
-                lastAcceptedElapsedMs = lastAcceptedElapsed,
-                nowElapsedMs = nowElapsed,
+            val hasLocationPermission = finePermissionGranted || coarsePermissionGranted
+            val hasLiveLocationState = lastLocation != null || lastObservedLocation != null ||
+                lastAccuracyMetres != null || lastObservedAccuracyMetres != null
+            val shouldSuspendLocationSources = ActivityLocationFallbackPolicy.shouldSuspendLocationSources(
+                hasLocationPermission = hasLocationPermission,
+                fusedCallbackRegistered = fusedLocationCallback != null,
+                legacyProviderRegistered = legacyLocationProvidersRegistered ||
+                    legacyLocationListener != null || legacyLocationProvider != null,
+                hasLiveLocationState = hasLiveLocationState,
             )
-            if (permissionOrSignalFallback || ActivityLocationFallbackPolicy.shouldRegisterLegacyProviders(
-                    requestStartedElapsedMs = locationRequestStartedElapsedMs,
+            if (!hasLocationPermission) {
+                locationPermissionBlocked = true
+                if (shouldSuspendLocationSources) {
+                    // Revoking the final location grant must stop both FLP and framework callbacks.
+                    registerLegacyLocationProviders(mode)
+                }
+            } else if (ActivityLocationFallbackPolicy.shouldResumeLocationSources(
+                    permissionWasBlocked = locationPermissionBlocked,
+                    hasLocationPermission = hasLocationPermission,
+                    sessionModeMatches = activityMode == mode,
+                    paused = activityPaused,
+                )
+            ) {
+                locationPermissionBlocked = false
+                // Re-register FLP after a permission grant; a callback removed on revocation
+                // cannot be assumed to resume automatically.
+                registerActivitySources(mode)
+                return
+            } else {
+                val legacyProviderPermissionInvalid = legacyLocationProvider != null &&
+                    !ActivityLocationFallbackPolicy.isLegacyProviderAuthorized(
+                        provider = legacyLocationProvider,
+                        finePermissionGranted = finePermissionGranted,
+                        coarsePermissionGranted = coarsePermissionGranted,
+                    )
+                val permissionOrSignalFallback = ActivityLocationFallbackPolicy.shouldFallbackFromGpsToNetwork(
+                    currentProvider = legacyLocationProvider,
+                    finePermissionGranted = finePermissionGranted,
+                    coarsePermissionGranted = coarsePermissionGranted,
+                    networkProviderEnabled = networkProviderEnabled,
+                    gpsRegistrationSucceeded = legacyLocationProvidersRegistered,
+                    providerAttemptStartedElapsedMs = legacyProviderAttemptStartedElapsedMs,
                     lastAcceptedElapsedMs = lastAcceptedElapsed,
                     nowElapsedMs = nowElapsed,
                 )
-            ) {
-                registerLegacyLocationProviders(mode)
+                val shouldRegisterFallback = hasLocationPermission &&
+                    ActivityLocationFallbackPolicy.shouldRegisterLegacyProviders(
+                        requestStartedElapsedMs = locationRequestStartedElapsedMs,
+                        lastAcceptedElapsedMs = lastAcceptedElapsed,
+                        nowElapsedMs = nowElapsed,
+                    )
+                if (legacyProviderPermissionInvalid || permissionOrSignalFallback || shouldRegisterFallback) {
+                    registerLegacyLocationProviders(mode)
+                }
             }
             if (activityMode == mode && !activityPaused) {
                 locationFallbackHandler.postDelayed(this, LOCATION_FALLBACK_POLL_MS)
@@ -378,7 +417,17 @@ class ActivityTrackingService : Service(), SensorEventListener {
         lastAccuracyMetres = null
         lastObservedAccuracyMetres = null
         route.clear()
-        startForegroundForCurrentSession(buildNotification())
+        if (!startForegroundForCurrentSession(buildNotification())) {
+            val rejectedSnapshot = buildActivitySnapshot(active = false).copy(currentSpeedKph = 0.0)
+            unregisterActivitySources()
+            clearActivityCheckpoint()
+            activityMode = null
+            activityPaused = false
+            activityPauseStartedElapsedMs = 0L
+            lastActivitySnapshot = rejectedSnapshot
+            stopSelf()
+            return
+        }
         registerActivitySources(mode)
         publishActivitySnapshot()
         saveActivityCheckpoint(force = true)
@@ -397,7 +446,13 @@ class ActivityTrackingService : Service(), SensorEventListener {
         engine.startSession(sessionId, profile)
         workoutEngine = engine
         sessionStartedAtWallMs = System.currentTimeMillis()
-        startForegroundForCurrentSession(buildNotification())
+        if (!startForegroundForCurrentSession(buildNotification())) {
+            lastWorkoutEvidence = runCatching { engine.stopSession() }.getOrNull() ?: lastWorkoutEvidence
+            engine.onHostPause()
+            workoutEngine = null
+            stopSelf()
+            return
+        }
         startNotificationUpdates()
     }
 
@@ -405,10 +460,16 @@ class ActivityTrackingService : Service(), SensorEventListener {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) {
+            locationPermissionBlocked = true
             registerStepSource(mode)
+            // Keep a lightweight permission-state watchdog so a grant made in Settings can
+            // restart location collection without requiring a new activity session.
+            locationFallbackHandler.removeCallbacks(locationFallbackWatchdog)
+            locationFallbackHandler.postDelayed(locationFallbackWatchdog, LOCATION_FALLBACK_POLL_MS)
             return
         }
 
+        locationPermissionBlocked = false
         registerStepSource(mode)
         locationRequestStartedElapsedMs = SystemClock.elapsedRealtime()
         legacyLocationProvidersRegistered = false
@@ -443,6 +504,72 @@ class ActivityTrackingService : Service(), SensorEventListener {
                             generationMatches = requestGeneration == locationRequestGeneration,
                         )
                     ) return
+
+                    if (!hasLocationPermission()) {
+                        locationPermissionBlocked = true
+                        registerLegacyLocationProviders(mode)
+                        return
+                    }
+
+                    // The Fused subscription stays alive while the framework provider is a
+                    // fallback, but only one source may feed route/distance state at a time.
+                    if (legacyLocationProvidersRegistered) {
+                        val nowElapsed = SystemClock.elapsedRealtime()
+                        val currentAcceptedElapsedMs =
+                            lastLocation?.elapsedRealtimeNanos?.div(1_000_000L)
+                        val currentAcceptedFixFresh = currentAcceptedElapsedMs?.let {
+                            GpsFixGate.isFreshElapsedTime(it, nowElapsed)
+                        } == true
+                        // A more accurate Fused point is not sufficient if it implies an
+                        // impossible cross-provider jump from the currently accepted fix.
+                        // Keep stationary promotion possible, but enforce monotonic time and
+                        // the sport-specific displacement/speed ceiling across the handoff.
+                        var transitionPrevious = lastLocation?.takeIf { currentAcceptedFixFresh }?.toGpsFix()
+                        val acceptedFusedLocations = result.locations
+                            .sortedBy { it.elapsedRealtimeNanos }
+                            .mapNotNull { location ->
+                                val fix = location.toGpsFix()
+                                if (fix.sourceLabel?.equals("fused", ignoreCase = true) != true ||
+                                    !GpsFixGate.acceptsSourceTransition(
+                                        fix,
+                                        previous = transitionPrevious,
+                                        mode = mode,
+                                        sessionStartedMs = activityStartedAtElapsedMs,
+                                        nowMs = nowElapsed,
+                                    )
+                                ) {
+                                    null
+                                } else {
+                                    transitionPrevious = fix
+                                    location to fix
+                                }
+                            }
+                        val newestAcceptedFusedFix =
+                            acceptedFusedLocations.maxByOrNull { it.second.elapsedMs }?.second
+                        if (!ActivityLocationFallbackPolicy.shouldPromoteFusedLocation(
+                                sessionModeMatches = activityMode == mode,
+                                paused = activityPaused,
+                                legacyProviderActive = legacyLocationProvidersRegistered,
+                                fusedFixAccuracyMetres = newestAcceptedFusedFix?.accuracyMetres,
+                                fusedFixElapsedMs = newestAcceptedFusedFix?.elapsedMs,
+                                currentAcceptedAccuracyMetres = lastLocation?.accuracy?.toDouble()
+                                    ?: lastAccuracyMetres?.toDouble(),
+                                currentAcceptedElapsedMs = currentAcceptedElapsedMs,
+                                currentAcceptedFixFresh = currentAcceptedFixFresh,
+                            )
+                        ) return
+                        promoteFusedLocationSource()
+                        // A batched Fused result may contain fixes older than the framework
+                        // fix that just owned the route. Never append those points after promotion.
+                        val promotedFusedLocations = if (currentAcceptedFixFresh && currentAcceptedElapsedMs != null) {
+                            acceptedFusedLocations.filter { it.second.elapsedMs > currentAcceptedElapsedMs }
+                        } else {
+                            acceptedFusedLocations
+                        }
+                        promotedFusedLocations.sortedBy { it.second.elapsedMs }
+                            .forEach { (location, _) -> handleLocationChanged(location) }
+                        return
+                    }
                     result.locations.forEach(::handleLocationChanged)
                 }
             }
@@ -491,14 +618,47 @@ class ActivityTrackingService : Service(), SensorEventListener {
         locationFallbackHandler.postDelayed(locationFallbackWatchdog, LOCATION_FALLBACK_POLL_MS * 2)
     }
 
+    /**
+     * Returns metric ownership to Fused only after its newest fix passes the same admission
+     * gate and is no worse than the current fresh framework fix. Reset only the live anchor;
+     * keep accumulated distance and the visible route history intact.
+     */
+    private fun promoteFusedLocationSource() {
+        removeLegacyLocationUpdates()
+        legacyLocationProvider = null
+        legacyProviderAttemptStartedElapsedMs = 0L
+        legacyProviderRegistrationFailureCount = 0
+        legacyProviderNextAttemptElapsedMs = 0L
+        lastLocation = null
+        lastObservedLocation = null
+        lastAccuracyMetres = null
+        lastObservedAccuracyMetres = null
+        gpsDistanceAccumulator.reset()
+        currentSpeedKph = 0.0
+    }
+
     private fun registerLegacyLocationProviders(mode: ActivityMode) {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-        ) return
         val finePermissionGranted =
             checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarsePermissionGranted =
             checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (!finePermissionGranted && !coarsePermissionGranted) {
+            // Permission revocation must tear down both FLP and framework callbacks.
+            locationPermissionBlocked = true
+            removeFusedLocationUpdates()
+            removeLegacyLocationUpdates()
+            legacyLocationProvider = null
+            legacyProviderAttemptStartedElapsedMs = 0L
+            legacyProviderRegistrationFailureCount = 0
+            legacyProviderNextAttemptElapsedMs = 0L
+            lastLocation = null
+            lastObservedLocation = null
+            lastAccuracyMetres = null
+            lastObservedAccuracyMetres = null
+            gpsDistanceAccumulator.reset()
+            currentSpeedKph = 0.0
+            return
+        }
         // Android 12+ users may grant approximate-only location. Never attempt GPS_PROVIDER
         // without fine permission, and never attempt NETWORK_PROVIDER without coarse permission.
         val gpsProviderEnabled = runCatching {
@@ -524,7 +684,13 @@ class ActivityTrackingService : Service(), SensorEventListener {
             null -> false
         }
         val providerUnavailable = legacyLocationProvider != null && !currentProviderAvailable
-        val allowProviderSwitch = shouldSwitchToNetwork || providerUnavailable
+        val providerNoLongerAuthorized = legacyLocationProvider != null &&
+            !ActivityLocationFallbackPolicy.isLegacyProviderAuthorized(
+                provider = legacyLocationProvider,
+                finePermissionGranted = finePermissionGranted,
+                coarsePermissionGranted = coarsePermissionGranted,
+            )
+        val allowProviderSwitch = shouldSwitchToNetwork || providerUnavailable || providerNoLongerAuthorized
         if (!ActivityLocationFallbackPolicy.shouldRegisterLegacyLocationProvider(
                 sessionModeMatches = activityMode == mode,
                 paused = activityPaused,
@@ -550,6 +716,15 @@ class ActivityTrackingService : Service(), SensorEventListener {
             legacyProviderAttemptStartedElapsedMs = 0L
             legacyProviderRegistrationFailureCount = 0
             legacyProviderNextAttemptElapsedMs = 0L
+            // No framework source is authorized/available. Do not leave a stale fix or
+            // accuracy value presented as the current live signal; preserve route history
+            // and cumulative distance while requiring a fresh anchor before credit resumes.
+            lastLocation = null
+            lastObservedLocation = null
+            lastAccuracyMetres = null
+            lastObservedAccuracyMetres = null
+            gpsDistanceAccumulator.reset()
+            currentSpeedKph = 0.0
             return
         }
 
@@ -619,12 +794,9 @@ class ActivityTrackingService : Service(), SensorEventListener {
         if (registered) {
             legacyProviderRegistrationFailureCount = 0
             legacyProviderNextAttemptElapsedMs = 0L
-            // Invalidate any pending FLP Task before removing its exact callback. Its success
-            // listener will also see the generation mismatch and cannot re-register after fallback.
-            locationRequestGeneration += 1L
-            val callback = fusedLocationCallback
-            fusedLocationCallback = null
-            if (callback != null) runCatching { fusedLocationClient.removeLocationUpdates(callback) }
+            // Keep Fused subscribed as a recovery candidate while the framework provider
+            // is active. The callback arbitrates by freshness and accuracy before it can
+            // retake metric ownership. Lifecycle invalidation remains in unregisterActivitySources().
         } else {
             if (legacyLocationListener === listener) {
                 legacyLocationListener = null
@@ -643,6 +815,14 @@ class ActivityTrackingService : Service(), SensorEventListener {
         legacyLocationListener = null
         legacyLocationProvidersRegistered = false
         if (listener != null) runCatching { locationManager.removeUpdates(listener) }
+    }
+
+    private fun removeFusedLocationUpdates() {
+        // Invalidate queued and in-flight callbacks before removing the exact FLP callback.
+        locationRequestGeneration += 1L
+        val callback = fusedLocationCallback
+        fusedLocationCallback = null
+        if (callback != null) runCatching { fusedLocationClient.removeLocationUpdates(callback) }
     }
 
     private fun refreshLegacyProviderSelection() {
@@ -665,10 +845,7 @@ class ActivityTrackingService : Service(), SensorEventListener {
         legacyProviderRegistrationFailureCount = 0
         legacyProviderNextAttemptElapsedMs = 0L
         locationRequestStartedElapsedMs = 0L
-        locationRequestGeneration += 1L
-        val callback = fusedLocationCallback
-        fusedLocationCallback = null
-        if (callback != null) runCatching { fusedLocationClient.removeLocationUpdates(callback) }
+        removeFusedLocationUpdates()
         gpsDistanceAccumulator.reset()
         runCatching { sensorManager.unregisterListener(this) }
     }
@@ -744,6 +921,7 @@ class ActivityTrackingService : Service(), SensorEventListener {
         mock = if (Build.VERSION.SDK_INT >= 31) isMock else isFromMockProvider,
         speedMps = if (hasSpeed()) speed.toDouble() else null,
         sourceLabel = provider,
+        speedAccuracyMps = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && hasSpeedAccuracy()) speedAccuracyMetersPerSecond.toDouble() else null,
     )
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -930,6 +1108,7 @@ class ActivityTrackingService : Service(), SensorEventListener {
         activityPauseStartedElapsedMs = 0L
         notificationHandler.removeCallbacks(notificationTicker)
         stopForeground(STOP_FOREGROUND_REMOVE)
+        foregroundStarted = false
         stopSelf()
         return final
     }
@@ -947,6 +1126,7 @@ class ActivityTrackingService : Service(), SensorEventListener {
         } else {
             notificationHandler.removeCallbacks(notificationTicker)
             stopForeground(STOP_FOREGROUND_REMOVE)
+            foregroundStarted = false
             stopSelf()
         }
         return evidence
@@ -993,6 +1173,7 @@ class ActivityTrackingService : Service(), SensorEventListener {
         if (!keepService) {
             notificationHandler.removeCallbacks(notificationTicker)
             stopForeground(STOP_FOREGROUND_REMOVE)
+            foregroundStarted = false
             stopSelf()
         }
     }
@@ -1111,7 +1292,16 @@ class ActivityTrackingService : Service(), SensorEventListener {
         lastActivitySnapshot = buildActivitySnapshot(active = true).copy(paused = restorePaused, currentSpeedKph = if (restorePaused) 0.0 else currentSpeedKph)
         activityPaused = restorePaused
         activityPauseStartedElapsedMs = if (restorePaused) nowElapsed else 0L
-        startForegroundForCurrentSession(buildNotification())
+        if (!startForegroundForCurrentSession(buildNotification())) {
+            val blockedSnapshot = buildActivitySnapshot(active = false).copy(currentSpeedKph = 0.0)
+            activityMode = null
+            activityPaused = false
+            activityPauseStartedElapsedMs = 0L
+            lastActivitySnapshot = blockedSnapshot
+            // Keep the durable checkpoint. It can be restored after an eligible FGS
+            // prerequisite is available again; do not silently delete the user's activity.
+            return false
+        }
         if (!activityPaused) registerActivitySources(checkpoint.mode)
         publishActivitySnapshot()
         startNotificationUpdates()
@@ -1183,17 +1373,49 @@ class ActivityTrackingService : Service(), SensorEventListener {
             .build()
     }
 
-    private fun startForegroundForCurrentSession(notification: Notification) {
-        if (Build.VERSION.SDK_INT >= 29) {
-            val type = when {
-                activityMode != null -> ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-                Build.VERSION.SDK_INT >= 34 -> ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
-                else -> ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE
+    private fun startForegroundForCurrentSession(notification: Notification): Boolean {
+        if (Build.VERSION.SDK_INT >= 34) {
+            val type = if (activityMode != null) {
+                when (
+                    ActivityForegroundServiceTypePolicy.forActivity(
+                        locationPermissionGranted = hasLocationPermission(),
+                        locationServicesEnabled = runCatching { locationManager.isLocationEnabled }.getOrDefault(false),
+                        activityRecognitionPermissionGranted = hasActivityRecognitionPermission(),
+                    )
+                ) {
+                    ActivityForegroundServiceKind.LOCATION -> ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+                    ActivityForegroundServiceKind.HEALTH -> ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
+                    null -> null
+                }
+            } else if (hasActivityRecognitionPermission()) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
+            } else {
+                null
+            }
+
+            if (type == null) {
+                if (foregroundStarted) {
+                    // Keep the already-running foreground notification visible, but never
+                    // attempt an invalid new type after a permission downgrade.
+                    notificationManager.notify(NOTIFICATION_ID, notification)
+                    return true
+                }
+                android.util.Log.w(TAG, "No eligible foreground-service type; refusing to start session")
+                return false
+            }
+            startForeground(NOTIFICATION_ID, notification, type)
+        } else if (Build.VERSION.SDK_INT >= 29) {
+            val type = if (activityMode != null) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            } else {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE
             }
             startForeground(NOTIFICATION_ID, notification, type)
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+        foregroundStarted = true
+        return true
     }
 
     private fun createNotificationChannel() {
